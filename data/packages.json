@@ -1,0 +1,18 @@
+[
+    {
+        "name": "pizza",
+        "dependencies": [
+            "cheese",
+            "sauce",
+            "broccoli"
+        ],
+        "url": "https://github.com/ActiveState/pizza"
+    },
+    {
+        "name": "tooth-brush",
+        "dependencies": [
+            "tooth-paste"
+        ],
+        "url": "ttps://github.com/ActiveState/tooth-brush"
+    }
+]
