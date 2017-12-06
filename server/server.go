@@ -8,18 +8,10 @@ import (
 	"net/http"
 	"os"
 
+	"activestate.com/devx/cli/internal/structures"
+
 	"github.com/gorilla/mux"
 )
-
-type Packages struct {
-	packages []Package
-}
-
-type Package struct {
-	name         string `json:"name"`
-	dependencies []string
-	url          string `json:"url"`
-}
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
@@ -33,16 +25,20 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "package, %q", s)
 }
 
-func getPackageFile() Packages {
+func getPackageFile() []structures.Package {
 	raw, err := ioutil.ReadFile("../data/packages.json")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	var packages Packages
+	packages := make([]structures.Package, 0)
 	// var package Package
-	json.Unmarshal([]byte(raw), &packages)
+	err2 := json.Unmarshal([]byte(raw), &packages)
+
+	if err2 != nil {
+		log.Fatal(err2)
+	}
 
 	return packages
 }
