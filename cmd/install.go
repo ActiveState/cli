@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"encoding/json"
+	"log"
+	"fmt"
+	"io/ioutil"
   "errors"
   "net/http"
 
@@ -21,13 +25,19 @@ var installCmd = &cobra.Command{
     return nil
   },
   Run: func(cmd *cobra.Command, args []string) {
-    var url = args[0]
-    resp, err := http.Get(url)
+    url := args[0]
+    res, err := http.Get(url)
 
     if err != nil {
-      return errors.New(err)
+      log.Fatal(err)
     }
 
-    println(resp)
+    body, err := ioutil.ReadAll(res.Body)
+    bodyStr := string(body)
+
+    var val map[string]interface{}
+    err2 := json.Unmarshal([]byte(bodyStr), &val)
+
+    fmt.Printf("%s", err2.Error())
   },
 }
