@@ -14,8 +14,13 @@
 
 package main
 
-import "activestate.com/devx/cli/cmd"
+import (
+	"github.com/ActiveState/Zeridian-CLI/cmd"
+	"github.com/ActiveState/Zeridian-CLI/server"
+)
 
 func main() {
+	go server.Up()
 	cmd.Execute()
+	server.Down()
 }

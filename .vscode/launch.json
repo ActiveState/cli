@@ -13,22 +13,9 @@
             "remotePath": "",
             "port": 2345,
             "host": "127.0.0.1",
-            "program": "${fileDirname}/../",
+            "program": "${workspaceRoot}/main.go",
             "env": {},
             "args": ["install", "http://google.com/"],
-            "showLog": true
-        },
-        {
-            "name": "Server",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "remotePath": "",
-            "port": 2345,
-            "host": "127.0.0.1",
-            "program": "${fileDirname}/../server/",
-            "env": {},
-            "args": [],
             "showLog": true
         }
     ]
