@@ -1,0 +1,56 @@
+name: CodeIntel
+owner: ActiveState
+version: master
+platforms: windows-10,ubuntu-17.10-x64,mac-10.12
+stages: dev,qa,prod
+languages:
+  - name: Python
+    version: 2.7.11
+    constraints:
+        platforms: windows-10,ubuntu-17.10-x64
+        stages: dev,qa,prod
+    packages:
+      - name: apsw
+        version: 3.8.11.1
+      - name: peewee
+        version: 2.9.1
+        tags:
+          - gcc-5
+  - name: Go
+    version: 1.9.2
+variables:
+  - name: PYTHONPATH
+    value: '%projectDir%/src:%projectDir%/tests'
+    constraints:
+        stages: dev,qa
+  - name: PYTHONPATH
+    value: '%projectDir%/src:%projectDir%/tests'
+hooks:
+  - name: FIRST_INSTALL
+    value: '%pythonExe% %projectDir%/setup.py prepare'
+  - name: AFTER_UPDATE
+    value: '%pythonExe% %projectDir%/setup.py prepare'
+commands:
+  - name: tests
+    value: pytest %projectDir%/tests
+  - name: debug
+    value: debug foo
+
+# We probably shouldn't have the following in this file
+policies:
+  - name: Infectuous Licenses
+    conditions:
+      - name: license-tags
+        value: infectuous
+        condition: contains
+    actions:
+      - name: email
+        value: scottr@activestate.com
+  - name: Ban Facebook
+    conditions:
+      - name: author
+        value: Facebook
+        condition: equals
+    actions:
+      - name: refuse
+        value: true
