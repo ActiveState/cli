@@ -16,11 +16,8 @@ package main
 
 import (
 	"github.com/ActiveState/Zeridian-CLI/cmd"
-	"github.com/ActiveState/Zeridian-CLI/server"
 )
 
 func main() {
-	go server.Up()
 	cmd.Execute()
-	server.Down()
 }
