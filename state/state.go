@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ActiveState/Zeridian-CLI/state/install"
+	"github.com/ActiveState/ActiveState-CLI/state/install"
 	"github.com/jessevdk/go-flags"
 )
 
