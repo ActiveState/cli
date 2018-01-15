@@ -14,9 +14,9 @@
             "remotePath": "",
             "port": 2345,
             "host": "127.0.0.1",
-            "program": "${workspaceRoot}/main.go",
+            "program": "${workspaceRoot}/state/state.go",
             "env": {},
-            "args": ["install", "http://google.com/"],
+            "args": ["--help"],
             "showLog": true
         }
     ]

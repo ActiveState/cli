@@ -1,16 +1,15 @@
-package cmd
+package main
 
 import (
 	"os"
 
-	"github.com/ActiveState/Zeridian-CLI/cmd/install"
+	"github.com/ActiveState/Zeridian-CLI/state/install"
 	"github.com/jessevdk/go-flags"
 )
 
 var parser = flags.NewNamedParser("state", flags.Default|flags.HelpFlag)
 
-// Execute the main command
-func Execute() {
+func main() {
 	_, err := parser.Parse()
 	if err != nil {
 		os.Exit(1)
