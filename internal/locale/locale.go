@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/nicksnyder/go-i18n/i18n"
+	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 )
 
@@ -16,11 +17,13 @@ var Supported = []string{"en-US", "nl-NL"}
 var T func(translationID string, args ...interface{}) string
 
 func init() {
+	viper.SetDefault("Locale", "en-US")
+
 	funk.ForEach(Supported, func(x string) {
 		i18n.MustLoadTranslationFile("locale/" + strings.ToLower(x) + ".yaml")
 	})
 
-	Set("en-US")
+	Set(viper.GetString("Locale"))
 }
 
 // Set the active language to the given locale
@@ -32,4 +35,6 @@ func Set(localeName string) {
 
 	localT, _ := i18n.Tfunc(localeName)
 	T = localT
+
+	viper.Set("Locale", localeName)
 }
