@@ -1,0 +1,6 @@
+install_project: 
+  other: installeer een project
+install_project_long:
+  other: installeer een project (long)
+running_install:
+  other: 'Uitvoering: Install'

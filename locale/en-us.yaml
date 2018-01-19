@@ -1,0 +1,6 @@
+install_project: 
+  other: install a project
+install_project_long:
+  other: install a project (long)
+running_install:
+  other: 'Running: Install'
