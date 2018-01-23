@@ -1,6 +1,52 @@
+state_description:
+  other: Met de ActiveState CLI kan je makkelijk tussen je ActiveState environments wisselen
 install_project: 
   other: installeer een project
-install_project_long:
-  other: installeer een project (long)
-running_install:
-  other: 'Uitvoering: Install'
+usage_tpl: 
+  other: "
+Gebruik:
+  [[if .Runnable]][[BR]]
+  [[.UseLine]]
+  [[end]]
+  [[if .HasAvailableSubCommands]][[BR]]
+    [[.CommandPath]] [command]
+  [[end]]
+
+[[if gt (len .Aliases) 0]]
+[[BR]][[BR]]
+Aliassen:[[BR]]
+  [[.NameAndAliases]][[end]]
+
+[[if .HasExample]]
+[[BR]][[BR]]
+Voorbeelden:[[BR]]
+  [[.Example]]
+[[end]]
+
+[[if .HasAvailableSubCommands]][[BR]][[BR]]Beschikbare Commands:
+[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
+  [[rpad .Name .NamePadding ]] [[.Short]]
+[[end]][[end]][[end]]
+
+[[if .HasAvailableLocalFlags]]
+[[BR]][[BR]]
+Flags:
+[[BR]][[.LocalFlags.FlagUsages | trimTrailingWhitespaces]]
+[[end]]
+
+[[if .HasAvailableInheritedFlags]]
+[[BR]][[BR]]
+Globale Flags: 
+[[BR]][[.InheritedFlags.FlagUsages | trimTrailingWhitespaces]]
+[[end]]
+
+[[if .HasHelpSubCommands]]
+[[BR]][[BR]]
+Meerdere help topics: [[range .Commands]]
+[[if .IsAdditionalHelpTopicCommand]][[BR]]
+  [[rpad .CommandPath .CommandPathPadding]] [[.Short]]
+[[end]][[end]][[end]]
+
+[[if .HasAvailableSubCommands]]
+[[BR]][[BR]]
+Gebruik \"[[.CommandPath]] [command] --help\" voor meer informatie over een command.[[end]][[BR]]"

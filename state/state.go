@@ -1,24 +1,33 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
+
 	"github.com/ActiveState/ActiveState-CLI/state/install"
-	"github.com/jessevdk/go-flags"
+
+	"github.com/ActiveState/cobra"
+	"github.com/dvirsky/go-pylog/logging"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 )
 
-var options struct {
-	Locale func(string) `long:"locale" short:"L" description:"Locale"`
-}
+var rootCmd *cobra.Command
 
-var parser = flags.NewNamedParser("state", flags.Default)
+var Locale string
 
 func init() {
+	initConfig()
+	initCommand()
+}
+
+func initConfig() {
+	logging.Info("Init Config")
+
 	configDirs := configdir.New("activestate", "cli")
 	configDirs.LocalPath, _ = filepath.Abs(".")
 	configDir := configDirs.QueryFolders(configdir.Global)[0]
@@ -32,30 +41,63 @@ func init() {
 	viper.AddConfigPath(configDir.Path)
 	viper.AddConfigPath(".")
 
-	options.Locale = flagSetLocale
-
-	parser.AddGroup("Application Options", "", &options)
-
-	command, shortDescription, longDescription, data := installCmd.Register()
-	parser.AddCommand(command, shortDescription, longDescription, data)
-}
-
-func main() {
-	err := viper.ReadInConfig()
-	if err != nil {
-		print.Error("Fatal error while reading config file: %s \n", err)
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Can't read config:", err)
 		os.Exit(1)
 	}
 
-	_, err = parser.Parse()
+	locale.Init()
+}
+
+func initCommand() {
+	logging.Debug("Init Command")
+
+	var T = locale.T
+	var Tt = locale.Tt
+
+	rootCmd = &cobra.Command{
+		Use: "state",
+		Run: Execute,
+	}
+
+	rootCmd.PersistentFlags().StringVarP(&Locale, "locale", "l", "", "localisation")
+
+	// Small hack to parse the locale flag early, so we can localise our commands properly
+	args := os.Args[1:]
+	_, flags, err := rootCmd.Traverse(args)
+	if err == nil {
+		_ = rootCmd.ParseFlags(flags)
+
+		if Locale != "" {
+			locale.Set(Locale)
+		}
+	}
+
+	rootCmd.SetShort(T("state_description"))
+	rootCmd.SetUsageTemplate(Tt("usage_tpl"))
+
+	install.Register(rootCmd)
+}
+
+func main() {
+	logging.Debug("main")
+
+	err := rootCmd.Execute()
 
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if Locale != "" {
+		viper.Set("Locale", Locale)
 	}
 
 	viper.WriteConfig()
 }
 
-func flagSetLocale(localeName string) {
-	locale.Set(localeName)
+func Execute(cmd *cobra.Command, args []string) {
+	logging.Debug("Execute")
+
+	print.Line(viper.GetString("Locale"))
 }

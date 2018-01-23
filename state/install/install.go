@@ -1,22 +1,28 @@
-package installCmd
+package install
 
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/cobra"
+	"github.com/dvirsky/go-pylog/logging"
 )
 
-type cmdOpts struct{}
+var T = locale.T
 
-func (c *cmdOpts) Execute(args []string) error {
-	T := locale.T
-	print.Line(T("running_install"))
-	return nil
+var installCmd *cobra.Command
+
+func Execute(cmd *cobra.Command, args []string) {
+	logging.Debug("Execute")
 }
 
-var cmd cmdOpts
-
 // Register the install command
-func Register() (name string, shortDescription string, longDescription string, data interface{}) {
-	T := locale.T
-	return "install", T("install_project"), T("install_project_long"), &cmd
+func Register(command *cobra.Command) {
+	logging.Debug("Register")
+
+	installCmd = &cobra.Command{
+		Use:   "install",
+		Short: T("install_project"),
+		Run:   Execute,
+	}
+
+	command.AddCommand(installCmd)
 }

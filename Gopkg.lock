@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/ActiveState/cobra"
+  packages = ["."]
+  revision = "5857d322c82ad7e9921b623d683d541acf70922c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dvirsky/go-pylog"
+  packages = ["logging"]
+  revision = "8b786c7fb4af9ec02396a139f38a70815d4c945c"
+
+[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "570b54cabe6b8eb0bc2dfce68d964677d63b5260"
@@ -20,10 +32,10 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
-  name = "github.com/jessevdk/go-flags"
+  name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
-  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
-  version = "v1.3.0"
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -107,7 +119,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
+  revision = "af50095a40f9041b3b38960738837185c26e9419"
 
 [[projects]]
   branch = "master"
@@ -124,6 +136,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a2b1f5e6080cc622f723b0ba3cb9231bdba11c94ed8437f9472900eba394e149"
+  inputs-digest = "dc2af995e920caf5a7c91141c8d68e023f1258f0f70c0f945ef6e9bfe2ee2122"
   solver-name = "gps-cdcl"
   solver-version = 1
