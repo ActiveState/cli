@@ -1,5 +1,8 @@
 package constants
 
+// LibraryName contains the main name of this library
+const LibraryName = "ActiveState-CLI"
+
 // ConfigName is used to inform viper and our config lib about the name of the config file
 const ConfigName = "activestate"
 

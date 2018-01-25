@@ -1,8 +1,11 @@
 package locale
 
 import (
+	"flag"
 	"os"
 	"strings"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 
 	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -22,8 +25,10 @@ func init() {
 
 	viper.SetDefault("Locale", "en-US")
 
+	path := getLocalePath()
+
 	funk.ForEach(Supported, func(x string) {
-		i18n.MustLoadTranslationFile("locale/" + strings.ToLower(x) + ".yaml")
+		i18n.MustLoadTranslationFile(path + strings.ToLower(x) + ".yaml")
 	})
 
 	locale := getLocaleFlag()
@@ -32,6 +37,34 @@ func init() {
 	}
 
 	Set(locale)
+}
+
+// getLocalePath is a super ugly hack to facilitate running Go scripts from their sub-directories
+// this should not be used for production code
+func getLocalePath() string {
+	var exists = func(path string) bool {
+		_, err := os.Stat(path)
+		return err == nil
+	}
+
+	pathsep := string(os.PathSeparator)
+	depth := ""
+	path := "locale" + pathsep
+
+	if flag.Lookup("test.v") == nil {
+		return path
+	}
+
+	for i := 0; i < 10; i++ { // max 10 iterations
+		if exists(depth+constants.LibraryName) || exists(depth+path) {
+			path = depth + path
+			break
+		} else {
+			depth = ".." + pathsep + depth
+		}
+	}
+
+	return path
 }
 
 // getLocaleFlag manually parses the input args looking for `--locale` or `-l` and retrieving its value
