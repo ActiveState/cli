@@ -16,7 +16,7 @@
             "host": "127.0.0.1",
             "program": "${workspaceRoot}/state/state.go",
             "cwd": "${workspaceRoot}",
-            "args": ["--locale en-US"],
+            "args": ["--locale", "en-US"],
             "showLog": true
         }
     ]

@@ -50,3 +50,5 @@ Meerdere help topics: [[range .Commands]]
 [[if .HasAvailableSubCommands]]
 [[BR]][[BR]]
 Gebruik \"[[.CommandPath]] [command] --help\" voor meer informatie over een command.[[end]][[BR]]"
+flag_state_locale_description:
+  other: Lokalisatie

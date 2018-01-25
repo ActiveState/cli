@@ -3,7 +3,6 @@ package print
 import (
 	"fmt"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/fatih/color"
 )
 
@@ -36,11 +35,4 @@ func Warning(format string, a ...interface{}) {
 // Info prints the given string as an info message
 func Info(format string, a ...interface{}) {
 	color.Blue(format, a...)
-}
-
-// Debug prints the given string as an info message
-func Debug(format string, a ...interface{}) {
-	if constants.DEBUG {
-		color.Cyan(format, a...)
-	}
 }
