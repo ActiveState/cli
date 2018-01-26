@@ -8,6 +8,12 @@
   revision = "5857d322c82ad7e9921b623d683d541acf70922c"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/dvirsky/go-pylog"
   packages = ["logging"]
@@ -74,6 +80,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/shibukawa/configdir"
   packages = ["."]
@@ -110,6 +122,12 @@
   revision = "aafc9e6bc7b7bb53ddaa75a5ef49a17d6e654be5"
 
 [[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "b91bfb9ebec76498946beb6af7c0230c7cc7ba6c"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/thoas/go-funk"
   packages = ["."]
   revision = "14304e8530de7dbb909c8305591b3a8370dd9dbb"
@@ -136,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dc2af995e920caf5a7c91141c8d68e023f1258f0f70c0f945ef6e9bfe2ee2122"
+  inputs-digest = "f3fd462e97fc73f114f7e475d240a2f7c532db8d29b1c1c6a007d51380bce18d"
   solver-name = "gps-cdcl"
   solver-version = 1
