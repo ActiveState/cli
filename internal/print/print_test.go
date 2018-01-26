@@ -11,6 +11,7 @@ func TestLine(t *testing.T) {
 // Formatted aliases to fmt.printf, also invokes Println
 func TestFormatted(t *testing.T) {
 	Formatted("hello %s", "world")
+	Line("") // end with newline to work around https://github.com/jstemmer/go-junit-report/issues/28
 }
 
 // Error prints the given string as an error message
