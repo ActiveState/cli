@@ -1,4 +1,4 @@
-package install
+package activate
 
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
@@ -8,12 +8,12 @@ import (
 
 // Command holds our main command definition
 var Command = &structures.Command{
-	Name:        "install",
-	Description: "install_project",
+	Name:        "activate",
+	Description: "activate_project",
 	Run:         Execute,
 }
 
-// Execute the install command
+// Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 }

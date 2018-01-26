@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 
-	"github.com/ActiveState/ActiveState-CLI/state/install"
+	"github.com/ActiveState/ActiveState-CLI/state/activate"
 
 	"github.com/ActiveState/cobra"
 	"github.com/dvirsky/go-pylog/logging"
@@ -38,7 +38,7 @@ func init() {
 	cC := Command.GetCobraCmd()
 	cC.PersistentFlags().StringVarP(&Flags.Locale, "locale", "l", "", T("flag_state_locale_description"))
 
-	Command.Append(install.Command)
+	Command.Append(activate.Command)
 }
 
 func main() {

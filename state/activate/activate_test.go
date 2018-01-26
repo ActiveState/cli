@@ -1,4 +1,4 @@
-package install
+package activate
 
 import (
 	"os"
@@ -20,7 +20,7 @@ func TestExecute(t *testing.T) {
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"install"})
+	Cc.SetArgs([]string{"activate"})
 
 	Command.Execute()
 
