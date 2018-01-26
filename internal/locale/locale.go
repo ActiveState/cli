@@ -2,10 +2,11 @@ package locale
 
 import (
 	"flag"
+	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
-
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 
 	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -20,7 +21,16 @@ var Supported = []string{"en-US", "nl-NL"}
 
 var translateFunction func(translationID string, args ...interface{}) string
 
+var args = os.Args[1:]
+var exit = os.Exit
+
 func init() {
+	if flag.Lookup("test.v") == nil {
+		Init()
+	}
+}
+
+func Init() {
 	logging.Debug("Init")
 
 	viper.SetDefault("Locale", "en-US")
@@ -39,32 +49,37 @@ func init() {
 	Set(locale)
 }
 
-// getLocalePath is a super ugly hack to facilitate running Go scripts from their sub-directories
-// this should not be used for production code
+// getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being ran
+// this just returns `locale/`
 func getLocalePath() string {
-	var exists = func(path string) bool {
-		_, err := os.Stat(path)
-		return err == nil
-	}
-
 	pathsep := string(os.PathSeparator)
-	depth := ""
 	path := "locale" + pathsep
 
 	if flag.Lookup("test.v") == nil {
 		return path
 	}
 
-	for i := 0; i < 10; i++ { // max 10 iterations
-		if exists(depth+constants.LibraryName) || exists(depth+path) {
-			path = depth + path
-			break
-		} else {
-			depth = ".." + pathsep + depth
-		}
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Panic("Could not call Caller(0)")
 	}
 
-	return path
+	abs := filepath.Dir(file)
+
+	// When tests are ran with coverage the location of this file is changed to a temp file, and we have to
+	// adjust accordingly
+	if strings.HasSuffix(abs, "_obj_test") {
+		abs = ""
+	}
+
+	var err error
+	abs, err = filepath.Abs(filepath.Join(abs, "..", ".."))
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return abs + pathsep + path
 }
 
 // getLocaleFlag manually parses the input args looking for `--locale` or `-l` and retrieving its value
@@ -72,7 +87,7 @@ func getLocalePath() string {
 func getLocaleFlag() string {
 	atValue := false
 
-	for _, v := range os.Args[1:] {
+	for _, v := range args {
 		if atValue {
 			return v
 		}
@@ -88,7 +103,8 @@ func getLocaleFlag() string {
 func Set(localeName string) {
 	if !funk.Contains(Supported, localeName) {
 		print.Error("Locale does not exist: %s", localeName)
-		os.Exit(1)
+		exit(1)
+		return
 	}
 
 	translateFunction, _ = i18n.Tfunc(localeName)

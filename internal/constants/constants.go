@@ -3,6 +3,12 @@ package constants
 // LibraryName contains the main name of this library
 const LibraryName = "ActiveState-CLI"
 
+// LibraryNamespace is the namespace that the library belongs to
+const LibraryNamespace = "github.com/ActiveState/"
+
+// ConfigNamespace holds the appdata folder name under which we store our config
+const ConfigNamespace = "activestate"
+
 // ConfigName is used to inform viper and our config lib about the name of the config file
 const ConfigName = "activestate"
 

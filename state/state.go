@@ -14,6 +14,8 @@ import (
 	"github.com/dvirsky/go-pylog/logging"
 )
 
+var exit = os.Exit
+
 var T = locale.T
 
 // Flags hold the flag values passed through the command line
@@ -47,7 +49,8 @@ func main() {
 
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		exit(1)
+		return
 	}
 
 	// Write our config to file

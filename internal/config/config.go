@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 
@@ -10,11 +11,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+var configNamespace = C.ConfigNamespace
+var configDirs configdir.ConfigDir
+var configDir *configdir.Config
+
+var exit = os.Exit
+
 func init() {
+	if flag.Lookup("test.v") == nil {
+		Init()
+	}
+}
+
+func Init() {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
-	configDirs := configdir.New(C.ConfigName, "cli")
+	configDirs = configdir.New(configNamespace, "cli")
 	configDirs.LocalPath, _ = filepath.Abs(".")
-	configDir := configDirs.QueryFolders(configdir.Global)[0]
+	configDir = configDirs.QueryFolders(configdir.Global)[0]
 
 	if !configDir.Exists(C.ConfigFileName) {
 		configDir.Create(C.ConfigFileName)
@@ -29,7 +42,7 @@ func init() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		print.Error("Can't read config: %s", err)
-		os.Exit(1)
+		exit(1)
 	}
 }
 

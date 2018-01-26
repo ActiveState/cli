@@ -1,0 +1,70 @@
+package structures
+
+import (
+	"os"
+	"testing"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/config"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/cobra"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMain(m *testing.M) {
+	config.Init()
+	locale.Init()
+	code := m.Run()
+	os.Exit(code)
+}
+
+func TestCreateCommand(t *testing.T) {
+
+	var cmd1 = Command{
+		Name:          "foo",
+		Description:   "foo_description",
+		Run:           func(cmd *cobra.Command, args []string) {},
+		UsageTemplate: "foo_usage_template",
+	}
+
+	cmd1.Register()
+
+	var cC *cobra.Command
+	cC = cmd1.GetCobraCmd()
+
+	assert.NotNil(t, cC)
+}
+func TestRunCommand(t *testing.T) {
+
+	ran := false
+
+	var cmd1 = Command{
+		Name:          "foo",
+		Description:   "foo_description",
+		Run:           func(cmd *cobra.Command, args []string) { ran = true },
+		UsageTemplate: "foo_usage_template",
+	}
+
+	cmd1.Execute()
+
+	assert.True(t, ran)
+}
+
+func TestAppend(t *testing.T) {
+
+	var cmd1 = Command{
+		Name:        "foo",
+		Description: "foo_description",
+	}
+
+	var cmd2 = Command{
+		Name:        "foo",
+		Description: "foo_description",
+	}
+
+	cmd1.Append(&cmd2)
+
+	var cC *cobra.Command
+	cC = cmd1.GetCobraCmd()
+
+	assert.True(t, cC.HasSubCommands())
+}
