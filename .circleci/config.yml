@@ -11,15 +11,21 @@ jobs:
       TEST_RESULTS: /tmp/test-results
     steps:
       - checkout
-      - run: mkdir -p $TEST_RESULTS
-      - run: make build
-      - run: mkdir -p $TEST_RESULTS
-      - run: go get github.com/jstemmer/go-junit-report
+      - run: 
+          name: Create test directory
+          command: mkdir -p $TEST_RESULTS
+      - run: 
+          name: Install junit reporter
+          command: go get github.com/jstemmer/go-junit-report
       - run:
           name: Run unit tests
-          command: |
-            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-            make test | tee ${TEST_RESULTS}/go-test.out
+          command: make test | tee ${TEST_RESULTS}/go-test.out
+      - run:
+          name: Parse tests to junit
+          command: go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
+      - run: 
+          name: Build the CLI
+          command: make build
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output
