@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ActiveState/ActiveState-CLI.svg?style=svg)](https://circleci.com/gh/ActiveState/ActiveState-CLI)
+
 # Installation
 
  1. Make sure you have Go installed (version 1.9 ideally)
@@ -15,4 +17,3 @@
  * Do not commit untested code (meaning tests exist for the code, and the tests pass)
  * To run code without building run `go run state/state.go <your command>`
  * To run all tests use `make test`
- 
