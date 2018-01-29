@@ -14,8 +14,6 @@ languages:
         version: 3.8.11.1
       - name: peewee
         version: 2.9.1
-        tags:
-          - gcc-5
   - name: Go
     version: 1.9.2
 variables:
