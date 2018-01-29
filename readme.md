@@ -13,3 +13,5 @@
  * If on Linux, you may have to run the following for godef to work properly: ```sudo ln -s /usr/lib/go /usr/lib/go-1.9```
  * ALWAYS `go fmt` before commit
  * Do not commit untested code (meaning tests exist for the code, and the tests pass)
+ * To run code without building run `go run state/state.go <your command>`
+ * To run all tests use `make test`
