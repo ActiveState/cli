@@ -12,11 +12,10 @@ jobs:
     steps:
       - checkout
       - run: 
-          name: Create test directory
-          command: mkdir -p $TEST_RESULTS
-      - run: 
-          name: Install junit reporter
-          command: go get github.com/jstemmer/go-junit-report
+          name: Prepare Environment
+          command: |
+              mkdir -p $TEST_RESULTS
+              go get github.com/jstemmer/go-junit-report
       - run:
           name: Run unit tests
           command: |
