@@ -16,7 +16,7 @@ func TestInitAndT(t *testing.T) {
 	assert.NotZero(t, len(translation))
 
 	translation = Tt("usage_tpl")
-	assert.Contains(t, translation, "{{", "Translation should contain template tags")
+	assert.Contains(t, translation, "{{{", "Translation should contain template tags")
 }
 
 func TestGetLocalePath(t *testing.T) {
