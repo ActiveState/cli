@@ -1,14 +1,14 @@
 name: CodeIntel
 owner: ActiveState
 version: master
-platforms: windows-10,ubuntu-17.10-x64,mac-10.12
-stages: dev,qa,prod
+platform: windows-10,ubuntu-17.10-x64,mac-10.12
+environment: dev,qa,prod
 languages:
   - name: Python
     version: 2.7.11
     constraints:
-        platforms: windows-10,ubuntu-17.10-x64
-        stages: dev,qa,prod
+        platform: windows-10,ubuntu-17.10-x64
+        environment: dev,qa,prod
     packages:
       - name: apsw
         version: 3.8.11.1
@@ -22,7 +22,7 @@ variables:
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
     constraints:
-        stages: dev,qa
+        environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
 hooks:
