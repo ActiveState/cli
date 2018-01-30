@@ -4,11 +4,10 @@ import (
 	"flag"
 	"log"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
+	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/dvirsky/go-pylog/logging"
 	"github.com/nicksnyder/go-i18n/i18n"
@@ -59,27 +58,14 @@ func getLocalePath() string {
 		return path
 	}
 
-	_, file, _, ok := runtime.Caller(0)
-	if !ok {
-		log.Panic("Could not call Caller(0)")
-	}
-
-	abs := filepath.Dir(file)
-
-	// When tests are ran with coverage the location of this file is changed to a temp file, and we have to
-	// adjust accordingly
-	if strings.HasSuffix(abs, "_obj_test") {
-		abs = ""
-	}
-
-	var err error
-	abs, err = filepath.Abs(filepath.Join(abs, "..", ".."))
+	rootpath, err := environment.GetRootPath()
 
 	if err != nil {
 		log.Panic(err)
+		return ""
 	}
 
-	return abs + pathsep + path
+	return rootpath + path
 }
 
 // getLocaleFlag manually parses the input args looking for `--locale` or `-l` and retrieving its value
