@@ -3,7 +3,7 @@
 # Installation
 
  1. Make sure you have Go installed (version 1.9 ideally)
- 2. Clone this repository under `$GOPATH/src/ActiveState/ActiveState-CLI`
+ 2. Clone this repository under `$GOPATH/src/github.com/ActiveState/ActiveState-CLI`
  3. Run `dep ensure`
  4. Run `make build`
 
