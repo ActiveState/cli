@@ -1,8 +1,8 @@
 name: CodeIntel
 owner: ActiveState
 version: master
-platform: windows-10,ubuntu-17.10-x64,mac-10.12
-environment: dev,qa,prod
+platforms: windows-10,ubuntu-17.10-x64,mac-10.12
+environments: dev,qa,prod
 languages:
   - name: Python
     version: 2.7.11
@@ -33,22 +33,3 @@ commands:
     value: pytest %projectDir%/tests
   - name: debug
     value: debug foo
-
-# We probably shouldn't have the following in this file
-policies:
-  - name: Infectuous Licenses
-    conditions:
-      - name: license-tags
-        value: infectuous
-        condition: contains
-    actions:
-      - name: email
-        value: scottr@activestate.com
-  - name: Ban Facebook
-    conditions:
-      - name: author
-        value: Facebook
-        condition: equals
-    actions:
-      - name: refuse
-        value: true
