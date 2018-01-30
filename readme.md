@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/ActiveState/ActiveState-CLI.svg?style=svg)](https://circleci.com/gh/ActiveState/ActiveState-CLI)
+[![CircleCI](https://circleci.com/gh/ActiveState/ActiveState-CLI.svg?style=svg&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/ActiveState-CLI)
 
 # Installation
 
