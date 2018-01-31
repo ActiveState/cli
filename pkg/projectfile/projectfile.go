@@ -7,6 +7,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string     `yaml:"name"`
 	Owner        string     `yaml:"owner"`
@@ -19,6 +20,7 @@ type Project struct {
 	Commands     []Command  `yaml:"commands"`
 }
 
+// Language covers the language structure, which goes under Project
 type Language struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
@@ -26,35 +28,41 @@ type Language struct {
 	Packages    []Package  `yaml:"packages"`
 }
 
+// Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
 	Platform    string `yaml:"platform"`
 	Environment string `yaml:"environment"`
 }
 
+// Package covers the package structure, which goes under the language struct
 type Package struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
 	Constraints Constraint `yaml:"constraints"`
 }
 
+// Variable covers the variable structure, which goes under Project
 type Variable struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
 }
 
+// Hook covers the hook structure, which goes under Project
 type Hook struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
 }
 
+// Command covers the command structure, which goes under Project
 type Command struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
 }
 
+// Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(filepath string) (*Project, error) {
 	dat, err := ioutil.ReadFile(filepath)
 	if err != nil {
@@ -67,6 +75,7 @@ func Parse(filepath string) (*Project, error) {
 	return &project, err
 }
 
+// Write to the given filepath, which should be the full path to an activestate.yaml file
 func Write(filepath string, project *Project) error {
 	dat, err := yaml.Marshal(&project)
 	if err != nil {
