@@ -4,8 +4,9 @@
 
  1. Make sure you have Go installed (version 1.9 ideally)
  2. Clone this repository under `$GOPATH/src/github.com/ActiveState/ActiveState-CLI`
- 3. Run `dep ensure`
- 4. Run `make build`
+ 3. Run `make init`
+ 4. Run `dep ensure`
+ 5. Run `make build`
 
 # Development Workflow
 
