@@ -26,7 +26,6 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "valueForName", project.Name, "Name should be set")
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
-	assert.Equal(t, "valueForPlatforms", project.Platforms, "Platforms should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
 }
 
