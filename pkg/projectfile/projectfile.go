@@ -2,6 +2,7 @@ package projectfile
 
 import (
 	"io/ioutil"
+	"os"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -64,4 +65,23 @@ func Parse(filepath string) (*Project, error) {
 	err = yaml.Unmarshal([]byte(dat), &project)
 
 	return &project, err
+}
+
+func Write(filepath string, project *Project) error {
+	dat, err := yaml.Marshal(&project)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write([]byte(dat))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

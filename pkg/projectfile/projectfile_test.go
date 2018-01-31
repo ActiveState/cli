@@ -1,6 +1,8 @@
 package projectfile
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -114,11 +116,11 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	project, err := Parse(filepath.Join(rootpath, "activestate.yml.sample"))
+	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
+	assert.NotNil(t, err, "Should throw an error")
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	project, err = Parse(filepath.Join(rootpath, "activestate.yml.sample"))
+	assert.Nil(t, err, "Should not throw an error")
 
 	assert.NotEmpty(t, project.Name, "Name should be set")
 	assert.NotEmpty(t, project.Owner, "Owner should be set")
@@ -143,4 +145,32 @@ func TestParse(t *testing.T) {
 
 	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
 	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
+}
+
+func TestWrite(t *testing.T) {
+	rootpath, err := environment.GetRootPath()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(rootpath, "activestate.yml.sample")
+	project, err := Parse(path)
+	assert.NoError(t, err, "Should parse our yaml file")
+
+	tmpfile, err := ioutil.TempFile("", "test")
+	assert.NoError(t, err, "Should create a temp file")
+
+	Write(tmpfile.Name(), project)
+
+	stat, err := tmpfile.Stat()
+	assert.NoError(t, err, "Should be able to stat file")
+
+	err = tmpfile.Close()
+	assert.NoError(t, err, "Should close our temp file")
+
+	assert.FileExists(t, tmpfile.Name(), "Project file is saved")
+	assert.NotZero(t, stat.Size(), "Project file should have data")
+
+	os.Remove(tmpfile.Name())
 }
