@@ -18,7 +18,6 @@ func TestProjectStruct(t *testing.T) {
 name: valueForName
 owner: valueForOwner
 version: valueForVersion
-platforms: valueForPlatforms
 environments: valueForEnvironments`)
 
 	err := yaml.Unmarshal([]byte(dat), &project)
@@ -27,8 +26,43 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "valueForName", project.Name, "Name should be set")
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
-	assert.Equal(t, "valueForPlatforms", project.Platforms, "Platforms should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
+}
+
+func TestPlatformStruct(t *testing.T) {
+	platform := Platform{}
+	dat := strings.TrimSpace(`
+name: valueForName
+os: valueForOS
+version: valueForVersion
+architecture: valueForArch`)
+
+	err := yaml.Unmarshal([]byte(dat), &platform)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", platform.Name, "Name should be set")
+	assert.Equal(t, "valueForOS", platform.Os, "OS should be set")
+	assert.Equal(t, "valueForVersion", platform.Version, "Version should be set")
+	assert.Equal(t, "valueForArch", platform.Architecture, "Architecture should be set")
+}
+
+func TestParamStruct(t *testing.T) {
+	param := Param{}
+	dat := strings.TrimSpace(`
+libc: valueForLibc
+compiler-name: valueForCompilerName
+compiler-version: valueForCompilerVersion
+debug: false
+build-flags: valueForBuildFlags`)
+
+	err := yaml.Unmarshal([]byte(dat), &param)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForLibc", param.Libc, "Libc should be set")
+	assert.Equal(t, "valueForCompilerName", param.CompilerName, "CompilerName should be set")
+	assert.Equal(t, "valueForCompilerVersion", param.CompilerVersion, "CompilerVersion should be set")
+	assert.Equal(t, false, param.Debug, "Debug should be set")
+	assert.Equal(t, "valueForBuildFlags", param.BuildFlags, "BuildFlags should be set")
 }
 
 func TestLanguageStruct(t *testing.T) {
@@ -127,6 +161,14 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Version, "Version should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
+
+	assert.NotEmpty(t, project.Platforms[0].Name, "Platform name should be set")
+	assert.NotEmpty(t, project.Platforms[0].Os, "Platform OS name should be set")
+	assert.NotEmpty(t, project.Platforms[0].Architecture, "Platform architecture name should be set")
+	assert.NotEmpty(t, project.Platforms[0].Params, "Platform params name should be set")
+
+	assert.NotEmpty(t, project.Platforms[0].Params[0].Libc, "Param libc should be set")
+	assert.NotEmpty(t, project.Platforms[0].Params[0].Debug, "Param debug should be set")
 
 	assert.NotEmpty(t, project.Languages[0].Name, "Language name should be set")
 	assert.NotEmpty(t, project.Languages[0].Version, "Language version should be set")

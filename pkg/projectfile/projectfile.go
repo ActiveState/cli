@@ -12,12 +12,28 @@ type Project struct {
 	Name         string     `yaml:"name"`
 	Owner        string     `yaml:"owner"`
 	Version      string     `yaml:"version"`
-	Platforms    string     `yaml:"platforms"`
 	Environments string     `yaml:"environments"`
+	Platforms    []Platform `yaml:"platforms"`
 	Languages    []Language `yaml:"languages"`
 	Variables    []Variable `yaml:"variables"`
 	Hooks        []Hook     `yaml:"hooks"`
 	Commands     []Command  `yaml:"commands"`
+}
+
+type Platform struct {
+	Name         string  `yaml:"name"`
+	Os           string  `yaml:"os"`
+	Version      string  `yaml:"version"`
+	Architecture string  `yaml:"architecture"`
+	Params       []Param `yaml:"params"`
+}
+
+type Param struct {
+	Libc            string `yaml:"libc"`
+	CompilerName    string `yaml:"compiler-name"`
+	CompilerVersion string `yaml:"compiler-version"`
+	Debug           bool   `yaml:"debug"`
+	BuildFlags      string `yaml:"build-flags"`
 }
 
 // Language covers the language structure, which goes under Project
@@ -25,6 +41,7 @@ type Language struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
 	Constraints Constraint `yaml:"constraints"`
+	Params      []Param    `yaml:"params"`
 	Packages    []Package  `yaml:"packages"`
 }
 
@@ -39,6 +56,7 @@ type Package struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
 	Constraints Constraint `yaml:"constraints"`
+	Params      []Param    `yaml:"params"`
 }
 
 // Variable covers the variable structure, which goes under Project
