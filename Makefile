@@ -11,6 +11,8 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 .PHONY: build
 
 all: test build
+init:
+		git config core.hooksPath .githooks
 build: 
 		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 test: 
