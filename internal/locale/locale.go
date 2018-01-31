@@ -54,10 +54,6 @@ func getLocalePath() string {
 	pathsep := string(os.PathSeparator)
 	path := "locale" + pathsep
 
-	if flag.Lookup("test.v") == nil {
-		return path
-	}
-
 	rootpath, err := environment.GetRootPath()
 
 	if err != nil {
