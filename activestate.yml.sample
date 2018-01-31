@@ -1,21 +1,35 @@
 name: CodeIntel
 owner: ActiveState
 version: master
-platforms: windows-10,ubuntu-17.10-x64,mac-10.12
 environments: dev,qa,prod
+platforms:
+  - name: Linux64Label
+    os: linux
+    architecture: x64
+    params:
+      - libc: gcc7
+        debug: true
+  - name: Windows10Label
+    os: windows
+    version: 10
 languages:
   - name: Python
     version: 2.7.11
     constraints:
-        platform: windows-10,ubuntu-17.10-x64
+        platform: Windows10Label,Linux64*
         environment: dev,qa,prod
     packages:
       - name: apsw
         version: 3.8.11.1
+        params:
+          - libc: gcc7
+            debug: true
       - name: peewee
         version: 2.9.1
   - name: Go
     version: 1.9.2
+    constraints:
+      platform: -Windows10Label
 variables:
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
