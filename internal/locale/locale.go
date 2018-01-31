@@ -25,12 +25,6 @@ var args = os.Args[1:]
 var exit = os.Exit
 
 func init() {
-	if flag.Lookup("test.v") == nil {
-		Init()
-	}
-}
-
-func Init() {
 	logging.Debug("Init")
 
 	viper.SetDefault("Locale", "en-US")

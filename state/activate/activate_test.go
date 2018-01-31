@@ -5,20 +5,17 @@ import (
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/stretchr/testify/assert"
 )
 
 // Little hack to ensure we are ran before the init function in activate.go
 var _ = func() (_ struct{}) {
 	config.Init()
-	locale.Init()
 	return
 }()
 
 func TestMain(m *testing.M) {
 	config.Init()
-	locale.Init()
 	code := m.Run()
 	os.Exit(code)
 }
