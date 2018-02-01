@@ -24,28 +24,26 @@ type Project struct {
 	Commands     []Command  `yaml:"commands"`
 }
 
+// Platform covers the platform structure, which goes under Project
 type Platform struct {
-	Name         string  `yaml:"name"`
-	Os           string  `yaml:"os"`
-	Version      string  `yaml:"version"`
-	Architecture string  `yaml:"architecture"`
-	Params       []Param `yaml:"params"`
+	Name         string `yaml:"name"`
+	Os           string `yaml:"os"`
+	Version      string `yaml:"version"`
+	Architecture string `yaml:"architecture"`
+	Libc         string `yaml:"libc"`
+	Compiler     string `yaml:"compiler"`
 }
 
-type Param struct {
-	Libc            string `yaml:"libc"`
-	CompilerName    string `yaml:"compiler-name"`
-	CompilerVersion string `yaml:"compiler-version"`
-	Debug           bool   `yaml:"debug"`
-	BuildFlags      string `yaml:"build-flags"`
-}
+// Build covers the build map, which can go under languages or packages
+// Build can hold variable keys, so we cannot predict what they are, hence why it is a map
+type Build map[string]string
 
 // Language covers the language structure, which goes under Project
 type Language struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
 	Constraints Constraint `yaml:"constraints"`
-	Params      []Param    `yaml:"params"`
+	Build       Build      `yaml:"build"`
 	Packages    []Package  `yaml:"packages"`
 }
 
@@ -60,7 +58,7 @@ type Package struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
 	Constraints Constraint `yaml:"constraints"`
-	Params      []Param    `yaml:"params"`
+	Build       Build      `yaml:"build"`
 }
 
 // Variable covers the variable structure, which goes under Project

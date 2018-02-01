@@ -6,9 +6,8 @@ platforms:
   - name: Linux64Label
     os: linux
     architecture: x64
-    params:
-      - libc: gcc7
-        debug: true
+    libc: glibc-2.25
+    compiler: gcc7
   - name: Windows10Label
     os: windows
     version: 10
@@ -16,21 +15,24 @@ languages:
   - name: Python
     version: 2.7.11
     constraints:
-        platform: Windows10Label,Linux64*
+        platform: Windows10Label,Linux64Label
         environment: dev,qa,prod
     packages:
       - name: apsw
         version: 3.8.11.1
-        params:
-          - libc: gcc7
-            debug: true
+        build:
+          debug: $DEBUG
       - name: peewee
         version: 2.9.1
+        build: 
+          override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
   - name: Go
     version: 1.9.2
     constraints:
-      platform: -Windows10Label
+        platform: -Windows10Label
 variables:
+  - name: DEBUG
+    value: true
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
     constraints:
