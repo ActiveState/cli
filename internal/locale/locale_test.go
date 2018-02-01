@@ -10,8 +10,6 @@ import (
 )
 
 func TestInitAndT(t *testing.T) {
-	Init()
-
 	translation := T("state_description")
 	assert.NotZero(t, len(translation))
 

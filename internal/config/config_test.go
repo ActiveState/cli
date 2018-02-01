@@ -36,7 +36,7 @@ func TestInit(t *testing.T) {
 
 	assert.Equal(false, configDir.Exists(C.ConfigFileName), "Config dir should not exist")
 
-	Init()
+	ensureConfigExists()
 
 	assert.Equal(true, configDir.Exists(C.ConfigFileName), "Config dir should exist")
 }
@@ -61,7 +61,8 @@ func TestInitCorrupt(t *testing.T) {
 		exitCode = 1
 	}
 
-	Init()
+	viper.Reset()
+	readInConfig()
 
 	assert.Equal(1, exitCode, "Config should fail to parse")
 }

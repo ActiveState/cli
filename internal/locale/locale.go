@@ -1,12 +1,10 @@
 package locale
 
 import (
-	"flag"
 	"log"
 	"os"
 	"strings"
 
-	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/dvirsky/go-pylog/logging"
@@ -24,12 +22,6 @@ var args = os.Args[1:]
 var exit = os.Exit
 
 func init() {
-	if flag.Lookup("test.v") == nil {
-		Init()
-	}
-}
-
-func Init() {
 	logging.Debug("Init")
 
 	viper.SetDefault("Locale", "en-US")
