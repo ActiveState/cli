@@ -3,20 +3,11 @@ package main
 import (
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/spf13/pflag"
 	funk "github.com/thoas/go-funk"
 
 	"github.com/stretchr/testify/assert"
 )
-
-// Little hack to ensure we are ran before the init function in state.go
-var _ = func() (_ struct{}) {
-	config.Init()
-	locale.Init()
-	return
-}()
 
 func TestInit(t *testing.T) {
 	assert := assert.New(t)

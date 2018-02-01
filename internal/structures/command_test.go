@@ -1,21 +1,11 @@
 package structures
 
 import (
-	"os"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/cobra"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestMain(m *testing.M) {
-	config.Init()
-	locale.Init()
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestCreateCommand(t *testing.T) {
 

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"os"
 	"path/filepath"
 
@@ -18,12 +17,11 @@ var configDir *configdir.Config
 var exit = os.Exit
 
 func init() {
-	if flag.Lookup("test.v") == nil {
-		Init()
-	}
+	ensureConfigExists()
+	readInConfig()
 }
 
-func Init() {
+func ensureConfigExists() {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs = configdir.New(configNamespace, "cli")
 	configDirs.LocalPath, _ = filepath.Abs(".")
@@ -32,7 +30,9 @@ func Init() {
 	if !configDir.Exists(C.ConfigFileName) {
 		configDir.Create(C.ConfigFileName)
 	}
+}
 
+func readInConfig() {
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
 	viper.SetConfigName(C.ConfigName)
