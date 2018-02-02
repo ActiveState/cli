@@ -11,13 +11,10 @@ jobs:
       TEST_RESULTS: /tmp/test-results
     steps:
       - checkout
-      - run:
-          name: Update submodules
-          command: |
-              git submodule update --init
       - run: 
           name: Prepare Environment
           command: |
+              git submodule update --init
               mkdir -p $TEST_RESULTS
               go get github.com/jstemmer/go-junit-report
       - run:
