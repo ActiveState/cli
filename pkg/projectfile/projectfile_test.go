@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -215,4 +216,22 @@ func TestWrite(t *testing.T) {
 	assert.NotZero(t, stat.Size(), "Project file should have data")
 
 	os.Remove(tmpfile.Name())
+}
+
+// TestGet the config
+func TestGet(t *testing.T) {
+	configFilename = "activestate.yml.sample"
+	config, _ := Get()
+	assert.NotNil(t, config, "Should not be nil.")
+}
+
+// Call GetProjectFilePath and confirm whatever is return can be parsed
+func TestGetProjectFilePath(t *testing.T) {
+	configFilename = "activestate.yml.sample"
+	configPath := GetProjectFilePath()
+	_, file, _, _ := runtime.Caller(0)
+	abs := filepath.Dir(file)
+	abs, _ = filepath.Abs(filepath.Join(abs, "..", ".."))
+	expectedPath := filepath.Join(abs, "activestate.yml.sample")
+	assert.Equal(t, configPath, expectedPath, "These should be the same.")
 }

@@ -1,9 +1,15 @@
 package projectfile
 
 import (
+	"crypto/sha1"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/dvirsky/go-pylog/logging"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -80,6 +86,12 @@ type Command struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
+var currentProject *Project
+var projectHash string
+
+// configFilename from constants.ConfigFileName
+var configFilename = constants.ConfigFileName
+
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(filepath string) (*Project, error) {
 	dat, err := ioutil.ReadFile(filepath)
@@ -111,4 +123,36 @@ func Write(filepath string, project *Project) error {
 	}
 
 	return nil
+}
+
+func hashConfig(data []byte) string {
+	hash := sha1.New()
+	return string(hash.Sum(data))
+}
+
+// GetProjectFilePath returns the path to the project activestate.yaml
+func GetProjectFilePath() string {
+	root, err := environment.GetRootPath()
+	if err != nil {
+		logging.Warning("Could not get project root path: %v", err)
+		return ""
+	}
+	return filepath.Join(root, configFilename)
+}
+
+// Get the project configuration
+func Get() (*Project, error) {
+	projectFilePath := GetProjectFilePath()
+	data, err := ioutil.ReadFile(projectFilePath)
+	hash := hashConfig(data)
+	if err != nil {
+		logging.Warning("Could not get project root path: %v", err)
+		print.Warning("Could not get project root path: %v", err)
+		return nil, err
+	}
+	if currentProject == nil || hash != projectHash {
+		currentProject, err = Parse(projectFilePath)
+		projectHash = hash
+	}
+	return currentProject, nil
 }
