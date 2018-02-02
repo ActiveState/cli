@@ -1,0 +1,3 @@
+[submodule "state/activate/scm/git/testdata/repo"]
+	path = internal/scm/git/testdata/repo
+	url = https://github.com/activestate/repo
