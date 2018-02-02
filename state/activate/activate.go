@@ -5,8 +5,8 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
-	"github.com/ActiveState/ActiveState-CLI/state/activate/scm"
 	"github.com/ActiveState/cobra"
 	"github.com/dvirsky/go-pylog/logging"
 )

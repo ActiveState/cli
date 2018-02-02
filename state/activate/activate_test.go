@@ -22,7 +22,7 @@ func TestExecute(t *testing.T) {
 
 func TestExecuteGitClone(t *testing.T) {
 	cwd, _ := os.Getwd() // store
-	repo, err := filepath.Abs(filepath.Join("scm", "git", "testdata", "repo"))
+	repo, err := filepath.Abs(filepath.Join("..", "..", "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "The test Git repository exists")
 
 	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
