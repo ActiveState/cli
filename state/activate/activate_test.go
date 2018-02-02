@@ -67,6 +67,11 @@ func TestExecuteGitClone(t *testing.T) {
 		assert.Nil(t, err, "The cloned repository contains an expected file")
 	}
 
+	// Test clone of invalid repository.
+	Command.GetCobraCmd().SetArgs([]string{cwd})
+	Command.Execute()
+	// TODO: assert that an error occurred
+
 	err = os.Chdir(cwd) // restore
 	assert.Nil(t, err, "Changed back to original directory")
 	err = os.RemoveAll(tempdir) // clean up

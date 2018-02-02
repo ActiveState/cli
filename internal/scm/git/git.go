@@ -60,7 +60,6 @@ func (g *Git) Clone() error {
 	fmt.Println(strings.Join(cmd.Args, " ")) // match command output style
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		print.Error(locale.T("error_state_activate"))
 		return err
 	}
 	return nil

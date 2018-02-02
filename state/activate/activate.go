@@ -40,7 +40,11 @@ func Execute(cmd *cobra.Command, args []string) {
 			if Flags.Path != "" {
 				scm.SetPath(Flags.Path)
 			}
-			scm.Clone()
+			err := scm.Clone()
+			if err != nil {
+				print.Error(locale.T("error_state_activate"))
+				return
+			}
 		} else {
 			// TODO: activate from ID
 		}
