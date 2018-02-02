@@ -11,6 +11,10 @@ jobs:
       TEST_RESULTS: /tmp/test-results
     steps:
       - checkout
+      - run:
+          name: Update submodules
+          command: |
+              git submodule update --init
       - run: 
           name: Prepare Environment
           command: |
