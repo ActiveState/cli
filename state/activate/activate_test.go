@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,4 +77,15 @@ func TestExecuteGitClone(t *testing.T) {
 	assert.Nil(t, err, "Changed back to original directory")
 	err = os.RemoveAll(tempdir) // clean up
 	assert.Nil(t, err, "The temporary directory was removed")
+}
+
+func TestSetEnv(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", "..", "internal", "scm", "git", "testdata", "repo"))
+	assert.Nil(t, err, "The test Git repository exists")
+
+	project, err := loadProjectConfig(filepath.Join(repo, constants.ConfigFileName))
+	assert.Nil(t, err, "The test ActiveState project config file exists")
+
+	setEnvironmentVariables(project)
+	assert.Equal(t, os.Getenv("TEST"), "test", "A test environment variable was read and set properly")
 }
