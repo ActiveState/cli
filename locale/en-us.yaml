@@ -62,5 +62,7 @@ info_state_activate_uri:
   other: Activating URI '{{.URI}}' into directory '{{.Dir}}'
 error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
+error_state_activate_config:
+  other: Config file '{{.ConfigFile}}' not found in repository root. This file is needed to complete the activation process.
 info_state_activate_cd:
   other: Changing into directory '{{.Dir}}'
