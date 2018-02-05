@@ -2,7 +2,9 @@ package activate
 
 import (
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
@@ -43,14 +45,20 @@ func Execute(cmd *cobra.Command, args []string) {
 			err := scm.Clone()
 			if err != nil {
 				print.Error(locale.T("error_state_activate"))
-				return
+				return // TODO: how to return error?
 			}
 		} else {
-			// TODO: activate from ID
+			return // TODO: activate from ID
 		}
+		configFile := filepath.Join(scm.Path(), constants.ConfigFileName)
 		if Flags.Cd {
 			print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
 			os.Chdir(scm.Path())
+			configFile = constants.ConfigFileName
+		}
+		if _, err := os.Stat(configFile); os.IsNotExist(err) {
+			print.Error(locale.T("error_state_activate_config", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
+			return // TODO: how to return error?
 		}
 	} else {
 		// TODO: activate current directory
