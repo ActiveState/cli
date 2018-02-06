@@ -31,14 +31,14 @@ type VirtualEnvironment interface {
 	// IsActive returns whether the given subshell is active
 	IsActive() bool
 
-	// GetBinary returns the configured binary
-	GetBinary() string
+	// Binary returns the configured binary
+	Binary() string
 
 	// SetBinary sets the configured binary, this should only be called by the virtualenvironment package
 	SetBinary(string)
 
-	// GetRcFile returns the configured RC file
-	GetRcFile() *os.File
+	// RcFile returns the configured RC file
+	RcFile() *os.File
 
 	// SetRcFile sets the configured RC file, this should only be called by the virtualenvironment package
 	SetRcFile(os.File)

@@ -22,8 +22,8 @@ func (v *VirtualEnvironment) ShellScript() string {
 	return "bashrc.sh"
 }
 
-// GetBinary - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) GetBinary() string {
+// Binary - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) Binary() string {
 	return v.binary
 }
 
@@ -32,8 +32,8 @@ func (v *VirtualEnvironment) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// GetRcFile - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) GetRcFile() *os.File {
+// RcFile - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) RcFile() *os.File {
 	return v.rcFile
 }
 
