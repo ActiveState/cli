@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -154,7 +153,7 @@ func TestParse(t *testing.T) {
 	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
 	assert.NotNil(t, err, "Should throw an error")
 
-	project, err = Parse(filepath.Join(rootpath, "activestate.yml.sample"))
+	project, err = Parse(filepath.Join(rootpath, "test", "activestate.yaml"))
 	assert.Nil(t, err, "Should not throw an error")
 
 	assert.NotEmpty(t, project.Name, "Name should be set")
@@ -197,7 +196,7 @@ func TestWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(rootpath, "activestate.yml.sample")
+	path := filepath.Join(rootpath, "test", "activestate.yaml")
 	project, err := Parse(path)
 	assert.NoError(t, err, "Should parse our yaml file")
 
@@ -220,18 +219,23 @@ func TestWrite(t *testing.T) {
 
 // TestGet the config
 func TestGet(t *testing.T) {
-	configFilename = "activestate.yml.sample"
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
+	configFilename = "activestate.yaml"
 	config, _ := Get()
-	assert.NotNil(t, config, "Should not be nil.")
+	assert.NotNil(t, config, "Config file is loaded")
 }
 
 // Call GetProjectFilePath and confirm whatever is return can be parsed
 func TestGetProjectFilePath(t *testing.T) {
-	configFilename = "activestate.yml.sample"
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
+	configFilename = "activestate.yaml"
 	configPath := GetProjectFilePath()
-	_, file, _, _ := runtime.Caller(0)
-	abs := filepath.Dir(file)
-	abs, _ = filepath.Abs(filepath.Join(abs, "..", ".."))
-	expectedPath := filepath.Join(abs, "activestate.yml.sample")
-	assert.Equal(t, configPath, expectedPath, "These should be the same.")
+	expectedPath := filepath.Join(root, "test", "activestate.yaml")
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 }

@@ -8,7 +8,7 @@ GOGET=$(GOCMD) get
 BINARY_NAME=state
 BINARY_UNIX=$(BINARY_NAME)_unix
 
-.PHONY: build
+.PHONY: build test
 
 all: test build
 init:
