@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,8 +33,12 @@ func TestHumanishPart(t *testing.T) {
 }
 
 func TestClone(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
 	cwd, _ := os.Getwd() // store
-	repo, err := filepath.Abs(filepath.Join("testdata", "repo"))
+	repo, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "The test repository exists")
 
 	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
