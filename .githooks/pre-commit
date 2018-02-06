@@ -2,14 +2,6 @@
 gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$')
 [ -z "$gofiles" ] && exit 0
 
-# build project
-build_result=$(make build)
-build_rc=$?
-if [ $build_rc -ne 0 ] ; then
-	echo "git pre-commit check failed: build failed."
-	exit 1
-fi
-
 # run tests
 failed_tests="$(go test ./... | grep "FAIL:" | awk '{print $3}')"
 if test -n "$failed_tests" ; then
