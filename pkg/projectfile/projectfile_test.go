@@ -47,23 +47,17 @@ architecture: valueForArch`)
 	assert.Equal(t, "valueForArch", platform.Architecture, "Architecture should be set")
 }
 
-func TestParamStruct(t *testing.T) {
-	param := Param{}
+func TestBuildStruct(t *testing.T) {
+	build := make(Build)
 	dat := strings.TrimSpace(`
-libc: valueForLibc
-compiler-name: valueForCompilerName
-compiler-version: valueForCompilerVersion
-debug: false
-build-flags: valueForBuildFlags`)
+key1: val1
+key2: val2`)
 
-	err := yaml.Unmarshal([]byte(dat), &param)
+	err := yaml.Unmarshal([]byte(dat), &build)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForLibc", param.Libc, "Libc should be set")
-	assert.Equal(t, "valueForCompilerName", param.CompilerName, "CompilerName should be set")
-	assert.Equal(t, "valueForCompilerVersion", param.CompilerVersion, "CompilerVersion should be set")
-	assert.Equal(t, false, param.Debug, "Debug should be set")
-	assert.Equal(t, "valueForBuildFlags", param.BuildFlags, "BuildFlags should be set")
+	assert.Equal(t, "val1", build["key1"], "Key1 should be set")
+	assert.Equal(t, "val2", build["key2"], "Key2 should be set")
 }
 
 func TestLanguageStruct(t *testing.T) {
@@ -166,16 +160,20 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Platforms[0].Name, "Platform name should be set")
 	assert.NotEmpty(t, project.Platforms[0].Os, "Platform OS name should be set")
 	assert.NotEmpty(t, project.Platforms[0].Architecture, "Platform architecture name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Params, "Platform params name should be set")
-
-	assert.NotEmpty(t, project.Platforms[0].Params[0].Libc, "Param libc should be set")
-	assert.NotEmpty(t, project.Platforms[0].Params[0].Debug, "Param debug should be set")
+	assert.NotEmpty(t, project.Platforms[0].Libc, "Platform libc name should be set")
+	assert.NotEmpty(t, project.Platforms[0].Compiler, "Platform compiler name should be set")
 
 	assert.NotEmpty(t, project.Languages[0].Name, "Language name should be set")
 	assert.NotEmpty(t, project.Languages[0].Version, "Language version should be set")
 
 	assert.NotEmpty(t, project.Languages[0].Packages[0].Name, "Package name should be set")
 	assert.NotEmpty(t, project.Languages[0].Packages[0].Version, "Package version should be set")
+
+	assert.NotEmpty(t, project.Languages[0].Packages[0].Build, "Package build should be set")
+	assert.NotEmpty(t, project.Languages[0].Packages[0].Build["debug"], "Build debug should be set")
+
+	assert.NotEmpty(t, project.Languages[0].Packages[1].Build, "Package build should be set")
+	assert.NotEmpty(t, project.Languages[0].Packages[1].Build["override"], "Build override should be set")
 
 	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
