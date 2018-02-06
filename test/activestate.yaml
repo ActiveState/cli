@@ -21,7 +21,7 @@ languages:
       - name: apsw
         version: 3.8.11.1
         build:
-          debug: $DEBUG
+          debug: $variable.DEBUG
       - name: peewee
         version: 2.9.1
         build: 
