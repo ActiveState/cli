@@ -2,11 +2,13 @@ package projectfile
 
 import (
 	"crypto/sha1"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/dvirsky/go-pylog/logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -24,7 +26,7 @@ type Project struct {
 	Commands     []Command  `yaml:"commands"`
 }
 
-// Platform covers the platform structure, which goes under Project
+// Platform covers the platform structure of our yaml
 type Platform struct {
 	Name         string `yaml:"name"`
 	Os           string `yaml:"os"`
@@ -109,6 +111,7 @@ func Write(filepath string, project *Project) error {
 	}
 
 	f, err := os.Create(filepath)
+	defer f.Close()
 	if err != nil {
 		return err
 	}
@@ -130,7 +133,7 @@ func hashConfig(data []byte) string {
 func GetProjectFilePath() string {
 	root, err := os.Getwd()
 	if err != nil {
-		logging.Warning("Could not get project root path: %v", err)
+		logging.Warning(locale.T("could_not_get_project_root_path", map[string]interface{}{"Error": err}))
 		return ""
 	}
 	return filepath.Join(root, configFilename)
@@ -142,8 +145,9 @@ func Get() (*Project, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	hash := hashConfig(data)
 	if err != nil {
-		logging.Warning("Could not get project root path: %v", err)
-		return nil, err
+		logging.Warning(locale.T("cannot_load_config_file_warning", map[string]interface{}{"Error": err}))
+		projectHash = ""
+		return nil, errors.New(locale.T("cannot_load_config_file_error_msg"))
 	}
 	if currentProject == nil || hash != projectHash {
 		currentProject, err = Parse(projectFilePath)
