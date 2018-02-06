@@ -3,13 +3,13 @@ package activate
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/cobra"
 	"github.com/dvirsky/go-pylog/logging"
@@ -77,26 +77,41 @@ func setEnvironmentVariables(project *projectfile.Project) {
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
-	var configFile string
 	if len(args) > 0 {
 		scm, err := clone(args[0])
 		if err != nil {
-			return // TODO: how to return error?
+			print.Error(locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": args[0]}))
+			print.Error(err.Error())
+			return
 		}
-		configFile = filepath.Join(scm.Path(), constants.ConfigFileName)
 		if Flags.Cd {
 			print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
 			os.Chdir(scm.Path())
-			configFile = constants.ConfigFileName
 		}
-	} else {
-		return // TODO: activate current directory
-		// scm := scm.New(os.Getwd())
 	}
-	project, err := loadProjectConfig(configFile)
+
+	project, err := projectfile.Get()
 	if err != nil {
 		print.Error(locale.T("error_state_activate_config_load"))
-		return // TODO: how to return error?
+		print.Error(err.Error())
+		return
 	}
 	setEnvironmentVariables(project)
+
+	venv, err := virtualenvironment.Activate()
+	_ = venv
+
+	if err != nil {
+		print.Error(locale.T("error_could_not_activate_subshell"))
+		print.Error(err.Error())
+		return
+	}
+
+	// Don't exit until our subshell has finished
+	for venv.IsActive() != false {
+		// do nothing
+	}
+
+	print.Bold(locale.T("info_deactivated", project))
+
 }
