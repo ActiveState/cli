@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/dvirsky/go-pylog/logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -130,7 +128,7 @@ func hashConfig(data []byte) string {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() string {
-	root, err := environment.GetRootPath()
+	root, err := os.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
 		return ""
@@ -145,7 +143,6 @@ func Get() (*Project, error) {
 	hash := hashConfig(data)
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
-		print.Warning("Could not get project root path: %v", err)
 		return nil, err
 	}
 	if currentProject == nil || hash != projectHash {
