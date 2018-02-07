@@ -14,8 +14,12 @@ func TestIsGitURI(t *testing.T) {
 	assert.True(t, IsGitURI("git@github.com:golang/playground.git"), "This is a Git repo")
 	assert.True(t, IsGitURI("http://github.com/golang/playground"), "This is a Git repo")
 	assert.True(t, IsGitURI("https://github.com/golang/playground"), "This is a Git repo")
+	assert.False(t, IsGitURI("nttp://github.com/golang/playground"), "This invalid Github URL is not a Git repo")
+	assert.False(t, IsGitURI("http://github.com/golang"), "This invalid Github URL is not a Git repo")
 
-	assert.True(t, IsGitURI(filepath.Join("testdata", "repo")), "This is a git repo")
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	assert.True(t, IsGitURI(filepath.Join(root, "internal", "scm", "git", "testdata", "repo")), "This is a git repo")
 
 	// TODO: include testdata from future SCMs.
 	assert.False(t, IsGitURI("http://www.selenic.com/hg"))
@@ -30,6 +34,14 @@ func TestHumanishPart(t *testing.T) {
 	// From `git help clone` documentation.
 	assert.Equal(t, "repo", (&Git{URI: "/path/to/repo.git"}).humanishPart(), "Got the expected humanish part")
 	assert.Equal(t, "foo", (&Git{URI: "host.xz:foo/.git"}).humanishPart(), "Got the expected humanish part")
+}
+
+func TestConfigFileExists(t *testing.T) {
+	git := &Git{URI: "https://github.com/ActiveState/repo"}
+	assert.True(t, git.ConfigFileExists(), "The remote test repository has an ActiveState-CLI config file")
+
+	git = &Git{URI: "https://github.com/ActiveState/does-not-exist"}
+	assert.False(t, git.ConfigFileExists(), "The non-existant repository does not have an ActiveState-CLI config file")
 }
 
 func TestClone(t *testing.T) {

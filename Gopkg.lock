@@ -47,6 +47,17 @@
   revision = "78cb33a07632fabbe71406e566304608ce935d63"
 
 [[projects]]
+  name = "github.com/google/go-github"
+  packages = ["github"]
+  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
+  version = "v15.0.0"
+
+[[projects]]
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+
+[[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -195,6 +206,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "99570fb0d36d5394e83ca14e5a3353944d29d77a9f8efad514c77d29389a130e"
+  inputs-digest = "6ecd4ee5a8e74a506cb30eb3467be9e82d1fa47b02a930e3f280976d474133e4"
   solver-name = "gps-cdcl"
   solver-version = 1

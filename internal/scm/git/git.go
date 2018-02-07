@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -8,17 +9,24 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/dvirsky/go-pylog/logging"
+	"github.com/google/go-github/github"
 )
 
 // IsGitURI returns whether or not the given URI points to a Git repository.
 func IsGitURI(uri string) bool {
-	// Check for git-specific URI components.
-	if strings.HasSuffix(uri, ".git") ||
-		strings.Contains(uri, "git@") ||
-		strings.Contains(uri, "github.com") {
+	if strings.HasPrefix(uri, "git@github.com") ||
+		strings.HasPrefix(uri, "http://github.com") ||
+		strings.HasPrefix(uri, "https://github.com") {
+		// Ensure this is a valid GitHub URL since the owner and repository name
+		// ultimately need to be extracted properly.
+		regex := regexp.MustCompile("^(git@github\\.com:|https?://github\\.com/)[^/]+/.*$")
+		return regex.MatchString(uri)
+	} else if strings.HasSuffix(uri, ".git") ||
+		strings.Contains(uri, "git@") {
 		return true
 	}
 	// Check for a '.git' directory or file in a local URI.
@@ -33,6 +41,26 @@ func IsGitURI(uri string) bool {
 type Git struct {
 	URI  string // the URI of the repository to clone
 	path string // the local path to clone into
+}
+
+// ConfigFileExists returns whether or not the ActiveState config file exists in
+// the repository, PRIOR to cloning (not after).
+func (g *Git) ConfigFileExists() bool {
+	if strings.HasPrefix(g.URI, "git@github.com") ||
+		strings.HasPrefix(g.URI, "http://github.com") ||
+		strings.HasPrefix(g.URI, "https://github.com") {
+		client := github.NewClient(nil)
+		regex := regexp.MustCompile("^.+github\\.com[:/]([^/]+)/(.+)$")
+		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI, ".git"))[1:]
+		reader, err := client.Repositories.DownloadContents(context.Background(), matches[0], matches[1], constants.ConfigFileName, nil)
+		if err != nil {
+			return false // assume does not exist
+		}
+		reader.Close()
+	} /*else {
+		return true // assume it exists for now
+	}*/
+	return true
 }
 
 // SetPath sets the Git repository's local path.

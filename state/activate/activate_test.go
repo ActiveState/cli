@@ -80,6 +80,36 @@ func TestExecuteGitClone(t *testing.T) {
 	assert.Nil(t, err, "The temporary directory was removed")
 }
 
+func TestExecuteGitCloneRemote(t *testing.T) {
+	Flags.Path, Flags.Cd = "", false // reset
+	cwd, _ := os.Getwd()             // store
+
+	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
+	assert.Nil(t, err, "A temporary directory was created")
+	err = os.Chdir(tempdir)
+	assert.Nil(t, err, "Changed into temporary directory")
+
+	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/repo"})
+	Command.Execute()
+	_, err = os.Stat("repo")
+	assert.Nil(t, err, "The cloned repository exists")
+	files := []string{"foo.txt", "bar.txt", "baz.txt"}
+	for _, file := range files {
+		_, err = os.Stat(filepath.Join("repo", file))
+		assert.Nil(t, err, "The cloned repository contains an expected file")
+	}
+
+	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/does-not-exist", "--path", "repo2"})
+	Command.Execute()
+	_, err = os.Stat("repo2")
+	assert.Error(t, err, "The non-existant repository did not have an ActiveState config file; no clone happened")
+
+	err = os.Chdir(cwd) // restore
+	assert.Nil(t, err, "Changed back to original directory")
+	err = os.RemoveAll(tempdir) // clean up
+	assert.Nil(t, err, "The temporary directory was removed")
+}
+
 func TestSetEnv(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
