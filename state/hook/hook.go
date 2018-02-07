@@ -7,8 +7,6 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
-	"github.com/ActiveState/ActiveState-CLI/state/hook/remove"
 	"github.com/ActiveState/cobra"
 	"github.com/dvirsky/go-pylog/logging"
 )
@@ -26,8 +24,8 @@ var Flags struct {
 }
 
 func init() {
-	Command.Append(add.Command)
-	Command.Append(remove.Command)
+	//Command.Append(add.Command)
+	//Command.Append(remove.Command)
 	// TODO make this work properly
 	// It shows `--filter` in the --help information but when you run
 	// `state hook --filter blah` it fails claiming it doesn't know what `--filter`
