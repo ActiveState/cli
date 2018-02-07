@@ -1,0 +1,105 @@
+package python
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+)
+
+func setup(t *testing.T) {
+	root, _ := environment.GetRootPath()
+	os.Chdir(filepath.Join(root, "test"))
+}
+
+func TestLanguage(t *testing.T) {
+	venv := &VirtualEnvironment{}
+	assert.Equal(t, "Python", venv.Language())
+}
+
+func TestDataDir(t *testing.T) {
+	venv := &VirtualEnvironment{}
+	assert.Empty(t, venv.DataDir())
+
+	venv.SetDataDir("/foo")
+	assert.NotEmpty(t, venv.DataDir())
+}
+
+func TestSetProject(t *testing.T) {
+	setup(t)
+
+	venv := &VirtualEnvironment{}
+	project, _ := projectfile.Get()
+	venv.SetProject(project)
+}
+
+func TestLanguageMeta(t *testing.T) {
+	setup(t)
+
+	project, _ := projectfile.Get()
+	language := &project.Languages[0]
+
+	venv := &VirtualEnvironment{}
+	assert.Nil(t, venv.LanguageMeta())
+
+	venv.SetLanguageMeta(language)
+	assert.NotNil(t, venv.LanguageMeta())
+}
+
+func TestLoadLanguageFromPath(t *testing.T) {
+	root, _ := environment.GetRootPath()
+	venv := &VirtualEnvironment{}
+
+	source := filepath.Join(root, "test", "builder", "python", "2.7.12")
+
+	datadir := filepath.Join(os.TempDir(), "as-state-test")
+	os.RemoveAll(datadir)
+	os.Mkdir(datadir, os.ModePerm)
+	venv.SetDataDir(datadir)
+
+	venv.LoadLanguageFromPath(source)
+
+	assert.FileExists(t, filepath.Join(datadir, "language"))
+}
+
+func TestLoadPackageFromPath(t *testing.T) {
+	root, _ := environment.GetRootPath()
+	venv := &VirtualEnvironment{}
+	pkg := &projectfile.Package{Name: "peewee"}
+
+	source := filepath.Join(root, "test", "builder", "python", "2.7.12", "peewee")
+
+	datadir := filepath.Join(os.TempDir(), "as-state-test")
+	os.RemoveAll(datadir)
+	os.Mkdir(datadir, os.ModePerm)
+	venv.SetDataDir(datadir)
+
+	venv.LoadPackageFromPath(source, pkg)
+
+	assert.FileExists(t, filepath.Join(datadir, "lib", "peewee"))
+}
+
+func TestActivate(t *testing.T) {
+	setup(t)
+
+	project, _ := projectfile.Get()
+	language := &project.Languages[0]
+
+	venv := &VirtualEnvironment{}
+
+	venv.SetProject(project)
+	venv.SetLanguageMeta(language)
+	venv.SetDataDir("")
+
+	os.Setenv("PYTHONPATH", "")
+	os.Setenv("PATH", "")
+
+	venv.Activate()
+
+	assert.NotEmpty(t, os.Getenv("PYTHONPATH"))
+	assert.NotEmpty(t, os.Getenv("PATH"))
+}

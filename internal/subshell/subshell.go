@@ -52,7 +52,7 @@ type SubShell interface {
 
 // Activate the virtual environment
 func Activate() (SubShell, error) {
-	logging.Debug("Activating Virtual Environment")
+	logging.Debug("Activating Subshell")
 
 	var T = locale.T
 
