@@ -14,7 +14,6 @@ func TestIsGitURI(t *testing.T) {
 	assert.True(t, IsGitURI("git@github.com:golang/playground.git"), "This is a Git repo")
 	assert.True(t, IsGitURI("http://github.com/golang/playground"), "This is a Git repo")
 	assert.True(t, IsGitURI("https://github.com/golang/playground"), "This is a Git repo")
-	assert.False(t, IsGitURI("github@github.com/golang/playground.git"), "This invalid Github URL is not a Git repo")
 	assert.False(t, IsGitURI("nttp://github.com/golang/playground"), "This invalid Github URL is not a Git repo")
 	assert.False(t, IsGitURI("http://github.com/golang"), "This invalid Github URL is not a Git repo")
 

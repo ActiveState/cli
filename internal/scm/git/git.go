@@ -18,7 +18,6 @@ import (
 
 // IsGitURI returns whether or not the given URI points to a Git repository.
 func IsGitURI(uri string) bool {
-	// Check for GitHub-specific URL components.
 	if strings.HasPrefix(uri, "git@github.com") ||
 		strings.HasPrefix(uri, "http://github.com") ||
 		strings.HasPrefix(uri, "https://github.com") {
@@ -26,7 +25,10 @@ func IsGitURI(uri string) bool {
 		// ultimately need to be extracted properly.
 		regex := regexp.MustCompile("^(git@github\\.com:|https?://github\\.com/)[^/]+/.*$")
 		return regex.MatchString(uri)
-	} // TODO: check non-GitHub URLs
+	} else if strings.HasSuffix(uri, ".git") ||
+		strings.Contains(uri, "git@") {
+		return true
+	}
 	// Check for a '.git' directory or file in a local URI.
 	if _, err := os.Stat(uri); err == nil {
 		_, err = os.Stat(filepath.Join(uri, ".git"))
