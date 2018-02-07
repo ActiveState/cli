@@ -40,6 +40,10 @@ func init() {
 func clone(uriOrID string) (scm.SCMer, error) {
 	scm := scm.New(uriOrID)
 	if scm != nil {
+		if !scm.ConfigFileExists() {
+			print.Error(locale.T("error_state_activate_config_exists"))
+			return nil, errors.New("config file not found")
+		}
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)
 		}
