@@ -41,8 +41,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 	scm := scm.New(uriOrID)
 	if scm != nil {
 		if !scm.ConfigFileExists() {
-			print.Error(locale.T("error_state_activate_config_exists"))
-			return nil, errors.New("config file not found")
+			return nil, errors.New(locale.T("error_state_activate_config_exists"))
 		}
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)
