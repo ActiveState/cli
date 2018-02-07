@@ -18,7 +18,7 @@ func setup(t *testing.T) {
 
 func TestLanguage(t *testing.T) {
 	venv := &VirtualEnvironment{}
-	assert.Equal(t, "Python", venv.Language())
+	assert.Equal(t, "Python", venv.Language(), "Should return Python")
 }
 
 func TestDataDir(t *testing.T) {
@@ -26,7 +26,7 @@ func TestDataDir(t *testing.T) {
 	assert.Empty(t, venv.DataDir())
 
 	venv.SetDataDir("/foo")
-	assert.NotEmpty(t, venv.DataDir())
+	assert.NotEmpty(t, venv.DataDir(), "Should set the datadir")
 }
 
 func TestSetProject(t *testing.T) {
@@ -44,10 +44,10 @@ func TestLanguageMeta(t *testing.T) {
 	language := &project.Languages[0]
 
 	venv := &VirtualEnvironment{}
-	assert.Nil(t, venv.LanguageMeta())
+	assert.Nil(t, venv.LanguageMeta(), "Should not have language meta")
 
 	venv.SetLanguageMeta(language)
-	assert.NotNil(t, venv.LanguageMeta())
+	assert.NotNil(t, venv.LanguageMeta(), "Should have language meta")
 }
 
 func TestLoadLanguageFromPath(t *testing.T) {
@@ -63,7 +63,7 @@ func TestLoadLanguageFromPath(t *testing.T) {
 
 	venv.LoadLanguageFromPath(source)
 
-	assert.FileExists(t, filepath.Join(datadir, "language"))
+	assert.FileExists(t, filepath.Join(datadir, "language"), "Should create a language symlink")
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
@@ -80,7 +80,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	venv.LoadPackageFromPath(source, pkg)
 
-	assert.FileExists(t, filepath.Join(datadir, "lib", "peewee"))
+	assert.FileExists(t, filepath.Join(datadir, "lib", "peewee"), "Should create a package symlink")
 }
 
 func TestActivate(t *testing.T) {
@@ -100,6 +100,6 @@ func TestActivate(t *testing.T) {
 
 	venv.Activate()
 
-	assert.NotEmpty(t, os.Getenv("PYTHONPATH"))
-	assert.NotEmpty(t, os.Getenv("PATH"))
+	assert.NotEmpty(t, os.Getenv("PYTHONPATH"), "PYTHONPATH should be set")
+	assert.NotEmpty(t, os.Getenv("PATH"), "PATH should be set")
 }
