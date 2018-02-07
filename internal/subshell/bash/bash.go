@@ -45,7 +45,7 @@ func (v *SubShell) SetRcFile(rcFile os.File) {
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() error {
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
-	cmd := exec.Command("bash", shellArgs...)
+	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 
