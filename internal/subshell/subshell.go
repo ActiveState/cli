@@ -1,4 +1,4 @@
-package virtualenvironment
+package subshell
 
 import (
 	"bytes"
@@ -14,14 +14,14 @@ import (
 	"github.com/dvirsky/go-pylog/logging"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/bash"
+	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
 	"github.com/alecthomas/template"
 	"github.com/gchaincl/gotic/fs"
 )
 
-// VirtualEnvironment defines the interface for our virtual environment packages, which should be contained in a sub-directory
+// SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
-type VirtualEnvironment interface {
+type SubShell interface {
 	// Activate the given subshell venv
 	Activate() error
 
@@ -34,13 +34,13 @@ type VirtualEnvironment interface {
 	// Binary returns the configured binary
 	Binary() string
 
-	// SetBinary sets the configured binary, this should only be called by the virtualenvironment package
+	// SetBinary sets the configured binary, this should only be called by the subshell package
 	SetBinary(string)
 
 	// RcFile returns the configured RC file
 	RcFile() *os.File
 
-	// SetRcFile sets the configured RC file, this should only be called by the virtualenvironment package
+	// SetRcFile sets the configured RC file, this should only be called by the subshell package
 	SetRcFile(os.File)
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
@@ -51,7 +51,7 @@ type VirtualEnvironment interface {
 }
 
 // Activate the virtual environment
-func Activate() (VirtualEnvironment, error) {
+func Activate() (SubShell, error) {
 	logging.Debug("Activating Virtual Environment")
 
 	var T = locale.T
@@ -59,12 +59,12 @@ func Activate() (VirtualEnvironment, error) {
 	binary := os.Getenv("SHELL")
 	name := path.Base(binary)
 
-	var venv VirtualEnvironment
+	var venv SubShell
 	var err error
 
 	switch name {
 	case "bash":
-		venv = &bash.VirtualEnvironment{}
+		venv = &bash.SubShell{}
 	default:
 		return nil, errors.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
@@ -85,7 +85,7 @@ func Activate() (VirtualEnvironment, error) {
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func getRcFile(v VirtualEnvironment) (*os.File, error) {
+func getRcFile(v SubShell) (*os.File, error) {
 	root, err := environment.GetRootPath()
 	if err != nil {
 		return nil, err

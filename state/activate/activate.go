@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+	"github.com/ActiveState/ActiveState-CLI/internal/subshell"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/cobra"
 	"github.com/dvirsky/go-pylog/logging"
@@ -98,7 +98,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 	setEnvironmentVariables(project)
 
-	venv, err := virtualenvironment.Activate()
+	venv, err := subshell.Activate()
 	_ = venv
 
 	if err != nil {
