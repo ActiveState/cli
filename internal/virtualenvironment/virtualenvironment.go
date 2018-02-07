@@ -19,9 +19,9 @@ import (
 	"github.com/dvirsky/go-pylog/logging"
 )
 
-// VirtualEnvironment defines the interface for our virtual environment packages, which should be contained in a sub-directory
+// VirtualEnvironmenter defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
-type VirtualEnvironment interface {
+type VirtualEnvironmenter interface {
 	// Activate the given virtualenvironment
 	Activate() error
 
@@ -56,7 +56,7 @@ type artifactHashable struct {
 	Build   map[string]string
 }
 
-var venvs = make(map[string]VirtualEnvironment)
+var venvs = make(map[string]VirtualEnvironmenter)
 
 // Activate the virtual environment
 func Activate(project *projectfile.Project) error {
@@ -86,7 +86,7 @@ func Activate(project *projectfile.Project) error {
 // GetEnv returns an environment for the given project and language, this will initialize the virtual directory structure
 // and set up the necessary environment variables if the venv wasnt already initialized, otherwise it will just return
 // the venv struct
-func GetEnv(project *projectfile.Project, language *projectfile.Language) (VirtualEnvironment, error) {
+func GetEnv(project *projectfile.Project, language *projectfile.Language) (VirtualEnvironmenter, error) {
 	switch language.Name {
 	case "Python":
 		hash := getHashFromLanguage(language)
@@ -113,7 +113,7 @@ func GetEnv(project *projectfile.Project, language *projectfile.Language) (Virtu
 }
 
 // ActivateLanguageVenv activates the virtual environment for the given language
-func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironment) error {
+func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironmenter) error {
 	datadir := config.GetDataDir()
 	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
 
@@ -138,7 +138,7 @@ func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.La
 	return venv.Activate()
 }
 
-func loadLanguage(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironment) error {
+func loadLanguage(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironmenter) error {
 	path, err := obtainLanguage(language)
 
 	if err != nil {
@@ -184,7 +184,7 @@ func obtainLanguage(language *projectfile.Language) (string, error) {
 	return path, nil
 }
 
-func loadPackage(project *projectfile.Project, language *projectfile.Language, pkg *projectfile.Package, venv VirtualEnvironment) error {
+func loadPackage(project *projectfile.Project, language *projectfile.Language, pkg *projectfile.Package, venv VirtualEnvironmenter) error {
 	path, err := obtainPackage(language, pkg)
 
 	if err != nil {
