@@ -12,7 +12,7 @@ func TestGitSCMs(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 
-	repo := filepath.Join(root, "git", "testdata", "repo")
+	repo := filepath.Join(root, "internal", "scm", "git", "testdata", "repo")
 	scm := New(repo)
 	assert.NotNil(t, scm, "A valid SCM was returned")
 }
