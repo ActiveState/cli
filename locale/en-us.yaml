@@ -4,7 +4,7 @@ activate_project:
   other: activate a project
 hook_description:
   other: manage hooks
-add_description:
+hook_add_description:
   other: 
   >
     add command to run on hook trigger
@@ -12,12 +12,6 @@ remove_description:
   other: 
   >
     remove command for hook trigger
-could_not_get_project_root_path:
-  other: "Could not get project root path: {{.Error}}"
-cannot_load_config_file_warning:
-  other: "Cannot load config file: {{.Error}}"
-cannot_load_config_file_error_msg:
-  other: "Cannot load config. Make sure your config file is in the project root"
 usage_tpl:
   other: "
 Usage:

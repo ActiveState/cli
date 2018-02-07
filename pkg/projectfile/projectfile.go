@@ -145,9 +145,9 @@ func Get() (*Project, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	hash := hashConfig(data)
 	if err != nil {
-		logging.Warning(locale.T("cannot_load_config_file_warning", map[string]interface{}{"Error": err}))
+		logging.Warning(locale.T("Cannot load config file: {{.Error}}", map[string]interface{}{"Error": err}))
 		projectHash = ""
-		return nil, errors.New(locale.T("cannot_load_config_file_error_msg"))
+		return nil, errors.New(locale.T("Cannot load config. Make sure your config file is in the project root"))
 	}
 	if currentProject == nil || hash != projectHash {
 		currentProject, err = Parse(projectFilePath)
