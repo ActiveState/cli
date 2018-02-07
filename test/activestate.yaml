@@ -13,7 +13,7 @@ platforms:
     version: 10
 languages:
   - name: Python
-    version: 2.7.11
+    version: 2.7.12
     constraints:
         platform: Windows10Label,Linux64Label
         environment: dev,qa,prod
@@ -26,10 +26,6 @@ languages:
         version: 2.9.1
         build: 
           override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
-  - name: Go
-    version: 1.9.2
-    constraints:
-        platform: -Windows10Label
 variables:
   - name: DEBUG
     value: true

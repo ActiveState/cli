@@ -86,3 +86,9 @@ error_could_not_activate_subshell:
   other: Could not activate a new subshell
 info_deactivated:
   other: Deactivated {{.Owner}}/{{.Name}}
+error_unsupported_language:
+  other: "Unsupported language: {{.Language}}"
+error_could_not_activate_venv:
+  other: Could not activate the virtual environment
+warning_language_not_yet_supported:
+  other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"

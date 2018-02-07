@@ -21,6 +21,11 @@ func init() {
 	readInConfig()
 }
 
+// GetDataDir returns the directory in which we'll be storing all our appdata
+func GetDataDir() string {
+	return configDir.Path
+}
+
 func ensureConfigExists() {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs = configdir.New(configNamespace, "cli")
