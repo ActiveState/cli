@@ -8,7 +8,7 @@ hook_add_description:
   other: 
   >
     add command to run on hook trigger
-remove_description:
+hook_remove_description:
   other: 
   >
     remove command for hook trigger

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/dvirsky/go-pylog/logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -133,7 +132,7 @@ func hashConfig(data []byte) string {
 func GetProjectFilePath() string {
 	root, err := os.Getwd()
 	if err != nil {
-		logging.Warning(locale.T("could_not_get_project_root_path", map[string]interface{}{"Error": err}))
+		logging.Warning("Could not get project root path: %v", err)
 		return ""
 	}
 	return filepath.Join(root, configFilename)
@@ -145,9 +144,9 @@ func Get() (*Project, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	hash := hashConfig(data)
 	if err != nil {
-		logging.Warning(locale.T("Cannot load config file: {{.Error}}", map[string]interface{}{"Error": err}))
+		logging.Warning("Cannot load config file: %v", err)
 		projectHash = ""
-		return nil, errors.New(locale.T("Cannot load config. Make sure your config file is in the project root"))
+		return nil, errors.New("Cannot load config. Make sure your config file is in the project root")
 	}
 	if currentProject == nil || hash != projectHash {
 		currentProject, err = Parse(projectFilePath)
