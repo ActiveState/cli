@@ -2,6 +2,7 @@ package projectfile
 
 import (
 	"crypto/sha1"
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ type Project struct {
 	Commands     []Command  `yaml:"commands"`
 }
 
-// Platform covers the platform structure, which goes under Project
+// Platform covers the platform structure of our yaml
 type Platform struct {
 	Name         string `yaml:"name"`
 	Os           string `yaml:"os"`
@@ -109,6 +110,7 @@ func Write(filepath string, project *Project) error {
 	}
 
 	f, err := os.Create(filepath)
+	defer f.Close()
 	if err != nil {
 		return err
 	}
@@ -142,8 +144,9 @@ func Get() (*Project, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	hash := hashConfig(data)
 	if err != nil {
-		logging.Warning("Could not get project root path: %v", err)
-		return nil, err
+		logging.Warning("Cannot load config file: %v", err)
+		projectHash = ""
+		return nil, errors.New("Cannot load config. Make sure your config file is in the project root")
 	}
 	if currentProject == nil || hash != projectHash {
 		currentProject, err = Parse(projectFilePath)

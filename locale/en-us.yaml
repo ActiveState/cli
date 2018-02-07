@@ -2,6 +2,16 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: activate a project
+hook_description:
+  other: manage hooks
+hook_add_description:
+  other: 
+  >
+    add command to run on hook trigger
+hook_remove_description:
+  other: 
+  >
+    remove command for hook trigger
 usage_tpl:
   other: "
 Usage:

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	C "github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -215,6 +216,13 @@ func TestWrite(t *testing.T) {
 	os.Remove(tmpfile.Name())
 }
 
+// Call GetProjectFilePath but doesn't exist
+func TestGetFail(t *testing.T) {
+	configFilename = "activestate.yml.does_not_exist"
+	config, _ := Get()
+	assert.Nil(t, config, "Config should not be set.")
+}
+
 // TestGet the config
 func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
@@ -223,17 +231,56 @@ func TestGet(t *testing.T) {
 
 	configFilename = "activestate.yaml"
 	config, _ := Get()
-	assert.NotNil(t, config, "Config file is loaded")
+	hash := projectHash
+	assert.NotNil(t, config, "Config should be set")
+	assert.NotEqual(t, hash, "", "Cache hash should be set")
 }
 
-// Call GetProjectFilePath and confirm whatever is return can be parsed
+//Test cache reset
+func TestGetCache(t *testing.T) {
+	configFilename = "activestate.yml.sample"
+	Get()
+	originalhash := projectHash
+	Get()
+	newHash := projectHash
+	assert.Equal(t, originalhash, newHash, "Both hashes should not change")
+}
+
+//Test cache reset
+func TestGetNewCache(t *testing.T) {
+	configFilename = C.ConfigFileName
+	config, _ := Get()
+	originalhash := projectHash
+	config.Languages[0].Version = "0.0.0"
+	configFilename = "activestate.yml.sample.delete"
+	testConfigFile := GetProjectFilePath()
+	Write(testConfigFile, config)
+	Get()
+	newHash := projectHash
+	os.Remove(testConfigFile)
+	assert.NotEqual(t, originalhash, newHash, "Hashes should be different")
+	// Reset the configFilename
+	configFilename = C.ConfigFileName
+}
+
+//Test cache reset
+func TestGetCacheReset(t *testing.T) {
+	configFilename = "activestate.yml.doesnotexist"
+	config, _ := Get()
+	deletedHash := projectHash
+	assert.Nil(t, config, "Config should NOT be set")
+	assert.Equal(t, deletedHash, "", "Hash should be empty")
+	configFilename = C.ConfigFileName
+
+}
+
+// Call GetProjectFilePath
 func TestGetProjectFilePath(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	configFilename = "activestate.yaml"
 	configPath := GetProjectFilePath()
-	expectedPath := filepath.Join(root, "test", "activestate.yaml")
+	expectedPath := filepath.Join(root, "test", C.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 }
