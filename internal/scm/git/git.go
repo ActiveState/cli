@@ -11,8 +11,8 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/dvirsky/go-pylog/logging"
 	"github.com/google/go-github/github"
 )
 

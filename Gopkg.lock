@@ -42,12 +42,6 @@
   revision = "cc9eb1d7ad760af14e8f918698f745e80377af4f"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/dvirsky/go-pylog"
-  packages = ["logging"]
-  revision = "8b786c7fb4af9ec02396a139f38a70815d4c945c"
-
-[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "570b54cabe6b8eb0bc2dfce68d964677d63b5260"
@@ -254,6 +248,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "79813cb09111c7c0c55446493e3171f65a3de92c890b4504533018ea57e45702"
+  inputs-digest = "196e2dbaa32b129d65ece1677c5805023171516df5b489b565b4257344fa9556"
   solver-name = "gps-cdcl"
   solver-version = 1

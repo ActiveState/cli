@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/dvirsky/go-pylog/logging"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	yaml "gopkg.in/yaml.v2"
 )
 

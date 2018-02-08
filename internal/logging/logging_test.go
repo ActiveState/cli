@@ -4,31 +4,35 @@ package logging
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
-	"time"
 )
 
 var _ = regexp.Compile
 
-type TestWriter struct {
-	messages []string
+type Test1Handler struct {
+	formatter Formatter
+	file      *os.File
+	messages  []string
 }
 
-func (w *TestWriter) Reset() {
-	w.messages = make([]string, 0)
+func (l *Test1Handler) SetFormatter(f Formatter) {
+	l.formatter = f
 }
 
-func (w *TestWriter) Len() int {
-	return len(w.messages)
+func (l *Test1Handler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
+	l.messages = append(l.messages, fmt.Sprintf("%s", message))
+
+	return nil
 }
 
-//Write(p []byte) (n int, err error)
-func (w *TestWriter) Write(s []byte) (int, error) {
+func (l *Test1Handler) Reset() {
+	l.messages = make([]string, 0)
+}
 
-	w.messages = append(w.messages, fmt.Sprintf("%s", s))
-	fmt.Println("TestWriter got Write(): ", string(s))
-	return len(s), nil
+func (l *Test1Handler) Len() int {
+	return len(l.messages)
 }
 
 func logAllLevels(msg string) {
@@ -42,8 +46,8 @@ func logAllLevels(msg string) {
 
 func Test_SetLevelByString(t *testing.T) {
 
-	w := new(TestWriter)
-	SetOutput(w)
+	w := &Test1Handler{DefaultFormatter, nil, nil}
+	SetHandler(w)
 
 	w.Reset()
 	//test levels
@@ -75,8 +79,8 @@ func Test_SetLevelByString(t *testing.T) {
 }
 func Test_Logging(t *testing.T) {
 
-	w := new(TestWriter)
-	SetOutput(w)
+	w := &Test1Handler{DefaultFormatter, nil, nil}
+	SetHandler(w)
 
 	w.Reset()
 	//test levels
@@ -152,29 +156,6 @@ func Test_Handler(t *testing.T) {
 
 	fmt.Println("Passed testHandler")
 }
-
-func Test_Context(t *testing.T) {
-	var ctx *MessageContext
-	func() {
-		func() {
-			ctx = getContext("INFO", 4)
-		}()
-	}()
-	if ctx.File != "logging_test.go" {
-		t.Fatal("Wrong file:", ctx.File)
-	}
-	if ctx.Level != "INFO" {
-		t.Fatal(ctx.Level)
-	}
-
-	// validate timestamp sampling - if the context's timestamp is more than 10ms before now() or it is after now, we fail
-	if ctx.TimeStamp.Add(10*time.Millisecond).Before(time.Now()) || ctx.TimeStamp.After(time.Now()) {
-		t.Fatal("Wrong timestamp: ", ctx.TimeStamp)
-
-	}
-	fmt.Println(ctx)
-}
-
 func Test_Formatting(t *testing.T) {
 	ctx := &MessageContext{
 		Level: "TEST",

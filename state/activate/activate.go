@@ -8,13 +8,13 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/cobra"
-	"github.com/dvirsky/go-pylog/logging"
 )
 
 // Command holds our main command definition

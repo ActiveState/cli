@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/dvirsky/go-pylog/logging"
 )
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation

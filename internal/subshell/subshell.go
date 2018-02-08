@@ -10,8 +10,8 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/dvirsky/go-pylog/logging"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"

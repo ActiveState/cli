@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/dvirsky/go-pylog/logging"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
