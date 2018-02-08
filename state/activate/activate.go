@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -66,17 +68,6 @@ func loadProjectConfig(configFile string) (*projectfile.Project, error) {
 	return projectfile.Parse(configFile)
 }
 
-// Sets the environment variables specified by the given project configuration
-// struct.
-func setEnvironmentVariables(project *projectfile.Project) {
-	if project.Variables == nil {
-		return
-	}
-	for _, variable := range project.Variables {
-		os.Setenv(variable.Name, variable.Value)
-	}
-}
-
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
@@ -99,7 +90,13 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Error(err.Error())
 		return
 	}
-	setEnvironmentVariables(project)
+
+	err = virtualenvironment.Activate(project)
+	if err != nil {
+		print.Error(locale.T("error_could_not_activate_venv"))
+		print.Error(err.Error())
+		return
+	}
 
 	venv, err := subshell.Activate()
 	_ = venv
