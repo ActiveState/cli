@@ -17,6 +17,12 @@
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/containous/go-bindata"
+  packages = ["."]
+  revision = "e237f24c9fab3ae0ed95bf04e3699e92c2a41283"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -39,12 +45,6 @@
   packages = ["."]
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
   version = "v1.4.7"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/gchaincl/gotic"
-  packages = ["fs"]
-  revision = "78cb33a07632fabbe71406e566304608ce935d63"
 
 [[projects]]
   name = "github.com/google/go-github"
@@ -129,6 +129,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/qor/assetfs"
+  packages = ["."]
+  revision = "ff57fdc13a148d39c3e930cb27c7eaf82e376891"
+
+[[projects]]
+  branch = "master"
   name = "github.com/shibukawa/configdir"
   packages = ["."]
   revision = "e180dbdc8da04c4fa04272e875ce64949f38bd3e"
@@ -206,6 +212,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6ecd4ee5a8e74a506cb30eb3467be9e82d1fa47b02a930e3f280976d474133e4"
+  inputs-digest = "79813cb09111c7c0c55446493e3171f65a3de92c890b4504533018ea57e45702"
   solver-name = "gps-cdcl"
   solver-version = 1
