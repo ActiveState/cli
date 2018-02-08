@@ -8,7 +8,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/internal/files"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
 	"github.com/alecthomas/template"
-	"github.com/gchaincl/gotic/fs"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -86,12 +85,7 @@ func Activate() (SubShell, error) {
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func getRcFile(v SubShell) (*os.File, error) {
-	root, err := environment.GetRootPath()
-	if err != nil {
-		return nil, err
-	}
-
-	tplFile, err := fs.ReadFile(filepath.Join(root, "assets", "shells", v.ShellScript()))
+	tplFile, err := files.AssetFS.Asset(filepath.Join("shells", v.ShellScript()))
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ init:
 build: 
 		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 test: 
-		$(GOTEST) -v ./...
+		$(GOTEST) ./...
 clean: 
 		$(GOCLEAN)
 		rm -Rf build
