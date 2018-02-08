@@ -34,3 +34,11 @@ func GetRootPath() (string, error) {
 
 	return abs + pathsep, nil
 }
+
+func GetRootPathUnsafe() string {
+	path, err := GetRootPath()
+	if err != nil {
+		panic(err)
+	}
+	return path
+}
