@@ -13,10 +13,9 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/python"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-
-	"github.com/dvirsky/go-pylog/logging"
 )
 
 // VirtualEnvironmenter defines the interface for our virtual environment packages, which should be contained in a sub-directory

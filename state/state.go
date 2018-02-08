@@ -10,8 +10,8 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/state/activate"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/cobra"
-	"github.com/dvirsky/go-pylog/logging"
 )
 
 var exit = os.Exit
