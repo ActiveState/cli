@@ -3,6 +3,7 @@ package hook
 import (
 	"fmt"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/helpers"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
