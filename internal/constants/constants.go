@@ -17,3 +17,6 @@ const ConfigFileName = ConfigName + ".yaml"
 
 // ConfigFileType is our preferred file type for our config file, this must match ConfigFileName
 const ConfigFileType = "yaml"
+
+// EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
+const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"

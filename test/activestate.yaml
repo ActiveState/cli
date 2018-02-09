@@ -5,9 +5,9 @@ environments: dev,qa,prod
 platforms:
   - name: Linux64Label
     os: linux
-    architecture: x64
+    architecture: amd64
     libc: glibc-2.25
-    compiler: gcc7
+    compiler: gcc-7
   - name: Windows10Label
     os: windows
     version: 10
