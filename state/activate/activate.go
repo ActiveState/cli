@@ -27,14 +27,12 @@ var Command = &structures.Command{
 // Flags hold the flag values passed through the command line
 var Flags struct {
 	Path string
-	Cd   bool
 }
 
 func init() {
 	logging.Debug("init")
 
 	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Path, "path", "", locale.T("flag_state_activate_path_description"))
-	Command.GetCobraCmd().PersistentFlags().BoolVar(&Flags.Cd, "cd", false, locale.T("flag_state_activate_cd_description"))
 }
 
 // Clones the repository specified by a given URI or ID and returns it. Any
@@ -43,7 +41,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 	scm := scm.New(uriOrID)
 	if scm != nil {
 		if !scm.ConfigFileExists() {
-			return nil, errors.New(locale.T("error_state_activate_config_exists"))
+			return nil, errors.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)
@@ -78,10 +76,8 @@ func Execute(cmd *cobra.Command, args []string) {
 			print.Error(err.Error())
 			return
 		}
-		if Flags.Cd {
-			print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
-			os.Chdir(scm.Path())
-		}
+		print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
+		os.Chdir(scm.Path())
 	}
 
 	project, err := projectfile.Get()
