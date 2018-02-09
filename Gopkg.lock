@@ -255,10 +255,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-<<<<<<< HEAD
   inputs-digest = "196e2dbaa32b129d65ece1677c5805023171516df5b489b565b4257344fa9556"
-=======
-  inputs-digest = "a72e7b39ddf99ce6cb10db88a8ddc1c24292de52c1526195e185cd91fac82849"
->>>>>>> feature-hook
   solver-name = "gps-cdcl"
   solver-version = 1
