@@ -18,7 +18,7 @@ type Hashedhook struct {
 func HashHookStruct(hook projectfile.Hook) (string, error) {
 	hash, err := hashstructure.Hash(hook, nil)
 	if err != nil {
-		return "", fmt.Errorf("Cannot hash hook struct: %v", err)
+		return "", err
 	}
 	return fmt.Sprintf("%X", hash), nil
 }
@@ -31,7 +31,7 @@ func MapHooks(hooks []projectfile.Hook) (map[string][]Hashedhook, error) {
 		hash, err := HashHookStruct(hook)
 		// If we can't hash, something is really wrong so fail gracefully
 		if err != nil {
-			return nil, fmt.Errorf("Failed to map hooks: %v", err)
+			return nil, err
 		}
 		newhook := Hashedhook{hook, hash}
 		hookmap[hook.Name] = append(hookmap[hook.Name], newhook)
@@ -44,12 +44,12 @@ func FilterHooks(hooknames []string) (map[string][]Hashedhook, error) {
 	logging.Debug("filterHooks")
 	config, err := projectfile.Get()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to filter hooks: %v", err)
+		return nil, err
 	}
 
 	hookmap, err := MapHooks(config.Hooks)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to filter hooks: %v", err)
+		return nil, err
 	}
 	// If no filters just return the whole thing
 	if len(hooknames) == 0 {
