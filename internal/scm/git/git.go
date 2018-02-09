@@ -39,16 +39,17 @@ func IsGitURI(uri string) bool {
 
 // Git represents a Git repository to clone locally.
 type Git struct {
-	URI  string // the URI of the repository to clone
-	path string // the local path to clone into
+	URI    string // the URI of the repository to clone
+	path   string // the local path to clone into
+	branch string // the branch to use
 }
 
 // ConfigFileExists returns whether or not the ActiveState config file exists in
 // the repository, PRIOR to cloning (not after).
 func (g *Git) ConfigFileExists() bool {
-	if strings.HasPrefix(g.URI, "git@github.com") ||
+	if g.branch == "" && (strings.HasPrefix(g.URI, "git@github.com") ||
 		strings.HasPrefix(g.URI, "http://github.com") ||
-		strings.HasPrefix(g.URI, "https://github.com") {
+		strings.HasPrefix(g.URI, "https://github.com")) {
 		client := github.NewClient(nil)
 		regex := regexp.MustCompile("^.+github\\.com[:/]([^/]+)/(.+)$")
 		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI, ".git"))[1:]
@@ -73,6 +74,24 @@ func (g *Git) Path() string {
 	return g.path
 }
 
+// SetBranch sets the Git repository's branch to use
+func (g *Git) SetBranch(branch string) {
+	g.branch = branch
+}
+
+// Branch returns the Git repository's branch
+func (g *Git) Branch() string {
+	return g.branch
+}
+
+// CheckoutBranch checks out the configured branch
+func (g *Git) CheckoutBranch() error {
+	cmd := exec.Command("git", "checkout", g.Branch())
+
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	return cmd.Run()
+}
+
 // Clone clones the Git repository into its given or computed directory.
 func (g *Git) Clone() error {
 	logging.Debug("Attempting to clone %+v", g)
@@ -90,6 +109,7 @@ func (g *Git) Clone() error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
+
 	return nil
 }
 

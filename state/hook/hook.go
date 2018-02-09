@@ -3,14 +3,13 @@ package hook
 import (
 	"fmt"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/helpers"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/cobra"
 	"github.com/bndr/gotabulate"
-	"github.com/mitchellh/hashstructure"
 )
 
 // Command holds our main command definition
@@ -25,12 +24,6 @@ var flags struct {
 	Filter string
 }
 
-// Hashedhook to easily associate a Hook struct to a hash of itself
-type Hashedhook struct {
-	Hook projectfile.Hook
-	Hash string
-}
-
 func init() {
 	//Command.Append(add.Command)
 	//Command.Append(remove.Command)
@@ -38,63 +31,7 @@ func init() {
 	// It shows `--filter` in the --help information but when you run
 	// `state hook --filter blah` it fails claiming it doesn't know what `--filter`
 	// is
-	//Command.GetCobraCmd().LocalFlags().StringVar(&flags.Filter, "filter", "", locale.T("hook_filter_flag_usage"))
-}
-
-// HashHookStruct takes a projectfile.Hook, hashes the struct and returns the hash as a string
-func HashHookStruct(hook projectfile.Hook) string {
-	hash, err := hashstructure.Hash(hook, nil)
-	if err != nil {
-		logging.Error("Cannot hash hook struct: %v", err)
-		return ""
-	}
-	return fmt.Sprintf("%X", hash)
-}
-
-// MapHooks creates a map of hooknames to associated commands
-func MapHooks(hooks []projectfile.Hook) map[string][]Hashedhook {
-	logging.Debug("mapHooks")
-	hookmap := make(map[string][]Hashedhook)
-	for _, hook := range hooks {
-		hash := HashHookStruct(hook)
-		// If we can't hash, something is really wrong so fail gracefully
-		//
-		if hash == "" {
-			print.Warning(locale.T("hook_cannot_hash_warning"))
-			return nil
-		}
-		newhook := Hashedhook{hook, hash}
-		hookmap[hook.Name] = append(hookmap[hook.Name], newhook)
-	}
-	return hookmap
-}
-
-// FilterHooks includes only hooks requested in a hookmap
-func FilterHooks(hooknames []string) map[string][]Hashedhook {
-	logging.Debug("filterHooks")
-	config, err := projectfile.Get()
-	if err != nil {
-		return nil
-	}
-
-	hookmap := MapHooks(config.Hooks)
-	if len(hooknames) == 0 {
-		return hookmap
-	}
-
-	var newmap = make(map[string][]Hashedhook)
-	for i := range hooknames {
-		// TODO: if !constraints.IsConstrained(hookmap[hooknames[i]].Hook.Constraints, config)
-		newmap[hooknames[i]] = hookmap[hooknames[i]]
-	}
-
-	//Empty array means nothing found in dict
-	if len(newmap) == 0 {
-		logging.Debug("No configured hooks for `%v`", hooknames)
-		return nil
-	}
-	return newmap
-	// logging.Debug("%v", hooknames)
+	Command.GetCobraCmd().PersistentFlags().StringVar(&flags.Filter, "filter", "", locale.T("hook_filter_flag_usage"))
 }
 
 func getFilters(cmd *cobra.Command) []string {
@@ -116,7 +53,7 @@ func getFilters(cmd *cobra.Command) []string {
 }
 
 // Print what we ended up with
-func printOutput(hookmap map[string][]Hashedhook) {
+func printOutput(hookmap map[string][]hooks.Hashedhook) {
 	logging.Debug("printOutput")
 
 	var T = locale.T
@@ -142,7 +79,10 @@ func printOutput(hookmap map[string][]Hashedhook) {
 func Execute(cmd *cobra.Command, args []string) {
 	hooknames := getFilters(cmd)
 
-	hookmap := FilterHooks(hooknames)
+	hookmap, err := hooks.FilterHooks(hooknames)
+	if err != nil {
+		logging.Error(fmt.Sprintf("%v", err))
+	}
 
 	printOutput(hookmap)
 

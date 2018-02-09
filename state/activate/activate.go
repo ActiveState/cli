@@ -26,13 +26,15 @@ var Command = &structures.Command{
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Path string
+	Path   string
+	Branch string
 }
 
 func init() {
 	logging.Debug("init")
 
 	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Path, "path", "", locale.T("flag_state_activate_path_description"))
+	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Branch, "branch", "", locale.T("flag_state_activate_branch_description"))
 }
 
 // Clones the repository specified by a given URI or ID and returns it. Any
@@ -40,11 +42,14 @@ func init() {
 func clone(uriOrID string) (scm.SCMer, error) {
 	scm := scm.New(uriOrID)
 	if scm != nil {
-		if !scm.ConfigFileExists() {
-			return nil, errors.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
-		}
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)
+		}
+		if Flags.Branch != "" {
+			scm.SetBranch(Flags.Branch)
+		}
+		if !scm.ConfigFileExists() {
+			return nil, errors.New(locale.T("error_state_activate_config_exists"))
 		}
 		if err := scm.Clone(); err != nil {
 			print.Error(locale.T("error_state_activate"))
@@ -76,8 +81,19 @@ func Execute(cmd *cobra.Command, args []string) {
 			print.Error(err.Error())
 			return
 		}
+
 		print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
 		os.Chdir(scm.Path())
+
+		if Flags.Branch != "" {
+			print.Info(locale.T("info_state_activate_branch", map[string]interface{}{"Branch": scm.Branch()}))
+			err = scm.CheckoutBranch()
+			if err != nil {
+				print.Error(locale.T("error_cannot_checkout_branch"))
+				print.Error(err.Error())
+				return
+			}
+		}
 	}
 
 	project, err := projectfile.Get()

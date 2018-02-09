@@ -3,7 +3,9 @@ package activate
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -99,6 +101,13 @@ func TestExecuteGitCloneRemote(t *testing.T) {
 	Command.Execute()
 	_, err = os.Stat("repo2")
 	assert.Error(t, err, "The non-existant repository did not have an ActiveState config file; no clone happened")
+
+	Flags.Path = ""
+	os.Chdir(tempdir)
+	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/repo", "--path", "repo3", "--branch", "branched"})
+	Command.Execute()
+	out, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	assert.Equal(t, "branched", strings.Trim(string(out), "\n"), "Should be under our defined branch")
 
 	err = os.Chdir(cwd) // restore
 	assert.Nil(t, err, "Changed back to original directory")
