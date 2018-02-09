@@ -31,7 +31,7 @@ func init() {
 	// It shows `--filter` in the --help information but when you run
 	// `state hook --filter blah` it fails claiming it doesn't know what `--filter`
 	// is
-	//Command.GetCobraCmd().LocalFlags().StringVar(&flags.Filter, "filter", "", locale.T("hook_filter_flag_usage"))
+	Command.GetCobraCmd().PersistentFlags().StringVar(&flags.Filter, "filter", "", locale.T("hook_filter_flag_usage"))
 }
 
 func getFilters(cmd *cobra.Command) []string {
@@ -79,7 +79,10 @@ func printOutput(hookmap map[string][]hooks.Hashedhook) {
 func Execute(cmd *cobra.Command, args []string) {
 	hooknames := getFilters(cmd)
 
-	hookmap := hooks.FilterHooks(hooknames)
+	hookmap, err := hooks.FilterHooks(hooknames)
+	if err != nil {
+		logging.Error(fmt.Sprintf("%v", err))
+	}
 
 	printOutput(hookmap)
 
