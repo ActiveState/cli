@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/helpers"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/cobra"
+	"github.com/bndr/gotabulate"
 )
 
 // Command holds our main command definition
@@ -53,12 +55,22 @@ func getFilters(cmd *cobra.Command) []string {
 // Print what we ended up with
 func printOutput(hookmap map[string][]hooks.Hashedhook) {
 	logging.Debug("printOutput")
+
+	var T = locale.T
+
+	print.Info(T("hook_listing_hooks"))
+	print.Line()
+
+	rows := [][]interface{}{}
 	for k, cmds := range hookmap {
-		print.Info(k + "\n")
 		for idx := range cmds {
-			print.Info("\t%v\n", cmds[idx])
+			rows = append(rows, []interface{}{cmds[idx].Hash, k, cmds[idx].Hook.Value})
 		}
 	}
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{T("hook_header_id"), T("hook_header_hook"), T("hook_header_command")})
+	t.SetAlign("left")
+	print.Line(t.Render("simple"))
 }
 
 // Execute List configured hooks
