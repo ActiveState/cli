@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/helpers/hooks"
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
@@ -109,6 +110,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	err = virtualenvironment.Activate(project)
 	if err != nil {
 		print.Error(locale.T("error_could_not_activate_venv"))
+		print.Error(err.Error())
+		return
+	}
+
+	err = hooks.RunHook("ACTIVATE", project)
+	if err != nil {
+		print.Error(locale.T("error_could_not_run_hooks"))
 		print.Error(err.Error())
 		return
 	}

@@ -2,7 +2,14 @@ package hooks
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/mitchellh/hashstructure"
@@ -21,6 +28,53 @@ func HashHookStruct(hook projectfile.Hook) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%X", hash), nil
+}
+
+// GetEffectiveHooks returns effective hooks by the given name, meaning only the ones that apply to the current runtime environment
+func GetEffectiveHooks(hookName string, project *projectfile.Project) ([]*projectfile.Hook, error) {
+	hooks := []*projectfile.Hook{}
+
+	for _, hook := range project.Hooks {
+		if hook.Name == hookName {
+			if !constraints.IsConstrained(hook.Constraints, project) {
+				hooks = append(hooks, &hook)
+			}
+		}
+	}
+
+	return hooks, nil
+}
+
+// RunHook runs effective hooks by the given name, meaning only the ones that apply to the current runtime environment
+func RunHook(hookName string, project *projectfile.Project) error {
+	hooks, err := GetEffectiveHooks(hookName, project)
+	if err != nil {
+		return err
+	}
+
+	if len(hooks) == 0 {
+		return nil
+	}
+
+	// This is an exception to the rule, since RunHook can be called from many different controllers and since we
+	// want to communicate the command being ran we have a print statement here, this is not ideal and should otherwise
+	// be avoided
+	print.Info(locale.T("info_running_hook", map[string]interface{}{"Name": hookName}))
+
+	for _, hook := range hooks {
+		// Todo: Find a library to properly split command strings
+		args := strings.Split(hook.Value, " ")
+
+		print.Info("> " + hook.Value)
+
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // MapHooks creates a map of hooknames to associated commands
