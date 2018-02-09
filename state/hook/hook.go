@@ -84,7 +84,7 @@ func FilterHooks(hooknames []string) map[string][]Hashedhook {
 
 	var newmap = make(map[string][]Hashedhook)
 	for i := range hooknames {
-		// TODO: if constraints.MatchesConstraints(hookmap[hooknames[i]].Hook.Constraints, config)
+		// TODO: if !constraints.IsConstrained(hookmap[hooknames[i]].Hook.Constraints, config)
 		newmap[hooknames[i]] = hookmap[hooknames[i]]
 	}
 

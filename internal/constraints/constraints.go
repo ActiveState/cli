@@ -53,53 +53,54 @@ func osCompiler() string {
 	return "" // TODO
 }
 
-// Returns whether or not the given platform fails the given constraint.
-func platformFailsConstraint(platform projectfile.Platform, constraint string) bool {
-	if platform.Name == strings.TrimLeft(constraint, "-") {
+// Returns whether or not the given platform is constrained by the given
+// constraint name.
+// If the constraint name is prefixed by "-", returns the converse.
+func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
+	if platform.Name == strings.TrimLeft(name, "-") {
 		if match(platform.Os, osName()) &&
 			match(platform.Version, osVersion()) &&
 			match(platform.Architecture, osArchitecture()) &&
 			match(platform.Libc, osLibc()) &&
 			match(platform.Compiler, osCompiler()) {
-			if strings.HasPrefix(constraint, "-") {
+			if strings.HasPrefix(name, "-") {
 				return true
 			}
-		} else if !strings.HasPrefix(constraint, "-") {
+		} else if !strings.HasPrefix(name, "-") {
 			return true
 		}
 	}
 	return false
 }
 
-// Returns whether or not the given constraint matches the given project
-// configuration.
-func matchesPlatform(constraints string, project *projectfile.Project) bool {
+// Returns whether or not the current platform is constrained by the given
+// named constraints, which are defined in the given project configuration.
+func platformIsConstrained(constraintNames string, project *projectfile.Project) bool {
+	for _, name := range strings.Split(constraintNames, ",") {
+		for _, platform := range project.Platforms {
+			if platformIsConstrainedByConstraintName(platform, name) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Returns whether or not the current environment is constrained by the given
+// constraints.
+func environmentIsConstrained(constraints string) bool {
 	constraintList := strings.Split(constraints, ",")
 	for _, constraint := range constraintList {
-		for _, platform := range project.Platforms {
-			if platformFailsConstraint(platform, constraint) {
-				return false
-			}
+		if constraint == os.Getenv(constants.EnvironmentEnvVarName) {
+			return false
 		}
 	}
 	return true
 }
 
-// Returns whether or not the given constraint matches the given project
-// configuration.
-func matchesEnvironment(constraints string) bool {
-	constraintList := strings.Split(constraints, ",")
-	for _, constraint := range constraintList {
-		if constraint == os.Getenv(constants.EnvironmentEnvVarName) {
-			return true
-		}
-	}
-	return false
-}
-
-// MatchesConstraints returns whether or not the given constraints match the
-// given project configuration.
-func MatchesConstraints(constraint projectfile.Constraint, project *projectfile.Project) bool {
-	return matchesPlatform(constraint.Platform, project) &&
-		matchesEnvironment(constraint.Environment)
+// IsConstrained returns whether or not the given constraints are constraining
+// based on given project configuration.
+func IsConstrained(constraint projectfile.Constraint, project *projectfile.Project) bool {
+	return platformIsConstrained(constraint.Platform, project) ||
+		environmentIsConstrained(constraint.Environment)
 }
