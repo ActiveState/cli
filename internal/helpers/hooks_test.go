@@ -37,7 +37,7 @@ func TestFilterHooks(t *testing.T) {
 	// Test is limited with a filter
 	filteredHooksMap := FilterHooks([]string{"FIRST_INSTALL"})
 	assert.Equal(t, 1, len(filteredHooksMap), "There should be only one hook in the map")
-	assert.Equal(t, []string{}, filteredHooksMap["AFTER_UPDATE"], "`AFTER_UPDATE` should not be in the map so this should be an empty list")
+	assert.Equal(t, 0, len(filteredHooksMap["AFTER_UPDATE"]), "`AFTER_UPDATE` should not be in the map so this should be an empty list")
 
 	// Test not limited with no filter
 	filteredHooksMap = FilterHooks([]string{})
@@ -45,7 +45,7 @@ func TestFilterHooks(t *testing.T) {
 
 	// Test no results with non existent or set filter
 	filteredHooksMap = FilterHooks([]string{"does_not_exist"})
-	assert.Equal(t, 0, len(filteredHooksMap), "There should be zero hooks in the hook map.  None found by filter name.")
+	assert.Nil(t, filteredHooksMap, "There should be zero hooks in the hook map.")
 }
 
 func TestHashHookStruct(t *testing.T) {

@@ -58,8 +58,10 @@ func FilterHooks(hooknames []string) map[string][]Hashedhook {
 	}
 
 	var newmap = make(map[string][]Hashedhook)
-	for i := range hooknames {
-		newmap[hooknames[i]] = hookmap[hooknames[i]]
+	for _, val := range hooknames {
+		if hookmap[val] != nil {
+			newmap[val] = hookmap[val]
+		}
 	}
 
 	//Empty array means nothing found in dict
