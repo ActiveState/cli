@@ -6,12 +6,20 @@ hook_description:
   other: manage hooks
 hook_add_description:
   other: 
-  >
+    >
     add command to run on hook trigger
 hook_remove_description:
   other: 
-  >
+    >
     remove command for hook trigger
+hook_header_id:
+  other: ID
+hook_header_hook:
+  other: HOOK
+hook_header_command:
+  other: COMMAND
+hook_listing_hooks:
+  other: Listing configured hooks
 usage_tpl:
   other: "
 Usage:
