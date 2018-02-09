@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sync"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
 
@@ -22,7 +23,7 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell venv
-	Activate() error
+	Activate(wg *sync.WaitGroup) error
 
 	// Deactivate the given subshell venv
 	Deactivate() error
@@ -50,7 +51,7 @@ type SubShell interface {
 }
 
 // Activate the virtual environment
-func Activate() (SubShell, error) {
+func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
 	var T = locale.T
@@ -77,7 +78,7 @@ func Activate() (SubShell, error) {
 
 	venv.SetBinary(binary)
 	venv.SetRcFile(*rcFile)
-	venv.Activate()
+	venv.Activate(wg)
 
 	return venv, err
 }

@@ -3,6 +3,7 @@ package activate
 import (
 	"errors"
 	"os"
+	"sync"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
 
@@ -73,6 +74,8 @@ func loadProjectConfig(configFile string) (*projectfile.Project, error) {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	var wg sync.WaitGroup
+
 	logging.Debug("Execute")
 	if len(args) > 0 {
 		scm, err := clone(args[0])
@@ -110,7 +113,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	venv, err := subshell.Activate()
+	venv, err := subshell.Activate(&wg)
 	_ = venv
 
 	if err != nil {
@@ -120,9 +123,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Don't exit until our subshell has finished
-	for venv.IsActive() != false {
-		// do nothing
-	}
+	wg.Wait()
 
 	print.Bold(locale.T("info_deactivated", project))
 
