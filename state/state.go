@@ -8,7 +8,9 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 
+	// commands
 	"github.com/ActiveState/ActiveState-CLI/state/activate"
+	"github.com/ActiveState/ActiveState-CLI/state/hook"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/cobra"
@@ -39,6 +41,7 @@ func init() {
 	cC.PersistentFlags().StringVarP(&Flags.Locale, "locale", "l", "", T("flag_state_locale_description"))
 
 	Command.Append(activate.Command)
+	Command.Append(hook.Command)
 }
 
 func main() {
