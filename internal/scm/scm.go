@@ -7,6 +7,9 @@ type SCMer interface {
 	ConfigFileExists() bool // whether or not the ActiveState config file exists
 	SetPath(string)         // set the repo's path (usually for cloning into)
 	Path() string           // the repo's path (automatically set after cloning)
+	SetBranch(string)       // set the repo's branch to use
+	Branch() string         // the repo's branch
+	CheckoutBranch() error  // checkout the configured branch
 	Clone() error           // clone the repo into the current directory
 }
 
