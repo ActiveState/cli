@@ -17,6 +17,12 @@
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
 
 [[projects]]
+  name = "github.com/bndr/gotabulate"
+  packages = ["."]
+  revision = "94ff52dbe671866d4f5cd3463ecdad8ec550e578"
+  version = "v1.1.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/containous/go-bindata"
   packages = ["."]
@@ -111,12 +117,6 @@
   packages = ["."]
   revision = "cdc68dd1f170b8dfc1a0d2231b5bb0967ed67006"
   version = "v2.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/hashstructure"
-  packages = ["."]
-  revision = "2bca23e0e452137f789efbc8610126fd8b94f73b"
 
 [[projects]]
   branch = "master"
@@ -255,6 +255,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "196e2dbaa32b129d65ece1677c5805023171516df5b489b565b4257344fa9556"
+  inputs-digest = "3526f1fc67f9c58897cf62347906964b01011213a84f8f98ca516a95799b95fc"
   solver-name = "gps-cdcl"
   solver-version = 1
