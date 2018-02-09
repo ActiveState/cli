@@ -53,9 +53,9 @@ func osCompiler() string {
 	return "" // TODO
 }
 
-// MatchesPlatform returns whether or not the given constraint matches the given
-// project configuration.
-func MatchesPlatform(constraints string, project *projectfile.Project) bool {
+// Returns whether or not the given constraint matches the given project
+// configuration.
+func matchesPlatform(constraints string, project *projectfile.Project) bool {
 	constraintList := strings.Split(constraints, ",")
 	for _, constraint := range constraintList {
 		for _, platform := range project.Platforms {
@@ -77,9 +77,9 @@ func MatchesPlatform(constraints string, project *projectfile.Project) bool {
 	return true
 }
 
-// MatchesEnvironment returns whether or not the given constraint matches the
-// given project configuration.
-func MatchesEnvironment(constraints string) bool {
+// Returns whether or not the given constraint matches the given project
+// configuration.
+func matchesEnvironment(constraints string) bool {
 	constraintList := strings.Split(constraints, ",")
 	for _, constraint := range constraintList {
 		if constraint == os.Getenv(constants.EnvironmentEnvVarName) {
@@ -87,4 +87,11 @@ func MatchesEnvironment(constraints string) bool {
 		}
 	}
 	return false
+}
+
+// MatchesConstraints returns whether or not the given constraints match the
+// given project configuration.
+func MatchesConstraints(constraint projectfile.Constraint, project *projectfile.Project) bool {
+	return matchesPlatform(constraint.Platform, project) &&
+		matchesEnvironment(constraint.Environment)
 }

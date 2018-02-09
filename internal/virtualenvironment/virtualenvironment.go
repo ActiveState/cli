@@ -63,8 +63,7 @@ func Activate(project *projectfile.Project) error {
 
 	if project.Variables != nil {
 		for _, variable := range project.Variables {
-			// TODO: if constraints.MatchesPlatform(variable.Constraints.Platform, project) &&
-			//          constraints.MatchesEnvironment(variable.Constraints.Environment)
+			// TODO: if constraints.MatchesConstraints(variable.Constraints, project)
 			os.Setenv(variable.Name, variable.Value)
 		}
 	}
@@ -90,8 +89,7 @@ func Activate(project *projectfile.Project) error {
 func GetEnv(project *projectfile.Project, language *projectfile.Language) (VirtualEnvironmenter, error) {
 	switch language.Name {
 	case "Python":
-		// TODO: if constraints.MatchesPlatform(language.Constraints.Platform, project) &&
-		//          constraints.MatchesEnvironment(language.Constraints.Environment)
+		// TODO: if constraints.MatchesConstraints(language.Constraints, project)
 		hash := getHashFromLanguage(language)
 		if _, ok := venvs[hash]; ok {
 			return venvs[hash], nil
@@ -131,8 +129,7 @@ func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.La
 	}
 
 	for _, pkg := range language.Packages {
-		// TODO: if constraints.MatchesPlatform(pkg.Constraints.Platform, project) &&
-		//          constraints.MatchesEnvironment(pkg.Constraints.Environment)
+		// TODO: if constraints.MatchesConstraints(pkg.Constraints, project)
 		err = loadPackage(project, language, &pkg, venv)
 
 		if err != nil {
