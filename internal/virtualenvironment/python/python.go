@@ -3,6 +3,7 @@ package python
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
@@ -55,7 +56,14 @@ func (v *VirtualEnvironment) LoadPackageFromPath(path string, pkg *projectfile.P
 	if err := mkdir(v.datadir, "lib"); err != nil {
 		return err
 	}
-	return os.Symlink(path, filepath.Join(v.DataDir(), "lib", pkg.Name))
+
+	return filepath.Walk(path, func(subpath string, f os.FileInfo, err error) error {
+		subpath = strings.TrimPrefix(subpath, path)
+		if subpath == "" {
+			return nil
+		}
+		return os.Symlink(filepath.Join(path, subpath), filepath.Join(v.DataDir(), "lib", subpath))
+	})
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment

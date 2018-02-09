@@ -80,7 +80,8 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	venv.LoadPackageFromPath(source, pkg)
 
-	assert.FileExists(t, filepath.Join(datadir, "lib", "peewee"), "Should create a package symlink")
+	// Todo: Test with datadir as source, not the archived version
+	assert.FileExists(t, filepath.Join(datadir, "lib", "2.9.1.tar.gz"), "Should create a package symlink")
 }
 
 func TestActivate(t *testing.T) {
