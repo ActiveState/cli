@@ -3,6 +3,7 @@ package subshell
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
@@ -17,9 +18,10 @@ func setup(t *testing.T) {
 
 func TestActivate(t *testing.T) {
 	setup(t)
+	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "bash")
-	venv, err := Activate()
+	venv, err := Activate(&wg)
 
 	assert.NoError(t, err, "Should activate")
 
@@ -34,9 +36,10 @@ func TestActivate(t *testing.T) {
 
 func TestActivateFailures(t *testing.T) {
 	setup(t)
+	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "foo")
-	_, err := Activate()
+	_, err := Activate(&wg)
 
 	assert.Error(t, err, "Should produce an error because of unsupported shell")
 }

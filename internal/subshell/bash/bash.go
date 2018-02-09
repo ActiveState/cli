@@ -3,6 +3,7 @@ package bash
 import (
 	"os"
 	"os/exec"
+	"sync"
 )
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -10,6 +11,7 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
+	wg     *sync.WaitGroup
 }
 
 // Shell - see subshell.SubShell
@@ -43,7 +45,10 @@ func (v *SubShell) SetRcFile(rcFile os.File) {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() error {
+func (v *SubShell) Activate(wg *sync.WaitGroup) error {
+	v.wg = wg
+	wg.Add(1)
+
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -54,6 +59,7 @@ func (v *SubShell) Activate() error {
 	var err error
 	go func() {
 		err = cmd.Wait()
+		v.wg.Done()
 	}()
 
 	return err
