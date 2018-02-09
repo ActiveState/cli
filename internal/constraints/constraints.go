@@ -53,24 +53,32 @@ func osCompiler() string {
 	return "" // TODO
 }
 
+// Returns whether or not the given platform fails the given constraint.
+func platformFailsConstraint(platform projectfile.Platform, constraint string) bool {
+	if platform.Name == strings.TrimLeft(constraint, "-") {
+		if match(platform.Os, osName()) &&
+			match(platform.Version, osVersion()) &&
+			match(platform.Architecture, osArchitecture()) &&
+			match(platform.Libc, osLibc()) &&
+			match(platform.Compiler, osCompiler()) {
+			if strings.HasPrefix(constraint, "-") {
+				return true
+			}
+		} else if !strings.HasPrefix(constraint, "-") {
+			return true
+		}
+	}
+	return false
+}
+
 // Returns whether or not the given constraint matches the given project
 // configuration.
 func matchesPlatform(constraints string, project *projectfile.Project) bool {
 	constraintList := strings.Split(constraints, ",")
 	for _, constraint := range constraintList {
 		for _, platform := range project.Platforms {
-			if platform.Name == strings.TrimLeft(constraint, "-") {
-				if match(platform.Os, osName()) &&
-					match(platform.Version, osVersion()) &&
-					match(platform.Architecture, osArchitecture()) &&
-					match(platform.Libc, osLibc()) &&
-					match(platform.Compiler, osCompiler()) {
-					if strings.HasPrefix(constraint, "-") {
-						return false
-					}
-				} else if !strings.HasPrefix(constraint, "-") {
-					return false
-				}
+			if platformFailsConstraint(platform, constraint) {
+				return false
 			}
 		}
 	}
