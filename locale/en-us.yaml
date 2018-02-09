@@ -74,10 +74,16 @@ flag_state_locale_description:
   other: Locale
 flag_state_activate_path_description:
   other: Where to install the project
+flag_state_activate_branch_description:
+  other: Clone this specific branch
 flag_state_activate_cd_description:
   other: Whether or not to change into the project directory once created
 info_state_activate_uri:
   other: Activating URI '{{.URI}}' into directory '{{.Dir}}'
+info_state_activate_branch:
+  other: "Checkout out branch: {{.Branch}}"
+error_cannot_checkout_branch:
+  other: Cannot checkout branch
 error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
 error_state_activate_config_exists:
