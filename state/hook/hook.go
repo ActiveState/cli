@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
-	"github.com/ActiveState/ActiveState-CLI/state/hook/remove"
 	"github.com/ActiveState/cobra"
 	"github.com/bndr/gotabulate"
 )
@@ -28,7 +27,7 @@ var flags struct {
 
 func init() {
 	Command.Append(add.Command)
-	Command.Append(remove.Command)
+	// Command.Append(remove.Command)
 	// TODO make this work properly
 	// It shows `--filter` in the --help information but when you run
 	// `state hook --filter blah` it fails claiming it doesn't know what `--filter`
