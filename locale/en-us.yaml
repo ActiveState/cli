@@ -106,3 +106,7 @@ error_could_not_activate_venv:
   other: Could not activate the virtual environment
 warning_language_not_yet_supported:
   other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"
+error_could_not_run_hooks:
+  other: Could not run hooks
+info_running_hook:
+  other: "Running hook: {{.Name}}"

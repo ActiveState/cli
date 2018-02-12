@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var testhooks = []projectfile.Hook{
@@ -80,4 +82,91 @@ func TestMapHooks(t *testing.T) {
 	assert.True(t, checkMapKeys(mappedhooks, keys), fmt.Sprintf("Map should have keys '%v' and '%v' but does not: %v", keys[0], keys[1], mappedhooks))
 	assert.Equal(t, 2, len(mappedhooks), "There should only be 2 triggers/keys in the map")
 	assert.Equal(t, 2, len(mappedhooks["firsthook"]), "There should be 2 commands for the `firsthook` hook")
+}
+
+func TestGetEffectiveHooks(t *testing.T) {
+	project := projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: name
+owner: owner
+hooks:
+ - name: ACTIVATE
+   value: echo Hello World!`)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+
+	hooks := GetEffectiveHooks("ACTIVATE", &project)
+
+	assert.NotZero(t, len(hooks), "Should return hooks")
+}
+
+func TestGetEffectiveHooksWithConstrained(t *testing.T) {
+	project := projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: name
+owner: owner
+hooks:
+  - name: ACTIVATE
+    value: echo Hello World
+    constraints: 
+        platform: foobar
+        environment: foobar`)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+
+	hooks := GetEffectiveHooks("ACTIVATE", &project)
+	assert.Zero(t, len(hooks), "Should return no hooks")
+}
+
+func TestRunHook(t *testing.T) {
+	project := projectfile.Project{}
+	touch := filepath.Join(os.TempDir(), "state-test-runhook")
+	os.Remove(touch)
+
+	dat := `
+name: name
+owner: owner
+hooks:
+ - name: ACTIVATE
+   value: touch ` + touch
+	dat = strings.TrimSpace(dat)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+
+	err = RunHook("ACTIVATE", &project)
+	assert.NoError(t, err, "Should run hooks")
+	assert.FileExists(t, touch, "Should create file as per the hook value")
+
+	os.Remove(touch)
+}
+
+func TestRunHookFail(t *testing.T) {
+	project := projectfile.Project{}
+	touch := filepath.Join(os.TempDir(), "state-test-runhook")
+	os.Remove(touch)
+
+	dat := `
+name: name
+owner: owner
+hooks:
+  - name: ACTIVATE
+    value: touch ` + touch + `
+    constraints: 
+       platform: foobar
+       environment: foobar`
+	dat = strings.TrimSpace(dat)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+
+	err = RunHook("ACTIVATE", &project)
+	assert.NoError(t, err, "Should run hooks without producing an error")
+
+	_, err = os.Stat(touch)
+	assert.Error(t, err, "Should not create file as per the constraints")
+
+	os.Remove(touch)
 }
