@@ -93,7 +93,8 @@ hooks:
  - name: ACTIVATE
    value: echo Hello World!`)
 
-	yaml.Unmarshal([]byte(dat), &project)
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
 
 	hooks := GetEffectiveHooks("ACTIVATE", &project)
 
@@ -106,13 +107,16 @@ func TestGetEffectiveHooksWithConstrained(t *testing.T) {
 name: name
 owner: owner
 hooks:
- - name: ACTIVATE
-   value: echo Hello World!
-   constraints: 
-	- platform: foobar
-	  environment: foobar`)
+  - name: ACTIVATE
+    value: echo Hello World
+    constraints: 
+        platform: foobar
+        environment: foobar`)
 
-	yaml.Unmarshal([]byte(dat), &project)
+	err := yaml.Unmarshal([]byte(dat), &project)
+	hook := project.Hooks[0]
+	_ = hook
+	assert.NoError(t, err, "YAML unmarshalled")
 
 	hooks := GetEffectiveHooks("ACTIVATE", &project)
 	assert.Zero(t, len(hooks), "Should return no hooks")
@@ -131,9 +135,10 @@ hooks:
    value: touch ` + touch
 	dat = strings.TrimSpace(dat)
 
-	yaml.Unmarshal([]byte(dat), &project)
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
 
-	err := RunHook("ACTIVATE", &project)
+	err = RunHook("ACTIVATE", &project)
 	assert.NoError(t, err, "Should run hooks")
 	assert.FileExists(t, touch, "Should create file as per the hook value")
 
@@ -149,15 +154,21 @@ func TestRunHookFail(t *testing.T) {
 name: name
 owner: owner
 hooks:
- - name: ACTIVATE
-   value: touch ` + touch
+  - name: ACTIVATE
+    value: touch ` + touch + `
+    constraints: 
+       platform: foobar
+       environment: foobar`
 	dat = strings.TrimSpace(dat)
 
-	yaml.Unmarshal([]byte(dat), &project)
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
 
-	err := RunHook("ACTIVATE", &project)
+	err = RunHook("ACTIVATE", &project)
 	assert.NoError(t, err, "Should run hooks without producing an error")
-	assert.FileExists(t, touch, "Should not create file as per the constraints")
+
+	_, err = os.Stat(touch)
+	assert.Error(t, err, "Should not create file as per the constraints")
 
 	os.Remove(touch)
 }
