@@ -95,7 +95,7 @@ hooks:
 
 	yaml.Unmarshal([]byte(dat), &project)
 
-	hooks, _ := GetEffectiveHooks("ACTIVATE", &project)
+	hooks := GetEffectiveHooks("ACTIVATE", &project)
 
 	assert.NotZero(t, len(hooks), "Should return hooks")
 }
@@ -114,8 +114,7 @@ hooks:
 
 	yaml.Unmarshal([]byte(dat), &project)
 
-	hooks, err := GetEffectiveHooks("ACTIVATE", &project)
-	assert.NoError(t, err, "Should get effective hooks")
+	hooks := GetEffectiveHooks("ACTIVATE", &project)
 	assert.Zero(t, len(hooks), "Should return no hooks")
 }
 

@@ -31,7 +31,7 @@ func HashHookStruct(hook projectfile.Hook) (string, error) {
 }
 
 // GetEffectiveHooks returns effective hooks by the given name, meaning only the ones that apply to the current runtime environment
-func GetEffectiveHooks(hookName string, project *projectfile.Project) ([]*projectfile.Hook, error) {
+func GetEffectiveHooks(hookName string, project *projectfile.Project) []*projectfile.Hook {
 	hooks := []*projectfile.Hook{}
 
 	for _, hook := range project.Hooks {
@@ -42,15 +42,12 @@ func GetEffectiveHooks(hookName string, project *projectfile.Project) ([]*projec
 		}
 	}
 
-	return hooks, nil
+	return hooks
 }
 
 // RunHook runs effective hooks by the given name, meaning only the ones that apply to the current runtime environment
 func RunHook(hookName string, project *projectfile.Project) error {
-	hooks, err := GetEffectiveHooks(hookName, project)
-	if err != nil {
-		return err
-	}
+	hooks := GetEffectiveHooks(hookName, project)
 
 	if len(hooks) == 0 {
 		return nil
