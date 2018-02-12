@@ -33,7 +33,7 @@ func TestExecuteGitClone(t *testing.T) {
 	assert.Nil(t, err, "Changed into temporary directory")
 
 	// Test basic clone.
-	_, err = os.Stat("repo")
+	_, err = os.Stat(filepath.Join(tempdir, "repo"))
 	Flags.Path = ""
 	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
 	Command.GetCobraCmd().SetArgs([]string{repo})
@@ -47,7 +47,7 @@ func TestExecuteGitClone(t *testing.T) {
 	}
 
 	// Test clone with specified directory.
-	_, err = os.Stat("repo2")
+	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
 	Flags.Path = ""
 	os.Chdir(tempdir)
 	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
@@ -91,7 +91,7 @@ func TestExecuteGitCloneRemote(t *testing.T) {
 	assert.Nil(t, err, "The cloned repository exists")
 	files := []string{"foo.txt", "bar.txt", "baz.txt"}
 	for _, file := range files {
-		_, err = os.Stat(file)
+		_, err = os.Stat(filepath.Join(tempdir, "repo", file))
 		assert.Nil(t, err, "The cloned repository contains an expected file")
 	}
 
@@ -99,7 +99,7 @@ func TestExecuteGitCloneRemote(t *testing.T) {
 	os.Chdir(tempdir)
 	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/does-not-exist", "--path", "repo2"})
 	Command.Execute()
-	_, err = os.Stat("repo2")
+	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
 	assert.Error(t, err, "The non-existant repository did not have an ActiveState config file; no clone happened")
 
 	Flags.Path = ""

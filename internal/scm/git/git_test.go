@@ -64,7 +64,7 @@ func TestClone(t *testing.T) {
 	git := &Git{URI: repo}
 	err = git.Clone()
 	assert.Nil(t, err, "The remote repository exists")
-	assert.Equal(t, git.Path(), "repo", "The repository was cloned into the expected directory")
+	assert.Equal(t, filepath.Base(git.Path()), "repo", "The repository was cloned into the expected directory")
 	_, err = os.Stat(git.Path())
 	assert.Nil(t, err, "The cloned repository exists")
 	files := []string{"foo.txt", "bar.txt", "baz.txt"}
@@ -77,10 +77,10 @@ func TestClone(t *testing.T) {
 	_, err = os.Stat("repo2")
 	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
 	git = &Git{URI: repo}
-	git.SetPath("repo2")
+	git.SetPath(filepath.Join(tempdir, "repo2"))
 	err = git.Clone()
 	assert.Nil(t, err, "The remote repository exists")
-	assert.Equal(t, git.Path(), "repo2", "The repository was cloned into the expected directory")
+	assert.Equal(t, filepath.Base(git.Path()), "repo2", "The repository was cloned into the expected directory")
 	_, err = os.Stat(git.Path())
 	assert.Nil(t, err, "The cloned repository exists")
 	for _, file := range files {
