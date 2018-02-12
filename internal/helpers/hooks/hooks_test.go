@@ -114,8 +114,6 @@ hooks:
         environment: foobar`)
 
 	err := yaml.Unmarshal([]byte(dat), &project)
-	hook := project.Hooks[0]
-	_ = hook
 	assert.NoError(t, err, "YAML unmarshalled")
 
 	hooks := GetEffectiveHooks("ACTIVATE", &project)
