@@ -3,11 +3,11 @@ package hook
 import (
 	"fmt"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/helpers/hooks"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cobra"
 	"github.com/bndr/gotabulate"
 )
