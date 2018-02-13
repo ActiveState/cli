@@ -96,7 +96,8 @@ func (g *Git) CheckoutBranch() error {
 func (g *Git) Clone() error {
 	logging.Debug("Attempting to clone %+v", g)
 	if g.path == "" {
-		g.path = g.humanishPart()
+		cwd, _ := os.Getwd()
+		g.path = filepath.Join(cwd, g.humanishPart())
 		logging.Debug("Determined 'humanish' dir to clone into as '%s'", g.path)
 	}
 	print.Info(locale.T("info_state_activate_uri", map[string]interface{}{
