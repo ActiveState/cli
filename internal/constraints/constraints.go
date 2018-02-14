@@ -2,15 +2,13 @@ package constraints
 
 import (
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-)
 
-// Mainly for testing.
-var osNameOverride, osVersionOverride, osArchitectureOverride, osLibcOverride, osCompilerOverride string
+	"github.com/ActiveState/sysinfo"
+)
 
 // Returns whether or not the expected string matches the actual string,
 // considering an empty expectation to be a match.
@@ -18,51 +16,16 @@ func match(expected string, actual string) bool {
 	return expected == "" || expected == actual
 }
 
-func osName() string {
-	if osNameOverride != "" {
-		return osNameOverride
-	}
-	return runtime.GOOS
-}
-
-func osVersion() string {
-	if osVersionOverride != "" {
-		return osVersionOverride
-	}
-	return "" // TODO
-}
-
-func osArchitecture() string {
-	if osArchitectureOverride != "" {
-		return osArchitectureOverride
-	}
-	return runtime.GOARCH
-}
-
-func osLibc() string {
-	if osLibcOverride != "" {
-		return osLibcOverride
-	}
-	return "" // TODO
-}
-
-func osCompiler() string {
-	if osCompilerOverride != "" {
-		return osCompilerOverride
-	}
-	return "" // TODO
-}
-
 // Returns whether or not the given platform is constrained by the given
 // constraint name.
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
 	if platform.Name == strings.TrimLeft(name, "-") {
-		if match(platform.Os, osName()) &&
-			match(platform.Version, osVersion()) &&
-			match(platform.Architecture, osArchitecture()) &&
-			match(platform.Libc, osLibc()) &&
-			match(platform.Compiler, osCompiler()) {
+		if match(platform.Os, sysinfo.OS()) &&
+			match(platform.Version, sysinfo.OSVersion()) &&
+			match(platform.Architecture, sysinfo.Architecture()) &&
+			match(platform.Libc, sysinfo.Libc()) &&
+			match(platform.Compiler, sysinfo.Compiler()) {
 			if strings.HasPrefix(name, "-") {
 				return true
 			}

@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ActiveState/sysinfo"
+  packages = ["."]
+  revision = "1cb0f50c178f7a97aa1f099951759917bde593ca"
+
+[[projects]]
+  branch = "master"
   name = "github.com/alecthomas/template"
   packages = [
     ".",
@@ -255,6 +261,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3526f1fc67f9c58897cf62347906964b01011213a84f8f98ca516a95799b95fc"
+  inputs-digest = "e9d8e6da4ab5b356d38b67387427fbcec151c0ab0c59d7e8b94370037b6883d1"
   solver-name = "gps-cdcl"
   solver-version = 1
