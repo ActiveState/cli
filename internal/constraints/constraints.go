@@ -21,8 +21,8 @@ func match(expected string, actual string) bool {
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
 	if platform.Name == strings.TrimLeft(name, "-") {
-		if match(platform.Os, sysinfo.Name()) &&
-			match(platform.Version, sysinfo.Version()) &&
+		if match(platform.Os, sysinfo.OS()) &&
+			match(platform.Version, sysinfo.OSVersion()) &&
 			match(platform.Architecture, sysinfo.Architecture()) &&
 			match(platform.Libc, sysinfo.Libc()) &&
 			match(platform.Compiler, sysinfo.Compiler()) {
