@@ -47,7 +47,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	// Add hook to activestate.yaml for the active project
 	project, err := projectfile.Get()
 	if err != nil {
-		msg := locale.Tt("hook_add_cannot_add_hook", map[string]interface{}{"Hookname": hookname, "Cmd": command})
+		msg := locale.T("hook_add_cannot_add_hook", map[string]interface{}{"Hookname": hookname, "Cmd": command})
 		print.Error(msg)
 		print.Error(err.Error())
 		return
