@@ -108,3 +108,5 @@ warning_language_not_yet_supported:
   other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"
 hook_remove_multiple_hooks:
   other: "More than one configured hook for name given.  Use ID instead."
+hook_remove_cannot_remove:
+  other: "Cannot remove hook '{{.Hookname}}' \n\t {{.Error}}"

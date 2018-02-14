@@ -37,21 +37,22 @@ func validateArgs(cmd *cobra.Command, args []string) error {
 }
 
 //  Cycle through the configured hooks, hash then remove hook if matches, save, exit
-func removebyHash(identifier string, config *projectfile.Project) bool {
-	hooks := config.Hooks
+func removebyHash(identifier string, project *projectfile.Project) bool {
+	hooks := project.Hooks
 	var removed = false
 	for i, hook := range hooks {
 		hash, err := helper.HashHookStruct(hook)
 		if identifier == hash {
 			hooks := append(hooks[:i], hooks[i+1:]...)
-			config.Hooks = hooks
+			project.Hooks = hooks
 			removed = true
 			break
 		} else if err != nil {
 			logging.Warning("Failed to remove hook '%v': %v", identifier, err)
+			print.Warning("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err})
 		}
 	}
-	projectfile.Write(projectfile.GetProjectFilePath(), config)
+	projectfile.Write(projectfile.GetProjectFilePath(), project)
 	return removed
 }
 
@@ -75,46 +76,46 @@ func printOutput(hookmap map[string][]helper.Hashedhook) {
 	print.Line(locale.T("hook_remove_multiple_hooks"))
 }
 
-func removeByName(identifier string, config *projectfile.Project) {
-	hooks := config.Hooks
+func removeByName(identifier string, project *projectfile.Project) {
+	hooks := project.Hooks
 	for i, hook := range hooks {
 		if identifier == hook.Name {
 			hooks := append(hooks[:i], hooks[i+1:]...)
-			config.Hooks = hooks
+			project.Hooks = hooks
 			break
 		}
 	}
-	projectfile.Write(projectfile.GetProjectFilePath(), config)
+	projectfile.Write(projectfile.GetProjectFilePath(), project)
 }
 
 // Execute the hook remove command
 // Adds a statement to be run on the given hook
 func Execute(cmd *cobra.Command, args []string) {
 	identifier := args[0]
-	config, err := projectfile.Get()
+	project, err := projectfile.Get()
 	if err != nil {
 		logging.Error("%v", err)
+		print.Warning("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err})
 		return
 	}
 
-	if removebyHash(identifier, config) {
+	if removebyHash(identifier, project) {
 		return
 	}
 
 	mappedHooks, err := helper.FilterHooks([]string{identifier})
-	logging.Warning("This is my mappedhooks: %V", mappedHooks)
 	if err != nil {
+		print.Warning("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err})
 		logging.Error("%v", err)
 		return
 	}
 
 	numOfHooksFound := len(mappedHooks[identifier])
-	logging.Warning("The length of this badboy is: %v", numOfHooksFound)
 	if numOfHooksFound == 1 {
-		removeByName(identifier, config)
+		removeByName(identifier, project)
+
 	} else if numOfHooksFound >= 2 {
 		printOutput(mappedHooks)
 	}
-
 	logging.Debug("Execute `hook remove`")
 }
