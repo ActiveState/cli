@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ActiveState/go-sysinfo"
+  packages = ["."]
+  revision = "f59ccf61613eb399765cb3be68d78a8a1c207962"
+
+[[projects]]
+  branch = "master"
   name = "github.com/alecthomas/template"
   packages = [
     ".",
