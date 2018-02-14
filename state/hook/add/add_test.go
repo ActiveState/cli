@@ -21,6 +21,12 @@ var tempDir string
 // Moves process into a tmp dir and brings a copy of project file with it
 func moveToTmpDir() error {
 	var err error
+	root, err := environment.GetRootPath()
+	testDir := filepath.Join(root, "test")
+	os.Chdir(testDir)
+	if err != nil {
+		return err
+	}
 	startingDir, _ = os.Getwd()
 	tempDir, err = ioutil.TempDir("", "ActiveSta bte-CLI-")
 	if err != nil {
@@ -68,11 +74,7 @@ func copy(src, dst string) error {
 }
 
 func TestAddHookPass(t *testing.T) {
-	root, err := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
-	os.Chdir(testDir)
-	assert.NoError(t, err, "Should detect root path")
-	err = moveToTmpDir()
+	err := moveToTmpDir()
 
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
@@ -96,11 +98,7 @@ func TestAddHookPass(t *testing.T) {
 
 //  This test MUST go before TestAddHookPass.  Something to do with writing files.
 func TestAddHookFail(t *testing.T) {
-	root, err := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
-	os.Chdir(testDir)
-	assert.NoError(t, err, "Should detect root path")
-	err = moveToTmpDir()
+	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
 	Cc := Command.GetCobraCmd()
