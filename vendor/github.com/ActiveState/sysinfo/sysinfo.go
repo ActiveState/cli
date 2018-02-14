@@ -3,20 +3,20 @@ package sysinfo
 import "runtime"
 
 // Mainly for testing.
-var nameOverride, versionOverride, architectureOverride, libcOverride, compilerOverride string
+var osOverride, osVersionOverride, architectureOverride, libcOverride, compilerOverride string
 
-// Name returns the system's name (e.g. "linux", "windows", etc.)
-func Name() string {
-	if nameOverride != "" {
-		return nameOverride
+// OS returns the system's OS name (e.g. "linux", "windows", etc.)
+func OS() string {
+	if osOverride != "" {
+		return osOverride
 	}
 	return runtime.GOOS
 }
 
-// Version returns the system's version.
-func Version() string {
-	if versionOverride != "" {
-		return versionOverride
+// OSVersion returns the system's OS version.
+func OSVersion() string {
+	if osVersionOverride != "" {
+		return osVersionOverride
 	}
 	return "" // TODO
 }

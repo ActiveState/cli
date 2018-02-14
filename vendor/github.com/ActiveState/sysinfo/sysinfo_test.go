@@ -6,16 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestName(t *testing.T) {
-	nameOverride = "linux"
-	assert.Equal(t, "linux", Name())
-	nameOverride = "" // reset
+func TestOS(t *testing.T) {
+	osOverride = "linux"
+	assert.Equal(t, "linux", OS())
+	osOverride = "" // reset
 }
 
-func TestVersion(t *testing.T) {
-	versionOverride = "4.0"
-	assert.Equal(t, "4.0", Version())
-	versionOverride = "" // reset
+func TestOSVersion(t *testing.T) {
+	osVersionOverride = "4.0"
+	assert.Equal(t, "4.0", OSVersion())
+	osVersionOverride = "" // reset
 }
 
 func TestArchitecture(t *testing.T) {

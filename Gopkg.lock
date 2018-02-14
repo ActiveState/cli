@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
-  revision = "1a9119f87dc8a6f9c938cd29f5339f8b7866a848"
+  revision = "1cb0f50c178f7a97aa1f099951759917bde593ca"
 
 [[projects]]
   branch = "master"
