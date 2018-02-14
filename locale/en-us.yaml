@@ -112,3 +112,7 @@ info_running_hook:
   other: "Running hook: {{.Name}}"
 hook_add_cannot_add_hook:
   other: "Cannot add hook '{{.Hookname}} {{.Cmd}}'"
+hook_remove_multiple_hooks:
+  other: "More than one configured hook for name given.  Use ID instead."
+hook_remove_cannot_remove:
+  other: "Cannot remove hook '{{.Hookname}}' \n\t {{.Error}}"
