@@ -92,7 +92,7 @@ error_state_activate_config_load:
   other: Unable to parse config file '{{.ConfigFile}}'. Please refer to the above error message, resolve the issue, and run activate again.
 info_state_activate_cd:
   other: Changing into directory '{{.Dir}}'
-unsupported_shell:
+error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
 error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"

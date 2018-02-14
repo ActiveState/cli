@@ -2,15 +2,14 @@ package subshell
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"sync"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
-
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 
@@ -66,7 +65,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	case "bash":
 		venv = &bash.SubShell{}
 	default:
-		return nil, errors.New(T("error_unsupported_shell", map[string]interface{}{
+		return nil, failures.User.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
 		}))
 	}

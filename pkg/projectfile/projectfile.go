@@ -2,12 +2,12 @@ package projectfile
 
 import (
 	"crypto/sha1"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -146,7 +146,7 @@ func Get() (*Project, error) {
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		projectHash = ""
-		return nil, errors.New("Cannot load config. Make sure your config file is in the project root")
+		return nil, failures.App.New("Cannot load config. Make sure your config file is in the project root")
 	}
 	if currentProject == nil || hash != projectHash {
 		currentProject, err = Parse(projectFilePath)

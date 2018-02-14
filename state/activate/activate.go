@@ -1,10 +1,10 @@
 package activate
 
 import (
-	"errors"
 	"os"
 	"sync"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/helpers/hooks"
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
 
@@ -51,14 +51,14 @@ func clone(uriOrID string) (scm.SCMer, error) {
 			scm.SetBranch(Flags.Branch)
 		}
 		if !scm.ConfigFileExists() {
-			return nil, errors.New(locale.T("error_state_activate_config_exists"))
+			return nil, failures.User.New(locale.T("error_state_activate_config_exists"))
 		}
 		if err := scm.Clone(); err != nil {
 			print.Error(locale.T("error_state_activate"))
 			return nil, err
 		}
 	} else {
-		return nil, errors.New("not implemented yet") // TODO: activate from ID
+		return nil, failures.User.New("not implemented yet") // TODO: activate from ID
 	}
 	return scm, nil
 }
@@ -81,8 +81,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
 		scm, err := clone(args[0])
 		if err != nil {
-			print.Error(locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": args[0]}))
-			print.Error(err.Error())
+			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": args[0]}))
 			return
 		}
 
@@ -93,8 +92,7 @@ func Execute(cmd *cobra.Command, args []string) {
 			print.Info(locale.T("info_state_activate_branch", map[string]interface{}{"Branch": scm.Branch()}))
 			err = scm.CheckoutBranch()
 			if err != nil {
-				print.Error(locale.T("error_cannot_checkout_branch"))
-				print.Error(err.Error())
+				failures.Handle(err, locale.T("error_cannot_checkout_branch"))
 				return
 			}
 		}
@@ -102,22 +100,19 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	project, err := projectfile.Get()
 	if err != nil {
-		print.Error(locale.T("error_state_activate_config_load"))
-		print.Error(err.Error())
+		failures.Handle(err, locale.T("error_state_activate_config_load"))
 		return
 	}
 
 	err = virtualenvironment.Activate(project)
 	if err != nil {
-		print.Error(locale.T("error_could_not_activate_venv"))
-		print.Error(err.Error())
+		failures.Handle(err, locale.T("error_could_not_activate_venv"))
 		return
 	}
 
 	err = hooks.RunHook("ACTIVATE", project)
 	if err != nil {
-		print.Error(locale.T("error_could_not_run_hooks"))
-		print.Error(err.Error())
+		failures.Handle(err, locale.T("error_could_not_run_hooks"))
 		return
 	}
 
@@ -125,8 +120,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	_ = venv
 
 	if err != nil {
-		print.Error(locale.T("error_could_not_activate_subshell"))
-		print.Error(err.Error())
+		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return
 	}
 
