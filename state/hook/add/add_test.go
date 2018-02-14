@@ -3,11 +3,10 @@ package add
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 
@@ -15,20 +14,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMain(m *testing.M) {
-	code := m.Run()
-	os.Exit(code)
+// For moving the CWD when needed during a test.
+var startingDir string
+var tempDir string
+
+// Moves process into a tmp dir and brings a copy of project file with it
+func moveToTmpDir() error {
+	var err error
+	startingDir, _ = os.Getwd()
+	tempDir, err = ioutil.TempDir("", "ActiveSta bte-CLI-")
+	if err != nil {
+		return err
+	}
+	err = os.Chdir(tempDir)
+	if err != nil {
+		return err
+	}
+
+	copy(filepath.Join(startingDir, "activestate.yaml"),
+		filepath.Join(tempDir, "activestate.yaml"))
+	return nil
 }
 
-// Test it doesn't explode when run with no args
-func TestExecute(t *testing.T) {
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
-
-	Command.Execute()
-
-	assert.Equal(t, true, true, "Execute didn't panic")
+// Moves process to original dir and deletes temp
+func removeTmpDir() error {
+	err := os.Chdir(startingDir)
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func copy(src, dst string) error {
@@ -49,51 +67,66 @@ func copy(src, dst string) error {
 	return out.Close()
 }
 
-//  This test MUST go before TestAddHookPass.  Something to do with writing files.
-func TestAddHookFail(t *testing.T) {
-	root, err := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
-	os.Chdir(testDir)
-	assert.NoError(t, err, "Should detect root path")
-
-	config, _ := projectfile.Get()
-	Cc := Command.GetCobraCmd()
-	newHookName := "A_HOOK"
-	Cc.SetArgs([]string{newHookName})
-	Cc.Execute()
-
-	var found = false
-	for _, hook := range config.Hooks {
-		if hook.Name == newHookName {
-			found = true
-		}
-	}
-	assert.False(t, found, fmt.Sprintf("Should NOT find a hook named %v", newHookName))
-}
 func TestAddHookPass(t *testing.T) {
 	root, err := environment.GetRootPath()
 	testDir := filepath.Join(root, "test")
-	savedconfigPath := filepath.Join(testDir, constants.ConfigFileName+".orig")
-	configPath := filepath.Join(testDir, constants.ConfigFileName)
 	os.Chdir(testDir)
-	_ = copy(configPath, savedconfigPath)
 	assert.NoError(t, err, "Should detect root path")
+	err = moveToTmpDir()
 
-	config, _ := projectfile.Get()
+	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+
 	newHookName := "A_HOOK"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{newHookName, "echo 'This is a command'"})
 	Cc.Execute()
 
+	project, _ := projectfile.Get()
 	var found = false
-	for _, hook := range config.Hooks {
+	for _, hook := range project.Hooks {
 		if hook.Name == newHookName {
 			found = true
 		}
 	}
 	assert.True(t, found, fmt.Sprintf("Should find a hook named %v", newHookName))
 
-	os.Remove(configPath)
-	_ = copy(savedconfigPath, configPath)
-	os.Remove(savedconfigPath)
+	err = removeTmpDir()
+	assert.Nil(t, err, "Tried to remove tmp testing dir")
+}
+
+//  This test MUST go before TestAddHookPass.  Something to do with writing files.
+func TestAddHookFail(t *testing.T) {
+	root, err := environment.GetRootPath()
+	testDir := filepath.Join(root, "test")
+	os.Chdir(testDir)
+	assert.NoError(t, err, "Should detect root path")
+	err = moveToTmpDir()
+	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+
+	Cc := Command.GetCobraCmd()
+	newHookName := "A_HOOK"
+	Cc.SetArgs([]string{newHookName})
+	Cc.Execute()
+	project, _ := projectfile.Get()
+
+	var found = false
+	for _, hook := range project.Hooks {
+		if hook.Name == newHookName {
+			found = true
+		}
+	}
+	assert.False(t, found, fmt.Sprintf("Should NOT find a hook named %v", newHookName))
+	err = removeTmpDir()
+	assert.Nil(t, err, "Tried to remove tmp testing dir")
+}
+
+// Test it doesn't explode when run with no args
+func TestExecute(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
+	Command.Execute()
+
+	assert.Equal(t, true, true, "Execute didn't panic")
 }
