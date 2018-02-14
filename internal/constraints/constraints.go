@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 
-	"github.com/ActiveState/go-sysinfo/sysinfo"
+	"github.com/ActiveState/sysinfo"
 )
 
 // Returns whether or not the expected string matches the actual string,
@@ -21,11 +21,11 @@ func match(expected string, actual string) bool {
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
 	if platform.Name == strings.TrimLeft(name, "-") {
-		if match(platform.Os, sysinfo.OSName()) &&
-			match(platform.Version, sysinfo.OSVersion()) &&
-			match(platform.Architecture, sysinfo.OSArchitecture()) &&
-			match(platform.Libc, sysinfo.OSLibc()) &&
-			match(platform.Compiler, sysinfo.OSCompiler()) {
+		if match(platform.Os, sysinfo.Name()) &&
+			match(platform.Version, sysinfo.Version()) &&
+			match(platform.Architecture, sysinfo.Architecture()) &&
+			match(platform.Libc, sysinfo.Libc()) &&
+			match(platform.Compiler, sysinfo.Compiler()) {
 			if strings.HasPrefix(name, "-") {
 				return true
 			}

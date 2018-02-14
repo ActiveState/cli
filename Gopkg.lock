@@ -9,9 +9,9 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/ActiveState/go-sysinfo"
+  name = "github.com/ActiveState/sysinfo"
   packages = ["."]
-  revision = "f59ccf61613eb399765cb3be68d78a8a1c207962"
+  revision = "1a9119f87dc8a6f9c938cd29f5339f8b7866a848"
 
 [[projects]]
   branch = "master"
@@ -261,6 +261,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3526f1fc67f9c58897cf62347906964b01011213a84f8f98ca516a95799b95fc"
+  inputs-digest = "e9d8e6da4ab5b356d38b67387427fbcec151c0ab0c59d7e8b94370037b6883d1"
   solver-name = "gps-cdcl"
   solver-version = 1
