@@ -49,7 +49,7 @@ func removebyHash(identifier string, project *projectfile.Project) bool {
 			break
 		} else if err != nil {
 			logging.Warning("Failed to remove hook '%v': %v", identifier, err)
-			print.Warning(locale.Tt("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
+			print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
 		}
 	}
 	projectfile.Write(projectfile.GetProjectFilePath(), project)
@@ -95,7 +95,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	project, err := projectfile.Get()
 	if err != nil {
 		logging.Error("%v", err)
-		print.Warning(locale.Tt("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
+		print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
 		return
 	}
 
@@ -105,7 +105,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	mappedHooks, err := helper.FilterHooks([]string{identifier})
 	if err != nil {
-		print.Warning(locale.Tt("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
+		print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
 		logging.Error("%v", err)
 		return
 	}
