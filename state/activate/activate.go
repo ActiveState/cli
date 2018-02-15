@@ -5,9 +5,6 @@ import (
 	"sync"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/helpers/hooks"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
-
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -15,6 +12,8 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell"
+	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/cobra"
 )

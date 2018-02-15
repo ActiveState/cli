@@ -110,3 +110,5 @@ error_could_not_run_hooks:
   other: Could not run hooks
 info_running_hook:
   other: "Running hook: {{.Name}}"
+hook_add_cannot_add_hook:
+  other: "Cannot add hook '{{.Hookname}} {{.Cmd}}'"
