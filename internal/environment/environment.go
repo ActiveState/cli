@@ -1,11 +1,12 @@
 package environment
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 )
 
 // GetRootPath returns the root path of the library we're under
@@ -14,7 +15,7 @@ func GetRootPath() (string, error) {
 
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", errors.New("Could not call Caller(0)")
+		return "", failures.App.New("Could not call Caller(0)")
 	}
 
 	abs := filepath.Dir(file)
@@ -35,6 +36,7 @@ func GetRootPath() (string, error) {
 	return abs + pathsep, nil
 }
 
+// GetRootPathUnsafe returns the root path or panics if it cannot be found (hence the unsafe)
 func GetRootPathUnsafe() string {
 	path, err := GetRootPath()
 	if err != nil {
