@@ -32,14 +32,22 @@ var Command = &commands.Command{
 	Description: "state_description",
 	Run:         Execute,
 
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "locale",
+			Shorthand:   "l",
+			Description: "flag_state_locale_description",
+			Type:        commands.TypeString,
+			Persist:     true,
+			StringVar:   &Flags.Locale,
+		},
+	},
+
 	UsageTemplate: "usage_tpl",
 }
 
 func init() {
 	logging.Debug("init")
-
-	cC := Command.GetCobraCmd()
-	cC.PersistentFlags().StringVarP(&Flags.Locale, "locale", "l", "", T("flag_state_locale_description"))
 
 	Command.Append(activate.Command)
 	Command.Append(hook.Command)
