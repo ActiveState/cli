@@ -274,6 +274,21 @@ func TestGetCacheReset(t *testing.T) {
 
 }
 
+func TestGetActivated(t *testing.T) {
+	root, _ := environment.GetRootPath()
+	cwd, _ := os.Getwd()
+	os.Chdir(filepath.Join(root, "test"))
+
+	configFilename = "activestate.yaml"
+	config1, _ := Get()
+	os.Chdir(root)
+	config2, err := Get()
+	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
+	assert.Equal(t, config1, config2, "The same activated state is returned if activestate.yaml does not exist")
+
+	os.Chdir(cwd) // restore
+}
+
 // Call GetProjectFilePath
 func TestGetProjectFilePath(t *testing.T) {
 	root, err := environment.GetRootPath()

@@ -139,8 +139,13 @@ func GetProjectFilePath() string {
 }
 
 // Get the project configuration
+// If no project file exists in the current directory and a project file was
+// previously loaded (i.e. the state is activated), return the loaded project.
 func Get() (*Project, error) {
 	projectFilePath := GetProjectFilePath()
+	if _, err := os.Stat(projectFilePath); err != nil && currentProject != nil {
+		return currentProject, nil
+	}
 	data, err := ioutil.ReadFile(projectFilePath)
 	hash := hashConfig(data)
 	if err != nil {
