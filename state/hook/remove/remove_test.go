@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	helper "github.com/ActiveState/ActiveState-CLI/internal/helpers"
+	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,11 +69,11 @@ func TestRemoveByHash(t *testing.T) {
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
 	project.Hooks = append(project.Hooks, hook)
 
-	hash, _ := helper.HashHookStruct(hook)
+	hash, _ := hookhelper.HashHookStruct(hook)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{hash})
 	Command.Execute()
-	mappedHooks, _ := helper.FilterHooks([]string{cmdName})
+	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%V'", cmdName))
 
 	err = removeTmpDir()
@@ -97,7 +97,7 @@ func TestRemoveByName(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
 	Command.Execute()
-	mappedHooks, _ := helper.FilterHooks([]string{cmdName})
+	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%V'", cmdName))
 
 	err = removeTmpDir()
@@ -141,7 +141,7 @@ func TestRemoveByNameFail(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
 	Command.Execute()
-	mappedHooks, _ := helper.FilterHooks([]string{cmdName})
+	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
 	assert.Equal(t, 2, len(mappedHooks[cmdName]), fmt.Sprintf("There should still be two commands of the same name in the config: '%v'", cmdName))
 
 	err = removeTmpDir()

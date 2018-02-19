@@ -1,10 +1,10 @@
 package remove
 
 import (
-	helper "github.com/ActiveState/ActiveState-CLI/internal/helpers"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/bndr/gotabulate"
 
@@ -41,7 +41,7 @@ func removebyHash(identifier string, project *projectfile.Project) bool {
 	hooks := project.Hooks
 	var removed = false
 	for i, hook := range hooks {
-		hash, err := helper.HashHookStruct(hook)
+		hash, err := hookhelper.HashHookStruct(hook)
 		if identifier == hash {
 			hooks := append(hooks[:i], hooks[i+1:]...)
 			project.Hooks = hooks
@@ -57,7 +57,7 @@ func removebyHash(identifier string, project *projectfile.Project) bool {
 }
 
 // Print what we ended up with
-func printOutput(hookmap map[string][]helper.Hashedhook) {
+func printOutput(hookmap map[string][]hookhelper.Hashedhook) {
 	var T = locale.T
 
 	print.Info(T("hook_listing_hooks"))
@@ -103,7 +103,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	mappedHooks, err := helper.FilterHooks([]string{identifier})
+	mappedHooks, err := hookhelper.FilterHooks([]string{identifier})
 	if err != nil {
 		print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
 		logging.Error("%v", err)
