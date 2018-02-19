@@ -4,8 +4,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -75,6 +75,13 @@ func loadProjectConfig(configFile string) (*projectfile.Project, error) {
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
+
+	// TODO: check for update, download update, verify update.
+	// if err := update.Update(path_to_downloaded_binary); err != nil {
+	// 	failures.Handle(err, TODO: download failure)
+	// } else {
+	// 	TODO: restart
+	// }
 
 	logging.Debug("Execute")
 	if len(args) > 0 {
