@@ -1,13 +1,13 @@
 package virtualenvironment
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/mholt/archiver"
 	"github.com/mitchellh/hashstructure"
 
@@ -107,7 +107,7 @@ func GetEnv(project *projectfile.Project, language *projectfile.Language) (Virtu
 		return venv, nil
 	default:
 		var T = locale.T
-		return nil, errors.New(T("warning_language_not_yet_supported", map[string]interface{}{
+		return nil, failures.User.New(T("warning_language_not_yet_supported", map[string]interface{}{
 			"Language": language.Name,
 		}))
 	}
