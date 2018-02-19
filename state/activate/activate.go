@@ -23,19 +23,29 @@ var Command = &commands.Command{
 	Name:        "activate",
 	Description: "activate_project",
 	Run:         Execute,
+
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "path",
+			Shorthand:   "",
+			Description: "flag_state_activate_path_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Path,
+		},
+		&commands.Flag{
+			Name:        "branch",
+			Shorthand:   "",
+			Description: "flag_state_activate_branch_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Branch,
+		},
+	},
 }
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
 	Path   string
 	Branch string
-}
-
-func init() {
-	logging.Debug("init")
-
-	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Path, "path", "", locale.T("flag_state_activate_path_description"))
-	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Branch, "branch", "", locale.T("flag_state_activate_branch_description"))
 }
 
 // Clones the repository specified by a given URI or ID and returns it. Any
