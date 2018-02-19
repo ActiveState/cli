@@ -1,4 +1,4 @@
-package structures
+package commands
 
 import (
 	"testing"

@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
 	"github.com/ActiveState/cobra"
@@ -14,7 +14,7 @@ import (
 )
 
 // Command holds our main command definition
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "hook",
 	Description: "hook_description",
 	Run:         Execute,
