@@ -265,6 +265,7 @@ func TestGetNewCache(t *testing.T) {
 
 //Test cache reset
 func TestGetCacheReset(t *testing.T) {
+	currentProject = nil // reset
 	configFilename = "activestate.yml.doesnotexist"
 	config, _ := Get()
 	deletedHash := projectHash
