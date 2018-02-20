@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
 	"github.com/ActiveState/cobra"
@@ -14,10 +14,20 @@ import (
 )
 
 // Command holds our main command definition
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "hook",
 	Description: "hook_description",
 	Run:         Execute,
+
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "filter",
+			Shorthand:   "",
+			Description: "hook_filter_flag_usage",
+			Type:        commands.TypeString,
+			StringVar:   &flags.Filter,
+		},
+	},
 }
 
 // Flags for hook command
@@ -28,11 +38,6 @@ var flags struct {
 func init() {
 	Command.Append(add.Command)
 	// Command.Append(remove.Command)
-	// TODO make this work properly
-	// It shows `--filter` in the --help information but when you run
-	// `state hook --filter blah` it fails claiming it doesn't know what `--filter`
-	// is
-	Command.GetCobraCmd().PersistentFlags().StringVar(&flags.Filter, "filter", "", locale.T("hook_filter_flag_usage"))
 }
 
 func getFilters(cmd *cobra.Command) []string {

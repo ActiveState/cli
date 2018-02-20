@@ -1,9 +1,10 @@
 package remove
 
 import (
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/bndr/gotabulate"
@@ -12,28 +13,25 @@ import (
 	"github.com/ActiveState/cobra"
 )
 
+// Args hold the arg values passed through the command line
+var Args struct {
+	Identifier string
+}
+
 // Command remove, sub command of hook
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "remove",
 	Description: "remove_description",
 	Run:         Execute,
-}
 
-func init() {
-	Command.GetCobraCmd().Args = validateArgs
-}
-
-func validateArgs(cmd *cobra.Command, args []string) error {
-	// TODO lists of known hooks, warn if hook passed isn't supported
-	// err := cobra.OnlyValidArgs(cmd, args)
-	// if err != nil {
-	// 	return err
-	// }
-	err := cobra.ExactArgs(1)(cmd, args)
-	if err != nil {
-		return err
-	}
-	return nil
+	Arguments: []*commands.Argument{
+		&commands.Argument{
+			Name:        "arg_hook_remove_identifier",
+			Description: "arg_hook_remove_identifier_description",
+			Variable:    &Args.Identifier,
+			Required:    true,
+		},
+	},
 }
 
 //  Cycle through the configured hooks, hash then remove hook if matches, save, exit
@@ -91,31 +89,29 @@ func removeByName(identifier string, project *projectfile.Project) {
 // Execute the hook remove command
 // Adds a statement to be run on the given hook
 func Execute(cmd *cobra.Command, args []string) {
-	identifier := args[0]
+	logging.Debug("Execute `hook remove`")
+
 	project, err := projectfile.Get()
 	if err != nil {
-		logging.Error("%v", err)
-		print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
+		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
 		return
 	}
 
-	if removebyHash(identifier, project) {
+	if removebyHash(Args.Identifier, project) {
 		return
 	}
 
-	mappedHooks, err := hookhelper.FilterHooks([]string{identifier})
+	mappedHooks, err := hookhelper.FilterHooks([]string{Args.Identifier})
 	if err != nil {
-		print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
-		logging.Error("%v", err)
+		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
 		return
 	}
 
-	numOfHooksFound := len(mappedHooks[identifier])
+	numOfHooksFound := len(mappedHooks[Args.Identifier])
 	if numOfHooksFound == 1 {
-		removeByName(identifier, project)
+		removeByName(Args.Identifier, project)
 
 	} else if numOfHooksFound >= 2 {
 		printOutput(mappedHooks)
 	}
-	logging.Debug("Execute `hook remove`")
 }
