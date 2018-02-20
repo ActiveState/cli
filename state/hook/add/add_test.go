@@ -78,7 +78,7 @@ func TestAddHookPass(t *testing.T) {
 
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
-	newHookName := "A_HOOK"
+	newHookName := "ACTIVATE"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{newHookName, "echo 'This is a command'"})
 	Cc.Execute()
