@@ -24,7 +24,8 @@ usage_tpl:
   other: "
 Usage:
   [[if .Runnable]][[BR]]
-  [[.UseLine]]
+  [[.UseLine]] 
+{{ range $key, $argument := .Arguments }}<{{$argument.Name}}> {{ end }}
   [[end]]
   [[if .HasAvailableSubCommands]][[BR]]
     [[.CommandPath]] [command]
@@ -58,6 +59,14 @@ Global Flags:
 [[BR]][[.InheritedFlags.FlagUsages | trimTrailingWhitespaces]]
 [[end]]
 
+{{if gt (len .Arguments) 0}}
+[[BR]][[BR]]
+Arguments:[[BR]]
+  {{ range $key, $argument := .Arguments }}
+  <{{$argument.Name}}> {{if gt (len $argument.Required) 0}}          {{else}}(optional){{end}} {{$argument.Description}}[[BR]]
+  {{ end }}
+{{end}}
+
 [[if .HasHelpSubCommands]]
 [[BR]][[BR]]
 Additional help topics: [[range .Commands]]
@@ -68,6 +77,8 @@ Additional help topics: [[range .Commands]]
 [[if .HasAvailableSubCommands]]
 [[BR]][[BR]]
 Use \"[[.CommandPath]] [command] --help\" for more information about a command.[[end]][[BR]]"
+arg_state_activate_url:
+  other: URL
 arg_state_activate_url_description:
   other: The URL of the repository that the project lives at
 flag_state_locale_description:
@@ -111,8 +122,24 @@ error_could_not_run_hooks:
 info_running_hook:
   other: "Running hook: {{.Name}}"
 hook_add_cannot_add_hook:
-  other: "Cannot add hook '{{.Hookname}} {{.Cmd}}'"
+  other: "Cannot add hook '{{.Hook}} {{.Command}}'"
 hook_remove_multiple_hooks:
   other: "More than one configured hook for name given.  Use ID instead."
 hook_remove_cannot_remove:
-  other: "Cannot remove hook '{{.Hookname}}' \n\t {{.Error}}"
+  other: "Cannot remove hook '{{.Identifier}}'"
+error_missing_arg:
+  other: "Argument missing: {{.Name}}"
+arg_hook_add_hook:
+  other: HOOK
+arg_hook_add_hook_description:
+  other: The hook that will be listened to
+error_hook_add_invalid_hook:
+  other: "Invalid hook given: {{.Name}}"
+arg_hook_add_command:
+  other: COMMAND
+arg_hook_add_command_description:
+  other: The command that will be ran
+arg_hook_remove_identifier:
+  other: IDENTIFIER
+arg_hook_remove_identifier_description:
+  other: Identifies what hook to remove, can be a hash or a hook name

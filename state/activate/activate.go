@@ -40,12 +40,30 @@ var Command = &commands.Command{
 			StringVar:   &Flags.Branch,
 		},
 	},
+
+	Arguments: []*commands.Argument{
+		&commands.Argument{
+			Name:        "arg_state_activate_url",
+			Description: "arg_state_activate_url_description",
+			Variable:    &Args.URL,
+		},
+		&commands.Argument{
+			Name:        "arg_state_activate_url",
+			Description: "arg_state_activate_url_description",
+			Variable:    &Args.URL,
+		},
+	},
 }
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
 	Path   string
 	Branch string
+}
+
+// Args hold the arg values passed through the command line
+var Args struct {
+	URL string
 }
 
 // Clones the repository specified by a given URI or ID and returns it. Any
@@ -88,9 +106,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	logging.Debug("Execute")
 	if len(args) > 0 {
-		scm, err := clone(args[0])
+		scm, err := clone(Args.URL)
 		if err != nil {
-			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": args[0]}))
+			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": Args.URL}))
 			return
 		}
 
