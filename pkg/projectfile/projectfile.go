@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"crypto/sha1"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,7 +22,7 @@ type Project struct {
 	Variables    []Variable `yaml:"variables"`
 	Hooks        []Hook     `yaml:"hooks"`
 	Commands     []Command  `yaml:"commands"`
-	path         string
+	path         string     // "private"
 }
 
 // Platform covers the platform structure of our yaml
@@ -84,11 +83,7 @@ type Command struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
-var currentProject *Project
-var projectHash string
-
-// configFilename from constants.ConfigFileName
-var configFilename = constants.ConfigFileName
+var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
 func Parse(filepath string) (*Project, error) {
@@ -130,39 +125,37 @@ func (p *Project) Save() error {
 	return nil
 }
 
-func hashConfig(data []byte) string {
-	hash := sha1.New()
-	return string(hash.Sum(data))
-}
-
-// GetProjectFilePath returns the path to the project activestate.yaml
-func GetProjectFilePath() string {
+// Returns the path to the project activestate.yaml
+func getProjectFilePath() string {
 	root, err := os.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
 		return ""
 	}
-	return filepath.Join(root, configFilename)
+	return filepath.Join(root, constants.ConfigFileName)
 }
 
 // Get the project configuration
-// If no project file exists in the current directory and a project file was
-// previously loaded (i.e. the state is activated), return the loaded project.
 func Get() (*Project, error) {
-	projectFilePath := GetProjectFilePath()
-	if _, err := os.Stat(projectFilePath); err != nil && currentProject != nil {
-		return currentProject, nil
+	if persistentProject != nil {
+		return persistentProject, nil
 	}
-	data, err := ioutil.ReadFile(projectFilePath)
-	hash := hashConfig(data)
+	projectFilePath := os.Getenv(constants.ActivatedStateConfigEnvVarName)
+	if projectFilePath == "" {
+		projectFilePath = getProjectFilePath()
+	}
+	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		projectHash = ""
 		return nil, failures.App.New("Cannot load config. Make sure your config file is in the project root")
 	}
-	if currentProject == nil || hash != projectHash {
-		currentProject, err = Parse(projectFilePath)
-		projectHash = hash
-	}
-	return currentProject, nil
+	return Parse(projectFilePath)
+}
+
+// Persist "activates" the given project and makes it such that subsequent calls
+// to Get() return this project.
+// Only one project can persist at a time.
+func (p *Project) Persist() {
+	persistentProject = p
+	os.Setenv(constants.ActivatedStateConfigEnvVarName, p.Path())
 }
