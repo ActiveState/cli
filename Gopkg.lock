@@ -95,6 +95,15 @@
   revision = "23c074d0eceb2b8a5bfdbb271ab780cde70f05a8"
 
 [[projects]]
+  name = "github.com/inconshreveable/go-update"
+  packages = [
+    ".",
+    "internal/binarydist",
+    "internal/osext"
+  ]
+  revision = "8152e7eb6ccf8679a64582a66b78519688d156ad"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -261,6 +270,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e9d8e6da4ab5b356d38b67387427fbcec151c0ab0c59d7e8b94370037b6883d1"
+  inputs-digest = "ade9d15fac6aad476a3f316c48f6eb4ad4a84d4799aa84dc581b9f153c079724"
   solver-name = "gps-cdcl"
   solver-version = 1
