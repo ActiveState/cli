@@ -28,6 +28,7 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
+	assert.Equal(t, "", project.Path, "Path should be empty")
 }
 
 func TestPlatformStruct(t *testing.T) {
@@ -186,9 +187,11 @@ func TestParse(t *testing.T) {
 
 	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
 	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
+
+	assert.NotEmpty(t, project.Path, "Path should be set")
 }
 
-func TestWrite(t *testing.T) {
+func TestSave(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 
 	if err != nil {
@@ -202,7 +205,8 @@ func TestWrite(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	assert.NoError(t, err, "Should create a temp file")
 
-	Write(tmpfile.Name(), project)
+	project.Path = tmpfile.Name()
+	project.Save()
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
@@ -221,6 +225,7 @@ func TestGetFail(t *testing.T) {
 	configFilename = "activestate.yml.does_not_exist"
 	config, _ := Get()
 	assert.Nil(t, config, "Config should not be set.")
+	configFilename = C.ConfigFileName // reset
 }
 
 // TestGet the config
@@ -229,7 +234,6 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	configFilename = "activestate.yaml"
 	config, _ := Get()
 	hash := projectHash
 	assert.NotNil(t, config, "Config should be set")
@@ -244,23 +248,23 @@ func TestGetCache(t *testing.T) {
 	Get()
 	newHash := projectHash
 	assert.Equal(t, originalhash, newHash, "Both hashes should not change")
+	configFilename = C.ConfigFileName // reset
 }
 
 //Test cache reset
 func TestGetNewCache(t *testing.T) {
-	configFilename = C.ConfigFileName
 	config, _ := Get()
 	originalhash := projectHash
 	config.Languages[0].Version = "0.0.0"
 	configFilename = "activestate.yml.sample.delete"
 	testConfigFile := GetProjectFilePath()
-	Write(testConfigFile, config)
+	config.Path = testConfigFile
+	config.Save()
 	Get()
 	newHash := projectHash
 	os.Remove(testConfigFile)
 	assert.NotEqual(t, originalhash, newHash, "Hashes should be different")
-	// Reset the configFilename
-	configFilename = C.ConfigFileName
+	configFilename = C.ConfigFileName // reset
 }
 
 //Test cache reset
@@ -271,8 +275,7 @@ func TestGetCacheReset(t *testing.T) {
 	deletedHash := projectHash
 	assert.Nil(t, config, "Config should NOT be set")
 	assert.Equal(t, deletedHash, "", "Hash should be empty")
-	configFilename = C.ConfigFileName
-
+	configFilename = C.ConfigFileName // reset
 }
 
 func TestGetActivated(t *testing.T) {
@@ -280,7 +283,6 @@ func TestGetActivated(t *testing.T) {
 	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	configFilename = "activestate.yaml"
 	config1, _ := Get()
 	os.Chdir(root)
 	config2, err := Get()

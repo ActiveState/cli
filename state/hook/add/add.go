@@ -55,6 +55,6 @@ func Execute(cmd *cobra.Command, args []string) {
 	newHook := projectfile.Hook{Name: hookname, Value: command}
 	project.Hooks = append(project.Hooks, newHook)
 
-	projectfile.Write(projectfile.GetProjectFilePath(), project)
+	project.Save()
 	logging.Debug("Execute `hook add`")
 }
