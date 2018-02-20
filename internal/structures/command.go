@@ -1,4 +1,4 @@
-package commands
+package structures
 
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
