@@ -140,7 +140,7 @@ func Get() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
-	projectFilePath := os.Getenv(constants.ActivatedStateConfigEnvVarName)
+	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath == "" {
 		projectFilePath = getProjectFilePath()
 	}
@@ -157,5 +157,5 @@ func Get() (*Project, error) {
 // Only one project can persist at a time.
 func (p *Project) Persist() {
 	persistentProject = p
-	os.Setenv(constants.ActivatedStateConfigEnvVarName, p.Path())
+	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }

@@ -21,5 +21,5 @@ const ConfigFileType = "yaml"
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 
-// ActivatedStateConfigEnvVarName is the name of the environment variable that specifies the path of the activestate.yaml config file.
-const ActivatedStateConfigEnvVarName = "ACTIVESTATE_ACTIVATED"
+// ProjectEnvVarName is the name of the environment variable that specifies the path of the activestate.yaml config file.
+const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
