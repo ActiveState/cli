@@ -28,7 +28,7 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
-	assert.Equal(t, "", project.Path, "Path should be empty")
+	assert.Equal(t, "", project.Path(), "Path should be empty")
 }
 
 func TestPlatformStruct(t *testing.T) {
@@ -188,7 +188,7 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
 	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
 
-	assert.NotEmpty(t, project.Path, "Path should be set")
+	assert.NotEmpty(t, project.Path(), "Path should be set")
 }
 
 func TestSave(t *testing.T) {
@@ -205,7 +205,7 @@ func TestSave(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	assert.NoError(t, err, "Should create a temp file")
 
-	project.Path = tmpfile.Name()
+	project.path = tmpfile.Name()
 	project.Save()
 
 	stat, err := tmpfile.Stat()
@@ -258,7 +258,7 @@ func TestGetNewCache(t *testing.T) {
 	config.Languages[0].Version = "0.0.0"
 	configFilename = "activestate.yml.sample.delete"
 	testConfigFile := GetProjectFilePath()
-	config.Path = testConfigFile
+	config.path = testConfigFile
 	config.Save()
 	Get()
 	newHash := projectHash

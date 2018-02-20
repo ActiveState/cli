@@ -23,7 +23,7 @@ type Project struct {
 	Variables    []Variable `yaml:"variables"`
 	Hooks        []Hook     `yaml:"hooks"`
 	Commands     []Command  `yaml:"commands"`
-	Path         string
+	path         string
 }
 
 // Platform covers the platform structure of our yaml
@@ -99,9 +99,14 @@ func Parse(filepath string) (*Project, error) {
 
 	project := Project{}
 	err = yaml.Unmarshal([]byte(dat), &project)
-	project.Path = filepath
+	project.path = filepath
 
 	return &project, err
+}
+
+// Path returns the project's activestate.yaml file path.
+func (p *Project) Path() string {
+	return p.path
 }
 
 // Save the project to its activestate.yaml file
@@ -111,7 +116,7 @@ func (p *Project) Save() error {
 		return err
 	}
 
-	f, err := os.Create(p.Path)
+	f, err := os.Create(p.Path())
 	defer f.Close()
 	if err != nil {
 		return err
