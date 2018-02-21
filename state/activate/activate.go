@@ -23,6 +23,31 @@ var Command = &commands.Command{
 	Name:        "activate",
 	Description: "activate_project",
 	Run:         Execute,
+
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "path",
+			Shorthand:   "",
+			Description: "flag_state_activate_path_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Path,
+		},
+		&commands.Flag{
+			Name:        "branch",
+			Shorthand:   "",
+			Description: "flag_state_activate_branch_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Branch,
+		},
+	},
+
+	Arguments: []*commands.Argument{
+		&commands.Argument{
+			Name:        "arg_state_activate_url",
+			Description: "arg_state_activate_url_description",
+			Variable:    &Args.URL,
+		},
+	},
 }
 
 // Flags hold the flag values passed through the command line
@@ -31,11 +56,9 @@ var Flags struct {
 	Branch string
 }
 
-func init() {
-	logging.Debug("init")
-
-	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Path, "path", "", locale.T("flag_state_activate_path_description"))
-	Command.GetCobraCmd().PersistentFlags().StringVar(&Flags.Branch, "branch", "", locale.T("flag_state_activate_branch_description"))
+// Args hold the arg values passed through the command line
+var Args struct {
+	URL string
 }
 
 // Clones the repository specified by a given URI or ID and returns it. Any
@@ -77,10 +100,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
-	if len(args) > 0 {
-		scm, err := clone(args[0])
+	if Args.URL != "" {
+		scm, err := clone(Args.URL)
 		if err != nil {
-			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": args[0]}))
+			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": Args.URL}))
 			return
 		}
 
