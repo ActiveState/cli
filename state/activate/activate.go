@@ -47,11 +47,6 @@ var Command = &commands.Command{
 			Description: "arg_state_activate_url_description",
 			Variable:    &Args.URL,
 		},
-		&commands.Argument{
-			Name:        "arg_state_activate_url",
-			Description: "arg_state_activate_url_description",
-			Variable:    &Args.URL,
-		},
 	},
 }
 
