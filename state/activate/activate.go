@@ -4,8 +4,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -50,7 +50,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 			scm.SetBranch(Flags.Branch)
 		}
 		if !scm.ConfigFileExists() {
-			return nil, failures.User.New(locale.T("error_state_activate_config_exists"))
+			return nil, failures.User.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
 		if err := scm.Clone(); err != nil {
 			print.Error(locale.T("error_state_activate"))

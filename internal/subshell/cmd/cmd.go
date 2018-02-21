@@ -1,4 +1,4 @@
-package bash
+package cmd
 
 import (
 	"os"
@@ -16,12 +16,12 @@ type SubShell struct {
 
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "bash"
+	return "cmd"
 }
 
 // RcFileTemplate - see subshell.SubShell
 func (v *SubShell) RcFileTemplate() string {
-	return "bashrc.sh"
+	return "config.bat"
 }
 
 // Binary - see subshell.SubShell
