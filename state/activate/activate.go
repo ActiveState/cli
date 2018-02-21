@@ -102,6 +102,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(err, locale.T("error_state_activate_config_load"))
 		return
 	}
+	project.Persist()
 
 	err = virtualenvironment.Activate(project)
 	if err != nil {
