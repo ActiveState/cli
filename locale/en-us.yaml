@@ -138,7 +138,7 @@ error_hook_add_invalid_hook:
 arg_hook_add_command:
   other: COMMAND
 arg_hook_add_command_description:
-  other: The command that will be ran
+  other: The command that will be run
 arg_hook_remove_identifier:
   other: IDENTIFIER
 arg_hook_remove_identifier_description:
