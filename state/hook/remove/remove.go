@@ -52,7 +52,7 @@ func removebyHash(identifier string, project *projectfile.Project) bool {
 			print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
 		}
 	}
-	projectfile.Write(projectfile.GetProjectFilePath(), project)
+	project.Save()
 	return removed
 }
 
@@ -85,7 +85,7 @@ func removeByName(identifier string, project *projectfile.Project) {
 			break
 		}
 	}
-	projectfile.Write(projectfile.GetProjectFilePath(), project)
+	project.Save()
 }
 
 // Execute the hook remove command

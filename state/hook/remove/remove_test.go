@@ -68,6 +68,7 @@ func TestRemoveByHash(t *testing.T) {
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
 	project.Hooks = append(project.Hooks, hook)
+	project.Save()
 
 	hash, _ := hookhelper.HashHookStruct(hook)
 	Cc := Command.GetCobraCmd()
@@ -93,6 +94,7 @@ func TestRemoveByName(t *testing.T) {
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
 	project.Hooks = append(project.Hooks, hook)
+	project.Save()
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
@@ -137,6 +139,7 @@ func TestRemoveByNameFail(t *testing.T) {
 	hook2 := projectfile.Hook{Name: cmdName, Value: "This is another command"}
 	project.Hooks = append(project.Hooks, hook1)
 	project.Hooks = append(project.Hooks, hook2)
+	project.Save()
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
