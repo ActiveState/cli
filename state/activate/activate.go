@@ -105,7 +105,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
-	if len(args) > 0 {
+	if Args.URL != "" {
 		scm, err := clone(Args.URL)
 		if err != nil {
 			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": Args.URL}))
