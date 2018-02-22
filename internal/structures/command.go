@@ -2,7 +2,7 @@ package structures
 
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 var T = locale.T

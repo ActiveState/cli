@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 // Command holds our main command definition

@@ -2,9 +2,7 @@ package subshell
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -13,6 +11,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	tempfile "github.com/mash/go-tempfile-suffix"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
@@ -44,11 +43,14 @@ type SubShell interface {
 	// SetRcFile sets the configured RC file, this should only be called by the subshell package
 	SetRcFile(os.File)
 
-	// Shell returns an identifiable string representing the shell, eg. bash, zsh
-	Shell() string
-
 	// RcFileTemplate returns the file name of the projects terminal config script used to generate project specific terminal configuration scripts, this script should live under assets/shells
 	RcFileTemplate() string
+
+	// RcFileExt returns the extension to use (including the dot), primarily aimed at windows
+	RcFileExt() string
+
+	// Shell returns an identifiable string representing the shell, eg. bash, zsh
+	Shell() string
 }
 
 // Activate the virtual environment
@@ -62,15 +64,16 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	} else {
 		binary = os.Getenv("SHELL")
 	}
-	name := path.Base(binary)
+
+	name := filepath.Base(binary)
 
 	var err error
-
+	var venv SubShell
 	switch name {
 	case "bash":
-		venv := bash.SubShell{}
+		venv = &bash.SubShell{}
 	case "cmd.exe":
-		venv := cmd.SubShell{}
+		venv = &cmd.SubShell{}
 	default:
 		return nil, failures.User.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
@@ -110,7 +113,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
 
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "state-subshell-rc")
+	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
 
 	if err != nil {
 		return nil, err

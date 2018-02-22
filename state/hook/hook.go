@@ -9,8 +9,8 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
-	"github.com/ActiveState/cobra"
 	"github.com/bndr/gotabulate"
+	"github.com/spf13/cobra"
 )
 
 // Command holds our main command definition

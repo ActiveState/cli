@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -125,12 +126,17 @@ func TestRunHook(t *testing.T) {
 	touch := filepath.Join(os.TempDir(), "state-test-runhook")
 	os.Remove(touch)
 
+	cmd := "echo . > "
+	if runtime.GOOS == "windows" {
+		cmd = "cmd /c " + cmd
+	}
+
 	dat := `
 name: name
 owner: owner
 hooks:
  - name: ACTIVATE
-   value: touch ` + touch
+   value: ` + cmd + touch
 	dat = strings.TrimSpace(dat)
 
 	err := yaml.Unmarshal([]byte(dat), &project)

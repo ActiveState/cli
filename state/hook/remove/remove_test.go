@@ -74,7 +74,7 @@ func TestRemoveByHash(t *testing.T) {
 	Cc.SetArgs([]string{hash})
 	Command.Execute()
 	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
-	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%V'", cmdName))
+	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
 
 	err = removeTmpDir()
 	assert.Nil(t, err, "Tried to remove tmp testing dir")
@@ -98,7 +98,7 @@ func TestRemoveByName(t *testing.T) {
 	Cc.SetArgs([]string{cmdName})
 	Command.Execute()
 	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
-	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%V'", cmdName))
+	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
 
 	err = removeTmpDir()
 	assert.Nil(t, err, "Tried to remove tmp testing dir")

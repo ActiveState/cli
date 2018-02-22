@@ -19,11 +19,6 @@ func (v *SubShell) Shell() string {
 	return "bash"
 }
 
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "bashrc.sh"
-}
-
 // Binary - see subshell.SubShell
 func (v *SubShell) Binary() string {
 	return v.binary
@@ -42,6 +37,16 @@ func (v *SubShell) RcFile() *os.File {
 // SetRcFile - see subshell.SubShell
 func (v *SubShell) SetRcFile(rcFile os.File) {
 	v.rcFile = &rcFile
+}
+
+// RcFileExt - see subshell.SubShell
+func (v *SubShell) RcFileExt() string {
+	return ""
+}
+
+// RcFileTemplate - see subshell.SubShell
+func (v *SubShell) RcFileTemplate() string {
+	return "bashrc.sh"
 }
 
 // Activate - see subshell.SubShell

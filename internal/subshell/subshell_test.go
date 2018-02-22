@@ -20,12 +20,11 @@ func TestActivate(t *testing.T) {
 	setup(t)
 	var wg sync.WaitGroup
 
-	os.Setenv("SHELL", "bash")
 	venv, err := Activate(&wg)
 
 	assert.NoError(t, err, "Should activate")
 
-	assert.Equal(t, "bash", venv.Shell(), "Should detect bash as the shell")
+	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
 	assert.True(t, venv.IsActive(), "Subshell should be active")
 
 	err = venv.Deactivate()
@@ -39,6 +38,7 @@ func TestActivateFailures(t *testing.T) {
 	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "foo")
+	os.Setenv("ComSpec", "foo")
 	_, err := Activate(&wg)
 
 	assert.Error(t, err, "Should produce an error because of unsupported shell")

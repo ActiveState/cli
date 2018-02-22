@@ -7,11 +7,16 @@ import (
 	"testing"
 
 	C "github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	funk "github.com/thoas/go-funk"
 )
+
+func init() {
+	defer shutdown()
+}
 
 func setup(t *testing.T) {
 	configNamespace = C.ConfigNamespace + "-test"
@@ -20,12 +25,15 @@ func setup(t *testing.T) {
 	configDirs.LocalPath, _ = filepath.Abs(".")
 	configDir = configDirs.QueryFolders(configdir.Global)[0]
 
-	os.RemoveAll(configDir.Path)
+	viper.Reset()
 
-	defer shutdown(t)
+	err := os.Remove(filepath.Join(configDir.Path, C.ConfigFileName))
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
-func shutdown(t *testing.T) {
+func shutdown() {
 	os.RemoveAll(configDir.Path)
 }
 
@@ -46,7 +54,8 @@ func TestInitCorrupt(t *testing.T) {
 
 	assert := assert.New(t)
 
-	configDir.Create(C.ConfigFileName)
+	file, _ := configDir.Create(C.ConfigFileName)
+	file.Close()
 
 	data := []byte("&")
 	path := filepath.Join(configDir.Path, C.ConfigFileName)
@@ -74,7 +83,8 @@ func TestSave(t *testing.T) {
 	path := filepath.Join(configDir.Path, C.ConfigFileName)
 
 	if !configDir.Exists(C.ConfigFileName) {
-		configDir.Create(C.ConfigFileName)
+		file, _ := configDir.Create(C.ConfigFileName)
+		file.Close()
 	}
 
 	// Prepare viper, which is a library that automates configuration
@@ -82,6 +92,8 @@ func TestSave(t *testing.T) {
 	viper.SetConfigName(C.ConfigName)
 	viper.SetConfigType(C.ConfigFileType)
 	viper.AddConfigPath(configDir.Path)
+
+	print.Line(configDir.Path)
 
 	if err := viper.ReadInConfig(); err != nil {
 		t.Fatal(err)

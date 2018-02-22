@@ -3,7 +3,7 @@ package structures
 import (
 	"testing"
 
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -1,6 +1,7 @@
 package locale
 
 import (
+	"path/filepath"
 	"testing"
 
 	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
@@ -19,7 +20,7 @@ func TestInitAndT(t *testing.T) {
 
 func TestGetLocalePath(t *testing.T) {
 	path := getLocalePath()
-	assert.Contains(t, path, constants.LibraryNamespace+constants.LibraryName+"/locale/", "Should detect locale path")
+	assert.Contains(t, path, filepath.FromSlash(constants.LibraryNamespace+constants.LibraryName+"/locale/"), "Should detect locale path")
 }
 
 func TestGetLocaleFlag(t *testing.T) {

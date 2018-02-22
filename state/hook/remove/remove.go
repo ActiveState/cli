@@ -9,7 +9,7 @@ import (
 	"github.com/bndr/gotabulate"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 // Command remove, sub command of hook
