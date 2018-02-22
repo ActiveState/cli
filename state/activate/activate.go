@@ -10,16 +10,16 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/internal/scm"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell"
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/spf13/cobra"
 )
 
 // Command holds our main command definition
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "activate",
 	Description: "activate_project",
 	Run:         Execute,

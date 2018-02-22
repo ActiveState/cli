@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 
 	// commands
 	"github.com/ActiveState/ActiveState-CLI/state/activate"
@@ -18,6 +18,7 @@ import (
 
 var exit = os.Exit
 
+// T links to locale.T
 var T = locale.T
 
 // Flags hold the flag values passed through the command line
@@ -26,7 +27,7 @@ var Flags struct {
 }
 
 // Command holds our main command definition
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "state",
 	Description: "state_description",
 	Run:         Execute,

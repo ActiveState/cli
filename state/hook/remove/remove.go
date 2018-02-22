@@ -3,7 +3,7 @@ package remove
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/structures"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/bndr/gotabulate"
@@ -13,7 +13,7 @@ import (
 )
 
 // Command remove, sub command of hook
-var Command = &structures.Command{
+var Command = &commands.Command{
 	Name:        "remove",
 	Description: "remove_description",
 	Run:         Execute,
