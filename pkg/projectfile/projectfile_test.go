@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	C "github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -28,6 +28,7 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
+	assert.Equal(t, "", project.Path(), "Path should be empty")
 }
 
 func TestPlatformStruct(t *testing.T) {
@@ -186,9 +187,11 @@ func TestParse(t *testing.T) {
 
 	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
 	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
+
+	assert.NotEmpty(t, project.Path(), "Path should be set")
 }
 
-func TestWrite(t *testing.T) {
+func TestSave(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 
 	if err != nil {
@@ -202,7 +205,8 @@ func TestWrite(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	assert.NoError(t, err, "Should create a temp file")
 
-	Write(tmpfile.Name(), project)
+	project.path = tmpfile.Name()
+	project.Save()
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
@@ -216,71 +220,55 @@ func TestWrite(t *testing.T) {
 	os.Remove(tmpfile.Name())
 }
 
-// Call GetProjectFilePath but doesn't exist
+// Call getProjectFilePath
+func TestGetProjectFilePath(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	cwd, err := os.Getwd()
+	assert.NoError(t, err, "Should fetch cwd")
+	os.Chdir(filepath.Join(root, "test"))
+
+	configPath := getProjectFilePath()
+	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
+
+	os.Chdir(cwd) // restore
+}
+
+// Call getProjectFilePath but doesn't exist
 func TestGetFail(t *testing.T) {
-	configFilename = "activestate.yml.does_not_exist"
 	config, _ := Get()
 	assert.Nil(t, config, "Config should not be set.")
+	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated")
 }
 
 // TestGet the config
 func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
+	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	configFilename = "activestate.yaml"
 	config, _ := Get()
-	hash := projectHash
 	assert.NotNil(t, config, "Config should be set")
-	assert.NotEqual(t, hash, "", "Cache hash should be set")
+	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated yet")
+
+	os.Chdir(cwd) // restore
 }
 
-//Test cache reset
-func TestGetCache(t *testing.T) {
-	configFilename = "activestate.yml.sample"
-	Get()
-	originalhash := projectHash
-	Get()
-	newHash := projectHash
-	assert.Equal(t, originalhash, newHash, "Both hashes should not change")
-}
-
-//Test cache reset
-func TestGetNewCache(t *testing.T) {
-	configFilename = C.ConfigFileName
-	config, _ := Get()
-	originalhash := projectHash
-	config.Languages[0].Version = "0.0.0"
-	configFilename = "activestate.yml.sample.delete"
-	testConfigFile := GetProjectFilePath()
-	Write(testConfigFile, config)
-	Get()
-	newHash := projectHash
-	os.Remove(testConfigFile)
-	assert.NotEqual(t, originalhash, newHash, "Hashes should be different")
-	// Reset the configFilename
-	configFilename = C.ConfigFileName
-}
-
-//Test cache reset
-func TestGetCacheReset(t *testing.T) {
-	configFilename = "activestate.yml.doesnotexist"
-	config, _ := Get()
-	deletedHash := projectHash
-	assert.Nil(t, config, "Config should NOT be set")
-	assert.Equal(t, deletedHash, "", "Hash should be empty")
-	configFilename = C.ConfigFileName
-
-}
-
-// Call GetProjectFilePath
-func TestGetProjectFilePath(t *testing.T) {
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
+func TestGetActivated(t *testing.T) {
+	root, _ := environment.GetRootPath()
+	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	configPath := GetProjectFilePath()
-	expectedPath := filepath.Join(root, "test", C.ConfigFileName)
-	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
+	config1, _ := Get()
+	config1.Persist()
+	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
+	os.Chdir(root)
+	config2, err := Get()
+	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
+	assert.Equal(t, config1, config2, "The same activated state is returned")
+	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is still set properly")
+
+	os.Chdir(cwd) // restore
 }
