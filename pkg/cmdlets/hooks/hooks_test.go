@@ -126,9 +126,9 @@ func TestRunHook(t *testing.T) {
 	touch := filepath.Join(os.TempDir(), "state-test-runhook")
 	os.Remove(touch)
 
-	cmd := "echo . > "
+	cmd := "touch "
 	if runtime.GOOS == "windows" {
-		cmd = "cmd /c " + cmd
+		cmd = "cmd /c echo . > " + cmd
 	}
 
 	dat := `
