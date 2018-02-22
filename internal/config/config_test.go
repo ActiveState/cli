@@ -29,7 +29,7 @@ func setup(t *testing.T) {
 
 	configPath := filepath.Join(configDir.Path, C.ConfigFileName)
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if _, err := os.Stat(configPath); err == nil {
 		err := os.Remove(configPath)
 		if err != nil {
 			panic(err.Error())
