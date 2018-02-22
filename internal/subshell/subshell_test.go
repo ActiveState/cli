@@ -20,6 +20,7 @@ func TestActivate(t *testing.T) {
 	setup(t)
 	var wg sync.WaitGroup
 
+	os.Setenv("SHELL", "bash")
 	venv, err := Activate(&wg)
 
 	assert.NoError(t, err, "Should activate")

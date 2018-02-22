@@ -27,9 +27,13 @@ func setup(t *testing.T) {
 
 	viper.Reset()
 
-	err := os.Remove(filepath.Join(configDir.Path, C.ConfigFileName))
-	if err != nil {
-		panic(err.Error())
+	configPath := filepath.Join(configDir.Path, C.ConfigFileName)
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		err := os.Remove(configPath)
+		if err != nil {
+			panic(err.Error())
+		}
 	}
 }
 
