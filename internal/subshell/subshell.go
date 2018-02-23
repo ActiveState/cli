@@ -41,7 +41,7 @@ type SubShell interface {
 	RcFile() *os.File
 
 	// SetRcFile sets the configured RC file, this should only be called by the subshell package
-	SetRcFile(os.File)
+	SetRcFile(*os.File)
 
 	// RcFileTemplate returns the file name of the projects terminal config script used to generate project specific terminal configuration scripts, this script should live under assets/shells
 	RcFileTemplate() string
@@ -86,7 +86,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	}
 
 	venv.SetBinary(binary)
-	venv.SetRcFile(*rcFile)
+	venv.SetRcFile(rcFile)
 	venv.Activate(wg)
 
 	return venv, err

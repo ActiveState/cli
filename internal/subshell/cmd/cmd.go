@@ -35,8 +35,8 @@ func (v *SubShell) RcFile() *os.File {
 }
 
 // SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile os.File) {
-	v.rcFile = &rcFile
+func (v *SubShell) SetRcFile(rcFile *os.File) {
+	v.rcFile = rcFile
 }
 
 // RcFileExt - see subshell.SubShell
