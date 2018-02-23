@@ -26,15 +26,27 @@ func GetDataDir() string {
 	return configDir.Path
 }
 
-func ensureConfigExists() {
+func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs = configdir.New(configNamespace, "cli")
 	configDirs.LocalPath, _ = filepath.Abs(".")
 	configDir = configDirs.QueryFolders(configdir.Global)[0]
 
 	if !configDir.Exists(C.ConfigFileName) {
-		configDir.Create(C.ConfigFileName)
+		configFile, err := configDir.Create(C.ConfigFileName)
+		if err != nil {
+			print.Error("Can't create config: %s", err)
+			exit(1)
+		}
+
+		err = configFile.Close()
+		if err != nil {
+			print.Error("Can't close config file: %s", err)
+			exit(1)
+		}
 	}
+
+	return nil
 }
 
 func readInConfig() {

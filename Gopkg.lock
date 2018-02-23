@@ -3,12 +3,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/ActiveState/cobra"
-  packages = ["."]
-  revision = "5857d322c82ad7e9921b623d683d541acf70922c"
-
-[[projects]]
-  branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
   revision = "1cb0f50c178f7a97aa1f099951759917bde593ca"
@@ -107,6 +101,12 @@
   version = "v1.7.4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mash/go-tempfile-suffix"
+  packages = ["."]
+  revision = "48f0f8a3a5ab605da31477ff5043493199e8fa9b"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -193,6 +193,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
+  version = "v0.0.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/spf13/jwalterweatherman"
   packages = ["."]
@@ -261,6 +267,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e9d8e6da4ab5b356d38b67387427fbcec151c0ab0c59d7e8b94370037b6883d1"
+  inputs-digest = "a72d56c9629198e8339b4d9b32886c2c26fa08f245365fe4a428cd31a604f4b2"
   solver-name = "gps-cdcl"
   solver-version = 1

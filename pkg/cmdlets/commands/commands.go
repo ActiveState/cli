@@ -5,7 +5,7 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 // T links to locale.T

@@ -10,7 +10,7 @@ import (
 	"github.com/bndr/gotabulate"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 // Args hold the arg values passed through the command line

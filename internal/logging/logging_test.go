@@ -151,7 +151,7 @@ func Test_Handler(t *testing.T) {
 	Warning("Bar Baz %s", 2)
 
 	if len(handler.output) != 2 {
-		t.Fatalf("Wrong len of output handler ", *handler)
+		t.Fatal("Wrong len of output handler ")
 	}
 
 	fmt.Println("Passed testHandler")

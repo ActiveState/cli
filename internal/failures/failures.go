@@ -36,6 +36,8 @@ func (e *AppFailure) Error() string {
 func (e *AppFailure) Handle(description string) {
 	if description == "" {
 		description = "App Error:"
+	} else {
+		print.Error(description)
 	}
 	logging.Error(description)
 	logging.Error(e.Error())
@@ -75,6 +77,8 @@ func Handle(err error, description string) {
 	default:
 		if description == "" {
 			description = "Unknown Error:"
+		} else {
+			print.Error(description)
 		}
 		logging.Error(description)
 		logging.Error(err.Error())

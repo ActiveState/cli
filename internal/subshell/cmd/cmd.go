@@ -1,4 +1,4 @@
-package bash
+package cmd
 
 import (
 	"os"
@@ -16,7 +16,7 @@ type SubShell struct {
 
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
-	return "bash"
+	return "cmd"
 }
 
 // Binary - see subshell.SubShell
@@ -41,12 +41,12 @@ func (v *SubShell) SetRcFile(rcFile *os.File) {
 
 // RcFileExt - see subshell.SubShell
 func (v *SubShell) RcFileExt() string {
-	return ""
+	return ".bat"
 }
 
 // RcFileTemplate - see subshell.SubShell
 func (v *SubShell) RcFileTemplate() string {
-	return "bashrc.sh"
+	return "config.bat"
 }
 
 // Activate - see subshell.SubShell
@@ -54,8 +54,9 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	v.wg = wg
 	wg.Add(1)
 
-	shellArgs := []string{"--rcfile", v.rcFile.Name()}
-	cmd := exec.Command(v.Binary(), shellArgs...)
+	shellArgs := []string{"/K", v.rcFile.Name()}
+
+	cmd := exec.Command("cmd", shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 
@@ -64,6 +65,9 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	var err error
 	go func() {
 		err = cmd.Wait()
+		if err != nil {
+			panic(err.Error())
+		}
 		v.wg.Done()
 	}()
 

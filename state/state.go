@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/state/hook"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 var exit = os.Exit

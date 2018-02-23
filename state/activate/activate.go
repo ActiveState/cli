@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 )
 
 // Command holds our main command definition
@@ -73,7 +73,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 			scm.SetBranch(Flags.Branch)
 		}
 		if !scm.ConfigFileExists() {
-			return nil, failures.User.New(locale.T("error_state_activate_config_exists"))
+			return nil, failures.User.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
 		if err := scm.Clone(); err != nil {
 			print.Error(locale.T("error_state_activate"))

@@ -2,19 +2,20 @@ package subshell
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	tempfile "github.com/mash/go-tempfile-suffix"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
+	"github.com/ActiveState/ActiveState-CLI/internal/subshell/cmd"
 	"github.com/alecthomas/template"
 )
 
@@ -36,17 +37,20 @@ type SubShell interface {
 	// SetBinary sets the configured binary, this should only be called by the subshell package
 	SetBinary(string)
 
-	// RcFile returns the configured RC file
+	// RcFile returns the parsed RcFileTemplate file to initialise the shell
 	RcFile() *os.File
 
 	// SetRcFile sets the configured RC file, this should only be called by the subshell package
-	SetRcFile(os.File)
+	SetRcFile(*os.File)
+
+	// RcFileTemplate returns the file name of the projects terminal config script used to generate project specific terminal configuration scripts, this script should live under assets/shells
+	RcFileTemplate() string
+
+	// RcFileExt returns the extension to use (including the dot), primarily aimed at windows
+	RcFileExt() string
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string
-
-	// ShellScript returns the file name for the rc script used to initialise the shell, this script should live under assets/shells
-	ShellScript() string
 }
 
 // Activate the virtual environment
@@ -54,16 +58,22 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
 	var T = locale.T
+	var binary string
+	if runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
+	} else {
+		binary = os.Getenv("SHELL")
+	}
 
-	binary := os.Getenv("SHELL")
-	name := path.Base(binary)
+	name := filepath.Base(binary)
 
-	var venv SubShell
 	var err error
-
+	var venv SubShell
 	switch name {
 	case "bash":
 		venv = &bash.SubShell{}
+	case "cmd.exe":
+		venv = &cmd.SubShell{}
 	default:
 		return nil, failures.User.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
@@ -76,7 +86,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	}
 
 	venv.SetBinary(binary)
-	venv.SetRcFile(*rcFile)
+	venv.SetRcFile(rcFile)
 	venv.Activate(wg)
 
 	return venv, err
@@ -85,7 +95,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func getRcFile(v SubShell) (*os.File, error) {
-	tplFile, err := files.AssetFS.Asset(filepath.Join("shells", v.ShellScript()))
+	tplFile, err := files.AssetFS.Asset(filepath.Join("shells", v.RcFileTemplate()))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +113,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
 
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "state-subshell-rc")
+	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
 
 	if err != nil {
 		return nil, err

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ActiveState/cobra"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
