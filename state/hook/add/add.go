@@ -36,7 +36,7 @@ var Command = &commands.Command{
 			Required:    true,
 			Validator: func(arg *commands.Argument, value string) error {
 				if !funk.Contains(KnownHooks, value) {
-					return failures.User.New(locale.T("error_hook_add_invalid_hook", map[string]interface{}{"name": value}))
+					return failures.User.New(locale.T("error_hook_add_invalid_hook", map[string]interface{}{"Name": value}))
 				}
 				return nil
 			},
