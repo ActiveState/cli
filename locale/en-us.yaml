@@ -20,6 +20,8 @@ hook_header_command:
   other: COMMAND
 hook_listing_hooks:
   other: Listing configured hooks
+hook_hooks_not_available:
+  other: Could not get configured hooks.
 usage_tpl:
   other: "
 Usage:

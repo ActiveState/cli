@@ -3,6 +3,7 @@ package hook
 import (
 	"fmt"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -87,7 +88,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	hookmap, err := hooks.FilterHooks(hooknames)
 	if err != nil {
-		logging.Error(fmt.Sprintf("%v", err))
+		err = failures.User.New(err.Error())
+		failures.Handle(err, locale.T("hook_hooks_not_available"))
+		return
 	}
 
 	printOutput(hookmap)
