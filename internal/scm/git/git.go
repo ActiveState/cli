@@ -37,6 +37,18 @@ func IsGitURI(uri string) bool {
 	return false
 }
 
+// WithinGithubRateLimit returns whether or not the given number of requests can
+// be processed by the Github API, which is rate-limited to 60 requests per hour
+// and 10 requests per minute.
+func WithinGithubRateLimit(requests int) bool {
+	client := github.NewClient(nil)
+	limits, _, err := client.RateLimits(context.Background())
+	if err != nil {
+		return true // assume yes
+	}
+	return limits.Core.Remaining >= requests
+}
+
 // Git represents a Git repository to clone locally.
 type Git struct {
 	URI    string // the URI of the repository to clone
