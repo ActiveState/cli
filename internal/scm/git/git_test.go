@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,6 +38,11 @@ func TestHumanishPart(t *testing.T) {
 }
 
 func TestConfigFileExists(t *testing.T) {
+	if !WithinGithubRateLimit(2) {
+		print.Warning("Exceeded Github API rate limit; skipping test 'TestConfigFileExists'")
+		return // this test needs to call the Github API twice
+	}
+
 	git := &Git{URI: "https://github.com/ActiveState/repo"}
 	assert.True(t, git.ConfigFileExists(), "The remote test repository has an ActiveState-CLI config file")
 

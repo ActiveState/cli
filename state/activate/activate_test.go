@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/ActiveState-CLI/internal/scm/git"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,6 +78,11 @@ func TestExecuteGitClone(t *testing.T) {
 }
 
 func TestExecuteGitCloneRemote(t *testing.T) {
+	if !git.WithinGithubRateLimit(3) {
+		print.Warning("Exceeded Github API rate limit; skipping test 'TestExecuteGitCloneRemote'")
+		return // this test needs to call the Github API 3 times
+	}
+
 	cwd, _ := os.Getwd() // store
 
 	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
