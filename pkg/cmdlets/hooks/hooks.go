@@ -77,7 +77,29 @@ func HashHooks(hooks []projectfile.Hook) (map[string]projectfile.Hook, error) {
 	return hashedHooks, nil
 }
 
+// HookExists Returns true if this hook and cmd are already configured
+func HookExists(hook projectfile.Hook, project *projectfile.Project) (bool, error) {
+	newHookHash, err := hook.Hash()
+	if err != nil {
+		return false, err
+	}
+
+	hooks := project.Hooks
+	for _, hook := range hooks {
+		hash, err := hook.Hash()
+		if err != nil {
+			return false, err
+		}
+		if hash == newHookHash {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // HashHooksFiltered is identical to HashHooks except that it takes a slice of names to be used as a filter
+// If no hook provided does the same as MapHooks
+// If no hooks found for given hooknames, returns nil
 func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string]projectfile.Hook, error) {
 	hashedHooks, err := HashHooks(hooks)
 	if err != nil {

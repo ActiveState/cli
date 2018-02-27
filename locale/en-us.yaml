@@ -123,6 +123,8 @@ info_running_hook:
   other: "Running hook: {{.Name}}"
 hook_add_cannot_add_hook:
   other: "Cannot add hook '{{.Hook}} {{.Command}}'"
+hook_add_cannot_add_existing_hook:
+  other: "Identical hook already configured"
 hook_remove_multiple_hooks:
   other: "More than one configured hook for name given.  Use ID instead."
 hook_remove_cannot_remove:
