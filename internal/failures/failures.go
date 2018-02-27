@@ -66,7 +66,11 @@ func (e *UserFailure) Error() string {
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 func (e *UserFailure) Handle(description string) {
-	print.Error(description)
+	if description != "" {
+		logging.Error(description)
+		print.Error(description)
+	}
+	logging.Error(e.Error())
 	print.Error(e.Error())
 }
 

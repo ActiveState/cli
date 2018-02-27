@@ -43,7 +43,7 @@ Examples:[[BR]]
 [[end]]
 
 [[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
-[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
+[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]][[BR]]
   [[rpad .Name .NamePadding ]] [[.Short]]
 [[end]][[end]][[end]]
 
@@ -126,7 +126,7 @@ hook_add_cannot_add_hook:
 hook_remove_multiple_hooks:
   other: "More than one configured hook for name given.  Use ID instead."
 hook_remove_cannot_remove:
-  other: "Cannot remove hook '{{.Identifier}}'"
+  other: "Cannot remove hook"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
 arg_hook_add_hook:
@@ -149,3 +149,13 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_hook_cannot_list:
   other: Cannot list hooks
+err_hook_cannot_find:
+  other: Cannot find hooks matching your query
+prompt_hook_choose_remove:
+  other: Which hook would you like to remove?
+prompt_hook_option:
+  other: "{{.Hook.Name}}: `{{.Command}}` ({{.Constraints}}{{.Hash}})"
+err_invalid_input:
+  other: Invalid input received
+hook_removed:
+  other: "Hook removed: {{.Hook.Name}} ({{.Hash}})"
