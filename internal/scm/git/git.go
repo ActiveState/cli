@@ -44,7 +44,7 @@ func WithinGithubRateLimit(requests int) bool {
 	client := github.NewClient(nil)
 	limits, _, err := client.RateLimits(context.Background())
 	if err != nil {
-		return true // assume yes
+		return false // assume no
 	}
 	return limits.Core.Remaining >= requests
 }
