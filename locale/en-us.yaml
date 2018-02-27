@@ -18,6 +18,8 @@ hook_header_hook:
   other: HOOK
 hook_header_command:
   other: COMMAND
+hook_header_index:
+  other: INDEX
 hook_listing_hooks:
   other: Listing configured hooks
 usage_tpl:
@@ -124,7 +126,7 @@ info_running_hook:
 hook_add_cannot_add_hook:
   other: "Cannot add hook '{{.Hook}} {{.Command}}'"
 hook_remove_multiple_hooks:
-  other: "More than one configured hook for name given.  Use ID instead."
+  other: "More than one configured hook for name given.  Use 'INDEX' listed above."
 hook_remove_cannot_remove:
   other: "Cannot remove hook '{{.Identifier}}'"
 error_missing_arg:
@@ -143,3 +145,7 @@ arg_hook_remove_identifier:
   other: IDENTIFIER
 arg_hook_remove_identifier_description:
   other: Identifies what hook to remove, can be a hash or a hook name
+hook_remove_hook_not_found:
+  other: Hook '{{.Hookname}}' not configured.  Confirm hookname.
+hook_remove_index_out_of_range:
+  other: Chosen index is invalid.  Please choose valid index to remove.
