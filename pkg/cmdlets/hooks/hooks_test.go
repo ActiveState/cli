@@ -1,7 +1,6 @@
 package hooks
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,26 +9,23 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
 
 var testhooks = []projectfile.Hook{
 	projectfile.Hook{
-		"firsthook",
-		"This is a command",
-		projectfile.Constraint{"windows", "64x"},
+		Name:  "firsthook",
+		Value: "This is a command",
 	},
 	projectfile.Hook{
-		"firsthook",
-		"This is a command also",
-		projectfile.Constraint{"windows", "64x"},
+		Name:  "firsthook",
+		Value: "This is a command also",
 	},
 	projectfile.Hook{
-		"secondhook",
-		"Believe it or not, this is a command too (not really)",
-		projectfile.Constraint{"windows", "64x"},
+		Name:        "secondhook",
+		Value:       "Believe it or not, this is a command too (not really)",
+		Constraints: projectfile.Constraint{Platform: "windows", Environment: "64x"},
 	},
 }
 
@@ -38,51 +34,29 @@ func TestFilterHooks(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 	// Test is limited with a filter
-	filteredHooksMap, err := FilterHooks([]string{"FIRST_INSTALL"})
+	filteredHooksMap, err := HashHooksFiltered(testhooks, []string{"firsthook"})
 	assert.NoError(t, err, "Should not fail to filter hooks.")
-	assert.Equal(t, 1, len(filteredHooksMap), "There should be only one hook in the map")
-	assert.Equal(t, 0, len(filteredHooksMap["AFTER_UPDATE"]), "`AFTER_UPDATE` should not be in the map so this should be an empty list")
+	assert.Equal(t, 2, len(filteredHooksMap), "There should be two hooks in the map")
+
+	for _, v := range filteredHooksMap {
+		assert.NotEqual(t, "secondhook", v.Name, "`secondhook` should not be in the map")
+	}
 
 	// Test not limited with no filter
-	filteredHooksMap, err = FilterHooks([]string{})
+	filteredHooksMap, err = HashHooksFiltered(testhooks, []string{})
 	assert.NoError(t, err, "Should not fail to filter hooks.")
-	assert.NotNil(t, 2, len(filteredHooksMap), "There should be 2 hooks in the hooks map")
+	assert.NotNil(t, 3, len(filteredHooksMap), "There should be 2 hooks in the hooks map")
 
 	// Test no results with non existent or set filter
-	filteredHooksMap, err = FilterHooks([]string{"does_not_exist"})
+	filteredHooksMap, err = HashHooksFiltered(testhooks, []string{"does_not_exist"})
 	assert.NoError(t, err, "Should not fail to filter hooks.")
-	assert.Nil(t, filteredHooksMap, "There should be zero hooks in the hook map.")
+	assert.Zero(t, len(filteredHooksMap), "There should be zero hooks in the hook map.")
 }
 
-func TestHashHookStruct(t *testing.T) {
-	binHash, _ := hashstructure.Hash(testhooks[0], nil)
-	expected := fmt.Sprintf("%X", binHash)
-	actual, err := HashHookStruct(testhooks[0])
-	assert.NoError(t, err, "Should not fail to hash hook struct.")
-	assert.Equal(t, expected, actual, "The hash of the same struct should be the same")
-}
-
-func checkMapKeys(mappedhooks map[string][]Hashedhook, keys []string) bool {
-	numFound := 0
-	for key := range mappedhooks {
-		for _, expectedKey := range keys {
-			if key == expectedKey {
-				numFound++
-			}
-		}
-	}
-	if numFound != len(keys) {
-		return false
-	}
-	return true
-}
 func TestMapHooks(t *testing.T) {
-	keys := []string{"firsthook", "secondhook"}
-	mappedhooks, err := MapHooks(testhooks)
+	mappedhooks, err := HashHooks(testhooks)
 	assert.NoError(t, err, "Should not fail to map hooks.")
-	assert.True(t, checkMapKeys(mappedhooks, keys), fmt.Sprintf("Map should have keys '%v' and '%v' but does not: %v", keys[0], keys[1], mappedhooks))
-	assert.Equal(t, 2, len(mappedhooks), "There should only be 2 triggers/keys in the map")
-	assert.Equal(t, 2, len(mappedhooks["firsthook"]), "There should be 2 commands for the `firsthook` hook")
+	assert.Equal(t, 3, len(mappedhooks), "There should only be 3 entries in the map")
 }
 
 func TestGetEffectiveHooks(t *testing.T) {

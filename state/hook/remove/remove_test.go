@@ -21,7 +21,8 @@ var tempDir string
 // Moves process into a tmp dir and brings a copy of project file with it
 func moveToTmpDir() error {
 	var err error
-	startingDir, _ = os.Getwd()
+	startingDir, _ = environment.GetRootPath()
+	startingDir = filepath.Join(startingDir, "test")
 	tempDir, err = ioutil.TempDir("", "ActiveSta bte-CLI-")
 	if err != nil {
 		return err
@@ -70,11 +71,13 @@ func TestRemoveByHash(t *testing.T) {
 	project.Hooks = append(project.Hooks, hook)
 	project.Save()
 
-	hash, _ := hookhelper.HashHookStruct(hook)
+	hash, _ := hook.Hash()
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{hash})
 	Command.Execute()
-	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
+
+	project, _ = projectfile.Get()
+	mappedHooks, _ := hookhelper.HashHooksFiltered(project.Hooks, []string{cmdName})
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
 
 	err = removeTmpDir()
@@ -99,8 +102,10 @@ func TestRemoveByName(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
 	Command.Execute()
-	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
-	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
+
+	project, _ = projectfile.Get()
+	mappedHooks, _ := hookhelper.HashHooksFiltered(project.Hooks, []string{cmdName})
+	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v', found: %v", cmdName, mappedHooks))
 
 	err = removeTmpDir()
 	assert.Nil(t, err, "Tried to remove tmp testing dir")
@@ -144,8 +149,9 @@ func TestRemoveByNameFail(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{cmdName})
 	Command.Execute()
-	mappedHooks, _ := hookhelper.FilterHooks([]string{cmdName})
-	assert.Equal(t, 2, len(mappedHooks[cmdName]), fmt.Sprintf("There should still be two commands of the same name in the config: '%v'", cmdName))
+
+	mappedHooks, _ := hookhelper.HashHooksFiltered(project.Hooks, []string{cmdName})
+	assert.Equal(t, 2, len(mappedHooks), fmt.Sprintf("There should still be two commands of the same name in the config: '%v'", cmdName))
 
 	err = removeTmpDir()
 	assert.Nil(t, err, "Tried to remove tmp testing dir")
