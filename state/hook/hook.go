@@ -88,7 +88,6 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	hookmap, err := hooks.FilterHooks(hooknames)
 	if err != nil {
-		err = failures.User.New(err.Error())
 		failures.Handle(err, locale.T("hook_hooks_not_available"))
 		return
 	}
