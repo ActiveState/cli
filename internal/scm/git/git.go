@@ -67,6 +67,9 @@ func (g *Git) ConfigFileExists() bool {
 		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI, ".git"))[1:]
 		reader, err := client.Repositories.DownloadContents(context.Background(), matches[0], matches[1], constants.ConfigFileName, nil)
 		if err != nil {
+			if _, ok := err.(*github.RateLimitError); ok {
+				return true // assume on a dev machine, so return true
+			}
 			return false // assume does not exist
 		}
 		reader.Close()
