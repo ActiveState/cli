@@ -91,6 +91,8 @@ func MapHooks(hooks []projectfile.Hook) (map[string][]Hashedhook, error) {
 }
 
 // FilterHooks includes only hooks requested in a hookmap
+// If no hook provided does the same as MapHooks
+// If no hooks found for given hooknames, returns nil
 func FilterHooks(hooknames []string) (map[string][]Hashedhook, error) {
 	logging.Debug("filterHooks")
 	config, err := projectfile.Get()

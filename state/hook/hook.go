@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
+	"github.com/ActiveState/ActiveState-CLI/state/hook/remove"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +38,7 @@ var flags struct {
 
 func init() {
 	Command.Append(add.Command)
-	// Command.Append(remove.Command)
+	Command.Append(remove.Command)
 }
 
 func getFilters(cmd *cobra.Command) []string {

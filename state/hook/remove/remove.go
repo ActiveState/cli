@@ -1,6 +1,12 @@
 package remove
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
@@ -34,8 +40,29 @@ var Command = &commands.Command{
 	},
 }
 
+// Print what we ended up with
+func printOutput(hookmap map[string][]hookhelper.Hashedhook) {
+	var T = locale.T
+
+	print.Line()
+	print.Info(T("hook_listing_hooks"))
+	print.Line()
+
+	rows := [][]interface{}{}
+	for k, cmds := range hookmap {
+		for idx := range cmds {
+			rows = append(rows, []interface{}{idx + 1, cmds[idx].Hash, k, cmds[idx].Hook.Value})
+		}
+	}
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{T("hook_header_index"), T("hook_header_id"), T("hook_header_hook"), T("hook_header_command")})
+	t.SetAlign("left")
+	print.Line(t.Render("simple"))
+	print.Line(locale.T("hook_remove_multiple_hooks"))
+}
+
 //  Cycle through the configured hooks, hash then remove hook if matches, save, exit
-func removebyHash(identifier string, project *projectfile.Project) bool {
+func removeByHash(identifier string, project *projectfile.Project) bool {
 	hooks := project.Hooks
 	var removed = false
 	for i, hook := range hooks {
@@ -54,26 +81,6 @@ func removebyHash(identifier string, project *projectfile.Project) bool {
 	return removed
 }
 
-// Print what we ended up with
-func printOutput(hookmap map[string][]hookhelper.Hashedhook) {
-	var T = locale.T
-
-	print.Info(T("hook_listing_hooks"))
-	print.Line()
-
-	rows := [][]interface{}{}
-	for k, cmds := range hookmap {
-		for idx := range cmds {
-			rows = append(rows, []interface{}{cmds[idx].Hash, k, cmds[idx].Hook.Value})
-		}
-	}
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{T("hook_header_id"), T("hook_header_hook"), T("hook_header_command")})
-	t.SetAlign("left")
-	print.Line(t.Render("simple"))
-	print.Line(locale.T("hook_remove_multiple_hooks"))
-}
-
 func removeByName(identifier string, project *projectfile.Project) {
 	hooks := project.Hooks
 	for i, hook := range hooks {
@@ -86,6 +93,19 @@ func removeByName(identifier string, project *projectfile.Project) {
 	project.Save()
 }
 
+// Index is the human readable idx, ie. first pos is 1, not 0
+func removeByIndex(idx int, hooks []hookhelper.Hashedhook, project *projectfile.Project) {
+	// Check if it's out of range
+	// otherwise carry on with next line
+	hookLen := len(hooks)
+	if hookLen < idx || 0 > idx {
+		err := failures.User.New(locale.T("hook_remove_index_out_of_range"))
+		failures.Handle(err, "")
+		return
+	}
+	removeByHash(hooks[idx-1].Hash, project)
+}
+
 // Execute the hook remove command
 // Adds a statement to be run on the given hook
 func Execute(cmd *cobra.Command, args []string) {
@@ -93,25 +113,37 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	project, err := projectfile.Get()
 	if err != nil {
+		err = failures.User.New(err.Error())
 		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
 		return
 	}
 
-	if removebyHash(Args.Identifier, project) {
+	if removeByHash(Args.Identifier, project) {
 		return
 	}
 
-	mappedHooks, err := hookhelper.FilterHooks([]string{Args.Identifier})
+	filteredMappedHooks, err := hookhelper.FilterHooks([]string{Args.Identifier})
 	if err != nil {
 		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
 		return
 	}
 
-	numOfHooksFound := len(mappedHooks[Args.Identifier])
-	if numOfHooksFound == 1 {
+	fileredHooks := filteredMappedHooks[Args.Identifier]
+	numOfHooksFound := len(fileredHooks)
+	if numOfHooksFound < 1 { // Hook not found
+		print.Info(locale.T("hook_remove_hook_not_found", map[string]interface{}{"Hookname": Args.Identifier}))
+	} else if numOfHooksFound == 1 { // Hook found! Remove it.
 		removeByName(Args.Identifier, project)
-
-	} else if numOfHooksFound >= 2 {
-		printOutput(mappedHooks)
+	} else if numOfHooksFound >= 2 { // Multiple hooks found.  List them.
+		printOutput(filteredMappedHooks)
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Enter text: ")
+		index, _ := reader.ReadString('\n')
+		idx, err := strconv.Atoi(strings.TrimSpace(index))
+		if err == nil {
+			removeByIndex(idx, fileredHooks, project)
+		} else {
+			failures.Handle(err, "Couldn't remove indexed hook")
+		}
 	}
 }
