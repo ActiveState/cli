@@ -143,3 +143,9 @@ arg_hook_remove_identifier:
   other: IDENTIFIER
 arg_hook_remove_identifier_description:
   other: Identifies what hook to remove, can be a hash or a hook name
+prompt_choose_hook:
+  other: Which hook do you wish to remove?
+err_no_projectfile:
+  other: No activestate.yaml file exists in the current working directory
+err_hook_cannot_list:
+  other: Cannot list hooks

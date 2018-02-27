@@ -1,13 +1,16 @@
 package projectfile
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -74,6 +77,15 @@ type Hook struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
+}
+
+// Hash return a hashed version of the hook
+func (h *Hook) Hash() (string, error) {
+	hash, err := hashstructure.Hash(h, nil)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%X", hash), nil
 }
 
 // Command covers the command structure, which goes under Project
@@ -147,7 +159,7 @@ func Get() (*Project, error) {
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		return nil, failures.App.New("Cannot load config. Make sure your config file is in the project root")
+		return nil, failures.User.New(locale.T("err_no_projectfile"))
 	}
 	return Parse(projectFilePath)
 }
