@@ -65,7 +65,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		if numOfHooksFound == 1 && Args.Identifier != "" {
 			removed = removeByName(project, Args.Identifier)
 		} else if numOfHooksFound > 0 {
-			removed = removeByPrompt(project, Args.Identifier) // under construction
+			removed = removeByPrompt(project, Args.Identifier)
 		} else {
 			failures.Handle(failures.User.New(locale.T("err_hook_cannot_find")), "")
 		}
