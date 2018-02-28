@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/AlecAivazis/survey"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/spf13/cobra"

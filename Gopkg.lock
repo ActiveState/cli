@@ -8,12 +8,6 @@
   revision = "1cb0f50c178f7a97aa1f099951759917bde593ca"
 
 [[projects]]
-  name = "github.com/AlecAivazis/survey"
-  packages = ["."]
-  revision = "9f89d9dd66613216993dc300f9f3dbae9c3c9bda"
-  version = "v1.4.2"
-
-[[projects]]
   branch = "master"
   name = "github.com/alecthomas/template"
   packages = [
