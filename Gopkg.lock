@@ -119,6 +119,12 @@
   version = "v0.0.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mgutz/ansi"
+  packages = ["."]
+  revision = "9520e82c474b0a04dd04f8a40959027271bab992"
+
+[[projects]]
   name = "github.com/mholt/archiver"
   packages = ["."]
   revision = "cdc68dd1f170b8dfc1a0d2231b5bb0967ed67006"
@@ -259,6 +265,15 @@
   revision = "4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1"
 
 [[projects]]
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  packages = [
+    "core",
+    "terminal"
+  ]
+  revision = "9f89d9dd66613216993dc300f9f3dbae9c3c9bda"
+  version = "v1.4.2"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
@@ -267,6 +282,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a72d56c9629198e8339b4d9b32886c2c26fa08f245365fe4a428cd31a604f4b2"
+  inputs-digest = "2f28c1053881a09b17feb587e66ac36eb12ed22145726d909b2f5be1729a05c0"
   solver-name = "gps-cdcl"
   solver-version = 1

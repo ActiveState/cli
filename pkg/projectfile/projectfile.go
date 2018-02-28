@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -83,6 +84,7 @@ type Hook struct {
 func (h *Hook) Hash() (string, error) {
 	hash, err := hashstructure.Hash(h, nil)
 	if err != nil {
+		logging.Errorf("Cannot hash hook: %v", err)
 		return "", err
 	}
 	return fmt.Sprintf("%X", hash), nil
@@ -156,6 +158,7 @@ func Get() (*Project, error) {
 	if projectFilePath == "" {
 		projectFilePath = getProjectFilePath()
 	}
+	print.Line(projectFilePath)
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)

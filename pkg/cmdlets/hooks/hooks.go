@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	funk "github.com/thoas/go-funk"
@@ -83,7 +84,6 @@ func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string
 	if err != nil {
 		return nil, err
 	}
-
 	if len(hookNames) == 0 {
 		return hashedHooks, err
 	}
@@ -96,4 +96,56 @@ func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string
 	}
 
 	return hashedHooksFiltered, nil
+}
+
+// PromptOptions returns an array of strings that can be consumed by the survey library we use,
+// the second return argument contains a map that connects each item to a hash
+func PromptOptions(project *projectfile.Project, filter string) ([]string, map[string]string, error) {
+	optionsMap := make(map[string]string)
+	options := []string{}
+
+	filters := []string{}
+	if filter != "" {
+		filters = append(filters, filter)
+	}
+
+	hashedHooks, err := HashHooksFiltered(project.Hooks, filters)
+	if err != nil {
+		return options, optionsMap, err
+	}
+
+	if len(hashedHooks) == 0 {
+		return options, optionsMap, failures.User.New(locale.T("err_hook_cannot_find"))
+	}
+
+	for hash, hook := range hashedHooks {
+		command := strings.Replace(hook.Value, "\n", " ", -1)
+		if len(command) > 50 {
+			command = command[0:50] + ".."
+		}
+
+		constraints := []string{}
+		if hook.Constraints.Environment != "" {
+			constraints = append(constraints, hook.Constraints.Environment)
+		}
+		if hook.Constraints.Platform != "" {
+			constraints = append(constraints, hook.Constraints.Platform)
+		}
+
+		var constraintString string
+		if len(constraints) > 0 {
+			constraintString = strings.Join(constraints, ", ") + ", "
+		}
+
+		value := locale.T("prompt_hook_option", map[string]interface{}{
+			"Hash":        hash,
+			"Hook":        hook,
+			"Command":     command,
+			"Constraints": constraintString,
+		})
+		options = append(options, value)
+		optionsMap[value] = hash
+	}
+
+	return options, optionsMap, nil
 }
