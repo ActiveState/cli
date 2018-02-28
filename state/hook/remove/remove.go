@@ -77,13 +77,11 @@ func Execute(cmd *cobra.Command, args []string) {
 
 //  Cycle through the configured hooks, hash then remove hook if matches, save, exit
 func removebyHash(project *projectfile.Project, hashToRemove string) *projectfile.Hook {
-	newHooks := project.Hooks
 	var removed *projectfile.Hook
-	for i, hook := range newHooks {
+	for i, hook := range project.Hooks {
 		hash, err := hook.Hash()
 		if hashToRemove == hash {
-			newHooks := append(newHooks[:i], newHooks[i+1:]...)
-			project.Hooks = newHooks
+			project.Hooks = append(project.Hooks[:i], project.Hooks[i+1:]...)
 			removed = &hook
 			break
 		} else if err != nil {

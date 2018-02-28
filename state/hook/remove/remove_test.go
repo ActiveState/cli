@@ -154,6 +154,23 @@ func TestRemovePrompt(t *testing.T) {
 	assert.Equal(t, optionsMap[testPromptResultOverride], hash, "Should have removed one hook")
 }
 
+func TestRemovebyHash(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	project, err := projectfile.Get()
+	hookLen := len(project.Hooks)
+	assert.NoError(t, err, "Should get project file")
+
+	hash, err := project.Hooks[0].Hash()
+	assert.NoError(t, err, "Should get hash")
+	removed := removebyHash(project, hash)
+	assert.NotNil(t, removed, "Received a removed hook")
+
+	project, _ = projectfile.Get()
+	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
+}
+
 // This test shoudln't remove anything as there are multiple hooks configured for the same hook name
 func TestRemoveByNameFail(t *testing.T) {
 	setup(t)
