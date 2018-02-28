@@ -59,7 +59,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 		numOfHooksFound := len(hashedHooks)
 		if numOfHooksFound == 1 && Args.Identifier != "" {
-			removed = removeByName(project)
+			removed = removeByName(project, Args.Identifier)
 		} else if numOfHooksFound > 0 {
 			removed = removeByPrompt(project) // under construction
 		} else {
@@ -93,13 +93,11 @@ func removebyHash(project *projectfile.Project, hashToRemove string) *projectfil
 	return removed
 }
 
-func removeByName(project *projectfile.Project) *projectfile.Hook {
-	newHooks := project.Hooks
+func removeByName(project *projectfile.Project, name string) *projectfile.Hook {
 	var removed *projectfile.Hook
-	for i, hook := range newHooks {
-		if Args.Identifier == hook.Name {
-			newHooks := append(newHooks[:i], newHooks[i+1:]...)
-			project.Hooks = newHooks
+	for i, hook := range project.Hooks {
+		if name == hook.Name {
+			project.Hooks = append(project.Hooks[:i], project.Hooks[i+1:]...)
 			removed = &hook
 			break
 		}
