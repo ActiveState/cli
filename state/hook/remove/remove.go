@@ -51,7 +51,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	removed = removeByHash(project, Args.Identifier)
 
 	if removed == nil {
-		hashedHooks, err := hooks.HashHooksFiltered(project.Hooks, []string{Args.Identifier})
+		filters := []string{}
+		if Args.Identifier != "" {
+			filters = append(filters, Args.Identifier)
+		}
+		hashedHooks, err := hooks.HashHooksFiltered(project.Hooks, filters)
 		if err != nil {
 			failures.Handle(err, locale.T("hook_remove_cannot_remove"))
 			return

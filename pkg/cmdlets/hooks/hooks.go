@@ -84,7 +84,7 @@ func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string
 	if err != nil {
 		return nil, err
 	}
-	if len(hookNames) == 0 || (len(hookNames) == 1 && hookNames[0] == "") {
+	if len(hookNames) == 0 {
 		return hashedHooks, err
 	}
 
@@ -104,7 +104,12 @@ func PromptOptions(project *projectfile.Project, filter string) ([]string, map[s
 	optionsMap := make(map[string]string)
 	options := []string{}
 
-	hashedHooks, err := HashHooksFiltered(project.Hooks, []string{filter})
+	filters := []string{}
+	if filter != "" {
+		filters = append(filters, filter)
+	}
+
+	hashedHooks, err := HashHooksFiltered(project.Hooks, filters)
 	if err != nil {
 		return options, optionsMap, err
 	}
