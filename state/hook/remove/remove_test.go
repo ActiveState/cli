@@ -91,7 +91,7 @@ func TestExecute(t *testing.T) {
 	assert.Equal(true, true, "Execute didn't panic")
 }
 
-func TestRemoveByHash(t *testing.T) {
+func TestRemoveByHashCmd(t *testing.T) {
 	setup(t)
 	defer teardown()
 
@@ -113,7 +113,7 @@ func TestRemoveByHash(t *testing.T) {
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
 }
 
-func TestRemoveByName(t *testing.T) {
+func TestRemoveByNameCmd(t *testing.T) {
 	setup(t)
 	defer teardown()
 
@@ -147,14 +147,14 @@ func TestRemovePrompt(t *testing.T) {
 
 	testPromptResultOverride = options[0]
 
-	removed := removeByPrompt(project)
+	removed := removeByPrompt(project, "")
 	assert.NotNil(t, removed, "Received a removed hook")
 
 	hash, _ := removed.Hash()
 	assert.Equal(t, optionsMap[testPromptResultOverride], hash, "Should have removed one hook")
 }
 
-func TestRemovebyHash(t *testing.T) {
+func TestRemoveByHash(t *testing.T) {
 	setup(t)
 	defer teardown()
 
@@ -164,7 +164,7 @@ func TestRemovebyHash(t *testing.T) {
 
 	hash, err := project.Hooks[0].Hash()
 	assert.NoError(t, err, "Should get hash")
-	removed := removebyHash(project, hash)
+	removed := removeByHash(project, hash)
 	assert.NotNil(t, removed, "Received a removed hook")
 
 	project, _ = projectfile.Get()
@@ -188,7 +188,7 @@ func TestRemovebyName(t *testing.T) {
 }
 
 // This test shoudln't remove anything as there are multiple hooks configured for the same hook name
-func TestRemoveByNameFail(t *testing.T) {
+func TestRemoveByNameFailCmd(t *testing.T) {
 	setup(t)
 	defer teardown()
 
