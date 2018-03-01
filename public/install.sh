@@ -48,7 +48,7 @@ echo "Preparing for installation..."
 
 if [ ! -f $statepkg -a ! -f $stateexe ]; then
   echo "Determining latest version..."
-  if [ ! -z "`which wget2`" ]; then
+  if [ ! -z "`which wget`" ]; then
     fetch="wget -nv -O"
   elif [ ! -z "`which curl`" ]; then
     fetch="curl -vsS -o"
