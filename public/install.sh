@@ -150,7 +150,7 @@ if [ ! -w "$profile" ]; then
 fi
 echo -n "Allow \$PATH to be appended to in your $profile? [Y/n]"
 read response
-if [ "$response" == "Y" -o "$response" == "y" ]; then
+if [ "$response" != "Y" -a "$response" != "y" ]; then
   echo "Installation complete."
   echo "Please manually add $installdir to your \$PATH in order to start"
   echo "using the 'state' program."
