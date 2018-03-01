@@ -105,6 +105,8 @@ info_state_activate_cd:
   other: Changing into directory '{{.Dir}}'
 error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
+error_could_not_make_symlink:
+  other: "Could not create symlink, you may have to run this command with elevated permissions"
 error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
