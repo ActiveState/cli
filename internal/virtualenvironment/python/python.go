@@ -51,11 +51,11 @@ func (v *VirtualEnvironment) SetLanguageMeta(language *projectfile.Language) {
 // LoadLanguageFromPath - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadLanguageFromPath(path string) error {
 	err := os.Symlink(path, filepath.Join(v.DataDir(), "language"))
-	var newErr error
 	if err != nil {
-		newErr = failures.User.New(locale.T("error_could_not_make_symlink"))
+		logging.Error(err.Error())
+		return failures.User.New(locale.T("error_could_not_make_symlink"))
 	}
-	return newErr
+	return nil
 }
 
 // LoadPackageFromPath - see virtualenvironment.VirtualEnvironment
