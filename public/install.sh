@@ -148,7 +148,7 @@ if [ ! -w "$profile" ]; then
   echo "using the 'state' program."
   exit 1
 fi
-echo -n "Allow \$PATH to be appended to in your $profile? [Y/n]"
+echo -n "Allow \$PATH to be appended to in your $profile? [y/N]"
 read response
 if [ "$response" != "Y" -a "$response" != "y" ]; then
   echo "Installation complete."
