@@ -47,30 +47,26 @@ stateexe=$os-$arch
 echo "Preparing for installation..."
 
 if [ ! -f $statepkg -a ! -f $stateexe ]; then
-  if [ ! -z "`which wget`" ]; then
-    # Determine the latest version to fetch.
-    version=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-    if [ -z "$version" ]; then
-      echo "Unable to retrieve the latest version number"
-      exit 1
-    fi
-    echo "Fetching the latest version: $version"
-    # Fetch it.
-    wget -q ${STATEURL}${version}/${statepkg} || exit 1
+  echo "Determining latest version..."
+  if [ ! -z "`which wget2`" ]; then
+    fetch="wget -nv -O"
   elif [ ! -z "`which curl`" ]; then
-    # Determine the latest version to fetch.
-    version=`curl -s $STATEURL$statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-    if [ -z "$version" ]; then
-      echo "Unable to retrieve the latest version number"
-      exit 1
-    fi
-    echo "Fetching the latest version: $version"
-    # Fetch it.
-    curl -s -o $statepkg ${STATEURL}${version}/${statepkg} || exit 1
+    fetch="curl -vsS -o"
   else
     echo "Either wget or curl is required to download files"
     exit 1
   fi
+  # Determine the latest version to fetch.
+  $fetch $statejson $STATEURL$statejson || exit 1
+  version=`cat $statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
+  rm $statejson
+  if [ -z "$version" ]; then
+    echo "Unable to retrieve the latest version number"
+    exit 1
+  fi
+  echo "Fetching the latest version: $version..."
+  # Fetch it.
+  $fetch $statepkg ${STATEURL}${version}/${statepkg} || exit 1
 fi
 
 # Extract the State binary.
@@ -93,7 +89,7 @@ fi
 
 # Check for existing installation. Otherwise, make the installation default to
 # /usr/local/bin if the user has write permission, or to a local bin.
-installdir="`dirname \`which $STATEEXE\``"
+installdir="`dirname \`which $STATEEXE\` 2>/dev/null`"
 if [ ! -z "$installdir" ]; then
   echo "Previous installation detected at $installdir"
 else
@@ -128,7 +124,7 @@ while "true"; do
   elif [ -e "$installdir/$STATEEXE" ]; then
     echo "WARNING: overwriting previous installation"
   fi
-  if [ "`dirname \`which $STATEEXE\``" != "$installdir" ]; then
+  if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$installdir" ]; then
     echo "WARNING: installing elsewhere from previous installation"
   fi
   echo -n "Continue? [y/N/q] "
@@ -157,7 +153,7 @@ done
 
 # Check if the installation is in $PATH, if not, update user's profile if
 # permitted to.
-if [ "`dirname \`which $STATEEXE\``" = "$installdir" ]; then
+if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$installdir" ]; then
   echo "Installation complete."
   echo "You may now start using the '$STATEEXE' program."
   exit 0
