@@ -42,6 +42,8 @@ var compilerNames = map[sysinfo.CompilerNameInfo]string{
 // For testing.
 var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
 
+// Returns whether or not the sysinfo-detected OS matches the given one
+// (presumably the constraint).
 func osMatches(os string) bool {
 	sysOS := sysinfo.OS()
 	if osOverride != "" {
@@ -60,6 +62,9 @@ func osMatches(os string) bool {
 	return false
 }
 
+// Returns whether or not the sysinfo-detected OS version is greater than or
+// equal to the given one (presumably the constraint).
+// An example version constraint is "4.1.0".
 func osVersionMatches(version string) bool {
 	osVersion, err := sysinfo.OSVersion()
 	if osVersionOverride != "" {
@@ -89,6 +94,8 @@ func osVersionMatches(version string) bool {
 	return true
 }
 
+// Returns whether or not the sysinfo-detected platform architecture matches the
+// given one (presumably the constraint).
 func archMatches(arch string) bool {
 	osArch := sysinfo.Architecture()
 	if archOverride != "" {
@@ -107,6 +114,10 @@ func archMatches(arch string) bool {
 	return false
 }
 
+// Returns whether or not the name of the sysinfo-detected Libc matches the
+// given one (presumably the constraint) and that its version is greater than or
+// equal to the given one.
+// An example Libc constraint is "glibc 2.23".
 func libcMatches(libc string) bool {
 	osLibc, err := sysinfo.Libc()
 	if libcOverride != "" {
@@ -148,6 +159,10 @@ func libcMatches(libc string) bool {
 	return true
 }
 
+// Returns whether or not a sysinfo-detected compiler exists whose name matches
+// the given one (presumably the constraint) and that its version is greater
+// than or equal to the given one.
+// An example compiler constraint is "gcc 7".
 func compilerMatches(compiler string) bool {
 	osCompilers, err := sysinfo.Compilers()
 	if compilerOverride != "" {
