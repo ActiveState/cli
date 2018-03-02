@@ -1,7 +1,10 @@
 package constraints
 
 import (
+	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
@@ -10,10 +13,184 @@ import (
 	"github.com/ActiveState/sysinfo"
 )
 
-// Returns whether or not the expected string matches the actual string,
-// considering an empty expectation to be a match.
-func match(expected string, actual string) bool {
-	return expected == "" || expected == actual
+// Map of sysinfo.OSInfos to our constraint OS names.
+// Our constraint names may be different from sysinfo names.
+var osNames = map[sysinfo.OsInfo]string{
+	sysinfo.Linux:   "linux",
+	sysinfo.Windows: "windows",
+}
+
+// Map of sysinfo.ArchInfos to our constraint arch names.
+// Our constraint names may be different from sysinfo names.
+var archNames = map[sysinfo.ArchInfo]string{
+	sysinfo.I386:  "386",
+	sysinfo.Amd64: "amd64",
+}
+
+// Map of sysinfo.LibcNameInfos to our constraint libc names.
+// Our constraint names may be different from sysinfo names.
+var libcNames = map[sysinfo.LibcNameInfo]string{
+	sysinfo.Glibc: "glibc",
+}
+
+// Map of sysinfo.CompilerNameInfos to our constraint compiler names.
+// Our constraint names may be different from sysinfo names.
+var compilerNames = map[sysinfo.CompilerNameInfo]string{
+	sysinfo.Gcc: "gcc",
+}
+
+// For testing.
+var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
+
+func osMatches(os string) bool {
+	sysOS := sysinfo.OS()
+	if osOverride != "" {
+		switch osOverride {
+		case osNames[sysinfo.Linux]:
+			sysOS = sysinfo.Linux
+		case osNames[sysinfo.Windows]:
+			sysOS = sysinfo.Windows
+		default:
+			sysOS = sysinfo.UnknownOs
+		}
+	}
+	if name, ok := osNames[sysOS]; ok {
+		return name == os
+	}
+	return false
+}
+
+func osVersionMatches(version string) bool {
+	osVersion, err := sysinfo.OSVersion()
+	if osVersionOverride != "" {
+		// When writing tests, this string should be of the form:
+		// [major].[minor].[micro] [os free-form name]
+		osVersion = sysinfo.OSVersionInfo{}
+		fmt.Sscanf(osVersionOverride, "%d.%d.%d %s", &osVersion.Major, &osVersion.Minor, &osVersion.Micro, &osVersion.Name)
+		osVersion.Version = fmt.Sprintf("%d.%d.%d", osVersion.Major, osVersion.Minor, osVersion.Micro)
+		err = nil
+	}
+	if err != nil {
+		return false
+	}
+	osVersionParts := []int{osVersion.Major, osVersion.Minor, osVersion.Micro}
+	for i, part := range strings.Split(version, ".") {
+		versionPart, err := strconv.Atoi(part)
+		if err != nil || osVersionParts[i] < versionPart {
+			return false
+		} else if osVersionParts[i] > versionPart {
+			// If this part is greater, skip subsequent checks.
+			// e.g. If osVersion is 2.6 and version is 3.0, 3 > 2, so ignore the minor
+			// check (which would have failed). If osVersion is 2.6 and version is
+			// 2.5, the minors would be compared.
+			return true
+		}
+	}
+	return true
+}
+
+func archMatches(arch string) bool {
+	osArch := sysinfo.Architecture()
+	if archOverride != "" {
+		switch archOverride {
+		case archNames[sysinfo.I386]:
+			osArch = sysinfo.I386
+		case archNames[sysinfo.Amd64]:
+			osArch = sysinfo.Amd64
+		default:
+			osArch = sysinfo.UnknownArch
+		}
+	}
+	if name, ok := archNames[osArch]; ok {
+		return name == arch
+	}
+	return false
+}
+
+func libcMatches(libc string) bool {
+	osLibc, err := sysinfo.Libc()
+	if libcOverride != "" {
+		osLibc = sysinfo.LibcInfo{}
+		var name string
+		fmt.Sscanf(libcOverride, "%s %d.%d", &name, &osLibc.Major, &osLibc.Minor)
+		switch name {
+		case libcNames[sysinfo.Glibc]:
+			osLibc.Name = sysinfo.Glibc
+		default:
+			osLibc.Name = sysinfo.UnknownLibc
+		}
+		err = nil
+	}
+	if err != nil {
+		return false
+	}
+	regex := regexp.MustCompile("^([[:alpha:]]+)\\W+(\\d+)\\D(\\d+)")
+	matches := regex.FindStringSubmatch(libc)
+	if len(matches) != 4 {
+		return false
+	}
+	if name, ok := libcNames[osLibc.Name]; !ok || name != strings.ToLower(matches[1]) {
+		return false
+	}
+	osLibcParts := []int{osLibc.Major, osLibc.Minor}
+	for i, part := range matches[2:] {
+		versionPart, err := strconv.Atoi(part)
+		if err != nil || osLibcParts[i] < versionPart {
+			return false
+		} else if osLibcParts[i] > versionPart {
+			// If this part is greater, skip subsequent checks.
+			// e.g. If osLibc is 1.9 and version is 2.0, 2 > 1, so ignore the minor
+			// check (which would have failed). If osVersion is 1.9 and version is
+			// 1.8, the minors would be compared.
+			return true
+		}
+	}
+	return true
+}
+
+func compilerMatches(compiler string) bool {
+	osCompilers, err := sysinfo.Compilers()
+	if compilerOverride != "" {
+		osCompilers = []sysinfo.CompilerInfo{sysinfo.CompilerInfo{}}
+		var name string
+		fmt.Sscanf(compilerOverride, "%s %d.%d", &name, &osCompilers[0].Major, &osCompilers[0].Minor)
+		switch name {
+		case compilerNames[sysinfo.Gcc]:
+			osCompilers[0].Name = sysinfo.Gcc
+		}
+		err = nil
+	}
+	if err != nil {
+		return false
+	}
+	regex := regexp.MustCompile("^([[:alpha:]]+)\\W+(\\d+)\\D?(\\d*)")
+	matches := regex.FindStringSubmatch(compiler)
+	if len(matches) != 4 {
+		return false
+	}
+	for _, osCompiler := range osCompilers {
+		if name, ok := compilerNames[osCompiler.Name]; !ok || name != strings.ToLower(matches[1]) {
+			continue
+		}
+		osCompilerParts := []int{osCompiler.Major, osCompiler.Minor}
+		for i, part := range matches[2:] {
+			if part == "" {
+				break // ignore minor check
+			}
+			versionPart, err := strconv.Atoi(part)
+			if err != nil || osCompilerParts[i] < versionPart {
+				return false
+			} else if osCompilerParts[i] > versionPart {
+				// If this part is greater, skip subsequent checks.
+				// e.g. If osCompiler is 7.2 and compiler is 5.0, 7 > 5, so ignore the
+				// minor check (which would have failed). If osCompiler is 4.6 and
+				// version is 4.4, the minors would be compared.
+				return true
+			}
+		}
+		return true
+	}
+	return false // no matching compilers found
 }
 
 // Returns whether or not the given platform is constrained by the given
@@ -21,11 +198,11 @@ func match(expected string, actual string) bool {
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
 	if platform.Name == strings.TrimLeft(name, "-") {
-		if match(platform.Os, sysinfo.OS()) &&
-			match(platform.Version, sysinfo.OSVersion()) &&
-			match(platform.Architecture, sysinfo.Architecture()) &&
-			match(platform.Libc, sysinfo.Libc()) &&
-			match(platform.Compiler, sysinfo.Compiler()) {
+		if (platform.Os == "" || osMatches(platform.Os)) &&
+			(platform.Version == "" || osVersionMatches(platform.Version)) &&
+			(platform.Architecture == "" || archMatches(platform.Architecture)) &&
+			(platform.Libc == "" || libcMatches(platform.Libc)) &&
+			(platform.Compiler == "" || compilerMatches(platform.Compiler)) {
 			if strings.HasPrefix(name, "-") {
 				return true
 			}
