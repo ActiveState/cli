@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 )
@@ -48,7 +50,12 @@ func (v *VirtualEnvironment) SetLanguageMeta(language *projectfile.Language) {
 
 // LoadLanguageFromPath - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadLanguageFromPath(path string) error {
-	return os.Symlink(path, filepath.Join(v.DataDir(), "language"))
+	err := os.Symlink(path, filepath.Join(v.DataDir(), "language"))
+	if err != nil {
+		logging.Error(err.Error())
+		return failures.User.New(locale.T("error_could_not_make_symlink"))
+	}
+	return nil
 }
 
 // LoadPackageFromPath - see virtualenvironment.VirtualEnvironment
