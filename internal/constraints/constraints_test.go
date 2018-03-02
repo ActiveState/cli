@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/sysinfo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -103,4 +104,27 @@ func TestCompilerMatches(t *testing.T) {
 	assert.True(t, compilerMatches("GCC 5.2"), "Case-insensitive matching")
 
 	compilerOverride = "" // reset
+}
+
+// This test is not for constraints, but verifies that sysinfo is working
+// correctly in a Linux development environment such that constraints will have
+// an effect.
+func TestSysinfoLinuxEnv(t *testing.T) {
+	if sysinfo.OS() != sysinfo.Linux || os.Getenv("CIRCLECI") != "" {
+		return // skip
+	}
+	assert.Equal(t, sysinfo.Linux, sysinfo.OS(), "Linux is the OS")
+	version, err := sysinfo.OSVersion()
+	assert.NoError(t, err, "No errors detecting OS version")
+	assert.True(t, version.Major > 0, "Determined kernel version")
+	assert.NotEqual(t, sysinfo.UnknownArch, sysinfo.Architecture(), "Architecture was recognized")
+	libc, err := sysinfo.Libc()
+	assert.NoError(t, err, "No errors detecting a Libc")
+	assert.NotEqual(t, sysinfo.UnknownLibc, libc.Name, "Libc name was recognized")
+	assert.True(t, libc.Major > 0, "Determined Libc version")
+	compilers, err := sysinfo.Compilers()
+	assert.NoError(t, err, "No errors detecting a compiler")
+	for _, compiler := range compilers {
+		assert.True(t, compiler.Major > 0, "Determined compiler version")
+	}
 }
