@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,8 +26,26 @@ var sourcePath = filepath.Join(getRootPath(), "public", "update")
 var sess *session.Session
 
 func main() {
+	if flag.Lookup("test.v") == nil {
+		run()
+	}
+}
+
+func run() {
 	fmt.Printf("Uploading files from %s\n", sourcePath)
 
+	createSession()
+	fileList := getFileList()
+
+	// Upload the files
+	fmt.Printf("Uploading %d files\n", len(fileList))
+	for _, path := range fileList {
+		params := prepareFile(path)
+		uploadFile(params)
+	}
+}
+
+func createSession() {
 	// Enable loading shared config file
 	os.Setenv("aws_SDK_LOAD_CONFIG", "1")
 	// Specify profile to load for the session's config
@@ -35,61 +55,62 @@ func main() {
 		Config:  aws.Config{Region: aws.String(awsRegionName)},
 	})
 	if err != nil {
-		fmt.Println("failed to create session,", err)
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatalf("failed to create session, %s", err.Error())
 	}
+}
 
+func getFileList() []string {
 	// Get list of files to upload
 	fmt.Printf("Getting list of files\n")
 	fileList := []string{}
 	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
 		if isDirectory(path) {
-			// Do nothing
 			return nil
 		}
 		fileList = append(fileList, path)
 		return nil
 	})
+	return fileList
+}
 
-	// Upload the files
-	fmt.Printf("Uploading %d files\n", len(fileList))
-	for _, path := range fileList {
-		fmt.Printf("Uploading %s\n", path)
-		// An s3 service
-		s3Svc := s3.New(sess)
+func prepareFile(path string) *s3.PutObjectInput {
+	fmt.Printf("Uploading %s\n", path)
 
-		file, err := os.Open(path)
-		if err != nil {
-			fmt.Println("Failed to open file", file, err)
-			os.Exit(1)
-		}
-		fileInfo, _ := file.Stat()
-		size := fileInfo.Size()
-		buffer := make([]byte, size)
-		file.Read(buffer)
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Failed to open file", file, err)
+		os.Exit(1)
+	}
+	fileInfo, _ := file.Stat()
+	size := fileInfo.Size()
+	buffer := make([]byte, size)
+	file.Read(buffer)
 
-		defer file.Close()
-		var key string
-		key = awsBucketPrefix + path
-		key = strings.Replace(key, sourcePath, "", 1)
-		fmt.Printf(" \\- Destination: %s\n", key)
+	defer file.Close()
+	var key string
+	key = awsBucketPrefix + path
+	key = strings.Replace(key, sourcePath, "", 1)
+	fmt.Printf(" \\- Destination: %s\n", key)
 
-		params := &s3.PutObjectInput{
-			Bucket:             aws.String(awsBucketName),
-			Key:                aws.String(key),
-			Body:               bytes.NewReader(buffer),
-			ContentLength:      aws.Int64(size),
-			ContentType:        aws.String(http.DetectContentType(buffer)),
-			ContentDisposition: aws.String("attachment"),
-			ACL:                aws.String("public-read"),
-		}
-		_, err = s3Svc.PutObject(params)
-		if err != nil {
-			fmt.Printf("Failed to upload data to %s/%s, %s\n",
-				awsBucketName, key, err.Error())
-			return
-		}
+	params := &s3.PutObjectInput{
+		Bucket:             aws.String(awsBucketName),
+		Key:                aws.String(key),
+		Body:               bytes.NewReader(buffer),
+		ContentLength:      aws.Int64(size),
+		ContentType:        aws.String(http.DetectContentType(buffer)),
+		ContentDisposition: aws.String("attachment"),
+		ACL:                aws.String("public-read"),
+	}
+
+	return params
+}
+
+func uploadFile(params *s3.PutObjectInput) {
+	s3Svc := s3.New(sess)
+	_, err := s3Svc.PutObject(params)
+	if err != nil {
+		fmt.Printf("Failed to upload data to %s/%s, %s\n",
+			awsBucketName, params.Key, err.Error())
 	}
 }
 

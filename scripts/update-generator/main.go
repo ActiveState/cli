@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var version, genDir string
+var appPath, version, genDir, defaultPlatform string
 
 type current struct {
 	Version string
@@ -108,9 +108,14 @@ func createBuildDir() {
 }
 
 func main() {
+	if flag.Lookup("test.v") == nil {
+		run()
+	}
+}
+
+func run() {
 	outputDirFlag := flag.String("o", "public", "Output directory for writing updates")
 
-	var defaultPlatform string
 	goos := os.Getenv("GOOS")
 	goarch := os.Getenv("GOARCH")
 	if goos != "" && goarch != "" {
@@ -129,9 +134,16 @@ func main() {
 	}
 
 	platform := *platformFlag
-	appPath := flag.Arg(0)
-	version = flag.Arg(1)
-	genDir = *outputDirFlag
+
+	if appPath == "" {
+		appPath = flag.Arg(0)
+	}
+	if version == "" {
+		version = flag.Arg(1)
+	}
+	if genDir == "" {
+		genDir = *outputDirFlag
+	}
 
 	createBuildDir()
 
