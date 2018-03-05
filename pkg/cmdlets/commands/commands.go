@@ -21,6 +21,8 @@ const (
 	TypeString = iota
 	// TypeInt is used to define the type for flags/args
 	TypeInt
+	// TypeBool is used to define the type for flags/args
+	TypeBool
 )
 
 // Flag is used to define flags in our Command struct
@@ -35,6 +37,8 @@ type Flag struct {
 	StringValue string
 	IntVar      *int
 	IntValue    int
+	BoolVar     *bool
+	BoolValue   bool
 }
 
 // Argument is used to define flags in our Command struct
@@ -184,6 +188,10 @@ func (c *Command) AddFlag(flag *Flag) error {
 	switch flag.Type {
 	case TypeString:
 		flagSetter().StringVarP(flag.StringVar, flag.Name, flag.Shorthand, flag.StringValue, T(flag.Description))
+	case TypeInt:
+		flagSetter().IntVarP(flag.IntVar, flag.Name, flag.Shorthand, flag.IntValue, T(flag.Description))
+	case TypeBool:
+		flagSetter().BoolVarP(flag.BoolVar, flag.Name, flag.Shorthand, flag.BoolValue, T(flag.Description))
 	default:
 		return failures.App.New("Unknown type:" + string(flag.Type))
 	}

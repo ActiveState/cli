@@ -95,6 +95,18 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kardianos/osext"
+  packages = ["."]
+  revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/binarydist"
+  packages = ["."]
+  revision = "3035450ff8b987ec4373f65c40767f096b35f2d2"
+
+[[projects]]
   name = "github.com/magiconair/properties"
   packages = ["."]
   revision = "d419a98cdbed11a922bf76f257b7c4be79b50e73"
@@ -164,6 +176,12 @@
   packages = ["."]
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
   version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -267,11 +285,21 @@
 [[projects]]
   name = "gopkg.in/AlecAivazis/survey.v1"
   packages = [
+    ".",
     "core",
     "terminal"
   ]
   revision = "9f89d9dd66613216993dc300f9f3dbae9c3c9bda"
   version = "v1.4.2"
+
+[[projects]]
+  branch = "v0"
+  name = "gopkg.in/inconshreveable/go-update.v0"
+  packages = [
+    ".",
+    "download"
+  ]
+  revision = "d8b0b1d421aa1cbf392c05869f8abbc669bb7066"
 
 [[projects]]
   branch = "v2"
@@ -282,6 +310,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2f28c1053881a09b17feb587e66ac36eb12ed22145726d909b2f5be1729a05c0"
+  inputs-digest = "172716f576b815d319f953ab1a6e5b5700a52fa6daf1bb702fa760ac1f3b3c99"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -15,6 +15,7 @@ type app struct{}
 
 // New creates a new failure struct
 func (e *app) New(msg string) Failure {
+	logging.Error(msg)
 	return &AppFailure{msg}
 }
 
@@ -39,14 +40,14 @@ func (e *AppFailure) Handle(description string) {
 	} else {
 		print.Error(description)
 	}
-	logging.Error(description)
-	logging.Error(e.Error())
+	// Already logged at New
 }
 
 type user struct{}
 
 // New creates a new failure struct
 func (e *user) New(msg string) Failure {
+	logging.Error(msg)
 	return &UserFailure{msg}
 }
 
@@ -70,7 +71,6 @@ func (e *UserFailure) Handle(description string) {
 		logging.Error(description)
 		print.Error(description)
 	}
-	logging.Error(e.Error())
 	print.Error(e.Error())
 }
 

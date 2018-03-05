@@ -69,22 +69,22 @@ if [ ! -f $statepkg -a ! -f $stateexe ]; then
   $fetch $statepkg ${STATEURL}${version}/${statepkg} || exit 1
 fi
 
+# Verify checksum.
+echo "Verifying checksum..."
+shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
+if [ "`sha256sum -b $statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
+  echo "SHA256 sum did not match:"
+  echo "Expected: $shasum"
+  echo "Received: `sha256sum -b $statepkg | cut -d ' ' -f1`"
+  echo "Aborting installation."
+  exit 1
+fi
+
 # Extract the State binary.
 if [ -f $statepkg ]; then
   echo "Extracting $statepkg..."
   gunzip $statepkg || exit 1
   chmod +x $stateexe
-fi
-
-# Verify checksum.
-echo "Verifying checksum..."
-shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
-if [ "`sha256sum -b $stateexe | cut -d ' ' -f1`" != "$shasum" ]; then
-  echo "SHA256 sum did not match:"
-  echo "Expected: $shasum"
-  echo "Received: `sha256sum -b $stateexe | cut -d ' ' -f1`"
-  echo "Aborting installation."
-  exit 1
 fi
 
 # Check for existing installation. Otherwise, make the installation default to
