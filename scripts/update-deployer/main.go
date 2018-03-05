@@ -63,6 +63,7 @@ func getFileList() []string {
 	// Get list of files to upload
 	fmt.Printf("Getting list of files\n")
 	fileList := []string{}
+	os.MkdirAll(sourcePath, os.ModePerm)
 	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
 		if isDirectory(path) {
 			return nil
