@@ -18,3 +18,15 @@
  * Do not commit untested code (meaning tests exist for the code, and the tests pass)
  * To run code without building run `go run state/state.go <your command>`
  * To run all tests use `make test`
+
+# Deploying an Update
+
+Running `make build` will generate the update bits.
+
+When update bits exist you can deploy them using `go run scripts/update-deployer/main.go`.
+
+You will need to set the following env vars:
+ * AWS_ACCESS_KEY_ID
+ * AWS_SECRET_ACCESS_KEY
+
+The rest of the configuration is hard-coded in scripts/update-deployer/main.go and should generally not be changed.
