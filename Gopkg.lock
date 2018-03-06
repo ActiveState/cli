@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
-  revision = "1cb0f50c178f7a97aa1f099951759917bde593ca"
+  revision = "9891d47c9ff78bbe67b845cc01c7ca95633d6a51"
 
 [[projects]]
   branch = "master"
@@ -310,7 +310,10 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows"
+  ]
   revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
@@ -354,6 +357,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "33d3d718d8f36e0430c39e4e55057c5e6a71690f43589a7d9c412d63255e3aab"
+  inputs-digest = "bab120fdff58978fc3ab1fd8935ec809f72d745ac8301b442f925d56bb86e010"
   solver-name = "gps-cdcl"
   solver-version = 1
