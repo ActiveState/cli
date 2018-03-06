@@ -8,12 +8,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	"github.com/kardianos/osext"
 	"gopkg.in/inconshreveable/go-update.v0"
@@ -124,7 +122,6 @@ func (u *Updater) update() error {
 	if err != nil {
 		return err
 	}
-	defer old.Close()
 
 	err = u.fetchInfo()
 	if err != nil {
@@ -232,11 +229,6 @@ func (u *Updater) fetchBin(gz []byte) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-// returns a random duration in [0,n).
-func randDuration(n time.Duration) time.Duration {
-	return time.Duration(rand.Int63n(int64(n)))
 }
 
 func (u *Updater) fetch(url string) ([]byte, error) {
