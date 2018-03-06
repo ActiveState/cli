@@ -5,12 +5,15 @@ import (
 	"os"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 
 	// commands
 	"github.com/ActiveState/ActiveState-CLI/state/activate"
 	"github.com/ActiveState/ActiveState-CLI/state/hook"
+	"github.com/ActiveState/ActiveState-CLI/state/selfupdate"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/spf13/cobra"
@@ -23,7 +26,8 @@ var T = locale.T
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Locale string
+	Locale  string
+	Version bool
 }
 
 // Command holds our main command definition
@@ -41,6 +45,12 @@ var Command = &commands.Command{
 			Persist:     true,
 			StringVar:   &Flags.Locale,
 		},
+		&commands.Flag{
+			Name:        "version",
+			Description: "flag_state_version_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.Version,
+		},
 	},
 
 	UsageTemplate: "usage_tpl",
@@ -51,6 +61,7 @@ func init() {
 
 	Command.Append(activate.Command)
 	Command.Append(hook.Command)
+	Command.Append(selfupdate.Command)
 }
 
 func main() {
@@ -72,4 +83,11 @@ func main() {
 // Execute the `state` command
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
+
+	if Flags.Version {
+		print.Info(locale.T("version_info", map[string]interface{}{"Version": constants.Version}))
+		return
+	}
+
+	cmd.Usage()
 }
