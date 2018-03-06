@@ -82,6 +82,8 @@ func prepareFile(path string) *s3.PutObjectInput {
 		fmt.Println("Failed to open file", file, err)
 		os.Exit(1)
 	}
+
+	// We just created our file, so no need to err check .Stat()
 	fileInfo, _ := file.Stat()
 	size := fileInfo.Size()
 	buffer := make([]byte, size)
