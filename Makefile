@@ -11,7 +11,7 @@ BINARY_UNIX=$(BINARY_NAME)_unix
 
 VERSION=`grep -m1 "^const Version" internal/constants/constants.go | cut -d ' ' -f4 | tr -d '"'`
 
-.PHONY: build test install
+.PHONY: build test install deploy
 
 all: test build
 init:
@@ -22,6 +22,8 @@ build:
 		go run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
 		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
+deploy:
+		go run scripts/update-deployer/main.go
 test: 
 		$(GOTEST) ./...
 clean: 
