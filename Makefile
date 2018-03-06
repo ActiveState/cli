@@ -9,7 +9,7 @@ GOGET=$(GOCMD) get
 BINARY_NAME=state
 BINARY_UNIX=$(BINARY_NAME)_unix
 
-VERSION=`cat version.txt`
+VERSION=`grep -m1 "^const Version" internal/constants/constants.go | cut -d ' ' -f4 | tr -d '"'`
 
 .PHONY: build test install
 

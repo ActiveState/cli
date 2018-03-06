@@ -1,6 +1,6 @@
 package constants
 
-// Version holds the current version of our cli - MUST BE KEPT IN SYNC WITH version.txt
+// Version holds the current version of our cli
 const Version = "0.0.1"
 
 // LibraryName contains the main name of this library
