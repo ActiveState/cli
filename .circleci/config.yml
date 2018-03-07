@@ -25,6 +25,9 @@ jobs:
       - run: 
           name: Build the CLI
           command: make build
+      - run: 
+          name: Deploy bits
+          command: make deploy
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output

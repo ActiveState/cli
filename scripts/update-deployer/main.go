@@ -43,6 +43,12 @@ func run() {
 		params := prepareFile(path)
 		uploadFile(params)
 	}
+
+	// Upload our latest install.sh, this is technically not an update file, but at the moment is closely related
+	// so it makes sense to include it here
+	// Eventually this script will be living somewhere more accessible like activestate.com/cli/install.sh
+	params := prepareFile(filepath.Join(getRootPath(), "public", "install.sh"))
+	uploadFile(params)
 }
 
 func createSession() {
@@ -93,6 +99,7 @@ func prepareFile(path string) *s3.PutObjectInput {
 	var key string
 	key = awsBucketPrefix + path
 	key = strings.Replace(key, sourcePath, "", 1)
+	key = strings.Replace(key, filepath.Join(getRootPath(), "public"), "", 1)
 	fmt.Printf(" \\- Destination: %s\n", key)
 
 	params := &s3.PutObjectInput{
