@@ -15,9 +15,10 @@ import (
 func TestPlatformConstraints(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	project, err := projectfile.Parse(filepath.Join(root, "test", constants.ConfigFileName))
+	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
-	assert.True(t, platformIsConstrained("Windows10Label", project))
+	assert.True(t, platformIsConstrained("Windows10Label"))
 }
 
 func TestEnvironmentConstraints(t *testing.T) {
@@ -32,10 +33,11 @@ func TestEnvironmentConstraints(t *testing.T) {
 func TestMatchConstraint(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	project, err := projectfile.Parse(filepath.Join(root, "test", constants.ConfigFileName))
+	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
 	constraint := projectfile.Constraint{"Windows10Label", "dev"}
-	assert.True(t, IsConstrained(constraint, project))
+	assert.True(t, IsConstrained(constraint))
 }
 
 func TestOsMatches(t *testing.T) {

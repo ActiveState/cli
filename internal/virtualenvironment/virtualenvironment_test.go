@@ -26,95 +26,92 @@ func setup(t *testing.T) {
 	os.RemoveAll(filepath.Join(datadir, "languages"))
 
 	venvs = make(map[string]VirtualEnvironmenter)
+
+	projectfile.Reset()
 }
 
 func TestActivate(t *testing.T) {
 	setup(t)
 
-	project, err := projectfile.Get()
-	assert.NoError(t, err, "Should get project file")
-
-	err = Activate(project)
+	err := Activate()
 	assert.NoError(t, err, "Should activate")
 
 	setup(t)
-	project = &projectfile.Project{}
+	project := &projectfile.Project{}
 	dat := strings.TrimSpace(`
-name: valueForName
-owner: valueForOwner`)
+		name: valueForName
+		owner: valueForOwner`)
 	yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
 
-	err = Activate(project)
+	err = Activate()
 	assert.NoError(t, err, "Should activate, even if no languages are defined")
 
 	setup(t)
 	project = &projectfile.Project{}
 	dat = strings.TrimSpace(`
-name: valueForName
-owner: valueForOwner
-languages: 
- - name: Python
-   version: 2.7.12`)
+		name: valueForName
+		owner: valueForOwner
+		languages: 
+		- name: Python
+		version: 2.7.12`)
 	yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
 
-	err = Activate(project)
+	err = Activate()
 	assert.NoError(t, err, "Should activate, even if no packages are defined")
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {
 	setup(t)
 
-	project, err := projectfile.Get()
-	assert.NoError(t, err, "Should get project file")
-
+	project := projectfile.Get()
 	language := projectfile.Language{Name: "foo"}
-
 	project.Languages = append(project.Languages, language)
+	project.Persist()
 
-	err = Activate(project)
+	err := Activate()
 	assert.Error(t, err, "Should not activate due to unknown language")
 }
 
 func TestGetEnv(t *testing.T) {
 	setup(t)
 
-	project, err := projectfile.Get()
+	project := projectfile.Get()
 
-	assert.NoError(t, err, "Should get project file")
-
-	_, err = GetEnv(project, &project.Languages[0])
+	_, err := GetEnv(&project.Languages[0])
 	assert.Error(t, err, "Should fail due to missing directory")
 
 	setup(t)
-	createFolderStructure(project)
+	createFolderStructure()
 
-	_, err = GetEnv(project, &project.Languages[0])
+	_, err = GetEnv(&project.Languages[0])
 	assert.NoError(t, err, "Should get venv")
 
 	// Calling it again for the cached version
-	_, err = GetEnv(project, &project.Languages[0])
+	_, err = GetEnv(&project.Languages[0])
 	assert.NoError(t, err, "Should get venv")
 }
 
 func TestActivateLanguageVenv(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 
 	venv := &python.VirtualEnvironment{}
 
-	err := ActivateLanguageVenv(project, &project.Languages[0], venv)
+	err := ActivateLanguageVenv(&project.Languages[0], venv)
 	assert.Error(t, err, "Should fail to activate venv because target folder doesnt exist")
 
-	createFolderStructure(project)
-	err = ActivateLanguageVenv(project, &project.Languages[0], venv)
+	createFolderStructure()
+	err = ActivateLanguageVenv(&project.Languages[0], venv)
 	assert.NoError(t, err, "Should activate the venv")
 }
 
 func TestLoadLanguage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 
 	venv := &python.VirtualEnvironment{}
@@ -122,22 +119,21 @@ func TestLoadLanguage(t *testing.T) {
 	datadir := config.GetDataDir()
 	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
 
-	venv.SetProject(project)
 	venv.SetLanguageMeta(language)
 	venv.SetDataDir(datadir)
 
-	err := loadLanguage(project, language, venv)
+	err := loadLanguage(language, venv)
 	assert.Error(t, err, "Should fail to load language because target folder doesnt exist")
 
-	createFolderStructure(project)
-	err = loadLanguage(project, language, venv)
+	createFolderStructure()
+	err = loadLanguage(language, venv)
 	assert.NoError(t, err, "Should load the language")
 }
 
 func TestGetHashFromLanguage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 
 	hash := getHashFromLanguage(language)
@@ -147,7 +143,7 @@ func TestGetHashFromLanguage(t *testing.T) {
 func TestObtainLanguage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 
 	path, err := obtainLanguage(language)
@@ -158,7 +154,7 @@ func TestObtainLanguage(t *testing.T) {
 func TestLoadPackage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 	pkg := &language.Packages[0]
 
@@ -167,22 +163,21 @@ func TestLoadPackage(t *testing.T) {
 	datadir := config.GetDataDir()
 	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
 
-	venv.SetProject(project)
 	venv.SetLanguageMeta(language)
 	venv.SetDataDir(datadir)
 
-	err := loadPackage(project, language, pkg, venv)
+	err := loadPackage(language, pkg, venv)
 	assert.Error(t, err, "Should fail to load package because target folder doesnt exist")
 
-	createFolderStructure(project)
-	err = loadPackage(project, language, pkg, venv)
+	createFolderStructure()
+	err = loadPackage(language, pkg, venv)
 	assert.NoError(t, err, "Should load the package")
 }
 
 func TestGetHashFromPackage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 	pkg := &language.Packages[0]
 
@@ -193,7 +188,7 @@ func TestGetHashFromPackage(t *testing.T) {
 func TestObtainPackage(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 	pkg := &language.Packages[0]
 
@@ -205,8 +200,6 @@ func TestObtainPackage(t *testing.T) {
 func TestCreateFolderStructure(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
-
-	err := createFolderStructure(project)
+	err := createFolderStructure()
 	assert.NoError(t, err, "Creates folder structure")
 }

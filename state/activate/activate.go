@@ -85,16 +85,6 @@ func clone(uriOrID string) (scm.SCMer, error) {
 	return scm, nil
 }
 
-// Loads the given ActiveState project configuration file and returns it as a
-// struct. Any error that occurs during the clone process is also returned.
-func loadProjectConfig(configFile string) (*projectfile.Project, error) {
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		print.Error(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
-		return nil, err
-	}
-	return projectfile.Parse(configFile)
-}
-
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
@@ -120,20 +110,15 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project, err := projectfile.Get()
-	if err != nil {
-		failures.Handle(err, locale.T("error_state_activate_config_load"))
-		return
-	}
-	project.Persist()
+	project := projectfile.Get()
 
-	err = virtualenvironment.Activate(project)
+	var err = virtualenvironment.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_venv"))
 		return
 	}
 
-	err = hooks.RunHook("ACTIVATE", project)
+	err = hooks.RunHook("ACTIVATE")
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_run_hooks"))
 		return

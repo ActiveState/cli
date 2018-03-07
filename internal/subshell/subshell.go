@@ -100,11 +100,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 		return nil, err
 	}
 
-	rcData, err := projectfile.Get()
-	if err != nil {
-		return nil, err
-	}
-
+	rcData := projectfile.Get()
 	t, err := template.New("rcfile").Parse(string(tplFile))
 	if err != nil {
 		return nil, err

@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -110,6 +109,10 @@ func Parse(filepath string) (*Project, error) {
 	err = yaml.Unmarshal([]byte(dat), &project)
 	project.path = filepath
 
+	if err != nil {
+		return nil, failures.User.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+	}
+
 	return &project, err
 }
 
@@ -149,22 +152,44 @@ func getProjectFilePath() string {
 	return filepath.Join(root, constants.ConfigFileName)
 }
 
-// Get the project configuration
-func Get() (*Project, error) {
+// Get returns the project configration in an unsafe manner (exits if errors occur)
+func Get() *Project {
+	project, err := GetSafe()
+	if err != nil {
+		failures.Handle(err, locale.T("err_project_file_unavailable"))
+		os.Exit(1)
+	}
+
+	return project
+}
+
+// GetSafe returns the project configuration in a safe manner (returns error)
+func GetSafe() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
+
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath == "" {
 		projectFilePath = getProjectFilePath()
 	}
-	print.Line(projectFilePath)
+
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, failures.User.New(locale.T("err_no_projectfile"))
 	}
-	return Parse(projectFilePath)
+	project, err := Parse(projectFilePath)
+	if err == nil {
+		project.Persist()
+	}
+	return project, err
+}
+
+// Reset the current state, which unsets the persistent project
+func Reset() {
+	persistentProject = nil
+	os.Unsetenv(constants.ProjectEnvVarName)
 }
 
 // Persist "activates" the given project and makes it such that subsequent calls

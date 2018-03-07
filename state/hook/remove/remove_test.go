@@ -26,6 +26,8 @@ func setup(t *testing.T) {
 	Args.Identifier = ""
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+
+	projectfile.Reset()
 }
 
 func teardown() {
@@ -95,7 +97,7 @@ func TestRemoveByHashCmd(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	cmdName := "REMOVE_ME"
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
@@ -108,7 +110,7 @@ func TestRemoveByHashCmd(t *testing.T) {
 	Command.Execute()
 	Cc.SetArgs([]string{})
 
-	project, _ = projectfile.Get()
+	project = projectfile.Get()
 	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
 }
@@ -117,7 +119,7 @@ func TestRemoveByNameCmd(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	cmdName := "REMOVE_ME"
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
@@ -129,7 +131,7 @@ func TestRemoveByNameCmd(t *testing.T) {
 	Command.Execute()
 	Cc.SetArgs([]string{})
 
-	project, _ = projectfile.Get()
+	project = projectfile.Get()
 	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
 	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v', found: %v", cmdName, mappedHooks))
 }
@@ -138,16 +140,13 @@ func TestRemovePrompt(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project, err := projectfile.Get()
-	assert.NoError(t, err, "Should get project file")
-
-	options, optionsMap, err := hooks.PromptOptions(project, "")
+	options, optionsMap, err := hooks.PromptOptions("")
 	print.Formatted("\nmap1: %v\n", optionsMap)
 	assert.NoError(t, err, "Should be able to get prompt options")
 
 	testPromptResultOverride = options[0]
 
-	removed := removeByPrompt(project, "")
+	removed := removeByPrompt("")
 	assert.NotNil(t, removed, "Received a removed hook")
 
 	hash, _ := removed.Hash()
@@ -158,16 +157,15 @@ func TestRemoveByHash(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project, err := projectfile.Get()
+	project := projectfile.Get()
 	hookLen := len(project.Hooks)
-	assert.NoError(t, err, "Should get project file")
 
 	hash, err := project.Hooks[0].Hash()
 	assert.NoError(t, err, "Should get hash")
-	removed := removeByHash(project, hash)
+	removed := removeByHash(hash)
 	assert.NotNil(t, removed, "Received a removed hook")
 
-	project, _ = projectfile.Get()
+	project = projectfile.Get()
 	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
 }
 
@@ -175,15 +173,13 @@ func TestRemovebyName(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project, err := projectfile.Get()
+	project := projectfile.Get()
 	hookLen := len(project.Hooks)
-	assert.NoError(t, err, "Should get project file")
 
-	assert.NoError(t, err, "Should get hash")
-	removed := removeByName(project, project.Hooks[0].Name)
+	removed := removeByName(project.Hooks[0].Name)
 	assert.NotNil(t, removed, "Received a removed hook")
 
-	project, _ = projectfile.Get()
+	project = projectfile.Get()
 	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
 }
 
@@ -193,7 +189,7 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 	defer teardown()
 
 	cmdName := "REMOVE_ME"
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 
 	hook1 := projectfile.Hook{Name: cmdName, Value: "This is a command"}
 	hook2 := projectfile.Hook{Name: cmdName, Value: "This is another command"}

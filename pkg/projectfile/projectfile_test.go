@@ -237,21 +237,22 @@ func TestGetProjectFilePath(t *testing.T) {
 
 // Call getProjectFilePath but doesn't exist
 func TestGetFail(t *testing.T) {
-	config, _ := Get()
+	config, _ := GetSafe()
 	assert.Nil(t, config, "Config should not be set.")
 	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated")
 }
 
 // TestGet the config
 func TestGet(t *testing.T) {
+	Reset()
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	config, _ := Get()
+	config := Get()
 	assert.NotNil(t, config, "Config should be set")
-	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated yet")
+	assert.NotEqual(t, "", os.Getenv(constants.ProjectEnvVarName), "The project env var should be set")
 
 	os.Chdir(cwd) // restore
 }
@@ -261,14 +262,18 @@ func TestGetActivated(t *testing.T) {
 	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	config1, _ := Get()
-	config1.Persist()
+	Reset()
+	config1 := Get()
 	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
+
 	os.Chdir(root)
-	config2, err := Get()
+	config2, err := GetSafe()
 	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
-	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is still set properly")
+
+	expected := filepath.Join(root, "test", constants.ConfigFileName)
+	actual := os.Getenv(constants.ProjectEnvVarName)
+	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
 
 	os.Chdir(cwd) // restore
 }
