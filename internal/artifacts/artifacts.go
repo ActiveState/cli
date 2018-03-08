@@ -1,4 +1,4 @@
-package artefacts
+package artifacts
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
 func ReplaceAll(filename, find, replace string) error {
-	// Read the artefact's bytes and create find and replace byte arrays for
+	// Read the artifact's bytes and create find and replace byte arrays for
 	// search and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -21,7 +21,7 @@ func ReplaceAll(filename, find, replace string) error {
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
 
-	// Check if the artefact is a binary file. If so, the search and replace byte
+	// Check if the artifact is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	if bytes.IndexByte(fileBytes, '0') != -1 {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
@@ -36,9 +36,9 @@ func ReplaceAll(filename, find, replace string) error {
 		}
 	}
 
-	// Open a temporary file for the replacement artefact and then perform the
+	// Open a temporary file for the replacement artifact and then perform the
 	// search and replace.
-	tmpfile, err := ioutil.TempFile("", "activestatecli-artefact")
+	tmpfile, err := ioutil.TempFile("", "activestatecli-artifact")
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func ReplaceAll(filename, find, replace string) error {
 		return err
 	}
 
-	// Replace the original artefact.
+	// Replace the original artifact.
 	stat, _ := os.Stat(filename)
 	if err := os.Chmod(tmpfile.Name(), stat.Mode()); err != nil {
 		return err
