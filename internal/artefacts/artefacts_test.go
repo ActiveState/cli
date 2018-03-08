@@ -21,7 +21,13 @@ func copyFileToTempDir(t *testing.T, filename string) string {
 	fileBytes, err := ioutil.ReadFile(filename)
 	assert.NoError(t, err, "Read file to copy")
 
-	tmpdir, err := ioutil.TempDir("", "activestatecli-test")
+	var tmpdir string
+	if os.Getenv("CIRCLECI") == "" {
+		tmpdir, err = ioutil.TempDir("", "activestatecli-test")
+	} else {
+		cwd, _ := os.Getwd()
+		tmpdir, err = ioutil.TempDir(cwd, "activestatecli-test")
+	}
 	assert.NoError(t, err, "Created a temp dir")
 
 	tmpfile := filepath.Join(tmpdir, filepath.Base(filename))
