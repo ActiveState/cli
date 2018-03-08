@@ -21,12 +21,13 @@ type HashedHook struct {
 }
 
 // GetEffectiveHooks returns effective hooks by the given name, meaning only the ones that apply to the current runtime environment
-func GetEffectiveHooks(hookName string, project *projectfile.Project) []*projectfile.Hook {
+func GetEffectiveHooks(hookName string) []*projectfile.Hook {
+	project := projectfile.Get()
 	hooks := []*projectfile.Hook{}
 
 	for _, hook := range project.Hooks {
 		if hook.Name == hookName {
-			if !constraints.IsConstrained(hook.Constraints, project) {
+			if !constraints.IsConstrained(hook.Constraints) {
 				hooks = append(hooks, &hook)
 			}
 		}
@@ -36,8 +37,8 @@ func GetEffectiveHooks(hookName string, project *projectfile.Project) []*project
 }
 
 // RunHook runs effective hooks by the given name, meaning only the ones that apply to the current runtime environment
-func RunHook(hookName string, project *projectfile.Project) error {
-	hooks := GetEffectiveHooks(hookName, project)
+func RunHook(hookName string) error {
+	hooks := GetEffectiveHooks(hookName)
 
 	if len(hooks) == 0 {
 		return nil
@@ -100,7 +101,8 @@ func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string
 
 // PromptOptions returns an array of strings that can be consumed by the survey library we use,
 // the second return argument contains a map that connects each item to a hash
-func PromptOptions(project *projectfile.Project, filter string) ([]string, map[string]string, error) {
+func PromptOptions(filter string) ([]string, map[string]string, error) {
+	project := projectfile.Get()
 	optionsMap := make(map[string]string)
 	options := []string{}
 

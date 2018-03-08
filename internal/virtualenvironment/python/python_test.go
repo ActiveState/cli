@@ -29,18 +29,10 @@ func TestDataDir(t *testing.T) {
 	assert.NotEmpty(t, venv.DataDir(), "Should set the datadir")
 }
 
-func TestSetProject(t *testing.T) {
-	setup(t)
-
-	venv := &VirtualEnvironment{}
-	project, _ := projectfile.Get()
-	venv.SetProject(project)
-}
-
 func TestLanguageMeta(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 
 	venv := &VirtualEnvironment{}
@@ -87,12 +79,11 @@ func TestLoadPackageFromPath(t *testing.T) {
 func TestActivate(t *testing.T) {
 	setup(t)
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	language := &project.Languages[0]
 
 	venv := &VirtualEnvironment{}
 
-	venv.SetProject(project)
 	venv.SetLanguageMeta(language)
 	venv.SetDataDir("")
 

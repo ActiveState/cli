@@ -68,11 +68,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	var T = locale.T
 
 	names := getFilters(cmd)
-	project, err := projectfile.Get()
-
-	if err != nil {
-		failures.Handle(err, T("err_hook_cannot_list"))
-	}
+	project := projectfile.Get()
 
 	hashmap, err := hooks.HashHooksFiltered(project.Hooks, names)
 	if err != nil {

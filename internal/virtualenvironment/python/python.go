@@ -15,7 +15,6 @@ import (
 type VirtualEnvironment struct {
 	datadir      string
 	languageMeta *projectfile.Language
-	project      *projectfile.Project
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -31,11 +30,6 @@ func (v *VirtualEnvironment) DataDir() string {
 // SetDataDir - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) SetDataDir(path string) {
 	v.datadir = path
-}
-
-// SetProject - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) SetProject(project *projectfile.Project) {
-	v.project = project
 }
 
 // LanguageMeta - see virtualenvironment.VirtualEnvironment

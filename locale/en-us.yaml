@@ -101,8 +101,6 @@ error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
 error_state_activate_config_exists:
   other: Config file '{{.ConfigFile}}' not found in repository root. This file is needed to complete the activation process.
-error_state_activate_config_load:
-  other: Unable to parse config file '{{.ConfigFile}}'. Please refer to the above error message, resolve the issue, and run activate again.
 info_state_activate_cd:
   other: Changing into directory '{{.Dir}}'
 error_unsupported_shell:
@@ -125,8 +123,6 @@ error_could_not_run_hooks:
   other: Could not run hooks
 info_running_hook:
   other: "Running hook: {{.Name}}"
-hook_add_cannot_add_hook:
-  other: "Cannot add hook '{{.Hook}} {{.Command}}'"
 hook_remove_multiple_hooks:
   other: "More than one configured hook for name given.  Use ID instead."
 hook_remove_cannot_remove:
@@ -177,3 +173,7 @@ update_complete:
   other: Update completed succesfully
 update_hash_mismatch:
   other: The archive hash could not be verified
+err_project_file_unavailable:
+  other: Could not load the project file
+err_project_parse:
+  other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"

@@ -41,14 +41,10 @@ var Command = &commands.Command{
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute `hook remove`")
 
-	project, err := projectfile.Get()
-	if err != nil {
-		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
-		return
-	}
+	project := projectfile.Get()
 
 	var removed *projectfile.Hook
-	removed = removeByHash(project, Args.Identifier)
+	removed = removeByHash(Args.Identifier)
 
 	if removed == nil {
 		filters := []string{}
@@ -63,9 +59,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 		numOfHooksFound := len(hashedHooks)
 		if numOfHooksFound == 1 && Args.Identifier != "" {
-			removed = removeByName(project, Args.Identifier)
+			removed = removeByName(Args.Identifier)
 		} else if numOfHooksFound > 0 {
-			removed = removeByPrompt(project, Args.Identifier)
+			removed = removeByPrompt(Args.Identifier)
 		} else {
 			failures.Handle(failures.User.New(locale.T("err_hook_cannot_find")), "")
 		}
@@ -80,7 +76,8 @@ func Execute(cmd *cobra.Command, args []string) {
 }
 
 //  Cycle through the configured hooks, hash then remove hook if matches, save, exit
-func removeByHash(project *projectfile.Project, hashToRemove string) *projectfile.Hook {
+func removeByHash(hashToRemove string) *projectfile.Hook {
+	project := projectfile.Get()
 	var removed *projectfile.Hook
 	for i, hook := range project.Hooks {
 		hash, err := hook.Hash()
@@ -97,7 +94,8 @@ func removeByHash(project *projectfile.Project, hashToRemove string) *projectfil
 	return removed
 }
 
-func removeByName(project *projectfile.Project, name string) *projectfile.Hook {
+func removeByName(name string) *projectfile.Hook {
+	project := projectfile.Get()
 	var removed *projectfile.Hook
 	for i, hook := range project.Hooks {
 		if name == hook.Name {
@@ -110,10 +108,10 @@ func removeByName(project *projectfile.Project, name string) *projectfile.Hook {
 	return removed
 }
 
-func removeByPrompt(project *projectfile.Project, identifier string) *projectfile.Hook {
+func removeByPrompt(identifier string) *projectfile.Hook {
 	var removed *projectfile.Hook
 
-	options, optionsMap, err := hooks.PromptOptions(project, identifier)
+	options, optionsMap, err := hooks.PromptOptions(identifier)
 	if err != nil {
 		failures.Handle(err, locale.T("err_hook_cannot_list"))
 	}
@@ -145,5 +143,5 @@ func removeByPrompt(project *projectfile.Project, identifier string) *projectfil
 	}
 
 	print.Line()
-	return removeByHash(project, hash)
+	return removeByHash(hash)
 }

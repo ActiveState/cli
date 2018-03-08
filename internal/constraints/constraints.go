@@ -230,7 +230,8 @@ func platformIsConstrainedByConstraintName(platform projectfile.Platform, name s
 
 // Returns whether or not the current platform is constrained by the given
 // named constraints, which are defined in the given project configuration.
-func platformIsConstrained(constraintNames string, project *projectfile.Project) bool {
+func platformIsConstrained(constraintNames string) bool {
+	project := projectfile.Get()
 	for _, name := range strings.Split(constraintNames, ",") {
 		for _, platform := range project.Platforms {
 			if platformIsConstrainedByConstraintName(platform, name) {
@@ -255,7 +256,7 @@ func environmentIsConstrained(constraints string) bool {
 
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
-func IsConstrained(constraint projectfile.Constraint, project *projectfile.Project) bool {
-	return platformIsConstrained(constraint.Platform, project) ||
+func IsConstrained(constraint projectfile.Constraint) bool {
+	return platformIsConstrained(constraint.Platform) ||
 		environmentIsConstrained(constraint.Environment)
 }
