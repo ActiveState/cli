@@ -179,7 +179,6 @@ func TestRemovebyName(t *testing.T) {
 	removed := removeByName(project.Hooks[0].Name)
 	assert.NotNil(t, removed, "Received a removed hook")
 
-	project = projectfile.Get()
 	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
 }
 
