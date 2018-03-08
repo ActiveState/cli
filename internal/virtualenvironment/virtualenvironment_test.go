@@ -26,7 +26,9 @@ func setup(t *testing.T) {
 	os.RemoveAll(filepath.Join(datadir, "languages"))
 
 	venvs = make(map[string]VirtualEnvironmenter)
+}
 
+func teardown() {
 	projectfile.Reset()
 }
 
@@ -60,6 +62,8 @@ func TestActivate(t *testing.T) {
 
 	err = Activate()
 	assert.NoError(t, err, "Should activate, even if no packages are defined")
+
+	teardown()
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {
@@ -72,6 +76,8 @@ func TestActivateFailureUnknownLanguage(t *testing.T) {
 
 	err := Activate()
 	assert.Error(t, err, "Should not activate due to unknown language")
+
+	teardown()
 }
 
 func TestGetEnv(t *testing.T) {
@@ -91,6 +97,8 @@ func TestGetEnv(t *testing.T) {
 	// Calling it again for the cached version
 	_, err = GetEnv(&project.Languages[0])
 	assert.NoError(t, err, "Should get venv")
+
+	teardown()
 }
 
 func TestActivateLanguageVenv(t *testing.T) {
@@ -106,6 +114,8 @@ func TestActivateLanguageVenv(t *testing.T) {
 	createFolderStructure()
 	err = ActivateLanguageVenv(&project.Languages[0], venv)
 	assert.NoError(t, err, "Should activate the venv")
+
+	teardown()
 }
 
 func TestLoadLanguage(t *testing.T) {
@@ -128,6 +138,8 @@ func TestLoadLanguage(t *testing.T) {
 	createFolderStructure()
 	err = loadLanguage(language, venv)
 	assert.NoError(t, err, "Should load the language")
+
+	teardown()
 }
 
 func TestGetHashFromLanguage(t *testing.T) {
@@ -138,6 +150,8 @@ func TestGetHashFromLanguage(t *testing.T) {
 
 	hash := getHashFromLanguage(language)
 	assert.NotEmpty(t, hash, "Hash should be set")
+
+	teardown()
 }
 
 func TestObtainLanguage(t *testing.T) {
@@ -149,6 +163,8 @@ func TestObtainLanguage(t *testing.T) {
 	path, err := obtainLanguage(language)
 	assert.NoError(t, err, "Should obtain language")
 	assert.NotEmpty(t, path, "Should return language path")
+
+	teardown()
 }
 
 func TestLoadPackage(t *testing.T) {
@@ -172,6 +188,8 @@ func TestLoadPackage(t *testing.T) {
 	createFolderStructure()
 	err = loadPackage(language, pkg, venv)
 	assert.NoError(t, err, "Should load the package")
+
+	teardown()
 }
 
 func TestGetHashFromPackage(t *testing.T) {
@@ -183,6 +201,8 @@ func TestGetHashFromPackage(t *testing.T) {
 
 	hash := getHashFromPackage(pkg)
 	assert.NotEmpty(t, hash, "Hash should be set")
+
+	teardown()
 }
 
 func TestObtainPackage(t *testing.T) {
@@ -195,6 +215,8 @@ func TestObtainPackage(t *testing.T) {
 	path, err := obtainPackage(language, pkg)
 	assert.NoError(t, err, "Should obtain language")
 	assert.NotEmpty(t, path, "Should return package path")
+
+	teardown()
 }
 
 func TestCreateFolderStructure(t *testing.T) {
@@ -202,4 +224,6 @@ func TestCreateFolderStructure(t *testing.T) {
 
 	err := createFolderStructure()
 	assert.NoError(t, err, "Creates folder structure")
+
+	teardown()
 }

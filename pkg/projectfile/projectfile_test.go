@@ -240,11 +240,12 @@ func TestGetFail(t *testing.T) {
 	config, _ := GetSafe()
 	assert.Nil(t, config, "Config should not be set.")
 	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated")
+
+	Reset()
 }
 
 // TestGet the config
 func TestGet(t *testing.T) {
-	Reset()
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := os.Getwd()
@@ -255,6 +256,8 @@ func TestGet(t *testing.T) {
 	assert.NotEqual(t, "", os.Getenv(constants.ProjectEnvVarName), "The project env var should be set")
 
 	os.Chdir(cwd) // restore
+
+	Reset()
 }
 
 func TestGetActivated(t *testing.T) {
@@ -262,7 +265,6 @@ func TestGetActivated(t *testing.T) {
 	cwd, _ := os.Getwd()
 	os.Chdir(filepath.Join(root, "test"))
 
-	Reset()
 	config1 := Get()
 	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
@@ -276,4 +278,6 @@ func TestGetActivated(t *testing.T) {
 	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
 
 	os.Chdir(cwd) // restore
+
+	Reset()
 }
