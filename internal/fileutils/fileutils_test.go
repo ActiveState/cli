@@ -1,4 +1,4 @@
-package artifacts
+package fileutils
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ func TestReplaceAllTextFile(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 
 	// Copy test.go to temp dir.
-	testfile := filepath.Join(root, "internal", "artifacts", "testdata", "test.go")
+	testfile := filepath.Join(root, "internal", "fileutils", "testdata", "test.go")
 	tmpfile := copyFileToTempDir(t, testfile)
 	defer os.RemoveAll(filepath.Dir(tmpfile))
 
@@ -66,7 +66,7 @@ func TestReplaceAllExe(t *testing.T) {
 	assert.NoError(t, err, "Determined working directory")
 
 	// Copy test.go to temp dir.
-	tmpfile := copyFileToTempDir(t, filepath.Join(root, "internal", "artifacts", "testdata", "test.go"))
+	tmpfile := copyFileToTempDir(t, filepath.Join(root, "internal", "fileutils", "testdata", "test.go"))
 	defer os.RemoveAll(filepath.Dir(tmpfile))
 
 	// Build test.go in the temp dir.
