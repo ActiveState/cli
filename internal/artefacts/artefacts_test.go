@@ -25,7 +25,7 @@ func copyFileToTempDir(t *testing.T, filename string) string {
 	assert.NoError(t, err, "Created a temp dir")
 
 	tmpfile := filepath.Join(tmpdir, filepath.Base(filename))
-	err = ioutil.WriteFile(tmpfile, fileBytes, 0644)
+	err = ioutil.WriteFile(tmpfile, fileBytes, 0666)
 	assert.NoError(t, err, "Wrote to temp file")
 
 	return tmpfile

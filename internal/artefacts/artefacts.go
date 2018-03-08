@@ -64,5 +64,9 @@ func ReplaceAll(filename, find, replace string) error {
 	}
 
 	// Replace the original artefact.
+	stat, _ := os.Stat(filename)
+	if err := os.Chmod(tmpfile.Name(), stat.Mode()); err != nil {
+		return err
+	}
 	return os.Rename(tmpfile.Name(), filename)
 }
