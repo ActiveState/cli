@@ -17,16 +17,22 @@ import (
 )
 
 const awsProfileName = "default"
-const awsRegionName = "ca-central-1"
-const awsBucketName = "cli-update"
-const awsBucketPrefix = "update/state"
 
-var sourcePath = filepath.Join(getRootPath(), "public", "update")
+var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 
 var sess *session.Session
 
 func main() {
 	if flag.Lookup("test.v") == nil {
+		if len(os.Args) != 5 {
+			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
+		}
+
+		sourcePath = os.Args[1]
+		awsRegionName = os.Args[2]
+		awsBucketName = os.Args[3]
+		awsBucketPrefix = os.Args[4]
+
 		run()
 	}
 }
@@ -43,12 +49,6 @@ func run() {
 		params := prepareFile(path)
 		uploadFile(params)
 	}
-
-	// Upload our latest install.sh, this is technically not an update file, but at the moment is closely related
-	// so it makes sense to include it here
-	// Eventually this script will be living somewhere more accessible like activestate.com/cli/install.sh
-	params := prepareFile(filepath.Join(getRootPath(), "public", "install.sh"))
-	uploadFile(params)
 }
 
 func createSession() {

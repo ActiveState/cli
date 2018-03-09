@@ -23,10 +23,19 @@
 
 Running `make build` will generate the update bits.
 
-When update bits exist you can deploy them using `go run scripts/update-deployer/main.go`.
+When update bits exist you can deploy them using `make deploy-updates`.
 
 You will need to set the following env vars:
  * AWS_ACCESS_KEY_ID
  * AWS_SECRET_ACCESS_KEY
 
-The rest of the configuration is hard-coded in scripts/update-deployer/main.go and should generally not be changed.
+The rest of the configuration is hard-coded in our Makefile and should generally not be changed.
+
+# Deploying Artifacts
+
+To deploy artifacts you first have to generate them, to do so run `make generate-artifacts`. For this to work you must
+provide source files inside the scripts/artifact-generator/source directory. Follow the folder structure and instructions
+provided within them.
+
+Once generated you can deploy the artifacts using 'make deploy-artifacts'. This requires AWS credentials the same as for
+deploying an update.
