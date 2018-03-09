@@ -8,6 +8,18 @@ STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.
 STATEID="ActiveStateCLI"
 
+info () {
+  echo "$(tput bold)==> ${1}$(tput sgr0)"
+}
+
+warn () {
+  echo "$(tput setf 3)${1}$(tput sgr0)"
+}
+
+error () {
+  echo "$(tput setf 1)${1}$(tput sgr0)"
+}
+
 # Determine the current OS.
 case `uname -s` in
 Linux)
@@ -15,16 +27,16 @@ Linux)
   ;;
 *BSD)
   os=`uname -s | tr '[A-Z]' '[a-z]'`
-  echo "BSDs not supported yet"
+  error "BSDs not supported yet"
   exit 1
   ;;
 Darwin)
   os=darwin
-  echo "MacOS not supported yet"
+  error "MacOS not supported yet"
   exit 1
   ;;
 *)
-  echo "Unsupported OS: `uname -s`"
+  error "Unsupported OS: `uname -s`"
   exit 1
   ;;
 esac
@@ -44,16 +56,16 @@ statejson=$os-$arch.json
 statepkg=$os-$arch.gz
 stateexe=$os-$arch
 
-echo "Preparing for installation..."
+info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 if [ ! -f $statepkg -a ! -f $stateexe ]; then
-  echo "Determining latest version..."
+  info "Determining latest version..."
   if [ ! -z "`which wget`" ]; then
     fetch="wget -nv -O"
   elif [ ! -z "`which curl`" ]; then
     fetch="curl -vsS -o"
   else
-    echo "Either wget or curl is required to download files"
+    error "Either wget or curl is required to download files"
     exit 1
   fi
   # Determine the latest version to fetch.
@@ -61,10 +73,10 @@ if [ ! -f $statepkg -a ! -f $stateexe ]; then
   version=`cat $statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
   rm $statejson
   if [ -z "$version" ]; then
-    echo "Unable to retrieve the latest version number"
+    error "Unable to retrieve the latest version number"
     exit 1
   fi
-  echo "Fetching the latest version: $version..."
+  info "Fetching the latest version: $version..."
   # Fetch it.
   $fetch $statepkg ${STATEURL}${version}/${statepkg} || exit 1
 fi
@@ -72,17 +84,17 @@ fi
 # Extract the State binary after verifying its checksum.
 if [ -f $statepkg ]; then
   # Verify checksum.
-  echo "Verifying checksum..."
+  info "Verifying checksum..."
   shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
   if [ "`sha256sum -b $statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
-    echo "SHA256 sum did not match:"
-    echo "Expected: $shasum"
-    echo "Received: `sha256sum -b $statepkg | cut -d ' ' -f1`"
-    echo "Aborting installation."
+    error "SHA256 sum did not match:"
+    error "Expected: $shasum"
+    error "Received: `sha256sum -b $statepkg | cut -d ' ' -f1`"
+    error "Aborting installation."
     exit 1
   fi
 
-  echo "Extracting $statepkg..."
+  info "Extracting $statepkg..."
   gunzip $statepkg || exit 1
   chmod +x $stateexe
 fi
@@ -91,7 +103,7 @@ fi
 # /usr/local/bin if the user has write permission, or to a local bin.
 installdir="`dirname \`which $STATEEXE\` 2>/dev/null`"
 if [ ! -z "$installdir" ]; then
-  echo "Previous installation detected at $installdir"
+  warn "Previous installation detected at $installdir"
 else
   if [ -w "/usr/local/bin" ]; then
     installdir="/usr/local/bin"
@@ -105,10 +117,10 @@ while "true"; do
   echo -n "Please enter the installation directory [$installdir]: "
   read input
   if [ -e "$input" -a ! -d "$input" ]; then
-    echo "$input exists and is not a directory"
+    warn "$input exists and is not a directory"
     continue
   elif [ -e "$input" -a ! -w "$input" ]; then
-    echo "You do not have permission to write to $input"
+    warn "You do not have permission to write to $input"
     continue
   fi
   if [ ! -z "$input" ]; then
@@ -118,20 +130,20 @@ while "true"; do
       installdir="$input"
     fi
   fi
-  echo "Installing to $installdir"
+  info "Installing to $installdir"
   if [ ! -e "$installdir" ]; then
-    echo "NOTE: $installdir will be created"
+    info "NOTE: $installdir will be created"
   elif [ -e "$installdir/$STATEEXE" ]; then
-    echo "WARNING: overwriting previous installation"
+    warn "WARNING: overwriting previous installation"
   fi
   if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$installdir" ]; then
-    echo "WARNING: installing elsewhere from previous installation"
+    warn "WARNING: installing elsewhere from previous installation"
   fi
   echo -n "Continue? [y/N/q] "
   read response
   case "$response" in
     [Qq])
-      echo "Aborting installation"
+      error "Aborting installation"
       exit 0
       ;;
     [Yy])
@@ -139,7 +151,7 @@ while "true"; do
       if [ ! -e "$installdir" ]; then
         mkdir -p "$installdir" || continue
       fi
-      echo "Installing to $installdir..."
+      info "Installing to $installdir..."
       mv $stateexe "$installdir/$STATEEXE"
       if [ $? -eq 0 ]; then
         break
@@ -154,13 +166,13 @@ done
 # Check if the installation is in $PATH, if not, update user's profile if
 # permitted to.
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$installdir" ]; then
-  echo "Installation complete."
-  echo "You may now start using the '$STATEEXE' program."
+  info "Installation complete."
+  info "You may now start using the '$STATEEXE' program."
   exit 0
 fi
-profile="`echo $HOME`/.profile"
+profile="`info $HOME`/.profile"
 if [ ! -w "$profile" ]; then
-  echo "Installation complete."
+  info "Installation complete."
   echo -n "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   exit 1
@@ -168,21 +180,21 @@ fi
 echo -n "Allow \$PATH to be appended to in your $profile? [y/N]"
 read response
 if [ "$response" != "Y" -a "$response" != "y" ]; then
-  echo "Installation complete."
+  info "Installation complete."
   echo -n "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   exit 1
 fi
-echo "Updating environment..."
+info "Updating environment..."
 pathenv="export PATH=\"\$PATH:$installdir\" #$STATEID"
 if [ -z "`grep -no \"\#$STATEID\" \"$profile\"`" ]; then
-  echo "Adding to \$PATH in $profile"
-  echo "\n$pathenv" >> "$profile"
+  info "Adding to \$PATH in $profile"
+  info "\n$pathenv" >> "$profile"
 else
-  echo "Updating \$PATH in $profile"
+  info "Updating \$PATH in $profile"
   sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$profile"
 fi
 
-echo "Installation complete."
+info "Installation complete."
 echo -n "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
