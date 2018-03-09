@@ -55,7 +55,7 @@ func run(language string) {
 	platform := fmt.Sprintf("%s-%s", OS, arch)
 
 	sourceDistPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
-		"source", language, "distribution", strings.ToLower(OS))
+		"source", language, "distribution", OS)
 	sourceArtifactPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator", "source", language, "packages")
 
 	targetDistPath := filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", language, platform)
