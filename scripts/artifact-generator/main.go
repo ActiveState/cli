@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/sysinfo"
-	logging "github.com/hhkbp2/go-logging"
 	"github.com/mholt/archiver"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
@@ -71,7 +70,7 @@ func run(language string) {
 	case "go":
 		packages = getPackagePathsGo(sourceArtifactPath)
 	default:
-		logging.Fatalf("Unsupported language: %s", language)
+		log.Fatalf("Unsupported language: %s", language)
 	}
 
 	distro := []*Distribution{}
