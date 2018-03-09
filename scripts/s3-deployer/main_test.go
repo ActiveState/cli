@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	sourcePath = "public/update"
+	awsRegionName = "ca-central-1"
+	awsBucketName = "cli-update"
+	awsBucketPrefix = "update/state"
+}
+
 func TestCreateSession(t *testing.T) {
 	createSession()
 	// succeeds if no panic/exit

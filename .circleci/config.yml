@@ -27,7 +27,7 @@ jobs:
           command: make build
       - run: 
           name: Deploy bits
-          command: make deploy
+          command: make deploy-updates
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output

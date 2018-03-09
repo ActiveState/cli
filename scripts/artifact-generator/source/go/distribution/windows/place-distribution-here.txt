@@ -1,0 +1,3 @@
+Place the exported zip here, downloaded from https://golang.org/dl/
+
+Currently untested on Windows.

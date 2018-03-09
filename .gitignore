@@ -2,3 +2,8 @@ build
 debug
 debug.test
 public/update/*
+public/distro/*
+scripts/artifact-generator/source/*/distribution/*/*
+!scripts/artifact-generator/source/*/distribution/*/place-distribution-here.txt
+scripts/artifact-generator/source/*/packages/src/*
+!scripts/artifact-generator/source/*/packages/src/place-packages-here.txt
