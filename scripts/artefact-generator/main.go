@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
+	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
 )
 
 // Distribution reflects the data contained in the distribution.json file
@@ -27,7 +27,7 @@ type Distribution struct {
 	Download string
 }
 
-// Package is used to iterate through packages found, before they are turned into artifacts
+// Package is used to iterate through packages found, before they are turned into artefacts
 type Package struct {
 	Name         string
 	AbsolutePath string
@@ -54,33 +54,33 @@ func run(language string) {
 	arch := strings.ToLower(sysinfo.Architecture().String())
 	platform := fmt.Sprintf("%s-%s", OS, arch)
 
-	sourceDistPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
+	sourceDistPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artefact-generator",
 		"source", language, "distribution", OS)
-	sourceArtifactPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator", "source", language, "packages")
+	sourceArtefactPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artefact-generator", "source", language, "packages")
 
 	targetDistPath := filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", language, platform)
-	targetArtifactPathRelative := filepath.Join("distro", language, "artifacts")
-	targetArtifactPath := filepath.Join(environment.GetRootPathUnsafe(), "public", targetArtifactPathRelative)
+	targetArtefactPathRelative := filepath.Join("distro", language, "artefacts")
+	targetArtefactPath := filepath.Join(environment.GetRootPathUnsafe(), "public", targetArtefactPathRelative)
 
 	os.MkdirAll(targetDistPath, os.ModePerm)
-	os.MkdirAll(targetArtifactPath, os.ModePerm)
+	os.MkdirAll(targetArtefactPath, os.ModePerm)
 
 	var packages []*Package
 	switch language {
 	case "go":
-		packages = getPackagePathsGo(sourceArtifactPath)
+		packages = getPackagePathsGo(sourceArtefactPath)
 	default:
 		log.Fatalf("Unsupported language: %s", language)
 	}
 
 	distro := []*Distribution{}
-	languageArtifact := createArtifact(language, sourceDistPath, "language", targetArtifactPath, targetArtifactPathRelative)
-	distro = append(distro, languageArtifact)
+	languageArtefact := createArtefact(language, sourceDistPath, "language", targetArtefactPath, targetArtefactPathRelative)
+	distro = append(distro, languageArtefact)
 
 	for _, pkg := range packages {
-		packageArtifact := createArtifact(pkg.Name, pkg.AbsolutePath, "package", targetArtifactPath, targetArtifactPathRelative)
-		packageArtifact.Parent = languageArtifact.Hash
-		distro = append(distro, packageArtifact)
+		packageArtefact := createArtefact(pkg.Name, pkg.AbsolutePath, "package", targetArtefactPath, targetArtefactPathRelative)
+		packageArtefact.Parent = languageArtefact.Hash
+		distro = append(distro, packageArtefact)
 	}
 
 	distrob, err := json.Marshal(distro)
@@ -90,10 +90,10 @@ func run(language string) {
 	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, os.ModePerm)
 }
 
-func createArtifact(name string, path string, kind string, targetPath string, downloadPath string) *Distribution {
-	fmt.Printf("Creating artifact for %s: %s (%s)\n", kind, name, path)
+func createArtefact(name string, path string, kind string, targetPath string, downloadPath string) *Distribution {
+	fmt.Printf("Creating artefact for %s: %s (%s)\n", kind, name, path)
 
-	artf := &artifact.Artifact{
+	artf := &artefact.Artefact{
 		Name:     name,
 		Type:     kind,
 		Version:  "0.0.1", // versions arent supported by this implementation
@@ -104,20 +104,20 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 	if err != nil {
 		log.Fatalf("JSON encoding failed: %s", err.Error())
 	}
-	artifactSource := filepath.Join(os.TempDir(), "artifact.json")
-	ioutil.WriteFile(artifactSource, artfb, os.ModePerm)
+	artefactSource := filepath.Join(os.TempDir(), "artefact.json")
+	ioutil.WriteFile(artefactSource, artfb, os.ModePerm)
 
 	// Add source files
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Fatalf("Cannot walk source dir: %s", err.Error())
 	}
-	source := []string{artifactSource}
+	source := []string{artefactSource}
 	for _, file := range files {
 		source = append(source, filepath.Join(path, file.Name()))
 	}
 
-	target := filepath.Join(targetPath, "artifact.tar.gz")
+	target := filepath.Join(targetPath, "artefact.tar.gz")
 
 	fmt.Printf(" \\- Writing interim file: %s\n", target)
 	err = archiver.TarGz.Make(target, source)
@@ -136,7 +136,7 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 
 	return &Distribution{
 		Hash:     hash,
-		Download: constants.APIArtifactURL + downloadPath + hash + ".tar.gz",
+		Download: constants.APIArtefactURL + downloadPath + hash + ".tar.gz",
 	}
 }
 

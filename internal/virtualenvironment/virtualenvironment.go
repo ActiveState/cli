@@ -46,7 +46,7 @@ type VirtualEnvironmenter interface {
 	LoadPackageFromPath(string, *projectfile.Package) error
 }
 
-type artifactHashable struct {
+type artefactHashable struct {
 	Name    string
 	Version string
 	Build   map[string]string
@@ -152,7 +152,7 @@ func loadLanguage(language *projectfile.Language, venv VirtualEnvironmenter) err
 }
 
 func getHashFromLanguage(language *projectfile.Language) string {
-	hashable := artifactHashable{Name: language.Name, Version: language.Version, Build: language.Build}
+	hashable := artefactHashable{Name: language.Name, Version: language.Version, Build: language.Build}
 	hash, _ := hashstructure.Hash(hashable, nil)
 	return fmt.Sprintf("%d", hash)
 }
@@ -198,7 +198,7 @@ func loadPackage(language *projectfile.Language, pkg *projectfile.Package, venv 
 }
 
 func getHashFromPackage(pkg *projectfile.Package) string {
-	hashable := artifactHashable{Name: pkg.Name, Version: pkg.Version, Build: pkg.Build}
+	hashable := artefactHashable{Name: pkg.Name, Version: pkg.Version, Build: pkg.Build}
 	hash, _ := hashstructure.Hash(hashable, nil)
 	return fmt.Sprintf("%d", hash)
 }

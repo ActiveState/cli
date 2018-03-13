@@ -33,8 +33,8 @@ const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
-// APIArtifactURL is the URL for downloading artifacts
-const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
+// APIArtefactURL is the URL for downloading artefacts
+const APIArtefactURL = "https://s3.ca-central-1.amazonaws.com/cli-artefacts/"
 
 // UpdateStorageDir is the directory where updates will be stored
 const UpdateStorageDir = "update/"
