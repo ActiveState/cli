@@ -178,7 +178,7 @@ func getPackagePathsGo(sourcePath string) []*Package {
 
 		var exists bool
 		for _, p := range resultPaths {
-			if len(path) >= len(p.AbsolutePath) && path[0:len(p.AbsolutePath)] == p.AbsolutePath {
+			if len(path) >= len(p.Name) && path[0:len(p.Name)] == p.Name {
 				exists = true
 				break
 			}
