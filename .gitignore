@@ -3,7 +3,7 @@ debug
 debug.test
 public/update/*
 public/distro/*
-scripts/artefact-generator/source/*/distribution/*/*
-!scripts/artefact-generator/source/*/distribution/*/place-distribution-here.txt
-scripts/artefact-generator/source/*/packages/src/*
-!scripts/artefact-generator/source/*/packages/src/place-packages-here.txt
+scripts/artefact-generator/source/vendor/*/distribution/*/*
+!scripts/artefact-generator/source/vendor/*/distribution/*/place-distribution-here.txt
+scripts/artefact-generator/source/vendor/*/packages/src/*
+!scripts/artefact-generator/source/vendor/*/packages/src/place-packages-here.txt
