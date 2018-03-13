@@ -51,6 +51,11 @@ x86_64)
   ;;
 esac
 
+# Determine the tmp directory.
+if [ -z "$TMPDIR" ]; then
+  TMPDIR="/tmp"
+fi
+
 # Construct system-dependent filenames.
 statejson=$os-$arch.json
 statepkg=$os-$arch.gz
@@ -58,7 +63,7 @@ stateexe=$os-$arch
 
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
-if [ ! -f $statepkg -a ! -f $stateexe ]; then
+if [ ! -f $TMPDIR/$statepkg -a ! -f $TMPDIR/$stateexe ]; then
   info "Determining latest version..."
   if [ ! -z "`which wget`" ]; then
     fetch="wget -nv -O"
@@ -69,34 +74,34 @@ if [ ! -f $statepkg -a ! -f $stateexe ]; then
     exit 1
   fi
   # Determine the latest version to fetch.
-  $fetch $statejson $STATEURL$statejson || exit 1
-  version=`cat $statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-  rm $statejson
+  $fetch $TMPDIR/$statejson $STATEURL$statejson || exit 1
+  version=`cat $TMPDIR/$statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
+  rm $TMPDIR/$statejson
   if [ -z "$version" ]; then
     error "Unable to retrieve the latest version number"
     exit 1
   fi
   info "Fetching the latest version: $version..."
   # Fetch it.
-  $fetch $statepkg ${STATEURL}${version}/${statepkg} || exit 1
+  $fetch $TMPDIR/$statepkg ${STATEURL}${version}/${statepkg} || exit 1
 fi
 
 # Extract the State binary after verifying its checksum.
-if [ -f $statepkg ]; then
+if [ -f $TMPDIR/$statepkg ]; then
   # Verify checksum.
   info "Verifying checksum..."
   shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
-  if [ "`sha256sum -b $statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
+  if [ "`sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $shasum"
-    error "Received: `sha256sum -b $statepkg | cut -d ' ' -f1`"
+    error "Received: `sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`"
     error "Aborting installation."
     exit 1
   fi
 
   info "Extracting $statepkg..."
-  gunzip $statepkg || exit 1
-  chmod +x $stateexe
+  gunzip $TMPDIR/$statepkg || exit 1
+  chmod +x $TMPDIR/$stateexe
 fi
 
 # Check for existing installation. Otherwise, make the installation default to
@@ -152,7 +157,7 @@ while "true"; do
         mkdir -p "$installdir" || continue
       fi
       info "Installing to $installdir..."
-      mv $stateexe "$installdir/$STATEEXE"
+      mv $TMPDIR/$stateexe "$installdir/$STATEEXE"
       if [ $? -eq 0 ]; then
         break
       fi
