@@ -21,19 +21,19 @@ jobs:
           name: Run unit tests
           command: |
               trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-              make test | tee ${TEST_RESULTS}/go-test.out
+              go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
+      - run:
+          # Unfortunately this runs our tests again. Have to find a way to combine both junit reports and coverage reports
+          name: Report Coverage
+          command: |
+            echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
+            bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
       - run: 
           name: Build the CLI
           command: make build
       - run: 
           name: Deploy bits
           command: make deploy-updates
-      - run:
-          name: Report Coverage
-          command: |
-            go get github.com/pierrre/gotestcover
-            echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
-            bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
     #   - run:
     #       name: Report Coverage
     #       command: |
