@@ -30,7 +30,7 @@ deploy-updates:
 deploy-artefacts:
 		go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artefacts distro
 test: 
-		$(GOTEST) -race -coverprofile=coverage.txt -covermode=atomic ./...
+		$(GOTEST) ./...
 clean: 
 		$(GOCLEAN)
 		rm -Rf build

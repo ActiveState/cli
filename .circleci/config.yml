@@ -30,7 +30,9 @@ jobs:
           command: make deploy-updates
       - run:
           name: Report Coverage
-          command: bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
+          command: |
+            gover
+            goveralls -coverprofile=gover.coverprofile -service=circle-ci -repotoken=a05a9f2a-2365-48a7-88dc-b62c6de254b7
       - store_artifacts:
           path: /tmp/test-results
           destination: raw-test-output
