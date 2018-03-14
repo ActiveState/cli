@@ -31,6 +31,9 @@ jobs:
       - run:
           name: Report Coverage
           command: |
+            go get golang.org/x/tools/cmd/cover
+            go get github.com/modocache/gover
+            go get github.com/mattn/goveralls
             gover
             goveralls -coverprofile=gover.coverprofile -service=circle-ci -repotoken=a05a9f2a-2365-48a7-88dc-b62c6de254b7
       - store_artifacts:
