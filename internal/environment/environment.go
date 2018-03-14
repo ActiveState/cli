@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"go/build"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,10 +21,24 @@ func GetRootPath() (string, error) {
 
 	abs := filepath.Dir(file)
 
+	// If we're receiving a relative path resolve it to absolute
+	if abs[0:1] != "/" && abs[1:1] != ":" {
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = build.Default.GOPATH
+		}
+		abs = filepath.Join(gopath, "src", abs)
+	}
+
 	// When tests are ran with coverage the location of this file is changed to a temp file, and we have to
 	// adjust accordingly
 	if strings.HasSuffix(abs, "_obj_test") {
 		abs = ""
+	}
+
+	// If we're in a temp _obj we need to account for it in the path
+	if strings.HasSuffix(abs, "_obj") {
+		abs = filepath.Join(abs, "..")
 	}
 
 	var err error
