@@ -240,6 +240,12 @@
   revision = "ff57fdc13a148d39c3e930cb27c7eaf82e376891"
 
 [[projects]]
+  name = "github.com/rs/xid"
+  packages = ["."]
+  revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
+  version = "v1.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/shibukawa/configdir"
   packages = ["."]
@@ -357,6 +363,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bab120fdff58978fc3ab1fd8935ec809f72d745ac8301b442f925d56bb86e010"
+  inputs-digest = "54a2d7cb62f9f2413edccfa4768cdaa8e8322c29350cc66ec2ca74419a9aad78"
   solver-name = "gps-cdcl"
   solver-version = 1
