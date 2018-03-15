@@ -7,23 +7,60 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppFailure(t *testing.T) {
-	var err Failure
-	err = App.New("hello")
+func TestCmdFailure(t *testing.T) {
+	err := FailCmd.New("hello")
 	assert.Equal(t, "hello", err.Error())
-	Handle(err, "")
 }
 
-func TestUserFailure(t *testing.T) {
-	var err Failure
-	err = User.New("hello")
-	assert.Equal(t, "hello", err.Error())
-	Handle(err, "")
+func TestLocale(t *testing.T) {
+	err := FailCmd.New("err_failure_test", "two", "four")
+	assert.Equal(t, "one two three four", err.Error())
 }
 
-func TestError(t *testing.T) {
-	var err error
-	err = errors.New("hello")
+func TestUserFailureAndMatches(t *testing.T) {
+	var err *Failure
+
+	err = FailUserInput.New("hello")
 	assert.Equal(t, "hello", err.Error())
-	Handle(err, "")
+	assert.True(t, err.Type.Matches(FailUser))
+}
+
+func TestWrap(t *testing.T) {
+	err := FailInput.Wrap(errors.New("hello"))
+	assert.Equal(t, "hello", err.Error())
+	assert.True(t, err.Type.Matches(FailInput))
+}
+
+func TestTypeIsSet(t *testing.T) {
+	err := FailCmd.New("hello")
+	assert.NotNil(t, err.Type, "Type is set")
+}
+
+func TestLog(t *testing.T) {
+	err := FailCmd.New("hello")
+	err.Log()
+	// ? no panic
+}
+
+func TestHandle(t *testing.T) {
+	err := FailCmd.New("hello")
+	Handle(err, "Description")
+	// ? no panic
+}
+
+func TestLegacy(t *testing.T) {
+	err := errors.New("hello")
+	Handle(err, "Description")
+	// ? no panic
+}
+
+func TestInvalidType(t *testing.T) {
+	var recovered = false
+	defer func() {
+		if r := recover(); r != nil {
+			recovered = true
+		}
+	}()
+	Type("foo.fail.bar")
+	assert.True(t, recovered, "Should throw a panic because prefix doesnt match package name")
 }

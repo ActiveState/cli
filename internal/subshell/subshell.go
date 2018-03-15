@@ -75,7 +75,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	case "cmd.exe":
 		venv = &cmd.SubShell{}
 	default:
-		return nil, failures.User.New(T("error_unsupported_shell", map[string]interface{}{
+		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
 		}))
 	}

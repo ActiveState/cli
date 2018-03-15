@@ -63,7 +63,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		} else if numOfHooksFound > 0 {
 			removed = removeByPrompt(Args.Identifier)
 		} else {
-			failures.Handle(failures.User.New(locale.T("err_hook_cannot_find")), "")
+			failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
 		}
 	}
 
@@ -138,7 +138,7 @@ func removeByPrompt(identifier string) *projectfile.Hook {
 	print.Formatted("\nresult: %v\n", result)
 	print.Formatted("\nmap: %v\n", optionsMap)
 	if result == "" || !exists {
-		failures.Handle(failures.User.New(locale.T("err_hook_cannot_find")), "")
+		failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
 		return removed
 	}
 

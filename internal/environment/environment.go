@@ -1,13 +1,14 @@
 package environment
 
+// This package may NOT depend on failures (directly or indirectly)
+
 import (
+	"errors"
 	"go/build"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 )
 
 // GetRootPath returns the root path of the library we're under
@@ -16,7 +17,7 @@ func GetRootPath() (string, error) {
 
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", failures.App.New("Could not call Caller(0)")
+		return "", errors.New("Could not call Caller(0)")
 	}
 
 	abs := filepath.Dir(file)

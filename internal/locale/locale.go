@@ -1,13 +1,15 @@
 package locale
 
+// This package may NOT depend on failures (directly or indirectly)
+
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -76,7 +78,7 @@ func getLocaleFlag() string {
 // Set the active language to the given locale
 func Set(localeName string) {
 	if !funk.Contains(Supported, localeName) {
-		print.Error("Locale does not exist: %s", localeName)
+		fmt.Printf("Locale does not exist: %s\n", localeName)
 		exit(1)
 		return
 	}
