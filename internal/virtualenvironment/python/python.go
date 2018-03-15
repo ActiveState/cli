@@ -47,7 +47,7 @@ func (v *VirtualEnvironment) LoadLanguageFromPath(path string) error {
 	err := os.Symlink(path, filepath.Join(v.DataDir(), "language"))
 	if err != nil {
 		logging.Error(err.Error())
-		return failures.User.New(locale.T("error_could_not_make_symlink"))
+		return failures.FailIO.New(locale.T("error_could_not_make_symlink"))
 	}
 	return nil
 }

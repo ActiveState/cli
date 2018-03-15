@@ -73,14 +73,14 @@ func clone(uriOrID string) (scm.SCMer, error) {
 			scm.SetBranch(Flags.Branch)
 		}
 		if !scm.ConfigFileExists() {
-			return nil, failures.User.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
+			return nil, failures.FailUser.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
 		if err := scm.Clone(); err != nil {
 			print.Error(locale.T("error_state_activate"))
 			return nil, err
 		}
 	} else {
-		return nil, failures.User.New("not implemented yet") // TODO: activate from ID
+		return nil, failures.FailUser.New("not implemented yet") // TODO: activate from ID
 	}
 	return scm, nil
 }

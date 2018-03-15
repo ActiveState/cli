@@ -1,94 +1,160 @@
 package failures
 
 import (
+	"fmt"
+	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/rs/xid"
 )
 
-// Failure defines the main interface used by all our custom failure structs
-type Failure interface {
-	Error() string
-	Handle(string)
+var (
+	// FailUser identifies a failure as a user facing failure, this doesn't use the Type method as the Type method does
+	// not support setting the user bool. This should be the ONLY failure type that does this.
+	FailUser = &FailureType{xid.New().String(), "failures.fail.user", true, []*FailureType{}}
+
+	// failLegacy identifies a failure as a legacy failure, this is for internal use only
+	failLegacy = Type("failures.fail.legacy")
+
+	// FailIO identifies a failure as an IO failure
+	FailIO = Type("failures.fail.io")
+
+	// FailInput identifies a failure as an input failure
+	FailInput = Type("failures.fail.input", FailUser)
+
+	// FailUserInput identifies a failure as an input failure
+	FailUserInput = Type("failures.fail.userinput", FailInput, FailUser)
+
+	// FailCmd identifies a failure as originating from the command that was ran
+	FailCmd = Type("failures.fail.cmd", FailUser)
+
+	// FailRuntime identifies a failure as a runtime failure (mainly intended for calls to the runtime package)
+	FailRuntime = Type("failures.fail.runtime")
+
+	// FailVerify identifies a failure as being due to the failure toverify something
+	FailVerify = Type("failures.fail.verify")
+
+	// FailNotFound identifies a failure as being due to an item not being found
+	FailNotFound = Type("failures.fail.notfound")
+)
+
+// FailureType reflects a specific type of failure, and is used to identify failures in a generalized way
+type FailureType struct {
+	UID     string
+	Name    string
+	User    bool
+	parents []*FailureType
 }
 
-type app struct{}
-
-// New creates a new failure struct
-func (e *app) New(msg string) Failure {
-	logging.Error(msg)
-	return &AppFailure{msg}
-}
-
-// App failure is used to easily create an app facing failure (failures.App.New(...))
-var App = app{}
-
-// AppFailure is the actual struct used for the failure, so what failures.App.New() creates
-type AppFailure struct {
-	message string
-}
-
-// Error returns the failure message
-func (e *AppFailure) Error() string {
-	return e.message
-}
-
-// Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
-// most relevant to the current error type
-func (e *AppFailure) Handle(description string) {
-	if description == "" {
-		description = "App Error:"
-	} else {
-		print.Error(description)
+// Matches tells you if the given FailureType matches the current one or any of its parents
+func (f *FailureType) Matches(m *FailureType) bool {
+	if f == m {
+		return true
 	}
-	// Already logged at New
+
+	for _, p := range f.parents {
+		if p.Matches(m) {
+			return true
+		}
+	}
+
+	return false
 }
 
-type user struct{}
-
-// New creates a new failure struct
-func (e *user) New(msg string) Failure {
-	logging.Error(msg)
-	return &UserFailure{msg}
+// New creates a failure struct with the given info
+func (f *FailureType) New(message string, params ...string) *Failure {
+	logging.Debug("Failure '%s' created: %s", f.Name, message)
+	var input = map[string]interface{}{}
+	for k, v := range params {
+		input["V"+strconv.Itoa(k)] = v
+	}
+	return &Failure{locale.T(message, input), f}
 }
 
-// User failure is used to easily create an user facing failure (failures.User.New(...))
-var User = user{}
-
-// UserFailure is the actual struct used for the failure, so what failures.User.New() creates
-type UserFailure struct {
-	message string
+// Wrap wraps another error
+func (f *FailureType) Wrap(err error) *Failure {
+	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
+	return f.New(err.Error())
 }
 
-// Error returns the failure message
-func (e *UserFailure) Error() string {
-	return e.message
+// Failure holds an actual failure, do not call this directly, use Fail and UserFail instead
+type Failure struct {
+	Message string
+	Type    *FailureType
+}
+
+// Error returns the failure message, cannot be a pointer as it breaks the error interface
+func (e Failure) Error() string {
+	return e.Message
+}
+
+// Log the failure
+func (e *Failure) Log() {
+	fmt.Printf("%v", e.Type)
+	logging.Error(fmt.Sprintf("%s: %s", e.Type.Name, e.Message))
 }
 
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
-func (e *UserFailure) Handle(description string) {
+func (e *Failure) Handle(description string) {
 	if description != "" {
-		logging.Error(description)
+		logging.Warning(description)
+
+		// Descriptions are always communicated to the user
 		print.Error(description)
 	}
-	print.Error(e.Error())
+
+	e.Log()
+
+	if e.Type.User {
+		print.Error(e.Error())
+	}
+}
+
+// Type returns a FailureType that can be used to create your own failure types
+func Type(name string, parents ...*FailureType) *FailureType {
+	pc, file, line, ok := runtime.Caller(1)
+	fun := runtime.FuncForPC(pc)
+
+	if !ok {
+		// This shouldn't ever happen to my knowledge, unless this function were a main function there will always be one
+		// caller up the chain
+		panic("runtime.Caller(1) failing in failures.Type")
+	}
+
+	pkg := strings.Split(filepath.Base(fun.Name()), ".")[0]
+	if !strings.HasPrefix(name+".fail.", pkg) {
+		panic(fmt.Sprintf("Invalid type name: %s, it should be in the format of `%s.fail.<name>`. Called from: %s:%d (%s)", name, pkg, file, line, fun.Name()))
+	}
+
+	user := false
+	for _, typ := range parents {
+		if typ.Matches(FailUser) {
+			user = true
+		}
+	}
+
+	guid := xid.New()
+	return &FailureType{guid.String(), name, user, parents}
 }
 
 // Handle is what controllers would call to handle an error message, this will take care of calling the underlying
 // handle method or logging the error if this isnt a Failure type
 func Handle(err error, description string) {
 	switch t := err.(type) {
-	default:
-		if description == "" {
-			description = "Unknown Error:"
-		} else {
-			print.Error(description)
-		}
-		logging.Error(description)
-		logging.Error(err.Error())
-		return
-	case Failure:
+	case *Failure:
 		t.Handle(description)
 		return
+	default:
+		failure := failLegacy.New(err.Error())
+		if description == "" {
+			description = "Unknown Error:"
+		}
+		failure.Handle(description)
 	}
 }

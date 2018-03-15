@@ -106,7 +106,7 @@ func GetEnv(language *projectfile.Language) (VirtualEnvironmenter, error) {
 		return venv, nil
 	default:
 		var T = locale.T
-		return nil, failures.User.New(T("warning_language_not_yet_supported", map[string]interface{}{
+		return nil, failures.FailUser.New(T("warning_language_not_yet_supported", map[string]interface{}{
 			"Language": language.Name,
 		}))
 	}

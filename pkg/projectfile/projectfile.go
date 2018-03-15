@@ -14,6 +14,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// FailNoProject identifies a failure as being due to a missing project file
+var FailNoProject = failures.Type("projectfile.fail.noproject")
+
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string     `yaml:"name"`
@@ -110,7 +113,7 @@ func Parse(filepath string) (*Project, error) {
 	project.path = filepath
 
 	if err != nil {
-		return nil, failures.User.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
 	return &project, err
@@ -177,7 +180,7 @@ func GetSafe() (*Project, error) {
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		return nil, failures.User.New(locale.T("err_no_projectfile"))
+		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
 	}
 	project, err := Parse(projectFilePath)
 	if err == nil {
