@@ -161,3 +161,5 @@ err_invalid_input:
   other: Invalid input received
 hook_removed:
   other: "Hook removed: {{.Hook.Name}} ({{.Hash}})"
+info_state_active_repoexists:
+  other: "Repo already exists: {{.Path}}"

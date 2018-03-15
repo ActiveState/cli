@@ -107,3 +107,25 @@ func TestClone(t *testing.T) {
 	err = os.RemoveAll(tempdir) // clean up
 	assert.Nil(t, err, "The temporary directory was removed")
 }
+
+func TestRepoExists(t *testing.T) {
+	originalCWD, _ := os.Getwd()
+
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should detect root path")
+	newCWD, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata"))
+	assert.NoError(t, err, "Should detect root path")
+	os.Chdir(newCWD)
+
+	repoExists, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
+	assert.Nil(t, err, "Obtain repo directory")
+	gitExists := &Git{URI: repoExists}
+	assert.True(t, gitExists.RepoExists(), "Repo should already exist")
+
+	repoFake, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "fakerepo"))
+	assert.Nil(t, err, "Obtain repo directory")
+	gitFake := &Git{URI: repoFake}
+	assert.False(t, gitFake.RepoExists(), "Repo should not exist")
+
+	os.Chdir(originalCWD)
+}
