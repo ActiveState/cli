@@ -75,7 +75,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 		if !scm.ConfigFileExists() {
 			return nil, failures.FailUser.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
-		if scm.RepoExists() {
+		if scm.TargetExists() {
 			print.Info(locale.T("info_state_active_repoexists", map[string]interface{}{"Path": scm.Path()}))
 			return scm, nil
 		}

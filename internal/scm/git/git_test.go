@@ -53,9 +53,11 @@ func TestConfigFileExists(t *testing.T) {
 func TestClone(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	err = os.Chdir(filepath.Join(root, "test"))
+	assert.NoError(t, err, "Moving to new CWD")
 
-	cwd, _ := os.Getwd() // store
+	cwd, err := os.Getwd() // store
+	assert.NoError(t, err, "Saving CWD")
 	repo, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "The test repository exists")
 
@@ -109,23 +111,26 @@ func TestClone(t *testing.T) {
 }
 
 func TestRepoExists(t *testing.T) {
-	originalCWD, _ := os.Getwd()
+	originalCWD, err := os.Getwd()
+	assert.NoError(t, err, "Saving CWD")
 
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	newCWD, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata"))
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(newCWD)
+	err = os.Chdir(newCWD)
+	assert.NoError(t, err, "Moving to new CWD")
 
 	repoExists, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "Obtain repo directory")
 	gitExists := &Git{URI: repoExists}
-	assert.True(t, gitExists.RepoExists(), "Repo should already exist")
+	assert.True(t, gitExists.TargetExists(), "Repo should already exist")
 
 	repoFake, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "fakerepo"))
 	assert.Nil(t, err, "Obtain repo directory")
 	gitFake := &Git{URI: repoFake}
-	assert.False(t, gitFake.RepoExists(), "Repo should not exist")
+	assert.False(t, gitFake.TargetExists(), "Repo should not exist")
 
-	os.Chdir(originalCWD)
+	err = os.Chdir(originalCWD)
+	assert.NoError(t, err, "Moving back to original CWD")
 }

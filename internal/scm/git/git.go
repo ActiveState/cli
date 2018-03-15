@@ -88,8 +88,9 @@ func (g *Git) SetPath(path string) {
 func (g *Git) Path() string {
 	if g.path == "" {
 		cwd, _ := os.Getwd()
-		g.path = filepath.Join(cwd, g.humanishPart())
-		logging.Debug("Determined 'humanish' dir to clone into as '%s'", g.path)
+		reponame := g.humanishPart()
+		g.path = filepath.Join(cwd, reponame)
+		logging.Debug("Determined 'humanish' dir to clone into as '%s'", reponame)
 	}
 	return g.path
 }
@@ -112,8 +113,8 @@ func (g *Git) CheckoutBranch() error {
 	return cmd.Run()
 }
 
-// RepoExists used to check if the repo has already been created or not
-func (g *Git) RepoExists() bool {
+// TargetExists used to check if the repo has already been created or not
+func (g *Git) TargetExists() bool {
 	if _, err := os.Stat(g.Path()); err == nil {
 		return true
 	}
