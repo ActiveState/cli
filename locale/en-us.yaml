@@ -193,3 +193,5 @@ err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
 info_activating_state:
   other: "Activating state: {{.Owner}}/{{.Name}}"
+info_state_active_repoexists:
+  other: "Repo already exists: {{.Path}}"
