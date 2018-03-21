@@ -1,12 +1,74 @@
 package artefact
 
-// Artefact is used to describe the contents of an artefact, this information can then be used to set up distributions
+import (
+	"encoding/json"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/config"
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+)
+
+// Meta is used to describe the contents of an artefact, this information can then be used to set up distributions
 // An artefact can be a package, a language, a clib, etc. It is a component that makes up a distribution.
 // It reflects the spec described here https://docs.google.com/document/d/1HprLsYXiKBeKfUvRrXpgyD_aodMnf6ZyuwgqpZu5ii4
-type Artefact struct {
+type Meta struct {
 	Name     string
 	Type     string
 	Version  string
 	Relocate string
 	Binaries []string
+}
+
+// Artefact describes the actual artifact as it is stored on the system
+type Artefact struct {
+	Meta *Meta
+	Path string
+	Hash string
+}
+
+// Get retrieves an artifact by the given hash
+func Get(hash string) (*Artefact, *failures.Failure) {
+	path := GetPath(hash)
+
+	if !strings.HasSuffix(path, constants.ArtefactFile) {
+		path = filepath.Join(path, constants.ArtefactFile)
+	}
+
+	if !fileutils.FileExists(path) {
+		return nil, failures.FailNotFound.New("Artefact file does not exist at " + path)
+	}
+
+	body, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+
+	artf := Meta{}
+	err = json.Unmarshal(body, &artf)
+	if err != nil {
+		return nil, failures.FailMarshal.Wrap(err)
+	}
+
+	return &Artefact{&artf, path, hash}, nil
+}
+
+// GetPath retrieves the path for an artifact hash
+func GetPath(hash string) string {
+	datadir := config.GetDataDir()
+	return filepath.Join(datadir, "artefacts", hash)
+}
+
+// Exists checks if an artifact exists by the given hash
+func Exists(hash string) bool {
+	path := GetPath(hash)
+
+	if !strings.HasSuffix(path, constants.ArtefactFile) {
+		path = filepath.Join(path, constants.ArtefactFile)
+	}
+
+	return fileutils.FileExists(path)
 }

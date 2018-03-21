@@ -1,8 +1,9 @@
-package python
+package golang
 
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func setup(t *testing.T) {
 
 func TestLanguage(t *testing.T) {
 	venv := &VirtualEnvironment{}
-	assert.Equal(t, "python", venv.Language(), "Should return python")
+	assert.Equal(t, "go", venv.Language(), "Should return go")
 }
 
 func TestDataDir(t *testing.T) {
@@ -59,20 +60,20 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	var language *artefact.Artefact
 	for _, lang := range dist.Languages {
-		if lang.Meta.Name == venv.Language() {
+		if strings.ToLower(lang.Meta.Name) == venv.Language() {
 			language = lang
 			break
 		}
 	}
 
-	assert.Nil(t, language, "Language should be nil as we don't have python artifacts yet")
+	assert.NotNil(t, language, "Should retrieve language from dist")
 
-	// artf := dist.Artefacts[dist.Languages[0].Hash][0]
-	// fail = venv.LoadArtefact(artf)
-	// assert.NoError(t, fail.ToError(), "Loads artefact without errors")
+	artf := dist.Artefacts[dist.Languages[0].Hash][0]
+	fail = venv.LoadArtefact(artf)
+	assert.NoError(t, fail.ToError(), "Loads artefact without errors")
 
-	// // Todo: Test with datadir as source, not the archived version
-	// assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artefact.json"), "Should create a package symlink")
+	// Todo: Test with datadir as source, not the archived version
+	assert.FileExists(t, filepath.Join(datadir, "src", artf.Meta.Name, "artefact.json"), "Should create a package symlink")
 }
 
 func TestActivate(t *testing.T) {
@@ -82,8 +83,8 @@ func TestActivate(t *testing.T) {
 
 	venv.SetArtefact(&artefact.Artefact{
 		Meta: &artefact.Meta{
-			Name:    "python",
-			Version: "2.7.11",
+			Name:    "go",
+			Version: "1.10",
 		},
 		Path: "test",
 	})
@@ -95,5 +96,4 @@ func TestActivate(t *testing.T) {
 	venv.Activate()
 
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
-	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
 }

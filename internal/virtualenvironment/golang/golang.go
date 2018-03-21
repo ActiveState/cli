@@ -1,13 +1,13 @@
-package python
+package golang
 
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 )
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
@@ -18,7 +18,7 @@ type VirtualEnvironment struct {
 
 // Language - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Language() string {
-	return "python"
+	return "go"
 }
 
 // DataDir - see virtualenvironment.VirtualEnvironment
@@ -44,6 +44,8 @@ func (v *VirtualEnvironment) SetArtefact(artf *artefact.Artefact) {
 // LoadArtefact - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadArtefact(artf *artefact.Artefact) *failures.Failure {
 	switch artf.Meta.Type {
+	case "language":
+		return v.loadLanguage(artf)
 	case "package":
 		return v.loadPackage(artf)
 	default:
@@ -51,25 +53,21 @@ func (v *VirtualEnvironment) LoadArtefact(artf *artefact.Artefact) *failures.Fai
 	}
 }
 
-func (v *VirtualEnvironment) loadPackage(artf *artefact.Artefact) *failures.Failure {
-	if err := fileutils.Mkdir(v.datadir, "lib"); err != nil {
+func (v *VirtualEnvironment) loadLanguage(artf *artefact.Artefact) *failures.Failure {
+	err := os.Symlink(filepath.Dir(artf.Path), filepath.Join(v.DataDir(), "language"))
+	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 
-	artfPath := filepath.Dir(artf.Path)
-	err := filepath.Walk(artfPath, func(subpath string, f os.FileInfo, err error) error {
-		subpath = strings.TrimPrefix(subpath, artfPath)
-		if subpath == "" {
-			return nil
-		}
-		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
-		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
-			return failures.FailIO.Wrap(err)
-		}
+	return nil
+}
 
-		return os.Symlink(filepath.Join(artfPath, subpath), target)
-	})
+func (v *VirtualEnvironment) loadPackage(artf *artefact.Artefact) *failures.Failure {
+	if err := fileutils.Mkdir(v.DataDir(), "src", filepath.Dir(artf.Meta.Name)); err != nil {
+		return failures.FailIO.Wrap(err)
+	}
 
+	err := os.Symlink(filepath.Dir(artf.Path), filepath.Join(v.DataDir(), "src", artf.Meta.Name))
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
@@ -79,18 +77,17 @@ func (v *VirtualEnvironment) loadPackage(artf *artefact.Artefact) *failures.Fail
 
 // Activate - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Activate() *failures.Failure {
-	if err := fileutils.Mkdir(v.datadir, "bin"); err != nil {
-		return err
-	}
-	return fileutils.Mkdir(v.datadir, "lib")
+	logging.Debug("Activating Go venv")
+
+	return fileutils.Mkdir(v.datadir, "bin")
 }
 
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
-	path := filepath.Join(v.datadir, "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH")
-	path = filepath.Join(v.datadir, "bin") + string(os.PathListSeparator) + path
 	return map[string]string{
-		"PYTHONPATH": filepath.Join(v.datadir, "lib"),
-		"PATH":       path,
+		"GOPATH": v.datadir,
+		"GOBIN":  filepath.Join(v.datadir, "bin"),
+		"GOROOT": filepath.Join(v.DataDir(), "language"),
+		"PATH":   filepath.Join(v.DataDir(), "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH"),
 	}
 }

@@ -179,3 +179,17 @@ err_project_parse:
   other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"
 err_failure_test:
   other: one {{.V0}} three {{.V1}}
+distro_obtaining:
+  other: "Obtaining Distribution"
+distro_installing:
+  other: "Installing Artifacts"
+err_hash_mismatch:
+  other: "Invalid file hash for file {{.V0}}, expected hash: {{.V2}}, got: {{.V1}}"
+err_language_not_supported:
+  other: "Language not yet supported: {{.V0}}"
+err_artefact_no_parent:
+  other: "The given artefact has no parent: {{.V0}}. Only Language artefacts can be without parent."
+err_invalid_status_code:
+  other: "Invalid status code: {{.V0}}"
+info_activating_state:
+  other: "Activating state: {{.Owner}}/{{.Name}}"

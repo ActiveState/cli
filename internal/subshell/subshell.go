@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/files"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -22,10 +24,10 @@ import (
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
-	// Activate the given subshell venv
+	// Activate the given subshell
 	Activate(wg *sync.WaitGroup) error
 
-	// Deactivate the given subshell venv
+	// Deactivate the given subshell
 	Deactivate() error
 
 	// IsActive returns whether the given subshell is active
@@ -68,28 +70,28 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	name := filepath.Base(binary)
 
 	var err error
-	var venv SubShell
+	var subs SubShell
 	switch name {
 	case "bash":
-		venv = &bash.SubShell{}
+		subs = &bash.SubShell{}
 	case "cmd.exe":
-		venv = &cmd.SubShell{}
+		subs = &cmd.SubShell{}
 	default:
 		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
 		}))
 	}
 
-	rcFile, err := getRcFile(venv)
+	rcFile, err := getRcFile(subs)
 	if err != nil {
 		return nil, err
 	}
 
-	venv.SetBinary(binary)
-	venv.SetRcFile(rcFile)
-	venv.Activate(wg)
+	subs.SetBinary(binary)
+	subs.SetRcFile(rcFile)
+	subs.Activate(wg)
 
-	return venv, err
+	return subs, err
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
@@ -100,7 +102,10 @@ func getRcFile(v SubShell) (*os.File, error) {
 		return nil, err
 	}
 
-	rcData := projectfile.Get()
+	rcData := map[string]interface{}{
+		"Project": projectfile.Get(),
+		"Env":     virtualenvironment.GetEnv(),
+	}
 	t, err := template.New("rcfile").Parse(string(tplFile))
 	if err != nil {
 		return nil, err

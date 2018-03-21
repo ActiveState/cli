@@ -36,5 +36,8 @@ const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 // APIArtefactURL is the URL for downloading artefacts
 const APIArtefactURL = "https://s3.ca-central-1.amazonaws.com/cli-artefacts/"
 
+// ArtefactFile is the name of the artefact json file contained within artefacts
+const ArtefactFile = "artefact.json"
+
 // UpdateStorageDir is the directory where updates will be stored
 const UpdateStorageDir = "update/"

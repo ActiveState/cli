@@ -2,10 +2,15 @@ package fileutils
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 )
 
@@ -69,4 +74,58 @@ func ReplaceAll(filename, find, replace string) error {
 		return err
 	}
 	return os.Rename(tmpfile.Name(), filename)
+}
+
+// FileExists checks if the given file (not folder) exists
+func FileExists(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	mode := fi.Mode()
+	return mode.IsRegular()
+}
+
+// DirExists checks if the given directory exists
+func DirExists(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	mode := fi.Mode()
+	return mode.IsDir()
+}
+
+// PathExists checks if the given path exists, this can be a file or a folder
+func PathExists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	}
+	return false
+}
+
+// Hash will sha256 hash the given file
+func Hash(path string) (string, *failures.Failure) {
+	hasher := sha256.New()
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", failures.FailIO.New(fmt.Sprintf("Cannot read file: %s, %s", path, err))
+	}
+	hasher.Write(b)
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+// Mkdir is a small helper function to create a directory if it doesnt already exist
+func Mkdir(parent string, subpath ...string) *failures.Failure {
+	path := filepath.Join(subpath...)
+	path = filepath.Join(parent, path)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+	}
+	return nil
 }

@@ -1,19 +1,25 @@
 package virtualenvironment
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/print"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
+	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
+	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/distribution"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/mholt/archiver"
-	"github.com/mitchellh/hashstructure"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/golang"
 	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/python"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 )
@@ -22,16 +28,19 @@ import (
 // under the same directory as this file
 type VirtualEnvironmenter interface {
 	// Activate the given virtualenvironment
-	Activate() error
+	Activate() *failures.Failure
+
+	// Env returns the desired environment variables for this venv
+	Env() map[string]string
 
 	// Language returns the language name
 	Language() string
 
 	// LanguageMeta holds the *projectfile.Language for this venv
-	LanguageMeta() *projectfile.Language
+	Artefact() *artefact.Artefact
 
 	// SetLanguageMeta sets the language meta
-	SetLanguageMeta(*projectfile.Language)
+	SetArtefact(*artefact.Artefact)
 
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
@@ -39,11 +48,8 @@ type VirtualEnvironmenter interface {
 	// SetDataDir sets the configured data for this venv
 	SetDataDir(string)
 
-	// LoadLanguageFromPath should load the given language into the venv via symlinks
-	LoadLanguageFromPath(string) error
-
-	// LoadLanguageFromPath should load the given package into the venv via symlinks
-	LoadPackageFromPath(string, *projectfile.Package) error
+	// LoadArtefact should load the given artefact into the venv
+	LoadArtefact(*artefact.Artefact) *failures.Failure
 }
 
 type artefactHashable struct {
@@ -55,212 +61,139 @@ type artefactHashable struct {
 var venvs = make(map[string]VirtualEnvironmenter)
 
 // Activate the virtual environment
-func Activate() error {
+func Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
 
 	project := projectfile.Get()
 
 	if project.Variables != nil {
 		for _, variable := range project.Variables {
-			// TODO: if !constraints.IsConstrained(variable.Constraints, project)
-			os.Setenv(variable.Name, variable.Value)
+			if !constraints.IsConstrained(variable.Constraints) {
+				os.Setenv(variable.Name, variable.Value)
+			}
 		}
 	}
 
-	err := createFolderStructure()
-	if err != nil {
-		return err
+	dist, fail := distribution.Obtain()
+	if fail != nil {
+		return fail
 	}
 
-	for _, language := range project.Languages {
-		_, err := GetEnv(&language)
-		if err != nil {
-			return err
+	// Load Languages
+	print.Info(locale.T("info_activating_state", project))
+	for _, artf := range dist.Languages {
+		env, fail := GetVenv(artf)
+		if fail != nil {
+			return fail
+		}
+
+		fail = createLanguageFolderStructure(artf)
+		if fail != nil {
+			return fail
+		}
+
+		// Load language artefact
+		fail = env.LoadArtefact(artf)
+		if fail != nil {
+			return fail
+		}
+
+		// Load Artefacts belonging to language
+		for _, subArtf := range dist.Artefacts[artf.Hash] {
+			fail := env.LoadArtefact(subArtf)
+			if fail != nil {
+				return fail
+			}
 		}
 	}
 
 	return nil
 }
 
-// GetEnv returns an environment for the given project and language, this will initialize the virtual directory structure
+// GetEnv returns a map of the cumulative environment variables for all active virtual environments
+func GetEnv() map[string]string {
+	env := map[string]string{}
+
+	for _, venv := range venvs {
+		for k, v := range venv.Env() {
+			if k == "PATH" && funk.Contains(env, "PATH") {
+				env["PATH"] = v + string(os.PathListSeparator) + env["PATH"]
+			} else {
+				if funk.Contains(env, k) {
+					logging.Warning("Two languages are defining the %s environment key, only one will be used", k)
+				}
+				env[k] = v
+			}
+		}
+	}
+
+	return env
+}
+
+// GetVenv returns an environment for the given project and language, this will initialize the virtual directory structure
 // and set up the necessary environment variables if the venv wasnt already initialized, otherwise it will just return
 // the venv struct
-func GetEnv(language *projectfile.Language) (VirtualEnvironmenter, error) {
-	switch language.Name {
-	case "Python":
-		// TODO: if !constraints.IsConstrained(language.Constraints, project)
-		hash := getHashFromLanguage(language)
-		if _, ok := venvs[hash]; ok {
-			return venvs[hash], nil
+func GetVenv(artf *artefact.Artefact) (VirtualEnvironmenter, *failures.Failure) {
+	if _, ok := venvs[artf.Hash]; ok {
+		return venvs[artf.Hash], nil
+	}
+
+	var venv VirtualEnvironmenter
+
+	switch strings.ToLower(artf.Meta.Name) {
+	case "python":
+		venv = &python.VirtualEnvironment{}
+		fail := ActivateLanguageVenv(artf, venv)
+
+		if fail != nil {
+			return nil, fail
 		}
+	case "go":
+		venv = &golang.VirtualEnvironment{}
+		fail := ActivateLanguageVenv(artf, venv)
 
-		venv := &python.VirtualEnvironment{}
-		err := ActivateLanguageVenv(language, venv)
-
-		if err != nil {
-			return nil, err
+		if fail != nil {
+			return nil, fail
 		}
-
-		venvs[hash] = venv
-
-		return venv, nil
 	default:
 		var T = locale.T
 		return nil, failures.FailUser.New(T("warning_language_not_yet_supported", map[string]interface{}{
-			"Language": language.Name,
+			"Language": artf.Meta.Name,
 		}))
 	}
+
+	venvs[artf.Hash] = venv
+	return venv, nil
 }
 
 // ActivateLanguageVenv activates the virtual environment for the given language
-func ActivateLanguageVenv(language *projectfile.Language, venv VirtualEnvironmenter) error {
+func ActivateLanguageVenv(artf *artefact.Artefact, venv VirtualEnvironmenter) *failures.Failure {
 	project := projectfile.Get()
 	datadir := config.GetDataDir()
-	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
+	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
 
-	venv.SetLanguageMeta(language)
-	venv.SetDataDir(datadir)
-
-	err := loadLanguage(language, venv)
-
+	err := os.RemoveAll(datadir)
 	if err != nil {
-		return err
+		return failures.FailIO.Wrap(err)
 	}
 
-	for _, pkg := range language.Packages {
-		// TODO: if !constraints.IsConstrained(pkg.Constraints, project)
-		err = loadPackage(language, &pkg, venv)
-
-		if err != nil {
-			return err
-		}
-	}
+	venv.SetArtefact(artf)
+	venv.SetDataDir(datadir)
 
 	return venv.Activate()
 }
 
-func loadLanguage(language *projectfile.Language, venv VirtualEnvironmenter) error {
-	path, err := obtainLanguage(language)
-
-	if err != nil {
-		return err
-	}
-
-	logging.Debug("Loading Language %s", language.Name)
-
-	return venv.LoadLanguageFromPath(path)
-}
-
-func getHashFromLanguage(language *projectfile.Language) string {
-	hashable := artefactHashable{Name: language.Name, Version: language.Version, Build: language.Build}
-	hash, _ := hashstructure.Hash(hashable, nil)
-	return fmt.Sprintf("%d", hash)
-}
-
-func obtainLanguage(language *projectfile.Language) (string, error) {
-	root, err := environment.GetRootPath()
-
-	if err != nil {
-		return "", err
-	}
-
-	datadir := config.GetDataDir()
-
-	path := filepath.Join(datadir, "languages", language.Name, getHashFromLanguage(language))
-
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		return path, nil
-	}
-
-	logging.Debug("Obtaining Language %s", language.Name)
-
-	// Black box stuff that needs to be replaced with API calls
-	input := filepath.Join(root, "test", "builder", strings.ToLower(language.Name), language.Version+".tar.gz")
-	err = archiver.TarGz.Open(input, path)
-
-	if err != nil {
-		return "", err
-	}
-
-	return path, nil
-}
-
-func loadPackage(language *projectfile.Language, pkg *projectfile.Package, venv VirtualEnvironmenter) error {
-	path, err := obtainPackage(language, pkg)
-
-	if err != nil {
-		return err
-	}
-
-	logging.Debug("Loading Package %s", pkg.Name)
-
-	return venv.LoadPackageFromPath(path, pkg)
-}
-
-func getHashFromPackage(pkg *projectfile.Package) string {
-	hashable := artefactHashable{Name: pkg.Name, Version: pkg.Version, Build: pkg.Build}
-	hash, _ := hashstructure.Hash(hashable, nil)
-	return fmt.Sprintf("%d", hash)
-}
-
-func obtainPackage(language *projectfile.Language, pkg *projectfile.Package) (string, error) {
-	root, err := environment.GetRootPath()
-
-	if err != nil {
-		return "", err
-	}
-
-	datadir := config.GetDataDir()
-
-	path := filepath.Join(datadir, "packages", pkg.Name, getHashFromPackage(pkg))
-
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		return path, nil
-	}
-
-	logging.Debug("Obtaining Package %s", pkg.Name)
-
-	// Black box stuff that needs to be replaced with API calls
-	input := filepath.Join(
-		root, "test", "builder",
-		strings.ToLower(language.Name), strings.ToLower(language.Version),
-		strings.ToLower(pkg.Name), pkg.Version+".tar.gz")
-	err = archiver.TarGz.Open(input, path)
-
-	if err != nil {
-		return "", err
-	}
-
-	return path, nil
-}
-
-// small helper function to create a directory if it doesnt already exist
-func mkdir(parent string, subpath ...string) error {
-	path := filepath.Join(subpath...)
-	path = filepath.Join(parent, path)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.MkdirAll(path, os.ModePerm)
-	}
-	return nil
-}
-
-func createFolderStructure() error {
+func createLanguageFolderStructure(artf *artefact.Artefact) *failures.Failure {
 	project := projectfile.Get()
 	datadir := config.GetDataDir()
 
-	if err := mkdir(datadir, "packages"); err != nil {
-		return err
-	}
-
-	if err := mkdir(datadir, "languages"); err != nil {
-		return err
+	if fail := fileutils.Mkdir(datadir, "packages"); fail != nil {
+		return fail
 	}
 
 	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner, project.Name))
 
-	for _, language := range project.Languages {
-		mkdir(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
-	}
+	fileutils.Mkdir(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
 
 	return nil
 }
