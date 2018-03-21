@@ -14,18 +14,8 @@ import (
 )
 
 func (p *Progress) serve(s *pState) {
-	winch := make(chan os.Signal, 1)
+	winch := make(chan os.Signal, 2)
 	signal.Notify(winch, syscall.SIGWINCH)
-
-	defer func() {
-		s.ticker.Stop()
-		signal.Stop(winch)
-		p.cacheHeap = s.bHeap
-		close(p.done)
-		if s.shutdownNotifier != nil {
-			close(s.shutdownNotifier)
-		}
-	}()
 
 	var numP, numA int
 	var timer *time.Timer
@@ -51,6 +41,23 @@ func (p *Progress) serve(s *pState) {
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
+			var completed int
+			for i := 0; i < s.bHeap.Len(); i++ {
+				b := (*s.bHeap)[i]
+				if b.completed {
+					completed++
+				}
+			}
+			if completed == s.bHeap.Len() {
+				s.ticker.Stop()
+				signal.Stop(winch)
+				s.waitAll()
+				if s.shutdownNotifier != nil {
+					close(s.shutdownNotifier)
+				}
+				close(p.done)
+				return
+			}
 		case <-winch:
 			tw, _, _ := cwriter.TermSize()
 			err := s.writeAndFlush(tw-tw/8, numP, numA)
@@ -66,10 +73,6 @@ func (p *Progress) serve(s *pState) {
 		case <-resumeTicker:
 			s.ticker = time.NewTicker(s.rr)
 			resumeTicker = nil
-		case <-s.cancel:
-			return
-		case <-p.shutdown:
-			return
 		}
 	}
 }

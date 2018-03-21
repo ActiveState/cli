@@ -21,43 +21,36 @@ const (
 
 // Progress represents the container that renders Progress bars
 type Progress struct {
-	// wg for internal rendering sync
-	wg *sync.WaitGroup
-	// External wg
-	ewg *sync.WaitGroup
-
 	operateState chan func(*pState)
 	done         chan struct{}
-	shutdown     chan struct{}
-	once         sync.Once
-
-	cacheHeap *priorityQueue
 }
 
 type (
 	// progress state, which may contain several bars
 	pState struct {
-		bHeap        *priorityQueue
-		heapUpdated  bool
-		idCounter    int
-		width        int
-		format       string
-		rr           time.Duration
-		ewg          *sync.WaitGroup
-		cw           *cwriter.Writer
-		ticker       *time.Ticker
-		interceptors []func(io.Writer)
+		bHeap       *priorityQueue
+		heapUpdated bool
+		idCounter   int
+		width       int
+		format      string
+		rr          time.Duration
+		cw          *cwriter.Writer
+		ticker      *time.Ticker
 
-		shutdownNotifier chan struct{}
+		// following are provided by user
+		uwg              *sync.WaitGroup
 		cancel           <-chan struct{}
+		shutdownNotifier chan struct{}
+		interceptors     []func(io.Writer)
 	}
-	widthSync struct {
-		Listen []chan int
-		Result []chan int
+	widthSyncer struct {
+		// Public for easy testing
+		Accumulator []chan int
+		Distributor []chan int
 	}
-	renderedBar struct {
-		bar  *Bar
-		pipe <-chan *bufReader
+	barRendering struct {
+		bar   *Bar
+		ready <-chan *renderedReader
 	}
 )
 
@@ -73,7 +66,6 @@ func New(options ...ProgressOption) *Progress {
 		cw:     cwriter.New(os.Stdout),
 		rr:     prr,
 		ticker: time.NewTicker(prr),
-		cancel: make(chan struct{}),
 	}
 
 	for _, opt := range options {
@@ -81,11 +73,8 @@ func New(options ...ProgressOption) *Progress {
 	}
 
 	p := &Progress{
-		ewg:          s.ewg,
-		wg:           new(sync.WaitGroup),
 		operateState: make(chan func(*pState)),
 		done:         make(chan struct{}),
-		shutdown:     make(chan struct{}),
 	}
 	go p.serve(s)
 	return p
@@ -93,12 +82,11 @@ func New(options ...ProgressOption) *Progress {
 
 // AddBar creates a new progress bar and adds to the container.
 func (p *Progress) AddBar(total int64, options ...BarOption) *Bar {
-	p.wg.Add(1)
 	result := make(chan *Bar, 1)
 	select {
 	case p.operateState <- func(s *pState) {
 		options = append(options, barWidth(s.width), barFormat(s.format))
-		b := newBar(s.idCounter, total, p.wg, s.cancel, options...)
+		b := newBar(s.idCounter, total, s.cancel, options...)
 		heap.Push(s.bHeap, b)
 		s.heapUpdated = true
 		s.idCounter++
@@ -111,23 +99,9 @@ func (p *Progress) AddBar(total int64, options ...BarOption) *Bar {
 	}
 }
 
-// RemoveBar removes bar at any time.
+// RemoveBar removes the bar at next render cycle
 func (p *Progress) RemoveBar(b *Bar) bool {
-	result := make(chan bool, 1)
-	select {
-	case p.operateState <- func(s *pState) {
-		if heap.Remove(s.bHeap, b.index) != nil {
-			s.heapUpdated = true
-			b.Complete()
-			result <- true
-		} else {
-			result <- false
-		}
-	}:
-		return <-result
-	case <-p.done:
-		return false
-	}
+	return b.askToComplete(true)
 }
 
 // UpdateBarPriority provides a way to change bar's order position.
@@ -150,43 +124,39 @@ func (p *Progress) BarCount() int {
 	}:
 		return <-result
 	case <-p.done:
-		return p.cacheHeap.Len()
+		return 0
 	}
 }
 
-// Stop is a way to gracefully shutdown mpb's rendering goroutine.
-// It is NOT for cancellation (use mpb.WithContext for cancellation purposes).
-// If *sync.WaitGroup has been provided via mpb.WithWaitGroup(), its Wait()
-// method will be called first.
-func (p *Progress) Stop() {
-	if p.ewg != nil {
-		p.ewg.Wait()
-	}
-	// first wait for all bars to quit
-	p.wg.Wait()
-	p.once.Do(func() {
-		close(p.shutdown)
-	})
+// Wait first waits for all bars to complete, then waits for user provided WaitGroup, if any.
+// It's optional to call, in other words if you don't call Progress.Wait(),
+// it's not guaranted that all bars will be flushed completely to the underlying io.Writer.
+func (p *Progress) Wait() {
 	<-p.done
 }
 
-func newWidthSync(timeout <-chan struct{}, numBars, numColumn int) *widthSync {
-	ws := &widthSync{
-		Listen: make([]chan int, numColumn),
-		Result: make([]chan int, numColumn),
+// Stop deprecated, use Progress.Wait instead.
+func (p *Progress) Stop() {
+	p.Wait()
+}
+
+func newWidthSyncer(timeout <-chan struct{}, numBars, numColumn int) *widthSyncer {
+	ws := &widthSyncer{
+		Accumulator: make([]chan int, numColumn),
+		Distributor: make([]chan int, numColumn),
 	}
 	for i := 0; i < numColumn; i++ {
-		ws.Listen[i] = make(chan int, numBars)
-		ws.Result[i] = make(chan int, numBars)
+		ws.Accumulator[i] = make(chan int, numBars)
+		ws.Distributor[i] = make(chan int, numBars)
 	}
 	for i := 0; i < numColumn; i++ {
-		go func(listenCh <-chan int, resultCh chan<- int) {
-			defer close(resultCh)
+		go func(accumulator <-chan int, distributor chan<- int) {
+			defer close(distributor)
 			widths := make([]int, 0, numBars)
 		loop:
 			for {
 				select {
-				case w := <-listenCh:
+				case w := <-accumulator:
 					widths = append(widths, w)
 					if len(widths) == numBars {
 						break loop
@@ -198,29 +168,32 @@ func newWidthSync(timeout <-chan struct{}, numBars, numColumn int) *widthSync {
 					break loop
 				}
 			}
-			result := max(widths)
+			maxWidth := calcMax(widths)
 			for i := 0; i < len(widths); i++ {
-				resultCh <- result
+				distributor <- maxWidth
 			}
-		}(ws.Listen[i], ws.Result[i])
+		}(ws.Accumulator[i], ws.Distributor[i])
 	}
 	return ws
 }
 
 func (s *pState) writeAndFlush(tw, numP, numA int) (err error) {
-	wSyncTimeout := make(chan struct{})
+	timeout := make(chan struct{})
+	pSyncer := newWidthSyncer(timeout, s.bHeap.Len(), numP)
+	aSyncer := newWidthSyncer(timeout, s.bHeap.Len(), numA)
 	time.AfterFunc(s.rr-s.rr/12, func() {
-		close(wSyncTimeout)
+		close(timeout)
 	})
 
-	prependWs := newWidthSync(wSyncTimeout, s.bHeap.Len(), numP)
-	appendWs := newWidthSync(wSyncTimeout, s.bHeap.Len(), numA)
-
-	for _, b := range s.renderByPriority(tw, prependWs, appendWs) {
-		r := <-b.pipe
+	for _, br := range s.renderByPriority(tw, pSyncer, aSyncer) {
+		r := <-br.ready
 		_, err = s.cw.ReadFrom(r)
-		if r.completed {
-			b.bar.Complete()
+		if !br.bar.completed && r.toComplete {
+			close(br.bar.shutdown)
+			br.bar.completed = true
+		}
+		if r.toRemove {
+			s.heapUpdated = heap.Remove(s.bHeap, br.bar.index) != nil
 		}
 	}
 
@@ -234,27 +207,39 @@ func (s *pState) writeAndFlush(tw, numP, numA int) (err error) {
 	return
 }
 
-func (s *pState) renderByPriority(tw int, prependWs, appendWs *widthSync) []*renderedBar {
-	slice := make([]*renderedBar, 0, s.bHeap.Len())
+func (s *pState) renderByPriority(tw int, pSyncer, aSyncer *widthSyncer) []*barRendering {
+	slice := make([]*barRendering, 0, s.bHeap.Len())
 	for s.bHeap.Len() > 0 {
 		b := heap.Pop(s.bHeap).(*Bar)
 		defer heap.Push(s.bHeap, b)
-		slice = append(slice, &renderedBar{
-			bar:  b,
-			pipe: b.render(tw, prependWs, appendWs),
+		slice = append(slice, &barRendering{
+			bar:   b,
+			ready: b.render(tw, pSyncer, aSyncer),
 		})
 	}
 	return slice
 }
 
-func max(slice []int) int {
-	max := slice[0]
+func (s *pState) waitAll() {
+	for s.bHeap.Len() > 0 {
+		b := heap.Pop(s.bHeap).(*Bar)
+		<-b.done
+	}
+	if s.uwg != nil {
+		s.uwg.Wait()
+	}
+}
 
+func calcMax(slice []int) int {
+	if len(slice) == 0 {
+		return 0
+	}
+
+	max := slice[0]
 	for i := 1; i < len(slice); i++ {
 		if slice[i] > max {
 			max = slice[i]
 		}
 	}
-
 	return max
 }

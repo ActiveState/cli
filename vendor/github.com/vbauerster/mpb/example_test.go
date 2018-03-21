@@ -14,8 +14,8 @@ func Example() {
 		mpb.WithWidth(100),
 		// override default "[=>-]" format
 		mpb.WithFormat("╢▌▌░╟"),
-		// override default 100ms refresh rate
-		mpb.WithRefreshRate(120*time.Millisecond),
+		// override default 120ms refresh rate
+		mpb.WithRefreshRate(100*time.Millisecond),
 	)
 
 	total := 100
@@ -38,20 +38,24 @@ func Example() {
 		),
 	)
 
+	max := 200 * time.Millisecond
 	for i := 0; i < total; i++ {
-		time.Sleep(time.Duration(rand.Intn(10)+1) * time.Second / 100)
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 		bar.Increment()
 	}
-
-	p.Stop()
+	// Wait for all bars to complete
+	p.Wait()
 }
 
-func ExampleBar_InProgress() {
+func ExampleBar_Completed() {
 	p := mpb.New()
-	bar := p.AddBar(100, mpb.AppendDecorators(decor.Percentage(5, 0)))
+	bar := p.AddBar(100)
 
-	for bar.InProgress() {
-		time.Sleep(time.Duration(rand.Intn(10)+1) * time.Second / 100)
+	max := 200 * time.Millisecond
+	for !bar.Completed() {
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 		bar.Increment()
 	}
+
+	p.Wait()
 }

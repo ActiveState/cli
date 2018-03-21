@@ -59,12 +59,13 @@ _Note:_ it is preferable to go get from github.com, rather than gopkg.in. See is
 		),
 	)
 
+	max := 200 * time.Millisecond
 	for i := 0; i < total; i++ {
-		time.Sleep(time.Duration(rand.Intn(10)+1) * time.Second / 100)
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 		bar.Increment()
 	}
-	// Gracefully shutdown mpb's monitor goroutine
-	p.Stop()
+	// Wait for all bars to complete
+	p.Wait()
 ```
 
 #### [Rendering multiple bars](examples/simple/main.go)
@@ -86,19 +87,20 @@ _Note:_ it is preferable to go get from github.com, rather than gopkg.in. See is
 				decor.Percentage(3, decor.DSyncSpace),
 			),
 			mpb.AppendDecorators(
-				decor.ETA(2, 0),
+				decor.ETA(3, 0),
 			),
 		)
 		go func() {
 			defer wg.Done()
+			max := 200 * time.Millisecond
 			for i := 0; i < total; i++ {
-				time.Sleep(time.Duration(rand.Intn(10)+1) * time.Second / 100)
+		        time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 				bar.Increment()
 			}
 		}()
 	}
-	// Gracefully shutdown mpb's monitor goroutine
-	p.Stop()
+	// Wait for all bars to complete
+	p.Wait()
 ```
 
 #### [Dynamic Total](examples/dynTotal/main.go)

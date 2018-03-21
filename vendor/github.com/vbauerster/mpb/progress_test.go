@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
 )
 
 func init() {
@@ -19,40 +18,29 @@ func init() {
 }
 
 func TestAddBar(t *testing.T) {
-	p := mpb.New()
+	p := mpb.New(mpb.Output(ioutil.Discard))
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	b := p.AddBar(80)
+	go func() {
+		for i := 0; i < 80; i++ {
+			if i == 33 {
+				wg.Done()
+			}
+			b.Increment()
+			time.Sleep(randomDuration(80 * time.Millisecond))
+		}
+	}()
+
+	wg.Wait()
 	count := p.BarCount()
-	if count != 0 {
-		t.Errorf("BarCount want: %q, got: %q\n", 0, count)
-	}
-
-	bar := p.AddBar(100)
-
-	count = p.BarCount()
 	if count != 1 {
 		t.Errorf("BarCount want: %q, got: %q\n", 1, count)
 	}
 
-	bar.Complete()
-	p.Stop()
-}
-
-func TestRemoveBar(t *testing.T) {
-	p := mpb.New()
-
-	bar := p.AddBar(10)
-
-	if !p.RemoveBar(bar) {
-		t.Error("RemoveBar failure")
-	}
-
-	count := p.BarCount()
-	if count != 0 {
-		t.Errorf("BarCount want: %q, got: %q\n", 0, count)
-	}
-
-	bar.Complete()
-	p.Stop()
+	b.Complete()
+	p.Wait()
 }
 
 func TestRemoveBars(t *testing.T) {
@@ -84,53 +72,45 @@ func TestRemoveBars(t *testing.T) {
 			}
 		}()
 	}
-	p.Stop()
+	p.Wait()
 }
 
 func TestWithCancel(t *testing.T) {
-	var wg sync.WaitGroup
 	cancel := make(chan struct{})
 	shutdown := make(chan struct{})
 	p := mpb.New(
 		mpb.Output(ioutil.Discard),
 		mpb.WithCancel(cancel),
 		mpb.WithShutdownNotifier(shutdown),
-		mpb.WithWaitGroup(&wg),
 	)
 
-	total := 100
 	numBars := 3
-	wg.Add(numBars)
-
+	bars := make([]*mpb.Bar, 0, numBars)
 	for i := 0; i < numBars; i++ {
-		name := fmt.Sprintf("Bar#%d:", i)
-		bar := p.AddBar(int64(total), mpb.BarID(i),
-			mpb.PrependDecorators(decor.StaticName(name, len(name), 0)))
-
+		bar := p.AddBar(int64(1000), mpb.BarID(i))
+		bars = append(bars, bar)
 		go func() {
-			defer wg.Done()
-			for i := 0; i < total; i++ {
-				select {
-				case <-cancel:
-					return
-				default:
-				}
-				time.Sleep(randomDuration(80 * time.Millisecond))
+			for !bar.Completed() {
+				time.Sleep(randomDuration(40 * time.Millisecond))
 				bar.Increment()
 			}
 		}()
 	}
 
-	time.AfterFunc(300*time.Millisecond, func() {
+	time.AfterFunc(100*time.Millisecond, func() {
 		close(cancel)
 	})
 
-	p.Stop()
-
+	p.Wait()
+	for _, bar := range bars {
+		if bar.Current() >= bar.Total() {
+			t.Errorf("bar %d: total = %d, current = %d\n", bar.ID(), bar.Total(), bar.Current())
+		}
+	}
 	select {
 	case <-shutdown:
-	case <-time.After(300 * time.Millisecond):
-		t.Error("ProgressBar didn't stop")
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Progress didn't stop")
 	}
 }
 
@@ -159,7 +139,7 @@ func TestCustomFormat(t *testing.T) {
 
 	wg.Wait()
 	close(cancel)
-	p.Stop()
+	p.Wait()
 
 	for _, r := range customFormat {
 		if !bytes.ContainsRune(buf.Bytes(), r) {
@@ -184,7 +164,7 @@ func TestInvalidFormatWidth(t *testing.T) {
 		bar.Increment()
 	}
 
-	p.Stop()
+	p.Wait()
 
 	got := buf.String()
 	want := fmt.Sprintf("[%s]", strings.Repeat("=", customWidth-2))

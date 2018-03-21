@@ -8,6 +8,10 @@ import (
 	"github.com/vbauerster/mpb/decor"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func main() {
 	p := mpb.New()
 
@@ -36,6 +40,7 @@ func main() {
 		bar.SetTotal(300, true)
 	}()
 
+	max := 200 * time.Millisecond
 	for i := 0; i < 300; i++ {
 		if i == 140 {
 			close(totalUpd1)
@@ -43,9 +48,9 @@ func main() {
 		if i == 250 {
 			close(totalUpd2)
 		}
-		time.Sleep(time.Duration(rand.Intn(10)+1) * time.Second / 100)
+		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 		bar.Increment()
 	}
 
-	p.Stop()
+	p.Wait()
 }

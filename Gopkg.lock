@@ -314,14 +314,14 @@
   version = "v0.5.4"
 
 [[projects]]
+  branch = "master"
   name = "github.com/vbauerster/mpb"
   packages = [
     ".",
     "cwriter",
     "decor"
   ]
-  revision = "e227edc706423683a577a93c78beb0ce9d211b00"
-  version = "v3.1.1"
+  revision = "44b3ab598678a5954168e726db2af310f43d3bd8"
 
 [[projects]]
   branch = "master"
@@ -373,6 +373,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "df50aa4ae391590f8a40b83929bc8b53fb0f8ca88ad4f0b13960eb1ab671b74a"
+  inputs-digest = "379ce2d4e18d6bfa3777813f1cfdc9fb3a130855c422814c967cf24ea42fc09d"
   solver-name = "gps-cdcl"
   solver-version = 1

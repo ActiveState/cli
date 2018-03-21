@@ -10,9 +10,9 @@ import (
 	"github.com/vbauerster/mpb/decor"
 )
 
-const (
-	maxBlockSize = 12
-)
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	var wg sync.WaitGroup
@@ -37,22 +37,18 @@ func main() {
 		)
 		go func() {
 			defer wg.Done()
-			for blockSize, i := 0, 0; i < total; i++ {
-				blockSize = rand.Intn(maxBlockSize) + 1
+			max := 200 * time.Millisecond
+			for i := 0; i < total; i++ {
+				time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 				if i&1 == 1 {
 					priority := total - int(b.Current())
 					p.UpdateBarPriority(b, priority)
 				}
 				b.Increment()
-				sleep(blockSize)
 			}
 		}()
 	}
 
-	p.Stop()
-	fmt.Println("stop")
-}
-
-func sleep(blockSize int) {
-	time.Sleep(time.Duration(blockSize) * (50*time.Millisecond + time.Duration(rand.Intn(5*int(time.Millisecond)))))
+	p.Wait()
+	fmt.Println("done")
 }
