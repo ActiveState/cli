@@ -2,12 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"sync"
-	"time"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
@@ -73,7 +69,7 @@ func init() {
 func main() {
 	logging.Debug("main")
 
-	if checkForAndApplyUpdates() {
+	if updater.CheckForAndApplyUpdates() {
 		relaunch() // will not return
 	}
 
@@ -102,85 +98,15 @@ func Execute(cmd *cobra.Command, args []string) {
 	cmd.Usage()
 }
 
-// Checks for updates once per day and, if one was found, applies it and returns
-// `true`. Otherwise, returns `false`.
-func checkForAndApplyUpdates() bool {
-	// Determine whether or not an update check has been performed today.
-	updateCheckMarker := filepath.Join(os.TempDir(), "activestate-cli-update-check")
-	marker, err := os.Stat(updateCheckMarker)
-	if err != nil {
-		// Marker does not exist. Create it.
-		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
-		if err != nil {
-			logging.Debug("Unable to automatically check for updates: %s", err)
-			return false
-		}
-	} else {
-		// Check to see if it has been 24 hours since the last update check. If not,
-		// skip another check.
-		nextCheckTime := marker.ModTime().Add(24 * time.Hour)
-		if time.Now().Before(nextCheckTime) {
-			logging.Debug("Not checking for updates until %s", nextCheckTime)
-			return false
-		}
-	}
-	// Will check for updates. Touch the update check marker so the next check
-	// will not happen for another day.
-	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
-	if err != nil {
-		logging.Debug("Unable to automatically check for updates: %s", err)
-		return false
-	}
-
-	// Check for an update.
-	print.Info(locale.T("checking_for_updates"))
-	update := updater.Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
-		CmdName:        constants.CommandName,
-	}
-	info, err := update.Info()
-	if err != nil {
-		logging.Debug("Unable to automatically check for updates: %s", err)
-		return false
-	} else if info == nil {
-		print.Info(locale.T("no_update_available"))
-		return false
-	}
-	print.Info(locale.T("updating_to_version", map[string]interface{}{
-		"fromVersion": constants.Version,
-		"toVersion":   info.Version,
-	}))
-
-	// Self-update.
-	err = update.Run()
-	if err != nil {
-		logging.Debug("Unable to automatically check for updates: %s", err)
-		return false
-	}
-	print.Info(locale.T("update_complete"))
-
-	return true
-}
-
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 // This function will never return to its caller.
 func relaunch() {
-	var wg sync.WaitGroup
-	wg.Add(1)
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
-	var err error
-	go func() {
-		err = cmd.Wait()
-		if err != nil {
-			panic(err.Error())
-		}
-		wg.Done()
-	}()
-	wg.Wait()
+	if err := cmd.Wait(); err != nil {
+		os.Exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
+	}
 	os.Exit(0)
 }

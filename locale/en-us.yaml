@@ -159,8 +159,6 @@ err_invalid_input:
   other: Invalid input received
 hook_removed:
   other: "Hook removed: {{.Hook.Name}} ({{.Hash}})"
-checking_for_updates:
-  other: Checking for updates...
 err_no_update_info:
   other: Cannot retrieve update information
 no_update_available:
