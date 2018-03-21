@@ -19,8 +19,6 @@ func init() {
 }
 
 func setup(t *testing.T) {
-	configNamespace = C.ConfigNamespace + "-test"
-
 	configDirs = configdir.New(configNamespace, "cli")
 	configDirs.LocalPath, _ = filepath.Abs(".")
 	configDir = configDirs.QueryFolders(configdir.Global)[0]
