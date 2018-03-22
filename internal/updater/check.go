@@ -17,13 +17,11 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 	timeoutCh := make(chan bool, 1)
 	infoCh := make(chan *Info, 1)
 	errCh := make(chan error, 1)
-	defer close(timeoutCh)
-	defer close(infoCh)
-	defer close(errCh)
 	// Run the timeout function.
 	go func() {
 		time.Sleep(t)
 		timeoutCh <- true
+		close(timeoutCh)
 	}()
 	// Run the updater function.
 	go func() {
@@ -33,6 +31,8 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 		} else {
 			errCh <- err
 		}
+		close(infoCh)
+		close(errCh)
 	}()
 	// Return the appropriate value, taking timeout into consideration.
 	select {
