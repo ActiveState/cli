@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 
 	"github.com/pkg/errors"
 )
@@ -24,14 +29,13 @@ type current struct {
 }
 
 func generateSha256(path string) string {
-	h := sha256.New()
+	hasher := sha256.New()
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	h.Write(b)
-	sum := h.Sum(nil)
-	return fmt.Sprintf("%x", sum)
+	hasher.Write(b)
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 type gzReader struct {
@@ -59,7 +63,11 @@ func newGzReader(r io.ReadCloser) io.ReadCloser {
 }
 
 func createUpdate(path string, platform string) {
-	os.MkdirAll(filepath.Join(genDir, version), 0755)
+	t := time.Now().Format("2006-01-02_15-04-05")
+	archive := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
+
+	os.MkdirAll(filepath.Join(genDir, constants.BranchName, version), 0755)
+	os.MkdirAll(filepath.Join(genDir, constants.BranchName, version, archive), 0755)
 
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
@@ -78,8 +86,16 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrapf(err,
 			"Errored closing gzip writter"))
 	}
-	gzPath := filepath.Join(genDir, version, platform+".gz")
+	gzPath := filepath.Join(genDir, constants.BranchName, version, platform+".gz")
 	err = ioutil.WriteFile(gzPath, buf.Bytes(), 0755)
+	if err != nil {
+		panic(errors.Wrapf(err,
+			"Errored writing gzipped buffer to file"))
+	}
+
+	// Store archived version
+	gzArchivePath := filepath.Join(genDir, constants.BranchName, version, archive, platform+".gz")
+	err = ioutil.WriteFile(gzArchivePath, buf.Bytes(), 0755)
 	if err != nil {
 		panic(errors.Wrapf(err,
 			"Errored writing gzipped buffer to file"))
@@ -90,7 +106,7 @@ func createUpdate(path string, platform string) {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	err = ioutil.WriteFile(filepath.Join(genDir, platform+".json"), b, 0755)
+	err = ioutil.WriteFile(filepath.Join(genDir, constants.BranchName, platform+".json"), b, 0755)
 	if err != nil {
 		panic(err)
 	}

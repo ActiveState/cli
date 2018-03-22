@@ -91,7 +91,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
 	if Flags.Version {
-		print.Info(locale.T("version_info", map[string]interface{}{"Version": constants.Version}))
+		print.Info(locale.T("version_info", map[string]interface{}{
+			"Version":  constants.Version,
+			"Branch":   constants.BranchName,
+			"Revision": constants.RevisionHash}))
 		return
 	}
 

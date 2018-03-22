@@ -168,7 +168,10 @@ updating_to_version:
 err_update_failed:
   other: Update failed, check the error log for more information
 version_info:
-  other: ActiveState CLI version {{.Version}}
+  other: | 
+    ActiveState CLI version {{.Version}}
+    Revision {{.Revision}}
+    Branch {{.Branch}}
 update_complete:
   other: Update completed succesfully
 update_hash_mismatch:
