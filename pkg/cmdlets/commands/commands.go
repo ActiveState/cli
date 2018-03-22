@@ -101,7 +101,7 @@ func (c *Command) argInputValidator(cmd *cobra.Command, args []string) error {
 			errMsg += T("error_missing_arg", c.Arguments[i]) + "\n"
 		}
 		if errMsg != "" {
-			return failures.User.New(errMsg)
+			return failures.FailUserInput.New(errMsg)
 		}
 	}
 
@@ -125,7 +125,7 @@ func (c *Command) argInputValidator(cmd *cobra.Command, args []string) error {
 	}
 
 	if errMsg != "" {
-		return failures.User.New(errMsg)
+		return failures.FailUserInput.New(errMsg)
 	}
 
 	return nil
@@ -193,7 +193,7 @@ func (c *Command) AddFlag(flag *Flag) error {
 	case TypeBool:
 		flagSetter().BoolVarP(flag.BoolVar, flag.Name, flag.Shorthand, flag.BoolValue, T(flag.Description))
 	default:
-		return failures.App.New("Unknown type:" + string(flag.Type))
+		return failures.FailInput.New("Unknown type:" + string(flag.Type))
 	}
 
 	return nil
@@ -205,7 +205,7 @@ func (c *Command) validateAddArgument(arg *Argument, idx int) error {
 		idx = len(c.Arguments) - 1
 	}
 	if idx > 0 && arg.Required && !c.Arguments[idx-1].Required {
-		return failures.App.New(
+		return failures.FailInput.New(
 			fmt.Sprintf("Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
 				arg, c.Arguments[len(c.Arguments)-1]))
 	}

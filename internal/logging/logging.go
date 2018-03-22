@@ -19,6 +19,8 @@
 //
 package logging
 
+// This package may NOT depend on failures (directly or indirectly)
+
 import (
 	"bytes"
 	"fmt"
