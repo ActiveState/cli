@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/ActiveState-CLI/internal/updater"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
 
 	// commands
@@ -67,6 +69,10 @@ func init() {
 func main() {
 	logging.Debug("main")
 
+	if updater.TimedCheck() {
+		relaunch() // will not return
+	}
+
 	// This actually runs the command
 	err := Command.Execute()
 
@@ -90,4 +96,17 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	cmd.Usage()
+}
+
+// When an update was found and applied, re-launch the update with the current
+// arguments and wait for return before exitting.
+// This function will never return to its caller.
+func relaunch() {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Start()
+	if err := cmd.Wait(); err != nil {
+		os.Exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
+	}
+	os.Exit(0)
 }
