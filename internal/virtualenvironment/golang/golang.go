@@ -79,14 +79,14 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Go venv")
 
-	return fileutils.Mkdir(v.datadir, "bin")
+	return fileutils.Mkdir(v.DataDir(), "bin")
 }
 
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
 	return map[string]string{
-		"GOPATH": v.datadir,
-		"GOBIN":  filepath.Join(v.datadir, "bin"),
+		"GOPATH": v.DataDir(),
+		"GOBIN":  filepath.Join(v.DataDir(), "bin"),
 		"GOROOT": filepath.Join(v.DataDir(), "language"),
 		"PATH":   filepath.Join(v.DataDir(), "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH"),
 	}

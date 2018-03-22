@@ -2,7 +2,6 @@ package download
 
 import (
 	"io/ioutil"
-	"os"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -77,7 +76,7 @@ func (m *Manager) Job(entry *Entry) {
 		return
 	}
 
-	err := ioutil.WriteFile(entry.Path, bytes, os.ModePerm)
+	err := ioutil.WriteFile(entry.Path, bytes, 0666)
 	if err != nil {
 		m.failure = failures.FailIO.Wrap(err)
 	}

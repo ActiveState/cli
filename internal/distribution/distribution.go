@@ -7,21 +7,18 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/download"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
-
-	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
-
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
-
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 )
 
 // FailArtifactMeta is a failure used when the artifact meta is invalid
@@ -102,6 +99,7 @@ func Obtain() (*Sanitized, *failures.Failure) {
 
 func sanitize(distArtifacts []Artifact) (*Sanitized, *failures.Failure) {
 	sanitized := Sanitized{}
+	sanitized.Languages = []*artifact.Artifact{}
 	sanitized.Artifacts = make(map[string][]*artifact.Artifact)
 
 	for _, distArtf := range distArtifacts {
@@ -181,7 +179,8 @@ func PrepareForArtifact(distArtf *Artifact) (string, *failures.Failure) {
 		return "", failures.FailIO.Wrap(err)
 	}
 
-	defer os.Remove(out.Name())
+	// We don't want the temp file to be created yet, we just need a unique path, so delete it
+	os.Remove(out.Name())
 
 	return out.Name(), nil
 }
