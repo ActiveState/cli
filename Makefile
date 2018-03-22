@@ -17,7 +17,6 @@ all: test build
 init:
 		git config core.hooksPath .githooks
 build: 
-		$(GOCMD) get -u github.com/dave/jennifer
 		go run scripts/constants-generator/main.go 
 		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 		mkdir -p public/update
@@ -32,7 +31,6 @@ deploy-updates:
 deploy-artefacts:
 		go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artefacts distro
 test: 
-		$(GOCMD) get -u github.com/dave/jennifer
 		go run scripts/constants-generator/main.go 
 		$(GOTEST) ./...
 clean: 
