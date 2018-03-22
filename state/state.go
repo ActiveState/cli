@@ -69,7 +69,7 @@ func init() {
 func main() {
 	logging.Debug("main")
 
-	if updater.CheckForAndApplyUpdates() {
+	if updater.TimedCheck() {
 		relaunch() // will not return
 	}
 

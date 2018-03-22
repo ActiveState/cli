@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,9 +12,43 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 )
 
-// CheckForAndApplyUpdates checks for updates once per day and, if one was
-// found, applies it and returns `true`. Otherwise, returns `false`.
-func CheckForAndApplyUpdates() bool {
+// Runs the given updater function on a timeout.
+func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
+	timeoutCh := make(chan bool, 1)
+	infoCh := make(chan *Info, 1)
+	errCh := make(chan error, 1)
+	defer close(timeoutCh)
+	defer close(infoCh)
+	defer close(errCh)
+	// Run the timeout function.
+	go func() {
+		time.Sleep(t)
+		timeoutCh <- true
+	}()
+	// Run the updater function.
+	go func() {
+		info, err := f()
+		if err == nil {
+			infoCh <- info
+		} else {
+			errCh <- err
+		}
+	}()
+	// Return the appropriate value, taking timeout into consideration.
+	select {
+	case <-timeoutCh:
+		return nil, errors.New("timeout")
+	case info := <-infoCh:
+		return info, nil
+	case err := <-errCh:
+		return nil, err
+	}
+}
+
+// TimedCheck checks for updates once per day and, if one was found within a
+// timeout period of one second, applies the update and returns `true`.
+// Otherwise, returns `false`.
+func TimedCheck() bool {
 	// Determine whether or not an update check has been performed today.
 	updateCheckMarker := filepath.Join(config.GetDataDir(), "update-check")
 	marker, err := os.Stat(updateCheckMarker)
@@ -33,15 +68,8 @@ func CheckForAndApplyUpdates() bool {
 			return false
 		}
 	}
-	// Will check for updates. Touch the update check marker so the next check
-	// will not happen for another day.
-	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
-	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
-		return false
-	}
 
-	// Check for an update.
+	// Check for an update, but timeout after one second.
 	logging.Debug("Checking for updates.")
 	update := Updater{
 		CurrentVersion: constants.Version,
@@ -49,9 +77,13 @@ func CheckForAndApplyUpdates() bool {
 		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
-	info, err := update.Info()
+	info, err := timeout(update.Info, time.Second)
 	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
+		if err.Error() != "timeout" {
+			logging.Error("Unable to automatically check for updates: %s", err)
+		} else {
+			logging.Debug("Automatically checking for updates timed out")
+		}
 		return false
 	} else if info == nil {
 		logging.Debug("No update available.")
@@ -61,6 +93,14 @@ func CheckForAndApplyUpdates() bool {
 	// Self-update.
 	logging.Debug("Self-updating.")
 	err = update.Run()
+	if err != nil {
+		logging.Error("Unable to automatically check for updates: %s", err)
+		return false
+	}
+
+	// Touch the update check marker so the next check will not happen for another
+	// day.
+	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
 	if err != nil {
 		logging.Error("Unable to automatically check for updates: %s", err)
 		return false
