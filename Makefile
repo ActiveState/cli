@@ -31,6 +31,7 @@ deploy-updates:
 deploy-artefacts:
 		go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artefacts distro
 test: 
+		go run scripts/constants-generator/main.go 
 		$(GOTEST) ./...
 clean: 
 		$(GOCLEAN)
