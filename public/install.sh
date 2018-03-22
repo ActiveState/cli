@@ -2,7 +2,7 @@
 # Copyright 2018 ActiveState Software Inc. All rights reserved.
 
 # URL to fetch updates from.
-STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/"
+STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/master/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.

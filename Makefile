@@ -9,7 +9,7 @@ GOGET=$(GOCMD) get
 BINARY_NAME=state
 BINARY_UNIX=$(BINARY_NAME)_unix
 
-VERSION=`grep -m1 "^const Version" internal/constants/constants.go | cut -d ' ' -f4 | tr -d '"'`
+VERSION=`grep -m1 "^const Version" internal/constants/generated.go | cut -d ' ' -f4 | tr -d '"'`
 
 .PHONY: build test install deploy-updates deploy-artefacts generate-artefacts
 
@@ -17,6 +17,7 @@ all: test build
 init:
 		git config core.hooksPath .githooks
 build: 
+		go run scripts/constants-generator/main.go 
 		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 		mkdir -p public/update
 		go run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
