@@ -17,13 +17,13 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 	timeoutCh := make(chan bool, 1)
 	infoCh := make(chan *Info, 1)
 	errCh := make(chan error, 1)
-	// Run the timeout function.
+	// Run the timeout function in a separate thread.
 	go func() {
 		time.Sleep(t)
 		timeoutCh <- true
 		close(timeoutCh)
 	}()
-	// Run the updater function.
+	// Run the updater function in a separate thread.
 	go func() {
 		info, err := f()
 		if err == nil {
@@ -34,7 +34,9 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 		close(infoCh)
 		close(errCh)
 	}()
-	// Return the appropriate value, taking timeout into consideration.
+	// Wait until one of the threads produces data in one of the channels being
+	// monitored. If the timeout comes first, report the timeout. If the update
+	// info comes first, return that. If there was some other error, return that.
 	select {
 	case <-timeoutCh:
 		return nil, errors.New("timeout")
