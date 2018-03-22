@@ -15,7 +15,7 @@ import (
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
+	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
@@ -24,11 +24,11 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 )
 
-// FailArtefactMeta is a failure used when the artifact meta is invalid
-var FailArtefactMeta = failures.Type("distribution.fail.artefactmeta", failures.FailVerify)
+// FailArtifactMeta is a failure used when the artifact meta is invalid
+var FailArtifactMeta = failures.Type("distribution.fail.artifactmeta", failures.FailVerify)
 
-// Artefact reflects and entry from the distribution.json file
-type Artefact struct {
+// Artifact reflects and entry from the distribution.json file
+type Artifact struct {
 	Hash     string
 	Parent   string
 	Download string
@@ -36,18 +36,18 @@ type Artefact struct {
 
 // Sanitized is a sanitized version of the distribution.json that can be more easily interpreted
 type Sanitized struct {
-	Languages []*artefact.Artefact
-	Artefacts map[string][]*artefact.Artefact
+	Languages []*artifact.Artifact
+	Artifacts map[string][]*artifact.Artifact
 }
 
 // variables that tests will override
-var dist []Artefact
+var dist []Artifact
 
 // Obtain will obtain the latest distribution data and ensure all artifacts are downloaded
 func Obtain() (*Sanitized, *failures.Failure) {
 	var fail *failures.Failure
 	if dist == nil {
-		dist, fail = ObtainArtefacts()
+		dist, fail = ObtainArtifacts()
 		if fail != nil {
 			return nil, fail
 		}
@@ -55,8 +55,8 @@ func Obtain() (*Sanitized, *failures.Failure) {
 
 	var entries []*download.Entry
 	for _, distArtf := range dist {
-		if NeedToObtainArtefact(&distArtf) {
-			target, fail := PrepareForArtefact(&distArtf)
+		if NeedToObtainArtifact(&distArtf) {
+			target, fail := PrepareForArtifact(&distArtf)
 			if fail != nil {
 				return nil, fail
 			}
@@ -85,7 +85,7 @@ func Obtain() (*Sanitized, *failures.Failure) {
 				decor.ETA(3, 0),
 			))
 		for _, entry := range entries {
-			InstallArtefact(entry.Data.(Artefact), entry.Path, entry)
+			InstallArtifact(entry.Data.(Artifact), entry.Path, entry)
 			bar.Increment()
 		}
 
@@ -100,12 +100,12 @@ func Obtain() (*Sanitized, *failures.Failure) {
 	return sanitized, nil
 }
 
-func sanitize(distArtefacts []Artefact) (*Sanitized, *failures.Failure) {
+func sanitize(distArtifacts []Artifact) (*Sanitized, *failures.Failure) {
 	sanitized := Sanitized{}
-	sanitized.Artefacts = make(map[string][]*artefact.Artefact)
+	sanitized.Artifacts = make(map[string][]*artifact.Artifact)
 
-	for _, distArtf := range distArtefacts {
-		artf, fail := artefact.Get(distArtf.Hash)
+	for _, distArtf := range distArtifacts {
+		artf, fail := artifact.Get(distArtf.Hash)
 		if fail != nil {
 			return nil, fail
 		}
@@ -115,27 +115,27 @@ func sanitize(distArtefacts []Artefact) (*Sanitized, *failures.Failure) {
 			sanitized.Languages = append(sanitized.Languages, artf)
 		default:
 			if distArtf.Parent == "" {
-				return nil, FailArtefactMeta.New("err_artefact_no_parent", distArtf.Hash)
+				return nil, FailArtifactMeta.New("err_artifact_no_parent", distArtf.Hash)
 			}
 
-			if _, ok := sanitized.Artefacts[distArtf.Parent]; !ok {
-				sanitized.Artefacts[distArtf.Parent] = []*artefact.Artefact{}
+			if _, ok := sanitized.Artifacts[distArtf.Parent]; !ok {
+				sanitized.Artifacts[distArtf.Parent] = []*artifact.Artifact{}
 			}
-			sanitized.Artefacts[distArtf.Parent] = append(sanitized.Artefacts[distArtf.Parent], artf)
+			sanitized.Artifacts[distArtf.Parent] = append(sanitized.Artifacts[distArtf.Parent], artf)
 		}
 	}
 
 	return &sanitized, nil
 }
 
-// ObtainArtefacts will download the given artefacts
-func ObtainArtefacts() ([]Artefact, *failures.Failure) {
-	dist := []Artefact{}
+// ObtainArtifacts will download the given artifacts
+func ObtainArtifacts() ([]Artifact, *failures.Failure) {
+	dist := []Artifact{}
 
 	os := sysinfo.OS().String()
 	arch := sysinfo.Architecture().String()
 	platform := strings.ToLower(fmt.Sprintf("%s-%s", os, arch))
-	url := fmt.Sprintf("%sdistro/%s/distribution.json", constants.APIArtefactURL, platform)
+	url := fmt.Sprintf("%sdistro/%s/distribution.json", constants.APIArtifactURL, platform)
 
 	logging.Debug("Using distro URL: %s", url)
 
@@ -152,18 +152,18 @@ func ObtainArtefacts() ([]Artefact, *failures.Failure) {
 	return dist, nil
 }
 
-// NeedToObtainArtefact will check whether the given artefact will need to be obtained
-func NeedToObtainArtefact(distArtf *Artefact) bool {
-	if artefact.Exists(distArtf.Hash) {
+// NeedToObtainArtifact will check whether the given artifact will need to be obtained
+func NeedToObtainArtifact(distArtf *Artifact) bool {
+	if artifact.Exists(distArtf.Hash) {
 		return false
 	}
 
 	return true
 }
 
-// PrepareForArtefact will ensure everything is in place for the given artefact to be obtained
-func PrepareForArtefact(distArtf *Artefact) (string, *failures.Failure) {
-	path := artefact.GetPath(distArtf.Hash)
+// PrepareForArtifact will ensure everything is in place for the given artifact to be obtained
+func PrepareForArtifact(distArtf *Artifact) (string, *failures.Failure) {
+	path := artifact.GetPath(distArtf.Hash)
 
 	if fileutils.DirExists(path) {
 		err := os.Remove(path)
@@ -186,9 +186,9 @@ func PrepareForArtefact(distArtf *Artefact) (string, *failures.Failure) {
 	return out.Name(), nil
 }
 
-// InstallArtefact will install the given artefact from a local source archive
-func InstallArtefact(distArtf Artefact, source string, entry *download.Entry) *failures.Failure {
-	path := artefact.GetPath(distArtf.Hash)
+// InstallArtifact will install the given artifact from a local source archive
+func InstallArtifact(distArtf Artifact, source string, entry *download.Entry) *failures.Failure {
+	path := artifact.GetPath(distArtf.Hash)
 
 	hash, fail := fileutils.Hash(source)
 	if fail != nil {
@@ -204,7 +204,7 @@ func InstallArtefact(distArtf Artefact, source string, entry *download.Entry) *f
 		return failures.FailArchiving.Wrap(err)
 	}
 
-	_, fail = artefact.Get(distArtf.Hash)
+	_, fail = artifact.Get(distArtf.Hash)
 	if fail != nil {
 		return fail
 	}

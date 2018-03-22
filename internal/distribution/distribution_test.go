@@ -10,5 +10,5 @@ func TestObtain(t *testing.T) {
 	dist, fail := Obtain()
 	assert.NoError(t, fail.ToError(), "Should obtain distribution")
 	assert.NotZero(t, dist.Languages, "Should return at least one language")
-	assert.NotZero(t, dist.Artefacts, "Should return at least one artefact")
+	assert.NotZero(t, dist.Artifacts, "Should return at least one artifact")
 }

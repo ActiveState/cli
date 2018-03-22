@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
+	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
 	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
 
@@ -37,10 +37,10 @@ type VirtualEnvironmenter interface {
 	Language() string
 
 	// LanguageMeta holds the *projectfile.Language for this venv
-	Artefact() *artefact.Artefact
+	Artifact() *artifact.Artifact
 
 	// SetLanguageMeta sets the language meta
-	SetArtefact(*artefact.Artefact)
+	SetArtifact(*artifact.Artifact)
 
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
@@ -48,11 +48,11 @@ type VirtualEnvironmenter interface {
 	// SetDataDir sets the configured data for this venv
 	SetDataDir(string)
 
-	// LoadArtefact should load the given artefact into the venv
-	LoadArtefact(*artefact.Artefact) *failures.Failure
+	// LoadArtifact should load the given artifact into the venv
+	LoadArtifact(*artifact.Artifact) *failures.Failure
 }
 
-type artefactHashable struct {
+type artifactHashable struct {
 	Name    string
 	Version string
 	Build   map[string]string
@@ -92,15 +92,15 @@ func Activate() *failures.Failure {
 			return fail
 		}
 
-		// Load language artefact
-		fail = env.LoadArtefact(artf)
+		// Load language artifact
+		fail = env.LoadArtifact(artf)
 		if fail != nil {
 			return fail
 		}
 
-		// Load Artefacts belonging to language
-		for _, subArtf := range dist.Artefacts[artf.Hash] {
-			fail := env.LoadArtefact(subArtf)
+		// Load Artifacts belonging to language
+		for _, subArtf := range dist.Artifacts[artf.Hash] {
+			fail := env.LoadArtifact(subArtf)
 			if fail != nil {
 				return fail
 			}
@@ -133,7 +133,7 @@ func GetEnv() map[string]string {
 // GetVenv returns an environment for the given project and language, this will initialize the virtual directory structure
 // and set up the necessary environment variables if the venv wasnt already initialized, otherwise it will just return
 // the venv struct
-func GetVenv(artf *artefact.Artefact) (VirtualEnvironmenter, *failures.Failure) {
+func GetVenv(artf *artifact.Artifact) (VirtualEnvironmenter, *failures.Failure) {
 	if _, ok := venvs[artf.Hash]; ok {
 		return venvs[artf.Hash], nil
 	}
@@ -167,7 +167,7 @@ func GetVenv(artf *artefact.Artefact) (VirtualEnvironmenter, *failures.Failure) 
 }
 
 // ActivateLanguageVenv activates the virtual environment for the given language
-func ActivateLanguageVenv(artf *artefact.Artefact, venv VirtualEnvironmenter) *failures.Failure {
+func ActivateLanguageVenv(artf *artifact.Artifact, venv VirtualEnvironmenter) *failures.Failure {
 	project := projectfile.Get()
 	datadir := config.GetDataDir()
 	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
@@ -177,13 +177,13 @@ func ActivateLanguageVenv(artf *artefact.Artefact, venv VirtualEnvironmenter) *f
 		return failures.FailIO.Wrap(err)
 	}
 
-	venv.SetArtefact(artf)
+	venv.SetArtifact(artf)
 	venv.SetDataDir(datadir)
 
 	return venv.Activate()
 }
 
-func createLanguageFolderStructure(artf *artefact.Artefact) *failures.Failure {
+func createLanguageFolderStructure(artf *artifact.Artifact) *failures.Failure {
 	project := projectfile.Get()
 	datadir := config.GetDataDir()
 

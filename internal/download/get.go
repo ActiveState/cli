@@ -55,7 +55,7 @@ func _testHTTPGet(url string) ([]byte, *failures.Failure) {
 	var arch = strings.ToLower(sysinfo.Architecture().String())
 	var platform = fmt.Sprintf("%s-%s", OS, arch)
 
-	path := strings.Replace(url, constants.APIArtefactURL, "", 1)
+	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
 	path = strings.Replace(path, "distro/"+platform+"/", "distro/", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 

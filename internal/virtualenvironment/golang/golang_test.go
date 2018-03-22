@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
+	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 	"github.com/ActiveState/ActiveState-CLI/internal/config"
 	"github.com/ActiveState/ActiveState-CLI/internal/distribution"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
@@ -36,15 +36,15 @@ func TestLanguageMeta(t *testing.T) {
 	setup(t)
 
 	venv := &VirtualEnvironment{}
-	assert.Nil(t, venv.Artefact(), "Should not have artefact info")
+	assert.Nil(t, venv.Artifact(), "Should not have artifact info")
 
-	venv.SetArtefact(&artefact.Artefact{
-		Meta: &artefact.Meta{
+	venv.SetArtifact(&artifact.Artifact{
+		Meta: &artifact.Meta{
 			Name: "test",
 		},
 		Path: "test",
 	})
-	assert.NotNil(t, venv.Artefact(), "Should have artefact info")
+	assert.NotNil(t, venv.Artifact(), "Should have artifact info")
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
@@ -58,7 +58,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 	dist, fail := distribution.Obtain()
 	assert.NoError(t, fail.ToError())
 
-	var language *artefact.Artefact
+	var language *artifact.Artifact
 	for _, lang := range dist.Languages {
 		if strings.ToLower(lang.Meta.Name) == venv.Language() {
 			language = lang
@@ -68,12 +68,12 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	assert.NotNil(t, language, "Should retrieve language from dist")
 
-	artf := dist.Artefacts[dist.Languages[0].Hash][0]
-	fail = venv.LoadArtefact(artf)
-	assert.NoError(t, fail.ToError(), "Loads artefact without errors")
+	artf := dist.Artifacts[dist.Languages[0].Hash][0]
+	fail = venv.LoadArtifact(artf)
+	assert.NoError(t, fail.ToError(), "Loads artifact without errors")
 
 	// Todo: Test with datadir as source, not the archived version
-	assert.FileExists(t, filepath.Join(datadir, "src", artf.Meta.Name, "artefact.json"), "Should create a package symlink")
+	assert.FileExists(t, filepath.Join(datadir, "src", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 }
 
 func TestActivate(t *testing.T) {
@@ -81,8 +81,8 @@ func TestActivate(t *testing.T) {
 
 	venv := &VirtualEnvironment{}
 
-	venv.SetArtefact(&artefact.Artefact{
-		Meta: &artefact.Meta{
+	venv.SetArtifact(&artifact.Artifact{
+		Meta: &artifact.Meta{
 			Name:    "go",
 			Version: "1.10",
 		},

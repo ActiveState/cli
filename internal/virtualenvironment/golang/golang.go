@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artefact"
+	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -13,7 +13,7 @@ import (
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
 	datadir  string
-	artefact *artefact.Artefact
+	artifact *artifact.Artifact
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -31,18 +31,18 @@ func (v *VirtualEnvironment) SetDataDir(path string) {
 	v.datadir = path
 }
 
-// Artefact - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) Artefact() *artefact.Artefact {
-	return v.artefact
+// Artifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) Artifact() *artifact.Artifact {
+	return v.artifact
 }
 
-// SetArtefact - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) SetArtefact(artf *artefact.Artefact) {
-	v.artefact = artf
+// SetArtifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) SetArtifact(artf *artifact.Artifact) {
+	v.artifact = artf
 }
 
-// LoadArtefact - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) LoadArtefact(artf *artefact.Artefact) *failures.Failure {
+// LoadArtifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) LoadArtifact(artf *artifact.Artifact) *failures.Failure {
 	switch artf.Meta.Type {
 	case "language":
 		return v.loadLanguage(artf)
@@ -53,7 +53,7 @@ func (v *VirtualEnvironment) LoadArtefact(artf *artefact.Artefact) *failures.Fai
 	}
 }
 
-func (v *VirtualEnvironment) loadLanguage(artf *artefact.Artefact) *failures.Failure {
+func (v *VirtualEnvironment) loadLanguage(artf *artifact.Artifact) *failures.Failure {
 	err := os.Symlink(filepath.Dir(artf.Path), filepath.Join(v.DataDir(), "language"))
 	if err != nil {
 		return failures.FailIO.Wrap(err)
@@ -62,7 +62,7 @@ func (v *VirtualEnvironment) loadLanguage(artf *artefact.Artefact) *failures.Fai
 	return nil
 }
 
-func (v *VirtualEnvironment) loadPackage(artf *artefact.Artefact) *failures.Failure {
+func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Failure {
 	if err := fileutils.Mkdir(v.DataDir(), "src", filepath.Dir(artf.Meta.Name)); err != nil {
 		return failures.FailIO.Wrap(err)
 	}
