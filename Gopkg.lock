@@ -315,6 +315,16 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/vbauerster/mpb"
+  packages = [
+    ".",
+    "cwriter",
+    "decor"
+  ]
+  revision = "44b3ab598678a5954168e726db2af310f43d3bd8"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -363,6 +373,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "54a2d7cb62f9f2413edccfa4768cdaa8e8322c29350cc66ec2ca74419a9aad78"
+  inputs-digest = "379ce2d4e18d6bfa3777813f1cfdc9fb3a130855c422814c967cf24ea42fc09d"
   solver-name = "gps-cdcl"
   solver-version = 1

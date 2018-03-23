@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"path/filepath"
 
@@ -17,6 +18,10 @@ var configDir *configdir.Config
 var exit = os.Exit
 
 func init() {
+	if flag.Lookup("test.v") != nil {
+		configNamespace = C.ConfigNamespace + "-test"
+	}
+
 	ensureConfigExists()
 	readInConfig()
 }

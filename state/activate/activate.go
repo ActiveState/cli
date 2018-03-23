@@ -116,21 +116,19 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	project := projectfile.Get()
 
-	var err = virtualenvironment.Activate()
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+	var fail = virtualenvironment.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return
 	}
 
-	err = hooks.RunHook("ACTIVATE")
+	err := hooks.RunHook("ACTIVATE")
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_run_hooks"))
 		return
 	}
 
-	venv, err := subshell.Activate(&wg)
-	_ = venv
-
+	_, err = subshell.Activate(&wg)
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return
