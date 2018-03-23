@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateSha256(t *testing.T) {
-	sha := generateSha256("foo")
-	assert.Equal(t, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", sha, "Should generate our SHA256")
-}
-
 func TestCreateUpdate(t *testing.T) {
 	dir, err := ioutil.TempDir(os.TempDir(), "update-generator-test")
 	if err != nil {

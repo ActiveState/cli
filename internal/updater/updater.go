@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+
 	"github.com/kardianos/osext"
 	"gopkg.in/inconshreveable/go-update.v0"
 
@@ -164,7 +166,7 @@ func (u *Updater) fetchInfo() error {
 		// already called fetchInfo
 		return nil
 	}
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + url.QueryEscape(plat) + ".json"
+	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + constants.BranchName + "/" + url.QueryEscape(plat) + ".json"
 	r, err := u.fetch(fullURL)
 	if err != nil {
 		return err
@@ -209,10 +211,10 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	var argCmdName = url.QueryEscape(u.CmdName)
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s.gz",
-		argCmdName, argInfoVersion, argPlatform)
+	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.gz",
+		argCmdName, constants.BranchName, argInfoVersion, argPlatform)
 
-	logging.Debug("Starting to fetch full binary")
+	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
 
 	r, err := u.fetch(fetchURL)
 	if err != nil {
@@ -270,9 +272,10 @@ func verifySha(bin []byte, sha string) bool {
 	h.Write(bin)
 
 	var computed = h.Sum(nil)
-	var bytesEqual = fmt.Sprintf("%x", computed) == sha
+	var computedSha = fmt.Sprintf("%x", computed)
+	var bytesEqual = computedSha == sha
 	if !bytesEqual {
-		logging.Error("SHA mismatch")
+		logging.Error("SHA mismatch, expected: %s, actual: %s", sha, computedSha)
 	}
 
 	return bytesEqual

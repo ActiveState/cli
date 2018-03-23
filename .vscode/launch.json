@@ -24,7 +24,6 @@
             "cwd": "${workspaceRoot}/test",
             "showLog": true
         },
-
         {
             "name": "state activate",
             "type": "go",

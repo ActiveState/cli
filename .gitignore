@@ -7,3 +7,4 @@ scripts/artifact-generator/source/vendor/*/distribution/*/*
 !scripts/artifact-generator/source/vendor/*/distribution/*/place-distribution-here.txt
 scripts/artifact-generator/source/vendor/*/packages/src/*
 !scripts/artifact-generator/source/vendor/*/packages/src/place-packages-here.txt
+internal/constants/generated.go

@@ -1,7 +1,7 @@
 package constants
 
-// Version holds the current version of our cli
-const Version = "0.1.0"
+// VersionNumber holds the current version of our cli
+const VersionNumber = "0.0.1"
 
 // LibraryName contains the main name of this library
 const LibraryName = "ActiveState-CLI"
