@@ -9,6 +9,9 @@ jobs:
     working_directory: /go/src/github.com/ActiveState/ActiveState-CLI
     environment:
       TEST_RESULTS: /tmp/test-results
+    dependencies:
+    pre:
+        - sudo apt-get update; sudo apt-get install upx-ucl
     steps:
       - checkout
       - run: 

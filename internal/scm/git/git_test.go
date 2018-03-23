@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,19 +37,6 @@ func TestHumanishPart(t *testing.T) {
 	// From `git help clone` documentation.
 	assert.Equal(t, "repo", (&Git{uri: "/path/to/repo.git"}).humanishPart(), "Got the expected humanish part")
 	assert.Equal(t, "foo", (&Git{uri: "host.xz:foo/.git"}).humanishPart(), "Got the expected humanish part")
-}
-
-func TestConfigFileExists(t *testing.T) {
-	if !WithinGithubRateLimit(2) {
-		print.Warning("Exceeded Github API rate limit; skipping test 'TestConfigFileExists'")
-		return // this test needs to call the Github API twice
-	}
-
-	git := &Git{uri: "https://github.com/ActiveState/repo"}
-	assert.True(t, git.ConfigFileExists(), "The remote test repository has an ActiveState-CLI config file")
-
-	git = &Git{uri: "https://github.com/ActiveState/does-not-exist"}
-	assert.False(t, git.ConfigFileExists(), "The non-existant repository does not have an ActiveState-CLI config file")
 }
 
 func TestClone(t *testing.T) {

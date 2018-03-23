@@ -62,6 +62,12 @@
   revision = "e237f24c9fab3ae0ed95bf04e3699e92c2a41283"
 
 [[projects]]
+  name = "github.com/dave/jennifer"
+  packages = ["jen"]
+  revision = "5ba2c0232d2f848cf1e390db03b100f0838f6d55"
+  version = "v0.18.0"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -97,18 +103,6 @@
   packages = ["."]
   revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
   version = "v1.32.0"
-
-[[projects]]
-  name = "github.com/google/go-github"
-  packages = ["github"]
-  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
-  version = "v15.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/google/go-querystring"
-  packages = ["query"]
-  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
   branch = "master"
@@ -373,6 +367,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "379ce2d4e18d6bfa3777813f1cfdc9fb3a130855c422814c967cf24ea42fc09d"
+  inputs-digest = "df6e49bb55b45ba4f65f8c60b221327d491b8c18bf4b2f48bed5a6decd2c4a8e"
   solver-name = "gps-cdcl"
   solver-version = 1

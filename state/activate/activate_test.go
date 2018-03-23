@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/scm/git"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -78,11 +76,6 @@ func TestExecuteGitClone(t *testing.T) {
 }
 
 func TestExecuteGitCloneRemote(t *testing.T) {
-	if !git.WithinGithubRateLimit(3) {
-		print.Warning("Exceeded Github API rate limit; skipping test 'TestExecuteGitCloneRemote'")
-		return // this test needs to call the Github API 3 times
-	}
-
 	cwd, _ := os.Getwd() // store
 
 	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
@@ -92,7 +85,7 @@ func TestExecuteGitCloneRemote(t *testing.T) {
 
 	Flags.Path = ""
 	os.Chdir(tempdir)
-	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/repo"})
+	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/repo.git"})
 	Command.Execute()
 	_, err = os.Stat(filepath.Join(tempdir, "repo"))
 	assert.Nil(t, err, "The cloned repository exists")
@@ -104,14 +97,14 @@ func TestExecuteGitCloneRemote(t *testing.T) {
 
 	Flags.Path = ""
 	os.Chdir(tempdir)
-	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/does-not-exist", "--path", "repo2"})
+	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/does-not-exist.git", "--path", "repo2"})
 	Command.Execute()
 	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
 	assert.Error(t, err, "The non-existant repository did not have an ActiveState config file; no clone happened")
 
 	Flags.Path = ""
 	os.Chdir(tempdir)
-	Command.GetCobraCmd().SetArgs([]string{"https://github.com/ActiveState/repo", "--path", "repo3", "--branch", "branched"})
+	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/repo.git", "--path", "repo3", "--branch", "branched"})
 	Command.Execute()
 	out, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	assert.Equal(t, "branched", strings.Trim(string(out), "\n"), "Should be under our defined branch")
