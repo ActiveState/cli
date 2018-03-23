@@ -2,7 +2,10 @@
 
 # Installation
 
- 1. Make sure you have Go installed (version 1.9 ideally)
+ 1. Install the following dependencies:
+   * Go 1.9 or later
+   * dep - https://github.com/golang/dep#installation
+   * upx - https://upx.github.io/
  2. Clone this repository under `$GOPATH/src/github.com/ActiveState/ActiveState-CLI`
  3. Run `make init`
  4. Run `dep ensure`
