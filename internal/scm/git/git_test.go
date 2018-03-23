@@ -30,13 +30,13 @@ func TestMatches(t *testing.T) {
 }
 
 func TestHumanishPart(t *testing.T) {
-	assert.Equal(t, "playground", (&Git{uri: "git@github.com:golang/playground.git"}).humanishPart(), "Got the expected humanish part")
-	assert.Equal(t, "playground", (&Git{uri: "http://github.com/golang/playground"}).humanishPart(), "Got the expected humanish part")
-	assert.Equal(t, "playground", (&Git{uri: "https://github.com/golang/playground"}).humanishPart(), "Got the expected humanish part")
+	assert.Equal(t, "playground", NewFromURI("git@github.com:golang/playground.git").humanishPart(), "Got the expected humanish part")
+	assert.Equal(t, "playground", NewFromURI("http://github.com/golang/playground").humanishPart(), "Got the expected humanish part")
+	assert.Equal(t, "playground", NewFromURI("https://github.com/golang/playground").humanishPart(), "Got the expected humanish part")
 
 	// From `git help clone` documentation.
-	assert.Equal(t, "repo", (&Git{uri: "/path/to/repo.git"}).humanishPart(), "Got the expected humanish part")
-	assert.Equal(t, "foo", (&Git{uri: "host.xz:foo/.git"}).humanishPart(), "Got the expected humanish part")
+	assert.Equal(t, "repo", NewFromURI("/path/to/repo.git").humanishPart(), "Got the expected humanish part")
+	assert.Equal(t, "foo", NewFromURI("host.xz:foo/.git").humanishPart(), "Got the expected humanish part")
 }
 
 func TestClone(t *testing.T) {
@@ -58,7 +58,7 @@ func TestClone(t *testing.T) {
 	// Test basic clone.
 	_, err = os.Stat("repo")
 	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
-	git := &Git{uri: repo}
+	git := NewFromURI(repo)
 	err = git.Clone()
 	assert.Nil(t, err, "The remote repository exists")
 	assert.Equal(t, filepath.Base(git.Path()), "repo", "The repository was cloned into the expected directory")
@@ -73,7 +73,7 @@ func TestClone(t *testing.T) {
 	// Test clone with specified directory.
 	_, err = os.Stat("repo2")
 	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
-	git = &Git{uri: repo}
+	git = NewFromURI(repo)
 	git.SetPath(filepath.Join(tempdir, "repo2"))
 	err = git.Clone()
 	assert.Nil(t, err, "The remote repository exists")
@@ -86,7 +86,7 @@ func TestClone(t *testing.T) {
 	}
 
 	// Test a non-existant repo.
-	git = &Git{uri: "does-not-exist"}
+	git = NewFromURI("does-not-exist")
 	err = git.Clone()
 	assert.Error(t, err, "The repository could not be cloned")
 	assert.NotEqual(t, git.Path(), "", "The repository would have been cloned into a directory")
@@ -112,12 +112,12 @@ func TestRepoExists(t *testing.T) {
 
 	repoExists, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "Obtain repo directory")
-	gitExists := &Git{uri: repoExists}
+	gitExists := NewFromURI(repoExists)
 	assert.True(t, gitExists.TargetExists(), "Repo should already exist")
 
 	repoFake, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "fakerepo"))
 	assert.Nil(t, err, "Obtain repo directory")
-	gitFake := &Git{uri: repoFake}
+	gitFake := NewFromURI(repoFake)
 	assert.False(t, gitFake.TargetExists(), "Repo should not exist")
 
 	err = os.Chdir(originalCWD)
@@ -130,6 +130,6 @@ func TestDetectUri(t *testing.T) {
 
 	fmt.Println(path)
 
-	scm := &Git{path: path}
+	scm := NewFromPath(path)
 	assert.NotEmpty(t, scm.URI(), "Can detect remote")
 }
