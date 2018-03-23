@@ -2,16 +2,20 @@ package golang
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 	"github.com/ActiveState/ActiveState-CLI/internal/config"
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/distribution"
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 )
 
 func setup(t *testing.T) {
@@ -96,4 +100,50 @@ func TestActivate(t *testing.T) {
 	venv.Activate()
 
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
+}
+
+func TestNamespace(t *testing.T) {
+	setup(t)
+
+	venv := &VirtualEnvironment{}
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should get root path")
+
+	project := projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: Bar
+owner: Foo`)
+
+	err = yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "Should create project struct")
+	project.SetPath(filepath.Join(root, "foo"))
+	project.Persist()
+
+	ns := venv.namespace()
+	assert.Equal(t, constants.LibraryNamespace+constants.LibraryName, ns, "Should detect namespace from remote")
+
+	project = projectfile.Project{}
+	dat = strings.TrimSpace(`
+name: Bar
+owner: Foo
+namespace: foo.bar/foo/bar`)
+
+	err = yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "Should create project struct")
+	project.Persist()
+
+	ns = venv.namespace()
+	assert.Equal(t, "foo.bar/foo/bar", ns, "Should detect namespace from namespace property")
+
+	project = projectfile.Project{}
+	dat = strings.TrimSpace(`
+name: Bar
+owner: Foo`)
+
+	err = yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "Should create project struct")
+	project.Persist()
+
+	ns = venv.namespace()
+	assert.Equal(t, path.Join(constants.DefaultNamespaceDomain, project.Owner, project.Name), ns, "Should create namespace based on owner/name")
 }

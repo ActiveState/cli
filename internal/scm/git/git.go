@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+
 	"github.com/ActiveState/ActiveState-CLI/internal/constants"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -16,8 +18,8 @@ import (
 	"github.com/google/go-github/github"
 )
 
-// IsGitURI returns whether or not the given URI points to a Git repository.
-func IsGitURI(uri string) bool {
+// MatchesRemote returns whether or not the given URI points to a Git repository.
+func MatchesRemote(uri string) bool {
 	if strings.HasPrefix(uri, "git@github.com") ||
 		strings.HasPrefix(uri, "http://github.com") ||
 		strings.HasPrefix(uri, "https://github.com") {
@@ -29,12 +31,13 @@ func IsGitURI(uri string) bool {
 		strings.Contains(uri, "git@") {
 		return true
 	}
-	// Check for a '.git' directory or file in a local URI.
-	if _, err := os.Stat(uri); err == nil {
-		_, err = os.Stat(filepath.Join(uri, ".git"))
-		return err == nil
-	}
-	return false
+	// Check for a '.git' file in a local URI (directories are checkouts, ie not a remote)
+	return fileutils.FileExists(filepath.Join(uri, ".git"))
+}
+
+// MatchesPath returns whether the given path is a git repository
+func MatchesPath(path string) bool {
+	return fileutils.DirExists(filepath.Join(path, ".git"))
 }
 
 // WithinGithubRateLimit returns whether or not the given number of requests can
@@ -49,9 +52,19 @@ func WithinGithubRateLimit(requests int) bool {
 	return limits.Core.Remaining >= requests
 }
 
+// NewFromURI creates a new Git struct using the given uri
+func NewFromURI(uri string) *Git {
+	return &Git{uri: uri}
+}
+
+// NewFromPath creates a new Git struct using the given path
+func NewFromPath(path string) *Git {
+	return &Git{path: path}
+}
+
 // Git represents a Git repository to clone locally.
 type Git struct {
-	URI    string // the URI of the repository to clone
+	uri    string // the uri of the repository to clone
 	path   string // the local path to clone into
 	branch string // the branch to use
 }
@@ -59,12 +72,12 @@ type Git struct {
 // ConfigFileExists returns whether or not the ActiveState config file exists in
 // the repository, PRIOR to cloning (not after).
 func (g *Git) ConfigFileExists() bool {
-	if g.branch == "" && (strings.HasPrefix(g.URI, "git@github.com") ||
-		strings.HasPrefix(g.URI, "http://github.com") ||
-		strings.HasPrefix(g.URI, "https://github.com")) {
+	if g.branch == "" && (strings.HasPrefix(g.URI(), "git@github.com") ||
+		strings.HasPrefix(g.URI(), "http://github.com") ||
+		strings.HasPrefix(g.URI(), "https://github.com")) {
 		client := github.NewClient(nil)
 		regex := regexp.MustCompile("^.+github\\.com[:/]([^/]+)/(.+)$")
-		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI, ".git"))[1:]
+		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI(), ".git"))[1:]
 		reader, err := client.Repositories.DownloadContents(context.Background(), matches[0], matches[1], constants.ConfigFileName, nil)
 		if err != nil {
 			if _, ok := err.(*github.RateLimitError); ok {
@@ -93,6 +106,24 @@ func (g *Git) Path() string {
 		logging.Debug("Determined 'humanish' dir to clone into as '%s'", reponame)
 	}
 	return g.path
+}
+
+// SetURI sets the Git repository's remote uri.
+func (g *Git) SetURI(URI string) {
+	g.uri = URI
+}
+
+// URI returns the Git repository's remote uri.
+func (g *Git) URI() string {
+	if g.uri == "" {
+		out, err := exec.Command("git", "config", "--get", "remote.origin.url").Output()
+		if err == nil {
+			g.uri = strings.Trim(string(out), "\n")
+		} else {
+			logging.Warning("Could not retrieve git remote from local repository")
+		}
+	}
+	return g.uri
 }
 
 // SetBranch sets the Git repository's branch to use
@@ -126,17 +157,13 @@ func (g *Git) Clone() error {
 	logging.Debug("Attempting to clone %+v", g)
 	path := g.Path()
 	print.Info(locale.T("info_state_activate_uri", map[string]interface{}{
-		"URI": g.URI, "Dir": path,
+		"URI": g.URI(), "Dir": path,
 	}))
 
-	cmd := exec.Command("git", "clone", g.URI, path)
+	cmd := exec.Command("git", "clone", g.URI(), path)
 	fmt.Println(strings.Join(cmd.Args, " ")) // match command output style
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 // Computes the 'humanish' part of the source repository in order to use it as
@@ -144,7 +171,7 @@ func (g *Git) Clone() error {
 // This computation is based on git clone's shell script.
 func (g *Git) humanishPart() string {
 	re := regexp.MustCompile(":*[/\\\\]*\\.git$")
-	path := re.ReplaceAllString(strings.TrimRight(g.URI, "/"), "")
+	path := re.ReplaceAllString(strings.TrimRight(g.URI(), "/"), "")
 	re = regexp.MustCompile(".*[/\\\\:]")
 	return re.ReplaceAllString(path, "")
 }

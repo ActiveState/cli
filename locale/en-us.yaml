@@ -198,3 +198,5 @@ info_activating_state:
   other: "Activating state: {{.Owner}}/{{.Name}}"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
+err_no_scm_for_path:
+  other: No source code control could be detected on {{.V0}}
