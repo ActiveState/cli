@@ -18,7 +18,8 @@ init:
 		git config core.hooksPath .githooks
 build: 
 		go run scripts/constants-generator/main.go 
-		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
+		cd $(BINARY_NAME) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
+		upx ../build/$(BINARY_NAME)
 		mkdir -p public/update
 		go run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
