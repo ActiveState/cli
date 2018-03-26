@@ -82,12 +82,12 @@ func Activate() *failures.Failure {
 	// Load Languages
 	print.Info(locale.T("info_activating_state", project))
 	for _, artf := range dist.Languages {
-		env, fail := GetVenv(artf)
+		fail = createLanguageFolderStructure(artf)
 		if fail != nil {
 			return fail
 		}
 
-		fail = createLanguageFolderStructure(artf)
+		env, fail := GetVenv(artf)
 		if fail != nil {
 			return fail
 		}

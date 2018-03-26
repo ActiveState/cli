@@ -63,7 +63,7 @@ var Args struct {
 // Clones the repository specified by a given URI or ID and returns it. Any
 // error that occurs during the clone process is also returned.
 func clone(uriOrID string) (scm.SCMer, error) {
-	scm := scm.New(uriOrID)
+	scm := scm.FromRemote(uriOrID)
 	if scm != nil {
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)

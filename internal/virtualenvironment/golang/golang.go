@@ -1,13 +1,20 @@
 package golang
 
 import (
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
+
+	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/ActiveState-CLI/internal/scm"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 )
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
@@ -79,7 +86,48 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Go venv")
 
+	project := projectfile.Get()
+
+	namespace := v.namespace()
+
+	fail := fileutils.Mkdir(filepath.Join(v.DataDir(), "src", filepath.Dir(namespace)))
+	if fail != nil {
+		return fail
+	}
+
+	err := os.Symlink(filepath.Dir(project.Path()), filepath.Join(v.DataDir(), "src", namespace))
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
 	return fileutils.Mkdir(v.DataDir(), "bin")
+}
+
+// namespace retrieves the namespace to use for the current venv
+func (v *VirtualEnvironment) namespace() string {
+	project := projectfile.Get()
+	if project.Namespace != "" {
+		return project.Namespace
+	}
+
+	projectPath := filepath.Dir(project.Path())
+	scmm := scm.FromPath(projectPath)
+	if scmm != nil {
+		uri := scmm.URI()
+
+		if uri[0:4] == "git@" {
+			uri = strings.Replace(uri, ":", "/", 1)
+			uri = strings.Replace(uri, ".git", "", 1)
+			uri = strings.Replace(uri, "git@", "http://", 1)
+		}
+
+		url, err := url.Parse(uri)
+		if err == nil {
+			return path.Join(url.Hostname(), url.Path)
+		}
+	}
+
+	return path.Join(constants.DefaultNamespaceDomain, project.Owner, project.Name)
 }
 
 // Env - see virtualenvironment.VirtualEnvironment

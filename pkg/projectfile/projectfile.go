@@ -21,6 +21,7 @@ var FailNoProject = failures.Type("projectfile.fail.noproject")
 type Project struct {
 	Name         string     `yaml:"name"`
 	Owner        string     `yaml:"owner"`
+	Namespace    string     `yaml:"namespace"`
 	Version      string     `yaml:"version"`
 	Environments string     `yaml:"environments"`
 	Platforms    []Platform `yaml:"platforms"`
@@ -122,6 +123,11 @@ func Parse(filepath string) (*Project, error) {
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
+}
+
+// SetPath sets the path of the project file and should generally only be used by tests
+func (p *Project) SetPath(path string) {
+	p.path = path
 }
 
 // Save the project to its activestate.yaml file
