@@ -3,8 +3,8 @@ package download
 import (
 	"io/ioutil"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )

@@ -11,14 +11,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
+	"github.com/ActiveState/cli/internal/artifact"
 )
 
 // OS is uppercase cause os is taken

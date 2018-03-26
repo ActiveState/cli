@@ -16,7 +16,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/cli/internal/constants"
 
 	"github.com/pkg/errors"
 )

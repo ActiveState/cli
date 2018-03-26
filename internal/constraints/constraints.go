@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/sysinfo"
 )

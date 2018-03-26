@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/config" // MUST be first!
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Runs the given updater function on a timeout.

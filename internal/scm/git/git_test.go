@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +50,7 @@ func TestClone(t *testing.T) {
 	repo, err := filepath.Abs(filepath.Join(root, "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "The test repository exists")
 
-	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
+	tempdir, err := ioutil.TempDir("", "cli-")
 	assert.Nil(t, err, "A temporary directory was created")
 	err = os.Chdir(tempdir)
 	assert.Nil(t, err, "Changed into temporary directory")

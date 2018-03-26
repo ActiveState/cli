@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 

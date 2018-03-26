@@ -5,19 +5,19 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/updater"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/config" // MUST be first!
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 
 	// commands
-	"github.com/ActiveState/ActiveState-CLI/state/activate"
-	"github.com/ActiveState/ActiveState-CLI/state/hook"
-	"github.com/ActiveState/ActiveState-CLI/state/selfupdate"
+	"github.com/ActiveState/cli/state/activate"
+	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/selfupdate"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/spf13/cobra"
 )
 

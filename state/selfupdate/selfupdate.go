@@ -1,12 +1,12 @@
 package selfupdate
 
 import (
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/updater"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
 )
 

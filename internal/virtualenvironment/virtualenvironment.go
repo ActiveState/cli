@@ -7,21 +7,21 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/cli/internal/print"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
-	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
-	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
+	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/fileutils"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/distribution"
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/cli/internal/distribution"
+	"github.com/ActiveState/cli/internal/failures"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/golang"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment/python"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/virtualenvironment/golang"
+	"github.com/ActiveState/cli/internal/virtualenvironment/python"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // VirtualEnvironmenter defines the interface for our virtual environment packages, which should be contained in a sub-directory

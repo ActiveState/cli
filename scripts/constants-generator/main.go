@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants/preprocess"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/constants/preprocess"
+	"github.com/ActiveState/cli/internal/environment"
 
 	"github.com/dave/jennifer/jen"
 )

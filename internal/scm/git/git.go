@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/fileutils"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 )
 
 // MatchesRemote returns whether or not the given URI points to a Git repository.

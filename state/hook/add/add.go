@@ -1,14 +1,14 @@
 package add
 
 import (
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/spf13/cobra"
 )
 

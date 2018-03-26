@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants

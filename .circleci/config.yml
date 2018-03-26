@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.9
-    working_directory: /go/src/github.com/ActiveState/ActiveState-CLI
+    working_directory: /go/src/github.com/ActiveState/cli
     environment:
       TEST_RESULTS: /tmp/test-results
     steps:

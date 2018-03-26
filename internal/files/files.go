@@ -3,7 +3,7 @@ package files
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/qor/assetfs"
 )
 

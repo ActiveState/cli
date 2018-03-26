@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	C "github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	C "github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 )

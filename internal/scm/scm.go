@@ -1,6 +1,6 @@
 package scm
 
-import "github.com/ActiveState/ActiveState-CLI/internal/scm/git"
+import "github.com/ActiveState/cli/internal/scm/git"
 
 // SCMer is the interface all known SCMs should implement.
 type SCMer interface {

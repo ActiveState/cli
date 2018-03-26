@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/ActiveState/ActiveState-CLI.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/ActiveState-CLI)
+[![CircleCI](https://circleci.com/gh/ActiveState/cli.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/cli)
 
 # Installation
 
@@ -6,7 +6,7 @@
    * Go 1.9 or later
    * dep - https://github.com/golang/dep#installation
    * upx - https://upx.github.io/
- 2. Clone this repository under `$GOPATH/src/github.com/ActiveState/ActiveState-CLI`
+ 2. Clone this repository under `$GOPATH/src/github.com/ActiveState/cli`
  3. Run `make init`
  4. Run `dep ensure`
  5. Run `make build`

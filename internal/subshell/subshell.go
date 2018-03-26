@@ -7,17 +7,17 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/files"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/files"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	tempfile "github.com/mash/go-tempfile-suffix"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
-	"github.com/ActiveState/ActiveState-CLI/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/alecthomas/template"
 )
 

@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/artifact"
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/distribution"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/distribution"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setup(t *testing.T) {

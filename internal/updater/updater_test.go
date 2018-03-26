@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/stretchr/testify/assert"
 )
 

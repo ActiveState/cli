@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
+	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/stretchr/testify/assert"
 )
 

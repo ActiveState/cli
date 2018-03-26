@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 
 	"github.com/containous/go-bindata"
 	"github.com/qor/assetfs"

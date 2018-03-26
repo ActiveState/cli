@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 

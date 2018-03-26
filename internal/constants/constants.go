@@ -4,7 +4,7 @@ package constants
 const VersionNumber = "0.1.0"
 
 // LibraryName contains the main name of this library
-const LibraryName = "ActiveState-CLI"
+const LibraryName = "cli"
 
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"

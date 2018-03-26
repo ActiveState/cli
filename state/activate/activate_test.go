@@ -27,7 +27,7 @@ func TestExecuteGitClone(t *testing.T) {
 	repo, err := filepath.Abs(filepath.Join("..", "..", "internal", "scm", "git", "testdata", "repo"))
 	assert.Nil(t, err, "The test Git repository exists")
 
-	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
+	tempdir, err := ioutil.TempDir("", "cli-")
 	assert.Nil(t, err, "A temporary directory was created")
 	err = os.Chdir(tempdir)
 	assert.Nil(t, err, "Changed into temporary directory")
@@ -78,7 +78,7 @@ func TestExecuteGitClone(t *testing.T) {
 func TestExecuteGitCloneRemote(t *testing.T) {
 	cwd, _ := os.Getwd() // store
 
-	tempdir, err := ioutil.TempDir("", "ActiveState-CLI-")
+	tempdir, err := ioutil.TempDir("", "cli-")
 	assert.Nil(t, err, "A temporary directory was created")
 	err = os.Chdir(tempdir)
 	assert.Nil(t, err, "Changed into temporary directory")
