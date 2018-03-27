@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -126,6 +127,31 @@ func Mkdir(parent string, subpath ...string) *failures.Failure {
 		if err != nil {
 			return failures.FailIO.Wrap(err)
 		}
+	}
+	return nil
+}
+
+// CopyFile copies a file from one location to another
+func CopyFile(src, target string) *failures.Failure {
+	in, err := os.Open(src)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer in.Close()
+
+	out, err := os.Create(target)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	err = out.Close()
+	if err != nil {
+		return failures.FailIO.Wrap(err)
 	}
 	return nil
 }

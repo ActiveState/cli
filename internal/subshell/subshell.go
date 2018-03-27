@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/alecthomas/template"
 )
 
@@ -74,6 +75,8 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	switch name {
 	case "bash":
 		subs = &bash.SubShell{}
+	case "zsh":
+		subs = &zsh.SubShell{}
 	case "cmd.exe":
 		subs = &cmd.SubShell{}
 	default:
