@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ActiveState/state-required"
+  packages = ["require"]
+  revision = "a0329b32eba8111961b25c274deed558a6554f38"
+
+[[projects]]
+  branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
   revision = "9891d47c9ff78bbe67b845cc01c7ca95633d6a51"
@@ -179,6 +185,12 @@
   packages = ["."]
   revision = "cdc68dd1f170b8dfc1a0d2231b5bb0967ed67006"
   version = "v2.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-ps"
+  packages = ["."]
+  revision = "4fdf99ab29366514c69ccccddab5dc58b8d84062"
 
 [[projects]]
   branch = "master"
@@ -367,6 +379,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "df6e49bb55b45ba4f65f8c60b221327d491b8c18bf4b2f48bed5a6decd2c4a8e"
+  inputs-digest = "cb8554d3d7c957a829a651f77b794c9082165077b11302bfee859cb345295d7f"
   solver-name = "gps-cdcl"
   solver-version = 1

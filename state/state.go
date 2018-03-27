@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -17,7 +18,8 @@ import (
 	"github.com/ActiveState/cli/state/hook"
 	"github.com/ActiveState/cli/state/selfupdate"
 
-	"github.com/ActiveState/cli/internal/logging"
+	_ "github.com/ActiveState/state-required/require"
+
 	"github.com/spf13/cobra"
 )
 
