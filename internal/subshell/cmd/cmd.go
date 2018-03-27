@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -79,7 +81,14 @@ func (v *SubShell) Deactivate() error {
 	if !v.IsActive() {
 		return nil
 	}
-	err := v.cmd.Process.Kill()
+
+	var err error
+	func() {
+		// Go's Process.Kill is not very safe to use, it throws a panic if the process no longer exists
+		defer failures.Recover()
+		err = v.cmd.Process.Kill()
+	}()
+
 	if err == nil {
 		v.cmd = nil
 	}

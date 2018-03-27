@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
@@ -88,7 +89,14 @@ func (v *SubShell) Deactivate() error {
 	if !v.IsActive() {
 		return nil
 	}
-	err := v.cmd.Process.Kill()
+
+	var err error
+	func() {
+		// Go's Process.Kill is not very safe to use, it throws a panic if the process no longer exists
+		defer failures.Recover()
+		err = v.cmd.Process.Kill()
+	}()
+
 	if err == nil {
 		v.cmd = nil
 	}

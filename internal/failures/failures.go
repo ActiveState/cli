@@ -197,3 +197,10 @@ func IsFailure(err error) bool {
 		return false
 	}
 }
+
+// Recover is a helper function to use for catching panic
+func Recover() {
+	if r := recover(); r != nil {
+		logging.Warning("Recovered from panic: %v", r)
+	}
+}
