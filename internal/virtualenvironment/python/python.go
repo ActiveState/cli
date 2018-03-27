@@ -51,6 +51,11 @@ func (v *VirtualEnvironment) LoadArtifact(artf *artifact.Artifact) *failures.Fai
 	}
 }
 
+// WorkingDirectory - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) WorkingDirectory() string {
+	return ""
+}
+
 func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Failure {
 	if err := fileutils.Mkdir(v.datadir, "lib"); err != nil {
 		return failures.FailIO.Wrap(err)

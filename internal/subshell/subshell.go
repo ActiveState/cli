@@ -105,6 +105,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	rcData := map[string]interface{}{
 		"Project": projectfile.Get(),
 		"Env":     virtualenvironment.GetEnv(),
+		"WD":      virtualenvironment.WorkingDirectory(),
 	}
 	t, err := template.New("rcfile").Parse(string(tplFile))
 	if err != nil {

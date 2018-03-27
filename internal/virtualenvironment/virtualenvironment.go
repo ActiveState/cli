@@ -42,6 +42,9 @@ type VirtualEnvironmenter interface {
 	// SetLanguageMeta sets the language meta
 	SetArtifact(*artifact.Artifact)
 
+	// WorkingDirectory returns the working directory for this venv, or an empty string if it has no preference
+	WorkingDirectory() string
+
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
 
@@ -128,6 +131,24 @@ func GetEnv() map[string]string {
 	}
 
 	return env
+}
+
+// WorkingDirectory returns the working directory to use for the current environment
+func WorkingDirectory() string {
+	for _, venv := range venvs {
+		wd := venv.WorkingDirectory()
+		if wd != "" {
+			return wd
+		}
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		// Shouldn't happen unless something is seriously wrong with your system
+		panic(locale.T("panic_couldnt_detect_wd", map[string]interface{}{"Error": err.Error()}))
+	}
+
+	return wd
 }
 
 // GetVenv returns an environment for the given project and language, this will initialize the virtual directory structure

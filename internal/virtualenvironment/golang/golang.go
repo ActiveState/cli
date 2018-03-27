@@ -48,6 +48,11 @@ func (v *VirtualEnvironment) SetArtifact(artf *artifact.Artifact) {
 	v.artifact = artf
 }
 
+// WorkingDirectory - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) WorkingDirectory() string {
+	return filepath.Join(v.DataDir(), "src", v.namespace())
+}
+
 // LoadArtifact - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadArtifact(artf *artifact.Artifact) *failures.Failure {
 	switch artf.Meta.Type {
