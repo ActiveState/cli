@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -39,7 +40,7 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	mr := &mockRequester{}
 	mr.HandleRequest(
 		func(url string) (io.ReadCloser, error) {
-			assert.Equal(t, "http://updates.yourdomain.com/myapp/"+constants.BranchName+"/linux-amd64.json", url)
+			assert.Equal(t, "http://updates.yourdomain.com/myapp/"+constants.BranchName+"/"+runtime.GOOS+"-"+runtime.GOARCH+".json", url)
 			return newTestReaderCloser("{}"), nil
 		})
 	updater := createUpdater(mr)
@@ -67,12 +68,12 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdateEscapedPath(t *testing.T) {
 			h := sha256.New()
 			h.Write(cb.Bytes())
 			computed := h.Sum(nil)
-			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/"+constants.BranchName+"/linux-amd64.json", url)
+			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/"+constants.BranchName+"/"+runtime.GOOS+"-"+runtime.GOARCH+".json", url)
 			return newTestReaderCloser(fmt.Sprintf(`{"Version": "1.3+foobar", "Sha256": "%x"}`, computed)), nil
 		})
 	mr.HandleRequest(
 		func(url string) (io.ReadCloser, error) {
-			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/"+constants.BranchName+"/1.3%2Bfoobar/linux-amd64.gz", url)
+			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/"+constants.BranchName+"/1.3%2Bfoobar/"+runtime.GOOS+"-"+runtime.GOARCH+".gz", url)
 			return cb, nil
 		})
 	updater := createUpdaterWithEscapedCharacters(mr)

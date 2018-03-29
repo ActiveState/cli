@@ -122,9 +122,9 @@ func (v *VirtualEnvironment) namespace() string {
 
 		if uri[0:4] == "git@" {
 			uri = strings.Replace(uri, ":", "/", 1)
-			uri = strings.Replace(uri, ".git", "", 1)
 			uri = strings.Replace(uri, "git@", "http://", 1)
 		}
+		uri = strings.Replace(uri, ".git", "", 1)
 
 		url, err := url.Parse(uri)
 		if err == nil {
