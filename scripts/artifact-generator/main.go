@@ -11,20 +11,14 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-
+	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
+
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
-
-	"github.com/ActiveState/cli/internal/artifact"
 )
-
-// OS is uppercase cause os is taken
-var OS = strings.ToLower(sysinfo.OS().String())
-var arch = strings.ToLower(sysinfo.Architecture().String())
-var platform = fmt.Sprintf("%s-%s", OS, arch)
 
 // Distribution reflects the data contained in the distribution.json file
 type Distribution struct {
@@ -52,14 +46,31 @@ func (s byLengthSorter) Less(i, j int) bool {
 }
 
 func main() {
+	var OS = strings.ToLower(sysinfo.OS().String())
+	var arch = strings.ToLower(sysinfo.Architecture().String())
+
+	distro("linux", "x86_64", false)
+	distro("macos", "x86_64", false)
+	distro(OS, arch, true)
+}
+
+func distro(OS string, arch string, isForTests bool) {
+	var platform = fmt.Sprintf("%s-%s", OS, arch)
+
 	// Create main distro
-	fmt.Println("Creating main distro")
+	fmt.Println("Creating main distro for " + platform)
 	distro := []*Distribution{}
 
-	targetDistPath := filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
+	var targetDistPath string
+	if isForTests {
+		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "test", "distro")
+	} else {
+		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
+	}
+
 	os.MkdirAll(targetDistPath, os.ModePerm)
 
-	distro = run("go", distro, false)
+	distro = run("go", OS, distro, isForTests)
 
 	distrob, err := json.Marshal(distro)
 	if err != nil {
@@ -68,26 +79,9 @@ func main() {
 
 	fmt.Printf("Saving distro to %s", filepath.Join(targetDistPath, "distribution.json"))
 	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, os.ModePerm)
-
-	// Create test distro
-	fmt.Println("Creating test distro")
-	distro = []*Distribution{}
-
-	targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "test", "distro")
-	os.MkdirAll(targetDistPath, os.ModePerm)
-
-	distro = run("go", distro, true)
-
-	distrob, err = json.Marshal(distro)
-	if err != nil {
-		log.Fatalf("JSON encoding failed: %s", err.Error())
-	}
-
-	fmt.Printf("Saving distro to %s", filepath.Join(targetDistPath, "distribution.json"))
-	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, os.ModePerm)
 }
 
-func run(language string, distro []*Distribution, isForTests bool) []*Distribution {
+func run(language string, OS string, distro []*Distribution, isForTests bool) []*Distribution {
 	subpath := ""
 	if isForTests {
 		subpath = "test"
