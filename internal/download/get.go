@@ -2,7 +2,6 @@ package download
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/sysinfo"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -51,12 +49,7 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
 func _testHTTPGet(url string) ([]byte, *failures.Failure) {
-	var OS = strings.ToLower(sysinfo.OS().String())
-	var arch = strings.ToLower(sysinfo.Architecture().String())
-	var platform = fmt.Sprintf("%s-%s", OS, arch)
-
 	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
-	path = strings.Replace(path, "distro/"+platform+"/", "distro/", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
 	body, err := ioutil.ReadFile(path)

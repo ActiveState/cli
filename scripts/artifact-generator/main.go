@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 
-	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
 )
 
@@ -46,12 +45,10 @@ func (s byLengthSorter) Less(i, j int) bool {
 }
 
 func main() {
-	var OS = strings.ToLower(sysinfo.OS().String())
-	var arch = strings.ToLower(sysinfo.Architecture().String())
-
-	distro("linux", "x86_64", false)
-	distro("macos", "x86_64", false)
-	distro(OS, arch, true)
+	//distro("linux", "x86_64", false)
+	//distro("macos", "x86_64", false)
+	distro("linux", "x86_64", true)
+	distro("macos", "x86_64", true)
 }
 
 func distro(OS string, arch string, isForTests bool) {
@@ -63,7 +60,7 @@ func distro(OS string, arch string, isForTests bool) {
 
 	var targetDistPath string
 	if isForTests {
-		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "test", "distro")
+		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "test", "distro", platform)
 	} else {
 		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
 	}
