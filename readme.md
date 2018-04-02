@@ -42,3 +42,5 @@ provided within them.
 
 Once generated you can deploy the artifacts using 'make deploy-artifacts'. This requires AWS credentials the same as for
 deploying an update.
+
+test
