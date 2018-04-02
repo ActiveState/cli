@@ -46,19 +46,6 @@ defaults:
       store_test_results:
         path: /tmp/test-results
 jobs:
-  build-linux:
-    <<: *meta
-    docker:
-      - image: circleci/golang:1.9
-    steps:
-      - checkout
-      - <<: *prepareEnv
-      - <<: *runTests
-      - <<: *reportCoverage
-      - <<: *buildCli
-      - <<: *deployBits
-      - <<: *storeArtifacts
-      - <<: *storeTestResults
   build-macos:
     <<: *meta
     machine:
@@ -78,6 +65,19 @@ jobs:
             export PATH=/tmp/gohome/bin:$PATH
       - <<: *prepareEnv
       - <<: *runTests
+      - <<: *buildCli
+      - <<: *deployBits
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+  build-linux:
+    <<: *meta
+    docker:
+      - image: circleci/golang:1.9
+    steps:
+      - checkout
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *reportCoverage
       - <<: *buildCli
       - <<: *deployBits
       - <<: *storeArtifacts
