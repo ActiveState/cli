@@ -1,5 +1,12 @@
 package sysinfo
 
+import (
+	"fmt"
+	"os/exec"
+	"regexp"
+	"strconv"
+)
+
 // OsInfo represents an OS returned by OS().
 type OsInfo int
 
@@ -71,6 +78,8 @@ const (
 	Glibc LibcNameInfo = iota
 	// Msvcrt represents the Microsoft Visual C++ runtime library.
 	Msvcrt
+	// BsdLibc represents the BSD C library.
+	BsdLibc
 	// UnknownLibc represents an unknown C library.
 	UnknownLibc
 )
@@ -81,6 +90,8 @@ func (i LibcNameInfo) String() string {
 		return "glibc"
 	case Msvcrt:
 		return "msvcrt"
+	case BsdLibc:
+		return "libc"
 	default:
 		return "Unknown"
 	}
@@ -99,28 +110,28 @@ type CompilerNameInfo int
 const (
 	// Gcc represents the GNU C Compiler toolchain.
 	Gcc CompilerNameInfo = iota
-	// Clang represents the LLVM/Clang toolchain.
-	Clang
 	// Msvc represents the Microsoft Visual C++ toolchain.
 	Msvc
 	// Mingw represents the Minimalist GNU for Windows toolchain.
 	Mingw
 	// Cygwin represents the Cygwin toolchain.
 	Cygwin
+	// Clang represents the LLVM/Clang toolchain.
+	Clang
 )
 
 func (i CompilerNameInfo) String() string {
 	switch i {
 	case Gcc:
 		return "GCC"
-	case Clang:
-		return "clang"
 	case Msvc:
 		return "MSVC"
 	case Mingw:
 		return "MinGW"
 	case Cygwin:
 		return "Cygwin"
+	case Clang:
+		return "clang"
 	default:
 		return "Unknown"
 	}
@@ -131,4 +142,27 @@ type CompilerInfo struct {
 	Name  CompilerNameInfo // C compiler name
 	Major int              // major version number
 	Minor int              // minor version number
+}
+
+// Checks whether or not the given compiler exists and returns its major and
+// minor version numbers. A major return of 0 indicates the compiler does not
+// exist, or that an error occurred.
+func getCompilerVersion(args []string) (int, int, error) {
+	cc, err := exec.Command(args[0], args[1:]...).CombinedOutput()
+	if err != nil {
+		return 0, 0, nil
+	}
+	regex := regexp.MustCompile("(\\d+)\\D(\\d+)\\D\\d+")
+	parts := regex.FindStringSubmatch(string(cc))
+	if len(parts) != 3 {
+		return 0, 0, fmt.Errorf("Unable to parse version string '%s'", cc)
+	}
+	for i := 1; i < len(parts); i++ {
+		if _, err := strconv.Atoi(parts[i]); err != nil {
+			return 0, 0, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[i], cc)
+		}
+	}
+	major, _ := strconv.Atoi(parts[1])
+	minor, _ := strconv.Atoi(parts[2])
+	return major, minor, nil
 }
