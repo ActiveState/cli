@@ -2,42 +2,89 @@
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
-jobs:
-  build:
-    docker:
-      - image: circleci/golang:1.9
+defaults:
+  meta: &meta
     working_directory: /go/src/github.com/ActiveState/cli
     environment:
       TEST_RESULTS: /tmp/test-results
+  steps:
+    prepareEnv: &prepareEnv
+      run: 
+        name: Prepare Environment
+        command: |
+            sudo apt-get update; sudo apt-get install upx-ucl
+            git submodule update --init
+            mkdir -p $TEST_RESULTS
+            go get github.com/jstemmer/go-junit-report
+            go run scripts/constants-generator/main.go 
+    runTests: &runTests
+      run:
+        name: Run unit tests
+        command: |
+            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+            go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
+    reportCoverage: &reportCoverage
+      run:
+        # Unfortunately this runs our tests again. Have to find a way to combine both junit reports and coverage reports
+        name: Report Coverage
+        command: |
+          echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
+          bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
+    buildCli: &buildCli
+      run: 
+        name: Build the CLI
+        command: make build
+    deployBits: &deployBits
+      run: 
+        name: Deploy bits
+        command: make deploy-updates
+    storeArtifacts: &storeArtifacts
+      store_artifacts:
+        path: /tmp/test-results
+        destination: raw-test-output
+    storeTestResults: &storeTestResults
+      store_test_results:
+        path: /tmp/test-results
+jobs:
+  build-linux:
+    <<: *meta
+    docker:
+      - image: circleci/golang:1.9
     steps:
       - checkout
-      - run: 
-          name: Prepare Environment
-          command: |
-              sudo apt-get update; sudo apt-get install upx-ucl
-              git submodule update --init
-              mkdir -p $TEST_RESULTS
-              go get github.com/jstemmer/go-junit-report
-              go run scripts/constants-generator/main.go 
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *reportCoverage
+      - <<: *buildCli
+      - <<: *deployBits
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+  build-macos:
+    <<: *meta
+    machine:
+      xcode:
+        version: 9.2.0
+    steps:
+      - checkout
       - run:
-          name: Run unit tests
-          command: |
-              trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-              go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
-      - run:
-          # Unfortunately this runs our tests again. Have to find a way to combine both junit reports and coverage reports
-          name: Report Coverage
-          command: |
-            echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
-            bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
-      - run: 
-          name: Build the CLI
-          command: make build
-      - run: 
-          name: Deploy bits
-          command: make deploy-updates
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: raw-test-output
-      - store_test_results:
-          path: /tmp/test-results
+        name: Install Golang
+        command: |
+          cd /tmp
+          wget https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz
+          tar -xzf go1.9.5.darwin-amd64.tar.gz
+          export GOPATH=/go
+          export GOBIN=/go/bin
+          export GOROOT=/tmp/go
+          export PATH=/tmp/go/bin:$PATH
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *buildCli
+      - <<: *deployBits
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+workflows:
+  version: 2
+  build: 
+    jobs:
+      - build-linux
+      - build-macos
