@@ -69,8 +69,8 @@ jobs:
           name: Install Golang
           command: |
             cd /tmp
-            wget https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz
-            tar -xzf go1.9.5.darwin-amd64.tar.gz
+            curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
+            tar -xzf golang.tar.gz
             export GOPATH=/go
             export GOBIN=/go/bin
             export GOROOT=/tmp/gohome
