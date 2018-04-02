@@ -4,7 +4,7 @@
 version: 2
 defaults:
   meta: &meta
-    working_directory: /go/src/github.com/ActiveState/cli
+    working_directory: /tmp/gohome/src/github.com/ActiveState/cli
     environment:
       TEST_RESULTS: /tmp/test-results
   steps:
@@ -74,8 +74,8 @@ jobs:
             tar -xzf go1.9.5.darwin-amd64.tar.gz
             export GOPATH=/go
             export GOBIN=/go/bin
-            export GOROOT=/tmp/go
-            export PATH=/tmp/go/bin:$PATH
+            export GOROOT=/tmp/gohome
+            export PATH=/tmp/gohome/bin:$PATH
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
