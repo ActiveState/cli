@@ -171,7 +171,12 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 }
 
 func getPackagePathsGo(sourcePath string) []*Package {
-	cmd := exec.Command("go", "list", "-e", "all")
+	gobin := "go"
+	goroot := os.Getenv("GOROOT")
+	if goroot != "" {
+		gobin = filepath.Join(goroot, "bin", "go")
+	}
+	cmd := exec.Command(gobin, "list", "-e", "all")
 	cmd.Env = []string{"GOPATH=" + sourcePath}
 
 	output, err := cmd.CombinedOutput()
