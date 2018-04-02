@@ -60,9 +60,9 @@ jobs:
       - <<: *storeTestResults
   build-macos:
     <<: *meta
-    machine:
+    macos:
       xcode:
-        version: 9.2.0
+        version: "9.2.0"
     working_directory: /tmp/gohome/src/github.com/ActiveState/cli 
     steps:
       - checkout
