@@ -3,9 +3,6 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 defaults:
-  meta: &meta
-    environment:
-      TEST_RESULTS: /tmp/test-results
   steps:
     prepareEnv: &prepareEnv
       run: 
@@ -13,20 +10,20 @@ defaults:
         command: |
             git submodule update --init
             mkdir -p $TEST_RESULTS
-            go get github.com/jstemmer/go-junit-report
-            go run scripts/constants-generator/main.go 
+            $GOROOT/go get github.com/jstemmer/go-junit-report
+            $GOROOT/go run scripts/constants-generator/main.go 
     runTests: &runTests
       run:
         name: Run unit tests
         command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-            go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
+            $GOROOT/go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
     reportCoverage: &reportCoverage
       run:
         # Unfortunately this runs our tests again. Have to find a way to combine both junit reports and coverage reports
         name: Report Coverage
         command: |
-          echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c 'go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
+          echo 'mode: atomic' > coverage.txt && go list ./... | xargs -n1 -I{} sh -c '$GOROOT/go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
           bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
     buildCli: &buildCli
       run: 
@@ -45,7 +42,8 @@ defaults:
         path: /tmp/test-results
 jobs:
   build-linux:
-    <<: *meta
+    environment:
+      TEST_RESULTS: /tmp/test-results
     docker:
       - image: circleci/golang:1.9
     working_directory: /go/src/github.com/ActiveState/cli
@@ -59,7 +57,11 @@ jobs:
       - <<: *storeArtifacts
       - <<: *storeTestResults
   build-macos:
-    <<: *meta
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      GOPATH: /tmp/gohome
+      GOBIN: /tmp/gohome/bin
+      GOROOT: /tmp/go
     macos:
       xcode: 9.2.0
     working_directory: /tmp/gohome/src/github.com/ActiveState/cli 
@@ -71,10 +73,6 @@ jobs:
             cd /tmp
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
-            export GOPATH=/go
-            export GOBIN=/go/bin
-            export GOROOT=/tmp/gohome
-            export PATH=/tmp/gohome/bin:$PATH
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
