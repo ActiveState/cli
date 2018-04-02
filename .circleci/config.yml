@@ -60,18 +60,18 @@ jobs:
   build-macos:
     environment:
       TEST_RESULTS: /tmp/test-results
-      GOPATH: /tmp/gohome
-      GOBIN: /tmp/gohome/bin
-      GOROOT: /tmp/go
+      GOPATH: /private/tmp/gohome
+      GOBIN: /private/tmp/gohome/bin
+      GOROOT: /private/tmp/go
     macos:
       xcode: 9.2.0
-    working_directory: /tmp/gohome/src/github.com/ActiveState/cli 
+    working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli 
     steps:
       - checkout
       - run:
           name: Install Golang
           command: |
-            cd /tmp
+            cd /private/tmp
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
       - <<: *prepareEnv
