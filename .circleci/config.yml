@@ -61,8 +61,7 @@ jobs:
   build-macos:
     <<: *meta
     macos:
-      xcode:
-        version: 9.2.0
+      xcode: 9.2.0
     working_directory: /tmp/gohome/src/github.com/ActiveState/cli 
     steps:
       - checkout
