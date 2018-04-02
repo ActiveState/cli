@@ -67,15 +67,15 @@ jobs:
     steps:
       - checkout
       - run:
-        name: Install Golang
-        command: |
-          cd /tmp
-          wget https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz
-          tar -xzf go1.9.5.darwin-amd64.tar.gz
-          export GOPATH=/go
-          export GOBIN=/go/bin
-          export GOROOT=/tmp/go
-          export PATH=/tmp/go/bin:$PATH
+          name: Install Golang
+          command: |
+            cd /tmp
+            wget https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz
+            tar -xzf go1.9.5.darwin-amd64.tar.gz
+            export GOPATH=/go
+            export GOBIN=/go/bin
+            export GOROOT=/tmp/go
+            export PATH=/tmp/go/bin:$PATH
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
