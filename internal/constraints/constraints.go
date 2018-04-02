@@ -70,7 +70,7 @@ func osVersionMatches(version string) bool {
 	if osVersionOverride != "" {
 		// When writing tests, this string should be of the form:
 		// [major].[minor].[micro] [os free-form name]
-		osVersion = sysinfo.OSVersionInfo{}
+		osVersion = &sysinfo.OSVersionInfo{}
 		fmt.Sscanf(osVersionOverride, "%d.%d.%d %s", &osVersion.Major, &osVersion.Minor, &osVersion.Micro, &osVersion.Name)
 		osVersion.Version = fmt.Sprintf("%d.%d.%d", osVersion.Major, osVersion.Minor, osVersion.Micro)
 		err = nil
@@ -121,7 +121,7 @@ func archMatches(arch string) bool {
 func libcMatches(libc string) bool {
 	osLibc, err := sysinfo.Libc()
 	if libcOverride != "" {
-		osLibc = sysinfo.LibcInfo{}
+		osLibc = &sysinfo.LibcInfo{}
 		var name string
 		fmt.Sscanf(libcOverride, "%s %d.%d", &name, &osLibc.Major, &osLibc.Minor)
 		switch name {
@@ -166,7 +166,7 @@ func libcMatches(libc string) bool {
 func compilerMatches(compiler string) bool {
 	osCompilers, err := sysinfo.Compilers()
 	if compilerOverride != "" {
-		osCompilers = []sysinfo.CompilerInfo{sysinfo.CompilerInfo{}}
+		osCompilers = []*sysinfo.CompilerInfo{&sysinfo.CompilerInfo{}}
 		var name string
 		fmt.Sscanf(compilerOverride, "%s %d.%d", &name, &osCompilers[0].Major, &osCompilers[0].Minor)
 		switch name {

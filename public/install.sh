@@ -24,16 +24,17 @@ error () {
 case `uname -s` in
 Linux)
   os=linux
+  sha256sum="sha256sum"
   ;;
 *BSD)
   os=`uname -s | tr '[A-Z]' '[a-z]'`
+  sha256sum=""
   error "BSDs not supported yet"
   exit 1
   ;;
 Darwin)
   os=darwin
-  error "MacOS not supported yet"
-  exit 1
+  sha256sum="shasum -a 256"
   ;;
 *)
   error "Unsupported OS: `uname -s`"
@@ -91,10 +92,10 @@ if [ -f $TMPDIR/$statepkg ]; then
   # Verify checksum.
   info "Verifying checksum..."
   shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
-  if [ "`sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
+  if [ "`$sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $shasum"
-    error "Received: `sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`"
+    error "Received: `$sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`"
     error "Aborting installation."
     exit 1
   fi
