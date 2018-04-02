@@ -16,7 +16,7 @@ defaults:
       run:
         name: Run unit tests
         command: |
-            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+            trap "$GOBIN/go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
             $GOROOT/bin/go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
     reportCoverage: &reportCoverage
       run:
@@ -44,6 +44,7 @@ jobs:
   build-linux:
     environment:
       TEST_RESULTS: /tmp/test-results
+      GOBIN: /go/bin
       GOROOT: /usr/local/go
     docker:
       - image: circleci/golang:1.9
