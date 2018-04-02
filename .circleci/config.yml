@@ -86,4 +86,6 @@ workflows:
   build: 
     jobs:
       - build-linux
-      - build-macos
+      - build-macos:
+          requires:
+            - build-linux
