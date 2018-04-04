@@ -45,8 +45,8 @@ func (s byLengthSorter) Less(i, j int) bool {
 }
 
 func main() {
-	//distro("linux", "x86_64", false)
-	//distro("macos", "x86_64", false)
+	distro("linux", "x86_64", false)
+	distro("macos", "x86_64", false)
 	distro("linux", "x86_64", true)
 	distro("macos", "x86_64", true)
 }
