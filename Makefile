@@ -21,12 +21,15 @@ VERSION=`grep -m1 "^const Version" internal/constants/generated.go | cut -d ' ' 
 all: test build
 init:
 		git config core.hooksPath .githooks
+		go get -u github.com/gobuffalo/packr/...
 build: 
+		packr
 		$(GOCMD) run scripts/constants-generator/main.go 
 		cd $(BINARY_NAME) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 		mkdir -p public/update
 		$(GOCMD) run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
+		packr
 		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
 generate-artifacts:
 		$(GOCMD) run scripts/artifact-generator/main.go 
