@@ -48,6 +48,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
       GOBIN: /go/bin
+      GOPATH: /go
       GOROOT: /usr/local/go
     docker:
       - image: circleci/golang:1.9
