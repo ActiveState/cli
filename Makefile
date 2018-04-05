@@ -11,6 +11,12 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 
+PACKRCMD=packr
+
+ifndef $(shell command -v packr 2> /dev/null)
+    PACKRCMD=${GOPATH}/bin/packr
+endif
+
 BINARY_NAME=state
 BINARY_UNIX=$(BINARY_NAME)_unix
 
@@ -21,12 +27,15 @@ VERSION=`grep -m1 "^const Version" internal/constants/generated.go | cut -d ' ' 
 all: test build
 init:
 		git config core.hooksPath .githooks
+		go get -u github.com/gobuffalo/packr/...
 build: 
+		$(PACKRCMD)
 		$(GOCMD) run scripts/constants-generator/main.go 
 		cd $(BINARY_NAME) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 		mkdir -p public/update
 		$(GOCMD) run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
+		$(PACKRCMD)
 		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
 generate-artifacts:
 		$(GOCMD) run scripts/artifact-generator/main.go 

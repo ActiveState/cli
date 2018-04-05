@@ -11,6 +11,7 @@ defaults:
             git submodule update --init
             mkdir -p $TEST_RESULTS
             $GOROOT/bin/go get github.com/jstemmer/go-junit-report
+            $GOROOT/bin/go get -u github.com/gobuffalo/packr/...
             $GOROOT/bin/go run scripts/constants-generator/main.go 
     runTests: &runTests
       run:
@@ -28,7 +29,9 @@ defaults:
     buildCli: &buildCli
       run: 
         name: Build the CLI
-        command: make build
+        command: |
+          make build
+          ./build/state --version
     deployBits: &deployBits
       run: 
         name: Deploy bits
@@ -45,6 +48,7 @@ jobs:
     environment:
       TEST_RESULTS: /tmp/test-results
       GOBIN: /go/bin
+      GOPATH: /go
       GOROOT: /usr/local/go
     docker:
       - image: circleci/golang:1.9

@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/files"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	tempfile "github.com/mash/go-tempfile-suffix"
@@ -100,17 +100,15 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func getRcFile(v SubShell) (*os.File, error) {
-	tplFile, err := files.AssetFS.Asset(filepath.Join("shells", v.RcFileTemplate()))
-	if err != nil {
-		return nil, err
-	}
+	box := packr.NewBox("../../assets")
+	tpl := box.String(filepath.Join("shells", v.RcFileTemplate()))
 
 	rcData := map[string]interface{}{
 		"Project": projectfile.Get(),
 		"Env":     virtualenvironment.GetEnv(),
 		"WD":      virtualenvironment.WorkingDirectory(),
 	}
-	t, err := template.New("rcfile").Parse(string(tplFile))
+	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
 		return nil, err
 	}
