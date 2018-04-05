@@ -14,7 +14,7 @@ GOGET=$(GOCMD) get
 PACKRCMD=packr
 
 ifndef $(shell command -v packr 2> /dev/null)
-    GOCMD=${GOPATH}/bin/packr
+    PACKRCMD=${GOPATH}/bin/packr
 endif
 
 BINARY_NAME=state
