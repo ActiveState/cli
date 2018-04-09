@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 	"github.com/ActiveState/ActiveState-CLI/state/hook/add"
+	"github.com/ActiveState/ActiveState-CLI/state/hook/remove"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +40,7 @@ var flags struct {
 
 func init() {
 	Command.Append(add.Command)
-	// Command.Append(remove.Command)
+	Command.Append(remove.Command)
 }
 
 func getFilters(cmd *cobra.Command) []string {
@@ -67,11 +68,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	var T = locale.T
 
 	names := getFilters(cmd)
-	project, err := projectfile.Get()
-
-	if err != nil {
-		failures.Handle(err, T("err_hook_cannot_list"))
-	}
+	project := projectfile.Get()
 
 	hashmap, err := hooks.HashHooksFiltered(project.Hooks, names)
 	if err != nil {

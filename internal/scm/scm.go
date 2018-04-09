@@ -10,6 +10,7 @@ type SCMer interface {
 	SetBranch(string)       // set the repo's branch to use
 	Branch() string         // the repo's branch
 	CheckoutBranch() error  // checkout the configured branch
+	TargetExists() bool     // Check if the repo directory has already been create
 	Clone() error           // clone the repo into the current directory
 }
 

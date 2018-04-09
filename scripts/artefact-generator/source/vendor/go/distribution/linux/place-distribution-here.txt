@@ -1,0 +1,3 @@
+Place the exported tar.gz here, downloaded from https://golang.org/dl/
+
+This script assumes the Linux amd64 version. Mileage may vary if you try something else.

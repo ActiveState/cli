@@ -86,6 +86,12 @@ func (g *Git) SetPath(path string) {
 
 // Path returns the Git repository's local path.
 func (g *Git) Path() string {
+	if g.path == "" {
+		cwd, _ := os.Getwd()
+		reponame := g.humanishPart()
+		g.path = filepath.Join(cwd, reponame)
+		logging.Debug("Determined 'humanish' dir to clone into as '%s'", reponame)
+	}
 	return g.path
 }
 
@@ -107,19 +113,23 @@ func (g *Git) CheckoutBranch() error {
 	return cmd.Run()
 }
 
+// TargetExists used to check if the repo has already been created or not
+func (g *Git) TargetExists() bool {
+	if _, err := os.Stat(g.Path()); err == nil {
+		return true
+	}
+	return false
+}
+
 // Clone clones the Git repository into its given or computed directory.
 func (g *Git) Clone() error {
 	logging.Debug("Attempting to clone %+v", g)
-	if g.path == "" {
-		cwd, _ := os.Getwd()
-		g.path = filepath.Join(cwd, g.humanishPart())
-		logging.Debug("Determined 'humanish' dir to clone into as '%s'", g.path)
-	}
+	path := g.Path()
 	print.Info(locale.T("info_state_activate_uri", map[string]interface{}{
-		"URI": g.URI, "Dir": g.path,
+		"URI": g.URI, "Dir": path,
 	}))
 
-	cmd := exec.Command("git", "clone", g.URI, g.path)
+	cmd := exec.Command("git", "clone", g.URI, path)
 	fmt.Println(strings.Join(cmd.Args, " ")) // match command output style
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {

@@ -14,6 +14,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// FailNoProject identifies a failure as being due to a missing project file
+var FailNoProject = failures.Type("projectfile.fail.noproject")
+
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string     `yaml:"name"`
@@ -83,6 +86,7 @@ type Hook struct {
 func (h *Hook) Hash() (string, error) {
 	hash, err := hashstructure.Hash(h, nil)
 	if err != nil {
+		logging.Errorf("Cannot hash hook: %v", err)
 		return "", err
 	}
 	return fmt.Sprintf("%X", hash), nil
@@ -107,6 +111,10 @@ func Parse(filepath string) (*Project, error) {
 	project := Project{}
 	err = yaml.Unmarshal([]byte(dat), &project)
 	project.path = filepath
+
+	if err != nil {
+		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+	}
 
 	return &project, err
 }
@@ -147,21 +155,44 @@ func getProjectFilePath() string {
 	return filepath.Join(root, constants.ConfigFileName)
 }
 
-// Get the project configuration
-func Get() (*Project, error) {
+// Get returns the project configration in an unsafe manner (exits if errors occur)
+func Get() *Project {
+	project, err := GetSafe()
+	if err != nil {
+		failures.Handle(err, locale.T("err_project_file_unavailable"))
+		os.Exit(1)
+	}
+
+	return project
+}
+
+// GetSafe returns the project configuration in a safe manner (returns error)
+func GetSafe() (*Project, error) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
+
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath == "" {
 		projectFilePath = getProjectFilePath()
 	}
+
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)
-		return nil, failures.User.New(locale.T("err_no_projectfile"))
+		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
 	}
-	return Parse(projectFilePath)
+	project, err := Parse(projectFilePath)
+	if err == nil {
+		project.Persist()
+	}
+	return project, err
+}
+
+// Reset the current state, which unsets the persistent project
+func Reset() {
+	persistentProject = nil
+	os.Unsetenv(constants.ProjectEnvVarName)
 }
 
 // Persist "activates" the given project and makes it such that subsequent calls

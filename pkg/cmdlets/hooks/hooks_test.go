@@ -69,9 +69,10 @@ hooks:
    value: echo Hello World!`)
 
 	err := yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
 	assert.NoError(t, err, "YAML unmarshalled")
 
-	hooks := GetEffectiveHooks("ACTIVATE", &project)
+	hooks := GetEffectiveHooks("ACTIVATE")
 
 	assert.NotZero(t, len(hooks), "Should return hooks")
 }
@@ -90,8 +91,9 @@ hooks:
 
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
 
-	hooks := GetEffectiveHooks("ACTIVATE", &project)
+	hooks := GetEffectiveHooks("ACTIVATE")
 	assert.Zero(t, len(hooks), "Should return no hooks")
 }
 
@@ -115,8 +117,9 @@ hooks:
 
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
 
-	err = RunHook("ACTIVATE", &project)
+	err = RunHook("ACTIVATE")
 	assert.NoError(t, err, "Should run hooks")
 	assert.FileExists(t, touch, "Should create file as per the hook value")
 
@@ -141,8 +144,9 @@ hooks:
 
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
 
-	err = RunHook("ACTIVATE", &project)
+	err = RunHook("ACTIVATE")
 	assert.NoError(t, err, "Should run hooks without producing an error")
 
 	_, err = os.Stat(touch)

@@ -1,10 +1,16 @@
 package constants
 
+// Version holds the current version of our cli
+const Version = "0.1.0"
+
 // LibraryName contains the main name of this library
 const LibraryName = "ActiveState-CLI"
 
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"
+
+// CommandName holds the name of our command
+const CommandName = "state"
 
 // ConfigNamespace holds the appdata folder name under which we store our config
 const ConfigNamespace = "activestate"
@@ -23,3 +29,12 @@ const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 
 // ProjectEnvVarName is the name of the environment variable that specifies the path of the activestate.yaml config file.
 const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
+
+// APIUpdateURL is the URL for our update server
+const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
+
+// APIArtefactURL is the URL for downloading artefacts
+const APIArtefactURL = "https://s3.ca-central-1.amazonaws.com/cli-artefacts/"
+
+// UpdateStorageDir is the directory where updates will be stored
+const UpdateStorageDir = "update/"
