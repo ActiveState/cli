@@ -67,6 +67,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 	if exists {
 		fmt.Printf(locale.T("hook_add_cannot_add_existing_hook"))
+		return
 	}
 	project.Hooks = append(project.Hooks, newHook)
 	project.Save()
