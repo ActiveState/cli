@@ -87,5 +87,14 @@ func Execute(cmd *cobra.Command, args []string) {
 	t.SetHeaders([]string{T("hook_header_id"), T("hook_header_hook"), T("hook_header_command")})
 	t.SetAlign("left")
 
+	hookmap, err := hooks.FilterHooks(hooknames)
+	if err != nil {
+		failures.Handle(err, locale.T("hook_hooks_not_available"))
+		return
+	}
+
+	printOutput(hookmap)
+
+	//logging.Debug("Execute:\n    hooknames: %v\n    hookmap: %v", hooknames, hookmap)
 	print.Line(t.Render("simple"))
 }
