@@ -154,3 +154,37 @@ hooks:
 
 	os.Remove(touch)
 }
+
+// TestHookExists tests whether we find existing configured hooks when they are there
+// and whether we don't find them if they don't exist.
+func TestHookExists(t *testing.T) {
+	project := projectfile.Project{}
+	touch := filepath.Join(os.TempDir(), "state-test-runhook")
+	os.Remove(touch)
+
+	dat := `
+name: name
+owner: owner
+hooks:
+  - name: ACTIVATE
+    value: touch ` + touch + `
+    constraints: 
+      platform: foobar
+      environment: foobar`
+	dat = strings.TrimSpace(dat)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
+	constraint := projectfile.Constraint{Platform: "foobar", Environment: "foobar"}
+	hookExists := projectfile.Hook{Name: "ACTIVATE", Value: "touch " + touch, Constraints: constraint}
+	hookNotExists := projectfile.Hook{Name: "ACTIVATENOT", Value: "touch " + touch, Constraints: constraint}
+	exists, _ := HookExists(hookExists, &project)
+	assert.True(t, exists, "Hooks should exist already.")
+	Notexists, _ := HookExists(hookNotExists, &project)
+	assert.False(t, Notexists, "Hooks should NOT exist already.")
+	_, err = os.Stat(touch)
+	assert.Error(t, err, "Should not create file as per the constraints")
+
+	os.Remove(touch)
+}
