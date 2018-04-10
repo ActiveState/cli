@@ -1,12 +1,14 @@
 package add
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
-	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
@@ -57,10 +59,8 @@ func Execute(cmd *cobra.Command, args []string) {
 	project := projectfile.Get()
 
 	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Command}
-	project.Hooks = append(project.Hooks, newHook)
 
-	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Command}
-	exists, err := hookhelper.HookExists(newHook, project)
+	exists, err := hooks.HookExists(newHook, project)
 	if err != nil {
 		failures.Handle(err, locale.T("hook_add_cannot_add_hook", Args))
 		return
@@ -69,8 +69,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		project.Hooks = append(project.Hooks, newHook)
 		project.Save()
 	} else {
-		err := failures.User.New("Identical hook already configured")
-		failures.Handle(err, "")
+		fmt.Printf(locale.T("hook_add_cannot_add_existing_hook"))
 	}
 	logging.Debug("Execute `hook add`")
 }

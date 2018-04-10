@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/environment"
@@ -131,7 +131,7 @@ func TestExecute(t *testing.T) {
 
 //
 func TestAddHookFailIdentical(t *testing.T) {
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
@@ -145,7 +145,7 @@ func TestAddHookFailIdentical(t *testing.T) {
 	Cc.SetArgs([]string{hookName, value})
 	Cc.Execute()
 
-	filteredMappedHooks, _ := hookhelper.HashHooksFiltered(project.Hooks, []string{hookName})
+	filteredMappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{hookName})
 
 	assert.Equal(t, 1,
 		len(filteredMappedHooks),

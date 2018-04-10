@@ -85,18 +85,12 @@ func HookExists(hook projectfile.Hook, project *projectfile.Project) (bool, erro
 	if err != nil {
 		return false, err
 	}
-
-	hooks := project.Hooks
-	for _, hook := range hooks {
-		hash, err := hook.Hash()
-		if err != nil {
-			return false, err
-		}
-		if hash == newHookHash {
-			return true, nil
-		}
+	hooks, err := HashHooks(project.Hooks)
+	if err != nil {
+		return false, err
 	}
-	return false, nil
+	_, exists := hooks[newHookHash]
+	return exists, nil
 }
 
 // HashHooksFiltered is identical to HashHooks except that it takes a slice of names to be used as a filter
