@@ -65,11 +65,10 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(err, locale.T("hook_add_cannot_add_hook", Args))
 		return
 	}
-	if !exists {
-		project.Hooks = append(project.Hooks, newHook)
-		project.Save()
-	} else {
+	if exists {
 		fmt.Printf(locale.T("hook_add_cannot_add_existing_hook"))
 	}
+	project.Hooks = append(project.Hooks, newHook)
+	project.Save()
 	logging.Debug("Execute `hook add`")
 }
