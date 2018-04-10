@@ -35,6 +35,6 @@ func TestLibc(t *testing.T) {
 func TestCompiler(t *testing.T) {
 	compilers, err := Compilers()
 	assert.Nil(t, err, "Determined system compilers")
-	assert.NotEqual(t, 0, len(compilers), "More than one compiler was found")
+	assert.NotEqual(t, 0, len(compilers), "At least one compiler was found")
 	assert.NotEmpty(t, compilers[0].Name.String(), "Compiler has a name")
 }

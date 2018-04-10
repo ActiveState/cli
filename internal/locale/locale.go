@@ -8,8 +8,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -29,9 +30,12 @@ func init() {
 	viper.SetDefault("Locale", "en-US")
 
 	path := getLocalePath()
+	box := packr.NewBox("../../locale")
 
 	funk.ForEach(Supported, func(x string) {
-		i18n.MustLoadTranslationFile(path + strings.ToLower(x) + ".yaml")
+		filename := strings.ToLower(x) + ".yaml"
+		filepath := path + filename
+		i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
 	})
 
 	locale := getLocaleFlag()

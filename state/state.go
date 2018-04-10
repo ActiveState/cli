@@ -3,19 +3,23 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config" // MUST be first!
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/config" // MUST be first!
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 
 	// commands
-	"github.com/ActiveState/ActiveState-CLI/state/activate"
-	"github.com/ActiveState/ActiveState-CLI/state/hook"
-	"github.com/ActiveState/ActiveState-CLI/state/selfupdate"
+	"github.com/ActiveState/cli/state/activate"
+	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/selfupdate"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	_ "github.com/ActiveState/state-required/require"
+
 	"github.com/spf13/cobra"
 )
 
@@ -67,6 +71,10 @@ func init() {
 func main() {
 	logging.Debug("main")
 
+	if updater.TimedCheck() {
+		relaunch() // will not return
+	}
+
 	// This actually runs the command
 	err := Command.Execute()
 
@@ -85,9 +93,25 @@ func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
 	if Flags.Version {
-		print.Info(locale.T("version_info", map[string]interface{}{"Version": constants.Version}))
+		print.Info(locale.T("version_info", map[string]interface{}{
+			"Version":  constants.Version,
+			"Branch":   constants.BranchName,
+			"Revision": constants.RevisionHash}))
 		return
 	}
 
 	cmd.Usage()
+}
+
+// When an update was found and applied, re-launch the update with the current
+// arguments and wait for return before exitting.
+// This function will never return to its caller.
+func relaunch() {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	cmd.Start()
+	if err := cmd.Wait(); err != nil {
+		os.Exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
+	}
+	os.Exit(0)
 }

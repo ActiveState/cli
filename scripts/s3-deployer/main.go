@@ -120,7 +120,7 @@ func uploadFile(params *s3.PutObjectInput) {
 	_, err := s3Svc.PutObject(params)
 	if err != nil {
 		fmt.Printf("Failed to upload data to %s/%s, %s\n",
-			awsBucketName, params.Key, err.Error())
+			awsBucketName, *params.Key, err.Error())
 	}
 }
 

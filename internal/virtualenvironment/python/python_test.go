@@ -7,8 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/distribution"
+	"github.com/ActiveState/cli/internal/environment"
 )
 
 func setup(t *testing.T) {
@@ -18,7 +20,7 @@ func setup(t *testing.T) {
 
 func TestLanguage(t *testing.T) {
 	venv := &VirtualEnvironment{}
-	assert.Equal(t, "Python", venv.Language(), "Should return Python")
+	assert.Equal(t, "python", venv.Language(), "Should return python")
 }
 
 func TestDataDir(t *testing.T) {
@@ -32,66 +34,66 @@ func TestDataDir(t *testing.T) {
 func TestLanguageMeta(t *testing.T) {
 	setup(t)
 
-	project := projectfile.Get()
-	language := &project.Languages[0]
-
 	venv := &VirtualEnvironment{}
-	assert.Nil(t, venv.LanguageMeta(), "Should not have language meta")
+	assert.Nil(t, venv.Artifact(), "Should not have artifact info")
 
-	venv.SetLanguageMeta(language)
-	assert.NotNil(t, venv.LanguageMeta(), "Should have language meta")
-}
-
-func TestLoadLanguageFromPath(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	venv := &VirtualEnvironment{}
-
-	source := filepath.Join(root, "test", "builder", "python", "2.7.12")
-
-	datadir := filepath.Join(os.TempDir(), "as-state-test")
-	os.RemoveAll(datadir)
-	os.Mkdir(datadir, os.ModePerm)
-	venv.SetDataDir(datadir)
-
-	venv.LoadLanguageFromPath(source)
-
-	assert.FileExists(t, filepath.Join(datadir, "language"), "Should create a language symlink")
+	venv.SetArtifact(&artifact.Artifact{
+		Meta: &artifact.Meta{
+			Name: "test",
+		},
+		Path: "test",
+	})
+	assert.NotNil(t, venv.Artifact(), "Should have artifact info")
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
-	root, _ := environment.GetRootPath()
 	venv := &VirtualEnvironment{}
-	pkg := &projectfile.Package{Name: "peewee"}
-
-	source := filepath.Join(root, "test", "builder", "python", "2.7.12", "peewee")
 
 	datadir := filepath.Join(os.TempDir(), "as-state-test")
 	os.RemoveAll(datadir)
 	os.Mkdir(datadir, os.ModePerm)
 	venv.SetDataDir(datadir)
 
-	venv.LoadPackageFromPath(source, pkg)
+	dist, fail := distribution.Obtain()
+	assert.NoError(t, fail.ToError())
 
-	// Todo: Test with datadir as source, not the archived version
-	assert.FileExists(t, filepath.Join(datadir, "lib", "2.9.1.tar.gz"), "Should create a package symlink")
+	var language *artifact.Artifact
+	for _, lang := range dist.Languages {
+		if lang.Meta.Name == venv.Language() {
+			language = lang
+			break
+		}
+	}
+
+	assert.Nil(t, language, "Language should be nil as we don't have python artifacts yet")
+
+	// artf := dist.Artifacts[dist.Languages[0].Hash][0]
+	// fail = venv.LoadArtifact(artf)
+	// assert.NoError(t, fail.ToError(), "Loads artifact without errors")
+
+	// // Todo: Test with datadir as source, not the archived version
+	// assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
 }
 
 func TestActivate(t *testing.T) {
 	setup(t)
 
-	project := projectfile.Get()
-	language := &project.Languages[0]
-
 	venv := &VirtualEnvironment{}
 
-	venv.SetLanguageMeta(language)
-	venv.SetDataDir("")
+	venv.SetArtifact(&artifact.Artifact{
+		Meta: &artifact.Meta{
+			Name:    "python",
+			Version: "2.7.11",
+		},
+		Path: "test",
+	})
 
-	os.Setenv("PYTHONPATH", "")
-	os.Setenv("PATH", "")
+	datadir := config.GetDataDir()
+	datadir = filepath.Join(datadir, "test")
+	venv.SetDataDir(datadir)
 
 	venv.Activate()
 
-	assert.NotEmpty(t, os.Getenv("PYTHONPATH"), "PYTHONPATH should be set")
-	assert.NotEmpty(t, os.Getenv("PATH"), "PATH should be set")
+	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
+	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
 }

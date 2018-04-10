@@ -6,10 +6,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -21,6 +21,7 @@ var FailNoProject = failures.Type("projectfile.fail.noproject")
 type Project struct {
 	Name         string     `yaml:"name"`
 	Owner        string     `yaml:"owner"`
+	Namespace    string     `yaml:"namespace"`
 	Version      string     `yaml:"version"`
 	Environments string     `yaml:"environments"`
 	Platforms    []Platform `yaml:"platforms"`
@@ -122,6 +123,11 @@ func Parse(filepath string) (*Project, error) {
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
+}
+
+// SetPath sets the path of the project file and should generally only be used by tests
+func (p *Project) SetPath(path string) {
+	p.path = path
 }
 
 // Save the project to its activestate.yaml file

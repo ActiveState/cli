@@ -3,9 +3,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ActiveState/state-required"
+  packages = ["require"]
+  revision = "a0329b32eba8111961b25c274deed558a6554f38"
+
+[[projects]]
+  branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
-  revision = "9891d47c9ff78bbe67b845cc01c7ca95633d6a51"
+  revision = "bb90a27afdbe969059eb5e58c7d042630eb0756e"
 
 [[projects]]
   branch = "master"
@@ -56,10 +62,10 @@
   version = "v1.1.2"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/containous/go-bindata"
-  packages = ["."]
-  revision = "e237f24c9fab3ae0ed95bf04e3699e92c2a41283"
+  name = "github.com/dave/jennifer"
+  packages = ["jen"]
+  revision = "5ba2c0232d2f848cf1e390db03b100f0838f6d55"
+  version = "v0.18.0"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -99,16 +105,10 @@
   version = "v1.32.0"
 
 [[projects]]
-  name = "github.com/google/go-github"
-  packages = ["github"]
-  revision = "e48060a28fac52d0f1cb758bc8b87c07bac4a87d"
-  version = "v15.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/google/go-querystring"
-  packages = ["query"]
-  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  revision = "3402a167bccf1bdd5c93ca820be9f27bba46261e"
+  version = "v1.10.7"
 
 [[projects]]
   branch = "master"
@@ -188,6 +188,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mitchellh/go-ps"
+  packages = ["."]
+  revision = "4fdf99ab29366514c69ccccddab5dc58b8d84062"
+
+[[projects]]
+  branch = "master"
   name = "github.com/mitchellh/hashstructure"
   packages = ["."]
   revision = "2bca23e0e452137f789efbc8610126fd8b94f73b"
@@ -232,12 +238,6 @@
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
   version = "v1.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/qor/assetfs"
-  packages = ["."]
-  revision = "ff57fdc13a148d39c3e930cb27c7eaf82e376891"
 
 [[projects]]
   name = "github.com/rs/xid"
@@ -315,6 +315,16 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/vbauerster/mpb"
+  packages = [
+    ".",
+    "cwriter",
+    "decor"
+  ]
+  revision = "44b3ab598678a5954168e726db2af310f43d3bd8"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -363,6 +373,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "54a2d7cb62f9f2413edccfa4768cdaa8e8322c29350cc66ec2ca74419a9aad78"
+  inputs-digest = "3d9c433c5fcb6c4e4ae6e866b1523220d72eb12d555f25885ee880a0f2fde0d5"
   solver-name = "gps-cdcl"
   solver-version = 1

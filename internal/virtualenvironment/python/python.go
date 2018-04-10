@@ -5,21 +5,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
-	datadir      string
-	languageMeta *projectfile.Language
+	datadir  string
+	artifact *artifact.Artifact
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Language() string {
-	return "Python"
+	return "python"
 }
 
 // DataDir - see virtualenvironment.VirtualEnvironment
@@ -32,65 +31,71 @@ func (v *VirtualEnvironment) SetDataDir(path string) {
 	v.datadir = path
 }
 
-// LanguageMeta - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) LanguageMeta() *projectfile.Language {
-	return v.languageMeta
+// Artifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) Artifact() *artifact.Artifact {
+	return v.artifact
 }
 
-// SetLanguageMeta - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) SetLanguageMeta(language *projectfile.Language) {
-	v.languageMeta = language
+// SetArtifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) SetArtifact(artf *artifact.Artifact) {
+	v.artifact = artf
 }
 
-// LoadLanguageFromPath - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) LoadLanguageFromPath(path string) error {
-	err := os.Symlink(path, filepath.Join(v.DataDir(), "language"))
-	if err != nil {
-		logging.Error(err.Error())
-		return failures.FailIO.New(locale.T("error_could_not_make_symlink"))
+// LoadArtifact - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) LoadArtifact(artf *artifact.Artifact) *failures.Failure {
+	switch artf.Meta.Type {
+	case "package":
+		return v.loadPackage(artf)
+	default:
+		return failures.FailUser.New("err_language_not_supported", artf.Meta.Name)
 	}
-	return nil
 }
 
-// LoadPackageFromPath - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) LoadPackageFromPath(path string, pkg *projectfile.Package) error {
-	if err := mkdir(v.datadir, "lib"); err != nil {
-		return err
+// WorkingDirectory - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) WorkingDirectory() string {
+	return ""
+}
+
+func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Failure {
+	if err := fileutils.Mkdir(v.datadir, "lib"); err != nil {
+		return failures.FailIO.Wrap(err)
 	}
 
-	return filepath.Walk(path, func(subpath string, f os.FileInfo, err error) error {
-		subpath = strings.TrimPrefix(subpath, path)
+	artfPath := filepath.Dir(artf.Path)
+	err := filepath.Walk(artfPath, func(subpath string, f os.FileInfo, err error) error {
+		subpath = strings.TrimPrefix(subpath, artfPath)
 		if subpath == "" {
 			return nil
 		}
-		return os.Symlink(filepath.Join(path, subpath), filepath.Join(v.DataDir(), "lib", subpath))
+		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
+		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+
+		return os.Symlink(filepath.Join(artfPath, subpath), target)
 	})
+
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
+	return nil
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) Activate() error {
-	if err := mkdir(v.datadir, "bin"); err != nil {
+func (v *VirtualEnvironment) Activate() *failures.Failure {
+	if err := fileutils.Mkdir(v.datadir, "bin"); err != nil {
 		return err
 	}
-	if err := mkdir(v.datadir, "lib"); err != nil {
-		return err
-	}
-
-	logging.Debug("Setting up Python env variables")
-
-	os.Setenv("PYTHONPATH", filepath.Join(v.datadir, "lib"))
-	os.Setenv("PATH", filepath.Join(v.datadir, "language", "bin")+string(os.PathListSeparator)+os.Getenv("PATH"))
-	os.Setenv("PATH", filepath.Join(v.datadir, "bin")+string(os.PathListSeparator)+os.Getenv("PATH"))
-
-	return nil
+	return fileutils.Mkdir(v.datadir, "lib")
 }
 
-// small helper function to create a directory if it doesnt already exist
-func mkdir(parent string, subpath ...string) error {
-	path := filepath.Join(subpath...)
-	path = filepath.Join(parent, path)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.Mkdir(path, os.ModePerm)
+// Env - see virtualenvironment.VirtualEnvironment
+func (v *VirtualEnvironment) Env() map[string]string {
+	path := filepath.Join(v.datadir, "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH")
+	path = filepath.Join(v.datadir, "bin") + string(os.PathListSeparator) + path
+	return map[string]string{
+		"PYTHONPATH": filepath.Join(v.datadir, "lib"),
+		"PATH":       path,
 	}
-	return nil
 }

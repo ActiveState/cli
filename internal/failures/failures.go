@@ -1,15 +1,16 @@
 package failures
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/rs/xid"
 )
 
@@ -41,6 +42,18 @@ var (
 
 	// FailNotFound identifies a failure as being due to an item not being found
 	FailNotFound = Type("failures.fail.notfound")
+
+	// FailNetwork identifies a failure due to a networking issue
+	FailNetwork = Type("failures.fail.network")
+
+	// FailArchiving identifies a failure due to archiving (compressing or decompressing)
+	FailArchiving = Type("failures.fail.archiving")
+
+	// FailMarshal identifies a failure due to marshalling or unmarshalling
+	FailMarshal = Type("failures.fail.marshal")
+
+	// FailThirdParty identifies a failure due to a third party component (ie. we cannot infer the real reason)
+	FailThirdParty = Type("failures.fail.thirdparty")
 )
 
 // FailureType reflects a specific type of failure, and is used to identify failures in a generalized way
@@ -68,12 +81,18 @@ func (f *FailureType) Matches(m *FailureType) bool {
 
 // New creates a failure struct with the given info
 func (f *FailureType) New(message string, params ...string) *Failure {
-	logging.Debug("Failure '%s' created: %s", f.Name, message)
 	var input = map[string]interface{}{}
 	for k, v := range params {
 		input["V"+strconv.Itoa(k)] = v
 	}
-	return &Failure{locale.T(message, input), f}
+
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		logging.Debug("Could not get caller for logging message")
+	}
+
+	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
+	return &Failure{locale.T(message, input), f, file, line}
 }
 
 // Wrap wraps another error
@@ -86,6 +105,8 @@ func (f *FailureType) Wrap(err error) *Failure {
 type Failure struct {
 	Message string
 	Type    *FailureType
+	File    string
+	Line    int
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
@@ -93,9 +114,16 @@ func (e Failure) Error() string {
 	return e.Message
 }
 
+// ToError converts a failure to an error
+func (e *Failure) ToError() error {
+	if e == nil {
+		return nil
+	}
+	return errors.New(e.Error())
+}
+
 // Log the failure
 func (e *Failure) Log() {
-	fmt.Printf("%v", e.Type)
 	logging.Error(fmt.Sprintf("%s: %s", e.Type.Name, e.Message))
 }
 
@@ -156,5 +184,23 @@ func Handle(err error, description string) {
 			description = "Unknown Error:"
 		}
 		failure.Handle(description)
+	}
+}
+
+// IsFailure returns whether the given error is of the Failure type
+func IsFailure(err error) bool {
+	switch t := err.(type) {
+	case *Failure:
+		_ = t // have to use t cause Golang
+		return true
+	default:
+		return false
+	}
+}
+
+// Recover is a helper function to use for catching panic
+func Recover() {
+	if r := recover(); r != nil {
+		logging.Warning("Recovered from panic: %v", r)
 	}
 }

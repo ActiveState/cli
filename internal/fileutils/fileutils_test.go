@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,6 +60,12 @@ func TestReplaceAllTextFile(t *testing.T) {
 }
 
 func TestReplaceAllExe(t *testing.T) {
+	gobin := "go"
+	goroot := os.Getenv("GOROOT")
+	if goroot != "" {
+		gobin = filepath.Join(goroot, "bin", "go")
+	}
+
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
@@ -77,7 +83,7 @@ func TestReplaceAllExe(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		exe += ".exe"
 	}
-	cmd := exec.Command("go", "build", "-o", exe, filepath.Base(tmpfile))
+	cmd := exec.Command(gobin, "build", "-o", exe, filepath.Base(tmpfile))
 	err = cmd.Run()
 	assert.NoError(t, err, "Ran go build")
 	oldExeStat, err := os.Stat(filepath.Join(filepath.Dir(tmpfile), exe))

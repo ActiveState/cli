@@ -1,10 +1,10 @@
 package constants
 
-// Version holds the current version of our cli
-const Version = "0.1.0"
+// VersionNumber holds the current version of our cli
+const VersionNumber = "0.1.0"
 
 // LibraryName contains the main name of this library
-const LibraryName = "ActiveState-CLI"
+const LibraryName = "cli"
 
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"
@@ -33,8 +33,14 @@ const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
-// APIArtefactURL is the URL for downloading artefacts
-const APIArtefactURL = "https://s3.ca-central-1.amazonaws.com/cli-artefacts/"
+// APIArtifactURL is the URL for downloading artifacts
+const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
+
+// ArtifactFile is the name of the artifact json file contained within artifacts
+const ArtifactFile = "artifact.json"
 
 // UpdateStorageDir is the directory where updates will be stored
 const UpdateStorageDir = "update/"
+
+// DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
+const DefaultNamespaceDomain = "github.com"
