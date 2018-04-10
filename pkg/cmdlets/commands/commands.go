@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/spf13/cobra"
 )
 

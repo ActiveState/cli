@@ -5,13 +5,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/print"
 	funk "github.com/thoas/go-funk"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // HashedHook to easily associate a Hook struct to a hash of itself

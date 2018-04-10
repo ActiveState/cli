@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,6 +21,24 @@ func TestActivate(t *testing.T) {
 	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "bash")
+	venv, err := Activate(&wg)
+
+	assert.NoError(t, err, "Should activate")
+
+	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
+	assert.True(t, venv.IsActive(), "Subshell should be active")
+
+	err = venv.Deactivate()
+	assert.NoError(t, err, "Should deactivate")
+
+	assert.False(t, venv.IsActive(), "Subshell should be inactive")
+}
+
+func TestActivateZsh(t *testing.T) {
+	setup(t)
+	var wg sync.WaitGroup
+
+	os.Setenv("SHELL", "zsh")
 	venv, err := Activate(&wg)
 
 	assert.NoError(t, err, "Should activate")

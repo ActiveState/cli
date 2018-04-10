@@ -7,25 +7,28 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/files"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/gobuffalo/packr"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	tempfile "github.com/mash/go-tempfile-suffix"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/subshell/bash"
-	"github.com/ActiveState/ActiveState-CLI/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/alecthomas/template"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
-	// Activate the given subshell venv
+	// Activate the given subshell
 	Activate(wg *sync.WaitGroup) error
 
-	// Deactivate the given subshell venv
+	// Deactivate the given subshell
 	Deactivate() error
 
 	// IsActive returns whether the given subshell is active
@@ -68,40 +71,44 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	name := filepath.Base(binary)
 
 	var err error
-	var venv SubShell
+	var subs SubShell
 	switch name {
 	case "bash":
-		venv = &bash.SubShell{}
+		subs = &bash.SubShell{}
+	case "zsh":
+		subs = &zsh.SubShell{}
 	case "cmd.exe":
-		venv = &cmd.SubShell{}
+		subs = &cmd.SubShell{}
 	default:
 		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
 			"Shell": name,
 		}))
 	}
 
-	rcFile, err := getRcFile(venv)
+	rcFile, err := getRcFile(subs)
 	if err != nil {
 		return nil, err
 	}
 
-	venv.SetBinary(binary)
-	venv.SetRcFile(rcFile)
-	venv.Activate(wg)
+	subs.SetBinary(binary)
+	subs.SetRcFile(rcFile)
+	subs.Activate(wg)
 
-	return venv, err
+	return subs, err
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func getRcFile(v SubShell) (*os.File, error) {
-	tplFile, err := files.AssetFS.Asset(filepath.Join("shells", v.RcFileTemplate()))
-	if err != nil {
-		return nil, err
-	}
+	box := packr.NewBox("../../assets")
+	tpl := box.String(filepath.Join("shells", v.RcFileTemplate()))
 
-	rcData := projectfile.Get()
-	t, err := template.New("rcfile").Parse(string(tplFile))
+	rcData := map[string]interface{}{
+		"Project": projectfile.Get(),
+		"Env":     virtualenvironment.GetEnv(),
+		"WD":      virtualenvironment.WorkingDirectory(),
+	}
+	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
 		return nil, err
 	}

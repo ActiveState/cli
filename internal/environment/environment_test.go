@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/ActiveState/ActiveState-CLI/internal/config"
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
+	_ "github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/stretchr/testify/assert"
 )
 

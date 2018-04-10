@@ -2,15 +2,6 @@
 gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$')
 [ -z "$gofiles" ] && exit 0
 
-# run tests
-failed_tests="$(go test ./... | grep "FAIL:" | awk '{print $3}')"
-if test -n "$failed_tests" ; then
-  for failed in $failed_tests; do
-    echo "git pre-commit check failed: test failed: $failed"
-  done
-  exit 1
-fi
-
 # go lint
 failed=""
 for f in $gofiles; do

@@ -1,9 +1,12 @@
-[![CircleCI](https://circleci.com/gh/ActiveState/ActiveState-CLI.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/ActiveState-CLI)
+[![CircleCI](https://circleci.com/gh/ActiveState/cli.svg?style=shield&circle-token=e439410d217d72704e82808bdc3bbe78b6ecbf21)](https://circleci.com/gh/ActiveState/cli)
 
 # Installation
 
- 1. Make sure you have Go installed (version 1.9 ideally)
- 2. Clone this repository under `$GOPATH/src/github.com/ActiveState/ActiveState-CLI`
+ 1. Install the following dependencies:
+   * Go 1.9 or later
+   * dep - https://github.com/golang/dep#installation
+   * upx - https://upx.github.io/
+ 2. Clone this repository under `$GOPATH/src/github.com/ActiveState/cli`
  3. Run `make init`
  4. Run `dep ensure`
  5. Run `make build`
@@ -31,11 +34,11 @@ You will need to set the following env vars:
 
 The rest of the configuration is hard-coded in our Makefile and should generally not be changed.
 
-# Deploying Artefacts
+# Deploying Artifacts
 
-To deploy artefacts you first have to generate them, to do so run `make generate-artefacts`. For this to work you must
-provide source files inside the scripts/artefact-generator/source directory. Follow the folder structure and instructions
+To deploy artifacts you first have to generate them, to do so run `make generate-artifacts`. For this to work you must
+provide source files inside the scripts/artifact-generator/source directory. Follow the folder structure and instructions
 provided within them.
 
-Once generated you can deploy the artefacts using 'make deploy-artefacts'. This requires AWS credentials the same as for
+Once generated you can deploy the artifacts using 'make deploy-artifacts'. This requires AWS credentials the same as for
 deploying an update.

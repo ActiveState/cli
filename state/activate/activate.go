@@ -4,17 +4,16 @@ import (
 	"os"
 	"sync"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/locale"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
-	"github.com/ActiveState/ActiveState-CLI/internal/scm"
-	"github.com/ActiveState/ActiveState-CLI/internal/subshell"
-	"github.com/ActiveState/ActiveState-CLI/internal/virtualenvironment"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
-	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/scm"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 )
 
@@ -64,16 +63,13 @@ var Args struct {
 // Clones the repository specified by a given URI or ID and returns it. Any
 // error that occurs during the clone process is also returned.
 func clone(uriOrID string) (scm.SCMer, error) {
-	scm := scm.New(uriOrID)
+	scm := scm.FromRemote(uriOrID)
 	if scm != nil {
 		if Flags.Path != "" {
 			scm.SetPath(Flags.Path)
 		}
 		if Flags.Branch != "" {
 			scm.SetBranch(Flags.Branch)
-		}
-		if !scm.ConfigFileExists() {
-			return nil, failures.FailUser.New(locale.T("error_state_activate_config_exists", map[string]interface{}{"ConfigFile": constants.ConfigFileName}))
 		}
 		if scm.TargetExists() {
 			print.Info(locale.T("info_state_active_repoexists", map[string]interface{}{"Path": scm.Path()}))
@@ -116,21 +112,19 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	project := projectfile.Get()
 
-	var err = virtualenvironment.Activate()
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_venv"))
+	var fail = virtualenvironment.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return
 	}
 
-	err = hooks.RunHook("ACTIVATE")
+	err := hooks.RunHook("ACTIVATE")
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_run_hooks"))
 		return
 	}
 
-	venv, err := subshell.Activate(&wg)
-	_ = venv
-
+	_, err = subshell.Activate(&wg)
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return

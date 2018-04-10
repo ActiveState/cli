@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -18,6 +18,7 @@ func TestProjectStruct(t *testing.T) {
 	dat := strings.TrimSpace(`
 name: valueForName
 owner: valueForOwner
+namespace: valueForNamespace
 version: valueForVersion
 environments: valueForEnvironments`)
 
@@ -26,6 +27,7 @@ environments: valueForEnvironments`)
 
 	assert.Equal(t, "valueForName", project.Name, "Name should be set")
 	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
+	assert.Equal(t, "valueForNamespace", project.Namespace, "Namespace should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
 	assert.Equal(t, "", project.Path(), "Path should be empty")
@@ -154,6 +156,7 @@ func TestParse(t *testing.T) {
 
 	assert.NotEmpty(t, project.Name, "Name should be set")
 	assert.NotEmpty(t, project.Owner, "Owner should be set")
+	assert.NotEmpty(t, project.Namespace, "Namespace should be set")
 	assert.NotEmpty(t, project.Version, "Version should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")

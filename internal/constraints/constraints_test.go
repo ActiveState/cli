@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/constants"
-	"github.com/ActiveState/ActiveState-CLI/internal/environment"
-	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/sysinfo"
 	"github.com/stretchr/testify/assert"
 )

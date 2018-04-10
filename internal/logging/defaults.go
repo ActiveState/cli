@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/ActiveState-CLI/internal/config"
+	"github.com/ActiveState/cli/internal/config"
 )
 
 type fileHandler struct {
