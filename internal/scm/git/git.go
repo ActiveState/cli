@@ -37,6 +37,18 @@ func IsGitURI(uri string) bool {
 	return false
 }
 
+// WithinGithubRateLimit returns whether or not the given number of requests can
+// be processed by the Github API, which is rate-limited to 60 requests per hour
+// and 10 requests per minute.
+func WithinGithubRateLimit(requests int) bool {
+	client := github.NewClient(nil)
+	limits, _, err := client.RateLimits(context.Background())
+	if err != nil {
+		return false // assume no
+	}
+	return limits.Core.Remaining >= requests
+}
+
 // Git represents a Git repository to clone locally.
 type Git struct {
 	URI    string // the URI of the repository to clone
@@ -55,6 +67,9 @@ func (g *Git) ConfigFileExists() bool {
 		matches := regex.FindStringSubmatch(strings.TrimSuffix(g.URI, ".git"))[1:]
 		reader, err := client.Repositories.DownloadContents(context.Background(), matches[0], matches[1], constants.ConfigFileName, nil)
 		if err != nil {
+			if _, ok := err.(*github.RateLimitError); ok {
+				return true // assume on a dev machine, so return true
+			}
 			return false // assume does not exist
 		}
 		reader.Close()
@@ -71,6 +86,12 @@ func (g *Git) SetPath(path string) {
 
 // Path returns the Git repository's local path.
 func (g *Git) Path() string {
+	if g.path == "" {
+		cwd, _ := os.Getwd()
+		reponame := g.humanishPart()
+		g.path = filepath.Join(cwd, reponame)
+		logging.Debug("Determined 'humanish' dir to clone into as '%s'", reponame)
+	}
 	return g.path
 }
 
@@ -92,19 +113,23 @@ func (g *Git) CheckoutBranch() error {
 	return cmd.Run()
 }
 
+// TargetExists used to check if the repo has already been created or not
+func (g *Git) TargetExists() bool {
+	if _, err := os.Stat(g.Path()); err == nil {
+		return true
+	}
+	return false
+}
+
 // Clone clones the Git repository into its given or computed directory.
 func (g *Git) Clone() error {
 	logging.Debug("Attempting to clone %+v", g)
-	if g.path == "" {
-		cwd, _ := os.Getwd()
-		g.path = filepath.Join(cwd, g.humanishPart())
-		logging.Debug("Determined 'humanish' dir to clone into as '%s'", g.path)
-	}
+	path := g.Path()
 	print.Info(locale.T("info_state_activate_uri", map[string]interface{}{
-		"URI": g.URI, "Dir": g.path,
+		"URI": g.URI, "Dir": path,
 	}))
 
-	cmd := exec.Command("git", "clone", g.URI, g.path)
+	cmd := exec.Command("git", "clone", g.URI, path)
 	fmt.Println(strings.Join(cmd.Args, " ")) // match command output style
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {

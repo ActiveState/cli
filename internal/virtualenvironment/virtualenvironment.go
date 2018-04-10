@@ -39,9 +39,6 @@ type VirtualEnvironmenter interface {
 	// SetDataDir sets the configured data for this venv
 	SetDataDir(string)
 
-	// SetProject sets the *projectfile.Project for this venv
-	SetProject(*projectfile.Project)
-
 	// LoadLanguageFromPath should load the given language into the venv via symlinks
 	LoadLanguageFromPath(string) error
 
@@ -49,7 +46,7 @@ type VirtualEnvironmenter interface {
 	LoadPackageFromPath(string, *projectfile.Package) error
 }
 
-type artifactHashable struct {
+type artefactHashable struct {
 	Name    string
 	Version string
 	Build   map[string]string
@@ -58,8 +55,10 @@ type artifactHashable struct {
 var venvs = make(map[string]VirtualEnvironmenter)
 
 // Activate the virtual environment
-func Activate(project *projectfile.Project) error {
+func Activate() error {
 	logging.Debug("Activating Virtual Environment")
+
+	project := projectfile.Get()
 
 	if project.Variables != nil {
 		for _, variable := range project.Variables {
@@ -68,13 +67,13 @@ func Activate(project *projectfile.Project) error {
 		}
 	}
 
-	err := createFolderStructure(project)
+	err := createFolderStructure()
 	if err != nil {
 		return err
 	}
 
 	for _, language := range project.Languages {
-		_, err := GetEnv(project, &language)
+		_, err := GetEnv(&language)
 		if err != nil {
 			return err
 		}
@@ -86,7 +85,7 @@ func Activate(project *projectfile.Project) error {
 // GetEnv returns an environment for the given project and language, this will initialize the virtual directory structure
 // and set up the necessary environment variables if the venv wasnt already initialized, otherwise it will just return
 // the venv struct
-func GetEnv(project *projectfile.Project, language *projectfile.Language) (VirtualEnvironmenter, error) {
+func GetEnv(language *projectfile.Language) (VirtualEnvironmenter, error) {
 	switch language.Name {
 	case "Python":
 		// TODO: if !constraints.IsConstrained(language.Constraints, project)
@@ -96,7 +95,7 @@ func GetEnv(project *projectfile.Project, language *projectfile.Language) (Virtu
 		}
 
 		venv := &python.VirtualEnvironment{}
-		err := ActivateLanguageVenv(project, language, venv)
+		err := ActivateLanguageVenv(language, venv)
 
 		if err != nil {
 			return nil, err
@@ -107,22 +106,22 @@ func GetEnv(project *projectfile.Project, language *projectfile.Language) (Virtu
 		return venv, nil
 	default:
 		var T = locale.T
-		return nil, failures.User.New(T("warning_language_not_yet_supported", map[string]interface{}{
+		return nil, failures.FailUser.New(T("warning_language_not_yet_supported", map[string]interface{}{
 			"Language": language.Name,
 		}))
 	}
 }
 
 // ActivateLanguageVenv activates the virtual environment for the given language
-func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironmenter) error {
+func ActivateLanguageVenv(language *projectfile.Language, venv VirtualEnvironmenter) error {
+	project := projectfile.Get()
 	datadir := config.GetDataDir()
 	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, language.Name, language.Version)
 
-	venv.SetProject(project)
 	venv.SetLanguageMeta(language)
 	venv.SetDataDir(datadir)
 
-	err := loadLanguage(project, language, venv)
+	err := loadLanguage(language, venv)
 
 	if err != nil {
 		return err
@@ -130,7 +129,7 @@ func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.La
 
 	for _, pkg := range language.Packages {
 		// TODO: if !constraints.IsConstrained(pkg.Constraints, project)
-		err = loadPackage(project, language, &pkg, venv)
+		err = loadPackage(language, &pkg, venv)
 
 		if err != nil {
 			return err
@@ -140,7 +139,7 @@ func ActivateLanguageVenv(project *projectfile.Project, language *projectfile.La
 	return venv.Activate()
 }
 
-func loadLanguage(project *projectfile.Project, language *projectfile.Language, venv VirtualEnvironmenter) error {
+func loadLanguage(language *projectfile.Language, venv VirtualEnvironmenter) error {
 	path, err := obtainLanguage(language)
 
 	if err != nil {
@@ -153,7 +152,7 @@ func loadLanguage(project *projectfile.Project, language *projectfile.Language, 
 }
 
 func getHashFromLanguage(language *projectfile.Language) string {
-	hashable := artifactHashable{Name: language.Name, Version: language.Version, Build: language.Build}
+	hashable := artefactHashable{Name: language.Name, Version: language.Version, Build: language.Build}
 	hash, _ := hashstructure.Hash(hashable, nil)
 	return fmt.Sprintf("%d", hash)
 }
@@ -186,7 +185,7 @@ func obtainLanguage(language *projectfile.Language) (string, error) {
 	return path, nil
 }
 
-func loadPackage(project *projectfile.Project, language *projectfile.Language, pkg *projectfile.Package, venv VirtualEnvironmenter) error {
+func loadPackage(language *projectfile.Language, pkg *projectfile.Package, venv VirtualEnvironmenter) error {
 	path, err := obtainPackage(language, pkg)
 
 	if err != nil {
@@ -199,7 +198,7 @@ func loadPackage(project *projectfile.Project, language *projectfile.Language, p
 }
 
 func getHashFromPackage(pkg *projectfile.Package) string {
-	hashable := artifactHashable{Name: pkg.Name, Version: pkg.Version, Build: pkg.Build}
+	hashable := artefactHashable{Name: pkg.Name, Version: pkg.Version, Build: pkg.Build}
 	hash, _ := hashstructure.Hash(hashable, nil)
 	return fmt.Sprintf("%d", hash)
 }
@@ -245,7 +244,8 @@ func mkdir(parent string, subpath ...string) error {
 	return nil
 }
 
-func createFolderStructure(project *projectfile.Project) error {
+func createFolderStructure() error {
+	project := projectfile.Get()
 	datadir := config.GetDataDir()
 
 	if err := mkdir(datadir, "packages"); err != nil {

@@ -23,7 +23,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	filename := filepath.Join(datadir, "log.txt")
 
 	if l.file == nil {
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, os.ModePerm)
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return err
 		}

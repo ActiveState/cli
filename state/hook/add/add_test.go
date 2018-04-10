@@ -83,7 +83,7 @@ func TestAddHookPass(t *testing.T) {
 	Cc.SetArgs([]string{newHookName, "echo 'This is a command'"})
 	Cc.Execute()
 
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 	var found = false
 	for _, hook := range project.Hooks {
 		if hook.Name == newHookName {
@@ -105,7 +105,7 @@ func TestAddHookFail(t *testing.T) {
 	newHookName := "A_HOOK"
 	Cc.SetArgs([]string{newHookName})
 	Cc.Execute()
-	project, _ := projectfile.Get()
+	project := projectfile.Get()
 
 	var found = false
 	for _, hook := range project.Hooks {

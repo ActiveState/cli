@@ -1,0 +1,3 @@
+Place the exported tar.gz here, downloaded from https://golang.org/dl/
+
+Currently untested on macOS.

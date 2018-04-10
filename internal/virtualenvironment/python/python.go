@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
+	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
 )
@@ -13,7 +15,6 @@ import (
 type VirtualEnvironment struct {
 	datadir      string
 	languageMeta *projectfile.Language
-	project      *projectfile.Project
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -31,11 +32,6 @@ func (v *VirtualEnvironment) SetDataDir(path string) {
 	v.datadir = path
 }
 
-// SetProject - see virtualenvironment.VirtualEnvironment
-func (v *VirtualEnvironment) SetProject(project *projectfile.Project) {
-	v.project = project
-}
-
 // LanguageMeta - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LanguageMeta() *projectfile.Language {
 	return v.languageMeta
@@ -48,7 +44,12 @@ func (v *VirtualEnvironment) SetLanguageMeta(language *projectfile.Language) {
 
 // LoadLanguageFromPath - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadLanguageFromPath(path string) error {
-	return os.Symlink(path, filepath.Join(v.DataDir(), "language"))
+	err := os.Symlink(path, filepath.Join(v.DataDir(), "language"))
+	if err != nil {
+		logging.Error(err.Error())
+		return failures.FailIO.New(locale.T("error_could_not_make_symlink"))
+	}
+	return nil
 }
 
 // LoadPackageFromPath - see virtualenvironment.VirtualEnvironment

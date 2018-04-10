@@ -2,7 +2,6 @@ package add
 
 import (
 	"github.com/ActiveState/ActiveState-CLI/internal/failures"
-	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
@@ -36,7 +35,7 @@ var Command = &commands.Command{
 			Required:    true,
 			Validator: func(arg *commands.Argument, value string) error {
 				if !funk.Contains(KnownHooks, value) {
-					return failures.User.New(locale.T("error_hook_add_invalid_hook", map[string]interface{}{"Name": value}))
+					return failures.FailUserInput.New(locale.T("error_hook_add_invalid_hook", map[string]interface{}{"Name": value}))
 				}
 				return nil
 			},
@@ -54,13 +53,8 @@ var Command = &commands.Command{
 // Adds a command to be run on the given hook trigger
 func Execute(cmd *cobra.Command, args []string) {
 	// Add hook to activestate.yaml for the active project
-	project, err := projectfile.Get()
-	if err != nil {
-		msg := locale.T("hook_add_cannot_add_hook", Args)
-		print.Error(msg)
-		print.Error(err.Error())
-		return
-	}
+	project := projectfile.Get()
+
 	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Command}
 	project.Hooks = append(project.Hooks, newHook)
 

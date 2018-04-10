@@ -5,9 +5,9 @@ import (
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
 	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/commands"
-	hookhelper "github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
+	"github.com/ActiveState/ActiveState-CLI/pkg/cmdlets/hooks"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/bndr/gotabulate"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/spf13/cobra"
@@ -18,10 +18,13 @@ var Args struct {
 	Identifier string
 }
 
+// Used for testing
+var testPromptResultOverride string
+
 // Command remove, sub command of hook
 var Command = &commands.Command{
 	Name:        "remove",
-	Description: "remove_description",
+	Description: "hook_remove_description",
 	Run:         Execute,
 
 	Arguments: []*commands.Argument{
@@ -29,61 +32,8 @@ var Command = &commands.Command{
 			Name:        "arg_hook_remove_identifier",
 			Description: "arg_hook_remove_identifier_description",
 			Variable:    &Args.Identifier,
-			Required:    true,
 		},
 	},
-}
-
-//  Cycle through the configured hooks, hash then remove hook if matches, save, exit
-func removebyHash(identifier string, project *projectfile.Project) bool {
-	hooks := project.Hooks
-	var removed = false
-	for i, hook := range hooks {
-		hash, err := hookhelper.HashHookStruct(hook)
-		if identifier == hash {
-			hooks := append(hooks[:i], hooks[i+1:]...)
-			project.Hooks = hooks
-			removed = true
-			break
-		} else if err != nil {
-			logging.Warning("Failed to remove hook '%v': %v", identifier, err)
-			print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": identifier, "Error": err}))
-		}
-	}
-	project.Save()
-	return removed
-}
-
-// Print what we ended up with
-func printOutput(hookmap map[string][]hookhelper.Hashedhook) {
-	var T = locale.T
-
-	print.Info(T("hook_listing_hooks"))
-	print.Line()
-
-	rows := [][]interface{}{}
-	for k, cmds := range hookmap {
-		for idx := range cmds {
-			rows = append(rows, []interface{}{cmds[idx].Hash, k, cmds[idx].Hook.Value})
-		}
-	}
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{T("hook_header_id"), T("hook_header_hook"), T("hook_header_command")})
-	t.SetAlign("left")
-	print.Line(t.Render("simple"))
-	print.Line(locale.T("hook_remove_multiple_hooks"))
-}
-
-func removeByName(identifier string, project *projectfile.Project) {
-	hooks := project.Hooks
-	for i, hook := range hooks {
-		if identifier == hook.Name {
-			hooks := append(hooks[:i], hooks[i+1:]...)
-			project.Hooks = hooks
-			break
-		}
-	}
-	project.Save()
 }
 
 // Execute the hook remove command
@@ -91,27 +41,107 @@ func removeByName(identifier string, project *projectfile.Project) {
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute `hook remove`")
 
-	project, err := projectfile.Get()
+	project := projectfile.Get()
+
+	var removed *projectfile.Hook
+	removed = removeByHash(Args.Identifier)
+
+	if removed == nil {
+		filters := []string{}
+		if Args.Identifier != "" {
+			filters = append(filters, Args.Identifier)
+		}
+		hashedHooks, err := hooks.HashHooksFiltered(project.Hooks, filters)
+		if err != nil {
+			failures.Handle(err, locale.T("hook_remove_cannot_remove"))
+			return
+		}
+
+		numOfHooksFound := len(hashedHooks)
+		if numOfHooksFound == 1 && Args.Identifier != "" {
+			removed = removeByName(Args.Identifier)
+		} else if numOfHooksFound > 0 {
+			removed = removeByPrompt(Args.Identifier)
+		} else {
+			failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
+		}
+	}
+
+	if removed == nil {
+		print.Warning(locale.T("hook_remove_cannot_remove"))
+	} else {
+		hash, _ := removed.Hash()
+		print.Info(locale.T("hook_removed", map[string]interface{}{"Hook": removed, "Hash": hash}))
+	}
+}
+
+//  Cycle through the configured hooks, hash then remove hook if matches, save, exit
+func removeByHash(hashToRemove string) *projectfile.Hook {
+	project := projectfile.Get()
+	var removed *projectfile.Hook
+	for i, hook := range project.Hooks {
+		hash, err := hook.Hash()
+		if hashToRemove == hash {
+			project.Hooks = append(project.Hooks[:i], project.Hooks[i+1:]...)
+			removed = &hook
+			break
+		} else if err != nil {
+			logging.Warning("Failed to remove hook '%v': %v", hashToRemove, err)
+			print.Warning(locale.T("hook_remove_cannot_remove", map[string]interface{}{"Hookname": hashToRemove, "Error": err}))
+		}
+	}
+	project.Save()
+	return removed
+}
+
+func removeByName(name string) *projectfile.Hook {
+	project := projectfile.Get()
+	var removed *projectfile.Hook
+	for i, hook := range project.Hooks {
+		if name == hook.Name {
+			project.Hooks = append(project.Hooks[:i], project.Hooks[i+1:]...)
+			removed = &hook
+			break
+		}
+	}
+	project.Save()
+	return removed
+}
+
+func removeByPrompt(identifier string) *projectfile.Hook {
+	var removed *projectfile.Hook
+
+	options, optionsMap, err := hooks.PromptOptions(identifier)
 	if err != nil {
-		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
-		return
+		failures.Handle(err, locale.T("err_hook_cannot_list"))
 	}
 
-	if removebyHash(Args.Identifier, project) {
-		return
+	prompt := &survey.Select{
+		Message: locale.T("prompt_hook_choose_remove"),
+		Options: options,
 	}
 
-	mappedHooks, err := hookhelper.FilterHooks([]string{Args.Identifier})
-	if err != nil {
-		failures.Handle(err, locale.T("hook_remove_cannot_remove", Args))
-		return
+	result := ""
+	err = survey.AskOne(prompt, &result, nil)
+
+	// For tests we want to override the result as we cannot process prompts from within a test
+	if testPromptResultOverride != "" {
+		result = testPromptResultOverride
 	}
 
-	numOfHooksFound := len(mappedHooks[Args.Identifier])
-	if numOfHooksFound == 1 {
-		removeByName(Args.Identifier, project)
-
-	} else if numOfHooksFound >= 2 {
-		printOutput(mappedHooks)
+	if err != nil && testPromptResultOverride == "" {
+		failures.Handle(err, locale.T("err_invalid_input"))
+		return removed
 	}
+
+	hash, exists := optionsMap[result]
+	print.Formatted("\nresult: %v\n", result)
+	print.Formatted("\nmap: %v\n", optionsMap)
+	if result == "" || !exists {
+		failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
+		return removed
+	}
+
+	print.Line()
+	return removeByHash(hash)
 }

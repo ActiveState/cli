@@ -1,42 +1,33 @@
 package hooks
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/ActiveState/ActiveState-CLI/internal/failures"
 	"github.com/ActiveState/ActiveState-CLI/internal/locale"
 	"github.com/ActiveState/ActiveState-CLI/internal/print"
+	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/ActiveState-CLI/internal/constraints"
-	"github.com/ActiveState/ActiveState-CLI/internal/logging"
 	"github.com/ActiveState/ActiveState-CLI/pkg/projectfile"
-	"github.com/mitchellh/hashstructure"
 )
 
-// Hashedhook to easily associate a Hook struct to a hash of itself
-type Hashedhook struct {
+// HashedHook to easily associate a Hook struct to a hash of itself
+type HashedHook struct {
 	Hook projectfile.Hook
 	Hash string
 }
 
-// HashHookStruct takes a projectfile.Hook, hashes the struct and returns the hash as a string
-func HashHookStruct(hook projectfile.Hook) (string, error) {
-	hash, err := hashstructure.Hash(hook, nil)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%X", hash), nil
-}
-
 // GetEffectiveHooks returns effective hooks by the given name, meaning only the ones that apply to the current runtime environment
-func GetEffectiveHooks(hookName string, project *projectfile.Project) []*projectfile.Hook {
+func GetEffectiveHooks(hookName string) []*projectfile.Hook {
+	project := projectfile.Get()
 	hooks := []*projectfile.Hook{}
 
 	for _, hook := range project.Hooks {
 		if hook.Name == hookName {
-			if !constraints.IsConstrained(hook.Constraints, project) {
+			if !constraints.IsConstrained(hook.Constraints) {
 				hooks = append(hooks, &hook)
 			}
 		}
@@ -46,8 +37,8 @@ func GetEffectiveHooks(hookName string, project *projectfile.Project) []*project
 }
 
 // RunHook runs effective hooks by the given name, meaning only the ones that apply to the current runtime environment
-func RunHook(hookName string, project *projectfile.Project) error {
-	hooks := GetEffectiveHooks(hookName, project)
+func RunHook(hookName string) error {
+	hooks := GetEffectiveHooks(hookName)
 
 	if len(hooks) == 0 {
 		return nil
@@ -74,52 +65,89 @@ func RunHook(hookName string, project *projectfile.Project) error {
 	return nil
 }
 
-// MapHooks creates a map of hooknames to associated commands
-func MapHooks(hooks []projectfile.Hook) (map[string][]Hashedhook, error) {
-	logging.Debug("mapHooks")
-	hookmap := make(map[string][]Hashedhook)
+// HashHooks returns a map of all the hooks with the keys being a hash of that hook
+func HashHooks(hooks []projectfile.Hook) (map[string]projectfile.Hook, error) {
+	hashedHooks := make(map[string]projectfile.Hook)
 	for _, hook := range hooks {
-		hash, err := HashHookStruct(hook)
+		hash, err := hook.Hash()
 		// If we can't hash, something is really wrong so fail gracefully
 		if err != nil {
 			return nil, err
 		}
-		newhook := Hashedhook{hook, hash}
-		hookmap[hook.Name] = append(hookmap[hook.Name], newhook)
+		hashedHooks[hash] = hook
 	}
-	return hookmap, nil
+	return hashedHooks, nil
 }
 
-// FilterHooks includes only hooks requested in a hookmap
-func FilterHooks(hooknames []string) (map[string][]Hashedhook, error) {
-	logging.Debug("filterHooks")
-	config, err := projectfile.Get()
+// HashHooksFiltered is identical to HashHooks except that it takes a slice of names to be used as a filter
+func HashHooksFiltered(hooks []projectfile.Hook, hookNames []string) (map[string]projectfile.Hook, error) {
+	hashedHooks, err := HashHooks(hooks)
 	if err != nil {
 		return nil, err
 	}
-
-	hookmap, err := MapHooks(config.Hooks)
-	if err != nil {
-		return nil, err
-	}
-	// If no filters just return the whole thing
-	if len(hooknames) == 0 {
-		return hookmap, nil
+	if len(hookNames) == 0 {
+		return hashedHooks, err
 	}
 
-	var newmap = make(map[string][]Hashedhook)
-	for _, val := range hooknames {
-		if hookmap[val] != nil {
-			// TODO: if !constraints.IsConstrained(hookmap[val].Hook.Constraints, config)
-			newmap[val] = hookmap[val]
+	hashedHooksFiltered := make(map[string]projectfile.Hook)
+	for hash, hook := range hashedHooks {
+		if funk.Contains(hookNames, hook.Name) {
+			hashedHooksFiltered[hash] = hook
 		}
 	}
 
-	//Empty array means nothing found in dict
-	if len(newmap) == 0 {
-		logging.Debug("No configured hooks for `%v`", hooknames)
-		return nil, nil
+	return hashedHooksFiltered, nil
+}
+
+// PromptOptions returns an array of strings that can be consumed by the survey library we use,
+// the second return argument contains a map that connects each item to a hash
+func PromptOptions(filter string) ([]string, map[string]string, error) {
+	project := projectfile.Get()
+	optionsMap := make(map[string]string)
+	options := []string{}
+
+	filters := []string{}
+	if filter != "" {
+		filters = append(filters, filter)
 	}
-	return newmap, nil
-	// logging.Debug("%v", hooknames)
+
+	hashedHooks, err := HashHooksFiltered(project.Hooks, filters)
+	if err != nil {
+		return options, optionsMap, err
+	}
+
+	if len(hashedHooks) == 0 {
+		return options, optionsMap, failures.FailUserInput.New(locale.T("err_hook_cannot_find"))
+	}
+
+	for hash, hook := range hashedHooks {
+		command := strings.Replace(hook.Value, "\n", " ", -1)
+		if len(command) > 50 {
+			command = command[0:50] + ".."
+		}
+
+		constraints := []string{}
+		if hook.Constraints.Environment != "" {
+			constraints = append(constraints, hook.Constraints.Environment)
+		}
+		if hook.Constraints.Platform != "" {
+			constraints = append(constraints, hook.Constraints.Platform)
+		}
+
+		var constraintString string
+		if len(constraints) > 0 {
+			constraintString = strings.Join(constraints, ", ") + ", "
+		}
+
+		value := locale.T("prompt_hook_option", map[string]interface{}{
+			"Hash":        hash,
+			"Hook":        hook,
+			"Command":     command,
+			"Constraints": constraintString,
+		})
+		options = append(options, value)
+		optionsMap[value] = hash
+	}
+
+	return options, optionsMap, nil
 }
