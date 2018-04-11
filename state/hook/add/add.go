@@ -1,11 +1,14 @@
 package add
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/logging"
@@ -56,8 +59,17 @@ func Execute(cmd *cobra.Command, args []string) {
 	project := projectfile.Get()
 
 	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Command}
-	project.Hooks = append(project.Hooks, newHook)
 
+	exists, err := hooks.HookExists(newHook, project)
+	if err != nil {
+		failures.Handle(err, locale.T("hook_add_cannot_add_hook", Args))
+		return
+	}
+	if exists {
+		fmt.Printf(locale.T("hook_add_cannot_add_existing_hook"))
+		return
+	}
+	project.Hooks = append(project.Hooks, newHook)
 	project.Save()
 	logging.Debug("Execute `hook add`")
 }
