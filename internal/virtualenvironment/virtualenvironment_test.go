@@ -3,6 +3,7 @@ package virtualenvironment
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -35,7 +36,13 @@ func TestActivate(t *testing.T) {
 	setup(t)
 
 	fail := Activate()
-	assert.NoError(t, fail.ToError(), "Should activate")
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, fail.ToError(), "Should activate")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// test activation should fail.
+		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+	}
 
 	setup(t)
 	project := &projectfile.Project{}
@@ -46,21 +53,33 @@ func TestActivate(t *testing.T) {
 	project.Persist()
 
 	fail = Activate()
-	assert.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// test activation should fail.
+		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+	}
 
 	setup(t)
 	project = &projectfile.Project{}
 	dat = strings.TrimSpace(`
 		name: valueForName
 		owner: valueForOwner
-		languages: 
+		languages:
 		- name: Python
 		version: 2.7.12`)
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
 	fail = Activate()
-	assert.NoError(t, fail.ToError(), "Should activate, even if no packages are defined")
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, fail.ToError(), "Should activate, even if no packages are defined")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// test activation should fail.
+		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+	}
 
 	teardown()
 }
