@@ -1,10 +1,21 @@
 # Go parameters
 GOCMD=go
+
+ifndef $(shell command -v go 2> /dev/null)
+    GOCMD=${GOROOT}/bin/go
+endif
+
 GOBUILD=$(GOCMD) build
 GOINSTALL=$(GOCMD) install
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
+
+PACKRCMD=packr
+
+ifndef $(shell command -v packr 2> /dev/null)
+    PACKRCMD=${GOPATH}/bin/packr
+endif
 
 BINARY_NAME=state
 BINARY_UNIX=$(BINARY_NAME)_unix
@@ -16,22 +27,25 @@ VERSION=`grep -m1 "^const Version" internal/constants/generated.go | cut -d ' ' 
 all: test build
 init:
 		git config core.hooksPath .githooks
+		go get -u github.com/gobuffalo/packr/...
 build: 
-		go run scripts/constants-generator/main.go 
+		$(PACKRCMD)
+		$(GOCMD) run scripts/constants-generator/main.go 
 		cd $(BINARY_NAME) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
 		mkdir -p public/update
-		go run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
+		$(GOCMD) run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
+		$(PACKRCMD)
 		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
 generate-artifacts:
-		go run scripts/artifact-generator/main.go 
+		$(GOCMD) run scripts/artifact-generator/main.go 
 deploy-updates:
-		go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
-		go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+		$(GOCMD) run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
+		$(GOCMD) run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
 deploy-artifacts:
-		go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
+		$(GOCMD) run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
 test: 
-		go run scripts/constants-generator/main.go 
+		$(GOCMD) run scripts/constants-generator/main.go 
 		$(GOTEST) ./...
 clean: 
 		$(GOCLEAN)

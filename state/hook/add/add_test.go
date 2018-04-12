@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -96,7 +97,6 @@ func TestAddHookPass(t *testing.T) {
 	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
-//  This test MUST go before TestAddHookPass.  Something to do with writing files.
 func TestAddHookFail(t *testing.T) {
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
@@ -127,4 +127,30 @@ func TestExecute(t *testing.T) {
 	Command.Execute()
 
 	assert.Equal(t, true, true, "Execute didn't panic")
+}
+
+//
+func TestAddHookFailIdentical(t *testing.T) {
+	project := projectfile.Get()
+	err := moveToTmpDir()
+	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+
+	hookName := "ACTIVATE"
+	value := "echo 'This is a command'"
+	hook1 := projectfile.Hook{Name: hookName, Value: value}
+	project.Hooks = append(project.Hooks, hook1)
+	project.Save()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{hookName, value})
+	Cc.Execute()
+
+	filteredMappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{hookName})
+
+	assert.Equal(t, 1,
+		len(filteredMappedHooks),
+		fmt.Sprintf("There should be only one hook configure for hookname'%v'", hookName))
+
+	err = removeTmpDir()
+	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }

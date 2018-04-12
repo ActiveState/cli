@@ -1,3 +1,6 @@
 [submodule "state/activate/scm/git/testdata/repo"]
 	path = internal/scm/git/testdata/repo
 	url = https://github.com/activestate/repo
+[submodule "scripts/artifact-generator/source/vendor"]
+	path = scripts/artifact-generator/source/vendor
+	url = git@github.com:ActiveState/cli-artifacts-source.git

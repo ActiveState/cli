@@ -45,9 +45,9 @@ func (s byLengthSorter) Less(i, j int) bool {
 }
 
 func main() {
-	//distro("linux", "x86_64", false)
-	//distro("macos", "x86_64", false)
-	//distro("windows", "x86_64", false)
+	distro("linux", "x86_64", false)
+	distro("macos", "x86_64", false)
+	distro("windows", "x86_64", false)
 	distro("linux", "x86_64", true)
 	distro("macos", "x86_64", true)
 	distro("windows", "x86_64", true)
@@ -173,7 +173,12 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 }
 
 func getPackagePathsGo(sourcePath string) []*Package {
-	cmd := exec.Command("go", "list", "-e", "all")
+	gobin := "go"
+	goroot := os.Getenv("GOROOT")
+	if goroot != "" {
+		gobin = filepath.Join(goroot, "bin", "go")
+	}
+	cmd := exec.Command(gobin, "list", "-e", "all")
 	cmd.Env = []string{"GOPATH=" + sourcePath}
 
 	output, err := cmd.CombinedOutput()
