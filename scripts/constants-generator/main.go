@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants/preprocess"
@@ -38,7 +37,7 @@ func run() {
 	}
 
 	target := filepath.Join(environment.GetRootPathUnsafe(), "internal", "constants", "generated.go")
-	ioutil.WriteFile(target, buf.Bytes(), os.ModePerm)
+	ioutil.WriteFile(target, buf.Bytes(), 0666)
 
 	fmt.Println("Constants generated")
 }

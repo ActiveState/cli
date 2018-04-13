@@ -47,8 +47,10 @@ func (s byLengthSorter) Less(i, j int) bool {
 func main() {
 	distro("linux", "x86_64", false)
 	distro("macos", "x86_64", false)
+	distro("windows", "x86_64", false)
 	distro("linux", "x86_64", true)
 	distro("macos", "x86_64", true)
+	distro("windows", "x86_64", true)
 }
 
 func distro(OS string, arch string, isForTests bool) {
@@ -65,7 +67,7 @@ func distro(OS string, arch string, isForTests bool) {
 		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
 	}
 
-	os.MkdirAll(targetDistPath, os.ModePerm)
+	os.MkdirAll(targetDistPath, 0777)
 
 	distro = run("go", OS, distro, isForTests)
 
@@ -75,7 +77,7 @@ func distro(OS string, arch string, isForTests bool) {
 	}
 
 	fmt.Printf("Saving distro to %s", filepath.Join(targetDistPath, "distribution.json"))
-	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, os.ModePerm)
+	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, 0666)
 }
 
 func run(language string, OS string, distro []*Distribution, isForTests bool) []*Distribution {
@@ -95,7 +97,7 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 		targetArtifactPath = filepath.Join(environment.GetRootPathUnsafe(), "test", targetArtifactPathRelative)
 	}
 
-	os.MkdirAll(targetArtifactPath, os.ModePerm)
+	os.MkdirAll(targetArtifactPath, 0777)
 
 	var packages []*Package
 	switch language {
