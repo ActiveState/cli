@@ -23,7 +23,7 @@ func GetRootPath() (string, error) {
 	abs := filepath.Dir(file)
 
 	// If we're receiving a relative path resolve it to absolute
-	if abs[0:1] != "/" && abs[1:1] != ":" {
+	if abs[0:1] != "/" && abs[1:2] != ":" {
 		gopath := os.Getenv("GOPATH")
 		if gopath == "" {
 			gopath = build.Default.GOPATH
