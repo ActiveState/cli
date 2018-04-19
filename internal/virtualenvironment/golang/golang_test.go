@@ -90,7 +90,12 @@ func TestLoadPackageFromPath(t *testing.T) {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// the symlinked file should not exist.
 		_, err := os.Stat(filepath.Join(datadir, "src", artf.Meta.Name, "artifact.json"))
-		assert.Error(t, err, "Symlinking requires admin privilages for now")
+		if err != nil {
+			assert.Error(t, err, "Symlinking requires admin privilages for now")
+		} else {
+			// But they might work...soooooo, don't fail if they do work.
+			assert.FileExists(t, filepath.Join(datadir, "src", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
+		}
 	}
 }
 
@@ -119,7 +124,12 @@ func TestActivate(t *testing.T) {
 		_, err := os.Stat(filepath.Join(venv.DataDir(), "bin"))
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
-		assert.Error(t, err, "Symlinking requires admin privilages for now")
+		if err != nil {
+			assert.Error(t, err, "Symlinking requires admin privilages for now")
+		} else {
+			// But they might work...soooooo, don't fail if they do work.
+			assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
+		}
 	}
 }
 
