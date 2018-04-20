@@ -24,6 +24,7 @@ func setup(t *testing.T) {
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
 	os.RemoveAll(filepath.Join(datadir, "packages"))
 	os.RemoveAll(filepath.Join(datadir, "languages"))
+	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 
 	venvs = make(map[string]VirtualEnvironmenter)
 }

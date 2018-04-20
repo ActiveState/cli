@@ -18,7 +18,10 @@ type VirtualEnvironment struct {
 
 // Language - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Language() string {
-	return "python"
+	if v.artifact == nil {
+		return "python3"
+	}
+	return strings.ToLower(v.artifact.Meta.Name)
 }
 
 // DataDir - see virtualenvironment.VirtualEnvironment
@@ -44,16 +47,27 @@ func (v *VirtualEnvironment) SetArtifact(artf *artifact.Artifact) {
 // LoadArtifact - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) LoadArtifact(artf *artifact.Artifact) *failures.Failure {
 	switch artf.Meta.Type {
+	case "language":
+		return v.loadLanguage(artf)
 	case "package":
 		return v.loadPackage(artf)
 	default:
-		return failures.FailUser.New("err_language_not_supported", artf.Meta.Name)
+		return failures.FailUser.New("err_artifact_not_supported", artf.Meta.Type)
 	}
 }
 
 // WorkingDirectory - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) WorkingDirectory() string {
 	return ""
+}
+
+func (v *VirtualEnvironment) loadLanguage(artf *artifact.Artifact) *failures.Failure {
+	err := os.Symlink(filepath.Dir(artf.Path), filepath.Join(v.DataDir(), "language"))
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
+	return nil
 }
 
 func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Failure {
@@ -67,7 +81,12 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if subpath == "" {
 			return nil
 		}
+
 		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
+		if fileutils.PathExists(target) {
+			return nil
+		}
+
 		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
 			return failures.FailIO.Wrap(err)
 		}
@@ -92,7 +111,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
-	path := filepath.Join(v.datadir, "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH")
+	path := filepath.Join(v.datadir, "language", "bin")
 	path = filepath.Join(v.datadir, "bin") + string(os.PathListSeparator) + path
 	return map[string]string{
 		"PYTHONPATH": filepath.Join(v.datadir, "lib"),
