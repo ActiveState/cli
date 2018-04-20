@@ -22,6 +22,12 @@ import (
 func setup(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	os.Chdir(filepath.Join(root, "test"))
+
+	datadir := config.GetDataDir()
+	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	os.RemoveAll(filepath.Join(datadir, "packages"))
+	os.RemoveAll(filepath.Join(datadir, "languages"))
+	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 }
 
 func TestLanguage(t *testing.T) {
@@ -53,6 +59,8 @@ func TestLanguageMeta(t *testing.T) {
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
+	setup(t)
+
 	venv := &VirtualEnvironment{}
 
 	datadir := filepath.Join(os.TempDir(), "as-state-test")
