@@ -73,7 +73,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	assert.NotNil(t, language, "Should retrieve language from dist")
 
-	artf := dist.Artifacts[dist.Languages[0].Hash][0]
+	artf := dist.Artifacts[language.Hash][0]
 	fail = venv.LoadArtifact(artf)
 	if runtime.GOOS != "windows" {
 		assert.NoError(t, fail.ToError(), "Loads artifact without errors")

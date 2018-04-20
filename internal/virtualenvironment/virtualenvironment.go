@@ -130,6 +130,10 @@ func GetEnv() map[string]string {
 		}
 	}
 
+	if funk.Contains(env, "PATH") {
+		env["PATH"] = env["PATH"] + string(os.PathListSeparator) + os.Getenv("PATH")
+	}
+
 	return env
 }
 
