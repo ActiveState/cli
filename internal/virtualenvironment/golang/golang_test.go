@@ -22,6 +22,12 @@ import (
 func setup(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	os.Chdir(filepath.Join(root, "test"))
+
+	datadir := config.GetDataDir()
+	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	os.RemoveAll(filepath.Join(datadir, "packages"))
+	os.RemoveAll(filepath.Join(datadir, "languages"))
+	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 }
 
 func TestLanguage(t *testing.T) {
@@ -53,6 +59,8 @@ func TestLanguageMeta(t *testing.T) {
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
+	setup(t)
+
 	venv := &VirtualEnvironment{}
 
 	datadir := filepath.Join(os.TempDir(), "as-state-test")
@@ -73,7 +81,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	assert.NotNil(t, language, "Should retrieve language from dist")
 
-	artf := dist.Artifacts[dist.Languages[0].Hash][0]
+	artf := dist.Artifacts[language.Hash][0]
 	fail = venv.LoadArtifact(artf)
 	if runtime.GOOS != "windows" {
 		assert.NoError(t, fail.ToError(), "Loads artifact without errors")

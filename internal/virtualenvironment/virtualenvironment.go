@@ -77,6 +77,9 @@ func Activate() *failures.Failure {
 		}
 	}
 
+	datadir := config.GetDataDir()
+	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner, project.Name))
+
 	dist, fail := distribution.Obtain()
 	if fail != nil {
 		return fail
@@ -130,6 +133,10 @@ func GetEnv() map[string]string {
 		}
 	}
 
+	if funk.Contains(env, "PATH") {
+		env["PATH"] = env["PATH"] + string(os.PathListSeparator) + os.Getenv("PATH")
+	}
+
 	return env
 }
 
@@ -162,7 +169,7 @@ func GetVenv(artf *artifact.Artifact) (VirtualEnvironmenter, *failures.Failure) 
 	var venv VirtualEnvironmenter
 
 	switch strings.ToLower(artf.Meta.Name) {
-	case "python":
+	case "python2", "python3":
 		venv = &python.VirtualEnvironment{}
 		fail := ActivateLanguageVenv(artf, venv)
 
@@ -211,8 +218,6 @@ func createLanguageFolderStructure(artf *artifact.Artifact) *failures.Failure {
 	if fail := fileutils.Mkdir(datadir, "packages"); fail != nil {
 		return fail
 	}
-
-	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner, project.Name))
 
 	fileutils.Mkdir(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
 
