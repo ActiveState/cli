@@ -104,8 +104,6 @@ func TestRunHook(t *testing.T) {
 	// Creating a file apparently leaves a hanging file handle
 	// so explicitly get file and close it.  Didn't notice until
 	// windows ran tests.
-	file, _ := os.Create(touch)
-	file.Close()
 	cmd := "touch "
 	if runtime.GOOS == "windows" {
 		cmd = "cmd /c echo . > "

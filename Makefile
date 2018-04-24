@@ -1,13 +1,7 @@
 # Go parameters
 GOCMD=go
 
-ifeq ($(OS),Windows_NT)
-    ISWINDOWS=true
-else
-    ISWINDOWS=false
-endif
-
-ifneq ($(ISWINDOWS),true)
+ifneq ($(OS),Windows_NT)
 	ifndef $(shell command -v go 2> /dev/null) 
 		GOCMD=${GOROOT}/bin/go
 	endif
@@ -23,12 +17,12 @@ GOGET=$(GOCMD) get
 
 PACKRCMD=packr
 
-ifeq ($(ISWINDOWS),false)
+ifneq ($(OS),Windows_NT)
 ifndef $(shell command -v packr 2> /dev/null)
 	PACKRCMD=${GOPATH}/bin/packr
 endif
 else
-	PACKRCMD=${GOPATH}\bin\packr
+	PACKRCMD=${GOPATH}\\bin\\packr
 endif
 
 STATE=state
@@ -60,7 +54,6 @@ deploy-updates:
 deploy-artifacts:
 		$(GOCMD) run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
 test: 
-		$(GOCMD) run scripts/artifact-generator/main.go 
 		$(GOCMD) run scripts/constants-generator/main.go 
 		$(GOTEST) ./...
 clean: 
