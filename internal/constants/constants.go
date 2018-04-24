@@ -44,3 +44,6 @@ const UpdateStorageDir = "update/"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
+
+// AnalyticsTrackingID is our Google Analytics tracking ID
+const AnalyticsTrackingID = "UA-118120158-1"

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/spf13/cobra"
@@ -78,6 +79,7 @@ func (c *Command) Execute() error {
 
 // runner wraps the Run command
 func (c *Command) runner(cmd *cobra.Command, args []string) {
+	analytics.Event(analytics.CatRunCmd, c.Name)
 	for idx, arg := range c.Arguments {
 		if len(args) > idx {
 			(*arg.Variable) = args[idx]
