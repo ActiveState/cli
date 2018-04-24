@@ -141,6 +141,6 @@ func (v *VirtualEnvironment) Env() map[string]string {
 		"GOPATH": v.DataDir(),
 		"GOBIN":  filepath.Join(v.DataDir(), "bin"),
 		"GOROOT": filepath.Join(v.DataDir(), "language"),
-		"PATH":   filepath.Join(v.DataDir(), "language", "bin") + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"PATH":   filepath.Join(v.DataDir(), "language", "bin"),
 	}
 }

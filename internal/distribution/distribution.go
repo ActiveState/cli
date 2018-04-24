@@ -203,9 +203,17 @@ func InstallArtifact(distArtf Artifact, source string, entry *download.Entry) *f
 		return failures.FailArchiving.Wrap(err)
 	}
 
-	_, fail = artifact.Get(distArtf.Hash)
+	artf, fail := artifact.Get(distArtf.Hash)
 	if fail != nil {
 		return fail
+	}
+
+	if artf.Meta.Relocate != "" {
+		langPath := path
+		if distArtf.Parent != "" {
+			langPath = artifact.GetPath(distArtf.Parent)
+		}
+		fileutils.ReplaceAllInDirectory(path, artf.Meta.Relocate, langPath)
 	}
 
 	return nil

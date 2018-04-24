@@ -3,6 +3,7 @@ package python
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,11 +17,25 @@ import (
 func setup(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	os.Chdir(filepath.Join(root, "test"))
+
+	datadir := config.GetDataDir()
+	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	os.RemoveAll(filepath.Join(datadir, "packages"))
+	os.RemoveAll(filepath.Join(datadir, "languages"))
+	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 }
 
 func TestLanguage(t *testing.T) {
 	venv := &VirtualEnvironment{}
-	assert.Equal(t, "python", venv.Language(), "Should return python")
+	assert.Equal(t, "python3", venv.Language(), "Should return python")
+
+	venv.SetArtifact(&artifact.Artifact{
+		Meta: &artifact.Meta{
+			Name: "python2",
+		},
+		Path: "test",
+	})
+	assert.Equal(t, "python2", venv.Language(), "Should return python")
 }
 
 func TestDataDir(t *testing.T) {
@@ -47,6 +62,8 @@ func TestLanguageMeta(t *testing.T) {
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
+	setup(t)
+
 	venv := &VirtualEnvironment{}
 
 	datadir := filepath.Join(os.TempDir(), "as-state-test")
@@ -65,14 +82,25 @@ func TestLoadPackageFromPath(t *testing.T) {
 		}
 	}
 
-	assert.Nil(t, language, "Language should be nil as we don't have python artifacts yet")
+	artf := dist.Artifacts[language.Hash][0]
+	fail = venv.LoadArtifact(artf)
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, fail.ToError(), "Loads artifact without errors")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// artifacts should not load correctly.
+		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+	}
 
-	// artf := dist.Artifacts[dist.Languages[0].Hash][0]
-	// fail = venv.LoadArtifact(artf)
-	// assert.NoError(t, fail.ToError(), "Loads artifact without errors")
-
-	// // Todo: Test with datadir as source, not the archived version
-	// assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
+	// Todo: Test with datadir as source, not the archived version
+	if runtime.GOOS != "windows" {
+		assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// the symlinked file should not exist.
+		_, err := os.Stat(filepath.Join(datadir, "lib", artf.Hash, "artifact.json"))
+		assert.Error(t, err, "Symlinking requires admin privilages for now")
+	}
 }
 
 func TestActivate(t *testing.T) {
