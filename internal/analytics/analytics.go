@@ -19,7 +19,6 @@ func init() {
 }
 
 func setup() {
-	logging.SetLevel(logging.DEBUG)
 	id, err := machineid.ID()
 	if err != nil {
 		logging.Error("Cannot retrieve machine ID: %s", err.Error())
