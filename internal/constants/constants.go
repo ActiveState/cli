@@ -1,7 +1,7 @@
 package constants
 
 // VersionNumber holds the current version of our cli
-const VersionNumber = "0.1.0"
+const VersionNumber = "0.1.1"
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -47,3 +47,12 @@ const DefaultNamespaceDomain = "github.com"
 
 // AnalyticsTrackingID is our Google Analytics tracking ID
 const AnalyticsTrackingID = "UA-118120158-1"
+
+// APIHost is the host that we're talking against for our API
+const APIHost = "staging.activestate.com"
+
+// APISchema is the schema used by our API
+const APISchema = "https"
+
+// APIPath is the path for our API endpoint
+const APIPath = "/api/v1"
