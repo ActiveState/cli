@@ -44,3 +44,9 @@ const UpdateStorageDir = "update/"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
+
+const ApiHost = "staging.activestate.com"
+
+const ApiSchema = "https"
+
+const ApiPath = "/api/v1"
