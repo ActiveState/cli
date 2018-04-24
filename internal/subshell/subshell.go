@@ -100,8 +100,8 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func getRcFile(v SubShell) (*os.File, error) {
-	box := packr.NewBox("../../assets")
-	tpl := box.String(filepath.Join("shells", v.RcFileTemplate()))
+	box := packr.NewBox("../../assets/shells")
+	tpl := box.String(v.RcFileTemplate())
 
 	rcData := map[string]interface{}{
 		"Project": projectfile.Get(),
