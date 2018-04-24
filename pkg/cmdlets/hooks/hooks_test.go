@@ -104,7 +104,7 @@ func TestRunHook(t *testing.T) {
 
 	cmd := "touch "
 	if runtime.GOOS == "windows" {
-		cmd = "cmd /c echo . > " + cmd
+		cmd = "cmd /c echo . > "
 	}
 
 	dat := `

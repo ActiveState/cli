@@ -96,10 +96,12 @@ func TestLoadPackageFromPath(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
 	} else {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// the symlinked file should not exist.
+		// Symlinks may or may not work on Windows depending on the env.
+		// Don't fail if they don't work and don't fail if they do.
 		_, err := os.Stat(filepath.Join(datadir, "lib", artf.Hash, "artifact.json"))
-		assert.Error(t, err, "Symlinking requires admin privilages for now")
+		if err == nil {
+			assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
+		}
 	}
 }
 

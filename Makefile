@@ -1,8 +1,12 @@
 # Go parameters
 GOCMD=go
 
-ifndef $(shell command -v go 2> /dev/null)
-    GOCMD=${GOROOT}/bin/go
+ifneq ($(OS),Windows_NT)
+	ifndef $(shell command -v go 2> /dev/null) 
+		GOCMD=${GOROOT}/bin/go
+	endif
+else
+	GOCMD=${GOROOT}bin\\\go
 endif
 
 GOBUILD=$(GOCMD) build
@@ -13,8 +17,12 @@ GOGET=$(GOCMD) get
 
 PACKRCMD=packr
 
+ifneq ($(OS),Windows_NT)
 ifndef $(shell command -v packr 2> /dev/null)
-    PACKRCMD=${GOPATH}/bin/packr
+	PACKRCMD=${GOPATH}/bin/packr
+endif
+else
+	PACKRCMD=${GOPATH}bin\\\packr
 endif
 
 BINARY_NAME=state
@@ -36,7 +44,7 @@ build:
 		$(GOCMD) run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
 install: 
 		$(PACKRCMD)
-		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
+		cd $(STATE) && $(GOINSTALL) $(STATE).go
 generate-artifacts:
 		$(GOCMD) run scripts/artifact-generator/main.go 
 deploy-updates:
