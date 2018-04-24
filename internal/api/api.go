@@ -7,9 +7,10 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+// Client contains the active API Client connection
 var Client *client.APIClient
 
 func init() {
-	transport := httptransport.New(constants.ApiHost, constants.ApiPath, []string{constants.ApiSchema})
+	transport := httptransport.New(constants.APIHost, constants.APIPath, []string{constants.APISchema})
 	Client = client.New(transport, strfmt.Default)
 }

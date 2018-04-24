@@ -45,8 +45,11 @@ const UpdateStorageDir = "update/"
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 
-const ApiHost = "staging.activestate.com"
+// APIHost is the host that we're talking against for our API
+const APIHost = "staging.activestate.com"
 
-const ApiSchema = "https"
+// APISchema is the schema used by our API
+const APISchema = "https"
 
-const ApiPath = "/api/v1"
+// APIPath is the path for our API endpoint
+const APIPath = "/api/v1"
