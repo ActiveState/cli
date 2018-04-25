@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/ActiveState/go-ogle-analytics"
+  packages = ["."]
+  revision = "9b3f1490152744b9bdff22102a3eaba76347774d"
+
+[[projects]]
+  branch = "master"
   name = "github.com/ActiveState/state-required"
   packages = ["require"]
   revision = "a0329b32eba8111961b25c274deed558a6554f38"
@@ -14,6 +20,18 @@
   revision = "bb90a27afdbe969059eb5e58c7d042630eb0756e"
 
 [[projects]]
+  name = "github.com/PuerkitoBio/purell"
+  packages = ["."]
+  revision = "0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/PuerkitoBio/urlesc"
+  packages = ["."]
+  revision = "de5bf2ad457846296e2031421a34e2568e304e35"
+
+[[projects]]
   branch = "master"
   name = "github.com/alecthomas/template"
   packages = [
@@ -21,6 +39,12 @@
     "parse"
   ]
   revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
+
+[[projects]]
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -74,6 +98,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/denisbrodbeck/machineid"
+  packages = ["."]
+  revision = "2777226d0340d8da18b49993ce2b4aeb9c1c6929"
+  version = "v0.8.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/dsnet/compress"
   packages = [
@@ -103,6 +133,75 @@
   packages = ["."]
   revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
   version = "v1.32.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/analysis"
+  packages = ["."]
+  revision = "863ac7f90e00e88e507095639a8457bbbf3c2ec9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/errors"
+  packages = ["."]
+  revision = "7bcb96a367bac6b76e6e42fa84155bb5581dcff8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/jsonpointer"
+  packages = ["."]
+  revision = "3a0015ad55fa9873f41605d3e8f28cd279c32ab2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/jsonreference"
+  packages = ["."]
+  revision = "3fb327e6747da3043567ee86abd02bb6376b6be2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/loads"
+  packages = ["."]
+  revision = "2a2b323bab96e6b1fdee110e57d959322446e9c9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/runtime"
+  packages = [
+    ".",
+    "client",
+    "logger",
+    "middleware",
+    "middleware/denco",
+    "middleware/header",
+    "middleware/untyped",
+    "security"
+  ]
+  revision = "f12926f16ac2fb1da15316fd0aa84ce0d64550c3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/spec"
+  packages = ["."]
+  revision = "bcff419492eeeb01f76e77d2ebc714dc97b607f5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/strfmt"
+  packages = ["."]
+  revision = "481808443b00a14745fada967cb5eeff0f9b1df2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/swag"
+  packages = ["."]
+  revision = "811b1089cde9dad18d4d0c2d09fbdbf28dbd27a5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/go-openapi/validate"
+  packages = ["."]
+  revision = "f8f9c5961cd5fd7c22af8d93d3190b640b4c72af"
 
 [[projects]]
   name = "github.com/gobuffalo/packr"
@@ -155,6 +254,16 @@
   packages = ["."]
   revision = "d419a98cdbed11a922bf76f257b7c4be79b50e73"
   version = "v1.7.4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    "buffer",
+    "jlexer",
+    "jwriter"
+  ]
+  revision = "8b799c424f57fa123fc63a99d6383bc6e4c02578"
 
 [[projects]]
   branch = "master"
@@ -325,10 +434,21 @@
 
 [[projects]]
   branch = "master"
+  name = "golang.org/x/net"
+  packages = [
+    "context",
+    "context/ctxhttp",
+    "idna"
+  ]
+  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
-    "windows"
+    "windows",
+    "windows/registry"
   ]
   revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
@@ -336,12 +456,21 @@
   branch = "master"
   name = "golang.org/x/text"
   packages = [
+    "collate",
+    "collate/build",
+    "internal/colltab",
     "internal/gen",
+    "internal/tag",
     "internal/triegen",
     "internal/ucd",
+    "language",
+    "secure/bidirule",
     "transform",
+    "unicode/bidi",
     "unicode/cldr",
-    "unicode/norm"
+    "unicode/norm",
+    "unicode/rangetable",
+    "width"
   ]
   revision = "4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1"
 
@@ -366,6 +495,15 @@
 
 [[projects]]
   branch = "v2"
+  name = "gopkg.in/mgo.v2"
+  packages = [
+    "bson",
+    "internal/json"
+  ]
+  revision = "3f83fa5005286a7fe593b055f0d7771a7dce4655"
+
+[[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
@@ -373,6 +511,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3d9c433c5fcb6c4e4ae6e866b1523220d72eb12d555f25885ee880a0f2fde0d5"
+  inputs-digest = "e56fcbcaa9fa38f483bd47d50c8b4c50c7ebcd7ab157c31fa582950a9ce2585b"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -69,7 +71,10 @@ func distro(OS string, arch string, isForTests bool) {
 
 	os.MkdirAll(targetDistPath, 0777)
 
+	distro = []*Distribution{}
 	distro = run("go", OS, distro, isForTests)
+	distro = run("python2", OS, distro, isForTests)
+	distro = run("python3", OS, distro, isForTests)
 
 	distrob, err := json.Marshal(distro)
 	if err != nil {
@@ -100,18 +105,25 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 	os.MkdirAll(targetArtifactPath, 0777)
 
 	var packages []*Package
+	var relocate string
 	switch language {
 	case "go":
 		packages = getPackagePathsGo(sourceArtifactPath)
+	case "python3":
+		packages = getPackagePaths(sourceArtifactPath)
+		relocate = getRelocatePython(sourceDistPath, "3.5")
+	case "python2":
+		packages = getPackagePaths(sourceArtifactPath)
+		relocate = getRelocatePython(sourceDistPath, "2.7")
 	default:
 		log.Fatalf("Unsupported language: %s", language)
 	}
 
-	languageArtifact := createArtifact(language, sourceDistPath, "language", targetArtifactPath, targetArtifactPathRelative)
+	languageArtifact := createArtifact(language, sourceDistPath, "language", targetArtifactPath, targetArtifactPathRelative, relocate)
 	distro = append(distro, languageArtifact)
 
 	for _, pkg := range packages {
-		packageArtifact := createArtifact(pkg.Name, pkg.AbsolutePath, "package", targetArtifactPath, targetArtifactPathRelative)
+		packageArtifact := createArtifact(pkg.Name, pkg.AbsolutePath, "package", targetArtifactPath, targetArtifactPathRelative, relocate)
 		packageArtifact.Parent = languageArtifact.Hash
 		distro = append(distro, packageArtifact)
 	}
@@ -119,14 +131,14 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 	return distro
 }
 
-func createArtifact(name string, srcPath string, kind string, targetPath string, downloadPath string) *Distribution {
+func createArtifact(name string, srcPath string, kind string, targetPath string, downloadPath string, relocate string) *Distribution {
 	fmt.Printf("Creating artifact for %s: %s (%s)\n", kind, name, srcPath)
 
 	artf := &artifact.Meta{
 		Name:     name,
 		Type:     kind,
 		Version:  "0.0.1", // versions arent supported by this implementation
-		Relocate: "",
+		Relocate: relocate,
 		Binaries: []string{},
 	}
 	artfb, err := json.Marshal(artf)
@@ -170,6 +182,22 @@ func createArtifact(name string, srcPath string, kind string, targetPath string,
 		Hash:     hash,
 		Download: constants.APIArtifactURL + downloadPath + "/" + hash + ".tar.gz",
 	}
+}
+
+func getPackagePaths(sourcePath string) []*Package {
+	files, err := ioutil.ReadDir(sourcePath)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	resultPaths := []*Package{}
+	for _, f := range files {
+		filename := f.Name()
+		packageName := strings.TrimSuffix(filename, filepath.Ext(filename))
+		resultPaths = append(resultPaths, &Package{packageName, filepath.Join(sourcePath, filename)})
+	}
+
+	return resultPaths
 }
 
 func getPackagePathsGo(sourcePath string) []*Package {
@@ -218,4 +246,35 @@ func getPackagePathsGo(sourcePath string) []*Package {
 	}
 
 	return resultPaths
+}
+
+func getRelocatePython(sourceDistPath string, version string) string {
+	var path = filepath.Join(sourceDistPath, "lib", "python"+version, "activestate.py")
+	if !fileutils.FileExists(path) {
+		path = filepath.Join(sourceDistPath, "Lib", "activestate.py") // Python 2.7 on Windows
+	}
+	if !fileutils.FileExists(path) {
+		return ""
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	var relocate string
+	var scanner = bufio.NewScanner(file)
+	var nextLine = false
+	for scanner.Scan() {
+		var line = scanner.Text()
+		if nextLine {
+			relocate = line[strings.Index(line, "'")+1:]
+			relocate = relocate[0:strings.Index(relocate, "'")]
+			break
+		}
+		nextLine = strings.Contains(line, "# Prefix to which extensions were built")
+	}
+
+	return relocate
 }

@@ -18,10 +18,6 @@ var configDir *configdir.Config
 var exit = os.Exit
 
 func init() {
-	if flag.Lookup("test.v") != nil {
-		configNamespace = C.ConfigNamespace + "-test"
-	}
-
 	ensureConfigExists()
 	readInConfig()
 }
@@ -34,8 +30,13 @@ func GetDataDir() string {
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs = configdir.New(configNamespace, "cli")
-	configDirs.LocalPath, _ = filepath.Abs(".")
-	configDir = configDirs.QueryFolders(configdir.Global)[0]
+
+	if flag.Lookup("test.v") != nil {
+		configDirs.LocalPath, _ = filepath.Abs("./testdata/generated/config")
+		configDir = configDirs.QueryFolders(configdir.Local)[0]
+	} else {
+		configDir = configDirs.QueryFolders(configdir.Global)[0]
+	}
 
 	if !configDir.Exists(C.ConfigFileName) {
 		configFile, err := configDir.Create(C.ConfigFileName)

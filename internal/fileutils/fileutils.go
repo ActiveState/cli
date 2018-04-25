@@ -77,6 +77,22 @@ func ReplaceAll(filename, find, replace string) error {
 	return os.Rename(tmpfile.Name(), filename)
 }
 
+// ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
+func ReplaceAllInDirectory(path string, find, replace string) error {
+	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		if f.IsDir() {
+			return nil
+		}
+		return ReplaceAll(path, find, replace)
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // FileExists checks if the given file (not folder) exists
 func FileExists(path string) bool {
 	fi, err := os.Stat(path)
@@ -115,6 +131,34 @@ func Hash(path string) (string, *failures.Failure) {
 		return "", failures.FailIO.New(fmt.Sprintf("Cannot read file: %s, %s", path, err))
 	}
 	hasher.Write(b)
+	return hex.EncodeToString(hasher.Sum(nil)), nil
+}
+
+// HashDirectory will sha256 hash the given directory
+func HashDirectory(path string) (string, *failures.Failure) {
+	hasher := sha256.New()
+	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if f.IsDir() {
+			return nil
+		}
+
+		b, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		hasher.Write(b)
+
+		return nil
+	})
+
+	if err != nil {
+		return "", failures.FailIO.New(fmt.Sprintf("Cannot hash directory: %s, %s", path, err))
+	}
+
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
