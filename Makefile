@@ -1,8 +1,12 @@
 # Go parameters
 GOCMD=go
 
-ifndef $(shell command -v go 2> /dev/null)
-    GOCMD=${GOROOT}/bin/go
+ifneq ($(OS),Windows_NT)
+	ifndef $(shell command -v go 2> /dev/null) 
+		GOCMD=${GOROOT}/bin/go
+	endif
+else
+	GOCMD=${GOROOT}\bin\\go
 endif
 
 GOBUILD=$(GOCMD) build
@@ -13,14 +17,19 @@ GOGET=$(GOCMD) get
 
 PACKRCMD=packr
 
+ifneq ($(OS),Windows_NT)
 ifndef $(shell command -v packr 2> /dev/null)
-    PACKRCMD=${GOPATH}/bin/packr
+	PACKRCMD=${GOPATH}/bin/packr
+endif
+else
+	PACKRCMD=${GOPATH}\\bin\\packr
 endif
 
-BINARY_NAME=state
-BINARY_UNIX=$(BINARY_NAME)_unix
-
-VERSION=`grep -m1 "^const Version" internal/constants/generated.go | cut -d ' ' -f4 | tr -d '"'`
+STATE=state
+BINARY_NAME=$(STATE)
+ifeq ($(OS),Windows_NT)
+    BINARY_NAME=$(STATE).exe
+endif
 
 .PHONY: build test install deploy-updates deploy-artifacts generate-artifacts
 
@@ -31,9 +40,9 @@ init:
 build: 
 		$(PACKRCMD)
 		$(GOCMD) run scripts/constants-generator/main.go 
-		cd $(BINARY_NAME) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
+		cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
 		mkdir -p public/update
-		$(GOCMD) run scripts/update-generator/main.go -o public/update build/state $(VERSION) 
+		$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
 install: 
 		$(PACKRCMD)
 		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
@@ -51,5 +60,5 @@ clean:
 		$(GOCLEAN)
 		rm -Rf build
 run:
-		cd $(BINARY_NAME) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(BINARY_NAME).go
+		cd $(STATE) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(STATE).go
 		build/$(BINARY_NAME) --help

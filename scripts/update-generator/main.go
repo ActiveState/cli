@@ -143,7 +143,7 @@ func run() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 
 	flag.Parse()
-	if flag.NArg() < 2 {
+	if flag.NArg() < 1 {
 		flag.Usage()
 		printUsage()
 		os.Exit(0)
@@ -155,7 +155,11 @@ func run() {
 		appPath = flag.Arg(0)
 	}
 	if version == "" {
-		version = flag.Arg(1)
+		if flag.Arg(1) == "" {
+			version = constants.Version
+		} else {
+			version = flag.Arg(1)
+		}
 	}
 	if genDir == "" {
 		genDir = *outputDirFlag

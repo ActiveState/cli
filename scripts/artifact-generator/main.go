@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -63,9 +64,9 @@ func distro(OS string, arch string, isForTests bool) {
 
 	var targetDistPath string
 	if isForTests {
-		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "test", "distro", platform)
+		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "test", "distro", platform)
 	} else {
-		targetDistPath = filepath.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
+		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
 	}
 
 	os.MkdirAll(targetDistPath, 0777)
@@ -80,8 +81,8 @@ func distro(OS string, arch string, isForTests bool) {
 		log.Fatalf("JSON encoding failed: %s", err.Error())
 	}
 
-	fmt.Printf("Saving distro to %s", filepath.Join(targetDistPath, "distribution.json"))
-	ioutil.WriteFile(filepath.Join(targetDistPath, "distribution.json"), distrob, 0666)
+	fmt.Printf("Saving distro to %s", path.Join(targetDistPath, "distribution.json"))
+	ioutil.WriteFile(path.Join(targetDistPath, "distribution.json"), distrob, 0666)
 }
 
 func run(language string, OS string, distro []*Distribution, isForTests bool) []*Distribution {
@@ -90,15 +91,15 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 		subpath = "test"
 	}
 
-	sourceDistPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
+	sourceDistPath := path.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
 		"source", "vendor", subpath, language, "distribution", OS)
-	sourceArtifactPath := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
+	sourceArtifactPath := path.Join(environment.GetRootPathUnsafe(), "scripts", "artifact-generator",
 		"source", "vendor", subpath, language, "packages")
 
-	targetArtifactPathRelative := filepath.Join("distro", "artifacts")
-	targetArtifactPath := filepath.Join(environment.GetRootPathUnsafe(), "public", targetArtifactPathRelative)
+	targetArtifactPathRelative := path.Join("distro", "artifacts")
+	targetArtifactPath := path.Join(environment.GetRootPathUnsafe(), "public", targetArtifactPathRelative)
 	if isForTests {
-		targetArtifactPath = filepath.Join(environment.GetRootPathUnsafe(), "test", targetArtifactPathRelative)
+		targetArtifactPath = path.Join(environment.GetRootPathUnsafe(), "test", targetArtifactPathRelative)
 	}
 
 	os.MkdirAll(targetArtifactPath, 0777)
@@ -130,8 +131,8 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 	return distro
 }
 
-func createArtifact(name string, path string, kind string, targetPath string, downloadPath string, relocate string) *Distribution {
-	fmt.Printf("Creating artifact for %s: %s (%s)\n", kind, name, path)
+func createArtifact(name string, srcPath string, kind string, targetPath string, downloadPath string, relocate string) *Distribution {
+	fmt.Printf("Creating artifact for %s: %s (%s)\n", kind, name, srcPath)
 
 	artf := &artifact.Meta{
 		Name:     name,
@@ -144,20 +145,20 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 	if err != nil {
 		log.Fatalf("JSON encoding failed: %s", err.Error())
 	}
-	artifactSource := filepath.Join(os.TempDir(), constants.ArtifactFile)
+	artifactSource := path.Join(os.TempDir(), constants.ArtifactFile)
 	ioutil.WriteFile(artifactSource, artfb, os.ModePerm)
 
 	// Add source files
-	files, err := ioutil.ReadDir(path)
+	files, err := ioutil.ReadDir(srcPath)
 	if err != nil {
 		log.Fatalf("Cannot walk source dir: %s", err.Error())
 	}
 	source := []string{artifactSource}
 	for _, file := range files {
-		source = append(source, filepath.Join(path, file.Name()))
+		source = append(source, path.Join(srcPath, file.Name()))
 	}
 
-	target := filepath.Join(targetPath, "artifact.tar.gz")
+	target := path.Join(targetPath, "artifact.tar.gz")
 
 	fmt.Printf(" \\- Writing interim file: %s\n", target)
 	err = archiver.TarGz.Make(target, source)
@@ -169,7 +170,7 @@ func createArtifact(name string, path string, kind string, targetPath string, do
 	if fail != nil {
 		log.Fatal(fail.Error())
 	}
-	realTarget := filepath.Join(targetPath, hash+".tar.gz")
+	realTarget := path.Join(targetPath, hash+".tar.gz")
 
 	fmt.Printf("  - Moving file to: %s\n", realTarget)
 	err = os.Rename(target, realTarget)
@@ -203,7 +204,7 @@ func getPackagePathsGo(sourcePath string) []*Package {
 	gobin := "go"
 	goroot := os.Getenv("GOROOT")
 	if goroot != "" {
-		gobin = filepath.Join(goroot, "bin", "go")
+		gobin = path.Join(goroot, "bin", "go")
 	}
 	cmd := exec.Command(gobin, "list", "-e", "all")
 	cmd.Env = []string{"GOPATH=" + sourcePath}
@@ -220,18 +221,18 @@ func getPackagePathsGo(sourcePath string) []*Package {
 
 	root := environment.GetRootPathUnsafe()
 
-	for _, path := range relativePaths {
-		if path == "" || strings.Contains(path, "vendor") || strings.Contains(path, root) || strings.Contains(path, ".git") {
+	for _, destPath := range relativePaths {
+		if destPath == "" || strings.Contains(destPath, "vendor") || strings.Contains(destPath, root) || strings.Contains(destPath, ".git") {
 			continue
 		}
 
-		if _, err := os.Stat(filepath.Join(sourcePath, "src", path)); os.IsNotExist(err) {
+		if _, err := os.Stat(path.Join(sourcePath, "src", destPath)); os.IsNotExist(err) {
 			continue
 		}
 
 		var exists bool
 		for _, p := range resultPaths {
-			if len(path) >= len(p.Name) && path[0:len(p.Name)] == p.Name {
+			if len(destPath) >= len(p.Name) && destPath[0:len(p.Name)] == p.Name {
 				exists = true
 				break
 			}
@@ -241,7 +242,7 @@ func getPackagePathsGo(sourcePath string) []*Package {
 			continue
 		}
 
-		resultPaths = append(resultPaths, &Package{path, filepath.Join(sourcePath, "src", path)})
+		resultPaths = append(resultPaths, &Package{destPath, path.Join(sourcePath, "src", destPath)})
 	}
 
 	return resultPaths
