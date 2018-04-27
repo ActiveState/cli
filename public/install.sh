@@ -1,5 +1,7 @@
 #!/bin/sh
 # Copyright 2018 ActiveState Software Inc. All rights reserved.
+#
+# Usage: ./install.sh [-b branch]
 
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/prod/"
