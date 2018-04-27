@@ -1,5 +1,7 @@
 #!/bin/sh
 # Copyright 2018 ActiveState Software Inc. All rights reserved.
+#
+# Usage: ./install.sh [-b branch]
 
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/prod/"
@@ -19,6 +21,15 @@ warn () {
 error () {
   echo "$(tput setf 1)${1}$(tput sgr0)"
 }
+
+# Process command line arguments.
+while getopts "b:" opt; do
+  case $opt in
+  b)
+    STATEURL=`echo $STATEURL | sed -e "s/prod/$OPTARG/;"`
+    ;;
+  esac
+done
 
 # Determine the current OS.
 case `uname -s` in
