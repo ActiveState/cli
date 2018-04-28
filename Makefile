@@ -6,7 +6,7 @@ ifneq ($(OS),Windows_NT)
 		GOCMD=${GOROOT}/bin/go
 	endif
 else
-	GOCMD=${GOROOT}\bin\\go
+	GOCMD=${GOROOT}bin\\\go
 endif
 
 GOBUILD=$(GOCMD) build
@@ -22,7 +22,7 @@ ifndef $(shell command -v packr 2> /dev/null)
 	PACKRCMD=${GOPATH}/bin/packr
 endif
 else
-	PACKRCMD=${GOPATH}\\bin\\packr
+	PACKRCMD=${GOPATH}bin\\\packr
 endif
 
 STATE=state
@@ -45,7 +45,7 @@ build:
 		$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
 install: 
 		$(PACKRCMD)
-		cd $(BINARY_NAME) && $(GOINSTALL) $(BINARY_NAME).go
+		cd $(STATE) && $(GOINSTALL) $(STATE).go
 generate-artifacts:
 		$(GOCMD) run scripts/artifact-generator/main.go 
 deploy-updates:
