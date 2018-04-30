@@ -208,3 +208,57 @@ err_no_scm_for_path:
   other: No source code control could be detected on {{.V0}}
 panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
+auth_description:
+  other: Authenticate against the ActiveState platform
+arg_state_auth_token:
+  other: TOKEN
+arg_state_auth_token_description:
+  other: The API Token generated via your control panel
+username_prompt:
+  other: "Enter your username:"
+password_prompt:
+  other: "Enter your password:"
+username_prompt_signup:
+  other: "Choose a username:"
+password_prompt_signup:
+  other: "Choose a password:"
+password_prompt_confirm:
+  other: "Enter your password again:"
+name_prompt:
+  other: "Enter your name:"
+email_prompt:
+  other: "Enter your email:"
+totp_prompt:
+  other: "Enter your two-factor authentication code:"
+survey_error_template:
+  other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
+err_value_required: 
+  other: value required
+err_prompt_unkown:
+  other: An unknown error occurred whilst processing your response, check the error log for more information
+prompt_login_to_signup:
+  other: No account was found for that username, would you like to register it?
+err_auth_failed:
+  other: Authentication failed, invalid password
+err_auth_failed_unknown_cause:
+  other: Authentication failed due to an unknown cause, check the error log for more information
+confirm_password_account_creation:
+  other: Please enter your password again to create your account.
+err_password_confirmation_failed:
+  other: Your password confirmation does not match
+err_username_taken:
+  other: Username is already taken
+signup_description:
+  other: Signup a new account
+err_auth_signup_email_exists:
+  other: An account with that email address already exists
+login_success_welcome_back:
+  other: You have succesfully authenticated, hello {{.Name}}!
+logged_in_as:
+  other: You are logged in as {{.Name}}
+logout_description:
+  other: Logout
+logged_out:
+  other: You have been logged out
+signup_success:
+  other: Your account has been registered and a confirmation email has been sent to {{.Email}}, your account will have limited permissions until you confirm it.

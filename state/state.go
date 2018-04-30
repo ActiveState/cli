@@ -10,12 +10,15 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 
 	// commands
 	"github.com/ActiveState/cli/state/activate"
+	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/selfupdate"
 
 	_ "github.com/ActiveState/state-required/require"
@@ -66,6 +69,8 @@ func init() {
 	Command.Append(activate.Command)
 	Command.Append(hook.Command)
 	Command.Append(selfupdate.Command)
+	Command.Append(auth.Command)
+	Command.Append(projects.Command)
 }
 
 func main() {

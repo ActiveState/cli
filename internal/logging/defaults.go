@@ -3,6 +3,8 @@
 package logging
 
 import (
+	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -21,6 +23,11 @@ func (l *fileHandler) SetFormatter(f Formatter) {
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	datadir := config.GetDataDir()
 	filename := filepath.Join(datadir, "log.txt")
+
+	// Also print to stdout if this is a test
+	if flag.Lookup("test.v") != nil {
+		fmt.Println(l.formatter.Format(ctx, message, args...))
+	}
 
 	if l.file == nil {
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)

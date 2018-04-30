@@ -91,6 +91,13 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 		logging.Debug("Could not get caller for logging message")
 	}
 
+	if strings.HasSuffix(file, "failures.go") {
+		_, file, line, ok = runtime.Caller(2)
+		if !ok {
+			logging.Debug("Could not get caller for logging message")
+		}
+	}
+
 	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
 	return &Failure{locale.T(message, input), f, file, line}
 }
