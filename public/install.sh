@@ -66,9 +66,9 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 if [ ! -f $TMPDIR/$statepkg -a ! -f $TMPDIR/$stateexe ]; then
   info "Determining latest version..."
-  if [ ! -z "`which wget`" ]; then
+  if [ ! -z "`which wget 2>/dev/null`" ]; then
     fetch="wget -nv -O"
-  elif [ ! -z "`which curl`" ]; then
+  elif [ ! -z "`which curl 2>/dev/null`" ]; then
     fetch="curl -vsS -o"
   else
     error "Either wget or curl is required to download files"
