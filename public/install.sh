@@ -77,9 +77,9 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 if [ ! -f $TMPDIR/$statepkg -a ! -f $TMPDIR/$stateexe ]; then
   info "Determining latest version..."
-  if [ ! -z "`which wget`" ]; then
+  if [ ! -z "`which wget 2>/dev/null`" ]; then
     fetch="wget -nv -O"
-  elif [ ! -z "`which curl`" ]; then
+  elif [ ! -z "`which curl 2>/dev/null`" ]; then
     fetch="curl -vsS -o"
   else
     error "Either wget or curl is required to download files"
@@ -102,7 +102,7 @@ fi
 if [ -f $TMPDIR/$statepkg ]; then
   # Verify checksum.
   info "Verifying checksum..."
-  shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
+  shasum=`$fetch - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
   if [ "`$sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $shasum"
