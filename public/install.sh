@@ -91,7 +91,7 @@ fi
 if [ -f $TMPDIR/$statepkg ]; then
   # Verify checksum.
   info "Verifying checksum..."
-  shasum=`wget -q -O - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
+  shasum=`$fetch - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
   if [ "`$sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $shasum"
