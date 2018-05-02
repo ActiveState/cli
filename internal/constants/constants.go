@@ -54,6 +54,9 @@ const APIHost = "platform.activestate.com"
 // APIHostStaging is the host that we're talking against for our API when not on production
 const APIHostStaging = "staging.activestate.com"
 
+// APIHostTesting is the host that we're talking against for our API when not on production
+const APIHostTesting = "testing.tld"
+
 // APISchema is the schema used by our API
 const APISchema = "https"
 

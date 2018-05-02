@@ -43,16 +43,12 @@ var Args struct {
 	Token string
 }
 
-// Flags for hook command
-var flags struct {
-	Filter string
-}
-
 func init() {
 	Command.Append(SignupCommand)
 	Command.Append(LogoutCommand)
 }
 
+// Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
 	if api.Auth != nil {
 		renewOK, err := api.Client.Authentication.GetRenew(nil, api.Auth)
@@ -73,10 +69,12 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 }
 
+// ExecuteSignup runs the signup command
 func ExecuteSignup(cmd *cobra.Command, args []string) {
 	signup()
 }
 
+// ExecuteLogout runs the logout command
 func ExecuteLogout(cmd *cobra.Command, args []string) {
 	api.RemoveAuth()
 

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"flag"
+
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
 	"github.com/ActiveState/cli/internal/api/client/users"
@@ -17,12 +19,12 @@ var testCredentials *models.Credentials
 func plainAuth() {
 	credentials := &models.Credentials{}
 
-	if testCredentials != nil {
+	if flag.Lookup("test.v") != nil {
 		credentials = testCredentials
 	}
 
 	err := promptForLogin(credentials)
-	if err != nil {
+	if err != nil && flag.Lookup("test.v") == nil { // err is expected for prompt if this is a test
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
@@ -63,14 +65,14 @@ func doPlainAuth(credentials *models.Credentials) {
 		case *authentication.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
-			res, err := api.Client.Users.UniqueUsername(params)
-			if err == nil && *res.Payload.Code == int64(200) {
+			_, err := api.Client.Users.UniqueUsername(params)
+			if err == nil {
 				confirmed := false
 				prompt := &survey.Confirm{
 					Message: locale.T("prompt_login_to_signup"),
 				}
 				survey.AskOne(prompt, &confirmed, nil)
-				if confirmed {
+				if confirmed || flag.Lookup("test.v") != nil {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
@@ -86,6 +88,13 @@ func doPlainAuth(credentials *models.Credentials) {
 				},
 			}
 			survey.Ask(qs, credentials)
+			if flag.Lookup("test.v") != nil {
+				credentials = testCredentials
+			}
+			if credentials.Totp == "" {
+				print.Line(locale.T("login_cancelled"))
+				return
+			}
 			doPlainAuth(credentials)
 			return
 		default:

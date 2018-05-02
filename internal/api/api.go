@@ -2,6 +2,8 @@ package api
 
 import (
 	"flag"
+	"fmt"
+	"net/http"
 
 	"github.com/ActiveState/cli/internal/api/client"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
@@ -21,24 +23,43 @@ var bearerToken string
 // Auth holds our authenticated information, go-swagger makes us pass this manually to all calls that require auth
 var Auth runtime.ClientAuthInfoWriter
 
-// APIHost holds the API Host we're connecting to, this should be one of constants.APIHost or constants.APIHostStaging
-var APIHost = constants.APIHost
+// Prefix is the URL prefix for our API, intended for use in tets
+var Prefix string
+
+// APIHost holds the API Host we're communicating with
+var APIHost string
+
+var transport http.RoundTripper
 
 func init() {
-	if flag.Lookup("test.v") != nil || constants.BranchName != constants.ProductionBranch {
-		APIHost = constants.APIHostStaging
-	}
 	ReInitialize()
 }
 
 // ReInitialize initializes (or re-initializes) an API connection
 func ReInitialize() {
-	transport := httptransport.New(APIHost, constants.APIPath, []string{constants.APISchema})
+	if APIHost == "" {
+		APIHost = constants.APIHost
+		if flag.Lookup("test.v") != nil {
+			APIHost = constants.APIHostTesting
+		} else if constants.BranchName != constants.ProductionBranch {
+			APIHost = constants.APIHostStaging
+		}
+	}
+	transportRuntime := httptransport.New(APIHost, constants.APIPath, []string{constants.APISchema})
+	// // Uncomment to enable debug logging:
+	if flag.Lookup("test.v") != nil {
+		transportRuntime.SetDebug(true)
+	}
+	Prefix = fmt.Sprintf("%s://%s%s", constants.APISchema, APIHost, constants.APIPath)
+
+	if flag.Lookup("test.v") != nil {
+		transportRuntime.Transport = transport
+	}
 	if bearerToken != "" {
 		Auth = httptransport.BearerToken(bearerToken)
-		transport.DefaultAuthentication = Auth
+		transportRuntime.DefaultAuthentication = Auth
 	}
-	Client = client.New(transport, strfmt.Default)
+	Client = client.New(transportRuntime, strfmt.Default)
 
 	apiToken := viper.GetString("apiToken")
 	if bearerToken == "" && apiToken != "" {
@@ -80,6 +101,7 @@ func Authenticate(credentials *models.Credentials) (*authentication.PostLoginOK,
 func RemoveAuth() {
 	viper.Set("apiToken", "")
 	bearerToken = ""
+	Auth = nil
 	ReInitialize()
 }
 
