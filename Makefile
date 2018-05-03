@@ -45,8 +45,7 @@ deploy-updates:
 deploy-artifacts:
 		$(GOCMD) run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
 generate-api-client:
-		cd internal
-		swagger generate client -f https://staging.activestate.com/swagger.json -A api
+		cd internal && swagger generate client -f https://staging.activestate.com/swagger.json -A api
 test: 
 		$(GOCMD) run scripts/constants-generator/main.go 
 		$(GOTEST) ./...

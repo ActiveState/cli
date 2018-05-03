@@ -46,7 +46,6 @@ func ReInitialize() {
 		}
 	}
 	transportRuntime := httptransport.New(APIHost, constants.APIPath, []string{constants.APISchema})
-	// // Uncomment to enable debug logging:
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.SetDebug(true)
 	}
@@ -136,8 +135,7 @@ func persistWithToken() {
 		return
 	}
 
-	var token string
-	token = tokenOK.Payload.Token
+	token := tokenOK.Payload.Token
 	logging.Debug("Value: %s", token)
 	viper.Set("apiToken", token)
 }

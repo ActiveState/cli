@@ -1,27 +1,3 @@
 name: cli
 owner: ActiveState
 namespace: github.com/ActiveState/cli
-version: ""
-environments: ""
-platforms: []
-languages:
-- name: Go
-  version: "1.10"
-  constraints:
-    platform: ""
-    environment: ""
-  build: {}
-  packages: []
-variables: []
-hooks:
-- name: ACTIVATE
-  value: echo 'This is a command'
-  constraints:
-    platform: ""
-    environment: ""
-- name: ACTIVATE
-  value: echo 'This is a command'
-  constraints:
-    platform: ""
-    environment: ""
-commands: []
