@@ -1,6 +1,3 @@
 name: cli
 owner: ActiveState
 namespace: github.com/ActiveState/cli
-languages:
- - name: Go
-   version: 1.10

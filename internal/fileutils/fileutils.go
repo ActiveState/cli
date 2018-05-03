@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -198,4 +199,13 @@ func CopyFile(src, target string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 	return nil
+}
+
+// ReadFileUnsafe is an unsafe version of ioutil.ReadFile, DO NOT USE THIS OUTSIDE OF TESTS
+func ReadFileUnsafe(src string) []byte {
+	b, err := ioutil.ReadFile(src)
+	if err != nil {
+		log.Fatalf("Cannot read file: %s, error: %s", src, err.Error())
+	}
+	return b
 }

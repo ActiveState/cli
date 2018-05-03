@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"flag"
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -53,6 +54,10 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) error {
+	if flag.Lookup("test.v") != nil {
+		return nil
+	}
+
 	logging.Debug("Event: %s, %s", category, action)
 	if category == CatRunCmd {
 		client.Send(ga.NewPageview())
@@ -66,6 +71,10 @@ func EventWithValue(category string, action string, value int64) {
 }
 
 func eventWithValue(category string, action string, value int64) error {
+	if flag.Lookup("test.v") != nil {
+		return nil
+	}
+
 	logging.Debug("Event: %s, %s", category, action)
 	return client.Send(ga.NewEvent(category, action).Value(value))
 }
