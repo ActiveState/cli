@@ -1,7 +1,7 @@
 package constants
 
 // VersionNumber holds the current version of our cli
-const VersionNumber = "0.1.1"
+const VersionNumber = "0.1.2"
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
