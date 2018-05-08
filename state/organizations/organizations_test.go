@@ -28,6 +28,8 @@ func TestOrganizations(t *testing.T) {
 
 	httpmock.Register("GET", "/organizations")
 
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	orgs, err := fetchOrganizations()
+	assert.NoError(t, err, "Fetched organizations")
+	assert.Equal(t, 1, len(orgs.Payload), "One organization fetched")
+	assert.Equal(t, "test-organization", orgs.Payload[0].Name)
 }

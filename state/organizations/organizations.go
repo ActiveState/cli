@@ -19,12 +19,16 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
-// Execute the organizations command.
-func Execute(cmd *cobra.Command, args []string) {
+func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	params.SetMemberOnly(&memberOnly)
-	orgs, err := api.Client.Organizations.ListOrganizations(params, nil)
+	return api.Client.Organizations.ListOrganizations(params, api.Auth)
+}
+
+// Execute the organizations command.
+func Execute(cmd *cobra.Command, args []string) {
+	orgs, err := fetchOrganizations()
 	if err != nil {
 		logging.Errorf("Unable to list member organizations: %s", err)
 		failures.Handle(err, locale.T("organizations_err"))
