@@ -32,4 +32,7 @@ func TestOrganizations(t *testing.T) {
 	assert.NoError(t, err, "Fetched organizations")
 	assert.Equal(t, 1, len(orgs.Payload), "One organization fetched")
 	assert.Equal(t, "test-organization", orgs.Payload[0].Name)
+
+	err = Command.Execute()
+	assert.NoError(t, err, "Executed without error")
 }
