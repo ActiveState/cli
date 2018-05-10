@@ -430,7 +430,7 @@
     "cwriter",
     "decor"
   ]
-  revision = "44b3ab598678a5954168e726db2af310f43d3bd8"
+  revision = "2369fd78a2e035be0c0ad346fd2b2b0875c3e64f"
 
 [[projects]]
   branch = "master"

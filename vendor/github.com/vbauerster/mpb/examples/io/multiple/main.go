@@ -20,7 +20,7 @@ func main() {
 	url2 := "https://homebrew.bintray.com/bottles/libtiff-4.0.7.sierra.bottle.tar.gz"
 
 	var wg sync.WaitGroup
-	p := mpb.New(mpb.WithWaitGroup(&wg))
+	p := mpb.New(mpb.WithWidth(64), mpb.WithWaitGroup(&wg))
 
 	for i, url := range [...]string{url1, url2} {
 		wg.Add(1)
@@ -29,7 +29,6 @@ func main() {
 	}
 
 	p.Wait()
-	fmt.Println("done")
 }
 
 func download(wg *sync.WaitGroup, p *mpb.Progress, name, url string, n int) {
@@ -59,15 +58,13 @@ func download(wg *sync.WaitGroup, p *mpb.Progress, name, url string, n int) {
 	}
 
 	// create bar with appropriate decorators
-	bar := p.AddBar(size,
+	bar := p.AddBar(size, mpb.BarPriority(n),
 		mpb.PrependDecorators(
-			decor.StaticName(name, 0, 0),
-			decor.CountersKibiByte("%6.1f / %6.1f", 18, 0),
+			decor.StaticName(name, len(name)+1, decor.DidentRight),
+			decor.CountersKibiByte("%6.1f / %6.1f", 0, decor.DwidthSync),
 		),
-		mpb.AppendDecorators(decor.ETA(5, decor.DwidthSync)),
+		mpb.AppendDecorators(decor.ETA(0, decor.DwidthSync)),
 	)
-	// Respect the order
-	p.UpdateBarPriority(bar, n)
 
 	// create proxy reader
 	reader := bar.ProxyReader(resp.Body)
