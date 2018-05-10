@@ -270,3 +270,9 @@ organizations_err:
   other: Unable to list member organizations
 organization_name:
   other: Organization Name
+project_name:
+  other: Project Name
+project_description:
+  other: Project Description
+project_err:
+  other: Unable to list projects

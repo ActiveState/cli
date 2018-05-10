@@ -1,4 +1,4 @@
-package organizations
+package projects
 
 import (
 	"os"
@@ -20,18 +20,21 @@ func setup(t *testing.T) {
 	Cc.SetArgs([]string{})
 }
 
-func TestOrganizations(t *testing.T) {
+func TestProjects(t *testing.T) {
 	setup(t)
 
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/organizations")
+	httpmock.Register("GET", "/organizations/organizationName/projects")
 
-	orgs, err := fetchOrganizations()
-	assert.NoError(t, err, "Fetched organizations")
-	assert.Equal(t, 1, len(orgs.Payload), "One organization fetched")
-	assert.Equal(t, "test-organization", orgs.Payload[0].Name)
+	projects, err := fetchProjects()
+	assert.NoError(t, err, "Fetched projects")
+	assert.Equal(t, 1, len(projects), "One project fetched")
+	assert.Equal(t, "test project", projects[0].Name)
+	assert.Equal(t, "organizationName", projects[0].Organization)
+	assert.Equal(t, "test description", projects[0].Description)
 
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
@@ -43,8 +46,12 @@ func TestClientError(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	_, err := fetchOrganizations()
+	_, err := fetchProjects()
 	assert.Error(t, err, "Should not be able to fetch organizations without mock")
+
+	httpmock.Register("GET", "/organizations")
+	_, err = fetchProjects()
+	assert.Error(t, err, "Should not be able to fetch projects without mock")
 
 	err = Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
