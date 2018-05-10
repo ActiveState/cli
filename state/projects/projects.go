@@ -56,7 +56,7 @@ func fetchProjects() ([]projectWithOrg, error) {
 func Execute(cmd *cobra.Command, args []string) {
 	projectsList, err := fetchProjects()
 	if err != nil {
-		failures.Handle(err, locale.T("projects_err"))
+		failures.Handle(err, locale.T("project_err"))
 		return
 	}
 

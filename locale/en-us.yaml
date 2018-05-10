@@ -274,3 +274,5 @@ project_name:
   other: Project Name
 project_description:
   other: Project Description
+project_err:
+  other: Unable to list projects

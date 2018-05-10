@@ -39,3 +39,20 @@ func TestProjects(t *testing.T) {
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 }
+
+func TestClientError(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	_, err := fetchProjects()
+	assert.Error(t, err, "Should not be able to fetch organizations without mock")
+
+	httpmock.Register("GET", "/organizations")
+	_, err = fetchProjects()
+	assert.Error(t, err, "Should not be able to fetch projects without mock")
+
+	err = Command.Execute()
+	assert.NoError(t, err, "Command still executes without error")
+}
