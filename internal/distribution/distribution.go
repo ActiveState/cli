@@ -76,10 +76,10 @@ func Obtain() (*Sanitized, *failures.Failure) {
 		progress := mpb.New()
 		bar := progress.AddBar(int64(len(entries)),
 			mpb.PrependDecorators(
-				decor.CountersNoUnit("%d / %d", 10, 0),
+				decor.CountersNoUnit("%d / %d", 20, 0),
 			),
 			mpb.AppendDecorators(
-				decor.ETA(3, 0),
+				decor.Percentage(5, 0),
 			))
 		for _, entry := range entries {
 			InstallArtifact(entry.Data.(Artifact), entry.Path, entry)
