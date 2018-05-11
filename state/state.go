@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/selfupdate"
 
-	//_ "github.com/ActiveState/state-required/require"
+	_ "github.com/ActiveState/state-required/require"
 
 	"github.com/spf13/cobra"
 )
