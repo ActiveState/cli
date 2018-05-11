@@ -264,5 +264,17 @@ signup_success:
   other: Your account has been registered and a confirmation email has been sent to {{.Email}}, your account will have limited permissions until you confirm it.
 login_cancelled:
   other: Authentication Cancelled
+organizations_description:
+  other: List member organizations on the ActiveState platform
+organizations_err:
+  other: Unable to list member organizations
+organization_name:
+  other: Organization Name
+project_name:
+  other: Project Name
+project_description:
+  other: Project Description
+project_err:
+  other: Unable to list projects
 total:
   other: Total
