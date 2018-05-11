@@ -276,3 +276,5 @@ project_description:
   other: Project Description
 project_err:
   other: Unable to list projects
+total:
+  other: Total

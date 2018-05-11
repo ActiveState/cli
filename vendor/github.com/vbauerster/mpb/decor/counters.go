@@ -2,6 +2,7 @@ package decor
 
 import (
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -23,27 +24,25 @@ const (
 
 const (
 	_ = iota
-	// Unit_KiB Kibibyte = 1024 b
-	Unit_KiB
-	// Unit_kB Kilobyte = 1000 b
-	Unit_kB
+	unitKiB
+	unitKB
 )
 
-type Unit uint
+type counterUnit uint
 
 type CounterKiB int64
 
-func (c CounterKiB) Format(f fmt.State, r rune) {
-	prec, ok := f.Precision()
+func (c CounterKiB) Format(st fmt.State, verb rune) {
+	prec, ok := st.Precision()
 
-	if r == 'd' || !ok {
+	if verb == 'd' || !ok {
 		prec = 0
 	}
-	if r == 'f' && !ok {
+	if verb == 'f' && !ok {
 		prec = 6
 	}
 	// retain old beahavior if s verb used
-	if r == 's' {
+	if verb == 's' {
 		prec = 1
 	}
 
@@ -66,15 +65,15 @@ func (c CounterKiB) Format(f fmt.State, r rune) {
 		res = strconv.FormatInt(int64(c), 10)
 	}
 
-	if f.Flag(int(' ')) {
+	if st.Flag(' ') {
 		res += " "
 	}
 	res += unit
 
-	if w, ok := f.Width(); ok {
+	if w, ok := st.Width(); ok {
 		if len(res) < w {
 			pad := strings.Repeat(" ", w-len(res))
-			if f.Flag(int('-')) {
+			if st.Flag(int('-')) {
 				res += pad
 			} else {
 				res = pad + res
@@ -82,22 +81,22 @@ func (c CounterKiB) Format(f fmt.State, r rune) {
 		}
 	}
 
-	f.Write([]byte(res))
+	io.WriteString(st, res)
 }
 
 type CounterKB int64
 
-func (c CounterKB) Format(f fmt.State, r rune) {
-	prec, ok := f.Precision()
+func (c CounterKB) Format(st fmt.State, verb rune) {
+	prec, ok := st.Precision()
 
-	if r == 'd' || !ok {
+	if verb == 'd' || !ok {
 		prec = 0
 	}
-	if r == 'f' && !ok {
+	if verb == 'f' && !ok {
 		prec = 6
 	}
 	// retain old beahavior if s verb used
-	if r == 's' {
+	if verb == 's' {
 		prec = 1
 	}
 
@@ -120,15 +119,15 @@ func (c CounterKB) Format(f fmt.State, r rune) {
 		res = strconv.FormatInt(int64(c), 10)
 	}
 
-	if f.Flag(int(' ')) {
+	if st.Flag(' ') {
 		res += " "
 	}
 	res += unit
 
-	if w, ok := f.Width(); ok {
+	if w, ok := st.Width(); ok {
 		if len(res) < w {
 			pad := strings.Repeat(" ", w-len(res))
-			if f.Flag(int('-')) {
+			if st.Flag(int('-')) {
 				res += pad
 			} else {
 				res = pad + res
@@ -136,5 +135,5 @@ func (c CounterKB) Format(f fmt.State, r rune) {
 		}
 	}
 
-	f.Write([]byte(res))
+	io.WriteString(st, res)
 }

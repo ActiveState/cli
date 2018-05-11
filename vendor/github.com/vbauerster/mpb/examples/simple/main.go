@@ -17,33 +17,34 @@ func init() {
 func main() {
 	var wg sync.WaitGroup
 	p := mpb.New(mpb.WithWaitGroup(&wg))
-	total := 100
-	numBars := 3
+	total, numBars := 100, 3
 	wg.Add(numBars)
 
 	for i := 0; i < numBars; i++ {
 		name := fmt.Sprintf("Bar#%d:", i)
 		bar := p.AddBar(int64(total),
 			mpb.PrependDecorators(
-				decor.StaticName(name, 0, 0),
-				// DSyncSpace is shortcut for DwidthSync|DextraSpace
-				// means sync the width of respective decorator's column
-				// and prepend one extra space.
-				decor.Percentage(3, decor.DSyncSpace),
+				// Display our static name with one space on the right
+				decor.StaticName(name, len(name)+1, decor.DidentRight),
+				// DwidthSync bit enables same column width synchronization
+				decor.Percentage(0, decor.DwidthSync),
 			),
 			mpb.AppendDecorators(
-				decor.ETA(3, 0),
+				// replace our ETA decorator with "done!", on bar completion event
+				decor.OnComplete(decor.ETA(3, 0), "done!", 0, 0),
 			),
 		)
+		// simulating some work
 		go func() {
 			defer wg.Done()
-			max := 200 * time.Millisecond
+			max := 100 * time.Millisecond
 			for i := 0; i < total; i++ {
 				time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 				bar.Increment()
 			}
 		}()
 	}
-	// Wait for all bars to complete
+	// first wait for provided wg, then
+	// wait for all bars to complete and flush
 	p.Wait()
 }

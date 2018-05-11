@@ -8,22 +8,25 @@ import (
 )
 
 const (
-	// DidentRight specifies identation direction.
+	// DidentRight bit specifies identation direction.
 	// |foo   |b     | With DidentRight
 	// |   foo|     b| Without DidentRight
 	DidentRight = 1 << iota
 
-	// DwidthSync will auto sync max width.
-	// Makes sense when there're more than one bar
+	// DwidthSync bit enables same column width synchronization.
+	// Effective on multiple bars only.
 	DwidthSync
 
-	// DextraSpace adds extra space, makes sense with DwidthSync only.
+	// DextraSpace bit adds extra space, makes sense with DwidthSync only.
 	// When DidentRight bit set, the space will be added to the right,
 	// otherwise to the left.
 	DextraSpace
 
 	// DSyncSpace is shortcut for DwidthSync|DextraSpace
 	DSyncSpace = DwidthSync | DextraSpace
+
+	// DSyncSpaceR is shortcut for DwidthSync|DextraSpace|DidentRight
+	DSyncSpaceR = DwidthSync | DextraSpace | DidentRight
 )
 
 // Statistics represents statistics of the progress bar.
@@ -31,7 +34,6 @@ const (
 type Statistics struct {
 	ID                  int
 	Completed           bool
-	Removed             bool
 	Total               int64
 	Current             int64
 	StartTime           time.Time
@@ -45,165 +47,212 @@ func (s *Statistics) Eta() time.Duration {
 }
 
 // DecoratorFunc is a function that can be prepended and appended to the progress bar
-type DecoratorFunc func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string
+type DecoratorFunc func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string
 
-// Name deprecated, use StaticName instead
-func Name(name string, minWidth int, conf byte) DecoratorFunc {
-	return StaticName(name, minWidth, conf)
+// OnComplete returns decorator, which wraps provided `fn` decorator, with sole
+// purpose to display final on complete message.
+//
+//	`fn` DecoratorFunc to wrap
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func OnComplete(fn DecoratorFunc, message string, width, conf int) DecoratorFunc {
+	msgDecorator := StaticName(message, width, conf)
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
+		if s.Completed {
+			return msgDecorator(s, widthAccumulator, widthDistributor)
+		}
+		return fn(s, widthAccumulator, widthDistributor)
+	}
 }
 
-// StaticName to be used, when there is no plan to change the name during whole
-// life of a progress rendering process
-func StaticName(name string, minWidth int, conf byte) DecoratorFunc {
-	nameFn := func(s *Statistics) string {
+// StaticName returns static name/message decorator.
+//
+//	`name` string to display
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func StaticName(name string, width, conf int) DecoratorFunc {
+	nameFn := func(*Statistics) string {
 		return name
 	}
-	return DynamicName(nameFn, minWidth, conf)
+	return DynamicName(nameFn, width, conf)
 }
 
-// DynamicName to be used, when there is a plan to change the name once or
-// several times during progress rendering process. If there're more than one
-// bar, and you'd like to synchronize column width, conf param should have
-// DwidthSync bit set.
-func DynamicName(nameFn func(*Statistics) string, minWidth int, conf byte) DecoratorFunc {
+// DynamicName returns dynamic name/message decorator.
+//
+//	`messageFn` callback function to get dynamic string message
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func DynamicName(messageFn func(*Statistics) string, width, conf int) DecoratorFunc {
 	format := "%%"
 	if (conf & DidentRight) != 0 {
 		format += "-"
 	}
 	format += "%ds"
-	return func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string {
-		name := nameFn(s)
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
+		name := messageFn(s)
 		if (conf & DwidthSync) != 0 {
-			myWidth <- utf8.RuneCountInString(name)
-			max := <-maxWidth
+			widthAccumulator <- utf8.RuneCountInString(name)
+			max := <-widthDistributor
 			if (conf & DextraSpace) != 0 {
 				max++
 			}
 			return fmt.Sprintf(fmt.Sprintf(format, max), name)
 		}
-		return fmt.Sprintf(fmt.Sprintf(format, minWidth), name)
+		return fmt.Sprintf(fmt.Sprintf(format, width), name)
 	}
 }
 
 // CountersNoUnit returns raw counters decorator
-func CountersNoUnit(pairFormat string, minWidth int, conf byte) DecoratorFunc {
-	return Counters(pairFormat, 0, minWidth, conf)
+//
+//	`pairFormat` printf compatible verbs for current and total, like "%f" or "%d"
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func CountersNoUnit(pairFormat string, width, conf int) DecoratorFunc {
+	return counters(pairFormat, 0, width, conf)
 }
 
-// CountersKibiByte returns human friendly byte counters decorator, where
-// counters unit is multiple by 1024.
-func CountersKibiByte(pairFormat string, minWidth int, conf byte) DecoratorFunc {
-	return Counters(pairFormat, Unit_KiB, minWidth, conf)
+// CountersKibiByte returns human friendly byte counters decorator, where counters unit is multiple by 1024.
+//
+//	`pairFormat` printf compatible verbs for current and total, like "%f" or "%d"
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+//
+// pairFormat example:
+//
+//	"%.1f / %.1f" = "1.0MiB / 12.0MiB" or "% .1f / % .1f" = "1.0 MiB / 12.0 MiB"
+func CountersKibiByte(pairFormat string, width, conf int) DecoratorFunc {
+	return counters(pairFormat, unitKiB, width, conf)
 }
 
-// CountersKiloByte returns human friendly byte counters decorator, where
-// counters unit is multiple by 1000.
-func CountersKiloByte(pairFormat string, minWidth int, conf byte) DecoratorFunc {
-	return Counters(pairFormat, Unit_kB, minWidth, conf)
+// CountersKiloByte returns human friendly byte counters decorator, where counters unit is multiple by 1000.
+//
+//	`pairFormat` printf compatible verbs for current and total, like "%f" or "%d"
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+//
+// pairFormat example:
+//
+//	"%.1f / %.1f" = "1.0MB / 12.0MB" or "% .1f / % .1f" = "1.0 MB / 12.0 MB"
+func CountersKiloByte(pairFormat string, width, conf int) DecoratorFunc {
+	return counters(pairFormat, unitKB, width, conf)
 }
 
-// Counters provides basic counters decorator.
-// pairFormat must contain two printf compatible verbs, like "%f" or "%d".
-// First verb substituted with Current, second one with Total. For example (assuming decor.Unit_KiB used):
-// "%.1f / %.1f" = "1.0MiB / 12.0MiB" or "% .1f / % .1f" = "1.0 MiB / 12.0 MiB"
-// unit is one of decor.Unit_KiB/decor.Unit_kB or just zero if you need raw unitless numbers.
-func Counters(pairFormat string, unit Unit, minWidth int, conf byte) DecoratorFunc {
+func counters(pairFormat string, unit counterUnit, width, conf int) DecoratorFunc {
 	format := "%%"
 	if (conf & DidentRight) != 0 {
 		format += "-"
 	}
 	format += "%ds"
-	return func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string {
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
 		var str string
 		switch unit {
-		case Unit_KiB:
+		case unitKiB:
 			str = fmt.Sprintf(pairFormat, CounterKiB(s.Current), CounterKiB(s.Total))
-		case Unit_kB:
+		case unitKB:
 			str = fmt.Sprintf(pairFormat, CounterKB(s.Current), CounterKB(s.Total))
 		default:
 			str = fmt.Sprintf(pairFormat, s.Current, s.Total)
 		}
 		if (conf & DwidthSync) != 0 {
-			myWidth <- utf8.RuneCountInString(str)
-			max := <-maxWidth
+			widthAccumulator <- utf8.RuneCountInString(str)
+			max := <-widthDistributor
 			if (conf & DextraSpace) != 0 {
 				max++
 			}
 			return fmt.Sprintf(fmt.Sprintf(format, max), str)
 		}
-		return fmt.Sprintf(fmt.Sprintf(format, minWidth), str)
+		return fmt.Sprintf(fmt.Sprintf(format, width), str)
 	}
 }
 
-// ETA provides exponential-weighted-moving-average ETA decorator.
-// If there're more than one bar, and you'd like to synchronize column width,
-// conf param should have DwidthSync bit set.
-func ETA(minWidth int, conf byte) DecoratorFunc {
+// ETA returns exponential-weighted-moving-average ETA decorator.
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func ETA(width, conf int) DecoratorFunc {
 	format := "%%"
 	if (conf & DidentRight) != 0 {
 		format += "-"
 	}
 	format += "%ds"
-	return func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string {
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
 		str := fmt.Sprint(time.Duration(s.Eta().Seconds()) * time.Second)
 		if (conf & DwidthSync) != 0 {
-			myWidth <- utf8.RuneCountInString(str)
-			max := <-maxWidth
+			widthAccumulator <- utf8.RuneCountInString(str)
+			max := <-widthDistributor
 			if (conf & DextraSpace) != 0 {
 				max++
 			}
 			return fmt.Sprintf(fmt.Sprintf(format, max), str)
 		}
-		return fmt.Sprintf(fmt.Sprintf(format, minWidth), str)
+		return fmt.Sprintf(fmt.Sprintf(format, width), str)
 	}
 }
 
-// Elapsed provides elapsed time decorator.
-// If there're more than one bar, and you'd like to synchronize column width,
-// conf param should have DwidthSync bit set.
-func Elapsed(minWidth int, conf byte) DecoratorFunc {
+// Elapsed returns elapsed time decorator.
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func Elapsed(width, conf int) DecoratorFunc {
 	format := "%%"
 	if (conf & DidentRight) != 0 {
 		format += "-"
 	}
 	format += "%ds"
-	return func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string {
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
 		str := fmt.Sprint(time.Duration(s.TimeElapsed.Seconds()) * time.Second)
 		if (conf & DwidthSync) != 0 {
-			myWidth <- utf8.RuneCountInString(str)
-			max := <-maxWidth
+			widthAccumulator <- utf8.RuneCountInString(str)
+			max := <-widthDistributor
 			if (conf & DextraSpace) != 0 {
 				max++
 			}
 			return fmt.Sprintf(fmt.Sprintf(format, max), str)
 		}
-		return fmt.Sprintf(fmt.Sprintf(format, minWidth), str)
+		return fmt.Sprintf(fmt.Sprintf(format, width), str)
 	}
 }
 
-// Percentage provides percentage decorator.
-// If there're more than one bar, and you'd like to synchronize column width,
-// conf param should have DwidthSync bit set.
-func Percentage(minWidth int, conf byte) DecoratorFunc {
+// Percentage returns percentage decorator.
+//
+//	`width` width reservation to apply, ignored if `DwidthSync` bit is set
+//
+//	`conf` bit set config, [DidentRight|DwidthSync|DextraSpace]
+func Percentage(width, conf int) DecoratorFunc {
 	format := "%%"
 	if (conf & DidentRight) != 0 {
 		format += "-"
 	}
 	format += "%ds"
-	return func(s *Statistics, myWidth chan<- int, maxWidth <-chan int) string {
+	return func(s *Statistics, widthAccumulator chan<- int, widthDistributor <-chan int) string {
 		str := fmt.Sprintf("%d %%", CalcPercentage(s.Total, s.Current, 100))
 		if (conf & DwidthSync) != 0 {
-			myWidth <- utf8.RuneCountInString(str)
-			max := <-maxWidth
+			widthAccumulator <- utf8.RuneCountInString(str)
+			max := <-widthDistributor
 			if (conf & DextraSpace) != 0 {
 				max++
 			}
 			return fmt.Sprintf(fmt.Sprintf(format, max), str)
 		}
-		return fmt.Sprintf(fmt.Sprintf(format, minWidth), str)
+		return fmt.Sprintf(fmt.Sprintf(format, width), str)
 	}
 }
 
+// CalcPercentage is a helper function, to calculate percentage.
 func CalcPercentage(total, current, width int64) (perc int64) {
 	if total <= 0 {
 		return 0

@@ -1,6 +1,8 @@
 package mpb
 
-import "github.com/vbauerster/mpb/decor"
+import (
+	"github.com/vbauerster/mpb/decor"
+)
 
 // BarOption is a function option which changes the default behavior of a bar,
 // if passed to p.AddBar(int64, ...BarOption)
@@ -75,6 +77,37 @@ func BarAutoIncrTotal(trigger, amount int64) BarOption {
 	}
 }
 
+// BarRemoveOnComplete is a flag, which will trigger bar auto remove on completion event.
+func BarRemoveOnComplete() BarOption {
+	return func(s *bState) {
+		s.removeOnComplete = true
+	}
+}
+
+// BarReplaceOnComplete is indicator for delayed bar start, after the `runningBar` is complete.
+// To achieve bar replacement effect, `runningBar` should has its `BarRemoveOnComplete` option set.
+func BarReplaceOnComplete(runningBar *Bar) BarOption {
+	return func(s *bState) {
+		s.runningBar = runningBar
+	}
+}
+
+// BarClearOnComplete clears the bar section on complete event.
+func BarClearOnComplete() BarOption {
+	return func(s *bState) {
+		s.noBarOnComplete = true
+	}
+}
+
+// BarPriority sets bar's priority.
+// Zero is highest priority, i.e. bar will be on top.
+// If `BarReplaceOnComplete` option is supplied, this option is ignored.
+func BarPriority(priority int) BarOption {
+	return func(s *bState) {
+		s.priority = priority
+	}
+}
+
 func barWidth(w int) BarOption {
 	return func(s *bState) {
 		s.width = w
@@ -83,6 +116,6 @@ func barWidth(w int) BarOption {
 
 func barFormat(format string) BarOption {
 	return func(s *bState) {
-		s.updateFormat(format)
+		s.runes = strToBarRunes(format)
 	}
 }
