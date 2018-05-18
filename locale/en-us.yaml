@@ -282,3 +282,5 @@ total:
   other: Total
 projects_description:
   other: Manage Your Projects
+err_api_not_authenticated:
+  other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
