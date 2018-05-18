@@ -60,6 +60,11 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	if len(projectsList) == 0 {
+		print.Line(locale.T("project_empty"))
+		return
+	}
+
 	rows := [][]interface{}{}
 	for _, project := range projectsList {
 		rows = append(rows, []interface{}{project.Name, project.Organization, project.Description})
