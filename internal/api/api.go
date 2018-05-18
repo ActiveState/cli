@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/ActiveState/cli/internal/api/client"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
@@ -102,6 +103,16 @@ func RemoveAuth() {
 	bearerToken = ""
 	Auth = nil
 	ReInitialize()
+}
+
+// ErrorCode tries to retrieve the code associated with an API error
+func ErrorCode(err interface{}) int {
+	r := reflect.ValueOf(err)
+	v := reflect.Indirect(r).FieldByName("Code")
+	if !v.IsValid() {
+		return -1
+	}
+	return int(v.Int())
 }
 
 // persistWithToken will retrieve and save a persistent authentication token based on the active authentication information
