@@ -51,11 +51,11 @@ func TestProjectsEmpty(t *testing.T) {
 		return 200, "organizations-empty"
 	})
 
-	projects, err := fetchProjects()
-	assert.NoError(t, err, "Fetched projects")
+	projects, fail := fetchProjects()
+	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 0, len(projects), "No projects returned")
 
-	err = Command.Execute()
+	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 }
 
