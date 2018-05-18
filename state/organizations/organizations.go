@@ -22,7 +22,9 @@ var Command = &commands.Command{
 func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
+	personal := false
 	params.SetMemberOnly(&memberOnly)
+	params.SetPersonal(&personal)
 	return api.Client.Organizations.ListOrganizations(params, api.Auth)
 }
 
