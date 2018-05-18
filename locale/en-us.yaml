@@ -276,5 +276,7 @@ project_description:
   other: Project Description
 project_err:
   other: Unable to list projects
+project_empty:
+  other: You have not created any projects yet
 total:
   other: Total
