@@ -1,6 +1,7 @@
 package projects
 
 import (
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,6 +38,24 @@ func TestProjects(t *testing.T) {
 	assert.Equal(t, "test description", projects[0].Description)
 
 	err := Command.Execute()
+	assert.NoError(t, err, "Executed without error")
+}
+
+func TestProjectsEmpty(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithResponder("GET", "/organizations", func(req *http.Request) (int, string) {
+		return 200, "organizations-empty"
+	})
+
+	projects, err := fetchProjects()
+	assert.NoError(t, err, "Fetched projects")
+	assert.Equal(t, 0, len(projects), "No projects returned")
+
+	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 }
 
