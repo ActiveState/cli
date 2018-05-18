@@ -29,14 +29,14 @@ func TestProjects(t *testing.T) {
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("GET", "/organizations/organizationName/projects")
 
-	projects, err := fetchProjects()
-	assert.NoError(t, err, "Fetched projects")
+	projects, fail := fetchProjects()
+	assert.NoError(t, fail.ToError(), "Fetched projects")
 	assert.Equal(t, 1, len(projects), "One project fetched")
 	assert.Equal(t, "test project", projects[0].Name)
 	assert.Equal(t, "organizationName", projects[0].Organization)
 	assert.Equal(t, "test description", projects[0].Description)
 
-	err = Command.Execute()
+	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 }
 
@@ -46,13 +46,28 @@ func TestClientError(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	_, err := fetchProjects()
-	assert.Error(t, err, "Should not be able to fetch organizations without mock")
+	_, fail := fetchProjects()
+	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
 
 	httpmock.Register("GET", "/organizations")
-	_, err = fetchProjects()
-	assert.Error(t, err, "Should not be able to fetch projects without mock")
+	_, fail = fetchProjects()
+	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without mock")
 
-	err = Command.Execute()
+	err := Command.Execute()
+	assert.NoError(t, err, "Command still executes without error")
+}
+
+func TestAuthError(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("GET", "/organizations", 401)
+	_, fail := fetchProjects()
+	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
+	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
+
+	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
 }

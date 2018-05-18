@@ -6,7 +6,6 @@ import (
 	clientProjects "github.com/ActiveState/cli/internal/api/client/projects"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/bndr/gotabulate"
@@ -27,14 +26,16 @@ type projectWithOrg struct {
 	Organization string
 }
 
-func fetchProjects() ([]projectWithOrg, error) {
+func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
 	orgs, err := api.Client.Organizations.ListOrganizations(orgParams, api.Auth)
 	if err != nil {
-		logging.Errorf("Unable to fetch member organizations: %s", err)
-		return nil, err
+		if api.ErrorCode(err) == 401 {
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		}
+		return nil, api.FailUnknown.Wrap(err)
 	}
 	projectsList := []projectWithOrg{}
 	for _, org := range orgs.Payload {
@@ -42,8 +43,10 @@ func fetchProjects() ([]projectWithOrg, error) {
 		projParams.SetOrganizationName(org.Name)
 		orgProjects, err := api.Client.Projects.ListProjects(projParams, api.Auth)
 		if err != nil {
-			logging.Errorf("Unable to fetch projects for org %s: %s", org.Name, err)
-			return nil, err
+			if api.ErrorCode(err) == 401 {
+				return nil, api.FailAuth.New("err_api_not_authenticated")
+			}
+			return nil, api.FailUnknown.Wrap(err)
 		}
 		for _, project := range orgProjects.Payload {
 			projectsList = append(projectsList, projectWithOrg{project.Name, project.Description, org.Name})
@@ -54,9 +57,9 @@ func fetchProjects() ([]projectWithOrg, error) {
 
 // Execute the projects command.
 func Execute(cmd *cobra.Command, args []string) {
-	projectsList, err := fetchProjects()
-	if err != nil {
-		failures.Handle(err, locale.T("project_err"))
+	projectsList, fail := fetchProjects()
+	if fail != nil {
+		failures.Handle(fail, locale.T("project_err"))
 		return
 	}
 
