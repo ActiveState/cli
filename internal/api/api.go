@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/api/client/authentication"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
@@ -29,6 +30,12 @@ var Prefix string
 
 // APIHost holds the API Host we're communicating with
 var APIHost string
+
+// FailAuth is the failure type used for failed authentication API requests
+var (
+	FailUnknown = failures.Type("api.fail.unknown")
+	FailAuth    = failures.Type("api.fail.auth", failures.FailUser)
+)
 
 var transport http.RoundTripper
 
