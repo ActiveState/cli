@@ -276,3 +276,27 @@ project_description:
   other: Project Description
 project_err:
   other: Unable to list projects
+new_project:
+  other: Create a new project
+flag_state_new_path_description:
+  other: Path to create a new project in.
+flag_state_new_owner_description:
+  other: Owner of the project being created.
+flag_state_new_version_description:
+  other: Version of the project being created.
+arg_state_new_name_description:
+  other: Name of the new project.
+state_new_prompt_name:
+  other: Please provide a name for the new project.
+error_state_new:
+  other: Unable to create new project: {{.Error}}
+error_state_new_exists:
+  other: Unable to create new project: path exists.
+state_new_prompt_owner:
+  other: Please provide an owner for the new project.
+state_new_prompt_version:
+  other: Please provide a version string for the new project.
+error_state_new_version:
+  other: Version string must consist only of numbers and decimals.
+state_new_created:
+  other: Created new project in {{.Dir}}

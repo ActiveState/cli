@@ -28,7 +28,7 @@ func TestOrganizations(t *testing.T) {
 
 	httpmock.Register("GET", "/organizations")
 
-	orgs, err := fetchOrganizations()
+	orgs, err := FetchOrganizations()
 	assert.NoError(t, err, "Fetched organizations")
 	assert.Equal(t, 1, len(orgs.Payload), "One organization fetched")
 	assert.Equal(t, "test-organization", orgs.Payload[0].Name)
@@ -43,7 +43,7 @@ func TestClientError(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	_, err := fetchOrganizations()
+	_, err := FetchOrganizations()
 	assert.Error(t, err, "Should not be able to fetch organizations without mock")
 
 	err = Command.Execute()

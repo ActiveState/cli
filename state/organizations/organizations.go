@@ -19,7 +19,9 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
-func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
+// FetchOrganizations returns an API response that contains a list of
+// organizations the currently authorized user belongs to.
+func FetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	params.SetMemberOnly(&memberOnly)
@@ -28,7 +30,7 @@ func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
 
 // Execute the organizations command.
 func Execute(cmd *cobra.Command, args []string) {
-	orgs, err := fetchOrganizations()
+	orgs, err := FetchOrganizations()
 	if err != nil {
 		logging.Errorf("Unable to list member organizations: %s", err)
 		failures.Handle(err, locale.T("organizations_err"))
