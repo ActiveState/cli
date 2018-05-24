@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -203,6 +204,11 @@ func IsFailure(err error) bool {
 	default:
 		return false
 	}
+}
+
+// IsType is a little helper method for checking whether the error is of the given type
+func IsType(err interface{}, typ interface{}) bool {
+	return reflect.TypeOf(err) == reflect.TypeOf(typ)
 }
 
 // Recover is a helper function to use for catching panic

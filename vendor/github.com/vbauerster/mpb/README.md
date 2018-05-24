@@ -11,9 +11,7 @@
 
 * __Multiple Bars__: Multiple progress bars are supported
 * __Dynamic Total__: [Set total](https://github.com/vbauerster/mpb/issues/9#issuecomment-344448984) while bar is running
-* __Dynamic Addition__: Additional bar could be added at later time
-* __Dynamic Removal__: Remove particular bar, before or after completion
-* __Dynamic Resize__: Adaptive bar resize (doesn't work inside tmux)
+* __Dynamic Add/Remove__: Dynamically add or remove bars
 * __Cancellation__: Cancel whole rendering process
 * __Predefined Decorators__: Elapsed time, [Ewmaest](https://github.com/dgryski/trifles/tree/master/ewmaest) based ETA, Percentage, Bytes counter
 * __Decorator's width sync__:  Synchronized decorator's width among multiple bars
@@ -32,39 +30,37 @@ _Note:_ it is preferable to go get from github.com, rather than gopkg.in. See is
 ```go
 	p := mpb.New(
 		// override default (80) width
-		mpb.WithWidth(100),
+		mpb.WithWidth(64),
 		// override default "[=>-]" format
 		mpb.WithFormat("╢▌▌░╟"),
 		// override default 120ms refresh rate
-		mpb.WithRefreshRate(100*time.Millisecond),
+		mpb.WithRefreshRate(180*time.Millisecond),
 	)
 
 	total := 100
 	name := "Single Bar:"
-	// Add a bar
-	// You're not limited to just a single bar, add as many as you need
+	// adding a single bar
 	bar := p.AddBar(int64(total),
-		// Prepending decorators
 		mpb.PrependDecorators(
-			// StaticName decorator with minWidth and no extra config
-			// If you need to change name while rendering, use DynamicName
-			decor.StaticName(name, len(name), 0),
-			// ETA decorator with minWidth and no extra config
-			decor.ETA(4, 0),
+			// Display our static name with one space on the right
+			decor.StaticName(name, len(name)+1, decor.DidentRight),
+			// ETA decorator with width reservation of 3 runes
+			decor.ETA(3, 0),
 		),
-		// Appending decorators
 		mpb.AppendDecorators(
-			// Percentage decorator with minWidth and no extra config
+			// Percentage decorator with width reservation of 5 runes
 			decor.Percentage(5, 0),
 		),
 	)
 
-	max := 200 * time.Millisecond
+	// simulating some work
+	max := 100 * time.Millisecond
 	for i := 0; i < total; i++ {
 		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
+		// increment by 1 (there is bar.IncrBy(int) method, if needed)
 		bar.Increment()
 	}
-	// Wait for all bars to complete
+	// wait for our bar to complete and flush
 	p.Wait()
 ```
 
@@ -72,49 +68,46 @@ _Note:_ it is preferable to go get from github.com, rather than gopkg.in. See is
 ```go
 	var wg sync.WaitGroup
 	p := mpb.New(mpb.WithWaitGroup(&wg))
-	total := 100
-	numBars := 3
+	total, numBars := 100, 3
 	wg.Add(numBars)
 
 	for i := 0; i < numBars; i++ {
 		name := fmt.Sprintf("Bar#%d:", i)
 		bar := p.AddBar(int64(total),
 			mpb.PrependDecorators(
-				decor.StaticName(name, 0, 0),
-				// DSyncSpace is shortcut for DwidthSync|DextraSpace
-				// means sync the width of respective decorator's column
-				// and prepend one extra space.
-				decor.Percentage(3, decor.DSyncSpace),
+				// Display our static name with one space on the right
+				decor.StaticName(name, len(name)+1, decor.DidentRight),
+				// DwidthSync bit enables same column width synchronization
+				decor.Percentage(0, decor.DwidthSync),
 			),
 			mpb.AppendDecorators(
-				decor.ETA(3, 0),
+				// Replace our ETA decorator with "done!", on bar completion event
+				decor.OnComplete(decor.ETA(3, 0), "done!", 0, 0),
 			),
 		)
+		// simulating some work
 		go func() {
 			defer wg.Done()
-			max := 200 * time.Millisecond
+			max := 100 * time.Millisecond
 			for i := 0; i < total; i++ {
-		        time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
+				time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 				bar.Increment()
 			}
 		}()
 	}
-	// Wait for all bars to complete
+	// first wait for provided wg, then
+	// wait for all bars to complete and flush
 	p.Wait()
 ```
 
-#### [Dynamic Total](examples/dynTotal/main.go)
+#### [Dynamic total](examples/dynTotal/main.go)
 
-![dynTotal.gif](examples/gifs/dynTotal.gif)
+![dynamic total](examples/gifs/1LuTsBJUAm4yV6PpT5OJSmJYw.svg)
 
-#### [Adaptive resize](examples/prependETA/main.go)
+#### [Complex example](examples/complex/main.go)
 
-![resize.gif](examples/gifs/resize.gif)
+![complex](examples/gifs/ln3qeyH5iXUoesLYfw7zHDn6u.svg)
 
-_Note:_ don't expect much, it corrupts if resizing too fast.
+#### [Bytes counters](examples/io/multiple/main.go)
 
-#### [Bytes counter decorator](examples/io/multiple/main.go)
-
-![io-multiple.gif](examples/gifs/io-multiple.gif)
-
-Typeface used in screen shots: [Iosevka](https://be5invis.github.io/Iosevka)
+![byte counters](examples/gifs/ZsrT3r0ecrFwoarnplQz4UeL4.svg)

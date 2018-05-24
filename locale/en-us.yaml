@@ -3,7 +3,7 @@ state_description:
 activate_project:
   other: activate a project
 hook_description:
-  other: manage hooks
+  other: Manage Project Hooks
 hook_add_description:
   other: 
     >
@@ -310,3 +310,11 @@ state_new_created:
   other: Created new project in {{.Dir}}
 error_state_new_project_add:
   other: Unable to create new Platform project.
+project_empty:
+  other: You have not created any projects yet
+total:
+  other: Total
+projects_description:
+  other: Manage Your Projects
+err_api_not_authenticated:
+  other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.

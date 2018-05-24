@@ -13,7 +13,7 @@ func init() {
 }
 
 func main() {
-	p := mpb.New()
+	p := mpb.New(mpb.WithWidth(64))
 
 	// initialize bar with dynamic total and initial total guess = 80
 	bar := p.AddBar(80,
@@ -25,28 +25,30 @@ func main() {
 			decor.CountersNoUnit("%d / %d", 12, 0),
 		),
 		mpb.AppendDecorators(
-			decor.Percentage(5, 0),
+			decor.Percentage(4, 0),
 		),
 	)
 
-	totalUpd1 := make(chan struct{})
-	totalUpd2 := make(chan struct{})
+	totalUpd := make(chan int64)
 	go func() {
-		<-totalUpd1
-		// intermediate not final total update
-		bar.SetTotal(200, false)
-		<-totalUpd2
-		// final total update
-		bar.SetTotal(300, true)
+		for {
+			total, ok := <-totalUpd
+			bar.SetTotal(total, !ok)
+			if !ok {
+				break
+			}
+		}
 	}()
 
-	max := 200 * time.Millisecond
-	for i := 0; i < 300; i++ {
+	max := 100 * time.Millisecond
+	for i := 0; !bar.Completed(); i++ {
 		if i == 140 {
-			close(totalUpd1)
+			totalUpd <- 190
 		}
 		if i == 250 {
-			close(totalUpd2)
+			totalUpd <- 300
+			// final upd, so closing channel
+			close(totalUpd)
 		}
 		time.Sleep(time.Duration(rand.Intn(10)+1) * max / 10)
 		bar.Increment()

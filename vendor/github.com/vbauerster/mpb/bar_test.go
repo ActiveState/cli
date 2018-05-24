@@ -8,48 +8,13 @@ import (
 	"sync"
 	"testing"
 	"time"
-	"unicode/utf8"
 
-	"github.com/vbauerster/mpb"
+	. "github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
 
-func TestWithWidth(t *testing.T) {
-	cases := map[string]struct{ w, expected int }{
-		"WithWidth-1": {-1, 81},
-		"WithWidth0":  {0, 3},
-		"WithWidth1":  {1, 3},
-		"WithWidth2":  {2, 3},
-		"WithWidth3":  {3, 4},
-		"WithWidth60": {60, 61},
-	}
-
-	var buf bytes.Buffer
-	for k, tc := range cases {
-		buf.Reset()
-		p := mpb.New(
-			mpb.Output(&buf),
-			mpb.WithWidth(tc.w),
-		)
-		bar := p.AddBar(10, mpb.BarTrim())
-
-		for i := 0; i < 10; i++ {
-			bar.Increment()
-		}
-
-		p.Wait()
-
-		gotWidth := utf8.RuneCount(buf.Bytes())
-		if gotWidth != tc.expected {
-			t.Errorf("%s: Expected width: %d, got: %d\n", k, tc.expected, gotWidth)
-		}
-	}
-}
-
 func TestBarCompleted(t *testing.T) {
-	p := mpb.New(
-		mpb.Output(ioutil.Discard),
-	)
+	p := New(WithOutput(ioutil.Discard))
 	total := 80
 	bar := p.AddBar(int64(total))
 
@@ -67,13 +32,13 @@ func TestBarCompleted(t *testing.T) {
 }
 
 func TestBarID(t *testing.T) {
-	p := mpb.New(mpb.Output(ioutil.Discard))
+	p := New(WithOutput(ioutil.Discard))
 
 	numBars := 3
-	bars := make([]*mpb.Bar, numBars)
+	bars := make([]*Bar, numBars)
 	for i := 0; i < numBars; i++ {
-		bars[i] = p.AddBar(80, mpb.BarID(i))
-		go func(bar *mpb.Bar) {
+		bars[i] = p.AddBar(80, BarID(i))
+		go func(bar *Bar) {
 			for i := 0; i < 80; i++ {
 				time.Sleep(10 * time.Millisecond)
 				bar.Increment()
@@ -94,16 +59,13 @@ func TestBarIncrWithReFill(t *testing.T) {
 	var buf bytes.Buffer
 
 	width := 100
-	p := mpb.New(
-		mpb.Output(&buf),
-		mpb.WithWidth(width),
-	)
+	p := New(WithOutput(&buf), WithWidth(width))
 
 	total := 100
 	till := 30
 	refillChar := '+'
 
-	bar := p.AddBar(100, mpb.BarTrim())
+	bar := p.AddBar(100, BarTrim())
 
 	bar.ResumeFill(refillChar, int64(till))
 
@@ -126,17 +88,17 @@ func TestBarIncrWithReFill(t *testing.T) {
 func TestBarPanics(t *testing.T) {
 	var wg sync.WaitGroup
 	var buf bytes.Buffer
-	p := mpb.New(mpb.Output(&buf), mpb.WithWaitGroup(&wg))
+	p := New(WithDebugOutput(&buf), WithOutput(nil), WithWaitGroup(&wg))
 
 	wantPanic := "Upps!!!"
-	numBars := 3
+	numBars := 1
 	wg.Add(numBars)
 
 	for i := 0; i < numBars; i++ {
 		name := fmt.Sprintf("b#%02d:", i)
-		bar := p.AddBar(100, mpb.BarID(i), mpb.PrependDecorators(
+		bar := p.AddBar(100, PrependDecorators(
 			func(s *decor.Statistics, _ chan<- int, _ <-chan int) string {
-				if s.ID == 2 && s.Current >= 42 {
+				if s.Current >= 42 {
 					panic(wantPanic)
 				}
 				return name
@@ -154,9 +116,10 @@ func TestBarPanics(t *testing.T) {
 
 	p.Wait()
 
-	wantPanic = fmt.Sprintf("b#%02d panic: %v", 2, wantPanic)
+	wantPanic = fmt.Sprintf("panic: %s", wantPanic)
 
-	if !strings.Contains(buf.String(), wantPanic) {
-		t.Errorf("Want: %q, got: %q\n", wantPanic, buf.String())
+	debugStr := buf.String()
+	if !strings.Contains(debugStr, wantPanic) {
+		t.Errorf("%q doesn't contain %q\n", debugStr, wantPanic)
 	}
 }

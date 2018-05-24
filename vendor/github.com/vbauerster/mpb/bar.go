@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -24,21 +25,27 @@ const (
 	etaAlpha  = 0.25
 )
 
-type fmtRunes [formatLen]rune
+type barRunes [formatLen]rune
 
 // Bar represents a progress Bar
 type Bar struct {
 	priority int
 	index    int
 
-	// the flag is set from Progress monitor goroutine only
+	// pointer to running bar, which this bar should replace
+	runningBar *Bar
+
+	// completed is set from master Progress goroutine only
 	completed bool
 
-	operateState chan func(*bState)
-	done         chan struct{}
-	shutdown     chan struct{}
+	removeOnComplete bool
 
-	// it's guaranted that cacheState isn't nil, after done channel is closed
+	operateState chan func(*bState)
+	// done is closed by Bar's goroutine, after cacheState is written
+	done chan struct{}
+	// shutdown is closed from master Progress goroutine only
+	shutdown chan struct{}
+
 	cacheState *bState
 }
 
@@ -46,7 +53,7 @@ type (
 	bState struct {
 		id                   int
 		width                int
-		format               fmtRunes
+		runes                barRunes
 		etaAlpha             float64
 		total                int64
 		current              int64
@@ -54,9 +61,9 @@ type (
 		totalAutoIncrBy      int64
 		trimLeftSpace        bool
 		trimRightSpace       bool
-		completed            bool
-		removed              bool
+		toComplete           bool
 		dynamic              bool
+		noBarOnComplete      bool
 		startTime            time.Time
 		timeElapsed          time.Duration
 		blockStartTime       time.Time
@@ -66,54 +73,66 @@ type (
 		refill               *refill
 		bufP, bufB, bufA     *bytes.Buffer
 		panicMsg             string
+
+		// following options are assigned to the *Bar
+		priority         int
+		removeOnComplete bool
+		runningBar       *Bar
 	}
 	refill struct {
 		char rune
 		till int64
 	}
-	renderedReader struct {
-		io.Reader
+	bFrame struct {
+		bar        *Bar
+		reader     io.Reader
 		toComplete bool
-		toRemove   bool
 	}
 )
 
-func newBar(id int, total int64, cancel <-chan struct{}, options ...BarOption) *Bar {
+func newBar(wg *sync.WaitGroup, id int, total int64, cancel <-chan struct{}, options ...BarOption) *Bar {
 	if total <= 0 {
 		total = time.Now().Unix()
 	}
 
 	s := &bState{
 		id:       id,
+		priority: id,
 		total:    total,
 		etaAlpha: etaAlpha,
 	}
 
 	for _, opt := range options {
-		opt(s)
+		if opt != nil {
+			opt(s)
+		}
 	}
 
-	s.bufP = bytes.NewBuffer(make([]byte, 0, s.width/2))
+	s.bufP = bytes.NewBuffer(make([]byte, 0, s.width))
 	s.bufB = bytes.NewBuffer(make([]byte, 0, s.width))
-	s.bufA = bytes.NewBuffer(make([]byte, 0, s.width/2))
+	s.bufA = bytes.NewBuffer(make([]byte, 0, s.width))
 
 	b := &Bar{
-		priority:     id,
-		operateState: make(chan func(*bState)),
-		done:         make(chan struct{}),
-		shutdown:     make(chan struct{}),
+		priority:         s.priority,
+		removeOnComplete: s.removeOnComplete,
+		runningBar:       s.runningBar,
+		operateState:     make(chan func(*bState)),
+		done:             make(chan struct{}),
+		shutdown:         make(chan struct{}),
 	}
 
-	go b.serve(s, cancel)
+	if b.runningBar != nil {
+		b.priority = b.runningBar.priority
+	}
+
+	go b.serve(wg, s, cancel)
 	return b
 }
 
 // RemoveAllPrependers removes all prepend functions
 func (b *Bar) RemoveAllPrependers() {
 	select {
-	case b.operateState <- func(s *bState) {
-		s.pDecorators = nil
-	}:
+	case b.operateState <- func(s *bState) { s.pDecorators = nil }:
 	case <-b.done:
 	}
 }
@@ -121,9 +140,7 @@ func (b *Bar) RemoveAllPrependers() {
 // RemoveAllAppenders removes all append functions
 func (b *Bar) RemoveAllAppenders() {
 	select {
-	case b.operateState <- func(s *bState) {
-		s.aDecorators = nil
-	}:
+	case b.operateState <- func(s *bState) { s.aDecorators = nil }:
 	case <-b.done:
 	}
 }
@@ -138,45 +155,6 @@ func (b *Bar) Increment() {
 	b.IncrBy(1)
 }
 
-// Incr Deprecated! Use IncrBy(int) or Increment() instead
-func (b *Bar) Incr(n int) {
-	b.IncrBy(n)
-}
-
-// IncrBy increments progress bar by amount of n
-func (b *Bar) IncrBy(n int) {
-	if n < 1 {
-		return
-	}
-	select {
-	case b.operateState <- func(s *bState) {
-		if s.completed {
-			return
-		}
-		next := time.Now()
-		if s.current == 0 {
-			s.startTime = next
-			s.blockStartTime = next
-		} else {
-			now := time.Now()
-			s.updateTimePerItemEstimate(n, now, next)
-			s.timeElapsed = now.Sub(s.startTime)
-		}
-		s.current += int64(n)
-		if s.dynamic {
-			curp := decor.CalcPercentage(s.total, s.current, 100)
-			if 100-curp <= s.totalAutoIncrTrigger {
-				s.total += s.totalAutoIncrBy
-			}
-		} else if s.current >= s.total {
-			s.current = s.total
-			s.completed = true
-		}
-	}:
-	case <-b.done:
-	}
-}
-
 // ResumeFill fills bar with different r rune,
 // from 0 to till amount of progress.
 func (b *Bar) ResumeFill(r rune, till int64) {
@@ -184,9 +162,7 @@ func (b *Bar) ResumeFill(r rune, till int64) {
 		return
 	}
 	select {
-	case b.operateState <- func(s *bState) {
-		s.refill = &refill{r, till}
-	}:
+	case b.operateState <- func(s *bState) { s.refill = &refill{r, till} }:
 	case <-b.done:
 	}
 }
@@ -251,8 +227,43 @@ func (b *Bar) Total() int64 {
 func (b *Bar) SetTotal(total int64, final bool) {
 	select {
 	case b.operateState <- func(s *bState) {
-		s.total = total
+		if total != 0 {
+			s.total = total
+		}
 		s.dynamic = !final
+	}:
+	case <-b.done:
+	}
+}
+
+// IncrBy increments progress bar by amount of n
+func (b *Bar) IncrBy(n int) {
+	if n < 1 {
+		return
+	}
+	now := time.Now()
+	select {
+	case b.operateState <- func(s *bState) {
+		if s.toComplete {
+			return
+		}
+		if s.current == 0 {
+			s.startTime = now
+			s.blockStartTime = now
+		} else {
+			s.updateTimePerItemEstimate(n, now)
+			s.timeElapsed = now.Sub(s.startTime)
+		}
+		s.current += int64(n)
+		if s.dynamic {
+			curp := decor.CalcPercentage(s.total, s.current, 100)
+			if 100-curp <= s.totalAutoIncrTrigger {
+				s.total += s.totalAutoIncrBy
+			}
+		} else if s.current >= s.total {
+			s.current = s.total
+			s.toComplete = true
+		}
 	}:
 	case <-b.done:
 	}
@@ -262,40 +273,21 @@ func (b *Bar) SetTotal(total int64, final bool) {
 func (b *Bar) Completed() bool {
 	result := make(chan bool, 1)
 	select {
-	case b.operateState <- func(s *bState) { result <- s.completed }:
+	case b.operateState <- func(s *bState) { result <- s.toComplete }:
 		return <-result
 	case <-b.done:
-		return b.cacheState.completed
+		return b.cacheState.toComplete
 	}
 }
 
-// Complete stops bar's progress tracking, but doesn't remove the bar from rendering queue.
-// If you need to remove, invoke Progress.RemoveBar(*Bar) instead.
-func (b *Bar) Complete() {
-	b.askToComplete(false)
-}
-
-func (b *Bar) askToComplete(toRemove bool) bool {
-	result := make(chan bool, 1)
-	select {
-	case b.operateState <- func(s *bState) {
-		s.removed = toRemove
-		s.completed = true
-		result <- true
-	}:
-		return <-result
-	case <-b.done:
-		return false
-	}
-}
-
-func (b *Bar) serve(s *bState, cancel <-chan struct{}) {
+func (b *Bar) serve(wg *sync.WaitGroup, s *bState, cancel <-chan struct{}) {
+	defer wg.Done()
 	for {
 		select {
 		case op := <-b.operateState:
 			op(s)
 		case <-cancel:
-			s.completed = true
+			s.toComplete = true
 			cancel = nil
 		case <-b.shutdown:
 			b.cacheState = s
@@ -305,8 +297,8 @@ func (b *Bar) serve(s *bState, cancel <-chan struct{}) {
 	}
 }
 
-func (b *Bar) render(tw int, pSyncer, aSyncer *widthSyncer) <-chan *renderedReader {
-	ch := make(chan *renderedReader, 1)
+func (b *Bar) render(debugOut io.Writer, tw int, pSyncer, aSyncer *widthSyncer) <-chan *bFrame {
+	ch := make(chan *bFrame, 1)
 
 	go func() {
 		select {
@@ -315,41 +307,36 @@ func (b *Bar) render(tw int, pSyncer, aSyncer *widthSyncer) <-chan *renderedRead
 			defer func() {
 				// recovering if external decorators panic
 				if p := recover(); p != nil {
-					s.panicMsg = fmt.Sprintf("b#%02d panic: %v\n", s.id, p)
+					s.panicMsg = fmt.Sprintf("panic: %v", p)
 					s.pDecorators = nil
 					s.aDecorators = nil
-					s.completed = true
-					r = strings.NewReader(s.panicMsg)
+					s.toComplete = true
+					// truncate panic msg to one tw line, if necessary
+					r = strings.NewReader(fmt.Sprintf(fmt.Sprintf("%%.%ds\n", tw), s.panicMsg))
+					fmt.Fprintf(debugOut, "%s %s bar id %02d %v\n", "[mpb]", time.Now(), s.id, s.panicMsg)
 				}
-				ch <- &renderedReader{r, s.completed, s.removed}
+				ch <- &bFrame{b, r, s.toComplete}
 			}()
-			s.draw(tw, pSyncer, aSyncer)
-			r = io.MultiReader(s.bufP, s.bufB, s.bufA)
+			r = s.draw(tw, pSyncer, aSyncer)
 		}:
 		case <-b.done:
 			s := b.cacheState
 			var r io.Reader
 			if s.panicMsg != "" {
-				r = strings.NewReader(s.panicMsg)
+				r = strings.NewReader(fmt.Sprintf(fmt.Sprintf("%%.%ds\n", tw), s.panicMsg))
 			} else {
-				s.draw(tw, pSyncer, aSyncer)
-				r = io.MultiReader(s.bufP, s.bufB, s.bufA)
+				r = s.draw(tw, pSyncer, aSyncer)
 			}
-			ch <- &renderedReader{r, s.completed, s.removed}
+			ch <- &bFrame{b, r, s.toComplete}
 		}
 	}()
 
 	return ch
 }
 
-func (s *bState) updateTimePerItemEstimate(amount int, now, next time.Time) {
-	lastBlockTime := now.Sub(s.blockStartTime)
-	lastItemEstimate := float64(lastBlockTime) / float64(amount)
-	s.timePerItem = time.Duration((s.etaAlpha * lastItemEstimate) + (1-s.etaAlpha)*float64(s.timePerItem))
-	s.blockStartTime = next
-}
+func (s *bState) draw(termWidth int, pSyncer, aSyncer *widthSyncer) io.Reader {
+	defer s.bufA.WriteByte('\n')
 
-func (s *bState) draw(termWidth int, pSyncer, aSyncer *widthSyncer) {
 	if termWidth <= 0 {
 		termWidth = s.width
 	}
@@ -357,19 +344,8 @@ func (s *bState) draw(termWidth int, pSyncer, aSyncer *widthSyncer) {
 	stat := newStatistics(s)
 
 	// render prepend functions to the left of the bar
-	s.bufP.Reset()
 	for i, f := range s.pDecorators {
 		s.bufP.WriteString(f(stat, pSyncer.Accumulator[i], pSyncer.Distributor[i]))
-	}
-
-	if !s.trimLeftSpace {
-		s.bufP.WriteByte(' ')
-	}
-
-	// render append functions to the right of the bar
-	s.bufA.Reset()
-	if !s.trimRightSpace {
-		s.bufA.WriteByte(' ')
 	}
 
 	for i, f := range s.aDecorators {
@@ -379,24 +355,40 @@ func (s *bState) draw(termWidth int, pSyncer, aSyncer *widthSyncer) {
 	prependCount := utf8.RuneCount(s.bufP.Bytes())
 	appendCount := utf8.RuneCount(s.bufA.Bytes())
 
-	if termWidth > s.width {
-		s.fillBar(s.width)
-	} else {
-		s.fillBar(termWidth - prependCount - appendCount)
+	if s.toComplete && s.noBarOnComplete {
+		return io.MultiReader(s.bufP, s.bufA)
 	}
+
+	s.fillBar(s.width)
 	barCount := utf8.RuneCount(s.bufB.Bytes())
 	totalCount := prependCount + barCount + appendCount
-	if totalCount > termWidth {
-		s.fillBar(termWidth - prependCount - appendCount)
+	if spaceCount := 0; totalCount > termWidth {
+		if !s.trimLeftSpace {
+			spaceCount++
+		}
+		if !s.trimRightSpace {
+			spaceCount++
+		}
+		s.fillBar(termWidth - prependCount - appendCount - spaceCount)
 	}
-	s.bufA.WriteByte('\n')
+
+	return io.MultiReader(s.bufP, s.bufB, s.bufA)
 }
 
 func (s *bState) fillBar(width int) {
+	defer func() {
+		s.bufB.WriteRune(s.runes[rRight])
+		if !s.trimRightSpace {
+			s.bufB.WriteByte(' ')
+		}
+	}()
+
 	s.bufB.Reset()
-	s.bufB.WriteRune(s.format[rLeft])
+	if !s.trimLeftSpace {
+		s.bufB.WriteByte(' ')
+	}
+	s.bufB.WriteRune(s.runes[rLeft])
 	if width <= 2 {
-		s.bufB.WriteRune(s.format[rRight])
 		return
 	}
 
@@ -413,33 +405,37 @@ func (s *bState) fillBar(width int) {
 			s.bufB.WriteRune(s.refill.char)
 		}
 		for i = till; i < completedWidth; i++ {
-			s.bufB.WriteRune(s.format[rFill])
+			s.bufB.WriteRune(s.runes[rFill])
 		}
 	} else {
 		var i int64
 		for i = 0; i < completedWidth; i++ {
-			s.bufB.WriteRune(s.format[rFill])
+			s.bufB.WriteRune(s.runes[rFill])
 		}
 	}
 
 	if completedWidth < int64(barWidth) && completedWidth > 0 {
 		_, size := utf8.DecodeLastRune(s.bufB.Bytes())
 		s.bufB.Truncate(s.bufB.Len() - size)
-		s.bufB.WriteRune(s.format[rTip])
+		s.bufB.WriteRune(s.runes[rTip])
 	}
 
 	for i := completedWidth; i < int64(barWidth); i++ {
-		s.bufB.WriteRune(s.format[rEmpty])
+		s.bufB.WriteRune(s.runes[rEmpty])
 	}
+}
 
-	s.bufB.WriteRune(s.format[rRight])
+func (s *bState) updateTimePerItemEstimate(amount int, now time.Time) {
+	lastBlockTime := now.Sub(s.blockStartTime)
+	lastItemEstimate := float64(lastBlockTime) / float64(amount)
+	s.timePerItem = time.Duration((s.etaAlpha * lastItemEstimate) + (1-s.etaAlpha)*float64(s.timePerItem))
+	s.blockStartTime = now
 }
 
 func newStatistics(s *bState) *decor.Statistics {
 	return &decor.Statistics{
 		ID:                  s.id,
-		Completed:           s.completed,
-		Removed:             s.removed,
+		Completed:           s.toComplete,
 		Total:               s.total,
 		Current:             s.current,
 		StartTime:           s.startTime,
@@ -448,9 +444,10 @@ func newStatistics(s *bState) *decor.Statistics {
 	}
 }
 
-func (s *bState) updateFormat(format string) {
+func strToBarRunes(format string) (array barRunes) {
 	for i, n := 0, 0; len(format) > 0; i++ {
-		s.format[i], n = utf8.DecodeRuneInString(format)
+		array[i], n = utf8.DecodeRuneInString(format)
 		format = format[n:]
 	}
+	return
 }
