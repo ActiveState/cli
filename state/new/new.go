@@ -9,6 +9,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/organizations"
+	"github.com/ActiveState/cli/internal/api/client/projects"
+	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -174,7 +176,27 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Create the project.
+	// Check to see if the project already exists on the ActiveState Platform.
+	if api.Auth != nil {
+		params := projects.NewGetProjectParams()
+		params.SetOrganizationName(Flags.Owner)
+		params.SetProjectName(Args.Name)
+		_, err := api.Client.Projects.GetProject(params, api.Auth)
+		if err == nil {
+			print.Error(locale.T("error_state_new_project_exists"))
+			return
+		}
+		switch err.(type) {
+		case *projects.GetProjectNotFound:
+			break // okay
+		default:
+			logging.Errorf("Unable to test if project exists: %s", err)
+			print.Error(locale.T("error_state_new_project_exists_check"))
+			return
+		}
+	}
+
+	// Create the project locally on disk.
 	project := projectfile.Project{
 		Name:    Args.Name,
 		Owner:   Flags.Owner,
@@ -183,4 +205,16 @@ func Execute(cmd *cobra.Command, args []string) {
 	project.SetPath(filepath.Join(Flags.Path, constants.ConfigFileName))
 	project.Save()
 	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": Flags.Path}))
+
+	// Create the project on the ActiveState Platform.
+	if api.Auth != nil {
+		params := projects.NewAddProjectParams()
+		params.SetOrganizationName(Flags.Owner)
+		params.SetProject(&models.Project{Name: Args.Name})
+		_, err := api.Client.Projects.AddProject(params, api.Auth)
+		if err != nil {
+			logging.Errorf("Unable to create Platform project: %s", err)
+			print.Error(locale.T("error_state_new_project_add"))
+		}
+	}
 }

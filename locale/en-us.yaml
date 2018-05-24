@@ -302,5 +302,11 @@ state_new_prompt_version:
   other: Please provide a version string for the new project.
 error_state_new_version:
   other: Version string must consist only of numbers and decimals.
+error_state_new_project_exists_check:
+  other: Unable to create new project: cannot determine if Platform project already exists.
+error_state_new_project_exists:
+  other: Unable to create new project: Platform project already exists.
 state_new_created:
   other: Created new project in {{.Dir}}
+error_state_new_project_add:
+  other: Unable to create new Platform project.
