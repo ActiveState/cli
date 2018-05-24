@@ -1,0 +1,11 @@
+{
+    "git.ignoreLimitWarning": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/testdata/generated": true
+    }
+}

@@ -5,7 +5,6 @@ import (
 	clientOrgs "github.com/ActiveState/cli/internal/api/client/organizations"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/bndr/gotabulate"
@@ -19,19 +18,29 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
-func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, error) {
+func fetchOrganizations() (*clientOrgs.ListOrganizationsOK, *failures.Failure) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
+	personal := false
 	params.SetMemberOnly(&memberOnly)
-	return api.Client.Organizations.ListOrganizations(params, api.Auth)
+	params.SetPersonal(&personal)
+	res, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
+
+	if err != nil {
+		if api.ErrorCode(err) == 401 {
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		}
+		return nil, api.FailUnknown.Wrap(err)
+	}
+
+	return res, nil
 }
 
 // Execute the organizations command.
 func Execute(cmd *cobra.Command, args []string) {
-	orgs, err := fetchOrganizations()
-	if err != nil {
-		logging.Errorf("Unable to list member organizations: %s", err)
-		failures.Handle(err, locale.T("organizations_err"))
+	orgs, fail := fetchOrganizations()
+	if fail != nil {
+		failures.Handle(fail, locale.T("organizations_err"))
 		return
 	}
 

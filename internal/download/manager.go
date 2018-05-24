@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
@@ -31,17 +32,17 @@ func (m *Manager) Download() *failures.Failure {
 	progress := mpb.New()
 	bar := progress.AddBar(int64(len(m.entries)),
 		mpb.PrependDecorators(
-			decor.CountersNoUnit("%d / %d", 10, 0),
+			decor.StaticName(locale.T("total"), 20, 0),
 		),
 		mpb.AppendDecorators(
-			decor.ETA(3, 0),
+			decor.Percentage(5, 0),
 		))
 
 	for w := 1; w <= m.WorkerCount; w++ {
 		// we can't know ahead of time how many jobs each worker will take, so approximate it
 		go func(jobs <-chan *Entry, bar *mpb.Bar) {
 			for entry := range jobs {
-				m.Job(entry)
+				m.Job(entry, progress)
 				bar.Increment()
 			}
 			done <- true
@@ -56,19 +57,18 @@ func (m *Manager) Download() *failures.Failure {
 		<-done
 	}
 
-	bar.Complete()
 	progress.Wait()
 
 	return m.failure
 }
 
 // Job runs an individual download job
-func (m *Manager) Job(entry *Entry) {
+func (m *Manager) Job(entry *Entry, progress *mpb.Progress) {
 	if m.failure != nil {
 		return
 	}
 
-	bytes, fail := Get(entry.Download)
+	bytes, fail := GetWithProgress(entry.Download, progress)
 
 	if fail != nil {
 		m.failure = fail
