@@ -71,7 +71,7 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 
 func TestNewWithBadPath(t *testing.T) {
 	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
-	invalidPath := ":invalid:path:"
+	invalidPath := "/invalid-path:"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-p", invalidPath, "-o", "test-owner", "-v", "1.0"})
 	err := Command.Execute()
