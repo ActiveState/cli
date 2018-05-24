@@ -288,12 +288,16 @@ arg_state_new_name_description:
   other: Name of the new project.
 state_new_prompt_name:
   other: Please provide a name for the new project.
-error_state_new:
-  other: Unable to create new project: {{.Error}}
+error_state_new_abort:
+  other: Unable to create new project: aborted.
 error_state_new_exists:
   other: Unable to create new project: path exists.
+error_state_new_mkdir:
+  other: Unable to create new project directory.
 state_new_prompt_owner:
   other: Please provide an owner for the new project.
+error_state_new_fetch_organizations:
+  other: Unable to create new project: cannot determine potential owners.
 state_new_prompt_version:
   other: Please provide a version string for the new project.
 error_state_new_version:

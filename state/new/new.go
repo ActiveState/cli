@@ -8,15 +8,14 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/api/client/organizations"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/organizations"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -80,7 +79,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	if Args.Name == "" {
 		prompt := &survey.Input{Message: locale.T("state_new_prompt_name")}
 		if err := survey.AskOne(prompt, &Args.Name, surveyor.ValidateRequired); err != nil {
-			failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
+			print.Error(locale.T("error_state_new_aborted"))
 			return
 		}
 	}
@@ -100,16 +99,17 @@ func Execute(cmd *cobra.Command, args []string) {
 			// project name as the path for the new project.
 			Flags.Path = filepath.Join(cwd, Args.Name)
 			if _, err := os.Stat(Flags.Path); err == nil {
-				failures.Handle(failures.FailIO.New("Directory exists"), locale.T("error_state_new_exists"))
+				print.Error(locale.T("error_state_new_exists"))
 				return
 			}
 		}
 	} else if _, err := os.Stat(Flags.Path); err == nil {
-		failures.Handle(failures.FailIO.New("Directory exists"), locale.T("error_state_new_exists"))
+		print.Error(locale.T("error_state_new_exists"))
 		return
 	}
 	if err := os.MkdirAll(Flags.Path, 0755); err != nil {
-		failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
+		logging.Errorf("Unable to create new project directory: %s", err)
+		print.Error(locale.T("error_state_new_mkdir"))
 		return
 	}
 
@@ -121,26 +121,34 @@ func Execute(cmd *cobra.Command, args []string) {
 		if api.Auth == nil {
 			prompt := &survey.Input{Message: locale.T("state_new_prompt_owner")}
 			if err := survey.AskOne(prompt, &Flags.Owner, surveyor.ValidateRequired); err != nil {
-				failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
+				print.Error(locale.T("error_state_new_aborted"))
 				return
 			}
 		} else {
-			orgs, err := organizations.FetchOrganizations()
+			params := organizations.NewListOrganizationsParams()
+			memberOnly := true
+			params.SetMemberOnly(&memberOnly)
+			orgs, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
 			if err != nil {
-				failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
+				logging.Errorf("Unable to fetch organizations: %s", err)
+				print.Error(locale.T("error_state_new_fetch_organizations"))
 				return
 			}
 			owners := []string{}
 			for _, org := range orgs.Payload {
 				owners = append(owners, org.Name)
 			}
-			prompt := &survey.Select{
-				Message: locale.T("state_new_prompt_owner"),
-				Options: owners,
-			}
-			if err = survey.AskOne(prompt, &Flags.Owner, nil); err != nil {
-				failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
-				return
+			if len(owners) > 1 {
+				prompt := &survey.Select{
+					Message: locale.T("state_new_prompt_owner"),
+					Options: owners,
+				}
+				if err = survey.AskOne(prompt, &Flags.Owner, nil); err != nil {
+					print.Error(locale.T("error_state_new_aborted"))
+					return
+				}
+			} else {
+				Flags.Owner = owners[0] // auto-select only option
 			}
 		}
 	}
@@ -156,12 +164,12 @@ func Execute(cmd *cobra.Command, args []string) {
 			return nil
 		})
 		if err != nil {
-			failures.Handle(err, locale.T("error_state_new", map[string]interface{}{"Error": err}))
+			print.Error(locale.T("error_state_new_aborted"))
 			return
 		}
 	} else {
 		if !regexp.MustCompile("^\\d+(\\.\\d+)*$").MatchString(Flags.Version) {
-			failures.Handle(failures.FailUserInput.New("Invalid version format"), locale.T("error_state_new_version"))
+			print.Error(locale.T("error_state_new_version"))
 			return
 		}
 	}
