@@ -76,7 +76,7 @@ func TestNewWithBadPath(t *testing.T) {
 	Cc.SetArgs([]string{"test-name", "-p", invalidPath, "-o", "test-owner", "-v", "1.0"})
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	_, err = os.Stat(filepath.Join(invalidPath, constants.ConfigFileName))
+	_, err = os.Stat(invalidPath)
 	assert.Error(t, err, "Project was not created")
 }
 
