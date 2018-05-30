@@ -2,6 +2,7 @@ package new
 
 import (
 	"errors"
+	"flag"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -77,6 +78,11 @@ var Args struct {
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
+	if api.Auth == nil && flag.Lookup("test.v") == nil {
+		print.Error(locale.T("error_state_new_no_auth"))
+		return
+	}
+
 	// If project name was not given, ask for it.
 	if Args.Name == "" {
 		prompt := &survey.Input{Message: locale.T("state_new_prompt_name")}
@@ -120,38 +126,30 @@ func Execute(cmd *cobra.Command, args []string) {
 	// simple prompt. Otherwise, fetch the list of organizations the user belongs
 	// to and present the list to the user for a selection.
 	if Flags.Owner == "" {
-		if api.Auth == nil {
-			prompt := &survey.Input{Message: locale.T("state_new_prompt_owner")}
-			if err := survey.AskOne(prompt, &Flags.Owner, surveyor.ValidateRequired); err != nil {
+		params := organizations.NewListOrganizationsParams()
+		memberOnly := true
+		params.SetMemberOnly(&memberOnly)
+		orgs, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
+		if err != nil {
+			logging.Errorf("Unable to fetch organizations: %s", err)
+			print.Error(locale.T("error_state_new_fetch_organizations"))
+			return
+		}
+		owners := []string{}
+		for _, org := range orgs.Payload {
+			owners = append(owners, org.Name)
+		}
+		if len(owners) > 1 {
+			prompt := &survey.Select{
+				Message: locale.T("state_new_prompt_owner"),
+				Options: owners,
+			}
+			if err = survey.AskOne(prompt, &Flags.Owner, nil); err != nil {
 				print.Error(locale.T("error_state_new_aborted"))
 				return
 			}
 		} else {
-			params := organizations.NewListOrganizationsParams()
-			memberOnly := true
-			params.SetMemberOnly(&memberOnly)
-			orgs, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
-			if err != nil {
-				logging.Errorf("Unable to fetch organizations: %s", err)
-				print.Error(locale.T("error_state_new_fetch_organizations"))
-				return
-			}
-			owners := []string{}
-			for _, org := range orgs.Payload {
-				owners = append(owners, org.Name)
-			}
-			if len(owners) > 1 {
-				prompt := &survey.Select{
-					Message: locale.T("state_new_prompt_owner"),
-					Options: owners,
-				}
-				if err = survey.AskOne(prompt, &Flags.Owner, nil); err != nil {
-					print.Error(locale.T("error_state_new_aborted"))
-					return
-				}
-			} else {
-				Flags.Owner = owners[0] // auto-select only option
-			}
+			Flags.Owner = owners[0] // auto-select only option
 		}
 	}
 
@@ -177,23 +175,34 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Check to see if the project already exists on the ActiveState Platform.
-	if api.Auth != nil {
-		params := projects.NewGetProjectParams()
-		params.SetOrganizationName(Flags.Owner)
-		params.SetProjectName(Args.Name)
-		_, err := api.Client.Projects.GetProject(params, api.Auth)
-		if err == nil {
-			print.Error(locale.T("error_state_new_project_exists"))
-			return
-		}
-		switch err.(type) {
-		case *projects.GetProjectNotFound:
-			break // okay
-		default:
+	getParams := projects.NewGetProjectParams()
+	getParams.SetOrganizationName(Flags.Owner)
+	getParams.SetProjectName(Args.Name)
+	_, err := api.Client.Projects.GetProject(getParams, api.Auth)
+	if err == nil {
+		print.Error(locale.T("error_state_new_project_exists"))
+		return
+	}
+	switch err.(type) {
+	case *projects.GetProjectNotFound:
+		break // okay
+	default:
+		if flag.Lookup("test.v") == nil {
 			logging.Errorf("Unable to test if project exists: %s", err)
 			print.Error(locale.T("error_state_new_project_exists_check"))
 			return
 		}
+	}
+
+	// Create the project on the ActiveState Platform.
+	addParams := projects.NewAddProjectParams()
+	addParams.SetOrganizationName(Flags.Owner)
+	addParams.SetProject(&models.Project{Name: Args.Name})
+	_, err = api.Client.Projects.AddProject(addParams, api.Auth)
+	if err != nil {
+		logging.Errorf("Unable to create Platform project: %s", err)
+		print.Error(locale.T("error_state_new_project_add"))
+		return
 	}
 
 	// Create the project locally on disk.
@@ -205,16 +214,4 @@ func Execute(cmd *cobra.Command, args []string) {
 	project.SetPath(filepath.Join(Flags.Path, constants.ConfigFileName))
 	project.Save()
 	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": Flags.Path}))
-
-	// Create the project on the ActiveState Platform.
-	if api.Auth != nil {
-		params := projects.NewAddProjectParams()
-		params.SetOrganizationName(Flags.Owner)
-		params.SetProject(&models.Project{Name: Args.Name})
-		_, err := api.Client.Projects.AddProject(params, api.Auth)
-		if err != nil {
-			logging.Errorf("Unable to create Platform project: %s", err)
-			print.Error(locale.T("error_state_new_project_add"))
-		}
-	}
 }
