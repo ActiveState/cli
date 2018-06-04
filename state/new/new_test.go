@@ -86,6 +86,7 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/organizations")
+	httpmock.Register("POST", "organizations/test-owner/projects")
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
@@ -108,6 +109,12 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
 	assert.NoError(t, err, "Wrote dummy file")
 
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("GET", "/organizations")
+	httpmock.Register("POST", "organizations/test-owner/projects")
+
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-p", tmpdir, "-o", "test-owner", "-v", "1.0"})
@@ -124,6 +131,13 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 // Verifies that a project was NOT created in the invalid path.
 func TestNewWithBadPath(t *testing.T) {
 	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("GET", "/organizations")
+	httpmock.Register("POST", "organizations/test-owner/projects")
+
 	invalidPath := "/invalid-path:"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-p", invalidPath, "-o", "test-owner", "-v", "1.0"})

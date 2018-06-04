@@ -92,35 +92,6 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// If path argument was not given, infer it from the current working directory
-	// and the project name given.
-	// Otherwise, ensure the given path does not already exist.
-	if Flags.Path == "" {
-		cwd, _ := os.Getwd()
-		files, _ := ioutil.ReadDir(cwd)
-		if len(files) == 0 {
-			// Current working directory is devoid of files. Use it as the path for
-			// the new project.
-			Flags.Path = cwd
-		} else {
-			// Current working directory has files in it. Use a subdirectory with the
-			// project name as the path for the new project.
-			Flags.Path = filepath.Join(cwd, Args.Name)
-			if _, err := os.Stat(Flags.Path); err == nil {
-				print.Error(locale.T("error_state_new_exists"))
-				return
-			}
-		}
-	} else if _, err := os.Stat(Flags.Path); err == nil {
-		print.Error(locale.T("error_state_new_exists"))
-		return
-	}
-	if err := os.MkdirAll(Flags.Path, 0755); err != nil {
-		logging.Errorf("Unable to create new project directory: %s", err)
-		print.Error(locale.T("error_state_new_mkdir"))
-		return
-	}
-
 	// If owner argument was not given, ask for it.
 	// If the user is not yet authenticated into the ActiveState Platform, it is a
 	// simple prompt. Otherwise, fetch the list of organizations the user belongs
@@ -153,6 +124,46 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	// Create the project on the ActiveState Platform.
+	addParams := projects.NewAddProjectParams()
+	addParams.SetOrganizationName(Flags.Owner)
+	addParams.SetProject(&models.Project{Name: Args.Name})
+	_, err := api.Client.Projects.AddProject(addParams, api.Auth)
+	if err != nil {
+		logging.Errorf("Unable to create Platform project: %s", err)
+		print.Error(locale.T("error_state_new_project_add"))
+		return
+	}
+
+	// If path argument was not given, infer it from the current working directory
+	// and the project name given.
+	// Otherwise, ensure the given path does not already exist.
+	if Flags.Path == "" {
+		cwd, _ := os.Getwd()
+		files, _ := ioutil.ReadDir(cwd)
+		if len(files) == 0 {
+			// Current working directory is devoid of files. Use it as the path for
+			// the new project.
+			Flags.Path = cwd
+		} else {
+			// Current working directory has files in it. Use a subdirectory with the
+			// project name as the path for the new project.
+			Flags.Path = filepath.Join(cwd, Args.Name)
+			if _, err := os.Stat(Flags.Path); err == nil {
+				print.Error(locale.T("error_state_new_exists"))
+				return
+			}
+		}
+	} else if _, err := os.Stat(Flags.Path); err == nil {
+		print.Error(locale.T("error_state_new_exists"))
+		return
+	}
+	if err := os.MkdirAll(Flags.Path, 0755); err != nil {
+		logging.Errorf("Unable to create new project directory: %s", err)
+		print.Error(locale.T("error_state_new_mkdir"))
+		return
+	}
+
 	// If version argument was not given, ask for it.
 	// Otherwise, validate its format.
 	if Flags.Version == "" {
@@ -172,37 +183,6 @@ func Execute(cmd *cobra.Command, args []string) {
 			print.Error(locale.T("error_state_new_version"))
 			return
 		}
-	}
-
-	// Check to see if the project already exists on the ActiveState Platform.
-	getParams := projects.NewGetProjectParams()
-	getParams.SetOrganizationName(Flags.Owner)
-	getParams.SetProjectName(Args.Name)
-	_, err := api.Client.Projects.GetProject(getParams, api.Auth)
-	if err == nil {
-		print.Error(locale.T("error_state_new_project_exists"))
-		return
-	}
-	switch err.(type) {
-	case *projects.GetProjectNotFound:
-		break // okay
-	default:
-		if flag.Lookup("test.v") == nil {
-			logging.Errorf("Unable to test if project exists: %s", err)
-			print.Error(locale.T("error_state_new_project_exists_check"))
-			return
-		}
-	}
-
-	// Create the project on the ActiveState Platform.
-	addParams := projects.NewAddProjectParams()
-	addParams.SetOrganizationName(Flags.Owner)
-	addParams.SetProject(&models.Project{Name: Args.Name})
-	_, err = api.Client.Projects.AddProject(addParams, api.Auth)
-	if err != nil {
-		logging.Errorf("Unable to create Platform project: %s", err)
-		print.Error(locale.T("error_state_new_project_add"))
-		return
 	}
 
 	// Create the project locally on disk.
