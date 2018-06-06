@@ -316,3 +316,9 @@ projects_description:
   other: Manage Your Projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
+error_expand_variable_infinite_recursion:
+  other: Infinite recursion trying to expand variable '{{.Variable}}'
+error_expand_variable_project_unknown_category:
+  other: Error expanding variable '{{.Variable}}': unknown category '{{.Category}}'
+error_expand_variable_project_unknown_name:
+  other: Error expanding variable '{{.Variable}}': unknown name '{{.Name}}'

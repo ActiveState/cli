@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -13,17 +15,17 @@ var calls int // for preventing infinite recursion during recursively expansion
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
-func ExpandFromProject(s string, p *projectfile.Project) string {
+func ExpandFromProject(s string, p *projectfile.Project) (string, *failures.Failure) {
 	calls++
 	if calls > 10 {
 		calls = 0 // reset
-		return ""
+		return "", failures.FailExpandVariableRecursion.New(locale.T("error_expand_variable_infinite_recursion", map[string]string{"Variable": s}))
 	}
+	var failure *failures.Failure
 	regex := regexp.MustCompile("\\${?\\w+\\.\\w+}?")
 	expanded := regex.ReplaceAllStringFunc(s, func(variable string) string {
-		components := strings.Split(strings.TrimLeft(variable, "$"), ".")
-		category := components[0]
-		name := components[1]
+		components := strings.Split(strings.Trim(variable, "${}"), ".")
+		category, name := components[0], components[1]
 		var value string
 		switch category {
 		case "platform":
@@ -44,6 +46,11 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 					value = platform.Libc
 				case "compiler":
 					value = platform.Compiler
+				default:
+					failure = failures.FailExpandVariableBadName.New(locale.T("error_expand_variable_project_unknown_name", map[string]string{
+						"Variable": variable,
+						"Name":     name,
+					}))
 				}
 			}
 		case "variables":
@@ -67,9 +74,17 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 					break
 				}
 			}
+		default:
+			failure = failures.FailExpandVariableBadCategory.New(locale.T("error_expand_variable_project_unknown_category", map[string]string{
+				"Variable": variable,
+				"Category": category,
+			}))
 		}
-		return ExpandFromProject(value, p)
+		if value != "" {
+			value, failure = ExpandFromProject(value, p)
+		}
+		return value
 	})
 	calls--
-	return expanded
+	return expanded, failure
 }
