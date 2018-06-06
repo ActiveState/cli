@@ -316,3 +316,59 @@ projects_description:
   other: Manage Your Projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
+env_description:
+  other: Manage Project Variables
+env_add_description:
+  other: 
+    >
+    add variable
+env_remove_description:
+  other: 
+    >
+    remove variable
+env_header_id:
+  other: ID
+env_header_variable:
+  other: VARIABLE
+env_header_value:
+  other: VALUE
+env_listing_variables:
+  other: Listing defined variables
+env_add_cannot_add_variable:
+  other: "Cannot add Variable '{{.Name}} {{.Value}}'"
+env_add_cannot_add_existing_variable:
+  other: "Identical variable already defined"
+env_remove_cannot_remove:
+  other: "Cannot remove variable"
+arg_env_add_variable:
+  other: VARIABLE
+arg_env_add_variable_description:
+  other: The variable that will be defined
+error_env_add_invalid_variable:
+  other: "Invalid variable name given: {{.Name}}"
+arg_env_add_value:
+  other: VALUE
+arg_env_add_value_description:
+  other: The value that will be assigned
+arg_env_remove_identifier:
+  other: IDENTIFIER
+arg_env_remove_identifier_description:
+  other: Identifies what variable to remove, can be a hash or a variable name
+prompt_choose_variable:
+  other: Which variable do you wish to remove?
+err_env_cannot_list:
+  other: Cannot list variables
+err_env_cannot_find:
+  other: Cannot find variables matching your query
+prompt_env_choose_remove:
+  other: Which variable would you like to remove?
+prompt_env_option:
+  other: "{{.Variable}}: `{{.Value}}` ({{.Constraints}}{{.Hash}})"
+env_removed:
+  other: "Variable removed: {{.Variable}} ({{.Hash}})"
+env_inherit_description:
+  other: Update the current project to inherit environment variables from the current environment.
+env_inherit_prompt_overwrite:
+  other: Do you want to overwrite the project's existing variable {{.Name}}, whose value is "{{.OldValue}}", with the new value "{{.NewValue}}"?
+env_inherit_inherit_aborted:
+  other: Unable to inherit from current environment: aborted.

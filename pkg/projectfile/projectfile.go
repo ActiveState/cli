@@ -76,6 +76,16 @@ type Variable struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
+// Hash return a hashed version of the variable
+func (v *Variable) Hash() (string, error) {
+	hash, err := hashstructure.Hash(v, nil)
+	if err != nil {
+		logging.Errorf("Cannot hash variable: %v", err)
+		return "", err
+	}
+	return fmt.Sprintf("%X", hash), nil
+}
+
 // Hook covers the hook structure, which goes under Project
 type Hook struct {
 	Name        string     `yaml:"name"`
