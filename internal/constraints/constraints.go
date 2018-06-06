@@ -53,6 +53,8 @@ func osMatches(os string) bool {
 			sysOS = sysinfo.Linux
 		case osNames[sysinfo.Windows]:
 			sysOS = sysinfo.Windows
+		case osNames[sysinfo.Mac]:
+			sysOS = sysinfo.Mac
 		default:
 			sysOS = sysinfo.UnknownOs
 		}
