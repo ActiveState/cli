@@ -18,6 +18,7 @@ import (
 var osNames = map[sysinfo.OsInfo]string{
 	sysinfo.Linux:   "linux",
 	sysinfo.Windows: "windows",
+	sysinfo.Mac:     "darwin",
 }
 
 // Map of sysinfo.ArchInfos to our constraint arch names.
