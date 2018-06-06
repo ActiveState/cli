@@ -20,6 +20,8 @@ platforms:
     os: linux
   - name: Windows
     os: windows
+  - name: macOS
+    os: darwin
 variables:
   - name: foo
     value: bar
