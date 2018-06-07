@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -77,17 +76,17 @@ commands:
 	// Test unknown category expansion failure.
 	_, fail = ExpandFromProject("$unknown.unknown", project)
 	assert.Error(t, fail.ToError(), "Error during expansion")
-	assert.True(t, fail.Type.Matches(failures.FailExpandVariableBadCategory), "Handled unknown category")
+	assert.True(t, fail.Type.Matches(FailExpandVariableBadCategory), "Handled unknown category")
 
 	// Test unknown name expansion failure.
 	_, fail = ExpandFromProject("$platform.unknown", project)
 	assert.Error(t, fail.ToError(), "Error during expansion")
-	assert.True(t, fail.Type.Matches(failures.FailExpandVariableBadName), "Handled unknown name")
+	assert.True(t, fail.Type.Matches(FailExpandVariableBadName), "Handled unknown name")
 
 	// Test infinite recursion failure.
 	_, fail = ExpandFromProject("$commands.recursive", project)
 	assert.Error(t, fail.ToError(), "Error during expansion")
-	assert.True(t, fail.Type.Matches(failures.FailExpandVariableRecursion), "Handled infinite recursion")
+	assert.True(t, fail.Type.Matches(FailExpandVariableRecursion), "Handled infinite recursion")
 }
 
 // Tests all possible $platform.[name] variable expansions.

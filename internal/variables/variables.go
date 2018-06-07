@@ -6,9 +6,20 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+// FailExpandVariable identifies a failure during variable expansion.
+var FailExpandVariable = failures.Type("variables.fail.expandvariable", failures.FailUser)
+
+// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
+var FailExpandVariableBadCategory = failures.Type("variables.fail.expandvariable.badcategory", FailExpandVariable)
+
+// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
+var FailExpandVariableBadName = failures.Type("variables.fail.expandvariable.badName", FailExpandVariable)
+
+// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
+var FailExpandVariableRecursion = failures.Type("variables.fail.expandvariable.recursion", FailExpandVariable)
 
 var calls int // for preventing infinite recursion during recursively expansion
 
@@ -19,7 +30,7 @@ func ExpandFromProject(s string, p *projectfile.Project) (string, *failures.Fail
 	calls++
 	if calls > 10 {
 		calls = 0 // reset
-		return "", failures.FailExpandVariableRecursion.New(locale.T("error_expand_variable_infinite_recursion", map[string]string{"Variable": s}))
+		return "", FailExpandVariableRecursion.New("error_expand_variable_infinite_recursion", s)
 	}
 	var failure *failures.Failure
 	regex := regexp.MustCompile("\\${?\\w+\\.\\w+}?")
@@ -47,10 +58,7 @@ func ExpandFromProject(s string, p *projectfile.Project) (string, *failures.Fail
 				case "compiler":
 					value = platform.Compiler
 				default:
-					failure = failures.FailExpandVariableBadName.New(locale.T("error_expand_variable_project_unknown_name", map[string]string{
-						"Variable": variable,
-						"Name":     name,
-					}))
+					failure = FailExpandVariableBadName.New("error_expand_variable_project_unknown_name", variable, name)
 				}
 			}
 		case "variables":
@@ -75,10 +83,7 @@ func ExpandFromProject(s string, p *projectfile.Project) (string, *failures.Fail
 				}
 			}
 		default:
-			failure = failures.FailExpandVariableBadCategory.New(locale.T("error_expand_variable_project_unknown_category", map[string]string{
-				"Variable": variable,
-				"Category": category,
-			}))
+			failure = FailExpandVariableBadCategory.New("error_expand_variable_project_unknown_category", variable, category)
 		}
 		if value != "" {
 			value, failure = ExpandFromProject(value, p)

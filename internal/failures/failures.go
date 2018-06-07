@@ -55,18 +55,6 @@ var (
 
 	// FailThirdParty identifies a failure due to a third party component (ie. we cannot infer the real reason)
 	FailThirdParty = Type("failures.fail.thirdparty")
-
-	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = Type("failures.fail.expandvariable", FailUser)
-
-	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = Type("failures.fail.expandvariable.badcategory", FailExpandVariable)
-
-	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = Type("failures.fail.expandvariable.badName", FailExpandVariable)
-
-	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = Type("failures.fail.expandvariable.recursion", FailExpandVariable)
 )
 
 // FailureType reflects a specific type of failure, and is used to identify failures in a generalized way
