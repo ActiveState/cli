@@ -322,3 +322,11 @@ error_expand_variable_project_unknown_category:
   other: Error expanding variable '{{.V0}}': unknown category '{{.V1}}'
 error_expand_variable_project_unknown_name:
   other: Error expanding variable '{{.V0}}': unknown name '{{.V1}}'
+error_state_run_unknown_name:
+  other: The command '{{.Name}}' is not defined in activestate.yaml.
+error_state_run_activate:
+  other: Unable to activate a state for running the command in. Try manually running "state activate" first.
+info_state_run_running:
+  other: Running command {{.Command}}
+error_state_run_error:
+  other: Failed to run command.
