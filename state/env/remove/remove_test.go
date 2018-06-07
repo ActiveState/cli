@@ -144,13 +144,13 @@ func TestRemovePrompt(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	options, optionsMap, err := variables.PromptOptions("")
+	options, optionsMap, err := variables.PromptOptions("DEBUG")
 	print.Formatted("\nmap1: %v\n", optionsMap)
 	assert.NoError(t, err, "Should be able to get prompt options")
 
 	testPromptResultOverride = options[0]
 
-	removed := removeByPrompt("")
+	removed := removeByPrompt("DEBUG")
 	assert.NotNil(t, removed, "Received a removed variable")
 
 	hash, _ := removed.Hash()
