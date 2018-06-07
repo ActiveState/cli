@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -98,6 +99,10 @@ func PromptOptions(filter string) ([]string, map[string]string, error) {
 	hashedVariables, err := HashVariablesFiltered(project.Variables, filters)
 	if err != nil {
 		return options, optionsMap, err
+	}
+
+	if len(hashedVariables) == 0 {
+		return options, optionsMap, failures.FailUserInput.New(locale.T("err_env_cannot_find"))
 	}
 
 	for hash, variable := range hashedVariables {
