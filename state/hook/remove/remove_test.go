@@ -2,13 +2,13 @@ package remove
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
@@ -16,78 +16,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// For moving the CWD when needed during a test.
-var startingDir string
-var tempDir string
+// Copies the activestate config file in the root test/ directory into the local
+// config directory, reads the config file as a project, and returns that
+// project.
+func getTestProject(t *testing.T) *projectfile.Project {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Got root path")
+	src := filepath.Join(root, "test", constants.ConfigFileName)
+	dst := filepath.Join(config.GetDataDir(), constants.ConfigFileName)
+	fail := fileutils.CopyFile(src, dst)
+	assert.Nil(t, fail, "Copied test activestate config file")
+	project, err := projectfile.Parse(dst)
+	assert.NoError(t, err, "Parsed test config file")
+	return project
+}
 
 func setup(t *testing.T) {
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
-
 	Args.Identifier = ""
+	testPromptResultOverride = ""
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-
 	projectfile.Reset()
-}
-
-func teardown() {
-	removeTmpDir()
-}
-
-// Moves process into a tmp dir and brings a copy of project file with it
-func moveToTmpDir() error {
-	var err error
-	startingDir, _ = environment.GetRootPath()
-	startingDir = filepath.Join(startingDir, "test")
-	tempDir, err = ioutil.TempDir("", "ActiveSta bte-CLI-")
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(tempDir)
-	if err != nil {
-		return err
-	}
-
-	copy(filepath.Join(startingDir, "activestate.yaml"),
-		filepath.Join(tempDir, "activestate.yaml"))
-	return nil
-}
-
-// Moves process to original dir and deletes temp
-func removeTmpDir() error {
-	err := os.Chdir(startingDir)
-	if err != nil {
-		return err
-	}
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func copy(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	in.Close()
-	return out.Close()
 }
 
 func TestExecute(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
 	assert := assert.New(t)
 	Command.Execute()
@@ -96,9 +51,9 @@ func TestExecute(t *testing.T) {
 
 func TestRemoveByHashCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	cmdName := "REMOVE_ME"
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
@@ -118,9 +73,9 @@ func TestRemoveByHashCmd(t *testing.T) {
 
 func TestRemoveByNameCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	cmdName := "REMOVE_ME"
 
 	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
@@ -139,15 +94,16 @@ func TestRemoveByNameCmd(t *testing.T) {
 
 func TestRemovePrompt(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	options, optionsMap, err := hooks.PromptOptions("")
+	options, optionsMap, err := hooks.PromptOptions("FIRST_INSTALL")
 	print.Formatted("\nmap1: %v\n", optionsMap)
 	assert.NoError(t, err, "Should be able to get prompt options")
 
 	testPromptResultOverride = options[0]
 
-	removed := removeByPrompt("")
+	removed := removeByPrompt("FIRST_INSTALL")
 	assert.NotNil(t, removed, "Received a removed hook")
 
 	hash, _ := removed.Hash()
@@ -156,9 +112,9 @@ func TestRemovePrompt(t *testing.T) {
 
 func TestRemoveByHash(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	hookLen := len(project.Hooks)
 
 	hash, err := project.Hooks[0].Hash()
@@ -172,9 +128,9 @@ func TestRemoveByHash(t *testing.T) {
 
 func TestRemovebyName(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	hookLen := len(project.Hooks)
 
 	removed := removeByName(project.Hooks[0].Name)
@@ -186,11 +142,10 @@ func TestRemovebyName(t *testing.T) {
 // This test shoudln't remove anything as there are multiple hooks configured for the same hook name
 func TestRemoveByNameFailCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
-	testPromptResultOverride = "" // reset
+	project := getTestProject(t)
+	project.Persist()
 
 	cmdName := "REMOVE_ME"
-	project := projectfile.Get()
 
 	hook1 := projectfile.Hook{Name: cmdName, Value: "This is a command"}
 	hook2 := projectfile.Hook{Name: cmdName, Value: "This is another command"}
@@ -209,7 +164,8 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 
 func TestRemoveNonExistant(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
 	_, _, err := variables.PromptOptions("")
 	assert.NoError(t, err, "Should be able to get prompt options")

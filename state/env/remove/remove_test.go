@@ -2,13 +2,13 @@ package remove
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -19,78 +19,33 @@ import (
 // tests added, modified, or removed in that file should be applied here and
 // vice-versa.
 
-// For moving the CWD when needed during a test.
-var startingDir string
-var tempDir string
+// Copies the activestate config file in the root test/ directory into the local
+// config directory, reads the config file as a project, and returns that
+// project.
+func getTestProject(t *testing.T) *projectfile.Project {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Got root path")
+	src := filepath.Join(root, "test", constants.ConfigFileName)
+	dst := filepath.Join(config.GetDataDir(), constants.ConfigFileName)
+	fail := fileutils.CopyFile(src, dst)
+	assert.Nil(t, fail, "Copied test activestate config file")
+	project, err := projectfile.Parse(dst)
+	assert.NoError(t, err, "Parsed test config file")
+	return project
+}
 
 func setup(t *testing.T) {
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
-
 	Args.Identifier = ""
+	testPromptResultOverride = ""
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-
 	projectfile.Reset()
-}
-
-func teardown() {
-	removeTmpDir()
-}
-
-// Moves process into a tmp dir and brings a copy of project file with it
-func moveToTmpDir() error {
-	var err error
-	startingDir, _ = environment.GetRootPath()
-	startingDir = filepath.Join(startingDir, "test")
-	tempDir, err = ioutil.TempDir("", "CLI-")
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(tempDir)
-	if err != nil {
-		return err
-	}
-
-	copy(filepath.Join(startingDir, "activestate.yaml"),
-		filepath.Join(tempDir, "activestate.yaml"))
-	return nil
-}
-
-// Moves process to original dir and deletes temp
-func removeTmpDir() error {
-	err := os.Chdir(startingDir)
-	if err != nil {
-		return err
-	}
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func copy(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	in.Close()
-	return out.Close()
 }
 
 func TestExecute(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
 	assert := assert.New(t)
 	Command.Execute()
@@ -99,9 +54,9 @@ func TestExecute(t *testing.T) {
 
 func TestRemoveByHashCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	varName := "foo"
 
 	variable := projectfile.Variable{Name: varName, Value: "value"}
@@ -121,9 +76,9 @@ func TestRemoveByHashCmd(t *testing.T) {
 
 func TestRemoveByNameCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	varName := "foo"
 
 	variable := projectfile.Variable{Name: varName, Value: "value"}
@@ -142,7 +97,8 @@ func TestRemoveByNameCmd(t *testing.T) {
 
 func TestRemovePrompt(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
 	options, optionsMap, err := variables.PromptOptions("DEBUG")
 	print.Formatted("\nmap1: %v\n", optionsMap)
@@ -159,9 +115,9 @@ func TestRemovePrompt(t *testing.T) {
 
 func TestRemoveByHash(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	variableLen := len(project.Variables)
 
 	hash, err := project.Variables[0].Hash()
@@ -175,9 +131,9 @@ func TestRemoveByHash(t *testing.T) {
 
 func TestRemovebyName(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
-	project := projectfile.Get()
 	variableLen := len(project.Variables)
 
 	removed := removeByName(project.Variables[0].Name)
@@ -189,11 +145,10 @@ func TestRemovebyName(t *testing.T) {
 // This test shoudln't remove anything as there are multiple variables defined for the same variable name
 func TestRemoveByNameFailCmd(t *testing.T) {
 	setup(t)
-	defer teardown()
-	testPromptResultOverride = "" // reset
+	project := getTestProject(t)
+	project.Persist()
 
 	varName := "foo"
-	project := projectfile.Get()
 
 	variable1 := projectfile.Variable{Name: varName, Value: "bar"}
 	variable2 := projectfile.Variable{Name: varName, Value: "baz", Constraints: projectfile.Constraint{Platform: "windows"}}
@@ -212,7 +167,8 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 
 func TestRemoveNonExistant(t *testing.T) {
 	setup(t)
-	defer teardown()
+	project := getTestProject(t)
+	project.Persist()
 
 	_, _, err := variables.PromptOptions("DEBUG")
 	assert.NoError(t, err, "Should be able to get prompt options")

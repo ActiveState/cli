@@ -2,12 +2,12 @@ package add
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -15,77 +15,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// For moving the CWD when needed during a test.
-var startingDir string
-var tempDir string
-
-// Moves process into a tmp dir and brings a copy of project file with it
-func moveToTmpDir() error {
-	var err error
+// Copies the activestate config file in the root test/ directory into the local
+// config directory, reads the config file as a project, and returns that
+// project.
+func getTestProject(t *testing.T) *projectfile.Project {
 	root, err := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
-	os.Chdir(testDir)
-	if err != nil {
-		return err
-	}
-	startingDir, _ = os.Getwd()
-	tempDir, err = ioutil.TempDir("", "ActiveSta bte-CLI-")
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(tempDir)
-	if err != nil {
-		return err
-	}
-
-	copy(filepath.Join(startingDir, "activestate.yaml"),
-		filepath.Join(tempDir, "activestate.yaml"))
-	return nil
-}
-
-// Moves process to original dir and deletes temp
-func removeTmpDir() error {
-	err := os.Chdir(startingDir)
-	if err != nil {
-		return err
-	}
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func copy(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	in.Close()
-	return out.Close()
+	assert.NoError(t, err, "Got root path")
+	src := filepath.Join(root, "test", constants.ConfigFileName)
+	dst := filepath.Join(config.GetDataDir(), constants.ConfigFileName)
+	fail := fileutils.CopyFile(src, dst)
+	assert.Nil(t, fail, "Copied test activestate config file")
+	project, err := projectfile.Parse(dst)
+	assert.NoError(t, err, "Parsed test config file")
+	return project
 }
 
 func TestAddHookPass(t *testing.T) {
 	Args.Hook, Args.Command = "", "" // reset
-	err := moveToTmpDir()
-
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	newHookName := "ACTIVATE"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{newHookName, "echo 'This is a command'"})
 	Cc.Execute()
 
-	project := projectfile.Get()
 	var found = false
 	for _, hook := range project.Hooks {
 		if hook.Name == newHookName {
@@ -93,21 +47,17 @@ func TestAddHookPass(t *testing.T) {
 		}
 	}
 	assert.True(t, found, fmt.Sprintf("Should find a hook named %v", newHookName))
-
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
 func TestAddHookFail(t *testing.T) {
 	Args.Hook, Args.Command = "", "" // reset
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	Cc := Command.GetCobraCmd()
 	newHookName := "A_HOOK"
 	Cc.SetArgs([]string{newHookName})
 	Cc.Execute()
-	project := projectfile.Get()
 
 	var found = false
 	for _, hook := range project.Hooks {
@@ -116,16 +66,13 @@ func TestAddHookFail(t *testing.T) {
 		}
 	}
 	assert.False(t, found, fmt.Sprintf("Should NOT find a hook named %v", newHookName))
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
 // Test it doesn't explode when run with no args
 func TestExecute(t *testing.T) {
 	Args.Hook, Args.Command = "", "" // reset
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	project := getTestProject(t)
+	project.Persist()
 
 	Command.Execute()
 
@@ -135,9 +82,8 @@ func TestExecute(t *testing.T) {
 //
 func TestAddHookFailIdentical(t *testing.T) {
 	Args.Hook, Args.Command = "", "" // reset
-	project := projectfile.Get()
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	hookName := "ACTIVATE"
 	value := "echo 'This is a command'"
@@ -154,7 +100,4 @@ func TestAddHookFailIdentical(t *testing.T) {
 	assert.Equal(t, 1,
 		len(filteredMappedHooks),
 		fmt.Sprintf("There should be only one hook configure for hookname'%v'", hookName))
-
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }

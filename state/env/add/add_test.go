@@ -2,12 +2,13 @@ package add
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -19,77 +20,31 @@ import (
 // added, modified, or removed in that file should be applied here and
 // vice-versa.
 
-// For moving the CWD when needed during a test.
-var startingDir string
-var tempDir string
-
-// Moves process into a tmp dir and brings a copy of project file with it
-func moveToTmpDir() error {
-	var err error
+// Copies the activestate config file in the root test/ directory into the local
+// config directory, reads the config file as a project, and returns that
+// project.
+func getTestProject(t *testing.T) *projectfile.Project {
 	root, err := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
-	os.Chdir(testDir)
-	if err != nil {
-		return err
-	}
-	startingDir, _ = os.Getwd()
-	tempDir, err = ioutil.TempDir("", "CLI-")
-	if err != nil {
-		return err
-	}
-	err = os.Chdir(tempDir)
-	if err != nil {
-		return err
-	}
-
-	copy(filepath.Join(startingDir, "activestate.yaml"),
-		filepath.Join(tempDir, "activestate.yaml"))
-	return nil
-}
-
-// Moves process to original dir and deletes temp
-func removeTmpDir() error {
-	err := os.Chdir(startingDir)
-	if err != nil {
-		return err
-	}
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func copy(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	in.Close()
-	return out.Close()
+	assert.NoError(t, err, "Got root path")
+	src := filepath.Join(root, "test", constants.ConfigFileName)
+	dst := filepath.Join(config.GetDataDir(), constants.ConfigFileName)
+	fail := fileutils.CopyFile(src, dst)
+	assert.Nil(t, fail, "Copied test activestate config file")
+	project, err := projectfile.Parse(dst)
+	assert.NoError(t, err, "Parsed test config file")
+	return project
 }
 
 func TestAddVariablePass(t *testing.T) {
 	Args.Name, Args.Value = "", "" // reset
-	err := moveToTmpDir()
-
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	newVariableName := "foo"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{newVariableName, "bar"})
 	Cc.Execute()
 
-	project := projectfile.Get()
 	var found = false
 	for _, variable := range project.Variables {
 		if variable.Name == newVariableName {
@@ -97,21 +52,17 @@ func TestAddVariablePass(t *testing.T) {
 		}
 	}
 	assert.True(t, found, fmt.Sprintf("Should find a variable named %v", newVariableName))
-
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
 func TestAddVariableFail(t *testing.T) {
 	Args.Name, Args.Value = "", "" // reset
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	Cc := Command.GetCobraCmd()
 	newVariableName := "foo?!"
 	Cc.SetArgs([]string{newVariableName})
 	Cc.Execute()
-	project := projectfile.Get()
 
 	var found = false
 	for _, variable := range project.Variables {
@@ -120,16 +71,13 @@ func TestAddVariableFail(t *testing.T) {
 		}
 	}
 	assert.False(t, found, fmt.Sprintf("Should NOT find a variable named %v", newVariableName))
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
 // Test it doesn't explode when run with no args
 func TestExecute(t *testing.T) {
 	Args.Name, Args.Value = "", "" // reset
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+	project := getTestProject(t)
+	project.Persist()
 
 	Command.Execute()
 
@@ -139,9 +87,8 @@ func TestExecute(t *testing.T) {
 //
 func TestAddVariableFailIdentical(t *testing.T) {
 	Args.Name, Args.Value = "", "" // reset
-	project := projectfile.Get()
-	err := moveToTmpDir()
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 
 	variableName := "DEBUG"
 	value := "true"
@@ -158,16 +105,12 @@ func TestAddVariableFailIdentical(t *testing.T) {
 	assert.Equal(t, 1,
 		len(filteredMappedVariables),
 		fmt.Sprintf("There should be only one variable defined for variablename'%v'", variableName))
-
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
 
 func TestAddVariableInheritValue(t *testing.T) {
 	Args.Name, Args.Value = "", "" // reset
-	err := moveToTmpDir()
-
-	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	project := getTestProject(t)
+	project.Persist()
 	os.Setenv("foo", "baz")
 
 	newVariableName := "foo"
@@ -175,7 +118,6 @@ func TestAddVariableInheritValue(t *testing.T) {
 	Cc.SetArgs([]string{newVariableName})
 	Cc.Execute()
 
-	project := projectfile.Get()
 	var found *projectfile.Variable
 	for _, variable := range project.Variables {
 		if variable.Name == newVariableName {
@@ -184,7 +126,4 @@ func TestAddVariableInheritValue(t *testing.T) {
 	}
 	assert.NotNil(t, found, fmt.Sprintf("Should find a variable named %v", newVariableName))
 	assert.Equal(t, os.Getenv("foo"), found.Value, "Variable value should be inherited from env")
-
-	err = removeTmpDir()
-	assert.Nil(t, err, "Tried to remove tmp testing dir")
 }
