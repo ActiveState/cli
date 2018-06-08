@@ -209,3 +209,16 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
 	assert.Equal(t, 2, len(mappedVariables), fmt.Sprintf("There should still be two variables of the same name in the config: '%v'", varName))
 }
+
+func TestRemoveNonExistant(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	_, _, err := variables.PromptOptions("DEBUG")
+	assert.NoError(t, err, "Should be able to get prompt options")
+
+	testPromptResultOverride = "does-not-exist"
+
+	removed := removeByPrompt("DEBUG")
+	assert.Nil(t, removed, "Could not remove non-existant variable")
+}

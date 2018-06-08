@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
+	"github.com/ActiveState/cli/pkg/cmdlets/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
@@ -204,4 +205,17 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 
 	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
 	assert.Equal(t, 2, len(mappedHooks), fmt.Sprintf("There should still be two commands of the same name in the config: '%v'", cmdName))
+}
+
+func TestRemoveNonExistant(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	_, _, err := variables.PromptOptions("")
+	assert.NoError(t, err, "Should be able to get prompt options")
+
+	testPromptResultOverride = "does-not-exist"
+
+	removed := removeByPrompt("")
+	assert.Nil(t, removed, "Could not remove non-existant hook")
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/spf13/cobra"
@@ -63,7 +63,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		} else if numOfHooksFound > 0 {
 			removed = removeByPrompt(Args.Identifier)
 		} else {
-			failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
+			failures.Handle(failures.FailUserInput.New("err_hook_cannot_find"), "")
 		}
 	}
 
@@ -135,10 +135,8 @@ func removeByPrompt(identifier string) *projectfile.Hook {
 	}
 
 	hash, exists := optionsMap[result]
-	print.Formatted("\nresult: %v\n", result)
-	print.Formatted("\nmap: %v\n", optionsMap)
 	if result == "" || !exists {
-		failures.Handle(failures.FailUserInput.New(locale.T("err_hook_cannot_find")), "")
+		print.Error("err_hook_cannot_find")
 		return removed
 	}
 

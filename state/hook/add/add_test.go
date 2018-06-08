@@ -75,6 +75,7 @@ func copy(src, dst string) error {
 }
 
 func TestAddHookPass(t *testing.T) {
+	Args.Hook, Args.Command = "", "" // reset
 	err := moveToTmpDir()
 
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
@@ -98,6 +99,7 @@ func TestAddHookPass(t *testing.T) {
 }
 
 func TestAddHookFail(t *testing.T) {
+	Args.Hook, Args.Command = "", "" // reset
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
@@ -120,6 +122,7 @@ func TestAddHookFail(t *testing.T) {
 
 // Test it doesn't explode when run with no args
 func TestExecute(t *testing.T) {
+	Args.Hook, Args.Command = "", "" // reset
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
@@ -131,6 +134,7 @@ func TestExecute(t *testing.T) {
 
 //
 func TestAddHookFailIdentical(t *testing.T) {
+	Args.Hook, Args.Command = "", "" // reset
 	project := projectfile.Get()
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")

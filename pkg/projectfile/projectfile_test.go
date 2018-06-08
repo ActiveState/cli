@@ -113,6 +113,9 @@ value: valueForValue`)
 
 	assert.Equal(t, "valueForName", variable.Name, "Name should be set")
 	assert.Equal(t, "valueForValue", variable.Value, "Value should be set")
+	hash, err := variable.Hash()
+	assert.NoError(t, err, "Hashed variable")
+	assert.NotEmpty(t, hash, "Hash has a value")
 }
 
 func TestHookStruct(t *testing.T) {
@@ -126,6 +129,9 @@ value: valueForValue`)
 
 	assert.Equal(t, "valueForName", hook.Name, "Name should be set")
 	assert.Equal(t, "valueForValue", hook.Value, "Value should be set")
+	hash, err := hook.Hash()
+	assert.NoError(t, err, "Hashed hook")
+	assert.NotEmpty(t, hash, "Hash has a value")
 }
 
 func TestCommandStruct(t *testing.T) {

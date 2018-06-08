@@ -65,7 +65,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		} else if numOfVariablesFound > 0 {
 			removed = removeByPrompt(Args.Identifier)
 		} else {
-			failures.Handle(failures.FailUserInput.New(locale.T("err_env_cannot_find")), "")
+			failures.Handle(failures.FailUserInput.New("err_env_cannot_find"), "")
 		}
 	}
 
@@ -137,10 +137,8 @@ func removeByPrompt(identifier string) *projectfile.Variable {
 	}
 
 	hash, exists := optionsMap[result]
-	print.Formatted("\nresult: %v\n", result)
-	print.Formatted("\nmap: %v\n", optionsMap)
 	if result == "" || !exists {
-		failures.Handle(failures.FailUserInput.New(locale.T("err_env_cannot_find")), "")
+		print.Error(locale.T("err_env_cannot_find"))
 		return removed
 	}
 

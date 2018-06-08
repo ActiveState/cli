@@ -102,7 +102,7 @@ func PromptOptions(filter string) ([]string, map[string]string, error) {
 	}
 
 	if len(hashedVariables) == 0 {
-		return options, optionsMap, failures.FailUserInput.New(locale.T("err_env_cannot_find"))
+		return options, optionsMap, failures.FailUserInput.New("err_env_cannot_find")
 	}
 
 	for hash, variable := range hashedVariables {

@@ -79,6 +79,7 @@ func copy(src, dst string) error {
 }
 
 func TestAddVariablePass(t *testing.T) {
+	Args.Name, Args.Value = "", "" // reset
 	err := moveToTmpDir()
 
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
@@ -102,6 +103,7 @@ func TestAddVariablePass(t *testing.T) {
 }
 
 func TestAddVariableFail(t *testing.T) {
+	Args.Name, Args.Value = "", "" // reset
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
 
@@ -124,6 +126,7 @@ func TestAddVariableFail(t *testing.T) {
 
 // Test it doesn't explode when run with no args
 func TestExecute(t *testing.T) {
+	Args.Name, Args.Value = "", "" // reset
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
@@ -135,6 +138,7 @@ func TestExecute(t *testing.T) {
 
 //
 func TestAddVariableFailIdentical(t *testing.T) {
+	Args.Name, Args.Value = "", "" // reset
 	project := projectfile.Get()
 	err := moveToTmpDir()
 	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
@@ -154,6 +158,32 @@ func TestAddVariableFailIdentical(t *testing.T) {
 	assert.Equal(t, 1,
 		len(filteredMappedVariables),
 		fmt.Sprintf("There should be only one variable defined for variablename'%v'", variableName))
+
+	err = removeTmpDir()
+	assert.Nil(t, err, "Tried to remove tmp testing dir")
+}
+
+func TestAddVariableInheritValue(t *testing.T) {
+	Args.Name, Args.Value = "", "" // reset
+	err := moveToTmpDir()
+
+	assert.Nil(t, err, "A temporary directory was created and entered as CWD")
+	os.Setenv("foo", "baz")
+
+	newVariableName := "foo"
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{newVariableName})
+	Cc.Execute()
+
+	project := projectfile.Get()
+	var found *projectfile.Variable
+	for _, variable := range project.Variables {
+		if variable.Name == newVariableName {
+			found = &variable
+		}
+	}
+	assert.NotNil(t, found, fmt.Sprintf("Should find a variable named %v", newVariableName))
+	assert.Equal(t, os.Getenv("foo"), found.Value, "Variable value should be inherited from env")
 
 	err = removeTmpDir()
 	assert.Nil(t, err, "Tried to remove tmp testing dir")

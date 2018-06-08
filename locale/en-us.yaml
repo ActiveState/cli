@@ -138,7 +138,7 @@ arg_hook_add_hook:
 arg_hook_add_hook_description:
   other: The hook that will be listened to
 error_hook_add_invalid_hook:
-  other: "Invalid hook given: {{.Name}}"
+  other: "Invalid hook given: {{.V0}}"
 arg_hook_add_command:
   other: COMMAND
 arg_hook_add_command_description:
@@ -345,7 +345,7 @@ arg_env_add_variable:
 arg_env_add_variable_description:
   other: The variable that will be defined
 error_env_add_invalid_variable:
-  other: "Invalid variable name given: {{.Name}}"
+  other: "Invalid variable name given: {{.V0}}"
 arg_env_add_value:
   other: VALUE
 arg_env_add_value_description:

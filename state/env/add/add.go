@@ -38,14 +38,14 @@ var Command = &commands.Command{
 			Validator: func(arg *commands.Argument, value string) error {
 				regex := regexp.MustCompile("^\\w+$")
 				if !regex.MatchString(value) {
-					return failures.FailUserInput.New(locale.T("err_env_add_invalid_variable", map[string]interface{}{"Name": value}))
+					return failures.FailUserInput.New("err_env_add_invalid_variable", value)
 				}
 				return nil
 			},
 		},
 		&commands.Argument{
 			Name:        "arg_env_add_value",
-			Description: "env_hook_add_value_description",
+			Description: "env_env_add_value_description",
 			Variable:    &Args.Value,
 			Required:    false,
 		},
@@ -74,5 +74,5 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 	project.Variables = append(project.Variables, newVariable)
 	project.Save()
-	logging.Debug("Execute `hook add`")
+	logging.Debug("Execute `env add`")
 }

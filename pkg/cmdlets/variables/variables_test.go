@@ -125,3 +125,26 @@ variables:
 	Notexists, _ := VariableExists(variableNotExists, &project)
 	assert.False(t, Notexists, "Variables should NOT exist already.")
 }
+
+func TestPromptOptions(t *testing.T) {
+	project := projectfile.Project{}
+	dat := `
+name: name
+owner: owner
+variables:
+  - name: foo
+    value: bar
+  - name: bar
+    value: baz`
+	dat = strings.TrimSpace(dat)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
+	options, optionsMap, err := PromptOptions("foo")
+	assert.NoError(t, err, "Determined options")
+	assert.Equal(t, 1, len(options), "One variable returned")
+	assert.Equal(t, 1, len(optionsMap), "One variable returned")
+	hash, _ := project.Variables[0].Hash()
+	assert.Equal(t, hash, optionsMap[options[0]], "Hash is foo's hash")
+}

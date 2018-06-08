@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/thoas/go-funk"
+	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -38,7 +38,7 @@ var Command = &commands.Command{
 			Required:    true,
 			Validator: func(arg *commands.Argument, value string) error {
 				if !funk.Contains(KnownHooks, value) {
-					return failures.FailUserInput.New(locale.T("error_hook_add_invalid_hook", map[string]interface{}{"Name": value}))
+					return failures.FailUserInput.New("error_hook_add_invalid_hook", value)
 				}
 				return nil
 			},
