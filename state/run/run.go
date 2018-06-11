@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	ps "github.com/mitchellh/go-ps"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +25,7 @@ var Command = &commands.Command{
 	Flags: []*commands.Flag{
 		&commands.Flag{
 			Name:        "standalone",
-			Shorthand:   "",
+			Shorthand:   "s",
 			Description: "flag_state_run_standalone_description",
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.Standalone,
@@ -51,30 +51,6 @@ var Args struct {
 	Name string
 }
 
-// Returns whether or not this process is being run in an activated state.
-func isActivated() bool {
-	pid := os.Getppid()
-	for true {
-		p, err := ps.FindProcess(pid)
-		if err != nil {
-			logging.Errorf("Could not detect process information: %s", err)
-			return false
-		}
-		if p == nil {
-			return false
-		}
-		if strings.HasPrefix(p.Executable(), "state") {
-			return true
-		}
-		ppid := p.PPid()
-		if p.PPid() == pid {
-			break
-		}
-		pid = ppid
-	}
-	return false
-}
-
 // Execute the run command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
@@ -97,7 +73,8 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Activate the state if needed.
-	if !isActivated() && !Flags.Standalone {
+	if !subshell.IsActivated() && !Flags.Standalone {
+		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())

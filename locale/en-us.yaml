@@ -322,8 +322,12 @@ error_expand_variable_project_unknown_category:
   other: Error expanding variable '{{.V0}}': unknown category '{{.V1}}'
 error_expand_variable_project_unknown_name:
   other: Error expanding variable '{{.V0}}': unknown name '{{.V1}}'
+flag_state_run_standalone_description:
+  other: Run a command, regardless of an activated state
 error_state_run_unknown_name:
   other: The command '{{.Name}}' is not defined in activestate.yaml.
+info_state_run_activating_state:
+  other: This command requires an activated state. Activating it now. To bypass this, use the --standalone flag.
 error_state_run_activate:
   other: Unable to activate a state for running the command in. Try manually running "state activate" first.
 info_state_run_running:
