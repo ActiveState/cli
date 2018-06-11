@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
@@ -22,7 +21,7 @@ func getTestProject(t *testing.T) *projectfile.Project {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Got root path")
 	src := filepath.Join(root, "test", constants.ConfigFileName)
-	dst := filepath.Join(config.GetDataDir(), constants.ConfigFileName)
+	dst := filepath.Join(root, "state", "hook", "add", "testdata", "generated", "config", constants.ConfigFileName)
 	fail := fileutils.CopyFile(src, dst)
 	assert.Nil(t, fail, "Copied test activestate config file")
 	project, err := projectfile.Parse(dst)

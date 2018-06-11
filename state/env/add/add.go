@@ -45,7 +45,7 @@ var Command = &commands.Command{
 		},
 		&commands.Argument{
 			Name:        "arg_env_add_value",
-			Description: "env_env_add_value_description",
+			Description: "arg_env_add_value_description",
 			Variable:    &Args.Value,
 			Required:    false,
 		},

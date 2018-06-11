@@ -39,18 +39,16 @@ func Execute(cmd *cobra.Command, args []string) {
 				continue
 			}
 			var yes bool
-			if flag.Lookup("test.v") == nil {
-				prompt := &survey.Confirm{Message: locale.T("env_inherit_prompt_overwrite", map[string]string{
-					"Name":     name,
-					"OldValue": variable.Value,
-					"NewValue": os.Getenv(name),
-				})}
-				err := survey.AskOne(prompt, &yes, nil)
-				if err != nil {
-					print.Error(locale.T("error_env_inherit_aborted"))
-					return
-				}
-			} else {
+			prompt := &survey.Confirm{Message: locale.T("env_inherit_prompt_overwrite", map[string]string{
+				"Name":     name,
+				"OldValue": variable.Value,
+				"NewValue": os.Getenv(name),
+			})}
+			err := survey.AskOne(prompt, &yes, nil)
+			if err != nil && flag.Lookup("test.v") == nil {
+				print.Error(locale.T("error_env_inherit_aborted"))
+				return
+			} else if flag.Lookup("test.v") != nil {
 				yes = testConfirm
 			}
 			if yes {
