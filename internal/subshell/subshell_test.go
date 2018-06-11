@@ -44,3 +44,7 @@ func TestActivateFailures(t *testing.T) {
 
 	assert.Error(t, err, "Should produce an error because of unsupported shell")
 }
+
+func TestIsActivated(t *testing.T) {
+	assert.False(t, IsActivated(), "Test environment is not in an activated state")
+}
