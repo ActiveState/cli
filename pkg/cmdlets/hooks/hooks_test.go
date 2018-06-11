@@ -183,3 +183,29 @@ hooks:
 	Notexists, _ := HookExists(hookNotExists, &project)
 	assert.False(t, Notexists, "Hooks should NOT exist already.")
 }
+
+func TestPromptOptions(t *testing.T) {
+	project := projectfile.Project{}
+	dat := `
+name: name
+owner: owner
+hooks:
+  - name: ACTIVATE
+    value: bar
+    constraints:
+      platform: foobar
+      environment: foobar
+  - name: SOMETHING_ELSE
+    value: baz`
+	dat = strings.TrimSpace(dat)
+
+	err := yaml.Unmarshal([]byte(dat), &project)
+	assert.NoError(t, err, "YAML unmarshalled")
+	project.Persist()
+	options, optionsMap, err := PromptOptions("ACTIVATE")
+	assert.NoError(t, err, "Determined options")
+	assert.Equal(t, 1, len(options), "One hook returned")
+	assert.Equal(t, 1, len(optionsMap), "One hook returned")
+	hash, _ := project.Hooks[0].Hash()
+	assert.Equal(t, hash, optionsMap[options[0]], "Hash is ACTIVATE's hash")
+}

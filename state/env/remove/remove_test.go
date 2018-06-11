@@ -9,11 +9,14 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
+
+// This is mostly a clone of the state/hooks/remove/remove_test.go file. Any
+// tests added, modified, or removed in that file should be applied here and
+// vice-versa.
 
 // Copies the activestate config file in the root test/ directory into the local
 // config directory, reads the config file as a project, and returns that
@@ -22,7 +25,7 @@ func getTestProject(t *testing.T) *projectfile.Project {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Got root path")
 	src := filepath.Join(root, "test", constants.ConfigFileName)
-	dst := filepath.Join(root, "state", "hook", "remove", "testdata", "generated", "config", constants.ConfigFileName)
+	dst := filepath.Join(root, "state", "env", "remove", "testdata", "generated", "config", constants.ConfigFileName)
 	fail := fileutils.CopyFile(src, dst)
 	assert.Nil(t, fail, "Copied test activestate config file")
 	project, err := projectfile.Parse(dst)
@@ -53,21 +56,21 @@ func TestRemoveByHashCmd(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	cmdName := "REMOVE_ME"
+	varName := "foo"
 
-	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
-	project.Hooks = append(project.Hooks, hook)
+	variable := projectfile.Variable{Name: varName, Value: "value"}
+	project.Variables = append(project.Variables, variable)
 	project.Save()
 
-	hash, _ := hook.Hash()
+	hash, _ := variable.Hash()
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{hash})
 	Command.Execute()
 	Cc.SetArgs([]string{})
 
 	project = projectfile.Get()
-	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
-	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v'", cmdName))
+	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
+	assert.Equal(t, 0, len(mappedVariables), fmt.Sprintf("No variables should be found of name: '%v'", varName))
 }
 
 func TestRemoveByNameCmd(t *testing.T) {
@@ -75,20 +78,20 @@ func TestRemoveByNameCmd(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	cmdName := "REMOVE_ME"
+	varName := "foo"
 
-	hook := projectfile.Hook{Name: cmdName, Value: "This is a command"}
-	project.Hooks = append(project.Hooks, hook)
+	variable := projectfile.Variable{Name: varName, Value: "value"}
+	project.Variables = append(project.Variables, variable)
 	project.Save()
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{cmdName})
+	Cc.SetArgs([]string{varName})
 	Command.Execute()
 	Cc.SetArgs([]string{})
 
 	project = projectfile.Get()
-	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
-	assert.Equal(t, 0, len(mappedHooks), fmt.Sprintf("No hooks should be found of name: '%v', found: %v", cmdName, mappedHooks))
+	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
+	assert.Equal(t, 0, len(mappedVariables), fmt.Sprintf("No variables should be found of name: '%v', found: %v", varName, mappedVariables))
 }
 
 func TestRemovePrompt(t *testing.T) {
@@ -96,17 +99,17 @@ func TestRemovePrompt(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	options, optionsMap, err := hooks.PromptOptions("FIRST_INSTALL")
+	options, optionsMap, err := variables.PromptOptions("DEBUG")
 	print.Formatted("\nmap1: %v\n", optionsMap)
 	assert.NoError(t, err, "Should be able to get prompt options")
 
 	testPromptResultOverride = options[0]
 
-	removed := removeByPrompt("FIRST_INSTALL")
-	assert.NotNil(t, removed, "Received a removed hook")
+	removed := removeByPrompt("DEBUG")
+	assert.NotNil(t, removed, "Received a removed variable")
 
 	hash, _ := removed.Hash()
-	assert.Equal(t, optionsMap[testPromptResultOverride], hash, "Should have removed one hook")
+	assert.Equal(t, optionsMap[testPromptResultOverride], hash, "Should have removed one variable")
 }
 
 func TestRemoveByHash(t *testing.T) {
@@ -114,15 +117,15 @@ func TestRemoveByHash(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	hookLen := len(project.Hooks)
+	variableLen := len(project.Variables)
 
-	hash, err := project.Hooks[0].Hash()
+	hash, err := project.Variables[0].Hash()
 	assert.NoError(t, err, "Should get hash")
 	removed := removeByHash(hash)
-	assert.NotNil(t, removed, "Received a removed hook")
+	assert.NotNil(t, removed, "Received a removed variable")
 
 	project = projectfile.Get()
-	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
+	assert.Equal(t, variableLen-1, len(project.Variables), "One variable should have been removed")
 }
 
 func TestRemovebyName(t *testing.T) {
@@ -130,35 +133,35 @@ func TestRemovebyName(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	hookLen := len(project.Hooks)
+	variableLen := len(project.Variables)
 
-	removed := removeByName(project.Hooks[0].Name)
-	assert.NotNil(t, removed, "Received a removed hook")
+	removed := removeByName(project.Variables[0].Name)
+	assert.NotNil(t, removed, "Received a removed variable")
 
-	assert.Equal(t, hookLen-1, len(project.Hooks), "One hook should have been removed")
+	assert.Equal(t, variableLen-1, len(project.Variables), "One variable should have been removed")
 }
 
-// This test shoudln't remove anything as there are multiple hooks configured for the same hook name
+// This test shoudln't remove anything as there are multiple variables defined for the same variable name
 func TestRemoveByNameFailCmd(t *testing.T) {
 	setup(t)
 	project := getTestProject(t)
 	project.Persist()
 
-	cmdName := "REMOVE_ME"
+	varName := "foo"
 
-	hook1 := projectfile.Hook{Name: cmdName, Value: "This is a command"}
-	hook2 := projectfile.Hook{Name: cmdName, Value: "This is another command"}
-	project.Hooks = append(project.Hooks, hook1)
-	project.Hooks = append(project.Hooks, hook2)
+	variable1 := projectfile.Variable{Name: varName, Value: "bar"}
+	variable2 := projectfile.Variable{Name: varName, Value: "baz", Constraints: projectfile.Constraint{Platform: "windows"}}
+	project.Variables = append(project.Variables, variable1)
+	project.Variables = append(project.Variables, variable2)
 	project.Save()
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{cmdName})
+	Cc.SetArgs([]string{varName})
 	Command.Execute()
 	Cc.SetArgs([]string{})
 
-	mappedHooks, _ := hooks.HashHooksFiltered(project.Hooks, []string{cmdName})
-	assert.Equal(t, 2, len(mappedHooks), fmt.Sprintf("There should still be two commands of the same name in the config: '%v'", cmdName))
+	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
+	assert.Equal(t, 2, len(mappedVariables), fmt.Sprintf("There should still be two variables of the same name in the config: '%v'", varName))
 }
 
 func TestRemoveNonExistant(t *testing.T) {
@@ -166,11 +169,11 @@ func TestRemoveNonExistant(t *testing.T) {
 	project := getTestProject(t)
 	project.Persist()
 
-	_, _, err := variables.PromptOptions("")
+	_, _, err := variables.PromptOptions("DEBUG")
 	assert.NoError(t, err, "Should be able to get prompt options")
 
 	testPromptResultOverride = "does-not-exist"
 
-	removed := removeByPrompt("")
-	assert.Nil(t, removed, "Could not remove non-existant hook")
+	removed := removeByPrompt("DEBUG")
+	assert.Nil(t, removed, "Could not remove non-existant variable")
 }
