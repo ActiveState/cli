@@ -97,6 +97,7 @@ func (h *Hook) Hash() (string, error) {
 type Command struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
+	Standalone  bool       `yaml:"standalone"`
 	Constraints Constraint `yaml:"constraints"`
 }
 

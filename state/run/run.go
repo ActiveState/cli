@@ -61,9 +61,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	// Determine which project command to run based on the given command name.
 	project := projectfile.Get()
 	var command string
+	var standalone bool
 	for _, cmd := range project.Commands {
 		if cmd.Name == Args.Name {
 			command = cmd.Value
+			standalone = cmd.Standalone
 			break
 		}
 	}
@@ -73,7 +75,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Activate the state if needed.
-	if !subshell.IsActivated() && !Flags.Standalone {
+	if !standalone && !subshell.IsActivated() && !Flags.Standalone {
 		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {

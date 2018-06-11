@@ -42,6 +42,36 @@ commands:
 	assert.NoError(t, err, "Executed without error")
 }
 
+func TestRunStandaloneCommand(t *testing.T) {
+	Flags.Standalone, Args.Name = false, "" // reset
+
+	project := &projectfile.Project{}
+	var contents string
+	if runtime.GOOS != "windows" {
+		contents = strings.TrimSpace(`
+commands:
+  - name: run
+    value: echo foo
+    standalone: true
+    `)
+	} else {
+		contents = strings.TrimSpace(`
+commands:
+  - name: run
+    value: cmd /C echo foo
+    standalone: true
+    `)
+	}
+	err := yaml.Unmarshal([]byte(contents), project)
+	assert.Nil(t, err, "Unmarshalled YAML")
+	project.Persist()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{""})
+	err = Command.Execute()
+	assert.NoError(t, err, "Executed without error")
+}
+
 func TestRunUnknownCommandName(t *testing.T) {
 	Flags.Standalone, Args.Name = false, "" // reset
 
