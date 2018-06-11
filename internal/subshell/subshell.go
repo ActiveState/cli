@@ -5,21 +5,22 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/gobuffalo/packr"
-
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	tempfile "github.com/mash/go-tempfile-suffix"
-
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/alecthomas/template"
+	"github.com/gobuffalo/packr"
+	tempfile "github.com/mash/go-tempfile-suffix"
+	ps "github.com/mitchellh/go-ps"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -126,4 +127,29 @@ func getRcFile(v SubShell) (*os.File, error) {
 	tmpFile.Close()
 
 	return tmpFile, err
+}
+
+// IsActivated returns whether or not this process is being run in an activated
+// state.
+func IsActivated() bool {
+	pid := os.Getppid()
+	for true {
+		p, err := ps.FindProcess(pid)
+		if err != nil {
+			logging.Errorf("Could not detect process information: %s", err)
+			return false
+		}
+		if p == nil {
+			return false
+		}
+		if strings.HasPrefix(p.Executable(), constants.CommandName) {
+			return true
+		}
+		ppid := p.PPid()
+		if p.PPid() == pid {
+			break
+		}
+		pid = ppid
+	}
+	return false
 }

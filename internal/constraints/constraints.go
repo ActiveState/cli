@@ -18,6 +18,7 @@ import (
 var osNames = map[sysinfo.OsInfo]string{
 	sysinfo.Linux:   "linux",
 	sysinfo.Windows: "windows",
+	sysinfo.Mac:     "darwin",
 }
 
 // Map of sysinfo.ArchInfos to our constraint arch names.
@@ -52,6 +53,8 @@ func osMatches(os string) bool {
 			sysOS = sysinfo.Linux
 		case osNames[sysinfo.Windows]:
 			sysOS = sysinfo.Windows
+		case osNames[sysinfo.Mac]:
+			sysOS = sysinfo.Mac
 		default:
 			sysOS = sysinfo.UnknownOs
 		}
@@ -208,16 +211,22 @@ func compilerMatches(compiler string) bool {
 	return false // no matching compilers found
 }
 
+// PlatformMatches returns whether or not the given platform matches the current
+// platform, as determined by the sysinfo package.
+func PlatformMatches(platform projectfile.Platform) bool {
+	return (platform.Os == "" || osMatches(platform.Os)) &&
+		(platform.Version == "" || osVersionMatches(platform.Version)) &&
+		(platform.Architecture == "" || archMatches(platform.Architecture)) &&
+		(platform.Libc == "" || libcMatches(platform.Libc)) &&
+		(platform.Compiler == "" || compilerMatches(platform.Compiler))
+}
+
 // Returns whether or not the given platform is constrained by the given
 // constraint name.
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
 	if platform.Name == strings.TrimLeft(name, "-") {
-		if (platform.Os == "" || osMatches(platform.Os)) &&
-			(platform.Version == "" || osVersionMatches(platform.Version)) &&
-			(platform.Architecture == "" || archMatches(platform.Architecture)) &&
-			(platform.Libc == "" || libcMatches(platform.Libc)) &&
-			(platform.Compiler == "" || compilerMatches(platform.Compiler)) {
+		if PlatformMatches(platform) {
 			if strings.HasPrefix(name, "-") {
 				return true
 			}

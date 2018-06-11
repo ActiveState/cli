@@ -316,6 +316,24 @@ projects_description:
   other: Manage Your Projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
+error_expand_variable_infinite_recursion:
+  other: Infinite recursion trying to expand variable '{{.V0}}'
+error_expand_variable_project_unknown_category:
+  other: Error expanding variable '{{.V0}}': unknown category '{{.V1}}'
+error_expand_variable_project_unknown_name:
+  other: Error expanding variable '{{.V0}}': unknown name '{{.V1}}'
+flag_state_run_standalone_description:
+  other: Run a command, regardless of an activated state
+error_state_run_unknown_name:
+  other: The command '{{.Name}}' is not defined in activestate.yaml.
+info_state_run_activating_state:
+  other: This command requires an activated state. Activating it now. To bypass this, use the --standalone flag.
+error_state_run_activate:
+  other: Unable to activate a state for running the command in. Try manually running "state activate" first.
+info_state_run_running:
+  other: Running command {{.Command}}
+error_state_run_error:
+  other: Failed to run command.
 env_description:
   other: Manage Project Variables
 env_add_description:
