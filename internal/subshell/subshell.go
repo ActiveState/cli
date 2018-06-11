@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -141,7 +142,7 @@ func IsActivated() bool {
 		if p == nil {
 			return false
 		}
-		if strings.HasPrefix(p.Executable(), "state") {
+		if strings.HasPrefix(p.Executable(), constants.CommandName) {
 			return true
 		}
 		ppid := p.PPid()
