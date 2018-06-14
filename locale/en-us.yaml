@@ -390,3 +390,13 @@ env_inherit_prompt_overwrite:
   other: Do you want to overwrite the project's existing variable {{.Name}}, whose value is "{{.OldValue}}", with the new value "{{.NewValue}}"?
 env_inherit_inherit_aborted:
   other: Unable to inherit from current environment: aborted.
+show_project:
+  other: Shows information about a project.
+arg_state_show_remote_description:
+  other: Path to project
+err_state_show_path_does_not_exist:
+  other: Directory does not exist.
+err_state_show_no_config:
+  other: activestate.yaml file not found in the given location.
+err_state_show_project_parse:
+  other: Could not parse activestate.yaml.
