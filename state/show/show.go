@@ -5,10 +5,12 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scm"
+	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
@@ -62,27 +64,51 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	print.Formatted("Name: %s\n", project.Name)
-	print.Formatted("Organization: %s\n", project.Owner)
-	print.Formatted("URL: %s\n", "")
-	print.Formatted("Platforms:\n")
+	print.Formatted("%s: %s\n", locale.T("print_state_show_name"), project.Name)
+	print.Formatted("%s: %s\n", locale.T("print_state_show_organization"), project.Owner)
+	print.Formatted("%s: %s\n", locale.T("print_state_show_url"), "")
+	print.Formatted("%s:\n", locale.T("print_state_show_platforms"))
 	for _, platform := range project.Platforms {
-		print.Formatted("  %s %s %s (%s)\n", platform.Os, platform.Version, platform.Architecture, platform.Name)
+		constrained := "*"
+		if !constraints.PlatformMatches(platform) {
+			constrained = " "
+		}
+		print.Formatted(" %s%s %s %s (%s)\n", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
 	}
-	print.Formatted("Hooks:\n")
+	print.Formatted("%s:\n", locale.T("print_state_show_hooks"))
 	for _, hook := range project.Hooks {
-		print.Formatted("  %s: %s\n", hook.Name, hook.Value)
+		if !constraints.IsConstrained(hook.Constraints) {
+			value, fail := variables.ExpandFromProject(hook.Value, project)
+			if fail != nil {
+				value = fail.Error()
+			}
+			print.Formatted("  %s: %s\n", hook.Name, value)
+		}
 	}
-	print.Formatted("Commands:\n")
+	print.Formatted("%s:\n", locale.T("print_state_show_commands"))
 	for _, command := range project.Commands {
-		print.Formatted("  %s: %s\n", command.Name, command.Value)
+		if !constraints.IsConstrained(command.Constraints) {
+			value, fail := variables.ExpandFromProject(command.Value, project)
+			if fail != nil {
+				value = fail.Error()
+			}
+			print.Formatted("  %s: %s\n", command.Name, value)
+		}
 	}
-	print.Formatted("Languages:\n")
+	print.Formatted("%s:\n", locale.T("print_state_show_languages"))
 	for _, language := range project.Languages {
-		print.Formatted("  %s %s (%d packages)\n", language.Name, language.Version, len(language.Packages))
+		if !constraints.IsConstrained(language.Constraints) {
+			print.Formatted("  %s %s (%d %s)\n", language.Name, language.Version, len(language.Packages), locale.T("print_state_show_packages"))
+		}
 	}
-	print.Formatted("Environment variables:\n")
+	print.Formatted("%s:\n", locale.T("print_state_show_env_vars"))
 	for _, variable := range project.Variables {
-		print.Formatted("  %s = %s\n", variable.Name, variable.Value)
+		if !constraints.IsConstrained(variable.Constraints) {
+			value, fail := variables.ExpandFromProject(variable.Value, project)
+			if fail != nil {
+				value = fail.Error()
+			}
+			print.Formatted("  %s = %s\n", variable.Name, value)
+		}
 	}
 }
