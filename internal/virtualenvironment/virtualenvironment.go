@@ -36,10 +36,10 @@ type VirtualEnvironmenter interface {
 	// Language returns the language name
 	Language() string
 
-	// LanguageMeta holds the *projectfile.Language for this venv
+	// Artifact holds the *projectfile.Language for this venv
 	Artifact() *artifact.Artifact
 
-	// SetLanguageMeta sets the language meta
+	// SetArtifact sets the language meta
 	SetArtifact(*artifact.Artifact)
 
 	// WorkingDirectory returns the working directory for this venv, or an empty string if it has no preference
