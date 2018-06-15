@@ -30,7 +30,7 @@ defaults:
       run: 
         name: Build the CLI
         command: |
-          packr
+          $GOROOT/bin/packr
           make build
           ./build/state --version
     deployBits: &deployBits
