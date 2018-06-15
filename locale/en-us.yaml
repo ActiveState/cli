@@ -291,15 +291,15 @@ error_state_new_no_auth:
 state_new_prompt_name:
   other: Please provide a name for the new project.
 error_state_new_abort:
-  other: Unable to create new project: aborted.
+  other: "Unable to create new project: aborted."
 error_state_new_exists:
-  other: Unable to create new project: path exists.
+  other: "Unable to create new project: path exists."
 error_state_new_mkdir:
   other: Unable to create new project directory.
 state_new_prompt_owner:
   other: Please provide an owner for the new project.
 error_state_new_fetch_organizations:
-  other: Unable to create new project: cannot determine potential owners.
+  other: "Unable to create new project: cannot determine potential owners."
 state_new_prompt_version:
   other: Please provide a version string for the new project.
 error_state_new_version:
@@ -319,9 +319,9 @@ err_api_not_authenticated:
 error_expand_variable_infinite_recursion:
   other: Infinite recursion trying to expand variable '{{.V0}}'
 error_expand_variable_project_unknown_category:
-  other: Error expanding variable '{{.V0}}': unknown category '{{.V1}}'
+  other: "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'"
 error_expand_variable_project_unknown_name:
-  other: Error expanding variable '{{.V0}}': unknown name '{{.V1}}'
+  other: "Error expanding variable '{{.V0}}': unknown name '{{.V1}}'"
 flag_state_run_standalone_description:
   other: Run a command, regardless of an activated state
 error_state_run_unknown_name:
@@ -389,7 +389,7 @@ env_inherit_description:
 env_inherit_prompt_overwrite:
   other: Do you want to overwrite the project's existing variable {{.Name}}, whose value is "{{.OldValue}}", with the new value "{{.NewValue}}"?
 env_inherit_inherit_aborted:
-  other: Unable to inherit from current environment: aborted.
+  other: "Unable to inherit from current environment: aborted."
 show_project:
   other: Shows information about a project.
 arg_state_show_remote_description:
