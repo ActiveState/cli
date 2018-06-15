@@ -23,7 +23,7 @@ func setup() {
 	id, err := machineid.ID()
 	if err != nil {
 		logging.Error("Cannot retrieve machine ID: %s", err.Error())
-		return
+		id = "unknown"
 	}
 	client, err = ga.NewClient(constants.AnalyticsTrackingID)
 	if err != nil {
@@ -54,7 +54,7 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) error {
-	if flag.Lookup("test.v") != nil {
+	if client == nil || flag.Lookup("test.v") != nil {
 		return nil
 	}
 
@@ -71,7 +71,7 @@ func EventWithValue(category string, action string, value int64) {
 }
 
 func eventWithValue(category string, action string, value int64) error {
-	if flag.Lookup("test.v") != nil {
+	if client == nil || flag.Lookup("test.v") != nil {
 		return nil
 	}
 
