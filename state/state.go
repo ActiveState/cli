@@ -17,10 +17,12 @@ import (
 	// commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
+	"github.com/ActiveState/cli/state/env"
 	"github.com/ActiveState/cli/state/hook"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
+	"github.com/ActiveState/cli/state/run"
 	"github.com/ActiveState/cli/state/selfupdate"
 	"github.com/ActiveState/cli/state/show"
 
@@ -78,6 +80,8 @@ func init() {
 	Command.Append(new.Command)
 	Command.Append(organizations.Command)
 	Command.Append(show.Command)
+	Command.Append(env.Command)
+	Command.Append(run.Command)
 }
 
 func main() {
