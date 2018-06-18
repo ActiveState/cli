@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/selfupdate"
+	"github.com/ActiveState/cli/state/show"
 
 	_ "github.com/ActiveState/state-required/require"
 
@@ -76,6 +77,7 @@ func init() {
 	Command.Append(projects.Command)
 	Command.Append(new.Command)
 	Command.Append(organizations.Command)
+	Command.Append(show.Command)
 }
 
 func main() {
