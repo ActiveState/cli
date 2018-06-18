@@ -64,3 +64,8 @@ func TestAuthError(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
 }
+
+func TestAliases(t *testing.T) {
+	cc := Command.GetCobraCmd()
+	assert.True(t, cc.HasAlias("orgs"), "Command has alias.")
+}
