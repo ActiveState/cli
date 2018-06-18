@@ -14,6 +14,7 @@ import (
 // Command is the organization command's definition.
 var Command = &commands.Command{
 	Name:        "organizations",
+	Aliases:     []string{"orgs"},
 	Description: "organizations_description",
 	Run:         Execute,
 }

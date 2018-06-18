@@ -56,9 +56,9 @@ type Command struct {
 	Name        string
 	Description string
 	Run         func(cmd *cobra.Command, args []string)
-
-	Flags     []*Flag
-	Arguments []*Argument
+	Aliases     []string
+	Flags       []*Flag
+	Arguments   []*Argument
 
 	UsageTemplate string
 
@@ -140,10 +140,11 @@ func (c *Command) Register() {
 	}
 
 	c.cobraCmd = &cobra.Command{
-		Use:   c.Name,
-		Short: T(c.Description),
-		Run:   c.runner,
-		Args:  c.argInputValidator,
+		Use:     c.Name,
+		Aliases: c.Aliases,
+		Short:   T(c.Description),
+		Run:     c.runner,
+		Args:    c.argInputValidator,
 	}
 
 	for _, flag := range c.Flags {
