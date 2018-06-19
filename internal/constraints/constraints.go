@@ -31,13 +31,18 @@ var archNames = map[sysinfo.ArchInfo]string{
 // Map of sysinfo.LibcNameInfos to our constraint libc names.
 // Our constraint names may be different from sysinfo names.
 var libcNames = map[sysinfo.LibcNameInfo]string{
-	sysinfo.Glibc: "glibc",
+	sysinfo.Glibc:   "glibc",
+	sysinfo.Msvcrt:  "msvcrt",
+	sysinfo.BsdLibc: "bsdlibc",
 }
 
 // Map of sysinfo.CompilerNameInfos to our constraint compiler names.
 // Our constraint names may be different from sysinfo names.
 var compilerNames = map[sysinfo.CompilerNameInfo]string{
-	sysinfo.Gcc: "gcc",
+	sysinfo.Gcc:   "gcc",
+	sysinfo.Msvc:  "cl",
+	sysinfo.Mingw: "mingw",
+	sysinfo.Clang: "clang",
 }
 
 // For testing.
@@ -130,6 +135,10 @@ func libcMatches(libc string) bool {
 		switch name {
 		case libcNames[sysinfo.Glibc]:
 			osLibc.Name = sysinfo.Glibc
+		case libcNames[sysinfo.Msvcrt]:
+			osLibc.Name = sysinfo.Msvcrt
+		case libcNames[sysinfo.BsdLibc]:
+			osLibc.Name = sysinfo.BsdLibc
 		default:
 			osLibc.Name = sysinfo.UnknownLibc
 		}
@@ -175,6 +184,12 @@ func compilerMatches(compiler string) bool {
 		switch name {
 		case compilerNames[sysinfo.Gcc]:
 			osCompilers[0].Name = sysinfo.Gcc
+		case compilerNames[sysinfo.Msvc]:
+			osCompilers[0].Name = sysinfo.Msvc
+		case compilerNames[sysinfo.Mingw]:
+			osCompilers[0].Name = sysinfo.Mingw
+		case compilerNames[sysinfo.Clang]:
+			osCompilers[0].Name = sysinfo.Clang
 		}
 		err = nil
 	}

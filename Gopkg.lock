@@ -17,7 +17,7 @@
   branch = "master"
   name = "github.com/ActiveState/sysinfo"
   packages = ["."]
-  revision = "bb90a27afdbe969059eb5e58c7d042630eb0756e"
+  revision = "3202a6c2340e9f2a4d12488f713f775802f70b00"
 
 [[projects]]
   name = "github.com/PuerkitoBio/purell"
@@ -517,6 +517,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b1998ced31869df087d96a05e107494f063d3dc92ed1587ac39b3a15c4fd733f"
+  inputs-digest = "55c7516d6a82bd802713011589db70c0591f23a196d61ef30d73d6baaa24f6fb"
   solver-name = "gps-cdcl"
   solver-version = 1
