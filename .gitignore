@@ -1,4 +1,7 @@
 build
+bazel/
+bazel-out
+BUILD.bazel
 debug
 debug.test
 public/update/*
