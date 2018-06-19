@@ -14,7 +14,7 @@ func TestCreateCommand(t *testing.T) {
 	var cmd1 = Command{
 		Name:          "foo",
 		Description:   "foo_description",
-		Aliases:       []string{"blah", "blah"},
+		Aliases:       []string{"blah"},
 		Run:           func(cmd *cobra.Command, args []string) {},
 		UsageTemplate: "foo_usage_template",
 	}
@@ -33,7 +33,7 @@ func TestRunCommand(t *testing.T) {
 	var cmd1 = Command{
 		Name:          "foo",
 		Description:   "foo_description",
-		Aliases:       []string{"blah", "blah"},
+		Aliases:       []string{"blah"},
 		Run:           func(cmd *cobra.Command, args []string) { ran = true },
 		UsageTemplate: "foo_usage_template",
 	}
