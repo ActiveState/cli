@@ -4,7 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "constants.go",
-        "generated.go",  # Keep
     ],
     importpath = "github.com/ActiveState/cli/internal/constants",
     visibility = ["//:__subpackages__"],

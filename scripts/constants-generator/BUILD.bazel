@@ -10,10 +10,12 @@ genrule(
         "//internal/constants:go_default_library",
         "//internal/constants/preprocess:go_default_library",
     ],
-    outs = ["internal/constants/generated.go"],
+    outs = ["generated.go"],
+    
+    tools = [":constants-generator"],
 
     # TODO: Replace this with a command that translactes into go bazel-out/stable-status.txt
-    cmd = "echo $GOROOT && go run $(location main.go)",
+    cmd = "$(location :constants-generator) > $@",
     # This give us access to bazel-out/stable-status.txt
     stamp = True,
 )
@@ -21,7 +23,6 @@ genrule(
 go_library(
     name = "go_default_library",
     srcs = [
-        "internal/constants/generated.go",
         "main.go",
     ],
     importpath = "github.com/ActiveState/cli/scripts/constants-generator",

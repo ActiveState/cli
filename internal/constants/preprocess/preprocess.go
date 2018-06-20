@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
+	
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
@@ -25,7 +25,7 @@ func init() {
 }
 
 func workspaceStatus() map[string]string {
-	text, err := ioutil.ReadFile(filepath.Join(environment.GetRootPathUnsafe(), "bazel-out", "stable-status.txt"))
+	text, err := ioutil.ReadFile(filepath.Join("bazel-out", "stable-status.txt"))
 	if err != nil {
 		log.Fatal(err)
 	}

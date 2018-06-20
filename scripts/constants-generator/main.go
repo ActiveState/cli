@@ -4,16 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	//"io/ioutil"
 	"log"
-	//"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants/preprocess"
-	"github.com/ActiveState/cli/internal/environment"
-	//"github.com/ActiveState/cli/internal/environment"
-
 	"github.com/dave/jennifer/jen"
 )
 
@@ -39,8 +32,6 @@ func run() {
 		log.Fatalf("Rendering failed: %v", err)
 	}
 
-	target := filepath.Join(environment.GetRootPathUnsafe(), "internal", "constants", "generated.go")
-	ioutil.WriteFile(target, buf.Bytes(), 0666)
+	fmt.Println(buf.String())
 
-	fmt.Println("Constants generated")
 }
