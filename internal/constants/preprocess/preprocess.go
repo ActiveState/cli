@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
+	//"github.com/ActiveState/cli/internal/constants"
 	
 )
 
@@ -21,7 +21,7 @@ func init() {
 	Constants["BranchName"] = func() string { return status["STABLE_BRANCHNAME"] }
 	Constants["BuildNumber"] = func() string { return strings.Trim(status["STABLE_BUILDNUMBER"], " ") }
 	Constants["RevisionHash"] = func() string { return status["STABLE_REVISIONHASH"] }
-	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, Constants["BuildNumber"]()) }
+	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", "fixme", Constants["BuildNumber"]()) }
 }
 
 func workspaceStatus() map[string]string {

@@ -1,9 +1,26 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+genrule(
+    name = "generated",
+    srcs = [
+        # wonder if we should have a filegroup dependency so that constants
+        # are rerun when the tree is dirty? Or alternatively if the tree is dirty
+        # our workspace status command could just emit that.
+    ],
+    outs = ["generated.go"],
+
+    # TODO: Replace this with a command that translactes into go bazel-out/stable-status.txt
+    cmd = "$(location //scripts/constants-generator) > $@",
+    # This give us access to bazel-out/stable-status.txt
+    stamp = True,
+    tools = ["//scripts/constants-generator"],
+)
+
 go_library(
     name = "go_default_library",
     srcs = [
         "constants.go",
+        "generated.go",
     ],
     importpath = "github.com/ActiveState/cli/internal/constants",
     visibility = ["//:__subpackages__"],

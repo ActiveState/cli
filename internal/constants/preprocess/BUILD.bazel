@@ -5,10 +5,6 @@ go_library(
     srcs = ["preprocess.go"],
     importpath = "github.com/ActiveState/cli/internal/constants/preprocess",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/constants:go_default_library",
-        "//internal/environment:go_default_library",
-    ],
 )
 
 go_test(
