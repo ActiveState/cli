@@ -25,6 +25,7 @@ go_test(
         "get_test.go",
         "manager_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
 )

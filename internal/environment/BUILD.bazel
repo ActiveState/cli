@@ -10,6 +10,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["environment_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//internal/config:go_default_library",

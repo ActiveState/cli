@@ -27,6 +27,7 @@ go_test(
         "check_test.go",
         "updater_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//internal/config:go_default_library",

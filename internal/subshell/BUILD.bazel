@@ -31,6 +31,7 @@ go_test(
         "subshell_linux_test.go",
         "subshell_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
         "//internal/environment:go_default_library",
