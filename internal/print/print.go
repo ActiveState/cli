@@ -47,3 +47,9 @@ func Bold(format string, a ...interface{}) {
 		c.Println()
 	}
 }
+
+// BoldInline prints the given string as bolded message in line
+func BoldInline(format string, a ...interface{}) {
+	c := color.New(color.Bold)
+	c.Printf(format, a...)
+}
