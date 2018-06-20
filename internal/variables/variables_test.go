@@ -31,7 +31,9 @@ variables:
   - name: bar
     value: quux
     constraints:
-      platform: Windows
+    platform: Windows
+  - name: UPPERCASE
+    value: foo
 hooks:
   - name: pre
     value: echo 'Hello $variables.foo!'
@@ -154,4 +156,12 @@ func TestExpandProjectEmbedded(t *testing.T) {
 	expanded, fail := ExpandFromProject("$variables.foo is in $variables.foo is in $variables.foo", project)
 	assert.Nil(t, fail, "Expanded without failure")
 	assert.Equal(t, "bar is in bar is in bar", expanded)
+}
+
+func TestExpandProjectUppercase(t *testing.T) {
+	project := loadProject(t)
+
+	expanded, fail := ExpandFromProject("${variables.UPPERCASE}bar", project)
+	assert.Nil(t, fail, "Expanded without failure")
+	assert.Equal(t, "foobar", expanded)
 }

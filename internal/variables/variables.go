@@ -23,6 +23,11 @@ var FailExpandVariableRecursion = failures.Type("variables.fail.expandvariable.r
 
 var calls int // for preventing infinite recursion during recursively expansion
 
+// Expand will detect the active project and invoke ExpandFromProject with the given string
+func Expand(s string) (string, *failures.Failure) {
+	return ExpandFromProject(s, projectfile.Get())
+}
+
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).

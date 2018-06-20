@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -86,6 +87,12 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Run the command.
+	command, fail := variables.Expand(command)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_env_cannot_parse"))
+		return
+	}
+
 	args = strings.Split(command, " ")
 	runCmd := exec.Command(args[0], args[1:]...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
