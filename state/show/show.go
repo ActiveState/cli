@@ -64,51 +64,71 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	print.Formatted("%s: %s\n", locale.T("print_state_show_name"), project.Name)
-	print.Formatted("%s: %s\n", locale.T("print_state_show_organization"), project.Owner)
-	print.Formatted("%s: %s\n", locale.T("print_state_show_url"), "")
-	print.Formatted("%s:\n", locale.T("print_state_show_platforms"))
-	for _, platform := range project.Platforms {
-		constrained := "*"
-		if !constraints.PlatformMatches(platform) {
-			constrained = " "
-		}
-		print.Formatted(" %s%s %s %s (%s)\n", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
-	}
-	print.Formatted("%s:\n", locale.T("print_state_show_hooks"))
-	for _, hook := range project.Hooks {
-		if !constraints.IsConstrained(hook.Constraints) {
-			value, fail := variables.ExpandFromProject(hook.Value, project)
-			if fail != nil {
-				value = fail.Error()
+	print.BoldInline("%s: ", locale.T("print_state_show_name"))
+	print.Formatted("%s\n", project.Name)
+
+	print.BoldInline("%s: ", locale.T("print_state_show_organization"))
+	print.Formatted("%s\n", project.Owner)
+
+	//print.Bold("%s: \n", locale.T("print_state_show_url"))
+	//print.Formatted("%s\n", "")
+
+	if len(project.Platforms) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_platforms"))
+		for _, platform := range project.Platforms {
+			constrained := "*"
+			if !constraints.PlatformMatches(platform) {
+				constrained = " "
 			}
-			print.Formatted("  %s: %s\n", hook.Name, value)
+			print.Formatted(" %s%s %s %s (%s)\n", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
 		}
 	}
-	print.Formatted("%s:\n", locale.T("print_state_show_commands"))
-	for _, command := range project.Commands {
-		if !constraints.IsConstrained(command.Constraints) {
-			value, fail := variables.ExpandFromProject(command.Value, project)
-			if fail != nil {
-				value = fail.Error()
+
+	if len(project.Hooks) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_hooks"))
+		for _, hook := range project.Hooks {
+			if !constraints.IsConstrained(hook.Constraints) {
+				value, fail := variables.ExpandFromProject(hook.Value, project)
+				if fail != nil {
+					value = fail.Error()
+				}
+				print.Formatted("  %s: %s\n", hook.Name, value)
 			}
-			print.Formatted("  %s: %s\n", command.Name, value)
 		}
 	}
-	print.Formatted("%s:\n", locale.T("print_state_show_languages"))
-	for _, language := range project.Languages {
-		if !constraints.IsConstrained(language.Constraints) {
-			print.Formatted("  %s %s (%d %s)\n", language.Name, language.Version, len(language.Packages), locale.T("print_state_show_packages"))
-		}
-	}
-	print.Formatted("%s:\n", locale.T("print_state_show_env_vars"))
-	for _, variable := range project.Variables {
-		if !constraints.IsConstrained(variable.Constraints) {
-			value, fail := variables.ExpandFromProject(variable.Value, project)
-			if fail != nil {
-				value = fail.Error()
+
+	if len(project.Commands) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_commands"))
+		for _, command := range project.Commands {
+			if !constraints.IsConstrained(command.Constraints) {
+				value, fail := variables.ExpandFromProject(command.Value, project)
+				if fail != nil {
+					value = fail.Error()
+				}
+				print.Formatted("  %s: %s\n", command.Name, value)
 			}
-			print.Formatted("  %s = %s\n", variable.Name, value)
+		}
+	}
+
+	if len(project.Languages) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_languages"))
+		for _, language := range project.Languages {
+			if !constraints.IsConstrained(language.Constraints) {
+				print.Formatted("  %s %s (%d %s)\n", language.Name, language.Version, len(language.Packages), locale.T("print_state_show_packages"))
+			}
+		}
+	}
+
+	if len(project.Variables) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_env_vars"))
+		for _, variable := range project.Variables {
+			if !constraints.IsConstrained(variable.Constraints) {
+				value, fail := variables.ExpandFromProject(variable.Value, project)
+				if fail != nil {
+					value = fail.Error()
+				}
+				print.Formatted("  %s: %s\n", variable.Name, value)
+			}
 		}
 	}
 }
