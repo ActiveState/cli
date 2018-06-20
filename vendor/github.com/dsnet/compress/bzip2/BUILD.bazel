@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bwt.go",
+        "common.go",
+        "fuzz_off.go",
+        "mtf_rle2.go",
+        "prefix.go",
+        "reader.go",
+        "rle1.go",
+        "writer.go",
+    ],
+    importmap = "vendor/github.com/dsnet/compress/bzip2",
+    importpath = "github.com/dsnet/compress/bzip2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/bzip2/internal/sais:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/errors:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/prefix:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bwt_test.go",
+        "bzip2_test.go",
+        "common_test.go",
+        "mtf_rle2_test.go",
+        "prefix_test.go",
+        "reader_test.go",
+        "rle1_test.go",
+        "writer_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/internal/errors:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/prefix:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/testutil:go_default_library",
+    ],
+)

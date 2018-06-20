@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "locale.go",
+        "locale-packr.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/locale",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/environment:go_default_library",
+        "//internal/logging:go_default_library",
+        "//vendor/github.com/gobuffalo/packr:go_default_library",
+        "//vendor/github.com/nicksnyder/go-i18n/i18n:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+        "//vendor/github.com/thoas/go-funk:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["locale_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/config:go_default_library",
+        "//internal/constants:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

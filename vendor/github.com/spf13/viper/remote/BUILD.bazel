@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["remote.go"],
+    importmap = "vendor/github.com/spf13/viper/remote",
+    importpath = "github.com/spf13/viper/remote",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/spf13/viper:go_default_library",
+        "@com_github_xordataexchange_crypt//config:go_default_library",
+    ],
+)

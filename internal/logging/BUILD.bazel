@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "defaults.go",
+        "formatter.go",
+        "logging.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/logging",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/config:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["logging_test.go"],
+    embed = [":go_default_library"],
+)

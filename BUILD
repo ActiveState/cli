@@ -1,4 +1,4 @@
-# gazelle:exclude scripts
+## gazelle:exclude scripts
 # gazelle:exclude internal/virtualenvironment/golang/testdata
 
 load("@bazel_gazelle//:def.bzl", "gazelle")

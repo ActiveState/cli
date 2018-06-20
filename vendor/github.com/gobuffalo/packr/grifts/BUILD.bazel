@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["release.go"],
+    importmap = "vendor/github.com/gobuffalo/packr/grifts",
+    importpath = "github.com/gobuffalo/packr/grifts",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_markbates_grift//grift:go_default_library"],
+)

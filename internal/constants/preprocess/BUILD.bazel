@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["preprocess.go"],
+    importpath = "github.com/ActiveState/cli/internal/constants/preprocess",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/constants:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["preprocess_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

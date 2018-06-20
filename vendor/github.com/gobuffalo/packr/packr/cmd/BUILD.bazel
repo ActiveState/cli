@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "build.go",
+        "clean.go",
+        "install.go",
+        "root.go",
+    ],
+    importmap = "vendor/github.com/gobuffalo/packr/packr/cmd",
+    importpath = "github.com/gobuffalo/packr/packr/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/gobuffalo/packr:go_default_library",
+        "//vendor/github.com/gobuffalo/packr/builder:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)

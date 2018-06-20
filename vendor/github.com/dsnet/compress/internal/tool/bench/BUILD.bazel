@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "benchmarks.go",
+        "cgo_brotli.go",
+        "cgo_bzip2.go",
+        "cgo_flate.go",
+        "cgo_lzma.go",
+        "cgo_zstd.go",
+        "config.go",
+        "lib_ds.go",
+        "lib_kp.go",
+        "lib_std.go",
+        "lib_uk.go",
+        "main.go",
+    ],
+    importmap = "vendor/github.com/dsnet/compress/internal/tool/bench",
+    importpath = "github.com/dsnet/compress/internal/tool/bench",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/brotli:go_default_library",
+        "//vendor/github.com/dsnet/compress/bzip2:go_default_library",
+        "//vendor/github.com/dsnet/compress/flate:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/cgo/brotli:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/cgo/bzip2:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/cgo/flate:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/cgo/lzma:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/cgo/zstd:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/testutil:go_default_library",
+        "//vendor/github.com/ulikunitz/xz/lzma:go_default_library",
+        "@com_github_dsnet_golib//unitconv:go_default_library",
+        "@com_github_klauspost_compress//flate:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "bench",
+    embed = [":go_default_library"],
+    visibility = ["//vendor/github.com/dsnet/compress:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["codec_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/dsnet/compress/internal/testutil:go_default_library"],
+)

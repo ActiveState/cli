@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "helpers.go",
+        "map.go",
+        "operation.go",
+        "presence.go",
+        "retrieve.go",
+        "scan.go",
+        "transform.go",
+        "typesafe.go",
+        "utils.go",
+    ],
+    importmap = "vendor/github.com/thoas/go-funk",
+    importpath = "github.com/thoas/go-funk",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "benchmark_test.go",
+        "funk_test.go",
+        "helpers_test.go",
+        "map_test.go",
+        "operation_test.go",
+        "presence_test.go",
+        "retrieve_test.go",
+        "scan_test.go",
+        "transform_test.go",
+        "typesafe_test.go",
+        "utils_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

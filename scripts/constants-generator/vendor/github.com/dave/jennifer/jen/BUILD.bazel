@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add.go",
+        "comments.go",
+        "custom.go",
+        "dict.go",
+        "do.go",
+        "file.go",
+        "generated.go",
+        "group.go",
+        "hints.go",
+        "jen.go",
+        "lit.go",
+        "statement.go",
+        "tag.go",
+        "tokens.go",
+    ],
+    importmap = "scripts/constants-generator/vendor/github.com/dave/jennifer/jen",
+    importpath = "github.com/dave/jennifer/jen",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "examples_test.go",
+        "file_test.go",
+        "generated_test.go",
+        "jen_test.go",
+    ],
+    embed = [":go_default_library"],
+)

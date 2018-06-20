@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "subshell.go",
+        "subshell-packr.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/subshell",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/constants:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/logging:go_default_library",
+        "//internal/subshell/bash:go_default_library",
+        "//internal/subshell/cmd:go_default_library",
+        "//internal/subshell/zsh:go_default_library",
+        "//internal/virtualenvironment:go_default_library",
+        "//pkg/projectfile:go_default_library",
+        "//vendor/github.com/alecthomas/template:go_default_library",
+        "//vendor/github.com/gobuffalo/packr:go_default_library",
+        "//vendor/github.com/mash/go-tempfile-suffix:go_default_library",
+        "//vendor/github.com/mitchellh/go-ps:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "subshell_linux_test.go",
+        "subshell_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/environment:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

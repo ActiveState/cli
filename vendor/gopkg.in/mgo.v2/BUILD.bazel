@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "auth.go",
+        "bulk.go",
+        "cluster.go",
+        "doc.go",
+        "gridfs.go",
+        "log.go",
+        "queue.go",
+        "raceoff.go",
+        "saslstub.go",
+        "server.go",
+        "session.go",
+        "socket.go",
+        "stats.go",
+    ],
+    importmap = "vendor/gopkg.in/mgo.v2",
+    importpath = "gopkg.in/mgo.v2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/gopkg.in/mgo.v2/bson:go_default_library",
+        "//vendor/gopkg.in/mgo.v2/internal/scram:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "auth_test.go",
+        "bulk_test.go",
+        "cluster_test.go",
+        "export_test.go",
+        "gridfs_test.go",
+        "queue_test.go",
+        "session_test.go",
+        "suite_test.go",
+        "syscall_test.go",
+        "syscall_windows_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/gopkg.in/mgo.v2/bson:go_default_library",
+        "@in_gopkg_check_v1//:go_default_library",
+    ],
+)

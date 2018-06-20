@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["jennifer.go"],
+    importmap = "vendor/github.com/dave/jennifer",
+    importpath = "github.com/dave/jennifer",
+    visibility = ["//visibility:public"],
+)

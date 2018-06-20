@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bar.go",
+        "foo.go",
+    ],
+    importmap = "vendor/github.com/gobuffalo/packr/example/foo",
+    importpath = "github.com/gobuffalo/packr/example/foo",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/gobuffalo/packr:go_default_library"],
+)

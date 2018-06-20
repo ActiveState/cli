@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["artifact.go"],
+    importpath = "github.com/ActiveState/cli/internal/artifact",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/config:go_default_library",
+        "//internal/constants:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/fileutils:go_default_library",
+    ],
+)

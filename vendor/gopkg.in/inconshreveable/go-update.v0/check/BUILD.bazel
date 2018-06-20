@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["check.go"],
+    importmap = "vendor/gopkg.in/inconshreveable/go-update.v0/check",
+    importpath = "gopkg.in/inconshreveable/go-update.v0/check",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kardianos/osext:go_default_library",
+        "//vendor/gopkg.in/inconshreveable/go-update.v0:go_default_library",
+    ],
+)

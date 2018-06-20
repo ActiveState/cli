@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["api_client_client.go"],
+    importpath = "github.com/ActiveState/cli/internal/api/client",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api/client/authentication:go_default_library",
+        "//internal/api/client/components:go_default_library",
+        "//internal/api/client/identities:go_default_library",
+        "//internal/api/client/languages:go_default_library",
+        "//internal/api/client/licenses:go_default_library",
+        "//internal/api/client/organizations:go_default_library",
+        "//internal/api/client/packages:go_default_library",
+        "//internal/api/client/platforms:go_default_library",
+        "//internal/api/client/projects:go_default_library",
+        "//internal/api/client/scans:go_default_library",
+        "//internal/api/client/sessions:go_default_library",
+        "//internal/api/client/status:go_default_library",
+        "//internal/api/client/users:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+    ],
+)

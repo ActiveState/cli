@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["python.go"],
+    importpath = "github.com/ActiveState/cli/internal/virtualenvironment/python",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/artifact:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/fileutils:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["python_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/artifact:go_default_library",
+        "//internal/config:go_default_library",
+        "//internal/distribution:go_default_library",
+        "//internal/environment:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

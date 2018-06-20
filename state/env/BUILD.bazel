@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["env.go"],
+    importpath = "github.com/ActiveState/cli/state/env",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/failures:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/print:go_default_library",
+        "//pkg/cmdlets/commands:go_default_library",
+        "//pkg/cmdlets/variables:go_default_library",
+        "//pkg/projectfile:go_default_library",
+        "//state/env/add:go_default_library",
+        "//state/env/inherit:go_default_library",
+        "//state/env/remove:go_default_library",
+        "//vendor/github.com/bndr/gotabulate:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["env_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/environment:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

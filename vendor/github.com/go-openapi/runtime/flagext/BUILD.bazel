@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["byte_size.go"],
+    importmap = "vendor/github.com/go-openapi/runtime/flagext",
+    importpath = "github.com/go-openapi/runtime/flagext",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_docker_go_units//:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["byte_size_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

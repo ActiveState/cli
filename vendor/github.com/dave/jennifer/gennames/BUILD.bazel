@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "hints.go",
+        "main.go",
+    ],
+    importmap = "vendor/github.com/dave/jennifer/gennames",
+    importpath = "github.com/dave/jennifer/gennames",
+    visibility = ["//visibility:private"],
+    deps = ["//vendor/github.com/dave/jennifer/jen:go_default_library"],
+)
+
+go_binary(
+    name = "gennames",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

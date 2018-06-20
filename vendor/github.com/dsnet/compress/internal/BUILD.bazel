@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "common.go",
+        "release.go",
+    ],
+    importmap = "vendor/github.com/dsnet/compress/internal",
+    importpath = "github.com/dsnet/compress/internal",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["common_test.go"],
+    embed = [":go_default_library"],
+)

@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["api.go"],
+    importpath = "github.com/ActiveState/cli/internal/api",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api/client:go_default_library",
+        "//internal/api/client/authentication:go_default_library",
+        "//internal/api/models:go_default_library",
+        "//internal/constants:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/logging:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["api_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/api/client/authentication:go_default_library",
+        "//internal/api/client/users:go_default_library",
+        "//internal/api/models:go_default_library",
+        "//internal/constants:go_default_library",
+        "//internal/testhelpers/httpmock:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

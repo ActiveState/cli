@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "archive.go",
+        "archive15.go",
+        "archive50.go",
+        "bit_reader.go",
+        "decode29.go",
+        "decode29_lz.go",
+        "decode29_ppm.go",
+        "decode50.go",
+        "decode_reader.go",
+        "decrypt_reader.go",
+        "filters.go",
+        "huffman.go",
+        "ppm_model.go",
+        "reader.go",
+        "vm.go",
+    ],
+    importmap = "vendor/github.com/nwaples/rardecode",
+    importpath = "github.com/nwaples/rardecode",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ask.go",
+        "confirm.go",
+        "doubleSelect.go",
+        "help.go",
+        "input.go",
+        "multiselect.go",
+        "password.go",
+        "select.go",
+        "selectThenInput.go",
+    ],
+    importmap = "vendor/gopkg.in/AlecAivazis/survey.v1/tests/autoplay",
+    importpath = "gopkg.in/AlecAivazis/survey.v1/tests/autoplay",
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_kr_pty//:go_default_library"],
+)
+
+go_binary(
+    name = "autoplay",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

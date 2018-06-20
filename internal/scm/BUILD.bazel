@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["scm.go"],
+    importpath = "github.com/ActiveState/cli/internal/scm",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/scm/git:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["scm_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/environment:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

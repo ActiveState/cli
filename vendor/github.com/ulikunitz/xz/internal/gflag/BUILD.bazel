@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["flag.go"],
+    importmap = "vendor/github.com/ulikunitz/xz/internal/gflag",
+    importpath = "github.com/ulikunitz/xz/internal/gflag",
+    visibility = ["//vendor/github.com/ulikunitz/xz:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["flag_test.go"],
+    embed = [":go_default_library"],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["inherit.go"],
+    importpath = "github.com/ActiveState/cli/state/env/inherit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/locale:go_default_library",
+        "//internal/print:go_default_library",
+        "//pkg/cmdlets/commands:go_default_library",
+        "//pkg/projectfile:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+        "//vendor/gopkg.in/AlecAivazis/survey.v1:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["inherit_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/projectfile:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

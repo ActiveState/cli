@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "archiver.go",
+        "rar.go",
+        "tar.go",
+        "tarbz2.go",
+        "targz.go",
+        "tarxz.go",
+        "zip.go",
+    ],
+    importmap = "vendor/github.com/mholt/archiver",
+    importpath = "github.com/mholt/archiver",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/bzip2:go_default_library",
+        "//vendor/github.com/nwaples/rardecode:go_default_library",
+        "//vendor/github.com/ulikunitz/xz:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["archiver_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+)

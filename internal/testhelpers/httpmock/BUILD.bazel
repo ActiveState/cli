@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["httpmock.go"],
+    importpath = "github.com/ActiveState/cli/internal/testhelpers/httpmock",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/fileutils:go_default_library",
+        "//internal/print:go_default_library",
+        "//vendor/gopkg.in/jarcoal/httpmock.v1:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["httpmock_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

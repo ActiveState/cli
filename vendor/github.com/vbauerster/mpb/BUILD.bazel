@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bar.go",
+        "bar_option.go",
+        "doc.go",
+        "options.go",
+        "options_go1.7.go",
+        "priority_queue.go",
+        "progress.go",
+        "progress_posix.go",
+        "progress_windows.go",
+        "proxyreader.go",
+    ],
+    importmap = "vendor/github.com/vbauerster/mpb",
+    importpath = "github.com/vbauerster/mpb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/vbauerster/mpb/cwriter:go_default_library",
+        "//vendor/github.com/vbauerster/mpb/decor:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "bar_test.go",
+        "barbench_test.go",
+        "decorators_test.go",
+        "draw_test.go",
+        "example_test.go",
+        "export_test.go",
+        "progress_go1.7_test.go",
+        "progress_test.go",
+        "proxyreader_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/github.com/vbauerster/mpb/cwriter:go_default_library",
+        "//vendor/github.com/vbauerster/mpb/decor:go_default_library",
+    ],
+)

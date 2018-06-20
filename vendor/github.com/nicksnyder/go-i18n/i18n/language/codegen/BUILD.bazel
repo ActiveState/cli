@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "main.go",
+        "xml.go",
+    ],
+    importmap = "vendor/github.com/nicksnyder/go-i18n/i18n/language/codegen",
+    importpath = "github.com/nicksnyder/go-i18n/i18n/language/codegen",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "codegen",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

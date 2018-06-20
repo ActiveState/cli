@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bzip2.go",
+        "diff.go",
+        "doc.go",
+        "encoding.go",
+        "patch.go",
+        "seek.go",
+    ],
+    importmap = "vendor/github.com/kr/binarydist",
+    importpath = "github.com/kr/binarydist",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "common_test.go",
+        "diff_test.go",
+        "patch_test.go",
+        "sort_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+)

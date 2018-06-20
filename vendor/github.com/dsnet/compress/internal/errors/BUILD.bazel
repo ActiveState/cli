@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["errors.go"],
+    importmap = "vendor/github.com/dsnet/compress/internal/errors",
+    importpath = "github.com/dsnet/compress/internal/errors",
+    visibility = ["//vendor/github.com/dsnet/compress:__subpackages__"],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "file.go",
+        "licenses.go",
+        "main.go",
+        "version.go",
+    ],
+    importmap = "vendor/github.com/ulikunitz/xz/cmd/gxz",
+    importpath = "github.com/ulikunitz/xz/cmd/gxz",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/ulikunitz/xz:go_default_library",
+        "//vendor/github.com/ulikunitz/xz/internal/gflag:go_default_library",
+        "//vendor/github.com/ulikunitz/xz/internal/term:go_default_library",
+        "//vendor/github.com/ulikunitz/xz/internal/xlog:go_default_library",
+        "//vendor/github.com/ulikunitz/xz/lzma:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "gxz",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

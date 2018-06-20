@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bit_reader.go",
+        "bit_writer.go",
+        "common.go",
+        "context.go",
+        "dict.go",
+        "dict_decoder.go",
+        "dict_encoder.go",
+        "prefix.go",
+        "prefix_decoder.go",
+        "prefix_encoder.go",
+        "reader.go",
+        "transform.go",
+        "writer.go",
+    ],
+    importmap = "vendor/github.com/dsnet/compress/brotli",
+    importpath = "github.com/dsnet/compress/brotli",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/internal:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/errors:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "brotli_test.go",
+        "common_test.go",
+        "dict_decoder_test.go",
+        "dict_encoder_test.go",
+        "prefix_test.go",
+        "reader_test.go",
+        "transform_test.go",
+        "writer_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/github.com/dsnet/compress/internal/errors:go_default_library",
+        "//vendor/github.com/dsnet/compress/internal/testutil:go_default_library",
+    ],
+)

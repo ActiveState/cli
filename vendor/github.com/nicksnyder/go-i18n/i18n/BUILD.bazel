@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["i18n.go"],
+    importmap = "vendor/github.com/nicksnyder/go-i18n/i18n",
+    importpath = "github.com/nicksnyder/go-i18n/i18n",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/bundle:go_default_library",
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/language:go_default_library",
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/translation:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "example_test.go",
+        "exampletemplate_test.go",
+        "exampleyaml_test.go",
+        "translations_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/nicksnyder/go-i18n/i18n/bundle:go_default_library"],
+)

@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["state.go"],
+    importpath = "github.com/ActiveState/cli/state",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/config:go_default_library",
+        "//internal/constants:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/logging:go_default_library",
+        "//internal/print:go_default_library",
+        "//internal/surveyor:go_default_library",
+        "//internal/updater:go_default_library",
+        "//pkg/cmdlets/commands:go_default_library",
+        "//state/activate:go_default_library",
+        "//state/auth:go_default_library",
+        "//state/hook:go_default_library",
+        "//state/new:go_default_library",
+        "//state/organizations:go_default_library",
+        "//state/projects:go_default_library",
+        "//state/selfupdate:go_default_library",
+        "//vendor/github.com/ActiveState/state-required/require:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "state",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["state_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/thoas/go-funk:go_default_library",
+    ],
+)

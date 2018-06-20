@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["test.go"],
+    importmap = "vendor/gopkg.in/AlecAivazis/survey.v1/tests/util",
+    importpath = "gopkg.in/AlecAivazis/survey.v1/tests/util",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/gopkg.in/AlecAivazis/survey.v1:go_default_library"],
+)

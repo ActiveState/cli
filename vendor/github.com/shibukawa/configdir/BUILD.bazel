@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "config.go",
+        "config_darwin.go",
+        "config_windows.go",
+        "config_xdg.go",
+    ],
+    importmap = "vendor/github.com/shibukawa/configdir",
+    importpath = "github.com/shibukawa/configdir",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["example_test.go"],
+    embed = [":go_default_library"],
+)

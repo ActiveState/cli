@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "constants_command.go",
+        "doc.go",
+        "goi18n.go",
+        "merge_command.go",
+    ],
+    importmap = "vendor/github.com/nicksnyder/go-i18n/goi18n",
+    importpath = "github.com/nicksnyder/go-i18n/goi18n",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/bundle:go_default_library",
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/language:go_default_library",
+        "//vendor/github.com/nicksnyder/go-i18n/i18n/translation:go_default_library",
+        "//vendor/github.com/pelletier/go-toml:go_default_library",
+        "//vendor/gopkg.in/yaml.v2:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "goi18n",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "constants_command_test.go",
+        "merge_command_flat_test.go",
+        "merge_command_test.go",
+    ],
+    embed = [":go_default_library"],
+)

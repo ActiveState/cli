@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["organizations.go"],
+    importpath = "github.com/ActiveState/cli/state/organizations",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/api/client/organizations:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/print:go_default_library",
+        "//pkg/cmdlets/commands:go_default_library",
+        "//vendor/github.com/bndr/gotabulate:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["organizations_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/api:go_default_library",
+        "//internal/environment:go_default_library",
+        "//internal/testhelpers/httpmock:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

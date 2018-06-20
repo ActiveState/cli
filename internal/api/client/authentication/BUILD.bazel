@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_token_parameters.go",
+        "add_token_responses.go",
+        "authentication_client.go",
+        "delete_token_parameters.go",
+        "delete_token_responses.go",
+        "disable_t_o_t_p_parameters.go",
+        "disable_t_o_t_p_responses.go",
+        "enable_t_o_t_p_parameters.go",
+        "enable_t_o_t_p_responses.go",
+        "get_renew_parameters.go",
+        "get_renew_responses.go",
+        "list_tokens_parameters.go",
+        "list_tokens_responses.go",
+        "new_t_o_t_p_parameters.go",
+        "new_t_o_t_p_responses.go",
+        "post_login_parameters.go",
+        "post_login_responses.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/api/client/authentication",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api/models:go_default_library",
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

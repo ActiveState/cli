@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["R.go"],
+    importmap = "vendor/github.com/nicksnyder/go-i18n/goi18n/testdata/expected",
+    importpath = "github.com/nicksnyder/go-i18n/goi18n/testdata/expected",
+    visibility = ["//visibility:public"],
+)

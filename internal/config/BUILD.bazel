@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["config.go"],
+    importpath = "github.com/ActiveState/cli/internal/config",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/constants:go_default_library",
+        "//internal/print:go_default_library",
+        "//vendor/github.com/shibukawa/configdir:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["config_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/constants:go_default_library",
+        "//internal/print:go_default_library",
+        "//vendor/github.com/shibukawa/configdir:go_default_library",
+        "//vendor/github.com/spf13/viper:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+        "//vendor/github.com/thoas/go-funk:go_default_library",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["selfupdate.go"],
+    importpath = "github.com/ActiveState/cli/state/selfupdate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/constants:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/print:go_default_library",
+        "//internal/updater:go_default_library",
+        "//pkg/cmdlets/commands:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["selfupdate_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

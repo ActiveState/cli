@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "ask.go",
+        "confirm.go",
+        "doubleSelect.go",
+        "editor.go",
+        "help.go",
+        "input.go",
+        "longSelect.go",
+        "multiselect.go",
+        "password.go",
+        "select.go",
+        "selectThenInput.go",
+    ],
+    importmap = "vendor/gopkg.in/AlecAivazis/survey.v1/tests",
+    importpath = "gopkg.in/AlecAivazis/survey.v1/tests",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//vendor/gopkg.in/AlecAivazis/survey.v1:go_default_library",
+        "//vendor/gopkg.in/AlecAivazis/survey.v1/tests/util:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "tests",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

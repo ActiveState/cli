@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["dbserver.go"],
+    importmap = "vendor/gopkg.in/mgo.v2/dbtest",
+    importpath = "gopkg.in/mgo.v2/dbtest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/gopkg.in/mgo.v2:go_default_library",
+        "@in_gopkg_tomb_v2//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "dbserver_test.go",
+        "export_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//vendor/gopkg.in/mgo.v2:go_default_library",
+        "@in_gopkg_check_v1//:go_default_library",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cat.go",
+        "copyright.go",
+        "main.go",
+        "version.go",
+        "version-file.go",
+    ],
+    importmap = "vendor/github.com/ulikunitz/xz/cmd/xb",
+    importpath = "github.com/ulikunitz/xz/cmd/xb",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "xb",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

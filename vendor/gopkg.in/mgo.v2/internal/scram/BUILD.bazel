@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["scram.go"],
+    importmap = "vendor/gopkg.in/mgo.v2/internal/scram",
+    importpath = "gopkg.in/mgo.v2/internal/scram",
+    visibility = ["//vendor/gopkg.in/mgo.v2:__subpackages__"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["scram_test.go"],
+    embed = [":go_default_library"],
+    deps = ["@in_gopkg_check_v1//:go_default_library"],
+)

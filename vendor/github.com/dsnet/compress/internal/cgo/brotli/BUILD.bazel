@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["brotli.go"],
+    cgo = True,
+    clinkopts = [
+        "-lbrotlicommon",
+        "-lbrotlidec",
+        "-lbrotlienc",
+    ],
+    importmap = "vendor/github.com/dsnet/compress/internal/cgo/brotli",
+    importpath = "github.com/dsnet/compress/internal/cgo/brotli",
+    visibility = ["//vendor/github.com/dsnet/compress:__subpackages__"],
+)

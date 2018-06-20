@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "client.go",
+        "conv.go",
+        "type-client.go",
+        "type-event.go",
+        "type-exception.go",
+        "type-item.go",
+        "type-pageview.go",
+        "type-screenview.go",
+        "type-social.go",
+        "type-timing.go",
+        "type-transaction.go",
+    ],
+    importmap = "vendor/github.com/ActiveState/go-ogle-analytics",
+    importpath = "github.com/ActiveState/go-ogle-analytics",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["analytics.go"],
+    importpath = "github.com/ActiveState/cli/internal/analytics",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/constants:go_default_library",
+        "//internal/logging:go_default_library",
+        "//vendor/github.com/ActiveState/go-ogle-analytics:go_default_library",
+        "//vendor/github.com/denisbrodbeck/machineid:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["analytics_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

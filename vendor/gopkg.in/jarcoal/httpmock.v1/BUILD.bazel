@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "doc.go",
+        "env.go",
+        "response.go",
+        "transport.go",
+    ],
+    importmap = "vendor/gopkg.in/jarcoal/httpmock.v1",
+    importpath = "gopkg.in/jarcoal/httpmock.v1",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "env_test.go",
+        "response_test.go",
+        "transport_test.go",
+    ],
+    embed = [":go_default_library"],
+)

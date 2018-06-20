@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "box.go",
+        "env.go",
+        "file.go",
+        "file_info.go",
+        "packr.go",
+        "physical_file.go",
+        "virtual_file.go",
+    ],
+    importmap = "vendor/github.com/gobuffalo/packr",
+    importpath = "github.com/gobuffalo/packr",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/pkg/errors:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "box_test.go",
+        "http_box_test.go",
+        "packr_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/require:go_default_library"],
+)

@@ -1,10 +1,12 @@
 build
-bazel/
 bazel-out
-BUILD.bazel
+bazel-bin
+bazel-cli
+bazel-genfiles
+bazel-testlogs
 debug
 debug.test
 public/update/*
 public/distro/*
-internal/constants/generated.go
+#internal/constants/generated.go
 **/testdata/generated/**

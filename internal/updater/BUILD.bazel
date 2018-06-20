@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "check.go",
+        "requester.go",
+        "updater.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/updater",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/config:go_default_library",
+        "//internal/constants:go_default_library",
+        "//internal/failures:go_default_library",
+        "//internal/locale:go_default_library",
+        "//internal/logging:go_default_library",
+        "//vendor/github.com/kardianos/osext:go_default_library",
+        "//vendor/github.com/pkg/errors:go_default_library",
+        "//vendor/gopkg.in/inconshreveable/go-update.v0:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "check_test.go",
+        "updater_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//internal/config:go_default_library",
+        "//internal/constants:go_default_library",
+        "//vendor/github.com/stretchr/testify/assert:go_default_library",
+    ],
+)

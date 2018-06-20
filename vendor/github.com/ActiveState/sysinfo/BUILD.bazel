@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "sysinfo.go",
+        "sysinfo_darwin.go",
+        "sysinfo_darwin_386.go",
+        "sysinfo_darwin_amd64.go",
+        "sysinfo_linux.go",
+        "sysinfo_linux_386.go",
+        "sysinfo_linux_amd64.go",
+        "sysinfo_linux_arm.go",
+        "sysinfo_windows.go",
+        "sysinfo_windows_386.go",
+        "sysinfo_windows_amd64.go",
+    ],
+    importmap = "vendor/github.com/ActiveState/sysinfo",
+    importpath = "github.com/ActiveState/sysinfo",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//vendor/golang.org/x/sys/windows:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["sysinfo_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)

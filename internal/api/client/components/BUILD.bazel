@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "components_client.go",
+        "get_component_parameters.go",
+        "get_component_responses.go",
+        "get_components_by_identity_parameters.go",
+        "get_components_by_identity_responses.go",
+        "list_components_parameters.go",
+        "list_components_responses.go",
+    ],
+    importpath = "github.com/ActiveState/cli/internal/api/client/components",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api/models:go_default_library",
+        "//vendor/github.com/go-openapi/errors:go_default_library",
+        "//vendor/github.com/go-openapi/runtime:go_default_library",
+        "//vendor/github.com/go-openapi/runtime/client:go_default_library",
+        "//vendor/github.com/go-openapi/strfmt:go_default_library",
+        "//vendor/golang.org/x/net/context:go_default_library",
+    ],
+)

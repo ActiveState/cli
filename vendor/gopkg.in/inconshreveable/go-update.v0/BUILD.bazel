@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "hide_noop.go",
+        "hide_windows.go",
+        "update.go",
+    ],
+    importmap = "vendor/gopkg.in/inconshreveable/go-update.v0",
+    importpath = "gopkg.in/inconshreveable/go-update.v0",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/kardianos/osext:go_default_library",
+        "//vendor/github.com/kr/binarydist:go_default_library",
+        "//vendor/gopkg.in/inconshreveable/go-update.v0/download:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["update_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/kr/binarydist:go_default_library"],
+)

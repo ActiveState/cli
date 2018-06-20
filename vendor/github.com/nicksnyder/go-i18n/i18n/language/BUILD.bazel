@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "language.go",
+        "operands.go",
+        "plural.go",
+        "pluralspec.go",
+        "pluralspec_gen.go",
+    ],
+    importmap = "vendor/github.com/nicksnyder/go-i18n/i18n/language",
+    importpath = "github.com/nicksnyder/go-i18n/i18n/language",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "language_test.go",
+        "operands_test.go",
+        "plural_test.go",
+        "pluralspec_gen_test.go",
+        "pluralspec_test.go",
+    ],
+    embed = [":go_default_library"],
+)

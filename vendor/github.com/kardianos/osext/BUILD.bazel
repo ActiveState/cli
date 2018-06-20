@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "osext.go",
+        "osext_go18.go",
+        "osext_plan9.go",
+        "osext_procfs.go",
+        "osext_sysctl.go",
+        "osext_windows.go",
+    ],
+    importmap = "vendor/github.com/kardianos/osext",
+    importpath = "github.com/kardianos/osext",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["osext_test.go"],
+    embed = [":go_default_library"],
+)

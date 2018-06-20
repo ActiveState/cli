@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["failures.go"],
+    importpath = "github.com/ActiveState/cli/internal/failures",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/locale:go_default_library",
+        "//internal/logging:go_default_library",
+        "//internal/print:go_default_library",
+        "//vendor/github.com/rs/xid:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["failures_test.go"],
+    embed = [":go_default_library"],
+    deps = ["//vendor/github.com/stretchr/testify/assert:go_default_library"],
+)
