@@ -380,6 +380,8 @@ err_env_cannot_find:
   other: Cannot find variables matching your query
 prompt_env_choose_remove:
   other: Which variable would you like to remove?
+err_env_cannot_parse:
+  other: Could not parse variables used in your request
 prompt_env_option:
   other: "{{.Variable}}: `{{.Value}}` ({{.Constraints}}{{.Hash}})"
 env_removed:
