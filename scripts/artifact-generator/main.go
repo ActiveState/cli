@@ -75,6 +75,7 @@ func distro(OS string, arch string, isForTests bool) {
 	distro = run("go", OS, distro, isForTests)
 	distro = run("python2", OS, distro, isForTests)
 	distro = run("python3", OS, distro, isForTests)
+	distro = run("perl", OS, distro, isForTests)
 
 	distrob, err := json.Marshal(distro)
 	if err != nil {
@@ -115,6 +116,8 @@ func run(language string, OS string, distro []*Distribution, isForTests bool) []
 	case "python2":
 		packages = getPackagePaths(sourceArtifactPath)
 		relocate = getRelocatePython(sourceDistPath, "2.7")
+	case "perl":
+		packages = getPackagePaths(sourceArtifactPath)
 	default:
 		log.Fatalf("Unsupported language: %s", language)
 	}
