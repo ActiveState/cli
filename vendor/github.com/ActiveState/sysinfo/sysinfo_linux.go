@@ -28,11 +28,6 @@ func OSVersion() (*OSVersionInfo, error) {
 	if len(parts) != 4 {
 		return nil, fmt.Errorf("Unable to parse version string '%s'", version)
 	}
-	for i := 1; i < len(parts); i++ {
-		if _, err := strconv.Atoi(parts[i]); err != nil {
-			return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[i], version)
-		}
-	}
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])
 	micro, _ := strconv.Atoi(parts[3])
@@ -72,11 +67,6 @@ func Libc() (*LibcInfo, error) {
 	parts := regex.FindStringSubmatch(string(libc))
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("Unable to parse libc string '%s'", libc)
-	}
-	for i := 1; i < len(parts); i++ {
-		if _, err := strconv.Atoi(parts[i]); err != nil {
-			return nil, fmt.Errorf("Unable to parse part '%s' of libc string '%s'", parts[i], libc)
-		}
 	}
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])

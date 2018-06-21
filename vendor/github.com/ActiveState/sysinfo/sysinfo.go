@@ -114,8 +114,6 @@ const (
 	Msvc
 	// Mingw represents the Minimalist GNU for Windows toolchain.
 	Mingw
-	// Cygwin represents the Cygwin toolchain.
-	Cygwin
 	// Clang represents the LLVM/Clang toolchain.
 	Clang
 )
@@ -128,8 +126,6 @@ func (i CompilerNameInfo) String() string {
 		return "MSVC"
 	case Mingw:
 		return "MinGW"
-	case Cygwin:
-		return "Cygwin"
 	case Clang:
 		return "clang"
 	default:
