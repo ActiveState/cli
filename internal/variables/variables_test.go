@@ -20,7 +20,7 @@ platforms:
   - name: Windows
     os: windows
   - name: macOS
-    os: darwin
+    os: macos
 variables:
   - name: foo
     value: bar
@@ -56,7 +56,11 @@ func TestExpandProjectPlatformOs(t *testing.T) {
 
 	expanded, fail := ExpandFromProject("$platform.os", project)
 	assert.Nil(t, fail, "Expanded without failure")
-	assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
+	if runtime.GOOS != "darwin" {
+		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
+	} else {
+		assert.Equal(t, "macos", expanded, "Expanded platform variable")
+	}
 }
 
 func TestExpandProjectHook(t *testing.T) {
@@ -94,7 +98,11 @@ func TestExpandProjectAlternateSyntax(t *testing.T) {
 
 	expanded, fail := ExpandFromProject("${platform.os}", project)
 	assert.Nil(t, fail, "Expanded without failure")
-	assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
+	if runtime.GOOS != "darwin" {
+		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
+	} else {
+		assert.Equal(t, "macos", expanded, "Expanded platform variable")
+	}
 }
 
 func TestExpandProjectUnknownCategory(t *testing.T) {

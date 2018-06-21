@@ -41,6 +41,7 @@ func TestMatchConstraint(t *testing.T) {
 }
 
 func TestOsMatches(t *testing.T) {
+	osNames := []string{"linux", "windows", "macos", "Linux", "Windows", "MacOS", "macOS"}
 	for _, name := range osNames {
 		osOverride = name
 		assert.True(t, osMatches(name), "OS matches with override")
@@ -80,6 +81,7 @@ func TestOsVersionMatches(t *testing.T) {
 }
 
 func TestArchMatches(t *testing.T) {
+	archNames := []string{"i386", "x86_64", "arm", "I386", "X86_64", "ARM"}
 	for _, name := range archNames {
 		archOverride = name
 		assert.True(t, archMatches(name), "Architecture matches with override")
@@ -108,13 +110,13 @@ func TestLibcMatches(t *testing.T) {
 	assert.True(t, libcMatches("MSVCRT 7.0"), "Case-insensitive matching")
 
 	// macOS tests.
-	libcOverride = "bsdlibc 3.2"
-	assert.False(t, libcMatches("bsdlibc 3.4"), "Newer bsdlibc required")
-	assert.False(t, libcMatches("bsdlibc 4.0"), "Newer bsdlibc required")
-	assert.True(t, libcMatches("bsdlibc 3.2"), "bsdlibc matches")
-	assert.True(t, libcMatches("bsdlibc 3.0"), "Older bsdlibc is okay")
-	assert.True(t, libcMatches("bsdlibc 2.0"), "Older bsdlibc is okay")
-	assert.True(t, libcMatches("BSDlibc 3.2"), "Case-insensitive matching")
+	libcOverride = "libc 3.2"
+	assert.False(t, libcMatches("libc 3.4"), "Newer libc required")
+	assert.False(t, libcMatches("libc 4.0"), "Newer libc required")
+	assert.True(t, libcMatches("libc 3.2"), "libc matches")
+	assert.True(t, libcMatches("libc 3.0"), "Older libc is okay")
+	assert.True(t, libcMatches("libc 2.0"), "Older libc is okay")
+	assert.True(t, libcMatches("LIBC 3.2"), "Case-insensitive matching")
 
 	libcOverride = "" // reset
 }
@@ -131,15 +133,15 @@ func TestCompilerMatches(t *testing.T) {
 	assert.True(t, compilerMatches("GCC 5.2"), "Case-insensitive matching")
 
 	// Windows tests.
-	compilerOverride = "cl 17.00"
-	assert.False(t, compilerMatches("cl 19.00"), "Newer cl required")
-	assert.False(t, compilerMatches("cl 19"), "Newer cl required")
-	assert.True(t, compilerMatches("cl 17.00"), "cl matches")
-	assert.True(t, compilerMatches("cl 17"), "cl matches")
-	assert.True(t, compilerMatches("cl 15.00"), "Older cl is okay")
-	assert.True(t, compilerMatches("cl 15"), "Older cl is okay")
-	assert.False(t, compilerMatches("mingw 5.4"), "Non-cl (MinGW) is not okay")
-	assert.True(t, compilerMatches("CL 17"), "Case-insensitive matching")
+	compilerOverride = "msvc 17.00"
+	assert.False(t, compilerMatches("msvc 19.00"), "Newer msvc required")
+	assert.False(t, compilerMatches("msvc 19"), "Newer msvc required")
+	assert.True(t, compilerMatches("msvc 17.00"), "msvc matches")
+	assert.True(t, compilerMatches("msvc 17"), "msvc matches")
+	assert.True(t, compilerMatches("msvc 15.00"), "Older msvc is okay")
+	assert.True(t, compilerMatches("msvc 15"), "Older msvc is okay")
+	assert.False(t, compilerMatches("mingw 5.4"), "Non-msvc (MinGW) is not okay")
+	assert.True(t, compilerMatches("MSVC 17"), "Case-insensitive matching")
 
 	// macOS tests.
 	compilerOverride = "clang 6.0"

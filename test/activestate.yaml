@@ -13,7 +13,7 @@ platforms:
     os: windows
     version: 10
   - name: MacOSLabel
-    os: darwin
+    os: macos
     version: 10.9
     compiler: clang-4
 languages:
