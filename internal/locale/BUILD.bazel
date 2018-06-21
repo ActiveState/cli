@@ -1,5 +1,15 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+genrule(
+    name = "packr",
+    srcs = [
+        "locale.go",
+        "//locale",
+    ],
+    outs = ["locale-packr.go"],
+    cmd = "cd internal/locale && packr && mv locale-packr.go ../../$@",
+)
+
 go_library(
     name = "go_default_library",
     srcs = [

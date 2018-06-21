@@ -1,0 +1,6 @@
+filegroup(
+    name = "locale",
+    srcs =
+        glob(["*.yaml"]),
+    visibility = ["//visibility:public"],
+)
