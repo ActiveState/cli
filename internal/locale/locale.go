@@ -35,7 +35,11 @@ func init() {
 	funk.ForEach(Supported, func(x string) {
 		filename := strings.ToLower(x) + ".yaml"
 		filepath := path + filename
-		i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
+		b, err := box.MustBytes(filename)
+		if err != nil {
+			log.Fatalf("Could not read file: %s, error: %v", filename, err)
+		}
+		i18n.ParseTranslationFileBytes(filepath, b)
 	})
 
 	locale := getLocaleFlag()

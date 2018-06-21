@@ -1,10 +1,20 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+genrule(
+    name = "packr",
+    srcs = [
+        "subshell.go",
+        "//assets/shells",
+    ],
+    outs = ["subshell-packr.go"],
+    cmd = "cd internal/subshell && packr && cp subshell-packr.go ../../$@",
+)
+
 go_library(
     name = "go_default_library",
     srcs = [
+        "subshell-packr.go", # keep
         "subshell.go",
-        "subshell-packr.go",
     ],
     importpath = "github.com/ActiveState/cli/internal/subshell",
     visibility = ["//:__subpackages__"],

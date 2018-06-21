@@ -7,14 +7,14 @@ genrule(
         "//locale",
     ],
     outs = ["locale-packr.go"],
-    cmd = "cd internal/locale && packr && mv locale-packr.go ../../$@",
+    cmd = "cd internal/locale && packr && cp locale-packr.go ../../$@",
 )
 
 go_library(
     name = "go_default_library",
     srcs = [
+        "locale-packr.go",  # keep
         "locale.go",
-        "locale-packr.go",
     ],
     importpath = "github.com/ActiveState/cli/internal/locale",
     visibility = ["//:__subpackages__"],

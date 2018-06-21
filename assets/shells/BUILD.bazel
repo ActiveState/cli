@@ -1,0 +1,6 @@
+filegroup(
+    name = "shells",
+    srcs =
+        glob(["*"]),
+    visibility = ["//visibility:public"],
+)
