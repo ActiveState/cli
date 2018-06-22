@@ -153,81 +153,101 @@ languages:
 	return project
 }
 
+func TestGet(t *testing.T) {
+	loadProject(t, "General")
+	val := Get()
+	assert.IsType(t, &Project{}, val, "Should be a project.go.Project")
+}
+
+func TestGetSafe(t *testing.T) {
+	loadProject(t, "General")
+	val, fail := GetSafe()
+	assert.Nil(t, fail, "Run without failure")
+	assert.IsType(t, &Project{}, val, "Should be a project.go.Project")
+}
+
 func TestName(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Name()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "foo", val, "Values should match")
+	assert.Equal(t, "foo", prj.Name(), "Values should match")
 }
 
 func TestOwner(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Owner()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "carey", val, "Values should match")
+	assert.Equal(t, "carey", prj.Owner(), "Values should match")
 }
 
 func TestNamespace(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Namespace()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "my/name/space", val, "Values should match")
+	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
 }
 
 func TestEnvironment(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Environment()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "something", val, "Values should match")
+	assert.Equal(t, "something", prj.Environments(), "Values should match")
 }
 
 func TestVersion(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Version()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "1.0", val, "Values should match")
+	assert.Equal(t, "1.0", prj.Version(), "Values should match")
 }
 
 func TestPlatforms(t *testing.T) {
 	loadProject(t, "General")
-	val, fail := Platforms()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
+	val := prj.Platforms()
 	assert.Equal(t, 3, len(val), "Values should match")
 }
 
-func TestConstrainHooks(t *testing.T) {
+func TestHooks(t *testing.T) {
 	loadProject(t, "Hooks")
-	hooks, fail := Hooks()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
+	hooks := prj.Hooks()
 	assert.Equal(t, 1, len(hooks), "Should match 1 out of three constrained items")
 }
 
-func TestConstrainLanguages(t *testing.T) {
+func TestLanguages(t *testing.T) {
 	loadProject(t, "Langs")
-	languages, fail := Languages()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
+	languages := prj.Languages()
 	assert.Equal(t, 1, len(languages), "Should match 1 out of three constrained items")
 }
 
-func TestConstrainPackages(t *testing.T) {
+func TestPackages(t *testing.T) {
 	loadProject(t, "Pkgs")
-	languages, _ := Languages()
+	prj, fail := GetSafe()
+	assert.Nil(t, fail, "Run without failure")
+	languages := prj.Languages()
 	language := languages[0]
 	packages, fail := language.Packages()
 	assert.Nil(t, fail, "Run without failure")
 	assert.Equal(t, 1, len(packages), "Should match 1 out of three constrained items")
 }
 
-func TestConstrainCommands(t *testing.T) {
+func TestCommands(t *testing.T) {
 	loadProject(t, "Cmds")
-	commands, fail := Commands()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
+	commands := prj.Commands()
 	assert.Equal(t, 1, len(commands), "Should match 1 out of three constrained items")
 }
 
-func TestConstrainVariables(t *testing.T) {
+func TestVariables(t *testing.T) {
 	loadProject(t, "Vars")
-	variables, fail := Variables()
+	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
+	variables := prj.Variables()
 	assert.Equal(t, 1, len(variables), "Should match 1 out of three constrained items")
 }
