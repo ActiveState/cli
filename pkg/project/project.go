@@ -5,54 +5,211 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// Platform covers the platform structure of our yaml
-type Platform struct {
-	Name         string
-	Os           string
-	Version      string
-	Architecture string
-	Libc         string
-	Compiler     string
+// Project covers the platform structure
+type Project struct {
+	projectfile  projectfile.Project
+	platforms    []*projectfile.Platform
+	languages    []*projectfile.Language
+	variables    []*projectfile.Variable
+	hooks        []*projectfile.Hook
+	commands     []*projectfile.Command
 }
+
+//Platforms returns a reference to projectfile.Platforms
+func (p Project) Platforms() []*Platform {
+	var platforms []*Platform
+	for platform := range p.projectfile.Platforms {
+		var newPlat Platform
+		newPlat.platform = *platform
+		platforms = append(platforms, newPlat)
+	}
+	return platforms
+}
+
+//Languages returns a reference to projectfile.Languages
+func (p Project) Languages() []*Language {
+	var languages []*Language
+	for language := range p.projectfile.Languages {
+		var newLang Language
+		newLang.language = *language
+		languages = append(languages, newLang)
+	}
+	return languages
+} 
+
+//Variables returns a reference to projectfile.Variables
+func (p Project) Variables() []*Variable {
+	var variables []*Variable
+	for variable := range p.projectfile.Variables {
+		var newVar Variable
+		newVar.variable = *variable
+		variables = append(variables, newVar)
+	}
+	return variables
+}
+
+//Hooks returns a reference to projectfile.Hooks
+func (p Project) Hooks() []*Hook {
+	var hooks []*Hook
+	for hook := range p.projectfile.Hooks {
+		var newHook Hook
+		newHook.hook = *hook
+		hooks = append(hooks, newHook)
+	}
+	return hooks
+}
+
+//Commands returns a reference to projectfile.Commands
+func (p Project) Commands() []*Command {
+	var commands []*Command
+	for command := range p.projectfile.Commands {
+		var newCommand Command
+		newCommand.command = *command
+		commands = append(commands, newCommand)
+	}
+	return commands
+}
+
+//Name returned are contrained and all variables evaluated
+func (p Project) Name() string { return p.platform.Name }
+
+//Os returned are contrained and all variables evaluated
+func (p Project) Os() string { return p.platform.Os }
+
+//Version returned are contrained and all variables evaluated
+func (p Project) Version() string { return p.platform.Version }
+
+//Architecture returned are contrained and all variables evaluated
+func (p Project) Architecture() string { return p.platform.Architecture }
+
+//Libc returned are contrained and all variables evaluated
+func (p Project) Libc() string { return p.platform.Libc }
+
+//Compiler returned are contrained and all variables evaluated
+func (p Project) Compiler() string { return p.platform.Compiler }
+
+//Get returns project struct
+func Get() *Project {
+	pj := projectfile.Get()
+	return Project{
+		projectfile:  pj
+	}
+}
+
+// Platform covers the platform structure
+type Platform struct {
+	platform *projectfile.Platform
+}
+
+//Name returned are contrained and all variables evaluated
+func (p Platform) Name() string { return p.platform.Name }
+
+//Os returned are contrained and all variables evaluated
+func (p Platform) Os() string { return p.platform.Os }
+
+//Version returned are contrained and all variables evaluated
+func (p Platform) Version() string { return p.platform.Version }
+
+//Architecture returned are contrained and all variables evaluated
+func (p Platform) Architecture() string { return p.platform.Architecture }
+
+//Libc returned are contrained and all variables evaluated
+func (p Platform) Libc() string { return p.platform.Libc }
+
+//Compiler returned are contrained and all variables evaluated
+func (p Platform) Compiler() string { return p.platform.Compiler }
 
 // Language covers the language structure, which goes under Project
 type Language struct {
-	Name     string
-	Version  string
-	Build    projectfile.Build
-	packages []projectfile.Package
+	build    *projectfile.Build
+	language  *projectfile.Language
+	packages []*projectfile.Package
 }
 
-// Constraint covers the constraint structure, which can go under almost any other struct
-type Constraint struct {
-	Platform    string
-	Environment string
+//Name returned are contrained and all variables evaluated
+func (l Language) Name() string { return l.language.Name }
+
+//Version returned are contrained and all variables evaluated
+func (l Language) Version() string { return l.language.Version }
+
+//Build returned are contrained and all variables evaluated
+func (l Language) Build() string { return l.build }
+
+//Packages returned are contrained and all variables evaluated
+func (l *Language) Packages() ([]Package, *failures.Failure) {
+	validPackages := []Package{}
+	for _, pkg := range l.packages {
+		if !constraints.IsConstrained(pkg.Constraints) {
+			newPkg := Package{}
+			newPkg.package = pkg
+			validPackages = append(validPackages, newPkg)
+		}
+	}
+	return validPackages, nil
 }
 
 // Package covers the package structure, which goes under the language struct
 type Package struct {
-	Name    string
-	Version string
-	Build   projectfile.Build
+	pkg 	*projectfile.Package
+	build   *projectfile.Build
 }
+
+//Name returned are contrained and all variables evaluated
+func (p Package) Name() string { return p.pkg.Name }
+
+//Version returned are contrained and all variables evaluated
+func (p Package) Version() string { return p.pkg.Version }
+
+//Build returned are contrained and all variables evaluated
+func (p Package) Build() string { return p.pkg.build }
+
+//Constraints returned are contrained and all variables evaluated
+func (p Constraint) Constraints() string {
+	validConstraints := []Constraint{}
+	for _, constraint := range p.constraints {
+		if !constraints.IsConstrained(constraint.Constraints) {
+			newConstraint := Constraint{}
+			newConstraint.constraint = constraint
+			validConstraints = append(validConstraints, newConstraint)
+		}
+	}
+	return validConstraints, nil
+}
+
+// Constraint covers the constraint structure, which can go under almost any other struct
+type Constraint struct {
+	constraint  *projectfile.Constraint
+	Platform    string
+	Environment string
+}
+
+//Platform returned are contrained and all variables evaluated
+func (c Constraint) Platform() string { return p.pkg.Build }
+
+//Environment returned are contrained and all variables evaluated
+func (c Constraint) Environment() string { return p.pkg.Environment }
 
 // Variable covers the variable structure, which goes under Project
 type Variable struct {
+	variable  *projectfile.Variable
 	Name  string
 	Value string
 }
 
 // Hook covers the hook structure, which goes under Project
 type Hook struct {
+	hook  *projectfile.Hook
 	Name  string
 	Value string
 }
 
 // Command covers the command structure, which goes under Project
 type Command struct {
+	command  *projectfile.Command
 	Name       string
 	Value      string
 	Standalone bool
@@ -60,6 +217,10 @@ type Command struct {
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
+
+func (p Project) Platforms() ([]*project.Platform, *failures.Failure) {
+	return Platform
+}
 
 //Name returned are contrained and all variables evaluated
 func Name() (string, *failures.Failure) {
@@ -155,21 +316,6 @@ func Languages() ([]Language, *failures.Failure) {
 		}
 	}
 	return validlangs, err
-}
-
-//Packages returned are contrained and all variables evaluated
-func (l *Language) Packages() ([]Package, *failures.Failure) {
-	validPackages := []Package{}
-	for _, pkg := range l.packages {
-		if !constraints.IsConstrained(pkg.Constraints) {
-			newPkg := Package{}
-			newPkg.Name = pkg.Name
-			newPkg.Version = pkg.Version
-			newPkg.Build = pkg.Build
-			validPackages = append(validPackages, newPkg)
-		}
-	}
-	return validPackages, nil
 }
 
 //Commands returned are contrained and all variables evaluated
