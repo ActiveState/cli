@@ -281,8 +281,8 @@ func TestGetActivated(t *testing.T) {
 	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
 	os.Chdir(root)
-	config2, err := GetSafe()
-	assert.NoError(t, err, "No error even if no activestate.yaml does not exist")
+	config2, fail := GetSafe()
+	assert.NoError(t, fail.ToError(), "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
 
 	expected := filepath.Join(root, "test", constants.ConfigFileName)

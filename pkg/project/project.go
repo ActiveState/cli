@@ -3,15 +3,10 @@ package project
 import (
 	"github.com/ActiveState/cli/internal/constraints"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-// Platform covers the platform structure of our yaml
-type Project struct {
-}
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -64,10 +59,10 @@ type Command struct {
 }
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
-var FailProjectNotLoaded = failures.Type("fail.notparsed", failures.FailUser)
+var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
 
 //Name returned are contrained and all variables evaluated
-func (p *Project) Name() (string, error) {
+func Name() (string, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return "", err
@@ -76,7 +71,7 @@ func (p *Project) Name() (string, error) {
 }
 
 //Owner returned are contrained and all variables evaluated
-func (p *Project) Owner() (string, error) {
+func Owner() (string, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return "", err
@@ -85,7 +80,7 @@ func (p *Project) Owner() (string, error) {
 }
 
 //Namespace returned are contrained and all variables evaluated
-func (p *Project) Namespace() (string, error) {
+func Namespace() (string, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return "", err
@@ -94,7 +89,7 @@ func (p *Project) Namespace() (string, error) {
 }
 
 //Version returned are contrained and all variables evaluated
-func (p *Project) Version() (string, error) {
+func Version() (string, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return "", err
@@ -103,7 +98,7 @@ func (p *Project) Version() (string, error) {
 }
 
 //Environment returned are contrained and all variables evaluated
-func (p *Project) Environment() (string, error) {
+func Environment() (string, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return "", err
@@ -112,7 +107,7 @@ func (p *Project) Environment() (string, error) {
 }
 
 //Platforms returned are contrained and all variables evaluated
-func (p *Project) Platforms() ([]projectfile.Platform, error) {
+func Platforms() ([]projectfile.Platform, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return nil, err
@@ -121,33 +116,34 @@ func (p *Project) Platforms() ([]projectfile.Platform, error) {
 }
 
 //Hooks returned are contrained and all variables evaluated
-func (p *Project) Hooks() ([]Hook, error) {
-	pj, err := projectfile.GetSafe()
-	if err != nil {
-		return nil, err
+func Hooks() ([]Hook, *failures.Failure) {
+	pj, fail := projectfile.GetSafe()
+	if fail != nil {
+		return nil, fail
 	}
-	validHooks := make([]Hook, len(pj.Hooks))
+	validHooks := []Hook{}
 	for _, hook := range pj.Hooks {
 		if !constraints.IsConstrained(hook.Constraints) {
 			newHook := Hook{}
 			newHook.Name = hook.Name
-			newHook.Value, err = variables.ExpandFromProject(hook.Value, pj)
-			if err != nil {
-				return nil, err
+			value, fail := variables.ExpandFromProject(hook.Value, pj)
+			if fail.ToError() != nil {
+				return nil, fail
 			}
+			newHook.Value = value
 			validHooks = append(validHooks, newHook)
 		}
 	}
-	return validHooks, err
+	return validHooks, fail
 }
 
 //Languages returned are contrained and all variables evaluated
-func (p *Project) Languages() ([]Language, error) {
+func Languages() ([]Language, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return nil, err
 	}
-	validlangs := make([]Language, len(pj.Languages))
+	validlangs := []Language{}
 	for _, language := range pj.Languages {
 		if !constraints.IsConstrained(language.Constraints) {
 			newLang := Language{}
@@ -162,8 +158,8 @@ func (p *Project) Languages() ([]Language, error) {
 }
 
 //Packages returned are contrained and all variables evaluated
-func (l *Language) Packages() ([]Package, error) {
-	validPackages := make([]Package, len(l.packages))
+func (l *Language) Packages() ([]Package, *failures.Failure) {
+	validPackages := []Package{}
 	for _, pkg := range l.packages {
 		if !constraints.IsConstrained(pkg.Constraints) {
 			newPkg := Package{}
@@ -177,17 +173,21 @@ func (l *Language) Packages() ([]Package, error) {
 }
 
 //Commands returned are contrained and all variables evaluated
-func (p *Project) Commands() ([]Command, error) {
+func Commands() ([]Command, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return nil, err
 	}
-	validCmds := make([]Command, len(pj.Commands))
+	validCmds := []Command{}
 	for _, command := range pj.Commands {
 		if !constraints.IsConstrained(command.Constraints) {
 			newCmd := Command{}
 			newCmd.Name = command.Name
-			newCmd.Value = command.Value
+			value, fail := variables.ExpandFromProject(command.Value, pj)
+			if fail.ToError() != nil {
+				return nil, fail
+			}
+			newCmd.Value = value
 			newCmd.Standalone = command.Standalone
 			validCmds = append(validCmds, newCmd)
 		}
@@ -196,12 +196,12 @@ func (p *Project) Commands() ([]Command, error) {
 }
 
 //Variables returned are contrained and all variables evaluated
-func (p *Project) Variables() ([]Variable, error) {
+func Variables() ([]Variable, *failures.Failure) {
 	pj, err := projectfile.GetSafe()
 	if err != nil {
 		return nil, err
 	}
-	validVars := make([]Variable, len(pj.Variables))
+	validVars := []Variable{}
 	for _, variable := range pj.Variables {
 		if !constraints.IsConstrained(variable.Constraints) {
 			newVar := Variable{}

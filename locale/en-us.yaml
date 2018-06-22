@@ -151,6 +151,8 @@ prompt_choose_hook:
   other: Which hook do you wish to remove?
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
+err_parse_project:
+  other: "Could not parse project file: Error:{{.V0}}"
 err_hook_cannot_list:
   other: Cannot list hooks
 err_hook_cannot_find:
@@ -418,9 +420,3 @@ print_state_show_packages:
   other: packages
 print_state_show_env_vars:
   other: Environment variables
-project_error_parse_string_badformat:
-  other: "Cannot parse string bad formatting: StartPosition: {{.V0}}, ErrorPosition:   {{.V1}}"
-project_error_failed_expand_copy:
-  other: "Could not load project file into memory: Issue in '{{.V0}}' field. Error: {{.V1}}"
-project_error_no_variable_returned:
-  other: "No variable returned for '{{.V0}}'"
