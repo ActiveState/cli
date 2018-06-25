@@ -18,7 +18,7 @@ type Project struct {
 
 //Platforms returns a reference to projectfile.Platforms
 func (p *Project) Platforms() []*Platform {
-	var platforms []*Platform
+	platforms := []*Platform{}
 	for _, platform := range p.projectfile.Platforms {
 		var newPlat = Platform{}
 		newPlat.platform = &platform
@@ -29,12 +29,11 @@ func (p *Project) Platforms() []*Platform {
 
 //Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
-	var languages []*Language
-	for _, language := range p.projectfile.Languages {
+	languages := []*Language{}
+	for i, language := range p.projectfile.Languages {
 		if !constraints.IsConstrained(language.Constraints) {
 			var newLang = Language{}
-			newLang.language = &language
-			newLang.packages = &language.Packages
+			newLang.language = &p.projectfile.Languages[i]
 			languages = append(languages, &newLang)
 		}
 	}
@@ -43,11 +42,11 @@ func (p *Project) Languages() []*Language {
 
 //Variables returns a reference to projectfile.Variables
 func (p *Project) Variables() []*Variable {
-	var variables []*Variable
-	for _, variable := range p.projectfile.Variables {
+	variables := []*Variable{}
+	for i, variable := range p.projectfile.Variables {
 		if !constraints.IsConstrained(variable.Constraints) {
 			var newVar = Variable{}
-			newVar.variable = &variable
+			newVar.variable = &p.projectfile.Variables[i]
 			variables = append(variables, &newVar)
 		}
 	}
@@ -56,11 +55,11 @@ func (p *Project) Variables() []*Variable {
 
 //Hooks returns a reference to projectfile.Hooks
 func (p *Project) Hooks() []*Hook {
-	var hooks []*Hook
-	for _, hook := range p.projectfile.Hooks {
+	hooks := []*Hook{}
+	for i, hook := range p.projectfile.Hooks {
 		if !constraints.IsConstrained(hook.Constraints) {
 			var newHook = Hook{}
-			newHook.hook = &hook
+			newHook.hook = &p.projectfile.Hooks[i]
 			hooks = append(hooks, &newHook)
 		}
 	}
@@ -69,11 +68,11 @@ func (p *Project) Hooks() []*Hook {
 
 //Commands returns a reference to projectfile.Commands
 func (p *Project) Commands() []*Command {
-	var commands []*Command
-	for _, command := range p.projectfile.Commands {
+	commands := []*Command{}
+	for i, command := range p.projectfile.Commands {
 		if !constraints.IsConstrained(command.Constraints) {
 			var newCommand = Command{}
-			newCommand.command = &command
+			newCommand.command = &p.projectfile.Commands[i]
 			commands = append(commands, &newCommand)
 		}
 	}
@@ -185,9 +184,7 @@ func (p *Platform) Compiler() (string, *failures.Failure) {
 
 // Language covers the language structure, which goes under Project
 type Language struct {
-	build    *projectfile.Build
 	language *projectfile.Language
-	packages *[]projectfile.Package
 }
 
 //Name returned are contrained and all variables evaluated
@@ -197,15 +194,15 @@ func (l *Language) Name() string { return l.language.Name }
 func (l *Language) Version() string { return l.language.Version }
 
 //Build returned are contrained and all variables evaluated
-func (l *Language) Build() *projectfile.Build { return l.build }
+func (l *Language) Build() *projectfile.Build { return &l.language.Build }
 
 //Packages returned are contrained and all variables evaluated
 func (l *Language) Packages() ([]Package, *failures.Failure) {
 	validPackages := []Package{}
-	for _, pkg := range *l.packages {
+	for i, pkg := range l.language.Packages {
 		if !constraints.IsConstrained(pkg.Constraints) {
 			newPkg := Package{}
-			newPkg.pkg = &pkg
+			newPkg.pkg = &l.language.Packages[i]
 			validPackages = append(validPackages, newPkg)
 		}
 	}
