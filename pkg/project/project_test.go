@@ -57,16 +57,16 @@ platforms:
   - name: OSX
     os: darwin
 hooks:
-  - name: baz
-    value: quux
+  - name: bar
+    value: bar
     constraints:
       platform: Windows
-  - name: gonzo
-    value: "echo 'something cool'"
+  - name: baz
+    value: baz
     constraints:
       platform: OSX
-  - name: bar
-    value: baz
+  - name: foo
+    value: foo
     constraints:
       platform: Linux
 `)
@@ -104,19 +104,19 @@ platforms:
   - name: OSX
     os: darwin
 languages:
-  - name: bar
+  - name: foo
     version: "1.1"
     build:
       override: --foo
     constraints:
       platform: Linux
-  - name: baz
+  - name: bar
     version: "1.2"
     build:
       override: --bar
     constraints:
       platform: Windows
-  - name: quiznar
+  - name: baz
     version: "1.3"
     build:
       override: --baz
@@ -241,25 +241,25 @@ func TestHooks(t *testing.T) {
 
 	if runtime.GOOS == "linux" {
 		name := hook.Name()
-		assert.Equal(t, "bar", name, "Names should match (Linux)")
+		assert.Equal(t, "foo", name, "Names should match (Linux)")
 		var value string
 		value, fail = hook.Value()
 		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "baz", value, "Value should match (Linux)")
+		assert.Equal(t, "foo", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := hook.Name()
-		assert.Equal(t, "baz", name, "Name should match (Windows)")
+		assert.Equal(t, "bar", name, "Name should match (Windows)")
 		var value string
 		value, fail = hook.Value()
 		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "quux", value, "Value should match (Windows)")
+		assert.Equal(t, "bar", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := hook.Name()
-		assert.Equal(t, "gonzo", name, "Names should match (OSX)")
+		assert.Equal(t, "baz", name, "Names should match (OSX)")
 		var value string
 		value, fail = hook.Value()
 		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "echo 'something cool'", value, "Value should match (OSX)")
+		assert.Equal(t, "baz", value, "Value should match (OSX)")
 	}
 }
 
@@ -275,23 +275,23 @@ func TestLanguages(t *testing.T) {
 
 	if runtime.GOOS == "linux" {
 		name := lang.Name()
-		assert.Equal(t, "bar", name, "Names should match (Linux)")
+		assert.Equal(t, "foo", name, "Names should match (Linux)")
 		version := lang.Version()
 		assert.Equal(t, "1.1", version, "Version should match (Linux)")
 		build := lang.Build()
 		assert.Equal(t, "--foo", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := lang.Name()
-		assert.Equal(t, "baz", name, "Name should match (Windows)")
+		assert.Equal(t, "bar", name, "Name should match (Windows)")
 		version := lang.Version()
 		assert.Equal(t, "1.2", version, "Version should match (Windows)")
 		build := lang.Build()
 		assert.Equal(t, "--bar", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := lang.Name()
-		assert.Equal(t, "gonzo", name, "Names should match (OSX)")
+		assert.Equal(t, "baz", name, "Names should match (OSX)")
 		version := lang.Version()
-		assert.Equal(t, "1.3 'something cool'", version, "Version should match (OSX)")
+		assert.Equal(t, "1.3", version, "Version should match (OSX)")
 		build := lang.Build()
 		assert.Equal(t, "--baz", (*build)["override"], "Build value should match (OSX)")
 	}
@@ -327,7 +327,7 @@ func TestPackages(t *testing.T) {
 		name := pkg.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
 		version := pkg.Version()
-		assert.Equal(t, "1.3 'something cool'", version, "Version should match (OSX)")
+		assert.Equal(t, "1.3", version, "Version should match (OSX)")
 		build := pkg.Build()
 		assert.Equal(t, "--baz", (*build)["override"], "Build value should match (OSX)")
 	}
