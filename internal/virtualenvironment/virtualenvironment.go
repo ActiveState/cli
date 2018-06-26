@@ -5,23 +5,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/print"
-
 	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/failures"
-
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/virtualenvironment/golang"
+	"github.com/ActiveState/cli/internal/virtualenvironment/perl"
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	funk "github.com/thoas/go-funk"
 )
 
 // VirtualEnvironmenter defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -178,6 +175,13 @@ func GetVenv(artf *artifact.Artifact) (VirtualEnvironmenter, *failures.Failure) 
 		}
 	case "go":
 		venv = &golang.VirtualEnvironment{}
+		fail := ActivateLanguageVenv(artf, venv)
+
+		if fail != nil {
+			return nil, fail
+		}
+	case "perl":
+		venv = &perl.VirtualEnvironment{}
 		fail := ActivateLanguageVenv(artf, venv)
 
 		if fail != nil {
