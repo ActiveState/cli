@@ -1,5 +1,5 @@
 platforms:
-  - name: OSX
+  - name: fullexample
     os: darwin
     version: "10.0"
     architecture: x386
@@ -9,6 +9,8 @@ platforms:
     os: windows
   - name: Linux
     os: linux
+  - name: OSX
+    os: darwin
 name: foo
 environments: "something"
 version: "1.0"

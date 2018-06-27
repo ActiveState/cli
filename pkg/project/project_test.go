@@ -55,10 +55,10 @@ func TestPlatforms(t *testing.T) {
 	assert.Nil(t, fail, "Run without failure")
 	val := prj.Platforms()
 	plat := val[0]
-	assert.Equal(t, 3, len(val), "Values should match")
+	assert.Equal(t, 4, len(val), "Values should match")
 
 	name := plat.Name()
-	assert.Equal(t, "OSX", name, "Names should match")
+	assert.Equal(t, "fullexample", name, "Names should match")
 
 	os := plat.Os()
 	assert.Equal(t, "darwin", os, "OS should match")
