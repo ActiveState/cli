@@ -16,7 +16,6 @@ func setProjectDir(t *testing.T) {
 	var err error
 	cwd, err = environment.GetRootPath()
 	assert.NoError(t, err, "Should fetch cwd")
-	println(cwd)
 	err = os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata"))
 	assert.NoError(t, err, "Should change dir without issue.")
 }
