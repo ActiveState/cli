@@ -152,7 +152,7 @@ prompt_choose_hook:
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_parse_project:
-  other: "Could not parse project file: Error:{{.V0}}"
+  other: "Could not parse project file. For more info refer to the error log"
 err_hook_cannot_list:
   other: Cannot list hooks
 err_hook_cannot_find:

@@ -204,11 +204,10 @@ func GetSafe() (*Project, *failures.Failure) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, FailParseProject.New(locale.T("err_parse_project", err.Error()))
+		return nil, FailParseProject.New(locale.T("err_parse_project"))
 	}
 	project.Persist()
-	var failure *failures.Failure
-	return project, failure
+	return project, nil
 }
 
 // Reset the current state, which unsets the persistent project

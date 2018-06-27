@@ -16,91 +16,123 @@ type Project struct {
 	projectfile *projectfile.Project
 }
 
-//Platforms returns a reference to projectfile.Platforms
+// Platform covers the platform structure
+type Platform struct {
+	platform    *projectfile.Platform
+	projectfile *projectfile.Project
+}
+
+// Language covers the language structure
+type Language struct {
+	language    *projectfile.Language
+	projectfile *projectfile.Project
+}
+
+// Package covers the package structure
+type Package struct {
+	pkg         *projectfile.Package
+	projectfile *projectfile.Project
+}
+
+// Command covers the command structure
+type Command struct {
+	command     *projectfile.Command
+	projectfile *projectfile.Project
+}
+
+// Hook covers the hook structure
+type Hook struct {
+	hook        *projectfile.Hook
+	projectfile *projectfile.Project
+}
+
+// Variable covers the variable structure
+type Variable struct {
+	variable    *projectfile.Variable
+	projectfile *projectfile.Project
+}
+
+// Build covers the build structure
+type Build map[string]string
+
+// Source returns the source projectfile
+func (p *Project) Source() *projectfile.Project { return p.projectfile }
+
+// Platforms gets platforms
 func (p *Project) Platforms() []*Platform {
 	platforms := []*Platform{}
-	for _, platform := range p.projectfile.Platforms {
-		var newPlat = Platform{}
-		newPlat.platform = &platform
-		platforms = append(platforms, &newPlat)
+	for i := range p.projectfile.Platforms {
+		platforms = append(platforms, &Platform{&p.projectfile.Platforms[i], p.projectfile})
 	}
 	return platforms
 }
 
-//Languages returns a reference to projectfile.Languages
+// Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
 	languages := []*Language{}
 	for i, language := range p.projectfile.Languages {
 		if !constraints.IsConstrained(language.Constraints) {
-			var newLang = Language{}
-			newLang.language = &p.projectfile.Languages[i]
-			languages = append(languages, &newLang)
+			languages = append(languages, &Language{&p.projectfile.Languages[i], p.projectfile})
 		}
 	}
 	return languages
 }
 
-//Variables returns a reference to projectfile.Variables
+// Variables returns a reference to projectfile.Variables
 func (p *Project) Variables() []*Variable {
 	variables := []*Variable{}
 	for i, variable := range p.projectfile.Variables {
 		if !constraints.IsConstrained(variable.Constraints) {
-			var newVar = Variable{}
-			newVar.variable = &p.projectfile.Variables[i]
-			variables = append(variables, &newVar)
+			variables = append(variables, &Variable{&p.projectfile.Variables[i], p.projectfile})
 		}
 	}
 	return variables
 }
 
-//Hooks returns a reference to projectfile.Hooks
+// Hooks returns a reference to projectfile.Hooks
 func (p *Project) Hooks() []*Hook {
 	hooks := []*Hook{}
 	for i, hook := range p.projectfile.Hooks {
 		if !constraints.IsConstrained(hook.Constraints) {
-			var newHook = Hook{}
-			newHook.hook = &p.projectfile.Hooks[i]
-			hooks = append(hooks, &newHook)
+			hooks = append(hooks, &Hook{&p.projectfile.Hooks[i], p.projectfile})
 		}
 	}
 	return hooks
 }
 
-//Commands returns a reference to projectfile.Commands
+// Commands returns a reference to projectfile.Commands
 func (p *Project) Commands() []*Command {
 	commands := []*Command{}
 	for i, command := range p.projectfile.Commands {
 		if !constraints.IsConstrained(command.Constraints) {
-			var newCommand = Command{}
-			newCommand.command = &p.projectfile.Commands[i]
-			commands = append(commands, &newCommand)
+			commands = append(commands, &Command{&p.projectfile.Commands[i], p.projectfile})
 		}
 	}
 	return commands
 }
 
-//Name returned are contrained and all variables evaluated
+// Name returns project name
 func (p *Project) Name() string { return p.projectfile.Name }
 
-//Owner returned are contrained and all variables evaluated
+// Owner returns project owner
 func (p *Project) Owner() string { return p.projectfile.Owner }
 
-//Version returned are contrained and all variables evaluated
+// Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version }
 
-//Namespace returned are contrained and all variables evaluated
+// Namespace returns project namespace
 func (p *Project) Namespace() string { return p.projectfile.Namespace }
 
-//Environments returned are contrained and all variables evaluated
+// Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
-//Get returns project struct
+// Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
 	return &Project{pj}
 }
 
-//GetSafe returns project struct
+// GetSafe returns project struct.  Produces failure if error occurs, allows recovery
 func GetSafe() (*Project, *failures.Failure) {
 	pj, fail := projectfile.GetSafe()
 	if fail.ToError() != nil {
@@ -109,198 +141,129 @@ func GetSafe() (*Project, *failures.Failure) {
 	return &Project{pj}, nil
 }
 
-// Platform covers the platform structure
-type Platform struct {
-	platform *projectfile.Platform
-}
+// Source returns the source projectfile
+func (p *Platform) Source() *projectfile.Project { return p.projectfile }
 
-//Name returned are contrained and all variables evaluated
+// Name returns platform name
 func (p *Platform) Name() string { return p.platform.Name }
 
-//Os returned are contrained and all variables evaluated
-func (p *Platform) Os() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(p.platform.Os, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Os returned with all variables evaluated
+func (p *Platform) Os() string {
+	value, _ := variables.ExpandFromProject(p.platform.Os, p.projectfile)
+	return value
 }
 
-//Version returned are contrained and all variables evaluated
-func (p *Platform) Version() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(p.platform.Version, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Version returned with all variables evaluated
+func (p *Platform) Version() string {
+	value, _ := variables.ExpandFromProject(p.platform.Version, p.projectfile)
+	return value
 }
 
-//Architecture returned are contrained and all variables evaluated
-func (p *Platform) Architecture() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(p.platform.Architecture, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Architecture with all variables evaluated
+func (p *Platform) Architecture() string {
+	value, _ := variables.ExpandFromProject(p.platform.Architecture, p.projectfile)
+	return value
 }
 
-//Libc returned are contrained and all variables evaluated
-func (p *Platform) Libc() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(p.platform.Libc, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Libc returned are constrained and all variables evaluated
+func (p *Platform) Libc() string {
+	value, _ := variables.ExpandFromProject(p.platform.Libc, p.projectfile)
+	return value
 }
 
-//Compiler returned are contrained and all variables evaluated
-func (p *Platform) Compiler() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(p.platform.Compiler, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Compiler returned are constrained and all variables evaluated
+func (p *Platform) Compiler() string {
+	value, _ := variables.ExpandFromProject(p.platform.Compiler, p.projectfile)
+	return value
 }
 
-// Language covers the language structure, which goes under Project
-type Language struct {
-	language *projectfile.Language
-}
+// Source returns the source projectfile
+func (l *Language) Source() *projectfile.Project { return l.projectfile }
 
-//Name returned are contrained and all variables evaluated
+// Name with all variables evaluated
 func (l *Language) Name() string { return l.language.Name }
 
-//Version returned are contrained and all variables evaluated
+// Version with all variables evaluated
 func (l *Language) Version() string { return l.language.Version }
 
-//Build returned are contrained and all variables evaluated
-func (l *Language) Build() *projectfile.Build { return &l.language.Build }
+// Build with all variables evaluated
+func (l *Language) Build() *Build {
+	build := Build{}
+	for key, val := range l.language.Build {
+		newVal, _ := variables.ExpandFromProject(val, l.projectfile)
+		build[key] = newVal
+	}
+	return &build
+}
 
-//Packages returned are contrained and all variables evaluated
-func (l *Language) Packages() ([]Package, *failures.Failure) {
+// Packages returned are constrained set
+func (l *Language) Packages() []Package {
 	validPackages := []Package{}
 	for i, pkg := range l.language.Packages {
 		if !constraints.IsConstrained(pkg.Constraints) {
 			newPkg := Package{}
 			newPkg.pkg = &l.language.Packages[i]
+			newPkg.projectfile = l.projectfile
 			validPackages = append(validPackages, newPkg)
 		}
 	}
-	return validPackages, nil
+	return validPackages
 }
 
-// Package covers the package structure, which goes under the language struct
-type Package struct {
-	pkg *projectfile.Package
-}
+// Source returns the source projectfile
+func (p *Package) Source() *projectfile.Project { return p.projectfile }
 
-//Name returned are contrained and all variables evaluated
+// Name returns package name
 func (p *Package) Name() string { return p.pkg.Name }
 
-//Version returned are contrained and all variables evaluated
+// Version returns package version
 func (p *Package) Version() string { return p.pkg.Version }
 
-//Build returned are contrained and all variables evaluated
-func (p *Package) Build() *projectfile.Build { return &p.pkg.Build }
-
-//Constraints returned are contrained and all variables evaluated
-func (p *Package) Constraints() *projectfile.Constraint {
-	return &p.pkg.Constraints
+// Build returned with all variables evaluated
+func (p *Package) Build() *Build {
+	build := Build{}
+	for key, val := range p.pkg.Build {
+		newVal, _ := variables.ExpandFromProject(val, p.projectfile)
+		build[key] = newVal
+	}
+	return &build
 }
 
-// Constraint covers the constraint structure, which can go under almost any other struct
-type Constraint struct {
-	constraint *projectfile.Constraint
-}
+// Source returns the source projectfile
+func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 
-//Platform returned are contrained and all variables evaluated
-func (c *Constraint) Platform() string { return c.constraint.Platform }
-
-//Environment returned are contrained and all variables evaluated
-func (c *Constraint) Environment() string { return c.constraint.Environment }
-
-// Variable covers the variable structure, which goes under Project
-type Variable struct {
-	variable *projectfile.Variable
-}
-
-//Name returned are contrained and all variables evaluated
+// Name returns variable name
 func (v *Variable) Name() string { return v.variable.Name }
 
-//Value returned are contrained and all variables evaluated
-func (v *Variable) Value() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(v.variable.Value, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Value returned with all variables evaluated
+func (v *Variable) Value() string {
+	value, _ := variables.ExpandFromProject(v.variable.Value, v.projectfile)
+	return value
 }
 
-// Hook covers the hook structure, which goes under Project
-type Hook struct {
-	hook *projectfile.Hook
-}
+// Source returns the source projectfile
+func (h *Hook) Source() *projectfile.Project { return h.projectfile }
 
-//Name returned are contrained and all variables evaluated
+// Name returns Hook name
 func (h *Hook) Name() string { return h.hook.Name }
 
-//Value returned are contrained and all variables evaluated
-func (h *Hook) Value() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(h.hook.Value, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Value returned with all variables evaluated
+func (h *Hook) Value() string {
+	value, _ := variables.ExpandFromProject(h.hook.Value, h.projectfile)
+	return value
 }
 
-// Command covers the command structure, which goes under Project
-type Command struct {
-	command *projectfile.Command
-}
+// Source returns the source projectfile
+func (c *Command) Source() *projectfile.Project { return c.projectfile }
 
-//Name returned are contrained and all variables evaluated
+// Name returns command name
 func (c *Command) Name() string { return c.command.Name }
 
-//Value returned are contrained and all variables evaluated
-func (c *Command) Value() (string, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	value, fail := variables.ExpandFromProject(c.command.Value, pj)
-	if fail.ToError() != nil {
-		return "", fail
-	}
-	return value, nil
+// Value returned with all variables evaluated
+func (c *Command) Value() string {
+	value, _ := variables.ExpandFromProject(c.command.Value, c.projectfile)
+	return value
 }
 
-//Standalone returns if the command is standalone or not
+// Standalone returns if the command is standalone or not
 func (c *Command) Standalone() bool { return c.command.Standalone }

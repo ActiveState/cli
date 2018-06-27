@@ -1,189 +1,44 @@
 package project
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
-func loadProject(t *testing.T, contentType string) *projectfile.Project {
-	project := &projectfile.Project{}
-	contentsGeneral := strings.TrimSpace(`
-platforms:
-  - name: OSX
-    os: darwin
-    version: 10.0
-    architecture: x386
-    libc: "gnu"
-    compiler: "gcc"
-name: foo
-environments: "something"
-version: "1.0"
-namespace: "my/name/space"
-owner: "carey"
-`)
-	contentsVars := strings.TrimSpace(`
-platforms:
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: darwin
-variables:
-  - name: foo
-    value: foo
-    constraints:
-      platform: Linux
-  - name: bar
-    value: bar
-    constraints:
-      platform: Windows
-  - name: baz
-    value: "baz"
-    constraints:
-      platform: OSX
-`)
-	contentsHooks := strings.TrimSpace(`
-platforms:
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: darwin
-hooks:
-  - name: bar
-    value: bar
-    constraints:
-      platform: Windows
-  - name: baz
-    value: baz
-    constraints:
-      platform: OSX
-  - name: foo
-    value: foo
-    constraints:
-      platform: Linux
-`)
-	contentsCmds := strings.TrimSpace(`
-platforms:
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: darwin
-commands:
-  - name: foo
-    value: foo
-    standalone: true
-    constraints:
-      platform: Linux
-  - name: bar
-    value: bar
-    standalone: true
-    constraints:
-      platform: Windows
-  - name: baz
-    value: baz
-    standalone: true
-    constraints:
-      platform: OSX
-`)
-	contentsLangs := strings.TrimSpace(`
-platforms:
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: darwin
-languages:
-  - name: foo
-    version: "1.1"
-    build:
-      override: --foo
-    constraints:
-      platform: Linux
-  - name: bar
-    version: "1.2"
-    build:
-      override: --bar
-    constraints:
-      platform: Windows
-  - name: baz
-    version: "1.3"
-    build:
-      override: --baz
-    constraints:
-      platform: OSX
-`)
-	contentsPkgs := strings.TrimSpace(`
-platforms:
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: darwin
-languages:
-  - name: foo
-    version: "1.0"
-    packages:
-      - name: foo
-        version: "1.1"
-        constraints:
-          platform: Linux
-        build:
-          override: --foo
-      - name: bar
-        version: "1.2"
-        constraints:
-            platform: Windows
-        build:
-          override: --bar
-      - name: baz
-        version: "1.3"
-        constraints:
-          platform: OSX
-        build:
-          override: --baz
-`)
-	var contents map[string]string
-	contents = make(map[string]string)
-	contents["Vars"] = contentsVars
-	contents["Langs"] = contentsLangs
-	contents["Cmds"] = contentsCmds
-	contents["Pkgs"] = contentsPkgs
-	contents["Hooks"] = contentsHooks
-	contents["General"] = contentsGeneral
-	fail := yaml.Unmarshal([]byte(contents[contentType]), project)
-	assert.Nil(t, fail, "Unmarshalled YAML")
-	project.Persist()
+var cwd string
 
-	return project
+func setProjectDir(t *testing.T) {
+	var err error
+	cwd, err = os.Getwd()
+	assert.NoError(t, err, "Should fetch cwd")
+	os.Chdir(filepath.Join(cwd, "testdata"))
+}
+
+func resetProjectDir(t *testing.T) {
+	os.Chdir(cwd)
 }
 
 func TestGet(t *testing.T) {
-	loadProject(t, "General")
-	val := Get()
-	assert.IsType(t, &Project{}, val, "Should be a project.go.Project")
+	setProjectDir(t)
+	config := Get()
+	assert.NotNil(t, config, "Config should be set")
+	resetProjectDir(t)
 }
 
 func TestGetSafe(t *testing.T) {
-	loadProject(t, "General")
+	setProjectDir(t)
 	val, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
-	assert.IsType(t, &Project{}, val, "Should be a project.go.Project")
+	assert.NoError(t, fail.ToError(), "Run without failure")
+	assert.NotNil(t, val, "Config should be set")
+	resetProjectDir(t)
 }
 
 func TestProject(t *testing.T) {
-	loadProject(t, "General")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 	assert.Equal(t, "foo", prj.Name(), "Values should match")
@@ -191,48 +46,45 @@ func TestProject(t *testing.T) {
 	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
 	assert.Equal(t, "something", prj.Environments(), "Values should match")
 	assert.Equal(t, "1.0", prj.Version(), "Values should match")
+	resetProjectDir(t)
 }
 
 func TestPlatforms(t *testing.T) {
-	loadProject(t, "General")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 	val := prj.Platforms()
 	plat := val[0]
-	assert.Equal(t, 1, len(val), "Values should match")
+	assert.Equal(t, 3, len(val), "Values should match")
 
 	name := plat.Name()
-	assert.Equal(t, "OSX", name, "Values should match")
+	assert.Equal(t, "OSX", name, "Names should match")
 
-	os, fail := plat.Os()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "darwin", os, "Values should match")
+	os := plat.Os()
+	assert.Equal(t, "darwin", os, "OS should match")
 
 	var version string
-	version, fail = plat.Version()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "10.0", version, "Values should match")
+	version = plat.Version()
+	assert.Equal(t, "10.0", version, "Version should match")
 
 	var arch string
-	arch, fail = plat.Architecture()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "x386", arch, "Values should match")
+	arch = plat.Architecture()
+	assert.Equal(t, "x386", arch, "Arch should match")
 
 	var libc string
-	libc, fail = plat.Libc()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "gnu", libc, "Values should match")
+	libc = plat.Libc()
+	assert.Equal(t, "gnu", libc, "Libc should match")
 
 	var compiler string
-	compiler, fail = plat.Compiler()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "gcc", compiler, "Values should match")
+	compiler = plat.Compiler()
+	assert.Equal(t, "gcc", compiler, "Compiler should match")
+	resetProjectDir(t)
 }
 
 func TestHooks(t *testing.T) {
-	loadProject(t, "Hooks")
+	setProjectDir(t)
 	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+	assert.NoError(t, fail.ToError(), "Run without failure")
 
 	hooks := prj.Hooks()
 	assert.Equal(t, 1, len(hooks), "Should match 1 out of three constrained items")
@@ -242,34 +94,29 @@ func TestHooks(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		name := hook.Name()
 		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		var value string
-		value, fail = hook.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "foo", value, "Value should match (Linux)")
+		value := hook.Value()
+		assert.Equal(t, "foo Linux", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := hook.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		var value string
-		value, fail = hook.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "bar", value, "Value should match (Windows)")
+		value := hook.Value()
+		assert.Equal(t, "bar Windows", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := hook.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		var value string
-		value, fail = hook.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "baz", value, "Value should match (OSX)")
+		value := hook.Value()
+		assert.Equal(t, "baz OSX", value, "Value should match (OSX)")
 	}
+	resetProjectDir(t)
 }
 
 func TestLanguages(t *testing.T) {
-	loadProject(t, "Langs")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 
 	languages := prj.Languages()
-	assert.Equal(t, 1, len(languages), "Should match 1 out of three constrained items")
+	assert.Equal(t, 2, len(languages), "Should match 1 out of three constrained items")
 
 	lang := languages[0]
 
@@ -279,32 +126,37 @@ func TestLanguages(t *testing.T) {
 		version := lang.Version()
 		assert.Equal(t, "1.1", version, "Version should match (Linux)")
 		build := lang.Build()
-		assert.Equal(t, "--foo", (*build)["override"], "Build value should match (Linux)")
+		assert.Equal(t, "--foo Linux", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := lang.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
 		version := lang.Version()
 		assert.Equal(t, "1.2", version, "Version should match (Windows)")
 		build := lang.Build()
-		assert.Equal(t, "--bar", (*build)["override"], "Build value should match (Windows)")
+		assert.Equal(t, "--bar Windows", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := lang.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
 		version := lang.Version()
 		assert.Equal(t, "1.3", version, "Version should match (OSX)")
 		build := lang.Build()
-		assert.Equal(t, "--baz", (*build)["override"], "Build value should match (OSX)")
+		assert.Equal(t, "--baz OSX", (*build)["override"], "Build value should match (OSX)")
 	}
+	resetProjectDir(t)
 }
 
 func TestPackages(t *testing.T) {
-	loadProject(t, "Pkgs")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 	languages := prj.Languages()
-	language := languages[0]
-	packages, fail := language.Packages()
-	assert.Nil(t, fail, "Run without failure")
+	var language *Language
+	for _, l := range languages {
+		if l.Name() == "packages" {
+			language = l
+		}
+	}
+	packages := language.Packages()
 	assert.Equal(t, 1, len(packages), "Should match 1 out of three constrained items")
 
 	pkg := packages[0]
@@ -315,26 +167,27 @@ func TestPackages(t *testing.T) {
 		version := pkg.Version()
 		assert.Equal(t, "1.1", version, "Version should match (Linux)")
 		build := pkg.Build()
-		assert.Equal(t, "--foo", (*build)["override"], "Build value should match (Linux)")
+		assert.Equal(t, "--foo Linux", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := pkg.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
 		version := pkg.Version()
 		assert.Equal(t, "1.2", version, "Version should match (Windows)")
 		build := pkg.Build()
-		assert.Equal(t, "--bar", (*build)["override"], "Build value should match (Windows)")
+		assert.Equal(t, "--bar Windows", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := pkg.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
 		version := pkg.Version()
 		assert.Equal(t, "1.3", version, "Version should match (OSX)")
 		build := pkg.Build()
-		assert.Equal(t, "--baz", (*build)["override"], "Build value should match (OSX)")
+		assert.Equal(t, "--baz OSX", (*build)["override"], "Build value should match (OSX)")
 	}
+	resetProjectDir(t)
 }
 
 func TestCommands(t *testing.T) {
-	loadProject(t, "Cmds")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 	commands := prj.Commands()
@@ -345,32 +198,30 @@ func TestCommands(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		name := cmd.Name()
 		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		version, fail := cmd.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "foo", version, "Value should match (Linux)")
+		version := cmd.Value()
+		assert.Equal(t, "foo Linux", version, "Value should match (Linux)")
 		standalone := cmd.Standalone()
 		assert.True(t, standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := cmd.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		version, fail := cmd.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "bar", version, "Value should match (Windows)")
+		version := cmd.Value()
+		assert.Equal(t, "bar Windows", version, "Value should match (Windows)")
 		standalone := cmd.Standalone()
 		assert.True(t, standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := cmd.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		version, fail := cmd.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "baz", version, "Value should match (OSX)")
+		version := cmd.Value()
+		assert.Equal(t, "baz OSX", version, "Value should match (OSX)")
 		standalone := cmd.Standalone()
 		assert.True(t, standalone, "Standalone value should match (OSX)")
 	}
+	resetProjectDir(t)
 }
 
 func TestVariables(t *testing.T) {
-	loadProject(t, "Vars")
+	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
 	variables := prj.Variables()
@@ -381,20 +232,18 @@ func TestVariables(t *testing.T) {
 	if runtime.GOOS == "linux" {
 		name := variable.Name()
 		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		value, fail := variable.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "foo", value, "Value should match (Linux)")
+		value := variable.Value()
+		assert.Equal(t, "foo Linux", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		name := variable.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		value, fail := variable.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "bar", value, "Value should match (Windows)")
+		value := variable.Value()
+		assert.Equal(t, "bar Windows", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		name := variable.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		value, fail := variable.Value()
-		assert.Nil(t, fail, "Run without failure")
-		assert.Equal(t, "baz", value, "Value should match (OSX)")
+		value := variable.Value()
+		assert.Equal(t, "baz OSX", value, "Value should match (OSX)")
 	}
+	resetProjectDir(t)
 }
