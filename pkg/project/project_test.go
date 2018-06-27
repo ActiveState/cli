@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +14,11 @@ var cwd string
 
 func setProjectDir(t *testing.T) {
 	var err error
-	cwd, err = os.Getwd()
+	cwd, err = environment.GetRootPath()
 	assert.NoError(t, err, "Should fetch cwd")
-	os.Chdir(filepath.Join(cwd, "testdata"))
+	println(cwd)
+	err = os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata"))
+	assert.NoError(t, err, "Should change dir without issue.")
 }
 
 func resetProjectDir(t *testing.T) {
