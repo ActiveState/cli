@@ -17,6 +17,9 @@ import (
 // FailNoProject identifies a failure as being due to a missing project file
 var FailNoProject = failures.Type("projectfile.fail.noproject")
 
+// FailParseProject identifies a failure as being due inability to parse file contents
+var FailParseProject = failures.Type("projectfile.fail.parseproject")
+
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string     `yaml:"name"`
@@ -184,7 +187,7 @@ func Get() *Project {
 }
 
 // GetSafe returns the project configuration in a safe manner (returns error)
-func GetSafe() (*Project, error) {
+func GetSafe() (*Project, *failures.Failure) {
 	if persistentProject != nil {
 		return persistentProject, nil
 	}
@@ -200,10 +203,11 @@ func GetSafe() (*Project, error) {
 		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
 	}
 	project, err := Parse(projectFilePath)
-	if err == nil {
-		project.Persist()
+	if err != nil {
+		return nil, FailParseProject.New(locale.T("err_parse_project"))
 	}
-	return project, err
+	project.Persist()
+	return project, nil
 }
 
 // Reset the current state, which unsets the persistent project
