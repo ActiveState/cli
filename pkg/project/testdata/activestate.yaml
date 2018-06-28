@@ -10,7 +10,7 @@ platforms:
   - name: Linux
     os: linux
   - name: OSX
-    os: darwin
+    os: macos
 name: foo
 environments: "something"
 version: "1.0"
