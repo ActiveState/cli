@@ -8,18 +8,32 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/environment"
+
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	if os.Getenv("CI") == "true" {
+		os.Setenv("SHELL", "/bin/bash")
+	}
+}
 
 func TestExecute(t *testing.T) {
 	assert := assert.New(t)
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"activate"})
+	cwd, _ := os.Getwd() // store
+	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "test"))
+	assert.Nil(err, "Changed into test directory")
 
 	Command.Execute()
 
 	assert.Equal(true, true, "Execute didn't panic")
+	assert.NoError(failures.GetHandled(), "No error occurred")
+
+	err = os.Chdir(cwd)
+	assert.Nil(err, "Changed back to original cwd")
 }
 
 func TestExecuteGitClone(t *testing.T) {
