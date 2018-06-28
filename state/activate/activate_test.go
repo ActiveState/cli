@@ -14,6 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	if os.Getenv("CI") == "true" {
+		os.Setenv("SHELL", "/bin/bash")
+	}
+}
+
 func TestExecute(t *testing.T) {
 	assert := assert.New(t)
 

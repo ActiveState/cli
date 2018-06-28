@@ -65,8 +65,6 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	var binary string
 	if runtime.GOOS == "windows" {
 		binary = os.Getenv("ComSpec")
-	} else if os.Getenv("CI") == "true" {
-		binary = "/bin/bash"
 	} else {
 		binary = os.Getenv("SHELL")
 	}
