@@ -95,7 +95,10 @@ func Activate() *failures.Failure {
 
 		env, fail := GetVenv(artf)
 		if fail != nil {
-			return fail
+			// Ideally this should fail. See https://www.pivotaltracker.com/story/show/158699349
+			print.Warning("Cannot load venv for artifact: %s, error: %s", artf.Meta.Name, fail.Error())
+			return nil
+			//return fail
 		}
 
 		// Load language artifact
