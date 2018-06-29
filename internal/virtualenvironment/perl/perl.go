@@ -82,7 +82,7 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 			return nil
 		}
 
-		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
+		target := filepath.Join(v.datadir, "languages", "lib", filepath.Base(artfPath), subpath)
 		if fileutils.PathExists(target) {
 			return nil
 		}
