@@ -71,6 +71,10 @@ func (v *VirtualEnvironment) loadLanguage(artf *artifact.Artifact) *failures.Fai
 }
 
 func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Failure {
+	if err := fileutils.Mkdir(v.datadir, "lib"); err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
 	artfPath := filepath.Dir(artf.Path)
 	err := filepath.Walk(artfPath, func(subpath string, f os.FileInfo, err error) error {
 		subpath = strings.TrimPrefix(subpath, artfPath)
@@ -78,9 +82,13 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 			return nil
 		}
 
-		target := filepath.Join(v.DataDir(), "language", "lib", subpath)
+		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
 		if fileutils.PathExists(target) {
 			return nil
+		}
+
+		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
+			return failures.FailIO.Wrap(err)
 		}
 
 		return os.Symlink(filepath.Join(artfPath, subpath), target)
