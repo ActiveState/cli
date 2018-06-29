@@ -1,0 +1,100 @@
+platforms:
+  - name: fullexample
+    os: darwin
+    version: "10.0"
+    architecture: x386
+    libc: "gnu"
+    compiler: "gcc"
+  - name: Windows
+    os: windows
+  - name: Linux
+    os: linux
+  - name: OSX
+    os: macos
+name: foo
+environments: "something"
+version: "1.0"
+namespace: "my/name/space"
+owner: "carey"
+variables:
+  - name: foo
+    value: foo $platform.name
+    constraints:
+      platform: Linux
+  - name: bar
+    value: bar $platform.name
+    constraints:
+      platform: Windows
+  - name: baz
+    value: baz $platform.name
+    constraints:
+      platform: OSX
+hooks:
+  - name: bar
+    value: bar $platform.name
+    constraints:
+      platform: Windows
+  - name: baz
+    value: baz $platform.name
+    constraints:
+      platform: OSX
+  - name: foo
+    value: foo $platform.name
+    constraints:
+      platform: Linux
+commands:
+  - name: foo
+    value: foo $platform.name
+    standalone: true
+    constraints:
+      platform: Linux
+  - name: bar
+    value: bar $platform.name
+    standalone: true
+    constraints:
+      platform: Windows
+  - name: baz
+    value: baz $platform.name
+    standalone: true
+    constraints:
+      platform: OSX
+languages:
+  - name: foo
+    version: "1.1"
+    build:
+      override: --foo $platform.name
+    constraints:
+      platform: Linux
+  - name: bar
+    version: "1.2"
+    build:
+      override: --bar $platform.name
+    constraints:
+      platform: Windows
+  - name: baz
+    version: "1.3"
+    build:
+      override: --baz $platform.name
+    constraints:
+      platform: OSX
+  - name: packages
+    version: "1.0"
+    packages:
+      - name: foo
+        version: "1.1"
+        constraints:
+          platform: Linux
+        build:
+          override: --foo $platform.name
+      - name: bar
+        version: "1.2"
+        constraints:
+            platform: Windows
+        build:
+          override: --bar $platform.name
+      - name: baz
+        version: "1.3"
+        constraints:
+          platform: OSX
+        build:
+          override: --baz $platform.name

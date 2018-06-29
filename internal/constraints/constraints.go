@@ -13,56 +13,17 @@ import (
 	"github.com/ActiveState/sysinfo"
 )
 
-// Map of sysinfo.OSInfos to our constraint OS names.
-// Our constraint names may be different from sysinfo names.
-var osNames = map[sysinfo.OsInfo]string{
-	sysinfo.Linux:   "linux",
-	sysinfo.Windows: "windows",
-	sysinfo.Mac:     "darwin",
-}
-
-// Map of sysinfo.ArchInfos to our constraint arch names.
-// Our constraint names may be different from sysinfo names.
-var archNames = map[sysinfo.ArchInfo]string{
-	sysinfo.I386:  "386",
-	sysinfo.Amd64: "amd64",
-}
-
-// Map of sysinfo.LibcNameInfos to our constraint libc names.
-// Our constraint names may be different from sysinfo names.
-var libcNames = map[sysinfo.LibcNameInfo]string{
-	sysinfo.Glibc: "glibc",
-}
-
-// Map of sysinfo.CompilerNameInfos to our constraint compiler names.
-// Our constraint names may be different from sysinfo names.
-var compilerNames = map[sysinfo.CompilerNameInfo]string{
-	sysinfo.Gcc: "gcc",
-}
-
 // For testing.
 var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
 
 // Returns whether or not the sysinfo-detected OS matches the given one
 // (presumably the constraint).
 func osMatches(os string) bool {
-	sysOS := sysinfo.OS()
+	name := sysinfo.OS().String()
 	if osOverride != "" {
-		switch osOverride {
-		case osNames[sysinfo.Linux]:
-			sysOS = sysinfo.Linux
-		case osNames[sysinfo.Windows]:
-			sysOS = sysinfo.Windows
-		case osNames[sysinfo.Mac]:
-			sysOS = sysinfo.Mac
-		default:
-			sysOS = sysinfo.UnknownOs
-		}
+		name = osOverride
 	}
-	if name, ok := osNames[sysOS]; ok {
-		return name == os
-	}
-	return false
+	return strings.ToLower(name) == strings.ToLower(os)
 }
 
 // Returns whether or not the sysinfo-detected OS version is greater than or
@@ -100,21 +61,11 @@ func osVersionMatches(version string) bool {
 // Returns whether or not the sysinfo-detected platform architecture matches the
 // given one (presumably the constraint).
 func archMatches(arch string) bool {
-	osArch := sysinfo.Architecture()
+	name := sysinfo.Architecture().String()
 	if archOverride != "" {
-		switch archOverride {
-		case archNames[sysinfo.I386]:
-			osArch = sysinfo.I386
-		case archNames[sysinfo.Amd64]:
-			osArch = sysinfo.Amd64
-		default:
-			osArch = sysinfo.UnknownArch
-		}
+		name = archOverride
 	}
-	if name, ok := archNames[osArch]; ok {
-		return name == arch
-	}
-	return false
+	return strings.ToLower(name) == strings.ToLower(arch)
 }
 
 // Returns whether or not the name of the sysinfo-detected Libc matches the
@@ -127,10 +78,14 @@ func libcMatches(libc string) bool {
 		osLibc = &sysinfo.LibcInfo{}
 		var name string
 		fmt.Sscanf(libcOverride, "%s %d.%d", &name, &osLibc.Major, &osLibc.Minor)
-		switch name {
-		case libcNames[sysinfo.Glibc]:
+		name = strings.ToLower(name)
+		if name == strings.ToLower(sysinfo.Glibc.String()) {
 			osLibc.Name = sysinfo.Glibc
-		default:
+		} else if name == strings.ToLower(sysinfo.Msvcrt.String()) {
+			osLibc.Name = sysinfo.Msvcrt
+		} else if name == strings.ToLower(sysinfo.BsdLibc.String()) {
+			osLibc.Name = sysinfo.BsdLibc
+		} else {
 			osLibc.Name = sysinfo.UnknownLibc
 		}
 		err = nil
@@ -143,7 +98,7 @@ func libcMatches(libc string) bool {
 	if len(matches) != 4 {
 		return false
 	}
-	if name, ok := libcNames[osLibc.Name]; !ok || name != strings.ToLower(matches[1]) {
+	if strings.ToLower(matches[1]) != strings.ToLower(osLibc.Name.String()) {
 		return false
 	}
 	osLibcParts := []int{osLibc.Major, osLibc.Minor}
@@ -172,9 +127,15 @@ func compilerMatches(compiler string) bool {
 		osCompilers = []*sysinfo.CompilerInfo{&sysinfo.CompilerInfo{}}
 		var name string
 		fmt.Sscanf(compilerOverride, "%s %d.%d", &name, &osCompilers[0].Major, &osCompilers[0].Minor)
-		switch name {
-		case compilerNames[sysinfo.Gcc]:
+		name = strings.ToLower(name)
+		if name == strings.ToLower(sysinfo.Gcc.String()) {
 			osCompilers[0].Name = sysinfo.Gcc
+		} else if name == strings.ToLower(sysinfo.Msvc.String()) {
+			osCompilers[0].Name = sysinfo.Msvc
+		} else if name == strings.ToLower(sysinfo.Mingw.String()) {
+			osCompilers[0].Name = sysinfo.Mingw
+		} else if name == strings.ToLower(sysinfo.Clang.String()) {
+			osCompilers[0].Name = sysinfo.Clang
 		}
 		err = nil
 	}
@@ -187,7 +148,7 @@ func compilerMatches(compiler string) bool {
 		return false
 	}
 	for _, osCompiler := range osCompilers {
-		if name, ok := compilerNames[osCompiler.Name]; !ok || name != strings.ToLower(matches[1]) {
+		if strings.ToLower(matches[1]) != strings.ToLower(osCompiler.Name.String()) {
 			continue
 		}
 		osCompilerParts := []int{osCompiler.Major, osCompiler.Minor}

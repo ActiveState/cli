@@ -14,6 +14,7 @@ func TestCreateCommand(t *testing.T) {
 	var cmd1 = Command{
 		Name:          "foo",
 		Description:   "foo_description",
+		Aliases:       []string{"blah"},
 		Run:           func(cmd *cobra.Command, args []string) {},
 		UsageTemplate: "foo_usage_template",
 	}
@@ -32,6 +33,7 @@ func TestRunCommand(t *testing.T) {
 	var cmd1 = Command{
 		Name:          "foo",
 		Description:   "foo_description",
+		Aliases:       []string{"blah"},
 		Run:           func(cmd *cobra.Command, args []string) { ran = true },
 		UsageTemplate: "foo_usage_template",
 	}
@@ -172,4 +174,20 @@ func TestArgValidator(t *testing.T) {
 
 	err := cmd.Execute()
 	assert.NoError(t, err, "Validator is ran properly")
+}
+
+func TestAliases(t *testing.T) {
+	var al = "alias"
+	var cmd = Command{
+		Name:        "foo",
+		Description: "foo_description",
+		Aliases:     []string{al},
+		Run:         func(cmd *cobra.Command, args []string) {},
+	}
+
+	cmd.Register()
+
+	cc := cmd.GetCobraCmd()
+
+	assert.True(t, cc.HasAlias(al), "Command has alias.")
 }

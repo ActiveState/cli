@@ -41,6 +41,7 @@ func TestMatchConstraint(t *testing.T) {
 }
 
 func TestOsMatches(t *testing.T) {
+	osNames := []string{"linux", "windows", "macos", "Linux", "Windows", "MacOS", "macOS"}
 	for _, name := range osNames {
 		osOverride = name
 		assert.True(t, osMatches(name), "OS matches with override")
@@ -68,10 +69,19 @@ func TestOsVersionMatches(t *testing.T) {
 	assert.True(t, osVersionMatches("6.1.0"), "Windows 7 is okay")
 	assert.True(t, osVersionMatches("6.0"), "Windows Vista is okay")
 
+	// macOS tests.
+	osVersionOverride = "10.6.2 Mac OS X"
+	assert.False(t, osVersionMatches("10.7.0"), "Lion required")
+	assert.False(t, osVersionMatches("10.7"), "Lion required")
+	assert.False(t, osVersionMatches("10.10"), "Mavericks required")
+	assert.True(t, osVersionMatches("10.5.0"), "Leopard is okay")
+	assert.True(t, osVersionMatches("10.4"), "Tiger is okay")
+
 	osVersionOverride = "" // reset
 }
 
 func TestArchMatches(t *testing.T) {
+	archNames := []string{"i386", "x86_64", "arm", "I386", "X86_64", "ARM"}
 	for _, name := range archNames {
 		archOverride = name
 		assert.True(t, archMatches(name), "Architecture matches with override")
@@ -91,6 +101,23 @@ func TestLibcMatches(t *testing.T) {
 	assert.False(t, libcMatches("musl 2"), "Non-glibc (musl) is not okay")
 	assert.True(t, libcMatches("GLIBC 2.23"), "Case-insensitive matching")
 
+	// Windows tests.
+	libcOverride = "msvcrt 7.0"
+	assert.False(t, libcMatches("msvcrt 8.0"), "Newer msvcrt required")
+	assert.True(t, libcMatches("msvcrt 7.0"), "msvcrt matches")
+	assert.True(t, libcMatches("msvcrt 6.0"), "Older msvcrt is okay")
+	assert.False(t, libcMatches("glibc 2.23"), "Non-msvcrt (glibc) is not okay")
+	assert.True(t, libcMatches("MSVCRT 7.0"), "Case-insensitive matching")
+
+	// macOS tests.
+	libcOverride = "libc 3.2"
+	assert.False(t, libcMatches("libc 3.4"), "Newer libc required")
+	assert.False(t, libcMatches("libc 4.0"), "Newer libc required")
+	assert.True(t, libcMatches("libc 3.2"), "libc matches")
+	assert.True(t, libcMatches("libc 3.0"), "Older libc is okay")
+	assert.True(t, libcMatches("libc 2.0"), "Older libc is okay")
+	assert.True(t, libcMatches("LIBC 3.2"), "Case-insensitive matching")
+
 	libcOverride = "" // reset
 }
 
@@ -104,6 +131,27 @@ func TestCompilerMatches(t *testing.T) {
 	assert.True(t, compilerMatches("gcc 4"), "Older GCC is okay")
 	assert.False(t, compilerMatches("clang 3.4"), "Non-GCC (Clang) is not okay")
 	assert.True(t, compilerMatches("GCC 5.2"), "Case-insensitive matching")
+
+	// Windows tests.
+	compilerOverride = "msvc 17.00"
+	assert.False(t, compilerMatches("msvc 19.00"), "Newer msvc required")
+	assert.False(t, compilerMatches("msvc 19"), "Newer msvc required")
+	assert.True(t, compilerMatches("msvc 17.00"), "msvc matches")
+	assert.True(t, compilerMatches("msvc 17"), "msvc matches")
+	assert.True(t, compilerMatches("msvc 15.00"), "Older msvc is okay")
+	assert.True(t, compilerMatches("msvc 15"), "Older msvc is okay")
+	assert.False(t, compilerMatches("mingw 5.4"), "Non-msvc (MinGW) is not okay")
+	assert.True(t, compilerMatches("MSVC 17"), "Case-insensitive matching")
+
+	// macOS tests.
+	compilerOverride = "clang 6.0"
+	assert.False(t, compilerMatches("clang 7.0"), "Newer clang required")
+	assert.False(t, compilerMatches("clang 7"), "Newer clang required")
+	assert.True(t, compilerMatches("clang 6.0"), "clang matches")
+	assert.True(t, compilerMatches("clang 6"), "clang matches")
+	assert.True(t, compilerMatches("clang 4"), "Older clang is okay")
+	assert.True(t, compilerMatches("clang 3.4"), "Older clang is okay")
+	assert.True(t, compilerMatches("CLANG 6"), "Case-insensitive matching")
 
 	compilerOverride = "" // reset
 }
@@ -119,6 +167,52 @@ func TestSysinfoLinuxEnv(t *testing.T) {
 	version, err := sysinfo.OSVersion()
 	assert.NoError(t, err, "No errors detecting OS version")
 	assert.True(t, version.Major > 0, "Determined kernel version")
+	assert.NotEqual(t, sysinfo.UnknownArch, sysinfo.Architecture(), "Architecture was recognized")
+	libc, err := sysinfo.Libc()
+	assert.NoError(t, err, "No errors detecting a Libc")
+	assert.NotEqual(t, sysinfo.UnknownLibc, libc.Name, "Libc name was recognized")
+	assert.True(t, libc.Major > 0, "Determined Libc version")
+	compilers, err := sysinfo.Compilers()
+	assert.NoError(t, err, "No errors detecting a compiler")
+	for _, compiler := range compilers {
+		assert.True(t, compiler.Major > 0, "Determined compiler version")
+	}
+}
+
+// This test is not for constraints, but verifies that sysinfo is working
+// correctly in a Windows development environment such that constraints will
+// have an effect.
+func TestSysinfoWindowsEnv(t *testing.T) {
+	if sysinfo.OS() != sysinfo.Windows || os.Getenv("CIRCLECI") != "" {
+		return // skip
+	}
+	assert.Equal(t, sysinfo.Windows, sysinfo.OS(), "Windows is the OS")
+	version, err := sysinfo.OSVersion()
+	assert.NoError(t, err, "No errors detecting OS version")
+	assert.True(t, version.Major > 0, "Determined OS version")
+	assert.NotEqual(t, sysinfo.UnknownArch, sysinfo.Architecture(), "Architecture was recognized")
+	libc, err := sysinfo.Libc()
+	assert.NoError(t, err, "No errors detecting a Libc")
+	assert.NotEqual(t, sysinfo.UnknownLibc, libc.Name, "Libc name was recognized")
+	assert.True(t, libc.Major > 0, "Determined Libc version")
+	compilers, err := sysinfo.Compilers()
+	assert.NoError(t, err, "No errors detecting a compiler")
+	for _, compiler := range compilers {
+		assert.True(t, compiler.Major > 0, "Determined compiler version")
+	}
+}
+
+// This test is not for constraints, but verifies that sysinfo is working
+// correctly in a macOS development environment such that constraints will have
+// an effect.
+func TestSysinfoMacOSEnv(t *testing.T) {
+	if sysinfo.OS() != sysinfo.Mac || os.Getenv("CIRCLECI") != "" {
+		return // skip
+	}
+	assert.Equal(t, sysinfo.Mac, sysinfo.OS(), "macOS is the OS")
+	version, err := sysinfo.OSVersion()
+	assert.NoError(t, err, "No errors detecting OS version")
+	assert.True(t, version.Major > 0, "Determined OS version")
 	assert.NotEqual(t, sysinfo.UnknownArch, sysinfo.Architecture(), "Architecture was recognized")
 	libc, err := sysinfo.Libc()
 	assert.NoError(t, err, "No errors detecting a Libc")

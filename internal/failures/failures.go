@@ -57,6 +57,8 @@ var (
 	FailThirdParty = Type("failures.fail.thirdparty")
 )
 
+var handled error
+
 // FailureType reflects a specific type of failure, and is used to identify failures in a generalized way
 type FailureType struct {
 	UID     string
@@ -182,6 +184,8 @@ func Type(name string, parents ...*FailureType) *FailureType {
 // Handle is what controllers would call to handle an error message, this will take care of calling the underlying
 // handle method or logging the error if this isnt a Failure type
 func Handle(err error, description string) {
+	handled = err
+
 	switch t := err.(type) {
 	case *Failure:
 		t.Handle(description)
@@ -193,6 +197,11 @@ func Handle(err error, description string) {
 		}
 		failure.Handle(description)
 	}
+}
+
+// GetHandled returns the last handled error
+func GetHandled() error {
+	return handled
 }
 
 // IsFailure returns whether the given error is of the Failure type

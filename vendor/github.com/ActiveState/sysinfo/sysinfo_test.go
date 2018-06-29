@@ -16,7 +16,6 @@ func TestOSVersion(t *testing.T) {
 	assert.Nil(t, err, "Determined OS version")
 	assert.NotEmpty(t, version.Version, "Detected OS version string")
 	assert.NotEqual(t, 0, version.Major, "Detected OS version major")
-	assert.NotEqual(t, 0, version.Minor, "Detected OS version minor")
 	assert.NotEmpty(t, version.Name, "Detected OS name")
 }
 
@@ -30,6 +29,7 @@ func TestLibc(t *testing.T) {
 	assert.Nil(t, err, "Determined Libc version")
 	assert.NotEqual(t, UnknownLibc, libc.Name, "Determined OS Libc")
 	assert.NotEqual(t, UnknownLibc.String(), libc.Name.String(), "Libc is known")
+	assert.NotEqual(t, 0, libc.Major, "Detected libc version major")
 }
 
 func TestCompiler(t *testing.T) {
