@@ -88,13 +88,13 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	// Todo: Test with datadir as source, not the archived version
 	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(datadir, "language", "lib", "artifact.json"), "Should create a package symlink")
+		assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
 	} else {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// the symlinked file should not exist.  Check if it was created or not. Skip if not.
-		_, err := os.Stat(filepath.Join(datadir, "language", "lib", "artifact.json"))
+		_, err := os.Stat(filepath.Join(datadir, "lib", artf.Hash, "artifact.json"))
 		if err == nil {
-			assert.FileExists(t, filepath.Join(datadir, "language", "lib", "artifact.json"), "Should create a package symlink")
+			assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
 		}
 	}
 }
@@ -119,4 +119,5 @@ func TestActivate(t *testing.T) {
 	venv.Activate()
 
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
+	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
 }
