@@ -114,7 +114,7 @@ func (v *VirtualEnvironment) Env() map[string]string {
 	path := filepath.Join(v.datadir, "language", "bin")
 	path = filepath.Join(v.datadir, "bin") + string(os.PathListSeparator) + path
 	return map[string]string{
-		"PERL5LIB": filepath.Join(v.datadir, "lib"),
+		"PERL5LIB": filepath.Join(v.datadir, "language", "lib"),
 		"PATH":     path,
 	}
 }
