@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
@@ -103,9 +104,11 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 func getRcFile(v SubShell) (*os.File, error) {
 	box := packr.NewBox("../../assets/shells")
 	tpl := box.String(v.RcFileTemplate())
-
+	prj := project.Get()
 	rcData := map[string]interface{}{
 		"Project": projectfile.Get(),
+		"Owner":   prj.Owner(),
+		"Name":    prj.Name(),
 		"Env":     virtualenvironment.GetEnv(),
 		"WD":      virtualenvironment.WorkingDirectory(),
 	}
