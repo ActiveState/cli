@@ -1,3 +1,3 @@
 @echo off
-SET PROMPT=$P$S{{.Owner}}\\{{.Name}}$G
+SET PROMPT=[{{.Owner}}\\{{.Name}}]$S$P$G
 cd {{.WD}}
