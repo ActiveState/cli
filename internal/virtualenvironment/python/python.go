@@ -3,6 +3,7 @@ package python
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/artifact"
@@ -111,8 +112,13 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
-	path := filepath.Join(v.datadir, "language", "bin")
-	path = filepath.Join(v.datadir, "bin") + string(os.PathListSeparator) + path
+	path := filepath.Join(v.datadir, "bin")
+	if runtime.GOOS == "windows" {
+		path = filepath.Join(v.datadir, "language") + string(os.PathListSeparator) + path
+	} else {
+		path = filepath.Join(v.datadir, "language", "bin") + string(os.PathListSeparator) + path
+	}
+
 	return map[string]string{
 		"PYTHONPATH": filepath.Join(v.datadir, "lib"),
 		"PATH":       path,
