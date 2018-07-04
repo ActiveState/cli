@@ -9,12 +9,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setup(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	os.Chdir(filepath.Join(root, "test"))
+	pjfile := projectfile.Project{}
+	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Perl"})
+	pjfile.Persist()
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
