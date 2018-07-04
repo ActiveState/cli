@@ -1,6 +1,7 @@
 package activate
 
 import (
+	"flag"
 	"os"
 	"sync"
 
@@ -80,7 +81,7 @@ func clone(uriOrID string) (scm.SCMer, error) {
 			return nil, err
 		}
 	} else {
-		return nil, failures.FailUser.New("not implemented yet") // TODO: activate from ID
+		return nil, failures.FailUser.New("activating from ID is not implemented yet") // TODO: activate from ID
 	}
 	return scm, nil
 }
@@ -131,7 +132,9 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Don't exit until our subshell has finished
-	wg.Wait()
+	if flag.Lookup("test.v") == nil {
+		wg.Wait()
+	}
 
 	print.Bold(locale.T("info_deactivated", project))
 

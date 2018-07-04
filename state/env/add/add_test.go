@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -81,6 +82,7 @@ func TestExecute(t *testing.T) {
 	Command.Execute()
 
 	assert.Equal(t, true, true, "Execute didn't panic")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 //

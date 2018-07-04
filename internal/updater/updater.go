@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -166,7 +167,11 @@ func (u *Updater) fetchInfo() error {
 		// already called fetchInfo
 		return nil
 	}
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + constants.BranchName + "/" + url.QueryEscape(plat) + ".json"
+	branchName := constants.BranchName
+	if flag.Lookup("test.v") != nil {
+		branchName = "master"
+	}
+	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/" + url.QueryEscape(plat) + ".json"
 	r, err := u.fetch(fullURL)
 	if err != nil {
 		return err
@@ -211,8 +216,12 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	var argCmdName = url.QueryEscape(u.CmdName)
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
+	var branchName = constants.BranchName
+	if flag.Lookup("test.v") != nil {
+		branchName = "master"
+	}
 	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.gz",
-		argCmdName, constants.BranchName, argInfoVersion, argPlatform)
+		argCmdName, branchName, argInfoVersion, argPlatform)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
 

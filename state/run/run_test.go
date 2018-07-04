@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -40,6 +41,7 @@ commands:
 	Cc.SetArgs([]string{"--standalone"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunStandaloneCommand(t *testing.T) {
@@ -70,6 +72,7 @@ commands:
 	Cc.SetArgs([]string{""})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
@@ -89,6 +92,7 @@ commands:
 	Cc.SetArgs([]string{"unknown"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
@@ -108,6 +112,7 @@ commands:
 	Cc.SetArgs([]string{"--standalone"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -148,6 +153,7 @@ commands:
 	Cc.SetArgs([]string{})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.
 	projectfile.Reset()
