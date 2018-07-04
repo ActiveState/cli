@@ -17,15 +17,10 @@ defaults:
       run:
         name: Run unit tests
         command: |
-            trap "$GOBIN/go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
-            $GOROOT/bin/go test -parallel 5 ./... | tee ${TEST_RESULTS}/go-test.out
-    reportCoverage: &reportCoverage
-      run:
-        # Unfortunately this runs our tests again. Have to find a way to combine both junit reports and coverage reports
-        name: Report Coverage
-        command: |
-          echo 'mode: atomic' > coverage.txt && $GOROOT/bin/go list ./... | xargs -n1 -I{} sh -c '$GOROOT/bin/go test -covermode=atomic -coverprofile=coverage.tmp {} && tail -n +2 coverage.tmp >> coverage.txt' && rm coverage.tmp
-          bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
+            $GOROOT/bin/go test -parallel 5 -covermode=atomic -coverprofile=coverage.tmp ./... | tee ${TEST_RESULTS}/go-test.out
+            $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
+            echo 'mode: atomic' > coverage.txt && tail -n +2 coverage.tmp >> coverage.txt
+            bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
     buildCli: &buildCli
       run: 
         name: Build the CLI
@@ -58,7 +53,6 @@ jobs:
       - checkout
       - <<: *prepareEnv
       - <<: *runTests
-      - <<: *reportCoverage
       - <<: *buildCli
       - <<: *deployBits
       - <<: *storeArtifacts
