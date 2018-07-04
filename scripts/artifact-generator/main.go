@@ -47,15 +47,18 @@ func (s byLengthSorter) Less(i, j int) bool {
 }
 
 func main() {
-	distro("linux", "x86_64", false)
-	distro("macos", "x86_64", false)
-	distro("windows", "x86_64", false)
-	distro("linux", "x86_64", true)
-	distro("macos", "x86_64", true)
-	distro("windows", "x86_64", true)
+	oses := []string{"linux", "macos", "windows"}
+	languages := []string{"go", "python2", "python3", "perl"}
+
+	for _, os := range oses {
+		for _, language := range languages {
+			distro(language, os, "x86_64", false)
+			distro(language, os, "x86_64", true)
+		}
+	}
 }
 
-func distro(OS string, arch string, isForTests bool) {
+func distro(language string, OS string, arch string, isForTests bool) {
 	var platform = fmt.Sprintf("%s-%s", OS, arch)
 
 	// Create main distro
@@ -64,18 +67,14 @@ func distro(OS string, arch string, isForTests bool) {
 
 	var targetDistPath string
 	if isForTests {
-		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "test", "distro", platform)
+		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "test", "distro", language, platform)
 	} else {
-		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "public", "distro", platform)
+		targetDistPath = path.Join(environment.GetRootPathUnsafe(), "public", "distro", language, platform)
 	}
 
 	os.MkdirAll(targetDistPath, 0777)
 
-	distro = []*Distribution{}
-	distro = run("go", OS, distro, isForTests)
-	distro = run("python2", OS, distro, isForTests)
-	distro = run("python3", OS, distro, isForTests)
-	distro = run("perl", OS, distro, isForTests)
+	distro = run(language, OS, isForTests)
 
 	distrob, err := json.Marshal(distro)
 	if err != nil {
@@ -86,7 +85,9 @@ func distro(OS string, arch string, isForTests bool) {
 	ioutil.WriteFile(path.Join(targetDistPath, "distribution.json"), distrob, 0666)
 }
 
-func run(language string, OS string, distro []*Distribution, isForTests bool) []*Distribution {
+func run(language string, OS string, isForTests bool) []*Distribution {
+	distro := []*Distribution{}
+
 	subpath := ""
 	if isForTests {
 		subpath = "test"
