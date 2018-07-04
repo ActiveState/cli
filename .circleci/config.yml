@@ -47,7 +47,7 @@ jobs:
       GOPATH: /go
       GOROOT: /usr/local/go
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.10
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
@@ -75,7 +75,10 @@ jobs:
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
       - <<: *prepareEnv
-      - <<: *runTests
+      - run:
+          name: Run unit tests
+          command: |
+            make test
       - <<: *buildCli
       - <<: *deployBits
       - <<: *storeArtifacts
