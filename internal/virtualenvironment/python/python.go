@@ -83,7 +83,7 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 			return nil
 		}
 
-		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
+		target := filepath.Join(v.DataDir(), "language", "Lib", "site-packages", artf.Meta.Name, subpath)
 		if fileutils.PathExists(target) {
 			return nil
 		}
@@ -91,7 +91,6 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
 			return failures.FailIO.Wrap(err)
 		}
-
 		return os.Symlink(filepath.Join(artfPath, subpath), target)
 	})
 
