@@ -94,7 +94,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	// Todo: Test with datadir as source, not the archived version
 	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
+		assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 	} else {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// the symlinked file should not exist.  Check if it was created or not. Skip if not.
