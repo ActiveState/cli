@@ -20,8 +20,9 @@ import (
 )
 
 func setup(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	os.Chdir(filepath.Join(root, "test"))
+	pjfile := projectfile.Project{}
+	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Go"})
+	pjfile.Persist()
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))

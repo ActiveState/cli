@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/sysinfo"
 	"github.com/mholt/archiver"
 	"github.com/vbauerster/mpb"
@@ -129,22 +130,34 @@ func sanitize(distArtifacts []Artifact) (*Sanitized, *failures.Failure) {
 // ObtainArtifacts will download the given artifacts
 func ObtainArtifacts() ([]Artifact, *failures.Failure) {
 	dist := []Artifact{}
+	pj := project.Get()
 
 	os := sysinfo.OS().String()
 	arch := sysinfo.Architecture().String()
 	platform := strings.ToLower(fmt.Sprintf("%s-%s", os, arch))
-	url := fmt.Sprintf("%sdistro/%s/distribution.json", constants.APIArtifactURL, platform)
+	languages := pj.Languages()
 
-	logging.Debug("Using distro URL: %s", url)
+	for _, language := range languages {
+		langName := strings.ToLower(language.Name())
+		if langName == "python" {
+			langName = langName + strings.Split(language.Version(), ".")[0]
+		}
+		url := fmt.Sprintf("%sdistro/%s/%s/distribution.json", constants.APIArtifactURL, langName, platform)
 
-	body, fail := download.Get(url)
-	if fail != nil {
-		return nil, fail
-	}
+		logging.Debug("Using distro URL: %s", url)
 
-	err := json.Unmarshal(body, &dist)
-	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
+		body, fail := download.Get(url)
+		if fail != nil {
+			return nil, failures.FailNetwork.New("err_cannot_obtain_dist", langName)
+		}
+
+		distBits := []Artifact{}
+		err := json.Unmarshal(body, &distBits)
+		if err != nil {
+			return nil, failures.FailMarshal.Wrap(err)
+		}
+
+		dist = append(dist, distBits...)
 	}
 
 	return dist, nil
