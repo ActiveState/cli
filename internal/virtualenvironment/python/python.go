@@ -113,6 +113,8 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
 	path := filepath.Join(v.datadir, "bin")
+	// Windows Python directory does NOT contain a `bin` directory for
+	// binaries
 	if runtime.GOOS == "windows" {
 		path = filepath.Join(v.datadir, "language") + string(os.PathListSeparator) + path
 	} else {
