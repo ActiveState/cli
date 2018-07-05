@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	config "github.com/ActiveState/cli/internal/config/variables"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -72,6 +73,10 @@ func ExpandFromProject(s string, p *projectfile.Project) (string, *failures.Fail
 					value = variable.Value
 					break
 				}
+			}
+			if value == "" {
+				// Read from config file or prompt the user for a value.
+				value = config.VariableValue(name, p.Path())
 			}
 		case "hooks":
 			for _, hook := range p.Hooks {
