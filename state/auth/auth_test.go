@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/spf13/viper"
@@ -52,6 +53,7 @@ func TestExecuteNoArgs(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Nil(t, api.Auth, "Did not authenticate")
 }
 
@@ -77,6 +79,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteNoArgsLoginByPrompt(t *testing.T) {
@@ -100,6 +103,7 @@ func TestExecuteNoArgsLoginByPrompt(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
@@ -140,6 +144,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteSignup(t *testing.T) {
@@ -171,6 +176,7 @@ func TestExecuteSignup(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteToken(t *testing.T) {
@@ -202,6 +208,7 @@ func TestExecuteToken(t *testing.T) {
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteLogout(t *testing.T) {
@@ -230,6 +237,7 @@ func TestExecuteLogout(t *testing.T) {
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, api.Auth, "Not Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteAuthWithTOTP(t *testing.T) {
@@ -261,11 +269,15 @@ func TestExecuteAuthWithTOTP(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, api.Auth, "Not Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
 
 	testCredentials.Totp = "foo"
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
 }
 
 func TestUsernameValidator(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,6 +40,7 @@ func TestProjects(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestProjectsEmpty(t *testing.T) {
@@ -57,6 +59,7 @@ func TestProjectsEmpty(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestClientError(t *testing.T) {
@@ -74,6 +77,7 @@ func TestClientError(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestAuthError(t *testing.T) {
@@ -89,4 +93,5 @@ func TestAuthError(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
