@@ -1,6 +1,7 @@
 package python
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -82,8 +83,13 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if subpath == "" {
 			return nil
 		}
-
-		target := filepath.Join(v.DataDir(), "language", "Lib", "site-packages", artf.Meta.Name, subpath)
+		var target string
+		if runtime.GOOS == "windows" {
+			target = filepath.Join(v.DataDir(), "language", "Lib", "site-packages", artf.Meta.Name, subpath)
+		} else {
+			langLibPath := getPackageFolder(filepath.Join(v.DataDir(), "language", "lib"))
+			target = filepath.Join(langLibPath, "site-packages", artf.Meta.Name, subpath)
+		}
 		if fileutils.PathExists(target) {
 			return nil
 		}
@@ -99,6 +105,15 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 	}
 
 	return nil
+}
+
+func getPackageFolder(path string) string {
+	matches, err := filepath.Glob(filepath.Join(path, "python*"))
+	if err != nil {
+		return ""
+	}
+	fmt.Println("matches: ", matches)
+	return matches[0]
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
