@@ -1,7 +1,6 @@
 package python
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -112,7 +111,9 @@ func getPackageFolder(path string) string {
 	if err != nil {
 		return ""
 	}
-	fmt.Println("matches: ", matches)
+	if len(matches) == 0 {
+		return ""
+	}
 	return matches[0]
 }
 
