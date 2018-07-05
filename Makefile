@@ -57,7 +57,7 @@ generate-api-client:
 		cd internal && swagger generate client -f https://staging.activestate.com/swagger.json -A api
 test: 
 		$(GOCMD) run scripts/constants-generator/main.go 
-		$(GOTEST) ./...
+		$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -v api`
 clean: 
 		$(GOCLEAN)
 		rm -Rf build
