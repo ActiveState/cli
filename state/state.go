@@ -112,7 +112,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Info(locale.T("version_info", map[string]interface{}{
 			"Version":  constants.Version,
 			"Branch":   constants.BranchName,
-			"Revision": constants.RevisionHash}))
+			"Revision": constants.RevisionHash,
+			"Date":     constants.Date}))
 		return
 	}
 
