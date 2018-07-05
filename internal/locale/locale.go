@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -96,6 +97,15 @@ func Set(localeName string) {
 // T aliases to i18n.Tfunc()
 func T(translationID string, args ...interface{}) string {
 	return translateFunction(translationID, args...)
+}
+
+// Tr is like T but it accepts string params that will be used as numbered params, eg. V0, V1, V2 etc
+func Tr(translationID string, values ...string) string {
+	var input = map[string]interface{}{}
+	for k, v := range values {
+		input["V"+strconv.Itoa(k)] = v
+	}
+	return T(translationID, input)
 }
 
 // Tt aliases to T, but before returning the string it replaces `[[` and `]]` with `{{` and `}}`,

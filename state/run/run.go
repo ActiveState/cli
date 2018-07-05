@@ -87,12 +87,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Run the command.
-	command, fail := variables.Expand(command)
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_env_cannot_parse"))
-		return
-	}
-
+	command = variables.Expand(command)
 	args = strings.Split(command, " ")
 	runCmd := exec.Command(args[0], args[1:]...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr

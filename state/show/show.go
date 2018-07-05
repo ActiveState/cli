@@ -88,10 +88,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_hooks"))
 		for _, hook := range project.Hooks {
 			if !constraints.IsConstrained(hook.Constraints) {
-				value, fail := variables.ExpandFromProject(hook.Value, project)
-				if fail != nil {
-					value = fail.Error()
-				}
+				value := variables.ExpandFromProject(hook.Value, project)
 				print.Formatted("  %s: %s\n", hook.Name, value)
 			}
 		}
@@ -101,10 +98,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_commands"))
 		for _, command := range project.Commands {
 			if !constraints.IsConstrained(command.Constraints) {
-				value, fail := variables.ExpandFromProject(command.Value, project)
-				if fail != nil {
-					value = fail.Error()
-				}
+				value := variables.ExpandFromProject(command.Value, project)
 				print.Formatted("  %s: %s\n", command.Name, value)
 			}
 		}
@@ -123,10 +117,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_env_vars"))
 		for _, variable := range project.Variables {
 			if !constraints.IsConstrained(variable.Constraints) {
-				value, fail := variables.ExpandFromProject(variable.Value, project)
-				if fail != nil {
-					value = fail.Error()
-				}
+				value := variables.ExpandFromProject(variable.Value, project)
 				print.Formatted("  %s: %s\n", variable.Name, value)
 			}
 		}

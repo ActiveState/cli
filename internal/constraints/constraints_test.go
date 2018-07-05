@@ -46,6 +46,7 @@ func TestOsMatches(t *testing.T) {
 		osOverride = name
 		assert.True(t, osMatches(name), "OS matches with override")
 	}
+	assert.True(t, osMatches("any"), "OS matches with any")
 	osOverride = "" // reset
 }
 
@@ -77,6 +78,8 @@ func TestOsVersionMatches(t *testing.T) {
 	assert.True(t, osVersionMatches("10.5.0"), "Leopard is okay")
 	assert.True(t, osVersionMatches("10.4"), "Tiger is okay")
 
+	assert.True(t, osVersionMatches("any"), "OSVersion matches with any")
+
 	osVersionOverride = "" // reset
 }
 
@@ -86,6 +89,7 @@ func TestArchMatches(t *testing.T) {
 		archOverride = name
 		assert.True(t, archMatches(name), "Architecture matches with override")
 	}
+	assert.True(t, archMatches("any"), "Arch matches with any")
 	archOverride = "" // reset
 }
 
@@ -117,6 +121,8 @@ func TestLibcMatches(t *testing.T) {
 	assert.True(t, libcMatches("libc 3.0"), "Older libc is okay")
 	assert.True(t, libcMatches("libc 2.0"), "Older libc is okay")
 	assert.True(t, libcMatches("LIBC 3.2"), "Case-insensitive matching")
+
+	assert.True(t, libcMatches("any"), "libc matches with any")
 
 	libcOverride = "" // reset
 }
@@ -152,6 +158,8 @@ func TestCompilerMatches(t *testing.T) {
 	assert.True(t, compilerMatches("clang 4"), "Older clang is okay")
 	assert.True(t, compilerMatches("clang 3.4"), "Older clang is okay")
 	assert.True(t, compilerMatches("CLANG 6"), "Case-insensitive matching")
+
+	assert.True(t, compilerMatches("any"), "compiler matches with any")
 
 	compilerOverride = "" // reset
 }
