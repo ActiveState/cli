@@ -17,7 +17,7 @@ defaults:
       run:
         name: Run unit tests
         command: |
-            $GOROOT/bin/go test -parallel 5 -covermode=atomic -coverprofile=coverage.tmp ./... | tee ${TEST_RESULTS}/go-test.out
+            $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=coverage.tmp `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
             $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
             echo 'mode: atomic' > coverage.txt && tail -n +2 coverage.tmp >> coverage.txt
             bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
