@@ -122,7 +122,6 @@ func (v *VirtualEnvironment) Env() map[string]string {
 	}
 
 	return map[string]string{
-		"PYTHONPATH": filepath.Join(v.datadir, "lib"),
-		"PATH":       path,
+		"PATH": path,
 	}
 }
