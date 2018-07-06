@@ -11,12 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-var packagePaths = make(map[string]string)
-
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
-	datadir  string
-	artifact *artifact.Artifact
+	datadir      string
+	artifact     *artifact.Artifact
+	packagePaths map[string]string
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -109,8 +108,11 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 }
 
 func (v *VirtualEnvironment) getPackageFolder(path string) string {
-	if packagePaths[v.Language()] != "" {
-		return packagePaths[v.Language()]
+	if v.packagePaths == nil {
+		v.packagePaths = make(map[string]string)
+	}
+	if v.packagePaths[path+v.Language()] != "" {
+		return v.packagePaths[path+v.Language()]
 	}
 
 	matches, err := filepath.Glob(filepath.Join(path, "python*"))
@@ -121,8 +123,8 @@ func (v *VirtualEnvironment) getPackageFolder(path string) string {
 		return ""
 	}
 
-	packagePaths[v.Language()] = matches[0]
-	return packagePaths[v.Language()]
+	v.packagePaths[path+v.Language()] = matches[0]
+	return v.packagePaths[path+v.Language()]
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
