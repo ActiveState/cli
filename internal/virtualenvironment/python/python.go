@@ -11,8 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-var python2PackagesPath string
-var python3PackagesPath string
+var packagePaths = make(map[string]string)
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
@@ -110,12 +109,8 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 }
 
 func (v *VirtualEnvironment) getPackageFolder(path string) string {
-	language := v.Language()
-	if language == "Python2" && python2PackagesPath != "" {
-		return python2PackagesPath
-	}
-	if language == "Python3" && python3PackagesPath != "" {
-		return python3PackagesPath
+	if packagePaths[v.Language()] != "" {
+		return packagePaths[v.Language()]
 	}
 
 	matches, err := filepath.Glob(filepath.Join(path, "python*"))
@@ -125,13 +120,9 @@ func (v *VirtualEnvironment) getPackageFolder(path string) string {
 	if len(matches) == 0 {
 		return ""
 	}
-	if language == "Python2" {
-		python2PackagesPath = matches[0]
-	}
-	if language == "Python3" {
-		python3PackagesPath = matches[0]
-	}
-	return matches[0]
+
+	packagePaths[v.Language()] = matches[0]
+	return packagePaths[v.Language()]
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
