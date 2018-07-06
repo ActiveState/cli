@@ -66,10 +66,10 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	var err error
 	go func() {
-		err = cmd.Wait()
-		if err != nil {
-			panic(err.Error())
-		}
+		// Intentionally ignore error from command.  Given this is an on going
+		// terminal session that the user interacts with, they would have seen
+		// any errors already and dealt with them.
+		_ = cmd.Wait()
 		v.wg.Done()
 	}()
 
