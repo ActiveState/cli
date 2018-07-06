@@ -11,7 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-var packagesPath string
+var python2PackagesPath string
+var python3PackagesPath string
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
@@ -88,7 +89,7 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if runtime.GOOS == "windows" {
 			target = filepath.Join(v.DataDir(), "language", "Lib", "site-packages", artf.Meta.Name, subpath)
 		} else {
-			langLibPath := getPackageFolder(filepath.Join(v.DataDir(), "language", "lib"))
+			langLibPath := v.getPackageFolder(filepath.Join(v.DataDir(), "language", "lib"))
 			target = filepath.Join(langLibPath, "site-packages", artf.Meta.Name, subpath)
 		}
 		if fileutils.PathExists(target) {
@@ -108,10 +109,15 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 	return nil
 }
 
-func getPackageFolder(path string) string {
-	if packagesPath != "" {
-		return packagesPath
+func (v *VirtualEnvironment) getPackageFolder(path string) string {
+	language := v.Language()
+	if language == "Python2" && python2PackagesPath != "" {
+		return python2PackagesPath
 	}
+	if language == "Python3" && python3PackagesPath != "" {
+		return python3PackagesPath
+	}
+
 	matches, err := filepath.Glob(filepath.Join(path, "python*"))
 	if err != nil {
 		return ""
@@ -119,8 +125,13 @@ func getPackageFolder(path string) string {
 	if len(matches) == 0 {
 		return ""
 	}
-	packagesPath = matches[0]
-	return packagesPath
+	if language == "Python2" {
+		python2PackagesPath = matches[0]
+	}
+	if language == "Python3" {
+		python3PackagesPath = matches[0]
+	}
+	return matches[0]
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
