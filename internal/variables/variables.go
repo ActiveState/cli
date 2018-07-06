@@ -76,6 +76,10 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 					break
 				}
 			}
+			if value == "" {
+				// Read from config file or prompt the user for a value.
+				value = ConfigValue(name, p.Path())
+			}
 		case "hooks":
 			for _, hook := range p.Hooks {
 				if hook.Name == name && !constraints.IsConstrained(hook.Constraints) {
