@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 )
@@ -23,6 +24,7 @@ func init() {
 	}
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify HEAD") }
 	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, Constants["BuildNumber"]()) }
+	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 }
 
 func getCmdOutput(cmdString string) string {
