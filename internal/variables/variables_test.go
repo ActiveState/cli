@@ -114,6 +114,7 @@ func TestExpandProjectUnknownCategory(t *testing.T) {
 	expanded := ExpandFromProject("$unknown.unknown", project)
 	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
+	assert.True(t, Failure().Type.Matches(FailExpandVariableBadCategory), "Handled unknown category")
 }
 
 func TestExpandProjectUnknownName(t *testing.T) {
@@ -122,6 +123,7 @@ func TestExpandProjectUnknownName(t *testing.T) {
 	expanded := ExpandFromProject("$platform.unknown", project)
 	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
+	assert.True(t, Failure().Type.Matches(FailExpandVariableBadName), "Handled unknown category")
 }
 
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
@@ -130,6 +132,7 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	expanded := ExpandFromProject("$commands.recursive", project)
 	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
+	assert.True(t, Failure().Type.Matches(FailExpandVariableRecursion), "Handled unknown category")
 }
 
 // Tests all possible $platform.[name] variable expansions.
