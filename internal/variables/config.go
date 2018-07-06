@@ -37,14 +37,11 @@ func ConfigValue(name string, project string) string {
 	}
 	// Prompt the user for a variable value and save it.
 	var value string
-	if flag.Lookup("test.v") != nil {
+	prompt := &survey.Input{Message: locale.Tt("config_variable_prompt_value", map[string]string{"Name": name})}
+	if err := survey.AskOne(prompt, &value, surveyor.ValidateRequired); err != nil && flag.Lookup("test.v") == nil {
+		return "" // do not save if cancelled
+	} else if flag.Lookup("test.v") != nil {
 		value = testValue
-	}
-	if value == "" {
-		prompt := &survey.Input{Message: locale.Tt("config_variable_prompt_value", map[string]string{"Name": name})}
-		if err := survey.AskOne(prompt, &value, surveyor.ValidateRequired); err != nil {
-			return "" // do not save if cancelled
-		}
 	}
 	config = append(config, configVariable{Name: name, Value: value, Project: project})
 	viper.Set("variables", config)
