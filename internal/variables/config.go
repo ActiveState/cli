@@ -20,10 +20,10 @@ type configVariable struct {
 
 var testValue string // for unit tests
 
-// VariableValue returns the value stored in the user config file for the
-// variable with the given name and project. If no value exists, the user is
-// prompted for one and the result is stored in the user config file.
-func VariableValue(name string, project string) string {
+// ConfigValue returns the value stored in the user config file for the variable
+// with the given name and project. If no value exists, the user is prompted for
+// one and the result is stored in the user config file.
+func ConfigValue(name string, project string) string {
 	config := []configVariable{}
 	if err := viper.UnmarshalKey("variables", &config); err != nil {
 		logging.Errorf("Unable to read user-configured variables: %s", err)
@@ -37,13 +37,14 @@ func VariableValue(name string, project string) string {
 	}
 	// Prompt the user for a variable value and save it.
 	var value string
-	if flag.Lookup("test.v") == nil {
+	if flag.Lookup("test.v") != nil {
+		value = testValue
+	}
+	if value == "" {
 		prompt := &survey.Input{Message: locale.Tt("config_variable_prompt_value", map[string]string{"Name": name})}
 		if err := survey.AskOne(prompt, &value, surveyor.ValidateRequired); err != nil {
 			return "" // do not save if cancelled
 		}
-	} else {
-		value = testValue
 	}
 	config = append(config, configVariable{Name: name, Value: value, Project: project})
 	viper.Set("variables", config)
