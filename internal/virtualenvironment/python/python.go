@@ -11,6 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
+var packagesPath string
+
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
 	datadir  string
@@ -107,6 +109,9 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 }
 
 func getPackageFolder(path string) string {
+	if packagesPath != "" {
+		return packagesPath
+	}
 	matches, err := filepath.Glob(filepath.Join(path, "python*"))
 	if err != nil {
 		return ""
@@ -114,7 +119,8 @@ func getPackageFolder(path string) string {
 	if len(matches) == 0 {
 		return ""
 	}
-	return matches[0]
+	packagesPath = matches[0]
+	return packagesPath
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
