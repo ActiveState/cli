@@ -57,6 +57,8 @@ func TestExpandProjectPlatformOs(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$platform.os", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
+
 	if runtime.GOOS != "darwin" {
 		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
 	} else {
@@ -68,6 +70,7 @@ func TestExpandProjectHook(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$hooks.pre", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "echo 'Hello bar!'", expanded, "Expanded simple variable")
 }
 
@@ -76,9 +79,11 @@ func TestExpandProjectHookWithConstraints(t *testing.T) {
 
 	if runtime.GOOS == "linux" {
 		expanded := ExpandFromProject("$hooks.post", project)
+		assert.NoError(t, Failure().ToError(), "Ran without failure")
 		assert.Equal(t, "echo 'Hello baz!'", expanded, "Expanded platform-specific variable")
 	} else if runtime.GOOS == "windows" {
 		expanded := ExpandFromProject("$hooks.post", project)
+		assert.NoError(t, Failure().ToError(), "Ran without failure")
 		assert.Equal(t, "echo 'Hello quux!'", expanded, "Expanded platform-specific variable")
 	}
 }
@@ -87,6 +92,7 @@ func TestExpandProjectCommand(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$ $commands.test", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ make test", expanded, "Expanded simple command")
 }
 
@@ -94,6 +100,7 @@ func TestExpandProjectAlternateSyntax(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("${platform.os}", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	if runtime.GOOS != "darwin" {
 		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
 	} else {
@@ -105,6 +112,7 @@ func TestExpandProjectUnknownCategory(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$unknown.unknown", project)
+	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
 }
 
@@ -112,6 +120,7 @@ func TestExpandProjectUnknownName(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$platform.unknown", project)
+	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
 }
 
@@ -119,6 +128,7 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("$commands.recursive", project)
+	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
 }
 
@@ -128,11 +138,6 @@ func TestExpandProjectPlatform(t *testing.T) {
 	contents := strings.TrimSpace(`
   platforms:
     - name: Any
-      os: any
-      version: any
-      architecture: any
-      libc: any
-      compiler: any
   `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -140,8 +145,8 @@ func TestExpandProjectPlatform(t *testing.T) {
 	project.Persist()
 
 	for _, name := range []string{"name", "os", "version", "architecture", "libc", "compiler"} {
-		expanded := ExpandFromProject(fmt.Sprintf("$platform.%s", name), project)
-		assert.NotEqual(t, "", expanded, "Expanded without failure: "+name)
+		ExpandFromProject(fmt.Sprintf("$platform.%s", name), project)
+		assert.NoError(t, Failure().ToError(), "Ran without failure")
 	}
 }
 
@@ -158,6 +163,7 @@ func TestExpandProjectEmbedded(t *testing.T) {
 	project.Persist()
 
 	expanded := ExpandFromProject("$variables.foo is in $variables.foo is in $variables.foo", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "bar is in bar is in bar", expanded)
 }
 
@@ -165,5 +171,6 @@ func TestExpandProjectUppercase(t *testing.T) {
 	project := loadProject(t)
 
 	expanded := ExpandFromProject("${variables.UPPERCASE}bar", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "foobar", expanded)
 }

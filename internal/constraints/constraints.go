@@ -19,9 +19,6 @@ var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride 
 // Returns whether or not the sysinfo-detected OS matches the given one
 // (presumably the constraint).
 func osMatches(os string) bool {
-	if os == "any" {
-		return true
-	}
 	name := sysinfo.OS().String()
 	if osOverride != "" {
 		name = osOverride
@@ -33,9 +30,6 @@ func osMatches(os string) bool {
 // equal to the given one (presumably the constraint).
 // An example version constraint is "4.1.0".
 func osVersionMatches(version string) bool {
-	if version == "any" {
-		return true
-	}
 	osVersion, err := sysinfo.OSVersion()
 	if osVersionOverride != "" {
 		// When writing tests, this string should be of the form:
@@ -67,9 +61,6 @@ func osVersionMatches(version string) bool {
 // Returns whether or not the sysinfo-detected platform architecture matches the
 // given one (presumably the constraint).
 func archMatches(arch string) bool {
-	if arch == "any" {
-		return true
-	}
 	name := sysinfo.Architecture().String()
 	if archOverride != "" {
 		name = archOverride
@@ -82,9 +73,6 @@ func archMatches(arch string) bool {
 // equal to the given one.
 // An example Libc constraint is "glibc 2.23".
 func libcMatches(libc string) bool {
-	if libc == "any" {
-		return true
-	}
 	osLibc, err := sysinfo.Libc()
 	if libcOverride != "" {
 		osLibc = &sysinfo.LibcInfo{}
@@ -134,9 +122,6 @@ func libcMatches(libc string) bool {
 // than or equal to the given one.
 // An example compiler constraint is "gcc 7".
 func compilerMatches(compiler string) bool {
-	if compiler == "any" {
-		return true
-	}
 	osCompilers, err := sysinfo.Compilers()
 	if compilerOverride != "" {
 		osCompilers = []*sysinfo.CompilerInfo{&sysinfo.CompilerInfo{}}
@@ -190,11 +175,11 @@ func compilerMatches(compiler string) bool {
 // PlatformMatches returns whether or not the given platform matches the current
 // platform, as determined by the sysinfo package.
 func PlatformMatches(platform projectfile.Platform) bool {
-	return (platform.Os == "" || platform.Os == "any" || osMatches(platform.Os)) &&
-		(platform.Version == "" || platform.Version == "any" || osVersionMatches(platform.Version)) &&
-		(platform.Architecture == "" || platform.Architecture == "any" || archMatches(platform.Architecture)) &&
-		(platform.Libc == "" || platform.Libc == "any" || libcMatches(platform.Libc)) &&
-		(platform.Compiler == "" || platform.Compiler == "any" || compilerMatches(platform.Compiler))
+	return (platform.Os == "" || osMatches(platform.Os)) &&
+		(platform.Version == "" || osVersionMatches(platform.Version)) &&
+		(platform.Architecture == "" || archMatches(platform.Architecture)) &&
+		(platform.Libc == "" || libcMatches(platform.Libc)) &&
+		(platform.Compiler == "" || compilerMatches(platform.Compiler))
 }
 
 // Returns whether or not the given platform is constrained by the given
