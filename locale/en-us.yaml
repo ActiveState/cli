@@ -178,6 +178,7 @@ version_info:
     ActiveState CLI version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
+    Built {{.Date}}
 update_complete:
   other: Update completed succesfully
 update_hash_mismatch:
