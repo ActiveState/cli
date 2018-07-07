@@ -13,9 +13,9 @@ import (
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
-	datadir      string
-	artifact     *artifact.Artifact
-	packagePaths map[string]string
+	datadir     string
+	artifact    *artifact.Artifact
+	packagePath string
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -108,11 +108,8 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 }
 
 func (v *VirtualEnvironment) getPackageFolder(path string) string {
-	if v.packagePaths == nil {
-		v.packagePaths = make(map[string]string)
-	}
-	if v.packagePaths[path+v.Language()] != "" {
-		return v.packagePaths[path+v.Language()]
+	if v.packagePath != "" {
+		return v.packagePath
 	}
 
 	matches, err := filepath.Glob(filepath.Join(path, "python*"))
@@ -123,8 +120,8 @@ func (v *VirtualEnvironment) getPackageFolder(path string) string {
 		return ""
 	}
 
-	v.packagePaths[path+v.Language()] = matches[0]
-	return v.packagePaths[path+v.Language()]
+	v.packagePath = matches[0]
+	return v.packagePath
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
