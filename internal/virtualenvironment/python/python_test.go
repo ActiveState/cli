@@ -18,10 +18,9 @@ func setup(t *testing.T) {
 	cwd, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should fetch cwd")
 	testDir := filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")
-	err = os.Mkdir(testDir, os.ModePerm) // For now there is nothing in the testdata dir so it's not cloned.
-	assert.NoError(t, err, "Should change dir")
+	os.Mkdir(testDir, os.ModePerm) // For now there is nothing in the testdata dir so it's not cloned.  Don't care if it errors out.
 	err = os.Chdir(filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata"))
-	assert.NoError(t, err, "Should change dir without issue.")
+	assert.NoError(t, err, "Should change dir")
 }
 
 func demolish(t *testing.T) {
