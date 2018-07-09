@@ -84,7 +84,19 @@ func TestLoadPackageFromPath(t *testing.T) {
 		}
 	}
 
+	fail = venv.LoadArtifact(language)
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, fail.ToError(), "Loads artifact without errors")
+	} else {
+		// Since creating symlinks on Windows requires admin privilages for now,
+		// artifacts should not load correctly.
+		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+	}
 	artf := dist.Artifacts[language.Hash][0]
+	// Manually generate expect home where packages will be linked
+	langPkgDir := filepath.Join(datadir, "language", "lib", "python2.7", "site-packages")
+	os.MkdirAll(langPkgDir, os.ModePerm)
+
 	fail = venv.LoadArtifact(artf)
 	if runtime.GOOS != "windows" {
 		assert.NoError(t, fail.ToError(), "Loads artifact without errors")
@@ -96,13 +108,13 @@ func TestLoadPackageFromPath(t *testing.T) {
 
 	// Todo: Test with datadir as source, not the archived version
 	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
+		assert.FileExists(t, filepath.Join(langPkgDir, artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 	} else {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// the symlinked file should not exist.  Check if it was created or not. Skip if not.
-		_, err := os.Stat(filepath.Join(datadir, "lib", artf.Hash, "artifact.json"))
+		_, err := os.Stat(filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"))
 		if err == nil {
-			assert.FileExists(t, filepath.Join(datadir, "lib", artf.Hash, "artifact.json"), "Should create a package symlink")
+			assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 		}
 	}
 }
