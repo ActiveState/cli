@@ -16,7 +16,7 @@ import (
 
 func setup(t *testing.T) {
 	root, _ := environment.GetRootPath()
-	testDir := filepath.Join(root, "test")
+	testDir := filepath.Join(root, "test", "site-packages")
 	os.RemoveAll(testDir)
 	os.Chdir(testDir)
 
