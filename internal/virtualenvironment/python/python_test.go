@@ -16,7 +16,9 @@ import (
 
 func setup(t *testing.T) {
 	root, _ := environment.GetRootPath()
-	os.Chdir(filepath.Join(root, "test"))
+	testDir := filepath.Join(root, "test")
+	os.RemoveAll(testDir)
+	os.Chdir(testDir)
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
