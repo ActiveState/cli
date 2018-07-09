@@ -149,31 +149,31 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all variables evaluated
 func (p *Platform) Os() string {
-	value, _ := variables.ExpandFromProject(p.platform.Os, p.projectfile)
+	value := variables.ExpandFromProject(p.platform.Os, p.projectfile)
 	return value
 }
 
 // Version returned with all variables evaluated
 func (p *Platform) Version() string {
-	value, _ := variables.ExpandFromProject(p.platform.Version, p.projectfile)
+	value := variables.ExpandFromProject(p.platform.Version, p.projectfile)
 	return value
 }
 
 // Architecture with all variables evaluated
 func (p *Platform) Architecture() string {
-	value, _ := variables.ExpandFromProject(p.platform.Architecture, p.projectfile)
+	value := variables.ExpandFromProject(p.platform.Architecture, p.projectfile)
 	return value
 }
 
 // Libc returned are constrained and all variables evaluated
 func (p *Platform) Libc() string {
-	value, _ := variables.ExpandFromProject(p.platform.Libc, p.projectfile)
+	value := variables.ExpandFromProject(p.platform.Libc, p.projectfile)
 	return value
 }
 
 // Compiler returned are constrained and all variables evaluated
 func (p *Platform) Compiler() string {
-	value, _ := variables.ExpandFromProject(p.platform.Compiler, p.projectfile)
+	value := variables.ExpandFromProject(p.platform.Compiler, p.projectfile)
 	return value
 }
 
@@ -190,7 +190,7 @@ func (l *Language) Version() string { return l.language.Version }
 func (l *Language) Build() *Build {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal, _ := variables.ExpandFromProject(val, l.projectfile)
+		newVal := variables.ExpandFromProject(val, l.projectfile)
 		build[key] = newVal
 	}
 	return &build
@@ -223,7 +223,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() *Build {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal, _ := variables.ExpandFromProject(val, p.projectfile)
+		newVal := variables.ExpandFromProject(val, p.projectfile)
 		build[key] = newVal
 	}
 	return &build
@@ -237,7 +237,7 @@ func (v *Variable) Name() string { return v.variable.Name }
 
 // Value returned with all variables evaluated
 func (v *Variable) Value() string {
-	value, _ := variables.ExpandFromProject(v.variable.Value, v.projectfile)
+	value := variables.ExpandFromProject(v.variable.Value, v.projectfile)
 	return value
 }
 
@@ -249,7 +249,7 @@ func (h *Hook) Name() string { return h.hook.Name }
 
 // Value returned with all variables evaluated
 func (h *Hook) Value() string {
-	value, _ := variables.ExpandFromProject(h.hook.Value, h.projectfile)
+	value := variables.ExpandFromProject(h.hook.Value, h.projectfile)
 	return value
 }
 
@@ -261,7 +261,7 @@ func (c *Command) Name() string { return c.command.Name }
 
 // Value returned with all variables evaluated
 func (c *Command) Value() string {
-	value, _ := variables.ExpandFromProject(c.command.Value, c.projectfile)
+	value := variables.ExpandFromProject(c.command.Value, c.projectfile)
 	return value
 }
 
