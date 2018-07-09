@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -20,7 +21,29 @@ func init() {
 	}
 }
 
+func setup(t *testing.T) {
+	cwd, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	testDir := filepath.Join(cwd, "state", "activate", "testdata")
+	os.Mkdir(testDir, os.ModePerm) // For now there is nothing in the testdata dir so it's not cloned.  Don't care if it errors out.
+	err = os.Chdir(testDir)
+	assert.NoError(t, err, "Should change dir")
+}
+
+func demolish(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	os.Chdir(root)
+	os.RemoveAll(filepath.Join(cwd, "state", "activate", "testdata")))
+
+	datadir := config.GetDataDir()
+	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	os.RemoveAll(filepath.Join(datadir, "packages"))
+	os.RemoveAll(filepath.Join(datadir, "languages"))
+	os.RemoveAll(filepath.Join(datadir, "artifacts"))
+}
 func TestExecute(t *testing.T) {
+	setup(t)
 	assert := assert.New(t)
 
 	cwd, _ := os.Getwd() // store
@@ -34,6 +57,7 @@ func TestExecute(t *testing.T) {
 
 	err = os.Chdir(cwd)
 	assert.Nil(err, "Changed back to original cwd")
+	demolish(t)
 }
 
 func TestExecuteGitClone(t *testing.T) {

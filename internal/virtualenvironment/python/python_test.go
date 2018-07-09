@@ -19,7 +19,7 @@ func setup(t *testing.T) {
 	assert.NoError(t, err, "Should fetch cwd")
 	testDir := filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")
 	os.Mkdir(testDir, os.ModePerm) // For now there is nothing in the testdata dir so it's not cloned.  Don't care if it errors out.
-	err = os.Chdir(filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata"))
+	err = os.Chdir(testDir)
 	assert.NoError(t, err, "Should change dir")
 }
 
