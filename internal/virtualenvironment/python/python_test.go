@@ -15,10 +15,17 @@ import (
 )
 
 func setup(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	testDir := filepath.Join(root, "test", "site-packages")
-	os.RemoveAll(testDir)
-	os.Chdir(testDir)
+	cwd, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	err = os.Chdir(filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata"))
+	assert.NoError(t, err, "Should change dir without issue.")
+}
+
+func demolish(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	os.Chdir(root)
+	os.RemoveAll(filepath.Join(root, "internal", "virtualenvironment", "python", "testdata"))
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
@@ -61,6 +68,7 @@ func TestLanguageMeta(t *testing.T) {
 		Path: "test",
 	})
 	assert.NotNil(t, venv.Artifact(), "Should have artifact info")
+	demolish(t)
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
@@ -117,6 +125,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 			assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 		}
 	}
+	demolish(t)
 }
 
 func TestActivate(t *testing.T) {
@@ -140,4 +149,5 @@ func TestActivate(t *testing.T) {
 
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
+	demolish(t)
 }
