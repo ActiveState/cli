@@ -78,7 +78,6 @@ func init() {
 	Command.Append(organizations.Command)
 	Command.Append(projects.Command)
 	Command.Append(new.Command)
-	Command.Append(organizations.Command)
 	Command.Append(show.Command)
 	Command.Append(env.Command)
 	Command.Append(run.Command)
