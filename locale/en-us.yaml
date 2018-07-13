@@ -337,6 +337,8 @@ info_state_run_running:
   other: Running command {{.Command}}
 error_state_run_error:
   other: Failed to run command.
+error_state_run_no_shell:
+  other: Failed to obtain shell info.
 env_description:
   other: Manage Project Variables
 env_add_description:

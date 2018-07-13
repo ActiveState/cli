@@ -1,13 +1,13 @@
 package hooks
 
 import (
-	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/variables"
 	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -44,22 +44,19 @@ func RunHook(hookName string) error {
 		return nil
 	}
 
+	subs, err := subshell.Get()
+	if err != nil {
+		return err
+	}
+
 	// This is an exception to the rule, since RunHook can be called from many different controllers and since we
 	// want to communicate the command being ran we have a print statement here, this is not ideal and should otherwise
 	// be avoided
 	print.Info(locale.T("info_running_hook", map[string]interface{}{"Name": hookName}))
 
 	for _, hook := range hooks {
-		// Todo: Find a library to properly split command strings
-		args := strings.Split(hook.Value, " ")
-
-		print.Info("> " + hook.Value)
-
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-		if err := cmd.Run(); err != nil {
-			return err
-		}
+		print.Info("> " + hook.Name)
+		subs.Run(variables.Expand(hook.Value))
 	}
 
 	return nil

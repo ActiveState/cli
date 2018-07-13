@@ -1,12 +1,16 @@
 package subshell
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,4 +51,27 @@ func TestActivateFailures(t *testing.T) {
 
 func TestIsActivated(t *testing.T) {
 	assert.False(t, IsActivated(), "Test environment is not in an activated state")
+}
+
+func TestRunCommand(t *testing.T) {
+	pfile := &projectfile.Project{}
+	pfile.Persist()
+
+	subs, err := Get()
+	assert.NoError(t, err)
+
+	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	assert.NoError(t, err)
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
+
+	if runtime.GOOS != "windows" {
+		subs.Run(fmt.Sprintf(`echo "Hello"
+touch %s`, tmpfile.Name()))
+	} else {
+		subs.Run(fmt.Sprintf(`echo "Hello"
+copy NUL %s`, tmpfile.Name()))
+	}
+
+	assert.FileExists(t, tmpfile.Name())
 }

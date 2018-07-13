@@ -1,10 +1,6 @@
 package run
 
 import (
-	"os"
-	"os/exec"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -88,12 +84,14 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// Run the command.
 	command = variables.Expand(command)
-	args = strings.Split(command, " ")
-	runCmd := exec.Command(args[0], args[1:]...)
-	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	subs, err := subshell.Get()
+	if err != nil {
+		failures.Handle(err, locale.T("error_state_run_no_shell"))
+	}
+
 	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
-	if err := runCmd.Run(); err != nil {
-		logging.Errorf("Error running command '%s': %s", command, err)
-		print.Error(locale.T("error_state_run_error"))
+	err = subs.Run(command)
+	if err != nil {
+		failures.Handle(err, locale.T("error_state_run_error"))
 	}
 }
