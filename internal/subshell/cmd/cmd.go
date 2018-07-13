@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/logging"
+
 	"github.com/ActiveState/cli/internal/failures"
 )
 
@@ -67,9 +69,12 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	var err error
 	go func() {
+		// Intentionally ignore error from command.  Given this is an on going
+		// terminal session that the user interacts with, they would have seen
+		// any errors already and dealt with them.
 		err = cmd.Wait()
 		if err != nil {
-			panic(err.Error())
+			logging.Warning(err.Error())
 		}
 		v.wg.Done()
 	}()
