@@ -42,9 +42,15 @@ func TestActivateFailures(t *testing.T) {
 	setup(t)
 	var wg sync.WaitGroup
 
+	shell := os.Getenv("SHELL")
+	comspec := os.Getenv("ComSpec")
+
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
 	_, err := Activate(&wg)
+
+	os.Setenv("SHELL", shell)
+	os.Setenv("ComSpec", comspec)
 
 	assert.Error(t, err, "Should produce an error because of unsupported shell")
 }
@@ -56,6 +62,8 @@ func TestIsActivated(t *testing.T) {
 func TestRunCommand(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
+
+	os.Setenv("SHELL", "bash")
 
 	subs, err := Get()
 	assert.NoError(t, err)
