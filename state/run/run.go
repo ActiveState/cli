@@ -87,11 +87,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	subs, err := subshell.Get()
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_no_shell"))
+		return
 	}
 
 	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
 	err = subs.Run(command)
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_error"))
+		return
 	}
 }

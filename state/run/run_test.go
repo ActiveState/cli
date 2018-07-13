@@ -20,6 +20,7 @@ import (
 
 func TestRunStandalone(t *testing.T) {
 	Flags.Standalone, Args.Name = false, "" // reset
+	os.Setenv("SHELL", "bash")
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	assert.NoError(t, err)
