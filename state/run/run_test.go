@@ -125,7 +125,7 @@ commands:
 	Cc.SetArgs([]string{"--standalone"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -148,14 +148,12 @@ func TestRunActivatedCommand(t *testing.T) {
 		contents = strings.TrimSpace(`
 commands:
   - name: run
-    value: echo foo
-    `)
+    value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
 commands:
   - name: run
-    value: cmd /C echo foo
-    `)
+    value: cmd /C echo foo`)
 	}
 	err = yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
