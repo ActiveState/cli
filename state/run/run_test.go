@@ -162,6 +162,7 @@ commands:
 	// Run the command.
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+	failures.ResetHandled()
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
