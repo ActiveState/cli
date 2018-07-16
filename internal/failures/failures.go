@@ -149,9 +149,7 @@ func (e *Failure) Handle(description string) {
 
 	e.Log()
 
-	if e.Type.User {
-		print.Error(e.Error())
-	}
+	print.Error(e.Error())
 }
 
 // Type returns a FailureType that can be used to create your own failure types
