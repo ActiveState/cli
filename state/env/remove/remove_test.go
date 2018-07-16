@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/variables"
@@ -35,7 +36,7 @@ func getTestProject(t *testing.T) *projectfile.Project {
 
 func setup(t *testing.T) {
 	Args.Identifier = ""
-	testPromptResultOverride = ""
+	testPromptResultOverride = "-"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
 	projectfile.Reset()
@@ -49,6 +50,7 @@ func TestExecute(t *testing.T) {
 	assert := assert.New(t)
 	Command.Execute()
 	assert.Equal(true, true, "Execute didn't panic")
+	assert.NoError(failures.Handled(), "No failure occurred")
 }
 
 func TestRemoveByHashCmd(t *testing.T) {
@@ -67,6 +69,8 @@ func TestRemoveByHashCmd(t *testing.T) {
 	Cc.SetArgs([]string{hash})
 	Command.Execute()
 	Cc.SetArgs([]string{})
+
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	project = projectfile.Get()
 	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
@@ -88,6 +92,8 @@ func TestRemoveByNameCmd(t *testing.T) {
 	Cc.SetArgs([]string{varName})
 	Command.Execute()
 	Cc.SetArgs([]string{})
+
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	project = projectfile.Get()
 	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
@@ -159,6 +165,8 @@ func TestRemoveByNameFailCmd(t *testing.T) {
 	Cc.SetArgs([]string{varName})
 	Command.Execute()
 	Cc.SetArgs([]string{})
+
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	mappedVariables, _ := variables.HashVariablesFiltered(project.Variables, []string{varName})
 	assert.Equal(t, 2, len(mappedVariables), fmt.Sprintf("There should still be two variables of the same name in the config: '%v'", varName))

@@ -178,6 +178,7 @@ version_info:
     ActiveState CLI version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
+    Built {{.Date}}
 update_complete:
   other: Update completed succesfully
 update_hash_mismatch:
@@ -422,3 +423,7 @@ print_state_show_packages:
   other: packages
 print_state_show_env_vars:
   other: Environment variables
+err_cannot_obtain_dist:
+  other: "Could not obtain distribution for language: {{.V0}}"
+config_variable_prompt_value:
+  other: "Variable '{{.Name}}' undefined. Please enter a value:"

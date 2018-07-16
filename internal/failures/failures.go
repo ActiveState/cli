@@ -199,9 +199,14 @@ func Handle(err error, description string) {
 	}
 }
 
-// GetHandled returns the last handled error
-func GetHandled() error {
+// Handled returns the last handled error
+func Handled() error {
 	return handled
+}
+
+// ResetHandled resets handled to nil
+func ResetHandled() {
+	handled = nil
 }
 
 // IsFailure returns whether the given error is of the Failure type

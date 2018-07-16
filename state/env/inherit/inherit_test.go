@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,6 +16,7 @@ func TestExecute(t *testing.T) {
 	Command.Execute()
 
 	assert.True(t, true, "Execute didn't panic")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestInheritNew(t *testing.T) {
@@ -27,6 +29,8 @@ func TestInheritNew(t *testing.T) {
 	project.Persist()
 
 	Command.Execute()
+
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	assert.Equal(t, 3, len(project.Variables), "3 env variables were inherited")
 	assert.Equal(t, "foo", project.Variables[0].Name, "name is foo")
@@ -49,12 +53,18 @@ func TestOverwrite(t *testing.T) {
 
 	testConfirm = true
 	Command.Execute()
+
 	assert.Equal(t, "baz", project.Variables[0].Value, "New value inherited")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
 
 	os.Setenv("foo", "bar")
 	testConfirm = false
 	Command.Execute()
+
 	assert.Equal(t, "baz", project.Variables[0].Value, "New value NOT inherited")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
 
 	recognizedVariables = origRecognizedVariables // restore
 }

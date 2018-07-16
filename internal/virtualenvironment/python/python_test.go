@@ -12,9 +12,14 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setup(t *testing.T) {
+	pjfile := projectfile.Project{}
+	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Python", Version: "2"})
+	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Python", Version: "3"})
+	pjfile.Persist()
 	cwd, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should fetch cwd")
 	testDir := filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")

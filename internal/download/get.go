@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -34,16 +36,20 @@ func init() {
 }
 
 func httpGet(url string) ([]byte, *failures.Failure) {
+	logging.Debug("Retrieving url: %s", url)
 	return httpGetWithProgress(url, nil)
 }
 
 func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.Failure) {
+	logging.Debug("Retrieving url: %s", url)
 	resp, err := http.Head(url)
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
 	}
-	total, err := strconv.Atoi(resp.Header.Get("Content-Length"))
+	length := resp.Header.Get("Content-Length")
+	total, err := strconv.Atoi(length)
 	if err != nil {
+		logging.Debug("Content-length: %v", length)
 		return nil, failures.FailInput.Wrap(err)
 	}
 
