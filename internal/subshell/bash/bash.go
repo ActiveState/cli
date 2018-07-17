@@ -1,6 +1,7 @@
 package bash
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
@@ -89,6 +90,25 @@ func (v *SubShell) Deactivate() error {
 		v.cmd = nil
 	}
 	return err
+}
+
+// Run - see subshell.SubShell
+func (v *SubShell) Run(script string) error {
+	tmpfile, err := ioutil.TempFile("", "bash-script")
+	if err != nil {
+		return err
+	}
+
+	tmpfile.WriteString("#!/usr/bin/env bash\n")
+	tmpfile.WriteString(script)
+	tmpfile.Close()
+	defer os.Remove(tmpfile.Name())
+	os.Chmod(tmpfile.Name(), 0755)
+
+	runCmd := exec.Command(tmpfile.Name())
+	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+	return runCmd.Run()
 }
 
 // IsActive - see subshell.SubShell

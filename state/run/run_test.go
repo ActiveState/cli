@@ -1,6 +1,8 @@
 package run
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -17,23 +20,31 @@ import (
 
 func TestRunStandalone(t *testing.T) {
 	Flags.Standalone, Args.Name = false, "" // reset
+	os.Setenv("SHELL", "bash")
+
+	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	assert.NoError(t, err)
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
 
 	project := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
-		contents = strings.TrimSpace(`
+		contents = fmt.Sprintf(`
 commands:
   - name: run
-    value: echo foo
-    `)
+    value: |
+      echo "Hello"
+      touch %s`, tmpfile.Name())
 	} else {
-		contents = strings.TrimSpace(`
+		contents = fmt.Sprintf(`
 commands:
   - name: run
-    value: cmd /C echo foo
-    `)
+    value: |
+    echo "Hello"
+    copy NUL %s`, tmpfile.Name())
 	}
-	err := yaml.Unmarshal([]byte(contents), project)
+	err = yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
@@ -42,6 +53,8 @@ commands:
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+	print.Line(tmpfile.Name())
+	assert.FileExists(t, tmpfile.Name())
 }
 
 func TestRunStandaloneCommand(t *testing.T) {
@@ -112,7 +125,7 @@ commands:
 	Cc.SetArgs([]string{"--standalone"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -135,14 +148,12 @@ func TestRunActivatedCommand(t *testing.T) {
 		contents = strings.TrimSpace(`
 commands:
   - name: run
-    value: echo foo
-    `)
+    value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
 commands:
   - name: run
-    value: cmd /C echo foo
-    `)
+    value: cmd /C echo foo`)
 	}
 	err = yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
@@ -151,6 +162,7 @@ commands:
 	// Run the command.
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+	failures.ResetHandled()
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
