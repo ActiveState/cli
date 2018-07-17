@@ -1,6 +1,7 @@
 package hooks
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -101,6 +102,8 @@ func TestRunHook(t *testing.T) {
 	project := projectfile.Project{}
 	touch := filepath.Join(os.TempDir(), "state-test-runhook")
 	os.Remove(touch)
+	os.Setenv("SHELL", "bash")
+
 	// Creating a file apparently leaves a hanging file handle
 	// so explicitly get file and close it.  Didn't notice until
 	// windows ran tests.
@@ -109,12 +112,14 @@ func TestRunHook(t *testing.T) {
 		cmd = "cmd /c echo . > "
 	}
 
-	dat := `
+	dat := fmt.Sprintf(`
 name: name
 owner: owner
 hooks:
  - name: ACTIVATE
-   value: ` + cmd + touch
+   value: |
+     echo "foo"
+     %s %s`, cmd, touch)
 	dat = strings.TrimSpace(dat)
 
 	err := yaml.Unmarshal([]byte(dat), &project)
@@ -132,6 +137,7 @@ func TestRunHookFail(t *testing.T) {
 	project := projectfile.Project{}
 	touch := filepath.Join(os.TempDir(), "state-test-runhook")
 	os.Remove(touch)
+	os.Setenv("SHELL", "bash")
 
 	dat := `
 name: name

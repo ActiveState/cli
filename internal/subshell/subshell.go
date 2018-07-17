@@ -33,6 +33,9 @@ type SubShell interface {
 	// Deactivate the given subshell
 	Deactivate() error
 
+	// Run a command string that assumes this shell
+	Run(script string) error
+
 	// IsActive returns whether the given subshell is active
 	IsActive() bool
 
@@ -62,41 +65,17 @@ type SubShell interface {
 func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
-	var T = locale.T
-	var binary string
-	if runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
-	} else {
-		binary = os.Getenv("SHELL")
+	subs, fail := Get()
+	if fail != nil {
+		return nil, fail
 	}
 
-	name := filepath.Base(binary)
-
-	var err error
-	var subs SubShell
-	switch name {
-	case "bash":
-		subs = &bash.SubShell{}
-	case "zsh":
-		subs = &zsh.SubShell{}
-	case "cmd.exe":
-		subs = &cmd.SubShell{}
-	default:
-		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
-			"Shell": name,
-		}))
-	}
-
-	rcFile, err := getRcFile(subs)
+	err := subs.Activate(wg)
 	if err != nil {
 		return nil, err
 	}
 
-	subs.SetBinary(binary)
-	subs.SetRcFile(rcFile)
-	subs.Activate(wg)
-
-	return subs, err
+	return subs, nil
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
@@ -139,6 +118,43 @@ func getRcFile(v SubShell) (*os.File, error) {
 	tmpFile.Close()
 
 	return tmpFile, err
+}
+
+// Get returns the subshell relevant to the current process, but does not activate it
+func Get() (SubShell, error) {
+	var T = locale.T
+	var binary string
+	if runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
+	} else {
+		binary = os.Getenv("SHELL")
+	}
+
+	name := filepath.Base(binary)
+
+	var subs SubShell
+	switch name {
+	case "bash":
+		subs = &bash.SubShell{}
+	case "zsh":
+		subs = &zsh.SubShell{}
+	case "cmd.exe":
+		subs = &cmd.SubShell{}
+	default:
+		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
+			"Shell": name,
+		}))
+	}
+
+	rcFile, err := getRcFile(subs)
+	if err != nil {
+		return nil, err
+	}
+
+	subs.SetBinary(binary)
+	subs.SetRcFile(rcFile)
+
+	return subs, nil
 }
 
 // IsActivated returns whether or not this process is being run in an activated
