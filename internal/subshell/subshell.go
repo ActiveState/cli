@@ -108,7 +108,9 @@ func getRcFile(v SubShell) (*os.File, error) {
 
 	userScripts := ""
 	for _, hook := range prj.Hooks() {
-		userScripts = userScripts + "\n" + hook.Value()
+		if hook.Name() == "ACTIVATE" {
+			userScripts = userScripts + "\n" + hook.Value()
+		}
 	}
 
 	rcData := map[string]interface{}{
