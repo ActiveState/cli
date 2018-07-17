@@ -44,18 +44,11 @@ func TestActivateFailures(t *testing.T) {
 	var wg sync.WaitGroup
 
 	shell := os.Getenv("SHELL")
-<<<<<<< HEAD
 	comspec := os.Getenv("ComSpec")
 
-=======
-	cmd := os.Getenv("ComSpec")
->>>>>>> master
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
 	_, err := Activate(&wg)
-	os.Setenv("SHELL", shell)
-	os.Setenv("ComSpec", cmd)
-
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 
