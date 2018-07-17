@@ -62,6 +62,7 @@ func createSession() {
 	})
 	if err != nil {
 		log.Fatalf("failed to create session, %s", err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -121,6 +122,7 @@ func uploadFile(params *s3.PutObjectInput) {
 	if err != nil {
 		fmt.Printf("Failed to upload data to %s/%s, %s\n",
 			awsBucketName, *params.Key, err.Error())
+		os.Exit(1)
 	}
 }
 
