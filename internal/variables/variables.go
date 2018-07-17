@@ -50,7 +50,7 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 		print.Warning(lastFailure.Error())
 		return ""
 	}
-	regex := regexp.MustCompile("\\${?\\w+\\.\\w+}?")
+	regex := regexp.MustCompile("\\${?\\w+\\.[\\w-]+}?")
 	expanded := regex.ReplaceAllStringFunc(s, func(variable string) string {
 		components := strings.Split(strings.Trim(variable, "${}"), ".")
 		category, name := components[0], components[1]

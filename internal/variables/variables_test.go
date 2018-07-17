@@ -24,6 +24,8 @@ platforms:
 variables:
   - name: foo
     value: bar
+  - name: foo-dashed
+    value: bar
   - name: bar
     value: baz
     constraints:
@@ -176,4 +178,21 @@ func TestExpandProjectUppercase(t *testing.T) {
 	expanded := ExpandFromProject("${variables.UPPERCASE}bar", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "foobar", expanded)
+}
+
+func TestExpandDashed(t *testing.T) {
+	project := &projectfile.Project{}
+	contents := strings.TrimSpace(`
+  variables:
+    - name: foo-bar
+      value: bar
+  `)
+
+	err := yaml.Unmarshal([]byte(contents), project)
+	assert.Nil(t, err, "Unmarshalled YAML")
+	project.Persist()
+
+	expanded := ExpandFromProject("- $variables.foo-bar -", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	assert.Equal(t, "- bar -", expanded)
 }
