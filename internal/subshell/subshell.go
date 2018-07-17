@@ -84,12 +84,21 @@ func getRcFile(v SubShell) (*os.File, error) {
 	box := packr.NewBox("../../assets/shells")
 	tpl := box.String(v.RcFileTemplate())
 	prj := project.Get()
+
+	userScripts := ""
+	for _, hook := range prj.Hooks() {
+		if hook.Name() == "ACTIVATE" {
+			userScripts = userScripts + "\n" + hook.Value()
+		}
+	}
+
 	rcData := map[string]interface{}{
-		"Project": projectfile.Get(),
-		"Owner":   prj.Owner(),
-		"Name":    prj.Name(),
-		"Env":     virtualenvironment.GetEnv(),
-		"WD":      virtualenvironment.WorkingDirectory(),
+		"Project":     projectfile.Get(),
+		"Owner":       prj.Owner(),
+		"Name":        prj.Name(),
+		"Env":         virtualenvironment.GetEnv(),
+		"WD":          virtualenvironment.WorkingDirectory(),
+		"UserScripts": userScripts,
 	}
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
