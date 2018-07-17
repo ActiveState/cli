@@ -27,6 +27,7 @@ var lastFailure *failures.Failure
 
 var calls int // for preventing infinite recursion during recursively expansion
 
+// Failure retrieves the latest failure
 func Failure() *failures.Failure {
 	return lastFailure
 }
