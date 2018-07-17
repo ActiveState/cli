@@ -28,11 +28,10 @@ func setup(t *testing.T) {
 	assert.NoError(t, err, "Should change dir")
 }
 
-func demolish(t *testing.T) {
+func teardown(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should fetch cwd")
 	os.Chdir(root)
-	os.RemoveAll(filepath.Join(root, "internal", "virtualenvironment", "python", "testdata"))
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
@@ -52,6 +51,7 @@ func TestLanguage(t *testing.T) {
 		Path: "test",
 	})
 	assert.Equal(t, "python2", venv.Language(), "Should return python")
+	teardown(t)
 }
 
 func TestDataDir(t *testing.T) {
@@ -60,6 +60,7 @@ func TestDataDir(t *testing.T) {
 
 	venv.SetDataDir("/foo")
 	assert.NotEmpty(t, venv.DataDir(), "Should set the datadir")
+	teardown(t)
 }
 
 func TestLanguageMeta(t *testing.T) {
@@ -75,7 +76,7 @@ func TestLanguageMeta(t *testing.T) {
 		Path: "test",
 	})
 	assert.NotNil(t, venv.Artifact(), "Should have artifact info")
-	demolish(t)
+	teardown(t)
 }
 
 func TestLoadPackageFromPath(t *testing.T) {
@@ -132,7 +133,7 @@ func TestLoadPackageFromPath(t *testing.T) {
 			assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
 		}
 	}
-	demolish(t)
+	teardown(t)
 }
 
 func TestActivate(t *testing.T) {
@@ -156,5 +157,5 @@ func TestActivate(t *testing.T) {
 
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
 	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
-	demolish(t)
+	teardown(t)
 }

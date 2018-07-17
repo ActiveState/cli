@@ -1,7 +1,6 @@
 package subshell
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -19,7 +18,6 @@ func setup(t *testing.T) {
 
 func TestActivate(t *testing.T) {
 	setup(t)
-	fmt.Println("Am I hitting this?")
 	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "bash")
@@ -37,20 +35,20 @@ func TestActivate(t *testing.T) {
 	assert.False(t, venv.IsActive(), "Subshell should be inactive")
 }
 
-// func TestActivateFailures(t *testing.T) {
-// 	setup(t)
-// 	var wg sync.WaitGroup
+func TestActivateFailures(t *testing.T) {
+	setup(t)
+	var wg sync.WaitGroup
 
-// 	shell := os.Getenv("SHELL")
-// 	cmd := os.Getenv("ComSpec")
-// 	os.Setenv("SHELL", "foo")
-// 	os.Setenv("ComSpec", "foo")
-// 	_, err := Activate(&wg)
-// 	os.Setenv("SHELL", shell)
-// 	os.Setenv("ComSpec", cmd)
+	shell := os.Getenv("SHELL")
+	cmd := os.Getenv("ComSpec")
+	os.Setenv("SHELL", "foo")
+	os.Setenv("ComSpec", "foo")
+	_, err := Activate(&wg)
+	os.Setenv("SHELL", shell)
+	os.Setenv("ComSpec", cmd)
 
-// 	assert.Error(t, err, "Should produce an error because of unsupported shell")
-// }
+	assert.Error(t, err, "Should produce an error because of unsupported shell")
+}
 
 func TestIsActivated(t *testing.T) {
 	assert.False(t, IsActivated(), "Test environment is not in an activated state")
