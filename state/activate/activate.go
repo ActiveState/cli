@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/cmdlets/hooks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 )
@@ -119,13 +118,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := hooks.RunHook("ACTIVATE")
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_run_hooks"))
-		return
-	}
-
-	_, err = subshell.Activate(&wg)
+	_, err := subshell.Activate(&wg)
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return

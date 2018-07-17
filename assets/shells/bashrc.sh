@@ -5,3 +5,5 @@ export PROMPT_COMMAND="echo -e \"\033[1mActive state: {{.Project.Owner}}/{{.Proj
 export {{$K}}="{{$V}}"
 {{end}}
 cd "{{.WD}}"
+
+{{.UserScripts}}

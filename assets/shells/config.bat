@@ -6,3 +6,5 @@ set {{$K}}={{$V}}
 {{end}}
 
 cd {{.WD}}
+
+{{.UserScripts}}
