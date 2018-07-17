@@ -78,7 +78,6 @@ func init() {
 	Command.Append(organizations.Command)
 	Command.Append(projects.Command)
 	Command.Append(new.Command)
-	Command.Append(organizations.Command)
 	Command.Append(show.Command)
 	Command.Append(env.Command)
 	Command.Append(run.Command)
@@ -112,7 +111,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Info(locale.T("version_info", map[string]interface{}{
 			"Version":  constants.Version,
 			"Branch":   constants.BranchName,
-			"Revision": constants.RevisionHash}))
+			"Revision": constants.RevisionHash,
+			"Date":     constants.Date}))
 		return
 	}
 

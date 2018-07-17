@@ -76,6 +76,7 @@ func TestExecuteGitClone(t *testing.T) {
 	Command.Execute()
 
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
 
 	newCwd, _ := os.Getwd()
 	assert.Equal(t, "repo2", filepath.Base(newCwd), "The cloned repository exists and was changed into")
