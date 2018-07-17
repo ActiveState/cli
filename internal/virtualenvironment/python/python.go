@@ -13,8 +13,9 @@ import (
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
-	datadir  string
-	artifact *artifact.Artifact
+	datadir     string
+	artifact    *artifact.Artifact
+	packagePath string
 }
 
 // Language - see virtualenvironment.VirtualEnvironment
@@ -82,8 +83,13 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if subpath == "" {
 			return nil
 		}
-
-		target := filepath.Join(v.DataDir(), "lib", filepath.Base(artfPath), subpath)
+		var target string
+		if runtime.GOOS == "windows" {
+			target = filepath.Join(v.DataDir(), "language", "Lib", "site-packages", artf.Meta.Name, subpath)
+		} else {
+			langLibPath := v.getPackageFolder(filepath.Join(v.DataDir(), "language", "lib"))
+			target = filepath.Join(langLibPath, "site-packages", artf.Meta.Name, subpath)
+		}
 		if fileutils.PathExists(target) {
 			return nil
 		}
@@ -91,7 +97,6 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 		if err := fileutils.Mkdir(filepath.Dir(target), "lib"); err != nil {
 			return failures.FailIO.Wrap(err)
 		}
-
 		return os.Symlink(filepath.Join(artfPath, subpath), target)
 	})
 
@@ -100,6 +105,23 @@ func (v *VirtualEnvironment) loadPackage(artf *artifact.Artifact) *failures.Fail
 	}
 
 	return nil
+}
+
+func (v *VirtualEnvironment) getPackageFolder(path string) string {
+	if v.packagePath != "" {
+		return v.packagePath
+	}
+
+	matches, err := filepath.Glob(filepath.Join(path, "python*"))
+	if err != nil {
+		return ""
+	}
+	if len(matches) == 0 {
+		return ""
+	}
+
+	v.packagePath = matches[0]
+	return v.packagePath
 }
 
 // Activate - see virtualenvironment.VirtualEnvironment
