@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/failures"
@@ -20,6 +21,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
 )
+
+// FailAlreadyActive is a failure given when a project is already active
+var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
 // VirtualEnvironmenter defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
@@ -63,6 +67,11 @@ var venvs = make(map[string]VirtualEnvironmenter)
 // Activate the virtual environment
 func Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
+
+	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
+	if activeProject != "" {
+		return FailAlreadyActive.New("err_already_active")
+	}
 
 	project := projectfile.Get()
 
@@ -136,6 +145,9 @@ func GetEnv() map[string]string {
 	if funk.Contains(env, "PATH") {
 		env["PATH"] = env["PATH"] + string(os.PathListSeparator) + os.Getenv("PATH")
 	}
+
+	pjfile := projectfile.Get()
+	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 
 	return env
 }
