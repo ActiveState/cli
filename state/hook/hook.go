@@ -3,6 +3,7 @@ package hook
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -80,7 +81,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	rows := [][]interface{}{}
 	for k, hook := range hashmap {
-		rows = append(rows, []interface{}{k, hook.Name, hook.Value})
+		if !constraints.IsConstrained(hook.Constraints) {
+			rows = append(rows, []interface{}{k, hook.Name, hook.Value})
+		}
 	}
 
 	t := gotabulate.Create(rows)
