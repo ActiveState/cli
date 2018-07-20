@@ -31,7 +31,7 @@ const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
 
 // ActivatedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
-const ActivatedStateEnvVarName = "STATE_ACTIVATED"
+const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
