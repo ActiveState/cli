@@ -11,6 +11,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 )
@@ -95,6 +96,18 @@ func TestActivateFailureUnknownLanguage(t *testing.T) {
 
 	err := Activate()
 	assert.Error(t, err, "Should not activate due to unknown language")
+
+	teardown()
+}
+
+func TestActivateFailureAlreadyActive(t *testing.T) {
+	setup(t)
+
+	os.Setenv(constants.ActivatedStateEnvVarName, "test")
+
+	fail := Activate()
+	assert.Error(t, fail.ToError(), "Should not activate due to unknown language")
+	assert.Equal(t, fail.Type.Name, "virtualenvironment.fail.alreadyactive")
 
 	teardown()
 }

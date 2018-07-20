@@ -65,6 +65,13 @@ type SubShell interface {
 func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
+	// Why another check here? Because some things like hooks / run command don't take the virtualenv route,
+	// realistically this shouldn't really happen, but it's a useful failsafe for us
+	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
+	if activeProject != "" {
+		return nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
+	}
+
 	subs, fail := Get()
 	if fail != nil {
 		return nil, fail
