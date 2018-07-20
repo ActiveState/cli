@@ -111,7 +111,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	project := projectfile.Get()
-
+	print.Info(locale.T("info_activating_state", project))
 	var fail = virtualenvironment.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
