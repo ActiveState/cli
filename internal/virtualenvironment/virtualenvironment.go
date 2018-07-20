@@ -83,7 +83,6 @@ func Activate() *failures.Failure {
 	}
 
 	// Load Languages
-	print.Info(locale.T("info_activating_state", project))
 	for _, artf := range dist.Languages {
 		fail = createLanguageFolderStructure(artf)
 		if fail != nil {
