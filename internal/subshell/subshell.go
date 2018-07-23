@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
@@ -145,6 +146,8 @@ func Get() (SubShell, error) {
 		subs = &bash.SubShell{}
 	case "zsh":
 		subs = &zsh.SubShell{}
+	case "tcsh":
+		subs = &tcsh.SubShell{}
 	case "cmd.exe":
 		subs = &cmd.SubShell{}
 	default:
