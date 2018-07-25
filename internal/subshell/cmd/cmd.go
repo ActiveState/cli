@@ -4,9 +4,11 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/failures"
 )
@@ -114,6 +116,7 @@ func (v *SubShell) Run(script string) error {
 	os.Chmod(tmpfile.Name(), 0755)
 
 	runCmd := exec.Command(tmpfile.Name())
+	runCmd.Dir = filepath.Dir(projectfile.Get().Path())
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	return runCmd.Run()

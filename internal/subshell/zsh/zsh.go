@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -71,6 +72,7 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	shellArgs := []string{}
 	cmd := exec.Command(v.Binary(), shellArgs...)
+	cmd.Dir = filepath.Dir(projectfile.Get().Path())
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 
