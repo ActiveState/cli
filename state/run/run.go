@@ -1,6 +1,8 @@
 package run
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -9,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +30,12 @@ var Command = &commands.Command{
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.Standalone,
 		},
+		&commands.Flag{
+			Name:        "list",
+			Description: "flag_state_run_standalone_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.List,
+		},
 	},
 
 	Arguments: []*commands.Argument{
@@ -41,6 +50,7 @@ var Command = &commands.Command{
 // Flags hold the flag values passed through the command line.
 var Flags struct {
 	Standalone bool
+	List       bool
 }
 
 // Args hold the arg values passed through the command line.
@@ -53,6 +63,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 	if Args.Name == "" {
 		Args.Name = "run" // default
+	}
+
+	if Flags.List {
+		ListCommands()
+		return
 	}
 
 	// Determine which project command to run based on the given command name.
@@ -95,5 +110,19 @@ func Execute(cmd *cobra.Command, args []string) {
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		return
+	}
+}
+
+// ListCommands prints the available commands
+func ListCommands() {
+	print.Info(locale.T("run_listing_commands"))
+
+	prj := project.Get()
+	commands := prj.Commands()
+
+	rows := [][]interface{}{}
+	for k, cmd := range commands {
+		rows = append(rows, []interface{}{k, cmd.Name()})
+		print.Line(fmt.Sprintf(" * %s", cmd.Name()))
 	}
 }
