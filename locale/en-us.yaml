@@ -327,6 +327,8 @@ error_expand_variable_project_unknown_name:
   other: "Error expanding variable '{{.V0}}': unknown name '{{.V1}}'"
 flag_state_run_standalone_description:
   other: Run a command, regardless of an activated state
+flag_state_run_list_description:
+  other: List available commands
 error_state_run_unknown_name:
   other: The command '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
@@ -431,3 +433,5 @@ config_variable_prompt_value:
   other: "Variable '{{.Name}}' undefined. Please enter a value:"
 err_already_active:
   other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
+run_listing_commands:
+  other: "Available Commands: "
