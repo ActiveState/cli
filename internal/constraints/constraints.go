@@ -186,14 +186,12 @@ func PlatformMatches(platform projectfile.Platform) bool {
 // constraint name.
 // If the constraint name is prefixed by "-", returns the converse.
 func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
-	if platform.Name == strings.TrimLeft(name, "-") {
-		if PlatformMatches(platform) {
-			if strings.HasPrefix(name, "-") {
-				return true
-			}
-		} else if !strings.HasPrefix(name, "-") {
+	if PlatformMatches(platform) {
+		if strings.HasPrefix(name, "-") {
 			return true
 		}
+	} else if !strings.HasPrefix(name, "-") {
+		return true
 	}
 	return false
 }
@@ -204,12 +202,12 @@ func platformIsConstrained(constraintNames string) bool {
 	project := projectfile.Get()
 	for _, name := range strings.Split(constraintNames, ",") {
 		for _, platform := range project.Platforms {
-			if platformIsConstrainedByConstraintName(platform, name) {
-				return true
+			if platform.Name == strings.TrimLeft(name, "-") && !platformIsConstrainedByConstraintName(platform, name) {
+				return false
 			}
 		}
 	}
-	return false
+	return true
 }
 
 // Returns whether or not the current environment is constrained by the given

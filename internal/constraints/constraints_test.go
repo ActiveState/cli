@@ -12,13 +12,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPlatformConstraints(t *testing.T) {
-	root, _ := environment.GetRootPath()
-	project, err := projectfile.Parse(filepath.Join(root, "test", constants.ConfigFileName))
-	project.Persist()
-	assert.Nil(t, err, "There was no error parsing the config file")
+var cwd string
 
-	assert.True(t, platformIsConstrained("Windows10Label"))
+func setProjectDir(t *testing.T) {
+	var err error
+	cwd, err = environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	err = os.Chdir(filepath.Join(cwd, "internal", "constraints", "testdata"))
+	assert.NoError(t, err, "Should change dir without issue.")
+}
+
+func TestPlatformConstraints(t *testing.T) {
+	setProjectDir(t)
+	if sysinfo.OS() != sysinfo.Windows {
+		assert.True(t, platformIsConstrained("Windows10Label"))
+	}
+	assert.False(t, platformIsConstrained("windows-label,linux-label,macos-label"), "No matter the platform, this should never be constrained.")
 }
 
 func TestEnvironmentConstraints(t *testing.T) {
