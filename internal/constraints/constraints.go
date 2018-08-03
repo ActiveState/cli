@@ -225,6 +225,9 @@ func environmentIsConstrained(constraints string) bool {
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
 func IsConstrained(constraint projectfile.Constraint) bool {
+	if constraint.Platform == "" && constraint.Environment == "" {
+		return false
+	}
 	return platformIsConstrained(constraint.Platform) ||
 		environmentIsConstrained(constraint.Environment)
 }
