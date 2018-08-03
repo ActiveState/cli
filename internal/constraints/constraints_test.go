@@ -1,6 +1,7 @@
 package constraints
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,10 +25,18 @@ func setProjectDir(t *testing.T) {
 
 func TestPlatformConstraints(t *testing.T) {
 	setProjectDir(t)
+	exclude := "-linux-label"
+	if sysinfo.OS() == sysinfo.Windows {
+		exclude = "-windows-label"
+	} else if sysinfo.OS() == sysinfo.Mac {
+		exclude = "-macos-label"
+	}
 	if sysinfo.OS() != sysinfo.Windows {
 		assert.True(t, platformIsConstrained("Windows10Label"))
 	}
 	assert.False(t, platformIsConstrained("windows-label,linux-label,macos-label"), "No matter the platform, this should never be constrained.")
+	assert.True(t, platformIsConstrained(fmt.Sprintf("windows-label,linux-label,macos-label,%s", exclude)), "No matter the platform, this should never be constrained.")
+	assert.True(t, platformIsConstrained(fmt.Sprintf("%s,windows-label,linux-label,macos-label", exclude)), "No matter the platform, this should never be constrained.")
 }
 
 func TestEnvironmentConstraints(t *testing.T) {
