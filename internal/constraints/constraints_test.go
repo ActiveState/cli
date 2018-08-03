@@ -35,8 +35,8 @@ func TestPlatformConstraints(t *testing.T) {
 		assert.True(t, platformIsConstrained("Windows10Label"))
 	}
 	assert.False(t, platformIsConstrained("windows-label,linux-label,macos-label"), "No matter the platform, this should never be constrained.")
-	assert.True(t, platformIsConstrained(fmt.Sprintf("windows-label,linux-label,macos-label,%s", exclude)), "No matter the platform, this should never be constrained.")
-	assert.True(t, platformIsConstrained(fmt.Sprintf("%s,windows-label,linux-label,macos-label", exclude)), "No matter the platform, this should never be constrained.")
+	assert.True(t, platformIsConstrained(fmt.Sprintf("windows-label,linux-label,macos-label,%s", exclude)), "Exclude at the end is still considered.")
+	assert.True(t, platformIsConstrained(fmt.Sprintf("%s,windows-label,linux-label,macos-label", exclude)), "Exclude at the start means (or any part really) means fail.")
 }
 
 func TestEnvironmentConstraints(t *testing.T) {
