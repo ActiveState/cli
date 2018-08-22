@@ -113,10 +113,10 @@ func run(language string, OS string, isForTests bool) []*Distribution {
 		packages = getPackagePathsGo(sourceArtifactPath)
 	case "python3":
 		packages = getPackagePaths(sourceArtifactPath)
-		relocate = getRelocatePython(sourceDistPath, "3.5")
+		relocate = getRelocatePython(sourceDistPath, "3.5", OS)
 	case "python2":
 		packages = getPackagePaths(sourceArtifactPath)
-		relocate = getRelocatePython(sourceDistPath, "2.7")
+		relocate = getRelocatePython(sourceDistPath, "2.7", OS)
 	case "perl":
 		packages = getPackagePaths(sourceArtifactPath)
 	default:
@@ -252,7 +252,7 @@ func getPackagePathsGo(sourcePath string) []*Package {
 	return resultPaths
 }
 
-func getRelocatePython(sourceDistPath string, version string) string {
+func getRelocatePython(sourceDistPath string, version string, OS string) string {
 	var path = filepath.Join(sourceDistPath, "lib", "python"+version, "activestate.py")
 	if !fileutils.FileExists(path) {
 		path = filepath.Join(sourceDistPath, "Lib", "activestate.py") // Python 2.7 on Windows
@@ -278,6 +278,10 @@ func getRelocatePython(sourceDistPath string, version string) string {
 			break
 		}
 		nextLine = strings.Contains(line, "# Prefix to which extensions were built")
+	}
+
+	if OS == "macos" {
+		relocate = fmt.Sprintf("%s,/Library/Frameworks/Python.framework/Versions/%s/Python", relocate, version)
 	}
 
 	return relocate
