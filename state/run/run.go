@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 )
 
@@ -71,13 +70,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Determine which project command to run based on the given command name.
-	project := projectfile.Get()
+	prj := project.Get()
 	var command string
 	var standalone bool
-	for _, cmd := range project.Commands {
-		if cmd.Name == Args.Name {
-			command = cmd.Value
-			standalone = cmd.Standalone
+	for _, cmd := range prj.Commands() {
+		if cmd.Name() == Args.Name {
+			command = cmd.Value()
+			standalone = cmd.Standalone()
 			break
 		}
 	}

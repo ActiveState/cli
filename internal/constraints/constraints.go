@@ -182,34 +182,24 @@ func PlatformMatches(platform projectfile.Platform) bool {
 		(platform.Compiler == "" || compilerMatches(platform.Compiler))
 }
 
-// Returns whether or not the given platform is constrained by the given
-// constraint name.
-// If the constraint name is prefixed by "-", returns the converse.
-func platformIsConstrainedByConstraintName(platform projectfile.Platform, name string) bool {
-	if platform.Name == strings.TrimLeft(name, "-") {
-		if PlatformMatches(platform) {
-			if strings.HasPrefix(name, "-") {
-				return true
-			}
-		} else if !strings.HasPrefix(name, "-") {
-			return true
-		}
-	}
-	return false
-}
-
 // Returns whether or not the current platform is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func platformIsConstrained(constraintNames string) bool {
 	project := projectfile.Get()
-	for _, name := range strings.Split(constraintNames, ",") {
+	names := strings.Split(constraintNames, ",")
+	constrained := true
+	for _, name := range names {
 		for _, platform := range project.Platforms {
-			if platformIsConstrainedByConstraintName(platform, name) {
-				return true
+			if platform.Name == strings.TrimLeft(name, "-") && PlatformMatches(platform) {
+				if strings.HasPrefix(name, "-") {
+					return true
+				}
+				constrained = false // can't return here because an exclude might still occur
 			}
 		}
 	}
-	return false
+
+	return constrained
 }
 
 // Returns whether or not the current environment is constrained by the given
@@ -227,6 +217,9 @@ func environmentIsConstrained(constraints string) bool {
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
 func IsConstrained(constraint projectfile.Constraint) bool {
+	if constraint.Platform == "" && constraint.Environment == "" {
+		return false
+	}
 	return platformIsConstrained(constraint.Platform) ||
 		environmentIsConstrained(constraint.Environment)
 }
