@@ -221,12 +221,13 @@ func InstallArtifact(distArtf Artifact, source string, entry *download.Entry) *f
 		return fail
 	}
 
-	if artf.Meta.Relocate != "" {
+	relocatePaths := strings.Split(artf.Meta.Relocate, ",")
+	for _, relocatePath := range relocatePaths {
 		langPath := path
 		if distArtf.Parent != "" {
 			langPath = artifact.GetPath(distArtf.Parent)
 		}
-		fileutils.ReplaceAllInDirectory(path, artf.Meta.Relocate, langPath)
+		fileutils.ReplaceAllInDirectory(path, relocatePath, langPath)
 	}
 
 	return nil
