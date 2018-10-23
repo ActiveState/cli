@@ -1,8 +1,9 @@
 # Go parameters
-GOCMD=go
+GOROOT := $(shell go env GOROOT)
+GOCMD   = go
 
 ifneq ($(OS),Windows_NT)
-	ifndef $(shell command -v go 2> /dev/null) 
+	ifdef GOROOT
 		GOCMD=${GOROOT}/bin/go
 	endif
 else
@@ -18,9 +19,9 @@ GOGET=$(GOCMD) get
 PACKRCMD=packr
 
 ifneq ($(OS),Windows_NT)
-ifndef $(shell command -v packr 2> /dev/null)
-	PACKRCMD=${GOPATH}/bin/packr
-endif
+	ifndef $(shell command -v packr 2> /dev/null)
+		PACKRCMD=${GOPATH}/bin/packr
+	endif
 else
 	PACKRCMD=${GOPATH}bin\\\packr
 endif
