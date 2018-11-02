@@ -52,3 +52,16 @@ Meerdere help topics: [[range .Commands]]
 Gebruik \"[[.CommandPath]] [command] --help\" voor meer informatie over een command.[[end]][[BR]]"
 flag_state_locale_description:
   other: Lokalisatie
+
+secrets_cmd_description:
+  other: Beheer geheimen
+secrets_keypair_cmd_description:
+  other: Manage Your Keypair
+secrets_keypair_generate_flag_usage:
+  other: Generate and upload a new Keypair
+secrets_keypair_err:
+  other: Unable to access user's keypair
+secrets_keypair_err_not_found:
+  other: Keypair not yet generated
+secrets_keypair_err_save:
+  other: Keypair could not be saved

@@ -39,29 +39,35 @@ init:
 		git config core.hooksPath .githooks
 		go get -u github.com/gobuffalo/packr/...
 build: 
-		$(PACKRCMD)
-		$(GOCMD) run scripts/constants-generator/main.go 
-		cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
-		mkdir -p public/update
-		$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
+	$(PACKRCMD)
+	$(GOCMD) run scripts/constants-generator/main.go 
+	cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
+	mkdir -p public/update
+	$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
 install: 
-		$(PACKRCMD)
-		cd $(STATE) && $(GOINSTALL) $(STATE).go
+	$(PACKRCMD)
+	cd $(STATE) && $(GOINSTALL) $(STATE).go
 generate-artifacts:
-		$(GOCMD) run scripts/artifact-generator/main.go 
+	$(GOCMD) run scripts/artifact-generator/main.go 
 deploy-updates:
-		$(GOCMD) run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
-		$(GOCMD) run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+	$(GOCMD) run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
+	$(GOCMD) run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
 deploy-artifacts:
-		$(GOCMD) run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
+	$(GOCMD) run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
+
 generate-api-client:
-		cd internal && swagger generate client -f https://staging.activestate.com/swagger.json -A api
+	cd internal && swagger generate client -f https://staging.activestate.com/swagger.json -A api
+generate-secrets-client:
+	# CURRENTLY A PLACE HOLDER REMINDER
+	cd internal/secrets-api && swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
+generate-clients: generate-api-client generate-secrets-client
+
 test: 
-		$(GOCMD) run scripts/constants-generator/main.go 
-		$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -v api`
+	$(GOCMD) run scripts/constants-generator/main.go 
+	$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -v api`
 clean: 
-		$(GOCLEAN)
-		rm -Rf build
+	$(GOCLEAN)
+	rm -Rf build
 run:
-		cd $(STATE) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(STATE).go
-		build/$(BINARY_NAME) --help
+	cd $(STATE) && $(GOBUILD) -o ../build/$(BINARY_NAME) $(STATE).go
+	build/$(BINARY_NAME) --help
