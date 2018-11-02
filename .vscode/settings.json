@@ -9,10 +9,9 @@
         "**/testdata/generated": true
     },
     "files.watcherExclude": {
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/vendor/**": true,
-        "**/artifacts/**": true,
-        "**/pkg/**": true
+        "**/.git": true,
+        "**/vendor": true,
+        "**/scripts/artifact_generator": true,
+        "**/pkg": true
     }
 }
