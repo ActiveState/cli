@@ -7,8 +7,10 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -94,4 +96,28 @@ func TestAuthError(t *testing.T) {
 	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
 	assert.Error(t, failures.Handled(), "Failure occurred")
+}
+
+func TestProjects_FetchByName_Succeeds(t *testing.T) {
+	setup(t)
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
+
+	project, fail := FetchByName(&models.Organization{Urlname: "ActiveState"}, "CodeIntel")
+	assert.NoError(t, fail.ToError(), "Fetched project")
+	assert.Equal(t, "CodeIntel", project.Name)
+}
+
+func TestProjects_FetchByName_NotFound(t *testing.T) {
+	setup(t)
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 404)
+
+	project, fail := FetchByName(&models.Organization{Urlname: "ActiveState"}, "CodeIntel")
+	assert.EqualError(t, fail.ToError(), locale.T("err_api_project_not_found"))
+	assert.Nil(t, project)
 }

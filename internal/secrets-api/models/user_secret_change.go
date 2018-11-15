@@ -16,13 +16,15 @@ import (
 // swagger:model UserSecretChange
 type UserSecretChange struct {
 
-	// level
-	// Required: true
-	Level *string `json:"level"`
+	// is user
+	IsUser bool `json:"is_user,omitempty"`
 
 	// name
-	// Required: true
-	Name *string `json:"name"`
+	Name string `json:"name,omitempty"`
+
+	// project id
+	// Format: uuid
+	ProjectID strfmt.UUID `json:"project_id,omitempty"`
 
 	// secret id
 	// Format: uuid
@@ -37,11 +39,7 @@ type UserSecretChange struct {
 func (m *UserSecretChange) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLevel(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateName(formats); err != nil {
+	if err := m.validateProjectID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -59,18 +57,13 @@ func (m *UserSecretChange) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *UserSecretChange) validateLevel(formats strfmt.Registry) error {
+func (m *UserSecretChange) validateProjectID(formats strfmt.Registry) error {
 
-	if err := validate.Required("level", "body", m.Level); err != nil {
-		return err
+	if swag.IsZero(m.ProjectID) { // not required
+		return nil
 	}
 
-	return nil
-}
-
-func (m *UserSecretChange) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
+	if err := validate.FormatOf("project_id", "body", "uuid", m.ProjectID.String(), formats); err != nil {
 		return err
 	}
 

@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/env"
 	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
@@ -83,13 +84,8 @@ func init() {
 
 	secretsClient := secretsapi.NewClient(
 		constants.SecretsAPISchema, constants.SecretsAPIHostStaging, constants.SecretsAPIPath, api.BearerToken)
-	secretsCmd, err := secrets.NewCommand(secretsClient)
-	if err != nil {
-		logging.Error("unable to define `secrets` command: %v", err)
-		fmt.Fprintf(os.Stderr, "unable to define `secrets` command: %v", err)
-		exit(1)
-	}
-	Command.Append(secretsCmd.Config())
+	Command.Append(secrets.NewCommand(secretsClient).Config())
+	Command.Append(keypair.NewCommand(secretsClient).Config())
 }
 
 func main() {

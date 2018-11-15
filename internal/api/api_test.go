@@ -94,3 +94,13 @@ func TestAuthFailure(t *testing.T) {
 	assert.Empty(t, BearerToken, "Should not have authenticated")
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
 }
+
+func TestErrorCode_WithoutPayload(t *testing.T) {
+	setup(t)
+	t.FailNow()
+}
+
+func TestErrorCode_WithPayload(t *testing.T) {
+	setup(t)
+	t.FailNow()
+}

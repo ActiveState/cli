@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,14 +30,41 @@ func TestOrganizations(t *testing.T) {
 
 	httpmock.Register("GET", "/organizations")
 
-	orgs, fail := fetchOrganizations()
+	orgs, fail := FetchAll()
 	assert.NoError(t, fail.ToError(), "Fetched organizations")
-	assert.Equal(t, 1, len(orgs.Payload), "One organization fetched")
-	assert.Equal(t, "test-organization", orgs.Payload[0].Name)
+	assert.Equal(t, 1, len(orgs), "One organization fetched")
+	assert.Equal(t, "test-organization", orgs[0].Name)
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestOrganizations_FetchByURLName_Succeeds(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("GET", "/organizations/FooOrg", 200)
+
+	org, fail := FetchByURLName("FooOrg")
+	assert.NoError(t, fail.ToError(), "Fetched organizations")
+	assert.Equal(t, "FooOrg", org.Urlname)
+	assert.Equal(t, "FooOrg Name", org.Name)
+}
+
+func TestOrganizations_FetchByURLName_NotFound(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.Prefix)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("GET", "/organizations/BarOrg", 404)
+
+	org, fail := FetchByURLName("BarOrg")
+	assert.EqualError(t, fail, locale.T("err_api_org_not_found"))
+	assert.Nil(t, org)
 }
 
 func TestClientError(t *testing.T) {
@@ -45,7 +73,7 @@ func TestClientError(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	_, fail := fetchOrganizations()
+	_, fail := FetchAll()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
 
 	err := Command.Execute()
@@ -60,7 +88,7 @@ func TestAuthError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
-	_, fail := fetchOrganizations()
+	_, fail := FetchAll()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
 	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
