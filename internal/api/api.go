@@ -20,7 +20,9 @@ import (
 
 // Client contains the active API Client connection
 var Client *client.APIClient
-var bearerToken string
+
+// BearerToken holds the user's Bearer-token received from the API
+var BearerToken string
 
 // Auth holds our authenticated information, go-swagger makes us pass this manually to all calls that require auth
 var Auth runtime.ClientAuthInfoWriter
@@ -31,10 +33,12 @@ var Prefix string
 // APIHost holds the API Host we're communicating with
 var APIHost string
 
-// FailAuth is the failure type used for failed authentication API requests
 var (
+	// FailUnknown is the failure type used for API requests with an unexpected error
 	FailUnknown = failures.Type("api.fail.unknown")
-	FailAuth    = failures.Type("api.fail.auth", failures.FailUser)
+
+	// FailAuth is the failure type used for failed authentication API requests
+	FailAuth = failures.Type("api.fail.auth", failures.FailUser)
 )
 
 var transport http.RoundTripper
@@ -62,14 +66,14 @@ func ReInitialize() {
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.Transport = transport
 	}
-	if bearerToken != "" {
-		Auth = httptransport.BearerToken(bearerToken)
+	if BearerToken != "" {
+		Auth = httptransport.BearerToken(BearerToken)
 		transportRuntime.DefaultAuthentication = Auth
 	}
 	Client = client.New(transportRuntime, strfmt.Default)
 
 	apiToken := viper.GetString("apiToken")
-	if bearerToken == "" && apiToken != "" {
+	if BearerToken == "" && apiToken != "" {
 		_, err := Authenticate(&models.Credentials{
 			Token: apiToken,
 		})
@@ -92,7 +96,8 @@ func Authenticate(credentials *models.Credentials) (*authentication.PostLoginOK,
 		return nil, err
 	}
 
-	bearerToken = loginOK.Payload.Token
+	// NOTE (gus) there's a chance for an infinite loop if BearerToken is not set for some reason
+	BearerToken = loginOK.Payload.Token
 	ReInitialize()
 
 	if credentials.Token != "" {
@@ -107,7 +112,7 @@ func Authenticate(credentials *models.Credentials) (*authentication.PostLoginOK,
 // RemoveAuth removes any authentication info stored and reinitializes our API connection
 func RemoveAuth() {
 	viper.Set("apiToken", "")
-	bearerToken = ""
+	BearerToken = ""
 	Auth = nil
 	ReInitialize()
 }

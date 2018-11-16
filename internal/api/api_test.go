@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api/client/authentication"
-
 	"github.com/ActiveState/cli/internal/api/client/users"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
@@ -65,7 +64,7 @@ func TestAuth(t *testing.T) {
 	assert.NotEmpty(t, viper.GetString("apiToken"), "Authentication is persisted through token")
 	assert.NotNil(t, Auth, "Authentication is persisted for this session")
 
-	bearerToken = ""
+	BearerToken = ""
 	Auth = nil
 	ReInitialize()
 	assert.NotNil(t, Auth, "Authentication is still persisted for this session")
@@ -92,6 +91,6 @@ func TestAuthFailure(t *testing.T) {
 
 	viper.Set("apiToken", "testFailure")
 	ReInitialize()
-	assert.Empty(t, bearerToken, "Should not have authenticated")
+	assert.Empty(t, BearerToken, "Should not have authenticated")
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
 }

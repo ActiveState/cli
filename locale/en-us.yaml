@@ -325,6 +325,8 @@ error_expand_variable_project_unknown_category:
   other: "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'"
 error_expand_variable_project_unknown_name:
   other: "Error expanding variable '{{.V0}}': unknown name '{{.V1}}'"
+run_description:
+  other: Run Your Project Commands
 flag_state_run_standalone_description:
   other: Run a command, regardless of an activated state
 flag_state_run_list_description:
@@ -435,3 +437,16 @@ err_already_active:
   other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
 run_listing_commands:
   other: "Available Commands: "
+
+secrets_cmd_description:
+  other: Manage Your Secrets
+secrets_keypair_cmd_description:
+  other: Manage Your Keypair
+secrets_keypair_generate_flag_usage:
+  other: Generate and upload a new Keypair
+secrets_keypair_err:
+  other: Unable to access user's Keypair
+secrets_keypair_err_not_found:
+  other: Keypair not yet generated
+secrets_keypair_err_save:
+  other: Keypair could not be saved

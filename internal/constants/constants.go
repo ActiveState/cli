@@ -55,9 +55,9 @@ const AnalyticsTrackingID = "UA-118120158-1"
 const APIHost = "platform.activestate.com"
 
 // APIHostStaging is the host that we're talking against for our API when not on production
-const APIHostStaging = "staging.activestate.com"
+const APIHostStaging = "staging.activestate.build"
 
-// APIHostTesting is the host that we're talking against for our API when not on production
+// APIHostTesting is the host that we're talking against for our API when not on production or staging
 const APIHostTesting = "testing.tld"
 
 // APISchema is the schema used by our API
@@ -68,6 +68,21 @@ const APIPath = "/api/v1"
 
 // APITokenName is the name we give our api token
 const APITokenName = "activestate-platform-cli"
+
+// SecretsAPIHost is the host that we're talking against for our SecretsAPI
+const SecretsAPIHost = "secrets.activestate.com"
+
+// SecretsAPIHostStaging is the host that we're talking against for our SecretsAPI when not on production
+const SecretsAPIHostStaging = "localhost:8080"
+
+// SecretsAPIHostTesting is the host that we're talking against for our SecretsAPI when not on production or staging
+const SecretsAPIHostTesting = "secrets.testing.tld"
+
+// SecretsAPISchema is the schema used by our SecretsAPI
+const SecretsAPISchema = "http"
+
+// SecretsAPIPath is the base path for our SecretsAPI endpoint
+const SecretsAPIPath = "/api/v1"
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"
