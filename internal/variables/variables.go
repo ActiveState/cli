@@ -4,10 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/print"
-
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -55,59 +54,19 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 		components := strings.Split(strings.Trim(variable, "${}"), ".")
 		category, name := components[0], components[1]
 		var value string
-		switch category {
-		case "platform":
-			for _, platform := range p.Platforms {
-				if !constraints.PlatformMatches(platform) {
-					continue
-				}
-				switch name {
-				case "name":
-					value = platform.Name
-				case "os":
-					value = platform.Os
-				case "version":
-					value = platform.Version
-				case "architecture":
-					value = platform.Architecture
-				case "libc":
-					value = platform.Libc
-				case "compiler":
-					value = platform.Compiler
-				default:
-					lastFailure = FailExpandVariableBadName.New("error_expand_variable_project_unknown_name", variable, name)
-					print.Warning(lastFailure.Error())
-				}
+
+		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
+			var failure *failures.Failure
+
+			if value, failure = expanderFn(name, p); failure != nil {
+				lastFailure = FailExpandVariableBadName.New("error_expand_variable_project_unknown_name", variable, failure.Error())
+				print.Warning(lastFailure.Error())
 			}
-		case "variables":
-			for _, variable := range p.Variables {
-				if variable.Name == name && !constraints.IsConstrained(variable.Constraints) {
-					value = variable.Value
-					break
-				}
-			}
-			if value == "" {
-				// Read from config file or prompt the user for a value.
-				value = ConfigValue(name, p.Path())
-			}
-		case "hooks":
-			for _, hook := range p.Hooks {
-				if hook.Name == name && !constraints.IsConstrained(hook.Constraints) {
-					value = hook.Value
-					break
-				}
-			}
-		case "commands":
-			for _, command := range p.Commands {
-				if command.Name == name && !constraints.IsConstrained(command.Constraints) {
-					value = command.Value
-					break
-				}
-			}
-		default:
+		} else {
 			lastFailure = FailExpandVariableBadCategory.New("error_expand_variable_project_unknown_category", variable, category)
 			print.Warning(lastFailure.Error())
 		}
+
 		if value != "" {
 			value = ExpandFromProject(value, p)
 		}
@@ -115,4 +74,98 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 	})
 	calls--
 	return expanded
+}
+
+// ExpanderFunc defines a function which can expand the name for a category. An Expander expects the name
+// to be expanded along with the project-file definition. It will return the expanded value of the name
+// or a Failure if expansion was unsuccessful.
+type ExpanderFunc func(name string, project *projectfile.Project) (string, *failures.Failure)
+
+// expanderRegistry maps category names to their ExpanderFunc implementations.
+var expanderRegistry = map[string]ExpanderFunc{
+	"platform":  PlatformExpander,
+	"variables": VariableExpander,
+	"hooks":     HookExpander,
+	"commands":  CommandExpander,
+}
+
+// RegisterExpander registers an ExpanderFunc for some given handler value. The handler value must not
+// effectively be a blank string and the ExpanderFunc must be defined. It is definitely possible to
+// replace an existing handler using this function.
+func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
+	cleanHandle := strings.TrimSpace(handle)
+	if cleanHandle == "" {
+		return failures.FailVerify.New("variables_expander_err_empty_name")
+	} else if expanderFn == nil {
+		return failures.FailVerify.New("variables_expander_err_undefined")
+	}
+	expanderRegistry[cleanHandle] = expanderFn
+	return nil
+}
+
+// PlatformExpander expends metadata about the current platform.
+func PlatformExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+	for _, platform := range project.Platforms {
+		if !constraints.PlatformMatches(platform) {
+			continue
+		}
+
+		switch name {
+		case "name":
+			return platform.Name, nil
+		case "os":
+			return platform.Os, nil
+		case "version":
+			return platform.Version, nil
+		case "architecture":
+			return platform.Architecture, nil
+		case "libc":
+			return platform.Libc, nil
+		case "compiler":
+			return platform.Compiler, nil
+		default:
+			return "", FailExpandVariableBadName.New("error_expand_variable_project_unrecognized_platform_var", name)
+		}
+	}
+	return "", nil
+}
+
+// VariableExpander expands variables defined in the profect-file.
+func VariableExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+	var value string
+	for _, variable := range project.Variables {
+		if variable.Name == name && !constraints.IsConstrained(variable.Constraints) {
+			value = variable.Value
+			break
+		}
+	}
+	if value == "" {
+		// Read from config file or prompt the user for a value.
+		value = ConfigValue(name, project.Path())
+	}
+	return value, nil
+}
+
+// HookExpander expands hooks defined in the project-file.
+func HookExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+	var value string
+	for _, hook := range project.Hooks {
+		if hook.Name == name && !constraints.IsConstrained(hook.Constraints) {
+			value = hook.Value
+			break
+		}
+	}
+	return value, nil
+}
+
+// CommandExpander expands commands defined in the project-file.
+func CommandExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+	var value string
+	for _, command := range project.Commands {
+		if command.Name == name && !constraints.IsConstrained(command.Constraints) {
+			value = command.Value
+			break
+		}
+	}
+	return value, nil
 }

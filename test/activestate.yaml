@@ -40,6 +40,8 @@ variables:
         environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
+secrets:
+  - name: org-secret
 hooks:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

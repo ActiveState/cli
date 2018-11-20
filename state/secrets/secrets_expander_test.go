@@ -1,0 +1,211 @@
+package secrets_test
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/state/secrets"
+	"github.com/stretchr/testify/suite"
+	yaml "gopkg.in/yaml.v2"
+)
+
+func loadSecretsProject() (*projectfile.Project, error) {
+	project := &projectfile.Project{}
+	contents := strings.TrimSpace(`
+name: SecretProject
+owner: SecretOrg
+secrets:
+  - name: undefined-secret
+  - name: org-secret
+  - name: proj-secret
+    project: true
+  - name: user-secret
+    user: true
+  - name: user-proj-secret
+    project: true
+    user: true
+  - name: org-secret-with-proj-value
+  - name: proj-secret-with-user-value
+    project: true
+  - name: user-secret-with-user-proj-value
+    user: true
+  - name: proj-secret-only-org-available
+    project: true
+  - name: user-secret-only-proj-available
+    user: true
+  - name: user-proj-secret-only-user-available
+    user: true
+    project: true
+  - name: bad-base64-encoded-secret
+  - name: invalid-encryption-secret
+commands:
+  - name: echo-org-secret
+    value: echo ${secrets.org-secret}
+  - name: echo-upper-org-secret
+    value: echo ${secrets.ORG-SECRET}
+`)
+
+	return project, yaml.Unmarshal([]byte(contents), project)
+}
+
+type SecretsExpanderSuite struct {
+	suite.Suite
+
+	projectFile *projectfile.Project
+
+	secretsClient *secretsapi.Client
+	secretsMock   *httpmock.HTTPMock
+	platformMock  *httpmock.HTTPMock
+}
+
+func (suite *SecretsExpanderSuite) BeforeTest(suiteName, testName string) {
+	locale.Set("en-US")
+
+	projectFile, err := loadSecretsProject()
+	suite.Require().Nil(err, "Unmarshalled project YAML")
+	projectFile.Persist()
+	suite.projectFile = projectFile
+
+	secretsClient := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearing123")
+	suite.Require().NotNil(secretsClient)
+	suite.secretsClient = secretsClient
+
+	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
+	suite.platformMock = httpmock.Activate(api.Prefix)
+}
+
+func (suite *SecretsExpanderSuite) AfterTest(suiteName, testName string) {
+	httpmock.DeActivate()
+}
+
+func (suite *SecretsExpanderSuite) prepareWorkingExpander() variables.ExpanderFunc {
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
+	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
+	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
+	return secrets.NewExpander(suite.secretsClient)
+}
+
+func (suite *SecretsExpanderSuite) assertExpansionFailure(secretName string, expectedErrMsg string) {
+	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+	suite.Equal(expectedErrMsg, failure.Symbol)
+	suite.Zero(value)
+}
+
+func (suite *SecretsExpanderSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
+	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+	suite.Equal(expectedExpansionValue, value)
+	suite.Nil(failure)
+}
+
+func (suite *SecretsExpanderSuite) TestSecretSpecNotDefinedInProject() {
+	// secret is in the database, but not defined in the project
+	expanderFn := secrets.NewExpander(suite.secretsClient)
+	value, failure := expanderFn("foo", suite.projectFile)
+	suite.Equal("secrets_expand_err_spec_undefined", failure.Symbol)
+	suite.Zero(value)
+}
+
+func (suite *SecretsExpanderSuite) TestOrgNotFound() {
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 404)
+
+	expanderFn := secrets.NewExpander(suite.secretsClient)
+	value, failure := expanderFn("undefined-secret", suite.projectFile)
+	suite.Equal("err_api_org_not_found", failure.Symbol)
+	suite.Zero(value)
+}
+
+func (suite *SecretsExpanderSuite) TestProjectNotFound() {
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 404)
+
+	expanderFn := secrets.NewExpander(suite.secretsClient)
+	value, failure := expanderFn("undefined-secret", suite.projectFile)
+	suite.Equal("err_api_project_not_found", failure.Symbol)
+	suite.Zero(value)
+}
+
+func (suite *SecretsExpanderSuite) TestKeypairNotFound() {
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
+	suite.secretsMock.RegisterWithCode("GET", "/keypair", 404)
+
+	expanderFn := secrets.NewExpander(suite.secretsClient)
+	value, failure := expanderFn("undefined-secret", suite.projectFile)
+	suite.Equal("keypair_err_not_found", failure.Symbol)
+	suite.Zero(value)
+}
+
+func (suite *SecretsExpanderSuite) TestDecodingFailed() {
+	suite.assertExpansionFailure("bad-base64-encoded-secret", "secrets_err_base64_decoding")
+}
+
+func (suite *SecretsExpanderSuite) TestDecryptionFailed() {
+	suite.assertExpansionFailure("invalid-encryption-secret", "secrets_err_decrypting")
+}
+
+func (suite *SecretsExpanderSuite) TestSecretHasNoValue() {
+	// secret is defined in the project, but not in the database
+	suite.assertExpansionFailure("undefined-secret", "secrets_expand_err_not_found")
+}
+
+func (suite *SecretsExpanderSuite) TestOrgSecret() {
+	suite.assertExpansionSuccess("org-secret", "amazing")
+}
+
+func (suite *SecretsExpanderSuite) TestProjectSecret() {
+	// NOTE the user_secrets response has org and project scoped secrets with same name
+	suite.assertExpansionSuccess("proj-secret", "proj-value")
+}
+
+func (suite *SecretsExpanderSuite) TestUserSecret() {
+	// NOTE the user_secrets response has org, project, and user scoped secrets with same name
+	suite.assertExpansionSuccess("user-secret", "user-value")
+}
+
+func (suite *SecretsExpanderSuite) TestUserProjectSecret() {
+	// NOTE the user_secrets response has org, project, user, and user-project scoped secrets with same name
+	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
+}
+
+func (suite *SecretsExpanderSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
+	// NOTE the user_secrets response has org and project scoped secrets with same name
+	suite.assertExpansionSuccess("org-secret-with-proj-value", "proj-value")
+}
+
+func (suite *SecretsExpanderSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
+	// NOTE the user_secrets response has project and user scoped secrets with same name
+	suite.assertExpansionSuccess("proj-secret-with-user-value", "user-value")
+}
+
+func (suite *SecretsExpanderSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
+	// NOTE the user_secrets response has user and user-project scoped secrets with same name
+	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-proj-value")
+}
+
+func (suite *SecretsExpanderSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
+	// NOTE the user_secrets response has user and user-project scoped secrets with same name
+	suite.assertExpansionFailure("proj-secret-only-org-available", "secrets_expand_err_not_found")
+}
+
+func (suite *SecretsExpanderSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
+	// NOTE the user_secrets response has user and user-project scoped secrets with same name
+	suite.assertExpansionFailure("user-secret-only-proj-available", "secrets_expand_err_not_found")
+}
+
+func (suite *SecretsExpanderSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
+	// NOTE the user_secrets response has user and user-project scoped secrets with same name
+	suite.assertExpansionSuccess("user-proj-secret-only-user-available", "user-value")
+}
+
+func Test_Secrets_TestSuite(t *testing.T) {
+	suite.Run(t, new(SecretsExpanderSuite))
+}

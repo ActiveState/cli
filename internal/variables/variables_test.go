@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
@@ -195,4 +196,32 @@ func TestExpandDashed(t *testing.T) {
 	expanded := ExpandFromProject("- $variables.foo-bar -", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
+}
+
+func TestRegisterExpander_RequiresNonBlankName(t *testing.T) {
+	failure := RegisterExpander("", func(n string, p *projectfile.Project) (string, *failures.Failure) {
+		return "", nil
+	})
+	assert.Equal(t, failure.Symbol, "variables_expander_err_empty_name")
+	assert.NotContains(t, expanderRegistry, "")
+
+	failure = RegisterExpander(" \n \t\f ", func(n string, p *projectfile.Project) (string, *failures.Failure) {
+		return "", nil
+	})
+	assert.Equal(t, failure.Symbol, "variables_expander_err_empty_name")
+	assert.NotContains(t, expanderRegistry, " \n \t\f ")
+}
+
+func TestRegisterExpander_ExpanderFuncCannotBeNil(t *testing.T) {
+	failure := RegisterExpander("tests", nil)
+	assert.Equal(t, failure.Symbol, "variables_expander_err_undefined")
+	assert.NotContains(t, expanderRegistry, "")
+}
+
+func TestRegisterExpander(t *testing.T) {
+	assert.NotContains(t, expanderRegistry, "lobsters")
+	RegisterExpander("lobsters", func(n string, p *projectfile.Project) (string, *failures.Failure) {
+		return "", nil
+	})
+	assert.Contains(t, expanderRegistry, "lobsters")
 }

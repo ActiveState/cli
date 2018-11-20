@@ -102,7 +102,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 
 	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
-	return &Failure{locale.T(message, input), f, file, line}
+	return &Failure{locale.T(message, input), f, file, line, message}
 }
 
 // Wrap wraps another error
@@ -117,6 +117,7 @@ type Failure struct {
 	Type    *FailureType
 	File    string
 	Line    int
+	Symbol  string
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
