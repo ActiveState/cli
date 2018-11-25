@@ -2,6 +2,7 @@ package keypair
 
 import (
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -9,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
+	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,9 @@ import (
 // DefaultRSABitLength represents the default RSA bit-length that will be assumed when
 // generating new Keypairs.
 const DefaultRSABitLength int = 4096
+
+// FailKeypairParse identifies a failure during keypair parsing.
+var FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
 
 // Command represents the keypair command and its dependencies.
 type Command struct {
@@ -102,21 +106,57 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 }
 
-// Fetch fetchs the current user's keypair or returns a failure.
-func Fetch(secretsClient *secretsapi.Client) (*models.Keypair, *failures.Failure) {
-	getOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
+// FetchRaw fetchs the current user's encoded and unparsed keypair or returns a failure.
+func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failures.Failure) {
+	kpOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, secretsapi.FailNotFound.New("keypair_err_not_found")
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
-	return getOk.Payload, nil
+
+	return kpOk.Payload, nil
+}
+
+// Fetch fetchs and parses the current user's keypair or returns a failure.
+func Fetch(secretsClient *secretsapi.Client) (keypairs.Keypair, *failures.Failure) {
+	rawKP, failure := FetchRaw(secretsClient)
+	if failure != nil {
+		return nil, failure
+	}
+
+	kp, err := keypairs.ParseRSA(*rawKP.EncryptedPrivateKey)
+	if err != nil {
+		return nil, FailKeypairParse.New("keypair_err_parsing")
+	}
+
+	return kp, nil
+}
+
+// FetchPublicKey fetchs the PublicKey for a sepcific user.
+func FetchPublicKey(secretsClient *secretsapi.Client, user *models.User) (keypairs.Encrypter, *failures.Failure) {
+	params := keys.NewGetPublicKeyParams()
+	params.UserID = user.UserID
+	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, secretsClient.Auth)
+	if err != nil {
+		if api.ErrorCode(err) == 404 {
+			return nil, secretsapi.FailNotFound.New("keypair_err_publickey_not_found", user.Username, user.UserID.String())
+		}
+		return nil, api.FailUnknown.Wrap(err)
+	}
+
+	pubKey, err := keypairs.ParseRSAPublicKey(*pubKeyOk.Payload.Value)
+	if err != nil {
+		return nil, FailKeypairParse.New("keypair_err_parsing_publickey")
+	}
+
+	return pubKey, nil
 }
 
 // Dump prints the encoded key-pair for the currently authenticated user to stdout.
 func Dump(secretsClient *secretsapi.Client) *failures.Failure {
-	kp, failure := Fetch(secretsClient)
+	kp, failure := FetchRaw(secretsClient)
 	if failure != nil {
 		return failure
 	}
@@ -140,7 +180,7 @@ func Generate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures
 	}
 
 	if !dryRun {
-		params := keys.NewSaveKeypairParams().WithKeypair(&models.KeypairChange{
+		params := keys.NewSaveKeypairParams().WithKeypair(&secretModels.KeypairChange{
 			EncryptedPrivateKey: &encodedPrivateKey,
 			PublicKey:           &encodedPublicKey,
 		})

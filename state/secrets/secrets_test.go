@@ -55,8 +55,9 @@ func (suite *SecretsCommandTestSuite) TestCommandConfig() {
 	suite.Equal("secrets_cmd_description", conf.Description, "i18n symbol")
 
 	subCmds := conf.GetCobraCmd().Commands()
-	suite.Require().Len(subCmds, 1, "number of subcommands")
+	suite.Require().Len(subCmds, 2, "number of subcommands")
 	suite.Equal("set", subCmds[0].Name())
+	suite.Equal("share", subCmds[1].Name())
 	suite.Len(conf.Flags, 0, "number of command flags supported")
 	suite.Len(conf.Arguments, 0, "number of commands args supported")
 }

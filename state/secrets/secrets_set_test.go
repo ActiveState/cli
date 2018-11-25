@@ -68,7 +68,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretNameAndValue(
 	cmd := secrets.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"set"})
 	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: secrets_arg_name_name\nArgument missing: secrets_arg_value_name\n")
+	suite.EqualError(err, "Argument missing: secrets_set_arg_name_name\nArgument missing: secrets_set_arg_value_name\n")
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
@@ -94,7 +94,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_InsertOrgSecret_Succeeds() 
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateOrgSecret_Succeeds() {
-	suite.assertUpdateSucceeds("org-secret", "00040004-0004-0004-0004-000000000000", false, false)
+	suite.assertInsertSucceeds("org-secret", false, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertProjectSecret_Succeeds() {
@@ -102,7 +102,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_InsertProjectSecret_Succeed
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateProjectSecret_Succeeds() {
-	suite.assertUpdateSucceeds("proj-secret", "00040004-0004-0004-0004-000000000001", true, false)
+	suite.assertInsertSucceeds("proj-secret", true, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserSecret_Succeeds() {
@@ -110,7 +110,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserSecret_Succeeds()
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserSecret_Succeeds() {
-	suite.assertUpdateSucceeds("user-org-secret", "00040004-0004-0004-0004-000000000002", false, true)
+	suite.assertInsertSucceeds("user-org-secret", false, true)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserProjectSecret_Succeeds() {
@@ -118,31 +118,20 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserProjectSecret_Suc
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserProjectSecret_Succeeds() {
-	suite.assertUpdateSucceeds("user-proj-secret", "00040004-0004-0004-0004-000000000004", true, true)
+	suite.assertInsertSucceeds("user-proj-secret", true, true)
 }
 
 func (suite *SecretsSetCommandTestSuite) assertInsertSucceeds(secretName string, isProject, isUser bool) {
 	bodyChanges := suite.executeSet(secretName, isProject, isUser)
 	suite.Require().Len(bodyChanges, 1)
 	suite.NotZero(*bodyChanges[0].Value)
-	suite.Equal(secretName, bodyChanges[0].Name)
-	suite.Equal(isUser, bodyChanges[0].IsUser)
-	suite.Zero(bodyChanges[0].SecretID)
+	suite.Equal(secretName, *bodyChanges[0].Name)
+	suite.Equal(isUser, *bodyChanges[0].IsUser)
 	if isProject {
 		suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), bodyChanges[0].ProjectID)
 	} else {
 		suite.Zero(bodyChanges[0].ProjectID)
 	}
-}
-
-func (suite *SecretsSetCommandTestSuite) assertUpdateSucceeds(secretName, secretID string, isProject, isUser bool) {
-	bodyChanges := suite.executeSet(secretName, isProject, isUser)
-	suite.Require().Len(bodyChanges, 1)
-	suite.NotZero(*bodyChanges[0].Value)
-	suite.Zero(bodyChanges[0].Name)
-	suite.Zero(bodyChanges[0].IsUser)
-	suite.Equal(strfmt.UUID(secretID), bodyChanges[0].SecretID)
-	suite.Zero(bodyChanges[0].ProjectID)
 }
 
 func (suite *SecretsSetCommandTestSuite) executeSet(secretName string, isProject, isUser bool) []*models.UserSecretChange {

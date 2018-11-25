@@ -30,22 +30,8 @@ func (o *SaveAllUserSecretsReader) ReadResponse(response runtime.ClientResponse,
 		}
 		return result, nil
 
-	case 400:
-		result := NewSaveAllUserSecretsBadRequest()
-		if err := result.readResponse(response, consumer, o.formats); err != nil {
-			return nil, err
-		}
-		return nil, result
-
 	case 401:
 		result := NewSaveAllUserSecretsUnauthorized()
-		if err := result.readResponse(response, consumer, o.formats); err != nil {
-			return nil, err
-		}
-		return nil, result
-
-	case 404:
-		result := NewSaveAllUserSecretsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -84,35 +70,6 @@ func (o *SaveAllUserSecretsNoContent) readResponse(response runtime.ClientRespon
 	return nil
 }
 
-// NewSaveAllUserSecretsBadRequest creates a SaveAllUserSecretsBadRequest with default headers values
-func NewSaveAllUserSecretsBadRequest() *SaveAllUserSecretsBadRequest {
-	return &SaveAllUserSecretsBadRequest{}
-}
-
-/*SaveAllUserSecretsBadRequest handles this case with default header values.
-
-Bad Request
-*/
-type SaveAllUserSecretsBadRequest struct {
-	Payload *models.UserSecretChangeMessage
-}
-
-func (o *SaveAllUserSecretsBadRequest) Error() string {
-	return fmt.Sprintf("[PATCH /organizations/{organizationID}/user_secrets][%d] saveAllUserSecretsBadRequest  %+v", 400, o.Payload)
-}
-
-func (o *SaveAllUserSecretsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.UserSecretChangeMessage)
-
-	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
-		return err
-	}
-
-	return nil
-}
-
 // NewSaveAllUserSecretsUnauthorized creates a SaveAllUserSecretsUnauthorized with default headers values
 func NewSaveAllUserSecretsUnauthorized() *SaveAllUserSecretsUnauthorized {
 	return &SaveAllUserSecretsUnauthorized{}
@@ -133,35 +90,6 @@ func (o *SaveAllUserSecretsUnauthorized) Error() string {
 func (o *SaveAllUserSecretsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.Message)
-
-	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
-		return err
-	}
-
-	return nil
-}
-
-// NewSaveAllUserSecretsNotFound creates a SaveAllUserSecretsNotFound with default headers values
-func NewSaveAllUserSecretsNotFound() *SaveAllUserSecretsNotFound {
-	return &SaveAllUserSecretsNotFound{}
-}
-
-/*SaveAllUserSecretsNotFound handles this case with default header values.
-
-Not Found
-*/
-type SaveAllUserSecretsNotFound struct {
-	Payload *models.UserSecretChangeMessage
-}
-
-func (o *SaveAllUserSecretsNotFound) Error() string {
-	return fmt.Sprintf("[PATCH /organizations/{organizationID}/user_secrets][%d] saveAllUserSecretsNotFound  %+v", 404, o.Payload)
-}
-
-func (o *SaveAllUserSecretsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.UserSecretChangeMessage)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

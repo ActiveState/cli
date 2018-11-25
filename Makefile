@@ -64,7 +64,7 @@ generate-clients: generate-api-client generate-secrets-client
 
 test: 
 	$(GOCMD) run scripts/constants-generator/main.go 
-	$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -v api`
+	$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -vE "(secrets-)?api/(client|model)"`
 clean: 
 	$(GOCLEAN)
 	rm -Rf build

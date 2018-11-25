@@ -1,12 +1,10 @@
 package secrets
 
 import (
-	"encoding/base64"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
@@ -34,14 +32,9 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", failure
 		}
 
-		kpOk, failure := keypair.Fetch(secretsClient)
+		kp, failure := keypair.Fetch(secretsClient)
 		if failure != nil {
 			return "", failure
-		}
-
-		kp, err := keypairs.ParseRSA(*kpOk.EncryptedPrivateKey)
-		if err != nil {
-			return "", variables.FailExpandVariable.New("keypair_err_parsing")
 		}
 
 		userSecrets, failure := FetchAll(secretsClient, org)
@@ -54,17 +47,7 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", variables.FailExpandVariable.New("secrets_expand_err_not_found", name)
 		}
 
-		encrBytes, err := base64.StdEncoding.DecodeString(*userSecret.Value)
-		if err != nil {
-			return "", secretsapi.FailSave.New("secrets_err_base64_decoding")
-		}
-
-		decrBytes, err := kp.Decrypt(encrBytes)
-		if err != nil {
-			return "", variables.FailExpandVariable.New("secrets_err_decrypting")
-		}
-
-		return string(decrBytes), nil
+		return DecodeAndDecrypt(kp, *userSecret.Value)
 	}
 }
 

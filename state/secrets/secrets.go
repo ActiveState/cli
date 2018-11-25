@@ -3,7 +3,6 @@ package secrets
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
@@ -15,9 +14,9 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/bndr/gotabulate"
@@ -36,8 +35,9 @@ type Command struct {
 	}
 
 	Args struct {
-		SecretName  string
-		SecretValue string
+		SecretName      string
+		SecretValue     string
+		ShareUserHandle string
 	}
 }
 
@@ -52,57 +52,11 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		Description: "secrets_cmd_description",
 		Run:         cmd.Execute,
 	}
-	cmd.config.Append(buildSubcommandSet(cmd))
+
+	cmd.config.Append(buildSetCommand(cmd))
+	cmd.config.Append(buildShareCommand(cmd))
 
 	return cmd
-}
-
-func buildSubcommandSet(cmd *Command) *commands.Command {
-	return &commands.Command{
-		Name:        "set",
-		Description: "secrets_set_cmd_description",
-		Run:         cmd.ExecuteSet,
-
-		Flags: []*commands.Flag{
-			&commands.Flag{
-				Name:        "project",
-				Shorthand:   "p",
-				Description: "secrets_set_flag_project",
-				Type:        commands.TypeBool,
-				BoolVar:     &cmd.Flags.IsProject,
-			},
-			&commands.Flag{
-				Name:        "user",
-				Shorthand:   "u",
-				Description: "secrets_set_flag_user",
-				Type:        commands.TypeBool,
-				BoolVar:     &cmd.Flags.IsUser,
-			},
-		},
-
-		Arguments: []*commands.Argument{
-			buildArgSecretName(cmd, true),
-			buildArgSecretValue(cmd, true),
-		},
-	}
-}
-
-func buildArgSecretName(cmd *Command, required bool) *commands.Argument {
-	return &commands.Argument{
-		Name:        "secrets_arg_name_name",
-		Description: "secrets_arg_name_description",
-		Variable:    &cmd.Args.SecretName,
-		Required:    required,
-	}
-}
-
-func buildArgSecretValue(cmd *Command, required bool) *commands.Argument {
-	return &commands.Argument{
-		Name:        "secrets_arg_value_name",
-		Description: "secrets_arg_value_description",
-		Variable:    &cmd.Args.SecretValue,
-		Required:    required,
-	}
 }
 
 // Config returns the underlying commands.Command definition.
@@ -197,94 +151,28 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 	}
 }
 
-// ExecuteSet processes the `secrets set` command.
-func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
-	projectFile := projectfile.Get()
-	org, failure := organizations.FetchByURLName(projectFile.Owner)
-	if failure == nil {
-		var project *models.Project
-		if cmd.Flags.IsProject {
-			project, failure = projects.FetchByName(org, projectFile.Name)
-		}
-
-		if failure == nil {
-			failure = UpsertUserSecret(cmd.secretsClient, org, project, cmd.Flags.IsUser, cmd.Args.SecretName, cmd.Args.SecretValue)
-		}
-	}
-
-	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
-	}
-}
-
-func findSecretByScope(userSecrets []*secretsModels.UserSecret, project *models.Project, isUser bool, secretName string) *secretsModels.UserSecret {
-	// assuming we only have secrets for the correct organization, so we don't provide it as an arg
-	// NOTE maybe just make a Secrets Service endpoint for this, eh?
-	var projectIDStr string
-	if project != nil {
-		projectIDStr = project.ProjectID.String()
-	}
-	for _, userSecret := range userSecrets {
-		if projectIDStr == userSecret.ProjectID.String() && *userSecret.IsUser == isUser && strings.EqualFold(*userSecret.Name, secretName) {
-			return userSecret
-		}
-	}
-	return nil
-}
-
-// UpsertUserSecret will add a new secret for this user or update an existing one. The update is dependent on
-// the org, project, level, and name being the same as an existing secret.
-func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
-	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
-	kpOk, failure := keypair.Fetch(secretsClient)
-	if failure != nil {
-		return failure
-	}
-
-	kp, err := keypairs.ParseRSA(*kpOk.EncryptedPrivateKey)
-	if err != nil {
-		logging.Error("parsing user keypair: %v", err)
-		return secretsapi.FailSave.New("keypair_err_parsing")
-	}
-
-	userSecrets, failure := FetchAll(secretsClient, org)
-	if failure != nil {
-		return failure
-	}
-
-	userSecret := findSecretByScope(userSecrets, project, isUser, secretName)
-
-	encrBytes, err := kp.Encrypt([]byte(secretValue))
+// EncryptAndEncode will use the provided Encrypter to encrypt the plaintext value then it will
+// base64 encode that ciphertext.
+func EncryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
+	encrBytes, err := encrypter.Encrypt([]byte(value))
 	if err != nil {
 		logging.Error("encrypting user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_encrypting")
+		return "", secretsapi.FailSave.New("secrets_err_encrypting")
 	}
-	encrStr := base64.StdEncoding.EncodeToString(encrBytes)
+	return base64.StdEncoding.EncodeToString(encrBytes), nil
+}
 
-	params := secrets.NewSaveAllUserSecretsParams()
-	params.OrganizationID = org.OrganizationID
-	secretChange := &secretsModels.UserSecretChange{
-		Value: &encrStr,
-	}
-	if userSecret != nil {
-		logging.Debug("updating UserSecret=%s", *userSecret.SecretID)
-		secretChange.SecretID = *userSecret.SecretID
-	} else {
-		logging.Debug("adding UserSecret")
-		secretChange.Name = secretName
-		secretChange.IsUser = isUser
-		if project != nil {
-			secretChange.ProjectID = project.ProjectID
-		}
-	}
-
-	params.UserSecrets = append(params.UserSecrets, secretChange)
-
-	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
+// DecodeAndDecrypt will first base64 decode the provided value then it will use the provided
+// Decrypter to decrypt the resulting ciphertext.
+func DecodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *failures.Failure) {
+	encrBytes, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
-		logging.Debug("error saving user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_save")
+		return "", secretsapi.FailSave.New("secrets_err_base64_decoding")
 	}
 
-	return nil
+	decrBytes, err := decrypter.Decrypt(encrBytes)
+	if err != nil {
+		return "", variables.FailExpandVariable.New("secrets_err_decrypting")
+	}
+	return string(decrBytes), nil
 }

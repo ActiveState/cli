@@ -97,10 +97,47 @@ func TestAuthFailure(t *testing.T) {
 
 func TestErrorCode_WithoutPayload(t *testing.T) {
 	setup(t)
-	t.FailNow()
+	assert.Equal(t, 100, ErrorCode(&struct{ Code int }{
+		Code: 100,
+	}))
+}
+
+func TestErrorCode_WithoutPayload_NoCodeValue(t *testing.T) {
+	setup(t)
+	assert.Equal(t, -1, ErrorCode(&struct{ OtherCode int }{
+		OtherCode: 100,
+	}))
 }
 
 func TestErrorCode_WithPayload(t *testing.T) {
 	setup(t)
-	t.FailNow()
+	providedCode := 200
+	codeValue := struct{ Code *int }{Code: &providedCode}
+	payload := struct{ Payload struct{ Code *int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, 200, ErrorCode(&payload))
+}
+
+func TestErrorCode_WithPayload_CodeNotPointer(t *testing.T) {
+	setup(t)
+	providedCode := 300
+	codeValue := struct{ Code int }{Code: providedCode}
+	payload := struct{ Payload struct{ Code int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, 300, ErrorCode(&payload))
+}
+
+func TestErrorCode_WithPayload_NoCodeField(t *testing.T) {
+	setup(t)
+	providedCode := 400
+	codeValue := struct{ OtherCode int }{OtherCode: providedCode}
+	payload := struct{ Payload struct{ OtherCode int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, -1, ErrorCode(&payload))
 }

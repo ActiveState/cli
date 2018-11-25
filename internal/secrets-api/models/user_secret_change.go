@@ -17,18 +17,16 @@ import (
 type UserSecretChange struct {
 
 	// is user
-	IsUser bool `json:"is_user,omitempty"`
+	// Required: true
+	IsUser *bool `json:"is_user"`
 
 	// name
-	Name string `json:"name,omitempty"`
+	// Required: true
+	Name *string `json:"name"`
 
 	// project id
 	// Format: uuid
 	ProjectID strfmt.UUID `json:"project_id,omitempty"`
-
-	// secret id
-	// Format: uuid
-	SecretID strfmt.UUID `json:"secret_id,omitempty"`
 
 	// value
 	// Required: true
@@ -39,11 +37,15 @@ type UserSecretChange struct {
 func (m *UserSecretChange) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateProjectID(formats); err != nil {
+	if err := m.validateIsUser(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateSecretID(formats); err != nil {
+	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProjectID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -57,6 +59,24 @@ func (m *UserSecretChange) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *UserSecretChange) validateIsUser(formats strfmt.Registry) error {
+
+	if err := validate.Required("is_user", "body", m.IsUser); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *UserSecretChange) validateName(formats strfmt.Registry) error {
+
+	if err := validate.Required("name", "body", m.Name); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *UserSecretChange) validateProjectID(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.ProjectID) { // not required
@@ -64,19 +84,6 @@ func (m *UserSecretChange) validateProjectID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("project_id", "body", "uuid", m.ProjectID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *UserSecretChange) validateSecretID(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.SecretID) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("secret_id", "body", "uuid", m.SecretID.String(), formats); err != nil {
 		return err
 	}
 
