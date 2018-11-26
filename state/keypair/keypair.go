@@ -98,7 +98,7 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 
 	if failure == nil {
-		failure = Generate(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
+		failure = doGenerate(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
 	}
 
 	if failure != nil {
@@ -126,9 +126,9 @@ func Fetch(secretsClient *secretsapi.Client) (keypairs.Keypair, *failures.Failur
 		return nil, failure
 	}
 
-	kp, err := keypairs.ParseRSA(*rawKP.EncryptedPrivateKey)
-	if err != nil {
-		return nil, FailKeypairParse.New("keypair_err_parsing")
+	kp, failure := keypairs.ParseRSA(*rawKP.EncryptedPrivateKey)
+	if failure != nil {
+		return nil, failure
 	}
 
 	return kp, nil
@@ -146,9 +146,9 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *models.User) (keypai
 		return nil, api.FailUnknown.Wrap(err)
 	}
 
-	pubKey, err := keypairs.ParseRSAPublicKey(*pubKeyOk.Payload.Value)
-	if err != nil {
-		return nil, FailKeypairParse.New("keypair_err_parsing_publickey")
+	pubKey, failure := keypairs.ParseRSAPublicKey(*pubKeyOk.Payload.Value)
+	if failure != nil {
+		return nil, failure
 	}
 
 	return pubKey, nil
@@ -165,18 +165,18 @@ func Dump(secretsClient *secretsapi.Client) *failures.Failure {
 	return nil
 }
 
-// Generate implements the behavior to generate a new Secrets key-pair on behalf of the user
+// doGenerate implements the behavior to generate a new Secrets key-pair on behalf of the user
 // and store that back to the Secrets Service.
-func Generate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
-	keypair, err := keypairs.GenerateRSA(bits)
-	if err != nil {
-		return api.FailUnknown.Wrap(err)
+func doGenerate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
+	keypair, failure := keypairs.GenerateRSA(bits)
+	if failure != nil {
+		return failure
 	}
 
 	encodedPrivateKey := keypair.EncodePrivateKey()
-	encodedPublicKey, err := keypair.EncodePublicKey()
-	if err != nil {
-		return api.FailUnknown.Wrap(err)
+	encodedPublicKey, failure := keypair.EncodePublicKey()
+	if failure != nil {
+		return failure
 	}
 
 	if !dryRun {
@@ -185,8 +185,7 @@ func Generate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures
 			PublicKey:           &encodedPublicKey,
 		})
 
-		_, err = secretsClient.Keys.SaveKeypair(params, secretsClient.Auth)
-		if err != nil {
+		if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
 			return secretsapi.FailSave.New("keypair_err_save")
 		}
 		print.Line("Keypair generated successfully")

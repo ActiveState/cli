@@ -177,7 +177,7 @@ func (suite *KeypairCommandTestSuite) TestFetch_ErrorParsing() {
 
 	kp, failure := keypair.Fetch(suite.secretsClient)
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(keypair.FailKeypairParse))
+	suite.True(failure.Type.Matches(keypairs.FailKeypair))
 }
 
 func (suite *KeypairCommandTestSuite) TestFetch_Success() {
@@ -219,7 +219,7 @@ func (suite *KeypairCommandTestSuite) TestFetchPublicKey_ErrorParsing() {
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(keypair.FailKeypairParse))
+	suite.True(failure.Type.Matches(keypairs.FailPublicKey))
 }
 
 func (suite *KeypairCommandTestSuite) TestFetchPublicKey_Success() {

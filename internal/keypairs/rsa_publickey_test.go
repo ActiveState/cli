@@ -23,8 +23,8 @@ func (suite *RSAPublicKeyTestSuite) TestEncrypts() {
 	suite.Require().NoError(err)
 
 	pubKey := &keypairs.RSAPublicKey{PublicKey: &privKey.PublicKey}
-	ciphertext, err := pubKey.Encrypt([]byte("this is the catch"))
-	suite.Require().NoError(err)
+	ciphertext, failure := pubKey.Encrypt([]byte("this is the catch"))
+	suite.Require().Nil(failure)
 
 	decryptedBytes, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privKey, ciphertext, nil)
 	suite.Require().NoError(err)
@@ -32,13 +32,13 @@ func (suite *RSAPublicKeyTestSuite) TestEncrypts() {
 }
 
 func (suite *RSAPublicKeyTestSuite) TestParsePublicKey() {
-	kp, err := keypairs.GenerateRSA(1024)
-	suite.Require().NoError(err)
-	pubKeyPEM, err := kp.EncodePublicKey()
-	suite.Require().NoError(err)
+	kp, failure := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(failure)
+	pubKeyPEM, failure := kp.EncodePublicKey()
+	suite.Require().Nil(failure)
 
-	pubKey, err := keypairs.ParseRSAPublicKey(pubKeyPEM)
-	suite.Require().NoError(err)
+	pubKey, failure := keypairs.ParseRSAPublicKey(pubKeyPEM)
+	suite.Require().Nil(failure)
 
 	suite.Equal(kp.PublicKey, *pubKey.PublicKey)
 }

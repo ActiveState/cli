@@ -154,10 +154,9 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 // EncryptAndEncode will use the provided Encrypter to encrypt the plaintext value then it will
 // base64 encode that ciphertext.
 func EncryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
-	encrBytes, err := encrypter.Encrypt([]byte(value))
-	if err != nil {
-		logging.Error("encrypting user secret: %v", err)
-		return "", secretsapi.FailSave.New("secrets_err_encrypting")
+	encrBytes, failure := encrypter.Encrypt([]byte(value))
+	if failure != nil {
+		return "", secretsapi.FailSave.New("secrets_err_encrypting", failure.Error())
 	}
 	return base64.StdEncoding.EncodeToString(encrBytes), nil
 }
@@ -170,9 +169,9 @@ func DecodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *fail
 		return "", secretsapi.FailSave.New("secrets_err_base64_decoding")
 	}
 
-	decrBytes, err := decrypter.Decrypt(encrBytes)
-	if err != nil {
-		return "", variables.FailExpandVariable.New("secrets_err_decrypting")
+	decrBytes, failure := decrypter.Decrypt(encrBytes)
+	if failure != nil {
+		return "", variables.FailExpandVariable.New("secrets_err_decrypting", failure.Error())
 	}
 	return string(decrBytes), nil
 }
