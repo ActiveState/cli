@@ -10,7 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -30,41 +32,15 @@ func TestOrganizations(t *testing.T) {
 
 	httpmock.Register("GET", "/organizations")
 
-	orgs, fail := FetchAll()
-	assert.NoError(t, fail.ToError(), "Fetched organizations")
-	assert.Equal(t, 1, len(orgs), "One organization fetched")
-	assert.Equal(t, "test-organization", orgs[0].Name)
-
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = Command.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-}
 
-func TestOrganizations_FetchByURLName_Succeeds(t *testing.T) {
-	setup(t)
-
-	httpmock.Activate(api.Prefix)
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithCode("GET", "/organizations/FooOrg", 200)
-
-	org, fail := FetchByURLName("FooOrg")
-	assert.NoError(t, fail.ToError(), "Fetched organizations")
-	assert.Equal(t, "FooOrg", org.Urlname)
-	assert.Equal(t, "FooOrg Name", org.Name)
-}
-
-func TestOrganizations_FetchByURLName_NotFound(t *testing.T) {
-	setup(t)
-
-	httpmock.Activate(api.Prefix)
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithCode("GET", "/organizations/BarOrg", 404)
-
-	org, fail := FetchByURLName("BarOrg")
-	assert.EqualError(t, fail, locale.T("err_api_org_not_found"))
-	assert.Nil(t, org)
+	assert.Contains(t, outStr, "test-organization")
 }
 
 func TestClientError(t *testing.T) {
@@ -73,12 +49,16 @@ func TestClientError(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	_, fail := FetchAll()
-	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
-
-	err := Command.Execute()
-	assert.NoError(t, err, "Command still executes without error")
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = Command.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
 	assert.Error(t, failures.Handled(), "Failure occurred")
+
+	// Should not be able to fetch organizations without mock
+	assert.Contains(t, outStr, "no responder found")
 }
 
 func TestAuthError(t *testing.T) {
@@ -88,13 +68,15 @@ func TestAuthError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
-	_, fail := FetchAll()
-	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
-	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
-
-	err := Command.Execute()
-	assert.NoError(t, err, "Command still executes without error")
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = Command.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
 	assert.Error(t, failures.Handled(), "Failure occurred")
+
+	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
 }
 
 func TestAliases(t *testing.T) {

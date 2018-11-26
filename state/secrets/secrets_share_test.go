@@ -184,9 +184,9 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 }
 
 func (suite *SecretsShareCommandTestSuite) decryptSecretValue(kp keypairs.Keypair, value string) string {
-	decrStr, failure := secrets.DecodeAndDecrypt(kp, value)
+	decrBytes, failure := kp.DecodeAndDecrypt(value)
 	suite.Require().Nil(failure)
-	return decrStr
+	return string(decrBytes)
 }
 
 func Test_SecretsShareCommand_TestSuite(t *testing.T) {

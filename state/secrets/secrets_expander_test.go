@@ -148,7 +148,7 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 }
 
 func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret", "secrets_err_base64_decoding")
+	suite.assertExpansionFailure("bad-base64-encoded-secret", "secrets_err_decrypting")
 }
 
 func (suite *SecretsExpanderTestSuite) TestDecryptionFailed() {

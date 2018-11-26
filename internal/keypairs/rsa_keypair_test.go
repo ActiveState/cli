@@ -57,6 +57,19 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
 	suite.Equal("howdy doody", string(decryptedMsg))
 }
 
+func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncodesAndDeccodesEncryptedValues() {
+	kp, failure := keypairs.GenerateRSA(1024)
+	suite.Require().Nil(failure)
+
+	encryptedMsg, failure := kp.EncryptAndEncode([]byte("howdy doody"))
+	suite.Require().Nil(failure)
+	suite.NotEqual("howdy doody", encryptedMsg)
+
+	decryptedMsg, failure := kp.DecodeAndDecrypt(encryptedMsg)
+	suite.Require().Nil(failure)
+	suite.Equal("howdy doody", string(decryptedMsg))
+}
+
 func (suite *RSAKeypairTestSuite) TestParseRSA_ParsesKeypair() {
 	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(failure)

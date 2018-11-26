@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/api"
@@ -10,15 +9,15 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/organizations"
-	"github.com/ActiveState/cli/state/projects"
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
@@ -69,7 +68,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	project := projectfile.Get()
 	org, failure := organizations.FetchByURLName(project.Owner)
 	if failure == nil {
-		failure = ListAll(cmd.secretsClient, org)
+		failure = listAll(cmd.secretsClient, org)
 	}
 
 	if failure != nil {
@@ -77,8 +76,8 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 }
 
-// FetchAll fetchs the current user's secrets for an organization.
-func FetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+// fetchAll fetchs the current user's secrets for an organization.
+func fetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
 	params := secrets.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	getOk, err := secretsClient.Secrets.Secrets.GetAllUserSecrets(params, secretsClient.Auth)
@@ -94,7 +93,7 @@ func FetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*se
 }
 
 // ListAll prints a list of all of the UserSecrets names and their level for this user given an Organization.
-func ListAll(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
+func listAll(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
 	logging.Debug("listing user-secrets for org=%s", org.OrganizationID.String())
 
 	orgProjects, failure := projects.FetchOrganizationProjects(org)
@@ -103,7 +102,7 @@ func ListAll(secretsClient *secretsapi.Client, org *models.Organization) *failur
 	}
 	orgProjectMap := mapProjects(orgProjects)
 
-	userSecrets, failure := FetchAll(secretsClient, org)
+	userSecrets, failure := fetchAll(secretsClient, org)
 	if failure != nil {
 		return failure
 	} else if len(userSecrets) == 0 {
@@ -151,25 +150,16 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 	}
 }
 
-// EncryptAndEncode will use the provided Encrypter to encrypt the plaintext value then it will
-// base64 encode that ciphertext.
-func EncryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
-	encrBytes, failure := encrypter.Encrypt([]byte(value))
+func encryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
+	encrStr, failure := encrypter.EncryptAndEncode([]byte(value))
 	if failure != nil {
-		return "", secretsapi.FailSave.New("secrets_err_encrypting", failure.Error())
+		return "", variables.FailExpandVariable.New("secrets_err_encrypting", failure.Error())
 	}
-	return base64.StdEncoding.EncodeToString(encrBytes), nil
+	return encrStr, nil
 }
 
-// DecodeAndDecrypt will first base64 decode the provided value then it will use the provided
-// Decrypter to decrypt the resulting ciphertext.
-func DecodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *failures.Failure) {
-	encrBytes, err := base64.StdEncoding.DecodeString(value)
-	if err != nil {
-		return "", secretsapi.FailSave.New("secrets_err_base64_decoding")
-	}
-
-	decrBytes, failure := decrypter.Decrypt(encrBytes)
+func decodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *failures.Failure) {
+	decrBytes, failure := decrypter.DecodeAndDecrypt(value)
 	if failure != nil {
 		return "", variables.FailExpandVariable.New("secrets_err_decrypting", failure.Error())
 	}

@@ -5,13 +5,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/organizations"
+	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/keypair"
-	"github.com/ActiveState/cli/state/organizations"
-	"github.com/ActiveState/cli/state/projects"
 )
 
 // NewExpander creates an ExpanderFunc which can decrypt stored user secrets.
@@ -32,12 +32,12 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", failure
 		}
 
-		kp, failure := keypair.Fetch(secretsClient)
+		kp, failure := keypairs.Fetch(secretsClient)
 		if failure != nil {
 			return "", failure
 		}
 
-		userSecrets, failure := FetchAll(secretsClient, org)
+		userSecrets, failure := fetchAll(secretsClient, org)
 		if failure != nil {
 			return "", failure
 		}
@@ -47,7 +47,7 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", variables.FailExpandVariable.New("secrets_expand_err_not_found", name)
 		}
 
-		return DecodeAndDecrypt(kp, *userSecret.Value)
+		return decodeAndDecrypt(kp, *userSecret.Value)
 	}
 }
 

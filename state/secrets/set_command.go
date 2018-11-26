@@ -3,16 +3,16 @@ package secrets
 import (
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/organizations"
+	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/keypair"
-	"github.com/ActiveState/cli/state/organizations"
-	"github.com/ActiveState/cli/state/projects"
 	"github.com/spf13/cobra"
 )
 
@@ -79,12 +79,12 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 // UpsertUserSecret will add a new secret for this user or update an existing one.
 func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
-	kp, failure := keypair.Fetch(secretsClient)
+	kp, failure := keypairs.Fetch(secretsClient)
 	if failure != nil {
 		return failure
 	}
 
-	encrStr, failure := EncryptAndEncode(kp, secretValue)
+	encrStr, failure := encryptAndEncode(kp, secretValue)
 	if failure != nil {
 		return failure
 	}

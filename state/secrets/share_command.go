@@ -9,13 +9,12 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/organizations"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/keypair"
-	"github.com/ActiveState/cli/state/organizations"
 	"github.com/spf13/cobra"
 )
 
@@ -77,17 +76,17 @@ func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, us
 }
 
 func prepareSharableSecrets(secretsClient *secretsapi.Client, org *models.Organization, user *models.User) ([]*secretsModels.UserSecretChange, *failures.Failure) {
-	otherEncrypter, failure := keypair.FetchPublicKey(secretsClient, user)
+	otherEncrypter, failure := keypairs.FetchPublicKey(secretsClient, user)
 	if failure != nil {
 		return nil, failure
 	}
 
-	selfKeypair, failure := keypair.Fetch(secretsClient)
+	selfKeypair, failure := keypairs.Fetch(secretsClient)
 	if failure != nil {
 		return nil, failure
 	}
 
-	selfSecrets, failure := FetchAll(secretsClient, org)
+	selfSecrets, failure := fetchAll(secretsClient, org)
 	if failure != nil {
 		return nil, failure
 	}
@@ -100,12 +99,12 @@ func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter key
 
 	for _, selfSecret := range selfSecrets {
 		if !*selfSecret.IsUser {
-			plaintextValue, failure := DecodeAndDecrypt(decrypter, *selfSecret.Value)
+			plaintextValue, failure := decodeAndDecrypt(decrypter, *selfSecret.Value)
 			if failure != nil {
 				return nil, failure
 			}
 
-			ciphertext, failure := EncryptAndEncode(encrypter, plaintextValue)
+			ciphertext, failure := encryptAndEncode(encrypter, plaintextValue)
 			if failure != nil {
 				return nil, failure
 			}
