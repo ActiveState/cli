@@ -12,47 +12,64 @@ import (
 	parent "gopkg.in/jarcoal/httpmock.v1"
 )
 
-var urlPrefix string
+// HTTPMock encapsulate the functionality for mocking requests to a specific base-url.
+type HTTPMock struct {
+	urlPrefix string
+}
 
-// Activate the httpmock
-func Activate(prefix string) {
-	if urlPrefix != "" {
-		panic("You already have an active httpmock, deactivate the old one first")
+var httpMocks = map[string]*HTTPMock{}
+var defaultMock *HTTPMock
+
+// Activate an and return an *HTTPMock instance. If none yet activated, then the first becomes the default
+// HTTPMock; which means you can just call package funcs to use it.
+func Activate(prefix string) *HTTPMock {
+	urlPrefix := strings.TrimSuffix(prefix, "/")
+	if _, mockExists := httpMocks[urlPrefix]; mockExists {
+		panic("mock with prefix=%s already active, deactive old mocks first")
 	}
-	urlPrefix = strings.TrimSuffix(prefix, "/")
-	parent.Activate()
+
+	mock := &HTTPMock{urlPrefix: urlPrefix}
+	httpMocks[urlPrefix] = mock
+
+	if defaultMock == nil {
+		defaultMock = mock
+		parent.Activate()
+	}
+
+	return mock
 }
 
 // DeActivate the httpmock
 func DeActivate() {
+	defer parent.DeactivateAndReset()
 	print.Line("RESET")
-	urlPrefix = ""
-	parent.DeactivateAndReset()
+	defaultMock = nil
+	httpMocks = map[string]*HTTPMock{}
 }
 
 // Register registers a httpmock for the given request (the response file is based on the request)
-func Register(method string, request string) {
-	RegisterWithCode(method, request, 200)
+func (mock *HTTPMock) Register(method string, request string) {
+	mock.RegisterWithCode(method, request, 200)
 }
 
 // RegisterWithCode is the same as Register but it allows specifying a code
-func RegisterWithCode(method string, request string, code int) {
-	responseFile := strings.Replace(request, urlPrefix, "", 1)
-	RegisterWithResponse(method, request, code, responseFile)
+func (mock *HTTPMock) RegisterWithCode(method string, request string, code int) {
+	responseFile := strings.Replace(request, mock.urlPrefix, "", 1)
+	mock.RegisterWithResponse(method, request, code, responseFile)
 }
 
 // RegisterWithResponse is the same as RegisterWithCode but it allows specifying a response file
-func RegisterWithResponse(method string, request string, code int, responseFile string) {
+func (mock *HTTPMock) RegisterWithResponse(method string, request string, code int, responseFile string) {
 	responsePath := getResponsePath()
 	responseFile = getResponseFile(method, code, responseFile, responsePath)
-	request = urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
 	parent.RegisterResponder(method, request,
 		parent.NewStringResponder(code, string(fileutils.ReadFileUnsafe(responseFile))))
 }
 
 // RegisterWithResponder register a httpmock with a custom responder
-func RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
-	request = urlPrefix + "/" + strings.TrimPrefix(request, "/")
+func (mock *HTTPMock) RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
+	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
 	responsePath := getResponsePath()
 	parent.RegisterResponder(method, request, func(req *http.Request) (*http.Response, error) {
 		code, responseFile := cb(req)
@@ -88,4 +105,34 @@ func getResponsePath() string {
 	}
 
 	return filepath.Join(filepath.Dir(file), "testdata", "httpresponse")
+}
+
+func ensureDefaultMock() {
+	if defaultMock == nil {
+		panic("default HTTPMock is not defined")
+	}
+}
+
+// Register defers to the default HTTPMock's Register or errors if no default defined.
+func Register(method string, request string) {
+	ensureDefaultMock()
+	defaultMock.Register(method, request)
+}
+
+// RegisterWithCode defers to the default HTTPMock's RegisterWithCode or errors if no default defined.
+func RegisterWithCode(method string, request string, code int) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithCode(method, request, code)
+}
+
+// RegisterWithResponse defers to the default HTTPMock's RegisterWithResponse or errors if no default defined.
+func RegisterWithResponse(method string, request string, code int, responseFile string) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithResponse(method, request, code, responseFile)
+}
+
+// RegisterWithResponder defers to the default HTTPMock's RegisterWithResponder or errors if no default defined.
+func RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithResponder(method, request, cb)
 }

@@ -27,7 +27,7 @@ var BearerToken string
 // Auth holds our authenticated information, go-swagger makes us pass this manually to all calls that require auth
 var Auth runtime.ClientAuthInfoWriter
 
-// Prefix is the URL prefix for our API, intended for use in tets
+// Prefix is the URL prefix for our API, intended for use in tests
 var Prefix string
 
 // APIHost holds the API Host we're communicating with
@@ -39,6 +39,9 @@ var (
 
 	// FailAuth is the failure type used for failed authentication API requests
 	FailAuth = failures.Type("api.fail.auth", failures.FailUser)
+
+	// FailNotFound indicates a failure to find a user's resource.
+	FailNotFound = failures.Type("api.fail.not_found", failures.FailUser)
 )
 
 var transport http.RoundTripper
@@ -119,12 +122,32 @@ func RemoveAuth() {
 
 // ErrorCode tries to retrieve the code associated with an API error
 func ErrorCode(err interface{}) int {
-	r := reflect.ValueOf(err)
-	v := reflect.Indirect(r).FieldByName("Code")
-	if !v.IsValid() {
+	codeVal := reflect.Indirect(reflect.ValueOf(err)).FieldByName("Code")
+	if codeVal.IsValid() {
+		return int(codeVal.Int())
+	}
+	return ErrorCodeFromPayload(err)
+}
+
+// ErrorCodeFromPayload tries to retrieve the code associated with an API error from a
+// Message object referenced as a Payload.
+func ErrorCodeFromPayload(err interface{}) int {
+	errVal := reflect.ValueOf(err)
+	payloadVal := reflect.Indirect(errVal).FieldByName("Payload")
+	if !payloadVal.IsValid() {
 		return -1
 	}
-	return int(v.Int())
+
+	codePtr := reflect.Indirect(payloadVal).FieldByName("Code")
+	if !codePtr.IsValid() {
+		return -1
+	}
+
+	codeVal := reflect.Indirect(codePtr)
+	if !codeVal.IsValid() {
+		return -1
+	}
+	return int(codeVal.Int())
 }
 
 // persistWithToken will retrieve and save a persistent authentication token based on the active authentication information

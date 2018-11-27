@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestSecretsAPI_Authenticated_Failure(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	client := secretsapi.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
+	client := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
 	require.NotNil(client)
 
 	httpmock.Activate(client.BaseURI)
@@ -57,7 +58,7 @@ func TestSecretsAPI_Authenticated_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	client := secretsapi.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
+	client := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
 	require.NotNil(client)
 
 	httpmock.Activate(client.BaseURI)

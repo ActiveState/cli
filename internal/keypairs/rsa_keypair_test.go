@@ -4,37 +4,87 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestKeypair_NewRSAGeneratorFunc_ErrorBitLengthLTMinAllowed(t *testing.T) {
-	assert := assert.New(t)
-	genFn, err := keypairs.NewRSAGeneratorFunc(keypairs.MinimumRSABitLength - 1)
-	assert.Nil(genFn)
-	assert.Equal(err, keypairs.ErrBitLengthTooShort)
+type RSAKeypairTestSuite struct {
+	suite.Suite
 }
 
-func TestKeypair_NewRSAGeneratorFunc_UsesMinimumBitLength(t *testing.T) {
-	assert := assert.New(t)
-	genFn, err := keypairs.NewRSAGeneratorFunc(keypairs.MinimumRSABitLength)
-	assert.NotNil(genFn)
-	assert.NoError(err)
+func (suite *RSAKeypairTestSuite) TestGenerateRSA_ErrorBitLengthLessThanMin() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength - 1)
+	suite.Nil(kp)
+	suite.Equal(err, keypairs.ErrBitLengthTooShort)
 }
 
-func TestKeypair_NewRSAGeneratorFunc_GeneratesRSAKeypairs(t *testing.T) {
-	assert := assert.New(t)
-	require := require.New(t)
-	genFn, err := keypairs.NewRSAGeneratorFunc(keypairs.MinimumRSABitLength)
-	require.NoError(err)
+func (suite *RSAKeypairTestSuite) TestGenerateRSA_UsesMinimumBitLength() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
+	suite.NotNil(kp)
+	suite.Implements((*keypairs.Keypair)(nil), kp)
+}
 
-	kp, err := genFn()
-	require.NoError(err, "creating generator function")
-	assert.IsType(new(keypairs.RSAKeypair), kp, "generating new RSAKeypair")
-
-	assert.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PRIVATE KEY-{5}\s`, kp.EncodePrivateKey())
+func (suite *RSAKeypairTestSuite) TestGenerateRSA_GeneratesRSAKeypair() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
+	suite.Regexp(`^-{5}BEGIN RSA PRIVATE KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PRIVATE KEY-{5}\s`, kp.EncodePrivateKey())
 
 	encPubKey, err := kp.EncodePublicKey()
-	require.NoError(err, "encoding public key")
-	assert.Regexp(`^-{5}BEGIN RSA PUBLIC KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PUBLIC KEY-{5}\s`, encPubKey)
+	suite.Require().NoError(err, "encoding public key")
+	suite.Regexp(`^-{5}BEGIN RSA PUBLIC KEY-{5}\s[[:alnum:]/+=]{44}\s-{5}END RSA PUBLIC KEY-{5}\s`, encPubKey)
+}
+
+func (suite *RSAKeypairTestSuite) TestRSAKeypair_MessageTooLongForKeySize() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
+
+	encMsg, err := kp.Encrypt([]byte("howdy doody"))
+	suite.Nil(encMsg)
+	suite.Contains(err.Error(), "message too long")
+}
+
+func (suite *RSAKeypairTestSuite) TestRSAKeypair_EncryptsAndDecrypts() {
+	kp, err := keypairs.GenerateRSA(1024)
+	suite.Require().NoError(err)
+
+	encryptedMsg, err := kp.Encrypt([]byte("howdy doody"))
+	suite.Require().NoError(err)
+	suite.NotEqual("howdy doody", string(encryptedMsg))
+
+	decryptedMsg, err := kp.Decrypt(encryptedMsg)
+	suite.Require().NoError(err)
+	suite.Equal("howdy doody", string(decryptedMsg))
+}
+
+func (suite *RSAKeypairTestSuite) TestParseRSA_ParsesKeypair() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
+
+	encPrivKey := kp.EncodePrivateKey()
+	kp2, err := keypairs.ParseRSA(encPrivKey)
+	suite.Require().NoError(err)
+	suite.Implements((*keypairs.Keypair)(nil), kp2)
+	suite.Equal(kp, kp2)
+}
+
+func (suite *RSAKeypairTestSuite) TestParseRSA_EncodingNotOfPrivateKey() {
+	kp, err := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(err)
+
+	encPublicKey, err := kp.EncodePublicKey()
+	suite.Require().NoError(err)
+
+	kp2, err := keypairs.ParseRSA(encPublicKey)
+	suite.Nil(kp2)
+	suite.Contains(err.Error(), "structure error")
+}
+
+func (suite *RSAKeypairTestSuite) TestParseRSA_KeypairNotPEMEncoded() {
+	kp, err := keypairs.ParseRSA("this is not an encoded key")
+	suite.Nil(kp)
+	suite.Require().Equal(err, keypairs.ErrInvalidPEMEncoding)
+}
+
+func Test_RSAKeypair_TestSuite(t *testing.T) {
+	suite.Run(t, new(RSAKeypairTestSuite))
 }

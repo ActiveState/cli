@@ -16,9 +16,9 @@ import (
 // swagger:model UserSecret
 type UserSecret struct {
 
-	// level
+	// is user
 	// Required: true
-	Level *string `json:"level"`
+	IsUser *bool `json:"is_user"`
 
 	// name
 	// Required: true
@@ -28,6 +28,10 @@ type UserSecret struct {
 	// Required: true
 	// Format: uuid
 	OrganizationID *strfmt.UUID `json:"organization_id"`
+
+	// project id
+	// Format: uuid
+	ProjectID strfmt.UUID `json:"project_id,omitempty"`
 
 	// secret id
 	// Required: true
@@ -48,7 +52,7 @@ type UserSecret struct {
 func (m *UserSecret) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLevel(formats); err != nil {
+	if err := m.validateIsUser(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -57,6 +61,10 @@ func (m *UserSecret) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOrganizationID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProjectID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,9 +86,9 @@ func (m *UserSecret) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *UserSecret) validateLevel(formats strfmt.Registry) error {
+func (m *UserSecret) validateIsUser(formats strfmt.Registry) error {
 
-	if err := validate.Required("level", "body", m.Level); err != nil {
+	if err := validate.Required("is_user", "body", m.IsUser); err != nil {
 		return err
 	}
 
@@ -103,6 +111,19 @@ func (m *UserSecret) validateOrganizationID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("organization_id", "body", "uuid", m.OrganizationID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *UserSecret) validateProjectID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ProjectID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("project_id", "body", "uuid", m.ProjectID.String(), formats); err != nil {
 		return err
 	}
 

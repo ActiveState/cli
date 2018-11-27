@@ -14,51 +14,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// DefaultRSABitLength represents the default RSA bit-length that will be assumed when
+// generating new Keypairs.
+const DefaultRSABitLength int = 4096
+
 // Command represents the keypair command and its dependencies.
 type Command struct {
-	Flags struct {
-		Generate bool
-	}
-
 	config        *commands.Command
 	secretsClient *secretsapi.Client
-	generatorFn   keypairs.GeneratorFunc
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, generatorFn keypairs.GeneratorFunc) *Command {
+func NewCommand(secretsClient *secretsapi.Client) *Command {
 	cmd := &Command{
 		secretsClient: secretsClient,
-		generatorFn:   generatorFn,
 	}
 
 	cmd.config = &commands.Command{
 		Name:        "keypair",
-		Description: "secrets_keypair_cmd_description",
+		Description: "keypair_cmd_description",
 		Run:         cmd.Execute,
-
-		Flags: []*commands.Flag{
-			&commands.Flag{
-				Name:        "generate",
-				Shorthand:   "",
-				Description: "secrets_keypair_generate_flag_usage",
-				Type:        commands.TypeBool,
-				BoolVar:     &cmd.Flags.Generate,
-			},
-		},
 	}
+
+	cmd.config.Append(&commands.Command{
+		Name:        "generate",
+		Description: "keypair_generate_cmd_description",
+		Run:         cmd.ExecuteGenerate,
+	})
 
 	return cmd
-}
-
-// NewRSACommand creates a new Keypair command which assumes use of an RSA keypair generator.
-// Will return an error if one is returned trying to create the new RSA keypair generator.
-func NewRSACommand(secretsClient *secretsapi.Client) (*Command, error) {
-	genFn, err := keypairs.NewRSAGeneratorFunc(4196)
-	if err != nil {
-		return nil, err
-	}
-	return NewCommand(secretsClient, genFn), nil
 }
 
 // Config returns the underlying commands.Command definition.
@@ -72,36 +56,55 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 	if failure == nil {
 		logging.Debug("(secrets.keypair) authenticated user=%s", uid.String())
-		if cmd.Flags.Generate {
-			failure = Generate(cmd.secretsClient, cmd.generatorFn)
-		} else {
-			failure = Dump(cmd.secretsClient)
-		}
+		failure = Dump(cmd.secretsClient)
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_keypair_err"))
+		failures.Handle(failure, locale.T("keypair_err"))
 	}
+}
+
+// ExecuteGenerate processes the `keypair generate` sub-command.
+func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
+	uid, failure := cmd.secretsClient.Authenticated()
+
+	if failure == nil {
+		logging.Debug("(secrets.keypair) authenticated user=%s", uid.String())
+		failure = Generate(cmd.secretsClient)
+	}
+
+	if failure != nil {
+		failures.Handle(failure, locale.T("keypair_err"))
+	}
+}
+
+// Fetch fetchs the current user's keypair or returns a failure.
+func Fetch(secretsClient *secretsapi.Client) (*models.Keypair, *failures.Failure) {
+	getOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
+	if err != nil {
+		if api.ErrorCode(err) == 404 {
+			return nil, secretsapi.FailNotFound.New("keypair_err_not_found")
+		}
+		return nil, api.FailUnknown.Wrap(err)
+	}
+	return getOk.Payload, nil
 }
 
 // Dump prints the encoded key-pair for the currently authenticated user to stdout.
 func Dump(secretsClient *secretsapi.Client) *failures.Failure {
-	getOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
-	if err != nil {
-		if secretsapi.ErrorCode(err) == 404 {
-			return secretsapi.FailNotFound.New("secrets_keypair_err_not_found")
-		}
-		return api.FailUnknown.Wrap(err)
+	kp, failure := Fetch(secretsClient)
+	if failure != nil {
+		return failure
 	}
-	print.Line(*getOk.Payload.EncryptedPrivateKey)
-	print.Line(*getOk.Payload.PublicKey)
+	print.Line(*kp.EncryptedPrivateKey)
+	print.Line(*kp.PublicKey)
 	return nil
 }
 
 // Generate implements the behavior to generate a new Secrets key-pair on behalf of the user
 // and store that back to the Secrets Service.
-func Generate(secretsClient *secretsapi.Client, generatorFn keypairs.GeneratorFunc) *failures.Failure {
-	keypair, err := generatorFn()
+func Generate(secretsClient *secretsapi.Client) *failures.Failure {
+	keypair, err := keypairs.GenerateRSA(DefaultRSABitLength)
 	if err != nil {
 		return api.FailUnknown.Wrap(err)
 	}
@@ -119,7 +122,7 @@ func Generate(secretsClient *secretsapi.Client, generatorFn keypairs.GeneratorFu
 
 	_, err = secretsClient.Keys.SaveKeypair(params, secretsClient.Auth)
 	if err != nil {
-		return secretsapi.FailSave.New("secrets_keypair_err_save")
+		return secretsapi.FailSave.New("keypair_err_save")
 	}
 
 	print.Line("Keypair generated successfully")

@@ -1,3 +1,6 @@
+undefined:
+  other: onbepaald
+
 state_description:
   other: Met de ActiveState CLI kan je makkelijk tussen je ActiveState environments wisselen
 activate_project: 
@@ -55,13 +58,52 @@ flag_state_locale_description:
 
 secrets_cmd_description:
   other: Beheer geheimen
-secrets_keypair_cmd_description:
+secrets_set_cmd_description:
+  other: Set the value of a secret
+secrets_arg_name_name:
+  other: secret-name
+secrets_arg_name_description:
+  other: Name of Secret
+secrets_arg_value_name:
+  other: secret-value
+secrets_arg_value_description:
+  other: Value of unencrypted Secret
+secrets_flag_org_description:
+  other: Name of Organization in which to manage your Secrets
+secrets_set_flag_project:
+  other: Scope the secret to the current project
+secrets_set_flag_user:
+  other: Scope the secret to the current user
+secrets_col_name:
+  other: Name
+secrets_col_scope:
+  other: Scope
+secrets_scope_user_project:
+  other: User Project
+secrets_scope_user_org:
+  other: User Organization
+secrets_scope_project:
+  other: Project
+secrets_scope_org:
+  other: Organization
+secrets_err:
+  other: Error managing user's Secrets
+secrets_err_no_org_found:
+  other: Not a member of requested Organization or it does not exist
+secrets_err_encrypting:
+  other: Error encrypting a user's Secret
+secrets_err_save:
+  other: Error updating user's Secrets
+
+keypair_cmd_description:
   other: Manage Your Keypair
-secrets_keypair_generate_flag_usage:
+keypair_generate_cmd_description:
   other: Generate and upload a new Keypair
-secrets_keypair_err:
-  other: Unable to access user's keypair
-secrets_keypair_err_not_found:
+keypair_err:
+  other: Unable to access user's Keypair
+keypair_err_not_found:
   other: Keypair not yet generated
-secrets_keypair_err_save:
+keypair_err_save:
   other: Keypair could not be saved
+keypair_err_parsing:
+  other: Keypair could not be parsed for some reason
