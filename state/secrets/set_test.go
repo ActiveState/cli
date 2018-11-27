@@ -122,19 +122,6 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserProjectSecret_Suc
 }
 
 func (suite *SecretsSetCommandTestSuite) assertInsertSucceeds(secretName string, isProject, isUser bool) {
-	bodyChanges := suite.executeSet(secretName, isProject, isUser)
-	suite.Require().Len(bodyChanges, 1)
-	suite.NotZero(*bodyChanges[0].Value)
-	suite.Equal(secretName, *bodyChanges[0].Name)
-	suite.Equal(isUser, *bodyChanges[0].IsUser)
-	if isProject {
-		suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), bodyChanges[0].ProjectID)
-	} else {
-		suite.Zero(bodyChanges[0].ProjectID)
-	}
-}
-
-func (suite *SecretsSetCommandTestSuite) executeSet(secretName string, isProject, isUser bool) []*models.UserSecretChange {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	cmdArgs := []string{"set"}
@@ -150,15 +137,27 @@ func (suite *SecretsSetCommandTestSuite) executeSet(secretName string, isProject
 		suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	}
 	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 
-	var bodyChanges []*models.UserSecretChange
+	var userChanges []*models.UserSecretChange
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
-		bodyErr = json.Unmarshal(reqBody, &bodyChanges)
+		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
 	})
+
+	var sharedChanges []*models.UserSecretChange
+	if !isUser {
+		// assert secrets get pushed for other users
+		suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
+		suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
+		suite.secretsMock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 200)
+		suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
+			reqBody, _ := ioutil.ReadAll(req.Body)
+			json.Unmarshal(reqBody, &sharedChanges)
+			return 204, "empty-response"
+		})
+	}
 
 	cmd.Config().GetCobraCmd().SetArgs(append(cmdArgs, secretName, "secret-value"))
 	execErr := cmd.Config().Execute()
@@ -167,7 +166,26 @@ func (suite *SecretsSetCommandTestSuite) executeSet(secretName string, isProject
 	suite.Require().NoError(bodyErr)
 	suite.NoError(failures.Handled())
 
-	return bodyChanges
+	suite.Require().Len(userChanges, 1)
+	suite.NotZero(*userChanges[0].Value)
+	suite.Equal(secretName, *userChanges[0].Name)
+	suite.Equal(isUser, *userChanges[0].IsUser)
+	if isProject {
+		suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), userChanges[0].ProjectID)
+	} else {
+		suite.Zero(userChanges[0].ProjectID)
+	}
+
+	if !isUser {
+		suite.Require().Len(sharedChanges, 1)
+		suite.NotZero(*sharedChanges[0].Value)
+		suite.Equal(secretName, *sharedChanges[0].Name)
+		suite.False(*sharedChanges[0].IsUser)
+		suite.Equal(userChanges[0].ProjectID, sharedChanges[0].ProjectID)
+	} else {
+		suite.Require().Len(sharedChanges, 0)
+	}
+
 }
 
 func Test_SecretsSetCommand_TestSuite(t *testing.T) {

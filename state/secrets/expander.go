@@ -52,12 +52,12 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
 		}
 
-		descrStr, failure := decodeAndDecrypt(kp, *userSecret.Value)
+		decrBytes, failure := kp.DecodeAndDecrypt(*userSecret.Value)
 		if failure != nil {
 			return "", failure
 		}
 
-		return descrStr, nil
+		return string(decrBytes), nil
 	}
 }
 

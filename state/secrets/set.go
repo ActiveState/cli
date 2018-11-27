@@ -62,12 +62,21 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 	org, failure := organizations.FetchByURLName(projectFile.Owner)
 	if failure == nil {
 		var project *models.Project
+		var kp keypairs.Keypair
 		if cmd.Flags.IsProject {
 			project, failure = projects.FetchByName(org.Urlname, projectFile.Name)
 		}
 
 		if failure == nil {
-			failure = UpsertUserSecret(cmd.secretsClient, org, project, cmd.Flags.IsUser, cmd.Args.SecretName, cmd.Args.SecretValue)
+			kp, failure = keypairs.Fetch(cmd.secretsClient)
+		}
+
+		if failure == nil {
+			failure = saveUserSecret(cmd.secretsClient, kp, org, project, cmd.Flags.IsUser, cmd.Args.SecretName, cmd.Args.SecretValue)
+		}
+
+		if failure == nil && !cmd.Flags.IsUser {
+			failure = pushSecretToOrgUsers(cmd.secretsClient, org, project, cmd.Args.SecretName, cmd.Args.SecretValue)
 		}
 	}
 
@@ -76,15 +85,10 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 	}
 }
 
-// UpsertUserSecret will add a new secret for this user or update an existing one.
-func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
+// saveUserSecret will add a new secret for this user or update an existing one.
+func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
-	kp, failure := keypairs.Fetch(secretsClient)
-	if failure != nil {
-		return failure
-	}
-
-	encrStr, failure := encryptAndEncode(kp, secretValue)
+	encrStr, failure := encrypter.EncryptAndEncode([]byte(secretValue))
 	if failure != nil {
 		return failure
 	}
@@ -106,6 +110,60 @@ func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
 		return secretsapi.FailSave.New("secrets_err_save")
+	}
+
+	return nil
+}
+
+// pushSecretToOrgUsers will share the current secret with all other users in the organization
+// who have a valid public-key available.
+func pushSecretToOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
+	isNotUser := false
+	currentUserID, failure := secretsClient.Authenticated()
+	if failure != nil {
+		return failure
+	}
+
+	members, failure := organizations.FetchMembers(org.Urlname)
+	if failure != nil {
+		return failure
+	}
+
+	for _, member := range members {
+		if *currentUserID != member.User.UserID {
+			pubKey, failure := keypairs.FetchPublicKey(secretsClient, member.User)
+			if failure != nil {
+				if failure.Type.Matches(secretsapi.FailNotFound) {
+					logging.Info("User `%s` has no public-key", member.User.Username)
+					// this is okay, just do what we can
+					continue
+				}
+				return failure
+			}
+
+			ciphertext, failure := pubKey.EncryptAndEncode([]byte(secretValue))
+			if failure != nil {
+				logging.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
+				// this is a local issue with the user's keys, so we try and move on
+				continue
+			}
+
+			change := &secretsModels.UserSecretChange{
+				IsUser: &isNotUser,
+				Name:   &secretName,
+				Value:  &ciphertext,
+			}
+			if project != nil {
+				change.ProjectID = project.ProjectID
+			}
+
+			failure = saveOtherUserSecrets(secretsClient, org, member.User, []*secretsModels.UserSecretChange{change})
+			if failure != nil {
+				// a potentially unrecoverable failure, so we stop here
+				return failure
+			}
+			logging.Info("Update secret `%s` for user `%s`", secretName, member.User.Username)
+		}
 	}
 
 	return nil
