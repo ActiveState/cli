@@ -30,9 +30,6 @@ var Auth runtime.ClientAuthInfoWriter
 // Prefix is the URL prefix for our API, intended for use in tests
 var Prefix string
 
-// APIHost holds the API Host we're communicating with
-var APIHost string
-
 var (
 	// FailUnknown is the failure type used for API requests with an unexpected error
 	FailUnknown = failures.Type("api.fail.unknown")
@@ -58,19 +55,11 @@ func init() {
 
 // ReInitialize initializes (or re-initializes) an API connection
 func ReInitialize() {
-	if APIHost == "" {
-		APIHost = constants.APIHost
-		if flag.Lookup("test.v") != nil {
-			APIHost = constants.APIHostTesting
-		} else if constants.BranchName != constants.ProductionBranch {
-			APIHost = constants.APIHostStaging
-		}
-	}
-	transportRuntime := httptransport.New(APIHost, constants.APIPath, []string{constants.APISchema})
+	transportRuntime := httptransport.New(constants.APIHost, constants.APIPath, []string{constants.APISchema})
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.SetDebug(true)
 	}
-	Prefix = fmt.Sprintf("%s://%s%s", constants.APISchema, APIHost, constants.APIPath)
+	Prefix = fmt.Sprintf("%s://%s%s", constants.APISchema, constants.APIHost, constants.APIPath)
 
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.Transport = transport

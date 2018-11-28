@@ -39,7 +39,6 @@ func setupUser(t *testing.T) *models.UserEditable {
 }
 
 func TestEndpoint(t *testing.T) {
-	assert.Equal(t, constants.APIHostTesting, APIHost, "We are running against the testing api")
 	assert.NotNil(t, Client, "ReInitialize initialized the Client")
 }
 

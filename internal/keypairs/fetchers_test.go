@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	apiModels "github.com/ActiveState/cli/internal/api/models"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
@@ -24,7 +23,7 @@ type KeypairFetcherTestSuite struct {
 
 func (suite *KeypairFetcherTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
-	secretsClient := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearing123")
+	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 

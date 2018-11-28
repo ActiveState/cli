@@ -3,6 +3,7 @@ package secretsapi_test
 import (
 	"net/http"
 
+	"github.com/ActiveState/cli/internal/constants"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	httptransport "github.com/go-openapi/runtime/client"
 )
@@ -17,4 +18,9 @@ func NewTestClient(scheme, host, basePath, bearerToken string) *secretsapi.Clien
 	rt := newClient.Transport.(*httptransport.Runtime)
 	rt.Transport = testTransport
 	return newClient
+}
+
+// NewDefaultTestClient creates a testable secrets client using constants for schema, host, and path.
+func NewDefaultTestClient(bearerToken string) *secretsapi.Client {
+	return NewTestClient(constants.SecretsAPISchema, constants.SecretsAPIHost, constants.SecretsAPIPath, bearerToken)
 }

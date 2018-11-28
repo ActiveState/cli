@@ -18,14 +18,14 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	client := secretsapi.NewClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
+	client := secretsapi.NewDefaultClient("bearer123")
 	require.NotNil(client)
 	assert.NotNil(client.Auth)
-	assert.Equal(fmt.Sprintf("http://%s%s", constants.SecretsAPIHostTesting, constants.SecretsAPIPath), client.BaseURI)
+	assert.Equal(fmt.Sprintf("%s://%s%s", constants.SecretsAPISchema, constants.SecretsAPIHost, constants.SecretsAPIPath), client.BaseURI)
 
 	rt, isRuntime := client.Transport.(*httptransport.Runtime)
 	require.True(isRuntime, "client.Transport is a Runtime")
-	assert.Equal(constants.SecretsAPIHostTesting, rt.Host)
+	assert.Equal(constants.SecretsAPIHost, rt.Host)
 	assert.Equal(constants.SecretsAPIPath, rt.BasePath)
 
 	// validate that the client.Auth writer sets the bearer token using the one we provided
@@ -41,7 +41,7 @@ func TestSecretsAPI_Authenticated_Failure(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	client := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
+	client := secretsapi_test.NewDefaultTestClient("bearer123")
 	require.NotNil(client)
 
 	httpmock.Activate(client.BaseURI)
@@ -58,7 +58,7 @@ func TestSecretsAPI_Authenticated_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	client := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearer123")
+	client := secretsapi_test.NewDefaultTestClient("bearer123")
 	require.NotNil(client)
 
 	httpmock.Activate(client.BaseURI)

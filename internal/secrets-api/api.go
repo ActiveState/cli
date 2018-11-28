@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
 	"github.com/go-openapi/runtime"
@@ -51,6 +52,11 @@ func NewClient(scheme, host, basePath, bearerToken string) *Client {
 		Auth:    httptransport.BearerToken(bearerToken),
 	}
 	return secretsClient
+}
+
+// NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path.
+func NewDefaultClient(bearerToken string) *Client {
+	return NewClient(constants.SecretsAPISchema, constants.SecretsAPIHost, constants.SecretsAPIPath, bearerToken)
 }
 
 // Authenticated will check with the Secrets Service to ensure the current Bearer token is a valid

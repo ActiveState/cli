@@ -32,21 +32,28 @@ ifeq ($(OS),Windows_NT)
     BINARY_NAME=$(STATE).exe
 endif
 
-.PHONY: build test install deploy-updates deploy-artifacts generate-artifacts
+.PHONY: build build-dev test install deploy-updates deploy-artifacts generate-artifacts packr preprocess
 
 all: test build
 init:
 		git config core.hooksPath .githooks
 		go get -u github.com/gobuffalo/packr/...
-build: 
+
+packr:
 	$(PACKRCMD)
-	$(GOCMD) run scripts/constants-generator/main.go 
+preprocess:
+	CLIENV=$(CLIENV) $(GOCMD) run scripts/constants-generator/main.go
+
+build: packr preprocess
 	cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
 	mkdir -p public/update
 	$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
-install: 
-	$(PACKRCMD)
+build-dev: CLIENV=dev
+build-dev: build
+
+install: packr
 	cd $(STATE) && $(GOINSTALL) $(STATE).go
+
 generate-artifacts:
 	$(GOCMD) run scripts/artifact-generator/main.go 
 deploy-updates:
@@ -62,8 +69,8 @@ generate-secrets-client:
 	cd internal/secrets-api && swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
 generate-clients: generate-api-client generate-secrets-client
 
-test: 
-	$(GOCMD) run scripts/constants-generator/main.go 
+test: CLIENV=test
+test: preprocess 
 	$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -vE "(secrets-)?api/(client|model)"`
 clean: 
 	$(GOCLEAN)
