@@ -39,7 +39,7 @@ func (suite *KeypairFetcherTestSuite) TestFetch_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 	kp, failure := keypairs.Fetch(suite.secretsClient)
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound))
+	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
@@ -49,7 +49,7 @@ func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
 
 	kp, failure := keypairs.Fetch(suite.secretsClient)
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(keypairs.FailKeypair))
+	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "Did not expect: %s", failure.Type.Name)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetch_Success() {
@@ -63,7 +63,7 @@ func (suite *KeypairFetcherTestSuite) TestFetchRaw_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 	kp, failure := keypairs.FetchRaw(suite.secretsClient)
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound))
+	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_Success() {
@@ -79,7 +79,7 @@ func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_NotFound() {
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
 	suite.Nil(kp)
-	suite.True(failure.Type.Matches(secretsapi.FailNotFound))
+	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "Did not expect: %s", failure.Type.Name)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_ErrorParsing() {
@@ -87,11 +87,11 @@ func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_ErrorParsing() {
 		return 200, "publickeys/unparseable"
 	})
 
-	kp, failure := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
+	key, failure := keypairs.FetchPublicKey(suite.secretsClient, &apiModels.User{
 		UserID: strfmt.UUID("00020002-0002-0002-0002-000200020002"),
 	})
-	suite.Nil(kp)
-	suite.True(failure.Type.Matches(keypairs.FailPublicKey))
+	suite.Nil(key)
+	suite.True(failure.Type.Matches(keypairs.FailPublicKeyParse), "Did not expect: %s", failure.Type.Name)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_Success() {
@@ -103,6 +103,6 @@ func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_Success() {
 	suite.IsType(&keypairs.RSAPublicKey{}, kp)
 }
 
-func Test_KeypairCommand_TestSuite(t *testing.T) {
+func Test_KeypairFetcher_TestSuite(t *testing.T) {
 	suite.Run(t, new(KeypairFetcherTestSuite))
 }

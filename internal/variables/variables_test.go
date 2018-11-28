@@ -202,19 +202,19 @@ func TestRegisterExpander_RequiresNonBlankName(t *testing.T) {
 	failure := RegisterExpander("", func(n string, p *projectfile.Project) (string, *failures.Failure) {
 		return "", nil
 	})
-	assert.Equal(t, failure.Symbol, "variables_expander_err_empty_name")
+	assert.True(t, failure.Type.Matches(FailExpanderBadName))
 	assert.NotContains(t, expanderRegistry, "")
 
 	failure = RegisterExpander(" \n \t\f ", func(n string, p *projectfile.Project) (string, *failures.Failure) {
 		return "", nil
 	})
-	assert.Equal(t, failure.Symbol, "variables_expander_err_empty_name")
+	assert.True(t, failure.Type.Matches(FailExpanderBadName))
 	assert.NotContains(t, expanderRegistry, " \n \t\f ")
 }
 
 func TestRegisterExpander_ExpanderFuncCannotBeNil(t *testing.T) {
 	failure := RegisterExpander("tests", nil)
-	assert.Equal(t, failure.Symbol, "variables_expander_err_undefined")
+	assert.True(t, failure.Type.Matches(FailExpanderNoFunc))
 	assert.NotContains(t, expanderRegistry, "")
 }
 

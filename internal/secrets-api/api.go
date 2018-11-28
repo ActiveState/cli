@@ -14,8 +14,24 @@ import (
 var (
 	// FailNotFound indicates a failure to find a user's resource.
 	FailNotFound = failures.Type("secrets-api.fail.not_found", failures.FailUser)
+
+	// FailKeypairNotFound indicates a failure to find a keypair.
+	FailKeypairNotFound = failures.Type("secrets-api.fail.keypair.not_found", FailNotFound)
+
+	// FailPublicKeyNotFound indicates a failure to find a public-key.
+	FailPublicKeyNotFound = failures.Type("secrets-api.fail.publickey.not_found", FailNotFound)
+
+	// FailUserSecretNotFound indicates a failure to find a user secret.
+	FailUserSecretNotFound = failures.Type("secrets-api.fail.user_secret.not_found", FailNotFound)
+
 	// FailSave indicates a failure to save a user's resource.
 	FailSave = failures.Type("secrets-api.fail.save", failures.FailUser)
+
+	// FailKeypairSave indicates a failure to save a keypair.
+	FailKeypairSave = failures.Type("secrets-api.fail.keypair.save", FailSave)
+
+	// FailUserSecretSave indicates a failure to save a user secret.
+	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
 // Client encapsulates a Secrets Service API client and its configuration

@@ -35,7 +35,7 @@ func processErrorResponse(err error) *failures.Failure {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")
 	case 404:
-		return api.FailNotFound.New("err_api_project_not_found")
+		return api.FailProjectNotFound.New("err_api_project_not_found")
 	default:
 		return api.FailUnknown.Wrap(err)
 	}

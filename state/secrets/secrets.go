@@ -15,7 +15,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
-	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/bndr/gotabulate"
@@ -106,7 +105,7 @@ func listAll(secretsClient *secretsapi.Client, org *models.Organization) *failur
 	if failure != nil {
 		return failure
 	} else if len(userSecrets) == 0 {
-		return secretsapi.FailNotFound.New("secrets_err_no_secrets_found")
+		return secretsapi.FailUserSecretNotFound.New("secrets_err_no_secrets_found")
 	}
 
 	rows := [][]interface{}{}
@@ -153,7 +152,7 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 func encryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
 	encrStr, failure := encrypter.EncryptAndEncode([]byte(value))
 	if failure != nil {
-		return "", variables.FailExpandVariable.New("secrets_err_encrypting", failure.Error())
+		return "", failure
 	}
 	return encrStr, nil
 }
@@ -161,7 +160,7 @@ func encryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *fail
 func decodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *failures.Failure) {
 	decrBytes, failure := decrypter.DecodeAndDecrypt(value)
 	if failure != nil {
-		return "", variables.FailExpandVariable.New("secrets_err_decrypting", failure.Error())
+		return "", failure
 	}
 	return string(decrBytes), nil
 }

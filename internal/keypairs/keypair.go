@@ -14,14 +14,6 @@ import (
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.
 const MinimumRSABitLength int = 12
 
-var (
-	// FailKeypair represents a failure to successfully work with a Keypair.
-	FailKeypair = failures.Type("keypairs.fail.keypair")
-
-	// FailPublicKey represents a failure to successfully work with a PublicKey.
-	FailPublicKey = failures.Type("keypairs.fail.publickey")
-)
-
 // Encrypter expects to encrypt a message.
 type Encrypter interface {
 	// Encrypt will encrypt the provided message using the Keypair's public-key.
@@ -39,6 +31,44 @@ type Decrypter interface {
 	// DecodeAndDecrypt will first base64 decode the provided msg then it will decrypt the resulting ciphertext.
 	DecodeAndDecrypt(value string) ([]byte, *failures.Failure)
 }
+
+var (
+	// // ErrBitLengthTooShort reflects an error when a key generation bit-length argument is too short.
+	// ErrBitLengthTooShort = errors.New("bit-length too short")
+
+	// // ErrInvalidPEMEncoding reflects an error trying to decode a PEM-encoded key.
+	// ErrInvalidPEMEncoding = errors.New("invalid PEM encoding")
+
+	// FailCrypto indicates a failure with something crypto related.
+	FailCrypto = failures.Type("keypairs.fail.crypto")
+
+	// FailKeypair represents a failure to successfully work with a Keypair.
+	FailKeypair = failures.Type("keypairs.fail.keypair", FailCrypto)
+
+	// FailKeypairParse indicates a failure to parse a keypair.
+	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailKeypair)
+
+	// FailKeypairGenerate indicates a failure to generate a keypair.
+	FailKeypairGenerate = failures.Type("keypairs.fail.keypair.generate", FailKeypair)
+
+	// FailPublicKey represents a failure to successfully work with a PublicKey.
+	FailPublicKey = failures.Type("keypairs.fail.publickey")
+
+	// FailPublicKeyParse indicates a failure to parse a public-key.
+	FailPublicKeyParse = failures.Type("keypairs.fail.publickey.parse", FailPublicKey)
+
+	// FailKeyDecode indicates a failure to decode a key.
+	FailKeyDecode = failures.Type("keypairs.fail.key.decode", FailCrypto)
+
+	// FailKeyEncode indicates a failure to encode a key.
+	FailKeyEncode = failures.Type("keypairs.fail.key.encode", FailCrypto)
+
+	// FailDecrypt indicates a failure to decrypt a value.
+	FailDecrypt = failures.Type("keypairs.fail.decrypt", FailCrypto)
+
+	// FailEncrypt indicates a failure to decrypt a value.
+	FailEncrypt = failures.Type("keypairs.fail.encrypt", FailCrypto)
+)
 
 // Keypair provides behavior for working with public crypto key-pairs.
 type Keypair interface {
@@ -92,7 +122,7 @@ func (keypair *RSAKeypair) EncodePublicKey() (string, *failures.Failure) {
 func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 	b, err := rsaEncrypt(&keypair.PublicKey, msg)
 	if err != nil {
-		return nil, FailKeypair.Wrap(err)
+		return nil, FailEncrypt.Wrap(err)
 	}
 	return b, nil
 }
@@ -102,7 +132,7 @@ func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, *failures.Failure) {
 	s, err := rsaEncryptAndEncode(&keypair.PublicKey, msg)
 	if err != nil {
-		return "", FailKeypair.Wrap(err)
+		return "", FailEncrypt.Wrap(err)
 	}
 	return s, nil
 }
@@ -112,7 +142,7 @@ func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, *failures.Failu
 func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, *failures.Failure) {
 	b, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, keypair.PrivateKey, ciphertext, nil)
 	if err != nil {
-		return nil, FailKeypair.Wrap(err)
+		return nil, FailDecrypt.Wrap(err)
 	}
 	return b, nil
 }
@@ -122,7 +152,7 @@ func (keypair *RSAKeypair) Decrypt(ciphertext []byte) ([]byte, *failures.Failure
 func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, *failures.Failure) {
 	encrBytes, err := base64.StdEncoding.DecodeString(msg)
 	if err != nil {
-		return nil, FailKeypair.New("keypairs_err_base64_decoding")
+		return nil, FailKeyDecode.New("keypairs_err_base64_decoding")
 	}
 	return keypair.Decrypt(encrBytes)
 }
@@ -136,7 +166,7 @@ func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return nil, FailKeypair.Wrap(err)
+		return nil, FailKeypairGenerate.Wrap(err)
 	}
 	return &RSAKeypair{privateKey}, nil
 }
@@ -145,12 +175,12 @@ func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {
 func ParseRSA(privateKeyPEM string) (*RSAKeypair, *failures.Failure) {
 	block, _ := pem.Decode([]byte(privateKeyPEM))
 	if block == nil {
-		return nil, FailKeypair.New("keypairs_err_pem_encoding")
+		return nil, FailKeypairParse.New("keypairs_err_pem_encoding")
 	}
 
 	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, FailKeypair.Wrap(err)
+		return nil, FailKeypairParse.Wrap(err)
 	}
 	return &RSAKeypair{privKey}, nil
 }
@@ -183,12 +213,12 @@ func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, *failures.Failure
 func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, *failures.Failure) {
 	block, _ := pem.Decode([]byte(publicKeyPEM))
 	if block == nil {
-		return nil, FailPublicKey.New("keypairs_err_pem_encoding")
+		return nil, FailPublicKeyParse.New("keypairs_err_pem_encoding")
 	}
 
 	ifc, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, FailPublicKey.Wrap(err)
+		return nil, FailPublicKeyParse.Wrap(err)
 	}
 
 	pubKey, ok := ifc.(*rsa.PublicKey)

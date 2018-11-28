@@ -116,7 +116,8 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 }
 
 // doGenerate implements the behavior to generate a new Secrets key-pair on behalf of the user
-// and store that back to the Secrets Service.
+// and store that back to the Secrets Service. If dry-run is enabled, a keypair will be generated
+// and printed, but not stored anywhere (thus, not used).
 func doGenerate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
 	keypair, failure := keypairs.GenerateRSA(bits)
 	if failure != nil {
@@ -136,7 +137,7 @@ func doGenerate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failur
 		})
 
 		if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
-			return secretsapi.FailSave.New("keypair_err_save")
+			return secretsapi.FailKeypairSave.New("keypair_err_save")
 		}
 		print.Line("Keypair generated successfully")
 	} else {

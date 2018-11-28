@@ -14,7 +14,7 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failure
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailNotFound.New("keypair_err_not_found")
+			return nil, secretsapi.FailKeypairNotFound.New("keypair_err_not_found")
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
@@ -44,7 +44,7 @@ func FetchPublicKey(secretsClient *secretsapi.Client, user *models.User) (Encryp
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, secretsClient.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailNotFound.New("keypair_err_publickey_not_found", user.Username, user.UserID.String())
+			return nil, secretsapi.FailPublicKeyNotFound.New("keypair_err_publickey_not_found", user.Username, user.UserID.String())
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}

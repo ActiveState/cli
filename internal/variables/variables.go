@@ -10,17 +10,25 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// FailExpandVariable identifies a failure during variable expansion.
-var FailExpandVariable = failures.Type("variables.fail.expandvariable", failures.FailUser)
+var (
+	// FailExpandVariable identifies a failure during variable expansion.
+	FailExpandVariable = failures.Type("variables.fail.expandvariable", failures.FailUser)
 
-// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-var FailExpandVariableBadCategory = failures.Type("variables.fail.expandvariable.badcategory", FailExpandVariable)
+	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
+	FailExpandVariableBadCategory = failures.Type("variables.fail.expandvariable.badcategory", FailExpandVariable)
 
-// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-var FailExpandVariableBadName = failures.Type("variables.fail.expandvariable.badName", FailExpandVariable)
+	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
+	FailExpandVariableBadName = failures.Type("variables.fail.expandvariable.badName", FailExpandVariable)
 
-// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-var FailExpandVariableRecursion = failures.Type("variables.fail.expandvariable.recursion", FailExpandVariable)
+	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
+	FailExpandVariableRecursion = failures.Type("variables.fail.expandvariable.recursion", FailExpandVariable)
+
+	// FailExpanderBadName is used when an Expanders name is invalid.
+	FailExpanderBadName = failures.Type("variables.fail.expander.badName", failures.FailVerify)
+
+	// FailExpanderNoFunc is used when no handler func is found for an Expander.
+	FailExpanderNoFunc = failures.Type("variables.fail.expander.noFunc", failures.FailVerify)
+)
 
 var lastFailure *failures.Failure
 
@@ -95,9 +103,9 @@ var expanderRegistry = map[string]ExpanderFunc{
 func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
-		return failures.FailVerify.New("variables_expander_err_empty_name")
+		return FailExpanderBadName.New("variables_expander_err_empty_name")
 	} else if expanderFn == nil {
-		return failures.FailVerify.New("variables_expander_err_undefined")
+		return FailExpanderNoFunc.New("variables_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
 	return nil
