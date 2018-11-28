@@ -107,7 +107,7 @@ func Fetch(secretsClient *secretsapi.Client) (*models.Keypair, *failures.Failure
 	getOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailNotFound.New("keypair_err_not_found")
+			return nil, secretsapi.FailKeypairNotFound.New("keypair_err_not_found")
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
@@ -147,7 +147,7 @@ func Generate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures
 
 		_, err = secretsClient.Keys.SaveKeypair(params, secretsClient.Auth)
 		if err != nil {
-			return secretsapi.FailSave.New("keypair_err_save")
+			return secretsapi.FailKeypairSave.New("keypair_err_save")
 		}
 		print.Line("Keypair generated successfully")
 	} else {

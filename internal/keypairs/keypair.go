@@ -7,16 +7,35 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.
 const MinimumRSABitLength int = 12
 
-// ErrBitLengthTooShort reflects an error when a key generation bit-length argument is too short.
-var ErrBitLengthTooShort = errors.New("bit-length too short")
+var (
+	// ErrBitLengthTooShort reflects an error when a key generation bit-length argument is too short.
+	ErrBitLengthTooShort = errors.New("bit-length too short")
 
-// ErrInvalidPEMEncoding reflects an error trying to decode a PEM-encoded key.
-var ErrInvalidPEMEncoding = errors.New("invalid PEM encoding")
+	// ErrInvalidPEMEncoding reflects an error trying to decode a PEM-encoded key.
+	ErrInvalidPEMEncoding = errors.New("invalid PEM encoding")
+
+	// FailCrypto indicates a failure with something crypto related.
+	FailCrypto = failures.Type("keypairs.fail.crypto")
+
+	// FailKeypairParse indicates a failure to parse a keypair.
+	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailCrypto)
+
+	// FailKeyDecode indicates a failure to decode a key.
+	FailKeyDecode = failures.Type("keypairs.fail.key.decode", FailCrypto)
+
+	// FailDecrypt indicates a failure to decrypt a value.
+	FailDecrypt = failures.Type("keypairs.fail.decrypt", FailCrypto)
+
+	// FailEncrypt indicates a failure to decrypt a value.
+	FailEncrypt = failures.Type("keypairs.fail.encrypt", FailCrypto)
+)
 
 // Keypair provides behavior for working with public crypto key-pairs.
 type Keypair interface {

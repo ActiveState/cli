@@ -6,6 +6,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -84,6 +86,7 @@ func (suite *SecretsExpanderSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *SecretsExpanderSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
+	projectfile.Reset()
 }
 
 func (suite *SecretsExpanderSuite) prepareWorkingExpander() variables.ExpanderFunc {
@@ -94,9 +97,9 @@ func (suite *SecretsExpanderSuite) prepareWorkingExpander() variables.ExpanderFu
 	return secrets.NewExpander(suite.secretsClient)
 }
 
-func (suite *SecretsExpanderSuite) assertExpansionFailure(secretName string, expectedErrMsg string) {
+func (suite *SecretsExpanderSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
 	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
-	suite.Equal(expectedErrMsg, failure.Symbol)
+	suite.True(failure.Type.Matches(expectedFailureType), "unexpected failure type")
 	suite.Zero(value)
 }
 
@@ -110,7 +113,7 @@ func (suite *SecretsExpanderSuite) TestSecretSpecNotDefinedInProject() {
 	// secret is in the database, but not defined in the project
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("foo", suite.projectFile)
-	suite.Equal("secrets_expand_err_spec_undefined", failure.Symbol)
+	suite.True(failure.Type.Matches(secrets.FailUnrecognizedSecretSpec))
 	suite.Zero(value)
 }
 
@@ -119,7 +122,7 @@ func (suite *SecretsExpanderSuite) TestOrgNotFound() {
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.Equal("err_api_org_not_found", failure.Symbol)
+	suite.True(failure.Type.Matches(api.FailOrganizationNotFound))
 	suite.Zero(value)
 }
 
@@ -129,7 +132,7 @@ func (suite *SecretsExpanderSuite) TestProjectNotFound() {
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.Equal("err_api_project_not_found", failure.Symbol)
+	suite.True(failure.Type.Matches(api.FailProjectNotFound))
 	suite.Zero(value)
 }
 
@@ -140,21 +143,21 @@ func (suite *SecretsExpanderSuite) TestKeypairNotFound() {
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.Equal("keypair_err_not_found", failure.Symbol)
+	suite.True(failure.Type.Matches(secretsapi.FailKeypairNotFound))
 	suite.Zero(value)
 }
 
 func (suite *SecretsExpanderSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret", "secrets_err_base64_decoding")
+	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
 }
 
 func (suite *SecretsExpanderSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret", "secrets_err_decrypting")
+	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt)
 }
 
 func (suite *SecretsExpanderSuite) TestSecretHasNoValue() {
 	// secret is defined in the project, but not in the database
-	suite.assertExpansionFailure("undefined-secret", "secrets_expand_err_not_found")
+	suite.assertExpansionFailure("undefined-secret", secretsapi.FailUserSecretNotFound)
 }
 
 func (suite *SecretsExpanderSuite) TestOrgSecret() {
@@ -193,12 +196,12 @@ func (suite *SecretsExpanderSuite) TestUserSecret_PrefersUserProjScopeIfAvailabl
 
 func (suite *SecretsExpanderSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("proj-secret-only-org-available", "secrets_expand_err_not_found")
+	suite.assertExpansionFailure("proj-secret-only-org-available", secretsapi.FailUserSecretNotFound)
 }
 
 func (suite *SecretsExpanderSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("user-secret-only-proj-available", "secrets_expand_err_not_found")
+	suite.assertExpansionFailure("user-secret-only-proj-available", secretsapi.FailUserSecretNotFound)
 }
 
 func (suite *SecretsExpanderSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {

@@ -42,6 +42,12 @@ var (
 
 	// FailNotFound indicates a failure to find a user's resource.
 	FailNotFound = failures.Type("api.fail.not_found", failures.FailUser)
+
+	// FailOrganizationNotFound is used when a project could not be found
+	FailOrganizationNotFound = failures.Type("api.fail.organization.not_found", FailNotFound)
+
+	// FailProjectNotFound is used when a project could not be found
+	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
 
 var transport http.RoundTripper
