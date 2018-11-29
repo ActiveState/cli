@@ -54,11 +54,5 @@ const AnalyticsTrackingID = "UA-118120158-1"
 // APITokenName is the name we give our api token
 const APITokenName = "activestate-platform-cli"
 
-// APIPath is the path for our API endpoint
-const APIPath = "/api/v1"
-
-// SecretsAPIPath is the base path for our SecretsAPI endpoint
-const SecretsAPIPath = "/api/secrets/v1"
-
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"

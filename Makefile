@@ -48,6 +48,7 @@ build: packr preprocess
 	cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
 	mkdir -p public/update
 	$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
+
 build-dev: CLIENV=dev
 build-dev: build
 
@@ -69,8 +70,7 @@ generate-secrets-client:
 	cd internal/secrets-api && swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
 generate-clients: generate-api-client generate-secrets-client
 
-test: CLIENV=test
-test: preprocess 
+test: preprocess
 	$(GOTEST) -parallel 12 `$(GOCMD) list ./... | grep -vE "(secrets-)?api/(client|model)"`
 clean: 
 	$(GOCLEAN)

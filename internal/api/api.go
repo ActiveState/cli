@@ -55,15 +55,15 @@ func init() {
 
 // ReInitialize initializes (or re-initializes) an API connection
 func ReInitialize() {
-	transportRuntime := httptransport.New(constants.APIHost, constants.APIPath, []string{constants.APISchema})
+	apiSetting := constants.GetPlatformAPISettings()
+	Prefix = fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
+
+	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.SetDebug(true)
-	}
-	Prefix = fmt.Sprintf("%s://%s%s", constants.APISchema, constants.APIHost, constants.APIPath)
-
-	if flag.Lookup("test.v") != nil {
 		transportRuntime.Transport = transport
 	}
+
 	if BearerToken != "" {
 		Auth = httptransport.BearerToken(BearerToken)
 		transportRuntime.DefaultAuthentication = Auth
