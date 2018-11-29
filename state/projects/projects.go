@@ -39,7 +39,7 @@ func FetchByName(org *models.Organization, projectName string) (*models.Project,
 		case 401:
 			return nil, api.FailAuth.New("err_api_not_authenticated")
 		case 404:
-			return nil, api.FailNotFound.New("err_api_project_not_found")
+			return nil, api.FailProjectNotFound.New("err_api_project_not_found")
 		default:
 			return nil, api.FailUnknown.Wrap(err)
 		}
@@ -58,7 +58,7 @@ func FetchOrganizationProjects(org *models.Organization) ([]*models.Project, *fa
 		case 401:
 			return nil, api.FailAuth.New("err_api_not_authenticated")
 		case 404:
-			return nil, api.FailNotFound.New("err_api_project_not_found")
+			return nil, api.FailProjectNotFound.New("err_api_project_not_found")
 		default:
 			return nil, api.FailUnknown.Wrap(err)
 		}

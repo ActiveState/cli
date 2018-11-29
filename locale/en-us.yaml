@@ -325,12 +325,18 @@ err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
   other: Unable to find requested Project
+variables_expander_err_empty_name:
+  other: Expander handle can not be an empty string
+variables_expander_err_undefined:
+  other: Expander must be defined
 error_expand_variable_infinite_recursion:
   other: Infinite recursion trying to expand variable '{{.V0}}'
 error_expand_variable_project_unknown_category:
   other: "Error expanding variable '{{.V0}}': unknown category '{{.V1}}'"
 error_expand_variable_project_unknown_name:
-  other: "Error expanding variable '{{.V0}}': unknown name '{{.V1}}'"
+  other: "Error expanding variable '{{.V0}}': {{.V1}}"
+error_expand_variable_project_unrecognized_platform_var:
+  other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
   other: Run Your Project Commands
 arg_state_run_name:
@@ -439,6 +445,8 @@ print_state_show_packages:
   other: packages
 print_state_show_env_vars:
   other: Environment variables
+print_state_show_secrets:
+  other: Secret specifications
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
 config_variable_prompt_value:
@@ -484,8 +492,17 @@ secrets_err_no_secrets_found:
   other: Unable to find any Secrets for User
 secrets_err_encrypting:
   other: Error encrypting a user's Secret
+secrets_err_decrypting:
+  other: Error decrypting a user's Secret
 secrets_err_save:
   other: Error updating user's Secrets
+secrets_err_base64_decoding:
+  other: Error base64 decoding secret value
+
+secrets_expand_err_spec_undefined:
+  other: "secret specification for `{{.V0}}` not defined in project"
+secrets_expand_err_not_found:
+  other: "unable to locate information regarding secret `{{.V0}}`"
 
 keypair_cmd_description:
   other: Manage Your Keypair

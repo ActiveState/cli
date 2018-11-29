@@ -50,7 +50,7 @@ func FetchByURLName(urlName string) (*models.Organization, *failures.Failure) {
 		case 401:
 			return nil, api.FailAuth.New("err_api_not_authenticated")
 		case 404:
-			return nil, api.FailNotFound.New("err_api_org_not_found")
+			return nil, api.FailOrganizationNotFound.New("err_api_org_not_found")
 		default:
 			return nil, api.FailUnknown.Wrap(err)
 		}

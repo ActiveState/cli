@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -22,17 +23,18 @@ var FailParseProject = failures.Type("projectfile.fail.parseproject")
 
 // Project covers the top level project structure of our yaml
 type Project struct {
-	Name         string     `yaml:"name"`
-	Owner        string     `yaml:"owner"`
-	Namespace    string     `yaml:"namespace"`
-	Version      string     `yaml:"version"`
-	Environments string     `yaml:"environments"`
-	Platforms    []Platform `yaml:"platforms"`
-	Languages    []Language `yaml:"languages"`
-	Variables    []Variable `yaml:"variables"`
-	Hooks        []Hook     `yaml:"hooks"`
-	Commands     []Command  `yaml:"commands"`
-	path         string     // "private"
+	Name         string      `yaml:"name"`
+	Owner        string      `yaml:"owner"`
+	Namespace    string      `yaml:"namespace"`
+	Version      string      `yaml:"version"`
+	Environments string      `yaml:"environments"`
+	Platforms    []Platform  `yaml:"platforms"`
+	Languages    []Language  `yaml:"languages"`
+	Variables    []Variable  `yaml:"variables"`
+	Hooks        []Hook      `yaml:"hooks"`
+	Commands     []Command   `yaml:"commands"`
+	Secrets      SecretSpecs `yaml:"secrets"`
+	path         string      // "private"
 }
 
 // Platform covers the platform structure of our yaml
@@ -112,6 +114,26 @@ type Command struct {
 	Value       string     `yaml:"value"`
 	Standalone  bool       `yaml:"standalone"`
 	Constraints Constraint `yaml:"constraints"`
+}
+
+// SecretSpec covers the secret specification structure, which goes under Project
+type SecretSpec struct {
+	Name      string `yaml:"name"`
+	IsProject bool   `yaml:"project"`
+	IsUser    bool   `yaml:"user"`
+}
+
+// SecretSpecs adds functionality around slices of SecretSpecs.
+type SecretSpecs []*SecretSpec
+
+// GetByName find the SecretSpec with the requested name.
+func (specs SecretSpecs) GetByName(specName string) *SecretSpec {
+	for _, spec := range specs {
+		if strings.EqualFold(specName, spec.Name) {
+			return spec
+		}
+	}
+	return nil
 }
 
 var persistentProject *Project

@@ -22,6 +22,11 @@ const DefaultRSABitLength int = 4096
 type Command struct {
 	config        *commands.Command
 	secretsClient *secretsapi.Client
+
+	Flags struct {
+		Bits   int
+		DryRun bool
+	}
 }
 
 // NewCommand creates a new Keypair command.
@@ -40,6 +45,23 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		Name:        "generate",
 		Description: "keypair_generate_cmd_description",
 		Run:         cmd.ExecuteGenerate,
+		Flags: []*commands.Flag{
+			&commands.Flag{
+				Name:        "bits",
+				Shorthand:   "b",
+				Description: "keypair_generate_flag_bits",
+				Type:        commands.TypeInt,
+				IntVar:      &cmd.Flags.Bits,
+				IntValue:    DefaultRSABitLength,
+			},
+			&commands.Flag{
+				Name:        "dry-run",
+				Shorthand:   "",
+				Description: "keypair_generate_flag_dryrun",
+				Type:        commands.TypeBool,
+				BoolVar:     &cmd.Flags.DryRun,
+			},
+		},
 	})
 
 	return cmd
@@ -66,11 +88,13 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 // ExecuteGenerate processes the `keypair generate` sub-command.
 func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
-	uid, failure := cmd.secretsClient.Authenticated()
+	var failure *failures.Failure
+	if !cmd.Flags.DryRun {
+		_, failure = cmd.secretsClient.Authenticated()
+	}
 
 	if failure == nil {
-		logging.Debug("(secrets.keypair) authenticated user=%s", uid.String())
-		failure = Generate(cmd.secretsClient)
+		failure = Generate(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
 	}
 
 	if failure != nil {
@@ -83,7 +107,7 @@ func Fetch(secretsClient *secretsapi.Client) (*models.Keypair, *failures.Failure
 	getOk, err := secretsClient.Keys.GetKeypair(nil, secretsClient.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
-			return nil, secretsapi.FailNotFound.New("keypair_err_not_found")
+			return nil, secretsapi.FailKeypairNotFound.New("keypair_err_not_found")
 		}
 		return nil, api.FailUnknown.Wrap(err)
 	}
@@ -103,8 +127,8 @@ func Dump(secretsClient *secretsapi.Client) *failures.Failure {
 
 // Generate implements the behavior to generate a new Secrets key-pair on behalf of the user
 // and store that back to the Secrets Service.
-func Generate(secretsClient *secretsapi.Client) *failures.Failure {
-	keypair, err := keypairs.GenerateRSA(DefaultRSABitLength)
+func Generate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
+	keypair, err := keypairs.GenerateRSA(bits)
 	if err != nil {
 		return api.FailUnknown.Wrap(err)
 	}
@@ -115,16 +139,21 @@ func Generate(secretsClient *secretsapi.Client) *failures.Failure {
 		return api.FailUnknown.Wrap(err)
 	}
 
-	params := keys.NewSaveKeypairParams().WithKeypair(&models.KeypairChange{
-		EncryptedPrivateKey: &encodedPrivateKey,
-		PublicKey:           &encodedPublicKey,
-	})
+	if !dryRun {
+		params := keys.NewSaveKeypairParams().WithKeypair(&models.KeypairChange{
+			EncryptedPrivateKey: &encodedPrivateKey,
+			PublicKey:           &encodedPublicKey,
+		})
 
-	_, err = secretsClient.Keys.SaveKeypair(params, secretsClient.Auth)
-	if err != nil {
-		return secretsapi.FailSave.New("keypair_err_save")
+		_, err = secretsClient.Keys.SaveKeypair(params, secretsClient.Auth)
+		if err != nil {
+			return secretsapi.FailKeypairSave.New("keypair_err_save")
+		}
+		print.Line("Keypair generated successfully")
+	} else {
+		print.Line(encodedPrivateKey)
+		print.Line(encodedPublicKey)
 	}
 
-	print.Line("Keypair generated successfully")
 	return nil
 }

@@ -149,6 +149,51 @@ standalone: true`)
 	assert.True(t, command.Standalone, "Standalone should be set")
 }
 
+func TestSecretsStruct_OrgScopedSecret(t *testing.T) {
+	spec := SecretSpec{}
+	dat := strings.TrimSpace(`
+name: valueForName
+`)
+
+	err := yaml.Unmarshal([]byte(dat), &spec)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
+	assert.False(t, spec.IsProject)
+	assert.False(t, spec.IsUser)
+}
+
+func TestSecretsStruct_ProjectScopedSecret(t *testing.T) {
+	spec := SecretSpec{}
+	dat := strings.TrimSpace(`
+name: valueForName
+project: true
+`)
+
+	err := yaml.Unmarshal([]byte(dat), &spec)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
+	assert.True(t, spec.IsProject)
+	assert.False(t, spec.IsUser)
+}
+
+func TestSecretsStruct_UserProjectScopedSecret(t *testing.T) {
+	spec := SecretSpec{}
+	dat := strings.TrimSpace(`
+name: valueForName
+project: true
+user: true
+`)
+
+	err := yaml.Unmarshal([]byte(dat), &spec)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
+	assert.True(t, spec.IsProject)
+	assert.True(t, spec.IsUser)
+}
+
 func TestParse(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 
@@ -199,6 +244,12 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
 	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
 	assert.False(t, project.Commands[0].Standalone, "Standalone value should be set, but false")
+
+	assert.Len(t, project.Secrets, 1)
+	secretSpec := project.Secrets.GetByName("org-secret")
+	assert.NotNil(t, secretSpec)
+	assert.False(t, secretSpec.IsProject)
+	assert.False(t, secretSpec.IsUser)
 
 	assert.NotEmpty(t, project.Path(), "Path should be set")
 }

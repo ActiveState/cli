@@ -42,13 +42,13 @@ func (suite *KeypairCommandTestSuite) TestCommandConfig() {
 	suite.Equal("keypair", conf.Name)
 	suite.Equal("keypair_cmd_description", conf.Description, "i18n symbol")
 
+	suite.Len(conf.Flags, 0, "number of command flags supported")
+	suite.Len(conf.Arguments, 0, "number of commands args supported")
+
 	ccCmds := conf.GetCobraCmd().Commands()
 	suite.Require().Len(ccCmds, 1, "number of subcommands")
 	suite.Equal("generate", ccCmds[0].Name())
-	suite.False(ccCmds[0].HasFlags())
-
-	suite.Len(conf.Flags, 0, "number of command flags supported")
-	suite.Len(conf.Arguments, 0, "number of commands args supported")
+	suite.True(ccCmds[0].HasFlags())
 }
 
 func (suite *KeypairCommandTestSuite) TestExecute_NoArgs_AuthFailure() {
@@ -116,7 +116,7 @@ func (suite *KeypairCommandTestSuite) TestExecute_Generate_SavesNewKeypair() {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate"})
+		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
@@ -135,13 +135,29 @@ func (suite *KeypairCommandTestSuite) TestExecute_Generate_SaveFails() {
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	cmd.Config().GetCobraCmd().SetArgs([]string{"generate"})
+	cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
 	execErr := cmd.Config().Execute()
 	suite.Require().NoError(execErr)
 	suite.Error(failures.Handled(), "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailSave), "should be a FailSave failure")
+}
+
+func (suite *KeypairCommandTestSuite) TestExecute_Generate_DryRun() {
+	cmd := keypair.NewCommand(suite.secretsClient)
+
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
+		execErr = cmd.Config().Execute()
+	})
+	suite.Require().NoError(outErr)
+	suite.Require().NoError(execErr)
+	suite.Require().NoError(failures.Handled(), "is a failure")
+
+	suite.Contains(outStr, "RSA PRIVATE KEY")
+	suite.Contains(outStr, "RSA PUBLIC KEY")
 }
 
 func Test_KeypairCommand_TestSuite(t *testing.T) {

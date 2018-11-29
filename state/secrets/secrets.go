@@ -153,7 +153,7 @@ func ListAll(secretsClient *secretsapi.Client, org *models.Organization) *failur
 	if failure != nil {
 		return failure
 	} else if len(userSecrets) == 0 {
-		return secretsapi.FailNotFound.New("secrets_err_no_secrets_found")
+		return secretsapi.FailUserSecretNotFound.New("secrets_err_no_secrets_found")
 	}
 
 	rows := [][]interface{}{}
@@ -235,7 +235,7 @@ func findSecretByScope(userSecrets []*secretsModels.UserSecret, project *models.
 // UpsertUserSecret will add a new secret for this user or update an existing one. The update is dependent on
 // the org, project, level, and name being the same as an existing secret.
 func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
-	logging.Debug("attempting to upset user-secret for org=%s", org.OrganizationID.String())
+	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
 	kpOk, failure := keypair.Fetch(secretsClient)
 	if failure != nil {
 		return failure
@@ -244,7 +244,7 @@ func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization
 	kp, err := keypairs.ParseRSA(*kpOk.EncryptedPrivateKey)
 	if err != nil {
 		logging.Error("parsing user keypair: %v", err)
-		return secretsapi.FailSave.New("secrets_keypair_err_parsing")
+		return keypairs.FailKeypairParse.New("keypair_err_parsing")
 	}
 
 	userSecrets, failure := FetchAll(secretsClient, org)
@@ -257,7 +257,7 @@ func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization
 	encrBytes, err := kp.Encrypt([]byte(secretValue))
 	if err != nil {
 		logging.Error("encrypting user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_encrypting")
+		return keypairs.FailEncrypt.New("secrets_err_encrypting")
 	}
 	encrStr := base64.StdEncoding.EncodeToString(encrBytes)
 
@@ -283,7 +283,7 @@ func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization
 	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Debug("error saving user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_save")
+		return secretsapi.FailUserSecretSave.New("secrets_err_save")
 	}
 
 	return nil

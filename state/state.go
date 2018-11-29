@@ -14,6 +14,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
@@ -86,6 +87,8 @@ func init() {
 		constants.SecretsAPISchema, constants.SecretsAPIHostStaging, constants.SecretsAPIPath, api.BearerToken)
 	Command.Append(secrets.NewCommand(secretsClient).Config())
 	Command.Append(keypair.NewCommand(secretsClient).Config())
+
+	variables.RegisterExpander("secrets", secrets.NewExpander(secretsClient))
 }
 
 func main() {
