@@ -36,6 +36,19 @@
             "cwd": "${workspaceRoot}/test",
             "args": ["activate"],
             "showLog": true
+        },
+        {
+            "name": "state secrets keypair",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "remotePath": "",
+            "port": 2345,
+            "host": "127.0.0.1",
+            "program": "${workspaceRoot}/state/state.go",
+            "cwd": "${workspaceRoot}",
+            "args": ["secrets", "keypair"],
+            "showLog": true
         }
     ]
 }

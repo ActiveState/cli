@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -25,6 +26,7 @@ func init() {
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify HEAD") }
 	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, Constants["BuildNumber"]()) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
+	Constants["APIEnv"] = func() string { return strings.TrimSpace(os.Getenv("APIENV")) }
 }
 
 func getCmdOutput(cmdString string) string {

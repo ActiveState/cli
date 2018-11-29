@@ -122,4 +122,11 @@ func Execute(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+
+	if len(project.Secrets) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_secrets"))
+		for _, secret := range project.Secrets {
+			print.Formatted("  %s: project-scope=%v, user-scope=%v\n", secret.Name, secret.IsProject, secret.IsUser)
+		}
+	}
 }

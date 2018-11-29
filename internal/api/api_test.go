@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api/client/authentication"
-
 	"github.com/ActiveState/cli/internal/api/client/users"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
@@ -40,7 +39,6 @@ func setupUser(t *testing.T) *models.UserEditable {
 }
 
 func TestEndpoint(t *testing.T) {
-	assert.Equal(t, constants.APIHostTesting, APIHost, "We are running against the testing api")
 	assert.NotNil(t, Client, "ReInitialize initialized the Client")
 }
 
@@ -65,7 +63,7 @@ func TestAuth(t *testing.T) {
 	assert.NotEmpty(t, viper.GetString("apiToken"), "Authentication is persisted through token")
 	assert.NotNil(t, Auth, "Authentication is persisted for this session")
 
-	bearerToken = ""
+	BearerToken = ""
 	Auth = nil
 	ReInitialize()
 	assert.NotNil(t, Auth, "Authentication is still persisted for this session")
@@ -92,6 +90,53 @@ func TestAuthFailure(t *testing.T) {
 
 	viper.Set("apiToken", "testFailure")
 	ReInitialize()
-	assert.Empty(t, bearerToken, "Should not have authenticated")
+	assert.Empty(t, BearerToken, "Should not have authenticated")
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
+}
+
+func TestErrorCode_WithoutPayload(t *testing.T) {
+	setup(t)
+	assert.Equal(t, 100, ErrorCode(&struct{ Code int }{
+		Code: 100,
+	}))
+}
+
+func TestErrorCode_WithoutPayload_NoCodeValue(t *testing.T) {
+	setup(t)
+	assert.Equal(t, -1, ErrorCode(&struct{ OtherCode int }{
+		OtherCode: 100,
+	}))
+}
+
+func TestErrorCode_WithPayload(t *testing.T) {
+	setup(t)
+	providedCode := 200
+	codeValue := struct{ Code *int }{Code: &providedCode}
+	payload := struct{ Payload struct{ Code *int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, 200, ErrorCode(&payload))
+}
+
+func TestErrorCode_WithPayload_CodeNotPointer(t *testing.T) {
+	setup(t)
+	providedCode := 300
+	codeValue := struct{ Code int }{Code: providedCode}
+	payload := struct{ Payload struct{ Code int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, 300, ErrorCode(&payload))
+}
+
+func TestErrorCode_WithPayload_NoCodeField(t *testing.T) {
+	setup(t)
+	providedCode := 400
+	codeValue := struct{ OtherCode int }{OtherCode: providedCode}
+	payload := struct{ Payload struct{ OtherCode int } }{
+		Payload: codeValue,
+	}
+
+	assert.Equal(t, -1, ErrorCode(&payload))
 }

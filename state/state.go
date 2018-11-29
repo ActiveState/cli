@@ -5,29 +5,30 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-
-	// commands
+	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/env"
 	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/run"
+	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/selfupdate"
 	"github.com/ActiveState/cli/state/show"
-
 	_ "github.com/ActiveState/state-required/require"
-
 	"github.com/spf13/cobra"
 )
 
@@ -81,6 +82,12 @@ func init() {
 	Command.Append(show.Command)
 	Command.Append(env.Command)
 	Command.Append(run.Command)
+
+	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
+	Command.Append(secrets.NewCommand(secretsClient).Config())
+	Command.Append(keypair.NewCommand(secretsClient).Config())
+
+	variables.RegisterExpander("secrets", secrets.NewExpander(secretsClient))
 }
 
 func main() {
@@ -127,7 +134,7 @@ func relaunch() {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 	if err := cmd.Wait(); err != nil {
-		os.Exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
+		exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
 	}
-	os.Exit(0)
+	exit(0)
 }

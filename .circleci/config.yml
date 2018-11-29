@@ -12,7 +12,7 @@ defaults:
             mkdir -p $TEST_RESULTS
             $GOROOT/bin/go get github.com/jstemmer/go-junit-report
             $GOROOT/bin/go get -u github.com/gobuffalo/packr/...
-            $GOROOT/bin/go run scripts/constants-generator/main.go 
+            $GOROOT/bin/go run scripts/constants-generator/main.go
     runTests: &runTests
       run:
         name: Run unit tests

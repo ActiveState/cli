@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/api/client"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
+	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -20,21 +21,31 @@ import (
 
 // Client contains the active API Client connection
 var Client *client.APIClient
-var bearerToken string
+
+// BearerToken holds the user's Bearer-token received from the API
+var BearerToken string
 
 // Auth holds our authenticated information, go-swagger makes us pass this manually to all calls that require auth
 var Auth runtime.ClientAuthInfoWriter
 
-// Prefix is the URL prefix for our API, intended for use in tets
+// Prefix is the URL prefix for our API, intended for use in tests
 var Prefix string
 
-// APIHost holds the API Host we're communicating with
-var APIHost string
-
-// FailAuth is the failure type used for failed authentication API requests
 var (
+	// FailUnknown is the failure type used for API requests with an unexpected error
 	FailUnknown = failures.Type("api.fail.unknown")
-	FailAuth    = failures.Type("api.fail.auth", failures.FailUser)
+
+	// FailAuth is the failure type used for failed authentication API requests
+	FailAuth = failures.Type("api.fail.auth", failures.FailUser)
+
+	// FailNotFound indicates a failure to find a user's resource.
+	FailNotFound = failures.Type("api.fail.not_found", failures.FailUser)
+
+	// FailOrganizationNotFound is used when a project could not be found
+	FailOrganizationNotFound = failures.Type("api.fail.organization.not_found", FailNotFound)
+
+	// FailProjectNotFound is used when a project could not be found
+	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
 
 var transport http.RoundTripper
@@ -45,31 +56,23 @@ func init() {
 
 // ReInitialize initializes (or re-initializes) an API connection
 func ReInitialize() {
-	if APIHost == "" {
-		APIHost = constants.APIHost
-		if flag.Lookup("test.v") != nil {
-			APIHost = constants.APIHostTesting
-		} else if constants.BranchName != constants.ProductionBranch {
-			APIHost = constants.APIHostStaging
-		}
-	}
-	transportRuntime := httptransport.New(APIHost, constants.APIPath, []string{constants.APISchema})
+	apiSetting := apiEnv.GetPlatformAPISettings()
+	Prefix = fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
+
+	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.SetDebug(true)
-	}
-	Prefix = fmt.Sprintf("%s://%s%s", constants.APISchema, APIHost, constants.APIPath)
-
-	if flag.Lookup("test.v") != nil {
 		transportRuntime.Transport = transport
 	}
-	if bearerToken != "" {
-		Auth = httptransport.BearerToken(bearerToken)
+
+	if BearerToken != "" {
+		Auth = httptransport.BearerToken(BearerToken)
 		transportRuntime.DefaultAuthentication = Auth
 	}
 	Client = client.New(transportRuntime, strfmt.Default)
 
 	apiToken := viper.GetString("apiToken")
-	if bearerToken == "" && apiToken != "" {
+	if BearerToken == "" && apiToken != "" {
 		_, err := Authenticate(&models.Credentials{
 			Token: apiToken,
 		})
@@ -92,7 +95,8 @@ func Authenticate(credentials *models.Credentials) (*authentication.PostLoginOK,
 		return nil, err
 	}
 
-	bearerToken = loginOK.Payload.Token
+	// NOTE (gus) there's a chance for an infinite loop if BearerToken is not set for some reason
+	BearerToken = loginOK.Payload.Token
 	ReInitialize()
 
 	if credentials.Token != "" {
@@ -107,19 +111,39 @@ func Authenticate(credentials *models.Credentials) (*authentication.PostLoginOK,
 // RemoveAuth removes any authentication info stored and reinitializes our API connection
 func RemoveAuth() {
 	viper.Set("apiToken", "")
-	bearerToken = ""
+	BearerToken = ""
 	Auth = nil
 	ReInitialize()
 }
 
 // ErrorCode tries to retrieve the code associated with an API error
 func ErrorCode(err interface{}) int {
-	r := reflect.ValueOf(err)
-	v := reflect.Indirect(r).FieldByName("Code")
-	if !v.IsValid() {
+	codeVal := reflect.Indirect(reflect.ValueOf(err)).FieldByName("Code")
+	if codeVal.IsValid() {
+		return int(codeVal.Int())
+	}
+	return ErrorCodeFromPayload(err)
+}
+
+// ErrorCodeFromPayload tries to retrieve the code associated with an API error from a
+// Message object referenced as a Payload.
+func ErrorCodeFromPayload(err interface{}) int {
+	errVal := reflect.ValueOf(err)
+	payloadVal := reflect.Indirect(errVal).FieldByName("Payload")
+	if !payloadVal.IsValid() {
 		return -1
 	}
-	return int(v.Int())
+
+	codePtr := reflect.Indirect(payloadVal).FieldByName("Code")
+	if !codePtr.IsValid() {
+		return -1
+	}
+
+	codeVal := reflect.Indirect(codePtr)
+	if !codeVal.IsValid() {
+		return -1
+	}
+	return int(codeVal.Int())
 }
 
 // persistWithToken will retrieve and save a persistent authentication token based on the active authentication information

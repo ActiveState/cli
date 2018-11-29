@@ -3,10 +3,10 @@ package projects
 import (
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/organizations"
-	clientProjects "github.com/ActiveState/cli/internal/api/client/projects"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -39,16 +39,11 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	}
 	projectsList := []projectWithOrg{}
 	for _, org := range orgs.Payload {
-		projParams := clientProjects.NewListProjectsParams()
-		projParams.SetOrganizationName(org.Name)
-		orgProjects, err := api.Client.Projects.ListProjects(projParams, api.Auth)
+		orgProjects, err := projects.FetchOrganizationProjects(org.Urlname)
 		if err != nil {
-			if api.ErrorCode(err) == 401 {
-				return nil, api.FailAuth.New("err_api_not_authenticated")
-			}
-			return nil, api.FailUnknown.Wrap(err)
+			return nil, err
 		}
-		for _, project := range orgProjects.Payload {
+		for _, project := range orgProjects {
 			projectsList = append(projectsList, projectWithOrg{project.Name, project.Description, org.Name})
 		}
 	}

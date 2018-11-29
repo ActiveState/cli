@@ -51,21 +51,6 @@ const DefaultNamespaceDomain = "github.com"
 // AnalyticsTrackingID is our Google Analytics tracking ID
 const AnalyticsTrackingID = "UA-118120158-1"
 
-// APIHost is the host that we're talking against for our API
-const APIHost = "platform.activestate.com"
-
-// APIHostStaging is the host that we're talking against for our API when not on production
-const APIHostStaging = "staging.activestate.com"
-
-// APIHostTesting is the host that we're talking against for our API when not on production
-const APIHostTesting = "testing.tld"
-
-// APISchema is the schema used by our API
-const APISchema = "https"
-
-// APIPath is the path for our API endpoint
-const APIPath = "/api/v1"
-
 // APITokenName is the name we give our api token
 const APITokenName = "activestate-platform-cli"
 
