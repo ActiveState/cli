@@ -120,9 +120,9 @@ func (keypair *RSAKeypair) EncodePublicKey() (string, *failures.Failure) {
 // Encrypt will encrypt the provided message using the Keypair's public-key. This particular
 // function will use SHA256 for the random oracle.
 func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
-	b, err := rsaEncrypt(&keypair.PublicKey, msg)
-	if err != nil {
-		return nil, FailEncrypt.Wrap(err)
+	b, failure := rsaEncrypt(&keypair.PublicKey, msg)
+	if failure != nil {
+		return nil, failure
 	}
 	return b, nil
 }
@@ -130,11 +130,11 @@ func (keypair *RSAKeypair) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 // EncryptAndEncode will encrypt the provided message using the Keypair's public-key
 // and then base-64 encode it.
 func (keypair *RSAKeypair) EncryptAndEncode(msg []byte) (string, *failures.Failure) {
-	s, err := rsaEncryptAndEncode(&keypair.PublicKey, msg)
-	if err != nil {
-		return "", FailEncrypt.Wrap(err)
+	encrBytes, failure := keypair.Encrypt(msg)
+	if failure != nil {
+		return "", failure
 	}
-	return s, nil
+	return base64.StdEncoding.EncodeToString(encrBytes), nil
 }
 
 // Decrypt will decrypt the provided ciphertext using the Keypair's private-key. This particular
@@ -202,11 +202,11 @@ func (key *RSAPublicKey) Encrypt(msg []byte) ([]byte, *failures.Failure) {
 
 // EncryptAndEncode will encrypt the provided message using this PublicKey and then base-64 encode it.
 func (key *RSAPublicKey) EncryptAndEncode(msg []byte) (string, *failures.Failure) {
-	s, err := rsaEncryptAndEncode(key.PublicKey, msg)
-	if err != nil {
-		return "", FailPublicKey.Wrap(err)
+	encrBytes, failure := key.Encrypt(msg)
+	if failure != nil {
+		return "", failure
 	}
-	return s, nil
+	return base64.StdEncoding.EncodeToString(encrBytes), nil
 }
 
 // ParseRSAPublicKey will parse a PEM encoded RSAPublicKey
@@ -228,14 +228,10 @@ func ParseRSAPublicKey(publicKeyPEM string) (*RSAPublicKey, *failures.Failure) {
 	return &RSAPublicKey{pubKey}, nil
 }
 
-func rsaEncrypt(pubKey *rsa.PublicKey, msg []byte) ([]byte, error) {
-	return rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, msg, nil)
-}
-
-func rsaEncryptAndEncode(pubKey *rsa.PublicKey, msg []byte) (string, error) {
-	encrBytes, err := rsaEncrypt(pubKey, msg)
+func rsaEncrypt(pubKey *rsa.PublicKey, msg []byte) ([]byte, *failures.Failure) {
+	encrBytes, err := rsa.EncryptOAEP(sha256.New(), rand.Reader, pubKey, msg, nil)
 	if err != nil {
-		return "", err
+		return nil, FailEncrypt.Wrap(err)
 	}
-	return base64.StdEncoding.EncodeToString(encrBytes), nil
+	return encrBytes, nil
 }

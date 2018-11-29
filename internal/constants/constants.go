@@ -82,7 +82,7 @@ const SecretsAPIHostTesting = "secrets.testing.tld"
 const SecretsAPISchema = "http"
 
 // SecretsAPIPath is the base path for our SecretsAPI endpoint
-const SecretsAPIPath = "/api/v1"
+const SecretsAPIPath = "/api/secrets/v1"
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"

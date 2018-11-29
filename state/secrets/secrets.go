@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/organizations"
@@ -147,20 +146,4 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 	} else {
 		return locale.T("secrets_scope_org")
 	}
-}
-
-func encryptAndEncode(encrypter keypairs.Encrypter, value string) (string, *failures.Failure) {
-	encrStr, failure := encrypter.EncryptAndEncode([]byte(value))
-	if failure != nil {
-		return "", failure
-	}
-	return encrStr, nil
-}
-
-func decodeAndDecrypt(decrypter keypairs.Decrypter, value string) (string, *failures.Failure) {
-	decrBytes, failure := decrypter.DecodeAndDecrypt(value)
-	if failure != nil {
-		return "", failure
-	}
-	return string(decrBytes), nil
 }

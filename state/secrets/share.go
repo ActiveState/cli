@@ -66,32 +66,25 @@ func findMemberForOrgByUsername(org *models.Organization, userHandler string) (*
 	return nil, api.FailNotFound.New("err_api_member_not_found")
 }
 
-func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, user *models.User) *failures.Failure {
-	otherChanges, failure := prepareSharableSecrets(secretsClient, org, user)
+func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, forUser *models.User) *failures.Failure {
+	selfSecrets, failure := fetchAll(secretsClient, org)
 	if failure != nil {
 		return failure
 	}
 
-	return saveOtherUserSecrets(secretsClient, org, user, otherChanges)
-}
-
-func prepareSharableSecrets(secretsClient *secretsapi.Client, org *models.Organization, user *models.User) ([]*secretsModels.UserSecretChange, *failures.Failure) {
-	otherEncrypter, failure := keypairs.FetchPublicKey(secretsClient, user)
+	otherEncrypter, failure := keypairs.FetchPublicKey(secretsClient, forUser)
 	if failure != nil {
-		return nil, failure
+		return failure
 	}
 
 	selfKeypair, failure := keypairs.Fetch(secretsClient)
 	if failure != nil {
-		return nil, failure
+		return failure
 	}
 
-	selfSecrets, failure := fetchAll(secretsClient, org)
-	if failure != nil {
-		return nil, failure
-	}
+	otherChanges, failure := portShareableSecrets(selfSecrets, selfKeypair, otherEncrypter)
 
-	return portShareableSecrets(selfSecrets, selfKeypair, otherEncrypter)
+	return saveOtherUserSecrets(secretsClient, org, forUser, otherChanges)
 }
 
 func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter keypairs.Decrypter, encrypter keypairs.Encrypter) ([]*secretsModels.UserSecretChange, *failures.Failure) {
@@ -99,12 +92,12 @@ func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter key
 
 	for _, selfSecret := range selfSecrets {
 		if !*selfSecret.IsUser {
-			plaintextValue, failure := decodeAndDecrypt(decrypter, *selfSecret.Value)
+			plaintextValue, failure := decrypter.DecodeAndDecrypt(*selfSecret.Value)
 			if failure != nil {
 				return nil, failure
 			}
 
-			ciphertext, failure := encryptAndEncode(encrypter, plaintextValue)
+			ciphertext, failure := encrypter.EncryptAndEncode(plaintextValue)
 			if failure != nil {
 				return nil, failure
 			}
