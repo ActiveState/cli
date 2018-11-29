@@ -42,14 +42,14 @@ init:
 packr:
 	$(PACKRCMD)
 preprocess:
-	CLIENV=$(CLIENV) $(GOCMD) run scripts/constants-generator/main.go
+	APIENV=$(APIENV) $(GOCMD) run scripts/constants-generator/main.go
 
 build: packr preprocess
 	cd $(STATE) && $(GOBUILD) -ldflags="-s -w" -o ../build/$(BINARY_NAME) $(STATE).go
 	mkdir -p public/update
 	$(GOCMD) run scripts/update-generator/main.go -o public/update build/$(BINARY_NAME)
 
-build-dev: CLIENV=dev
+build-dev: APIENV=dev
 build-dev: build
 
 install: packr

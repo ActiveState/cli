@@ -8,7 +8,7 @@ import (
 )
 
 func TestConstants(t *testing.T) {
-	os.Setenv("CLIENV", "preprocess_testing")
+	os.Setenv("APIENV", "preprocess_testing")
 	for k, v := range Constants {
 		assert.NotEmpty(t, v(), "Value for "+k+" is generated")
 	}

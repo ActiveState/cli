@@ -16,7 +16,9 @@ type APISetting struct {
 	BasePath string
 }
 
-var envSettings = map[string]map[string]APISetting{
+type apiSettingMap map[string]APISetting
+
+var apiEnvSettings = map[string]apiSettingMap{
 	"prod": {
 		platformKey: APISetting{"https", "platform.activestate.com", "/api/v1"},
 		secretsKey:  APISetting{"https", "platform.activestate.com", "/api/secrets/v1"},
@@ -35,33 +37,31 @@ var envSettings = map[string]map[string]APISetting{
 	},
 }
 
-var envName string
+var apiEnvSetting apiSettingMap
 
-// getEnvName memoizes the name of the env to use. It prefers a custom env if available
-// and if one is not found, then determines if this is test, prod, or stage. Defaults to
-// stage.
-func getEnvName() string {
-	if envName == "" {
-		envName = EnvName
-		if _, hasSettingsForEnv := envSettings[envName]; !hasSettingsForEnv {
-			if flag.Lookup("test.v") != nil {
-				envName = "test"
-			} else if BranchName == "prod" {
-				envName = "prod"
-			} else {
-				envName = "stage"
-			}
+// init determines the name of the API environment to use. It prefers a custom
+// APIEnv env variable if available. If not defined or no setting found for the provided
+// custom value, then the apiEnvName determines if this is test, prod, or stage based on
+// a few factors. The default is always stage.
+func init() {
+	var hasSettingsForEnv bool
+	if apiEnvSetting, hasSettingsForEnv = apiEnvSettings[APIEnv]; !hasSettingsForEnv {
+		if flag.Lookup("test.v") != nil {
+			apiEnvSetting = apiEnvSettings["test"]
+		} else if BranchName == "prod" {
+			apiEnvSetting = apiEnvSettings["prod"]
+		} else {
+			apiEnvSetting = apiEnvSettings["stage"]
 		}
 	}
-	return envName
 }
 
 // GetPlatformAPISettings returns the environmental settings for the platform api
 func GetPlatformAPISettings() APISetting {
-	return envSettings[getEnvName()][platformKey]
+	return apiEnvSetting[platformKey]
 }
 
 // GetSecretsAPISettings returns the environmental settings for the secrets api
 func GetSecretsAPISettings() APISetting {
-	return envSettings[getEnvName()][secretsKey]
+	return apiEnvSetting[secretsKey]
 }
