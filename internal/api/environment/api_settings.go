@@ -1,7 +1,9 @@
-package constants
+package environment
 
 import (
 	"flag"
+
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 const (
@@ -45,10 +47,10 @@ var apiEnvSetting apiSettingMap
 // a few factors. The default is always stage.
 func init() {
 	var hasSettingsForEnv bool
-	if apiEnvSetting, hasSettingsForEnv = apiEnvSettings[APIEnv]; !hasSettingsForEnv {
+	if apiEnvSetting, hasSettingsForEnv = apiEnvSettings[constants.APIEnv]; !hasSettingsForEnv {
 		if flag.Lookup("test.v") != nil {
 			apiEnvSetting = apiEnvSettings["test"]
-		} else if BranchName == "prod" {
+		} else if constants.BranchName == "prod" {
 			apiEnvSetting = apiEnvSettings["prod"]
 		} else {
 			apiEnvSetting = apiEnvSettings["stage"]

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/constants"
+	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
@@ -58,7 +58,7 @@ func NewClient(schema, host, basePath, bearerToken string) *Client {
 
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path.
 func NewDefaultClient(bearerToken string) *Client {
-	apiSetting := constants.GetSecretsAPISettings()
+	apiSetting := apiEnv.GetSecretsAPISettings()
 	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
 }
 

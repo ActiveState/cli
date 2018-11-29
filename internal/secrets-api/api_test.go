@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/constants"
+	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -18,7 +18,7 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	apiSetting := constants.GetSecretsAPISettings()
+	apiSetting := apiEnv.GetSecretsAPISettings()
 	client := secretsapi.NewDefaultClient("bearer123")
 	require.NotNil(client)
 	assert.NotNil(client.Auth)

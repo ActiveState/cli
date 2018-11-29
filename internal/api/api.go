@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/api/client"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
+	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -55,7 +56,7 @@ func init() {
 
 // ReInitialize initializes (or re-initializes) an API connection
 func ReInitialize() {
-	apiSetting := constants.GetPlatformAPISettings()
+	apiSetting := apiEnv.GetPlatformAPISettings()
 	Prefix = fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
 
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
