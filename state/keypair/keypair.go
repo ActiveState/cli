@@ -80,7 +80,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 	if failure == nil {
 		logging.Debug("(secrets.keypair) authenticated user=%s", uid.String())
-		failure = doDump(cmd.secretsClient)
+		failure = printEncodedKeypair(cmd.secretsClient)
 	}
 
 	if failure != nil {
@@ -88,8 +88,8 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 }
 
-// doDump prints the encoded key-pair for the currently authenticated user to stdout.
-func doDump(secretsClient *secretsapi.Client) *failures.Failure {
+// printEncodedKeypair prints the encoded key-pair for the currently authenticated user to stdout.
+func printEncodedKeypair(secretsClient *secretsapi.Client) *failures.Failure {
 	kp, failure := keypairs.FetchRaw(secretsClient)
 	if failure != nil {
 		return failure
@@ -107,7 +107,7 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 
 	if failure == nil {
-		failure = doGenerate(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
+		failure = generateKeypair(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
 	}
 
 	if failure != nil {
@@ -115,10 +115,10 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 }
 
-// doGenerate implements the behavior to generate a new Secrets key-pair on behalf of the user
+// generateKeypair implements the behavior to generate a new Secrets key-pair on behalf of the user
 // and store that back to the Secrets Service. If dry-run is enabled, a keypair will be generated
 // and printed, but not stored anywhere (thus, not used).
-func doGenerate(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
+func generateKeypair(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
 	keypair, failure := keypairs.GenerateRSA(bits)
 	if failure != nil {
 		return failure

@@ -161,7 +161,7 @@ func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, *failures.Failu
 // The value for bits can be anything `>= MinimumRSABitLength`.
 func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {
 	if bits < MinimumRSABitLength {
-		return nil, FailKeypair.New("keypairs_err_bitlength_too_short")
+		return nil, FailKeypairGenerate.New("keypairs_err_bitlength_too_short")
 	}
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)

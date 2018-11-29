@@ -39,7 +39,7 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	}
 	projectsList := []projectWithOrg{}
 	for _, org := range orgs.Payload {
-		orgProjects, err := projects.FetchOrganizationProjects(org)
+		orgProjects, err := projects.FetchOrganizationProjects(org.Urlname)
 		if err != nil {
 			return nil, err
 		}

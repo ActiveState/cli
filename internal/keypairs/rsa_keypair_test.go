@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,7 +14,7 @@ type RSAKeypairTestSuite struct {
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_ErrorBitLengthLessThanMin() {
 	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength - 1)
 	suite.Nil(kp)
-	suite.Equal(locale.T("keypairs_err_bitlength_too_short"), failure.Error())
+	suite.Truef(failure.Type.Matches(keypairs.FailKeypairGenerate), "Did not expect failure type: %s", failure.Type.Name)
 }
 
 func (suite *RSAKeypairTestSuite) TestGenerateRSA_UsesMinimumBitLength() {
@@ -41,6 +40,7 @@ func (suite *RSAKeypairTestSuite) TestRSAKeypair_MessageTooLongForKeySize() {
 
 	encMsg, failure := kp.Encrypt([]byte("howdy doody"))
 	suite.Nil(encMsg)
+	suite.Truef(failure.Type.Matches(keypairs.FailEncrypt), "Did not expect failure type: %s", failure.Type.Name)
 	suite.Contains(failure.Error(), "message too long")
 }
 
@@ -96,7 +96,7 @@ func (suite *RSAKeypairTestSuite) TestParseRSA_EncodingNotOfPrivateKey() {
 func (suite *RSAKeypairTestSuite) TestParseRSA_KeypairNotPEMEncoded() {
 	kp, failure := keypairs.ParseRSA("this is not an encoded key")
 	suite.Nil(kp)
-	suite.Equal(locale.T("keypairs_err_pem_encoding"), failure.Error())
+	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "Did not expect failure type: %s", failure.Type.Name)
 }
 
 func Test_RSAKeypair_TestSuite(t *testing.T) {

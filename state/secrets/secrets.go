@@ -67,7 +67,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	project := projectfile.Get()
 	org, failure := organizations.FetchByURLName(project.Owner)
 	if failure == nil {
-		failure = listAll(cmd.secretsClient, org)
+		failure = listAllUserSecrets(cmd.secretsClient, org)
 	}
 
 	if failure != nil {
@@ -91,11 +91,11 @@ func fetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*se
 	return getOk.Payload, nil
 }
 
-// ListAll prints a list of all of the UserSecrets names and their level for this user given an Organization.
-func listAll(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
+// listAllUserSecrets prints a list of all of the UserSecrets names and their level for this user given an Organization.
+func listAllUserSecrets(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
 	logging.Debug("listing user-secrets for org=%s", org.OrganizationID.String())
 
-	orgProjects, failure := projects.FetchOrganizationProjects(org)
+	orgProjects, failure := projects.FetchOrganizationProjects(org.Urlname)
 	if failure != nil {
 		return failure
 	}

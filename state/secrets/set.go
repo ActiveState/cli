@@ -63,7 +63,7 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 	if failure == nil {
 		var project *models.Project
 		if cmd.Flags.IsProject {
-			project, failure = projects.FetchByName(org, projectFile.Name)
+			project, failure = projects.FetchByName(org.Urlname, projectFile.Name)
 		}
 
 		if failure == nil {
@@ -104,7 +104,7 @@ func UpsertUserSecret(secretsClient *secretsapi.Client, org *models.Organization
 
 	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
 	if err != nil {
-		logging.Debug("error saving user secret: %v", err)
+		logging.Error("error saving user secret: %v", err)
 		return secretsapi.FailSave.New("secrets_err_save")
 	}
 

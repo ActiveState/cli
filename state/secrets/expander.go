@@ -32,7 +32,7 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", failure
 		}
 
-		proj, failure := projects.FetchByName(org, projectFile.Name)
+		proj, failure := projects.FetchByName(org.Urlname, projectFile.Name)
 		if failure != nil {
 			return "", failure
 		}

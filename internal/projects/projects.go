@@ -8,9 +8,9 @@ import (
 )
 
 // FetchByName fetches a project for an organization.
-func FetchByName(org *models.Organization, projectName string) (*models.Project, *failures.Failure) {
+func FetchByName(orgName string, projectName string) (*models.Project, *failures.Failure) {
 	params := clientProjects.NewGetProjectParams()
-	params.OrganizationName = org.Urlname
+	params.OrganizationName = orgName
 	params.ProjectName = projectName
 	resOk, err := api.Client.Projects.GetProject(params, api.Auth)
 	if err != nil {
@@ -20,9 +20,9 @@ func FetchByName(org *models.Organization, projectName string) (*models.Project,
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
-func FetchOrganizationProjects(org *models.Organization) ([]*models.Project, *failures.Failure) {
+func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Failure) {
 	projParams := clientProjects.NewListProjectsParams()
-	projParams.SetOrganizationName(org.Urlname)
+	projParams.SetOrganizationName(orgName)
 	orgProjects, err := api.Client.Projects.ListProjects(projParams, api.Auth)
 	if err != nil {
 		return nil, processErrorResponse(err)
