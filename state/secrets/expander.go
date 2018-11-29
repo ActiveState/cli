@@ -1,19 +1,17 @@
 package secrets
 
 import (
-	"encoding/base64"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/organizations"
+	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/keypair"
-	"github.com/ActiveState/cli/state/organizations"
-	"github.com/ActiveState/cli/state/projects"
 )
 
 var (
@@ -34,22 +32,17 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", failure
 		}
 
-		proj, failure := projects.FetchByName(org, projectFile.Name)
+		proj, failure := projects.FetchByName(org.Urlname, projectFile.Name)
 		if failure != nil {
 			return "", failure
 		}
 
-		kpOk, failure := keypair.Fetch(secretsClient)
+		kp, failure := keypairs.Fetch(secretsClient)
 		if failure != nil {
 			return "", failure
 		}
 
-		kp, err := keypairs.ParseRSA(*kpOk.EncryptedPrivateKey)
-		if err != nil {
-			return "", keypairs.FailKeypairParse.New("keypair_err_parsing")
-		}
-
-		userSecrets, failure := FetchAll(secretsClient, org)
+		userSecrets, failure := fetchAll(secretsClient, org)
 		if failure != nil {
 			return "", failure
 		}
@@ -59,17 +52,12 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 			return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
 		}
 
-		encrBytes, err := base64.StdEncoding.DecodeString(*userSecret.Value)
-		if err != nil {
-			return "", keypairs.FailKeyDecode.New("secrets_err_base64_decoding")
+		descrStr, failure := decodeAndDecrypt(kp, *userSecret.Value)
+		if failure != nil {
+			return "", failure
 		}
 
-		decrBytes, err := kp.Decrypt(encrBytes)
-		if err != nil {
-			return "", keypairs.FailDecrypt.New("secrets_err_decrypting")
-		}
-
-		return string(decrBytes), nil
+		return descrStr, nil
 	}
 }
 

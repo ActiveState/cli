@@ -116,6 +116,37 @@ func (a *Client) SaveAllUserSecrets(params *SaveAllUserSecretsParams, authInfo r
 
 }
 
+/*
+SaveOtherUserSecrets saves a collection of user secrets for a different user
+
+Update another user's vault with any of the provided non-user scoped secrets
+*/
+func (a *Client) SaveOtherUserSecrets(params *SaveOtherUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*SaveOtherUserSecretsNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSaveOtherUserSecretsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "saveOtherUserSecrets",
+		Method:             "PATCH",
+		PathPattern:        "/organizations/{organizationID}/user_secrets/{userID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &SaveOtherUserSecretsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*SaveOtherUserSecretsNoContent), nil
+
+}
+
 // SetTransport changes the transport on the client
 func (a *Client) SetTransport(transport runtime.ClientTransport) {
 	a.transport = transport

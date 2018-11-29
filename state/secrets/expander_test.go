@@ -58,7 +58,7 @@ commands:
 	return project, yaml.Unmarshal([]byte(contents), project)
 }
 
-type SecretsExpanderSuite struct {
+type SecretsExpanderTestSuite struct {
 	suite.Suite
 
 	projectFile *projectfile.Project
@@ -68,8 +68,9 @@ type SecretsExpanderSuite struct {
 	platformMock  *httpmock.HTTPMock
 }
 
-func (suite *SecretsExpanderSuite) BeforeTest(suiteName, testName string) {
+func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
+	failures.ResetHandled()
 
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
@@ -84,12 +85,12 @@ func (suite *SecretsExpanderSuite) BeforeTest(suiteName, testName string) {
 	suite.platformMock = httpmock.Activate(api.Prefix)
 }
 
-func (suite *SecretsExpanderSuite) AfterTest(suiteName, testName string) {
+func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 }
 
-func (suite *SecretsExpanderSuite) prepareWorkingExpander() variables.ExpanderFunc {
+func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() variables.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
@@ -97,19 +98,19 @@ func (suite *SecretsExpanderSuite) prepareWorkingExpander() variables.ExpanderFu
 	return secrets.NewExpander(suite.secretsClient)
 }
 
-func (suite *SecretsExpanderSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
+func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
 	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
 	suite.True(failure.Type.Matches(expectedFailureType), "unexpected failure type")
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
+func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
 	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
 	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(failure)
 }
 
-func (suite *SecretsExpanderSuite) TestSecretSpecNotDefinedInProject() {
+func (suite *SecretsExpanderTestSuite) TestSecretSpecNotDefinedInProject() {
 	// secret is in the database, but not defined in the project
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("foo", suite.projectFile)
@@ -117,7 +118,7 @@ func (suite *SecretsExpanderSuite) TestSecretSpecNotDefinedInProject() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderSuite) TestOrgNotFound() {
+func (suite *SecretsExpanderTestSuite) TestOrgNotFound() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 404)
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
@@ -126,7 +127,7 @@ func (suite *SecretsExpanderSuite) TestOrgNotFound() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderSuite) TestProjectNotFound() {
+func (suite *SecretsExpanderTestSuite) TestProjectNotFound() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 404)
 
@@ -136,7 +137,7 @@ func (suite *SecretsExpanderSuite) TestProjectNotFound() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderSuite) TestKeypairNotFound() {
+func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/keypair", 404)
@@ -147,68 +148,68 @@ func (suite *SecretsExpanderSuite) TestKeypairNotFound() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderSuite) TestDecodingFailed() {
+func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
 	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
 }
 
-func (suite *SecretsExpanderSuite) TestDecryptionFailed() {
+func (suite *SecretsExpanderTestSuite) TestDecryptionFailed() {
 	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt)
 }
 
-func (suite *SecretsExpanderSuite) TestSecretHasNoValue() {
+func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
 	// secret is defined in the project, but not in the database
 	suite.assertExpansionFailure("undefined-secret", secretsapi.FailUserSecretNotFound)
 }
 
-func (suite *SecretsExpanderSuite) TestOrgSecret() {
+func (suite *SecretsExpanderTestSuite) TestOrgSecret() {
 	suite.assertExpansionSuccess("org-secret", "amazing")
 }
 
-func (suite *SecretsExpanderSuite) TestProjectSecret() {
+func (suite *SecretsExpanderTestSuite) TestProjectSecret() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
 	suite.assertExpansionSuccess("proj-secret", "proj-value")
 }
 
-func (suite *SecretsExpanderSuite) TestUserSecret() {
+func (suite *SecretsExpanderTestSuite) TestUserSecret() {
 	// NOTE the user_secrets response has org, project, and user scoped secrets with same name
 	suite.assertExpansionSuccess("user-secret", "user-value")
 }
 
-func (suite *SecretsExpanderSuite) TestUserProjectSecret() {
+func (suite *SecretsExpanderTestSuite) TestUserProjectSecret() {
 	// NOTE the user_secrets response has org, project, user, and user-project scoped secrets with same name
 	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
 }
 
-func (suite *SecretsExpanderSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
+func (suite *SecretsExpanderTestSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
 	suite.assertExpansionSuccess("org-secret-with-proj-value", "proj-value")
 }
 
-func (suite *SecretsExpanderSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
+func (suite *SecretsExpanderTestSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
 	// NOTE the user_secrets response has project and user scoped secrets with same name
 	suite.assertExpansionSuccess("proj-secret-with-user-value", "user-value")
 }
 
-func (suite *SecretsExpanderSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
+func (suite *SecretsExpanderTestSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-proj-value")
 }
 
-func (suite *SecretsExpanderSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
+func (suite *SecretsExpanderTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionFailure("proj-secret-only-org-available", secretsapi.FailUserSecretNotFound)
 }
 
-func (suite *SecretsExpanderSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
+func (suite *SecretsExpanderTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionFailure("user-secret-only-proj-available", secretsapi.FailUserSecretNotFound)
 }
 
-func (suite *SecretsExpanderSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
+func (suite *SecretsExpanderTestSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionSuccess("user-proj-secret-only-user-available", "user-value")
 }
 
-func Test_Secrets_TestSuite(t *testing.T) {
-	suite.Run(t, new(SecretsExpanderSuite))
+func Test_SecretsExpander_TestSuite(t *testing.T) {
+	suite.Run(t, new(SecretsExpanderTestSuite))
 }

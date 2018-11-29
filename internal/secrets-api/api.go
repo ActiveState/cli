@@ -18,6 +18,9 @@ var (
 	// FailKeypairNotFound indicates a failure to find a keypair.
 	FailKeypairNotFound = failures.Type("secrets-api.fail.keypair.not_found", FailNotFound)
 
+	// FailPublicKeyNotFound indicates a failure to find a public-key.
+	FailPublicKeyNotFound = failures.Type("secrets-api.fail.publickey.not_found", FailNotFound)
+
 	// FailUserSecretNotFound indicates a failure to find a user secret.
 	FailUserSecretNotFound = failures.Type("secrets-api.fail.user_secret.not_found", FailNotFound)
 

@@ -24,9 +24,9 @@ type Client struct {
 }
 
 /*
-GetKeypair gets a specific user s keypair
+GetKeypair gets authenticated user s keypair
 
-Get a specific user's keypair
+Get authenticated user's keypair
 */
 func (a *Client) GetKeypair(params *GetKeypairParams, authInfo runtime.ClientAuthInfoWriter) (*GetKeypairOK, error) {
 	// TODO: Validate the params before sending
@@ -55,9 +55,40 @@ func (a *Client) GetKeypair(params *GetKeypairParams, authInfo runtime.ClientAut
 }
 
 /*
-SaveKeypair creates or update a specific user s keypair
+GetPublicKey gets a specific user s public key
 
-Create or update specific user's keypair
+Get a specific user's public-key
+*/
+func (a *Client) GetPublicKey(params *GetPublicKeyParams, authInfo runtime.ClientAuthInfoWriter) (*GetPublicKeyOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPublicKeyParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getPublicKey",
+		Method:             "GET",
+		PathPattern:        "/publickeys/{userID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetPublicKeyReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetPublicKeyOK), nil
+
+}
+
+/*
+SaveKeypair creates or update a current user s keypair
+
+Create or update current user's keypair
 */
 func (a *Client) SaveKeypair(params *SaveKeypairParams, authInfo runtime.ClientAuthInfoWriter) (*SaveKeypairNoContent, error) {
 	// TODO: Validate the params before sending
