@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -39,7 +38,7 @@ func (suite *SecretsSetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	suite.Require().NoError(err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	secretsClient := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearing123")
+	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 

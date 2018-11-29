@@ -12,9 +12,16 @@ var testTransport http.RoundTripper
 // NewTestClient creates a new secretsapi.Client with a testable Transport. Makes it possible to
 // use httpmock.
 func NewTestClient(scheme, host, basePath, bearerToken string) *secretsapi.Client {
-	newClient := secretsapi.NewClient(scheme, host, basePath, bearerToken)
-	// this is necessary to allow httpmock tests to function
-	rt := newClient.Transport.(*httptransport.Runtime)
+	return withTestableTransport(secretsapi.NewClient(scheme, host, basePath, bearerToken))
+}
+
+// NewDefaultTestClient creates a testable secrets client using environment defaults for schema, host, and path.
+func NewDefaultTestClient(bearerToken string) *secretsapi.Client {
+	return withTestableTransport(secretsapi.NewDefaultClient(bearerToken))
+}
+
+func withTestableTransport(client *secretsapi.Client) *secretsapi.Client {
+	rt := client.Transport.(*httptransport.Runtime)
 	rt.Transport = testTransport
-	return newClient
+	return client
 }

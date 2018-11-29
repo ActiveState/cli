@@ -83,8 +83,7 @@ func init() {
 	Command.Append(env.Command)
 	Command.Append(run.Command)
 
-	secretsClient := secretsapi.NewClient(
-		constants.SecretsAPISchema, constants.SecretsAPIHostStaging, constants.SecretsAPIPath, api.BearerToken)
+	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
 	Command.Append(secrets.NewCommand(secretsClient).Config())
 	Command.Append(keypair.NewCommand(secretsClient).Config())
 

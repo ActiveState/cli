@@ -83,6 +83,9 @@ func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, fo
 	}
 
 	otherChanges, failure := portShareableSecrets(selfSecrets, selfKeypair, otherEncrypter)
+	if failure != nil {
+		return failure
+	}
 
 	return saveOtherUserSecrets(secretsClient, org, forUser, otherChanges)
 }

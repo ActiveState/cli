@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/models"
@@ -25,7 +24,7 @@ type KeypairCommandTestSuite struct {
 
 func (suite *KeypairCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
-	secretsClient := secretsapi_test.NewTestClient("http", constants.SecretsAPIHostTesting, constants.SecretsAPIPath, "bearing123")
+	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 
