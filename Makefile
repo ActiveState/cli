@@ -1,9 +1,8 @@
 # Go parameters
-GOROOT := $(shell go env GOROOT)
-GOCMD   = go
+GOCMD=go
 
 ifneq ($(OS),Windows_NT)
-	ifdef GOROOT
+	ifndef $(shell command -v go 2> /dev/null)
 		GOCMD=${GOROOT}/bin/go
 	endif
 else
