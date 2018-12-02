@@ -529,5 +529,7 @@ keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
   other: invalid PEM encoding
+keypairs_err_passphrase_incorrect:
+  other: provided passphrase is incorrect
 keypairs_err_invalid_rsa_publickey:
   other: provided key not an RSA public-key
