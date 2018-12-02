@@ -9,16 +9,23 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
 	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // DefaultRSABitLength represents the default RSA bit-length that will be assumed when
 // generating new Keypairs.
 const DefaultRSABitLength int = 4096
 
-// FailKeypairParse identifies a failure during keypair parsing.
-var FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
+var (
+	// FailKeypairParse identifies a failure during keypair parsing.
+	FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
+
+	// FailInputPassphrase identifies a failure entering passphrase.
+	FailInputPassphrase = failures.Type("keypair.fail.parse", failures.FailUserInput)
+)
 
 // Command represents the keypair command and its dependencies.
 type Command struct {
@@ -101,13 +108,19 @@ func printEncodedKeypair(secretsClient *secretsapi.Client) *failures.Failure {
 
 // ExecuteGenerate processes the `keypair generate` sub-command.
 func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
+	var passphrase string
 	var failure *failures.Failure
 	if !cmd.Flags.DryRun {
+		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
 		_, failure = cmd.secretsClient.Authenticated()
 	}
 
 	if failure == nil {
-		failure = generateKeypair(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
+		passphrase, failure = promptForPassphrase()
+	}
+
+	if failure == nil {
+		failure = generateKeypair(cmd.secretsClient, passphrase, cmd.Flags.Bits, cmd.Flags.DryRun)
 	}
 
 	if failure != nil {
@@ -115,16 +128,29 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 }
 
+func promptForPassphrase() (string, *failures.Failure) {
+	var passphrase string
+	var prompt = &survey.Password{Message: locale.T("passphrase_prompt")}
+	if err := survey.AskOne(prompt, &passphrase, surveyor.ValidateRequired); err != nil {
+		return "", FailInputPassphrase.New("keypair_err_passphrase_prompt")
+	}
+	return passphrase, nil
+}
+
 // generateKeypair implements the behavior to generate a new Secrets key-pair on behalf of the user
 // and store that back to the Secrets Service. If dry-run is enabled, a keypair will be generated
 // and printed, but not stored anywhere (thus, not used).
-func generateKeypair(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
+func generateKeypair(secretsClient *secretsapi.Client, passphrase string, bits int, dryRun bool) *failures.Failure {
 	keypair, failure := keypairs.GenerateRSA(bits)
 	if failure != nil {
 		return failure
 	}
 
-	encodedPrivateKey := keypair.EncodePrivateKey()
+	encodedPrivateKey, failure := keypair.EncryptAndEncodePrivateKey(passphrase)
+	if failure != nil {
+		return failure
+	}
+
 	encodedPublicKey, failure := keypair.EncodePublicKey()
 	if failure != nil {
 		return failure

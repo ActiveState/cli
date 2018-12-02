@@ -114,11 +114,11 @@ func (suite *KeypairCommandTestSuite) TestExecute_Generate_SavesNewKeypair() {
 	})
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, _ := osutil.CaptureStdout(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		execErr = cmd.Config().Execute()
+		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
 	})
-	suite.Require().NoError(outErr)
+
 	suite.Require().NoError(execErr)
 	suite.Require().NoError(bodyErr)
 	suite.NoError(failures.Handled(), "unexpected failure occurred")
@@ -134,8 +134,12 @@ func (suite *KeypairCommandTestSuite) TestExecute_Generate_SaveFails() {
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-	execErr := cmd.Config().Execute()
+	var execErr error
+	osutil.CaptureStdout(func() {
+		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
+		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
+	})
+
 	suite.Require().NoError(execErr)
 	suite.Error(failures.Handled(), "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
@@ -147,11 +151,10 @@ func (suite *KeypairCommandTestSuite) TestExecute_Generate_DryRun() {
 	cmd := keypair.NewCommand(suite.secretsClient)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, _ := osutil.CaptureStdout(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
-		execErr = cmd.Config().Execute()
+		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
 	})
-	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
 	suite.Require().NoError(failures.Handled(), "is a failure")
 

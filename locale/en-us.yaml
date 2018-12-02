@@ -223,6 +223,8 @@ username_prompt:
   other: "Enter your username:"
 password_prompt:
   other: "Enter your password:"
+passphrase_prompt:
+  other: "Enter your passphrase:"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -524,6 +526,8 @@ keypair_err_save:
   other: Keypair could not be saved
 keypair_err_publickey_not_found:
   other: No public-key found for user `{{.V0}}` ({{.V1}})
+keypair_err_passphrase_prompt:
+  other: The provided passphrase is invalid
 
 keypairs_err_bitlength_too_short:
   other: bit-length too short
