@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
@@ -25,6 +26,21 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile("save-testing.key")
+	suite.Equal(os.FileMode(0600), fileInfo.Mode())
+}
+
+func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
+	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(failure)
+
+	failure = keypairs.SaveWithDefaults(kp)
+	suite.Require().Nil(failure)
+
+	kp2, failure := keypairs.Load(constants.KeypairLocalFileName)
+	suite.Require().Nil(failure)
+	suite.Equal(kp, kp2)
+
+	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
 	suite.Equal(os.FileMode(0600), fileInfo.Mode())
 }
 

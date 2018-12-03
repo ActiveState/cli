@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -136,7 +137,7 @@ func (suite *SecretsSetCommandTestSuite) assertSaveSucceeds(secretName string, i
 	if isProject {
 		suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	}
-	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
+	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var userChanges []*models.UserSecretChange
 	var bodyErr error

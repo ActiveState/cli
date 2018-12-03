@@ -6,7 +6,7 @@ import (
 )
 
 func loadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
-	kp, failure := keypairs.Load("private")
+	kp, failure := keypairs.LoadWithDefaults()
 	if failure != nil {
 		if failure.Type.Matches(keypairs.FailLoadNotFound) || failure.Type.Matches(keypairs.FailKeypairParse) {
 			return nil, failure.Type.New("keypair_err_require_auth")

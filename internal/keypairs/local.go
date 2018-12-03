@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 )
 
@@ -51,6 +52,17 @@ func Save(kp Keypair, keyName string) *failures.Failure {
 		return FailSaveFile.Wrap(err)
 	}
 	return nil
+}
+
+// LoadWithDefaults will call Load with the default key name (i.e. constants.KeypairLocalFileName).
+func LoadWithDefaults() (Keypair, *failures.Failure) {
+	return Load(constants.KeypairLocalFileName)
+}
+
+// SaveWithDefaults will call Save with the provided keypair and the default key name
+// (i.e. constants.KeypairLocalFileName).
+func SaveWithDefaults(kp Keypair) *failures.Failure {
+	return Save(kp, constants.KeypairLocalFileName)
 }
 
 func localKeyFilename(keyName string) string {

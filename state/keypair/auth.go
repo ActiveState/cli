@@ -29,7 +29,7 @@ func (cmd *Command) ExecuteAuth(_ *cobra.Command, args []string) {
 	}
 
 	if failure == nil {
-		keypairs.Save(kp, "private")
+		keypairs.SaveWithDefaults(kp)
 	}
 
 	if failure != nil {

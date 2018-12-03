@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -154,7 +155,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 200)
 
-	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
+	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyChanges []*secretsModels.UserSecretChange
 	var bodyErr error

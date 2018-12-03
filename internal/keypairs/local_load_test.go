@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
@@ -40,39 +41,55 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
-	keyFile := suite.createConfigDirFile("test-rsa-parse-err.key", 0600)
-	defer osutil.RemoveConfigFile("test-rsa-parse-err.key")
+	keyName := "test-rsa-parse-err"
+	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
+	defer osutil.RemoveConfigFile(keyName + ".key")
 
 	keyFile.WriteString("this will never parse")
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load("test-rsa-parse-err")
+	kp, failure := keypairs.Load(keyName)
 	suite.Nil(kp)
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", failure)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailure() {
-	keyFile := suite.createConfigDirFile("test-rsa-encrypted.key", 0600)
-	defer osutil.RemoveConfigFile("test-rsa-encrypted.key")
+	keyName := "test-rsa-encrypted"
+	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
+	defer osutil.RemoveConfigFile(keyName + ".key")
 
 	keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load("test-rsa-encrypted")
+	kp, failure := keypairs.Load(keyName)
 	suite.Nil(kp)
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(keypairs.FailKeypairPassphrase), "unexpected failure type: %v", failure)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuccess() {
-	keyFile := suite.createConfigDirFile("test-rsa-success.key", 0600)
-	defer osutil.RemoveConfigFile("test-rsa-success.key")
+	keyName := "test-rsa-success"
+	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
+	defer osutil.RemoveConfigFile(keyName + ".key")
 
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
 
-	kp, failure := keypairs.Load("test-rsa-success")
+	kp, failure := keypairs.Load(keyName)
+	suite.Require().Nil(failure)
+	suite.NotNil(kp)
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
+	keyName := constants.KeypairLocalFileName
+	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
+	defer osutil.RemoveConfigFile(keyName + ".key")
+
+	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	suite.Require().NoError(keyFile.Close())
+
+	kp, failure := keypairs.LoadWithDefaults()
 	suite.Require().Nil(failure)
 	suite.NotNil(kp)
 }

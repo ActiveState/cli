@@ -54,5 +54,9 @@ const AnalyticsTrackingID = "UA-118120158-1"
 // APITokenName is the name we give our api token
 const APITokenName = "activestate-platform-cli"
 
+// KeypairLocalFileName is the name of the file (sans extension) that will hold the user's unencrypted
+// private key in their config dir.
+const KeypairLocalFileName = "private"
+
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"

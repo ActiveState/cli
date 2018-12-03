@@ -75,7 +75,7 @@ func generateKeypair(secretsClient *secretsapi.Client, passphrase string, bits i
 		print.Line("Keypair generated successfully")
 
 		// save the keypair locally to avoid authenticating the keypair every time it's used
-		if failure = keypairs.Save(keypair, "private"); failure != nil {
+		if failure = keypairs.SaveWithDefaults(keypair); failure != nil {
 			return failure
 		}
 	} else {
