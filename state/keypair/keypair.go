@@ -33,8 +33,9 @@ type Command struct {
 	secretsClient *secretsapi.Client
 
 	Flags struct {
-		Bits   int
-		DryRun bool
+		Bits           int
+		DryRun         bool
+		SkipPassphrase bool
 	}
 }
 
@@ -69,6 +70,13 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 				Description: "keypair_generate_flag_dryrun",
 				Type:        commands.TypeBool,
 				BoolVar:     &cmd.Flags.DryRun,
+			},
+			&commands.Flag{
+				Name:        "skip-passphrase",
+				Shorthand:   "",
+				Description: "keypair_generate_flag_skippassphrase",
+				Type:        commands.TypeBool,
+				BoolVar:     &cmd.Flags.SkipPassphrase,
 			},
 		},
 	})
@@ -110,12 +118,18 @@ func printEncodedKeypair(secretsClient *secretsapi.Client) *failures.Failure {
 func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 	var passphrase string
 	var failure *failures.Failure
+
+	if cmd.Flags.SkipPassphrase {
+		// for the moment, we do not want to record any unencrypted private-keys
+		cmd.Flags.DryRun = true
+	}
+
 	if !cmd.Flags.DryRun {
 		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
 		_, failure = cmd.secretsClient.Authenticated()
 	}
 
-	if failure == nil {
+	if failure == nil && !cmd.Flags.SkipPassphrase {
 		passphrase, failure = promptForPassphrase()
 	}
 
@@ -146,9 +160,14 @@ func generateKeypair(secretsClient *secretsapi.Client, passphrase string, bits i
 		return failure
 	}
 
-	encodedPrivateKey, failure := keypair.EncryptAndEncodePrivateKey(passphrase)
-	if failure != nil {
-		return failure
+	var encodedPrivateKey string
+	if passphrase == "" {
+		encodedPrivateKey = keypair.EncodePrivateKey()
+	} else {
+		encodedPrivateKey, failure = keypair.EncryptAndEncodePrivateKey(passphrase)
+		if failure != nil {
+			return failure
+		}
 	}
 
 	encodedPublicKey, failure := keypair.EncodePublicKey()

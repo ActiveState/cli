@@ -518,6 +518,12 @@ keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
   other: Generate and upload a new Keypair
+keypair_generate_flag_bits:
+  other: Bit-length of keypair to generate
+keypair_generate_flag_dryrun:
+  other: Do not save any changes
+keypair_generate_flag_skippassphrase:
+  other: Do not require a passphrase for new Keypair (implies --dry-run)
 keypair_err:
   other: Unable to access user's Keypair
 keypair_err_not_found:
@@ -537,3 +543,7 @@ keypairs_err_passphrase_incorrect:
   other: provided passphrase is incorrect
 keypairs_err_invalid_rsa_publickey:
   other: provided key not an RSA public-key
+keypairs_err_load_not_found:
+  other: Authorized keypair not found
+keypairs_err_load_requires_mode:
+  other: "Keypair `{{.V0}}` file is too permissive, expects no more than `{{.V1}}` permissions"
