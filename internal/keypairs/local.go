@@ -22,6 +22,12 @@ var (
 	// FailLoadFileTooPermissive represents a failure wherein a Keypair file's permissions
 	// (it's octet) are too permissive.
 	FailLoadFileTooPermissive = failures.Type("keypairs.fail.load.too_permissive", FailLoad)
+
+	// FailSave indicates a failure when saving something.
+	FailSave = failures.Type("keypairs.fail.save")
+
+	// FailSaveFile indicates a failure when saving a keypair file.
+	FailSaveFile = failures.Type("keypairs.fail.save.file")
 )
 
 // Load will attempt to load a Keypair using private and public-key files from the
@@ -29,12 +35,26 @@ var (
 // keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, *failures.Failure) {
 	var kp Keypair
-	keyFilename := filepath.Join(config.GetDataDir(), keyName+".key")
+	keyFilename := localKeyFilename(keyName)
 	failure := validateKeyFile(keyFilename)
 	if failure == nil {
 		kp, failure = loadAndParseKeypair(keyFilename)
 	}
 	return kp, failure
+}
+
+// Save will save the unencrypted and encoded private key to a local config file. The filename will be
+// the value of `keyName` and suffixed with `.key`.
+func Save(kp Keypair, keyName string) *failures.Failure {
+	err := ioutil.WriteFile(localKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
+	if err != nil {
+		return FailSaveFile.Wrap(err)
+	}
+	return nil
+}
+
+func localKeyFilename(keyName string) string {
+	return filepath.Join(config.GetDataDir(), keyName+".key")
 }
 
 func validateKeyFile(keyFilename string) *failures.Failure {

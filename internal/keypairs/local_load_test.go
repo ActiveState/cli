@@ -2,34 +2,28 @@ package keypairs_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
 )
 
-type KeypairLoadersTestSuite struct {
+type KeypairLocalLoadTestSuite struct {
 	suite.Suite
 }
 
-func (suite *KeypairLoadersTestSuite) TearDownSuite() {
-	os.RemoveAll(config.GetDataDir())
-}
-
-func (suite *KeypairLoadersTestSuite) TestNoKeyFileFound() {
+func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {
 	kp, failure := keypairs.Load("test-no-such")
 	suite.Nil(kp)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure)
 }
 
-func (suite *KeypairLoadersTestSuite) assertTooPermissive(fileMode os.FileMode) {
+func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode) {
 	tmpKeyName := fmt.Sprintf("test-rsa-%0.4o", fileMode)
 	keyFile := suite.createConfigDirFile(tmpKeyName+".key", fileMode)
+	defer osutil.RemoveConfigFile(tmpKeyName + ".key")
 	suite.Require().NoError(keyFile.Close())
 
 	kp, failure := keypairs.Load(tmpKeyName)
@@ -38,15 +32,16 @@ func (suite *KeypairLoadersTestSuite) assertTooPermissive(fileMode os.FileMode) 
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadFileTooPermissive), "unexpected failure type: %v", failure)
 }
 
-func (suite *KeypairLoadersTestSuite) TestFileFound_PermsTooPermissive() {
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
 	octalPerms := []os.FileMode{0640, 0650, 0660, 0670, 0604, 0605, 0606, 0607, 0700, 0500}
 	for _, perm := range octalPerms {
 		suite.assertTooPermissive(perm)
 	}
 }
 
-func (suite *KeypairLoadersTestSuite) TestFileFound_KeypairParseError() {
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyFile := suite.createConfigDirFile("test-rsa-parse-err.key", 0600)
+	defer osutil.RemoveConfigFile("test-rsa-parse-err.key")
 
 	keyFile.WriteString("this will never parse")
 	suite.Require().NoError(keyFile.Close())
@@ -57,8 +52,10 @@ func (suite *KeypairLoadersTestSuite) TestFileFound_KeypairParseError() {
 	suite.Truef(failure.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", failure)
 }
 
-func (suite *KeypairLoadersTestSuite) TestFileFound_EncryptedKeypairParseFailure() {
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_EncryptedKeypairParseFailure() {
 	keyFile := suite.createConfigDirFile("test-rsa-encrypted.key", 0600)
+	defer osutil.RemoveConfigFile("test-rsa-encrypted.key")
+
 	keyFile.WriteString(suite.readTestFile("test-keypair-encrypted.key"))
 	suite.Require().NoError(keyFile.Close())
 
@@ -68,8 +65,10 @@ func (suite *KeypairLoadersTestSuite) TestFileFound_EncryptedKeypairParseFailure
 	suite.Truef(failure.Type.Matches(keypairs.FailKeypairPassphrase), "unexpected failure type: %v", failure)
 }
 
-func (suite *KeypairLoadersTestSuite) TestFileFound_UnencryptedKeypairParseSuccess() {
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_UnencryptedKeypairParseSuccess() {
 	keyFile := suite.createConfigDirFile("test-rsa-success.key", 0600)
+	defer osutil.RemoveConfigFile("test-rsa-success.key")
+
 	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
 	suite.Require().NoError(keyFile.Close())
 
@@ -78,20 +77,18 @@ func (suite *KeypairLoadersTestSuite) TestFileFound_UnencryptedKeypairParseSucce
 	suite.NotNil(kp)
 }
 
-func Test_KeypairLoaders_TestSuite(t *testing.T) {
-	suite.Run(t, new(KeypairLoadersTestSuite))
-}
-
-func (suite *KeypairLoadersTestSuite) createConfigDirFile(keyFile string, fileMode os.FileMode) *os.File {
-	filename := filepath.Join(config.GetDataDir(), keyFile)
-	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+func (suite *KeypairLocalLoadTestSuite) createConfigDirFile(keyFile string, fileMode os.FileMode) *os.File {
+	file, err := osutil.CreateConfigFile(keyFile, fileMode)
 	suite.Require().NoError(err)
 	return file
 }
 
-func (suite *KeypairLoadersTestSuite) readTestFile(fileName string) string {
-	_, currentFile, _, _ := runtime.Caller(0)
-	contents, err := ioutil.ReadFile(filepath.Join(filepath.Dir(currentFile), "testdata", fileName))
+func (suite *KeypairLocalLoadTestSuite) readTestFile(fileName string) string {
+	contents, err := osutil.ReadTestFile(fileName)
 	suite.Require().NoError(err)
 	return string(contents)
+}
+
+func Test_KeypairLocalLoad_TestSuite(t *testing.T) {
+	suite.Run(t, new(KeypairLocalLoadTestSuite))
 }

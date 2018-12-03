@@ -1,0 +1,39 @@
+package keypairs_test
+
+import (
+	"os"
+	"testing"
+
+	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/stretchr/testify/suite"
+)
+
+type KeypairLocalSaveTestSuite struct {
+	suite.Suite
+}
+
+func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
+	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(failure)
+
+	failure = keypairs.Save(kp, "save-testing")
+	suite.Require().Nil(failure)
+
+	kp2, failure := keypairs.Load("save-testing")
+	suite.Require().Nil(failure)
+	suite.Equal(kp, kp2)
+
+	fileInfo := suite.statConfigDirFile("save-testing.key")
+	suite.Equal(os.FileMode(0600), fileInfo.Mode())
+}
+
+func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
+	keyFileStat, err := osutil.StatConfigFile(keyFile)
+	suite.Require().NoError(err)
+	return keyFileStat
+}
+
+func Test_KeypairLocalSave_TestSuite(t *testing.T) {
+	suite.Run(t, new(KeypairLocalSaveTestSuite))
+}

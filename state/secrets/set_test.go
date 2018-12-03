@@ -48,6 +48,7 @@ func (suite *SecretsSetCommandTestSuite) BeforeTest(suiteName, testName string) 
 
 func (suite *SecretsSetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
+	osutil.RemoveConfigFile("private.key")
 }
 
 func (suite *SecretsSetCommandTestSuite) TestCommandConfig() {
@@ -89,38 +90,38 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated()
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertOrgSecret_Succeeds() {
-	suite.assertInsertSucceeds("new-org-secret", false, false)
+	suite.assertSaveSucceeds("new-org-secret", false, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateOrgSecret_Succeeds() {
-	suite.assertInsertSucceeds("org-secret", false, false)
+	suite.assertSaveSucceeds("org-secret", false, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertProjectSecret_Succeeds() {
-	suite.assertInsertSucceeds("new-proj-secret", true, false)
+	suite.assertSaveSucceeds("new-proj-secret", true, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateProjectSecret_Succeeds() {
-	suite.assertInsertSucceeds("proj-secret", true, false)
+	suite.assertSaveSucceeds("proj-secret", true, false)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserSecret_Succeeds() {
-	suite.assertInsertSucceeds("new-user-org-secret", false, true)
+	suite.assertSaveSucceeds("new-user-org-secret", false, true)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserSecret_Succeeds() {
-	suite.assertInsertSucceeds("user-org-secret", false, true)
+	suite.assertSaveSucceeds("user-org-secret", false, true)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_InsertUserProjectSecret_Succeeds() {
-	suite.assertInsertSucceeds("new-user-proj-secret", true, true)
+	suite.assertSaveSucceeds("new-user-proj-secret", true, true)
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserProjectSecret_Succeeds() {
-	suite.assertInsertSucceeds("user-proj-secret", true, true)
+	suite.assertSaveSucceeds("user-proj-secret", true, true)
 }
 
-func (suite *SecretsSetCommandTestSuite) assertInsertSucceeds(secretName string, isProject, isUser bool) {
+func (suite *SecretsSetCommandTestSuite) assertSaveSucceeds(secretName string, isProject, isUser bool) {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	cmdArgs := []string{"set"}
@@ -135,7 +136,7 @@ func (suite *SecretsSetCommandTestSuite) assertInsertSucceeds(secretName string,
 	if isProject {
 		suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	}
-	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
+	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
 
 	var userChanges []*models.UserSecretChange
 	var bodyErr error

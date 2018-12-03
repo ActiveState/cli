@@ -77,7 +77,7 @@ func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, fo
 		return failure
 	}
 
-	selfKeypair, failure := keypairs.Fetch(secretsClient)
+	selfKeypair, failure := loadKeypairFromConfigDir()
 	if failure != nil {
 		return failure
 	}

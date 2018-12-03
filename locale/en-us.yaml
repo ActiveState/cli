@@ -534,6 +534,8 @@ keypair_err_publickey_not_found:
   other: No public-key found for user `{{.V0}}` ({{.V1}})
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
+keypair_err_require_auth:
+  other: Your keypair is not authenticated, run `state keypair auth` first
 
 keypairs_err_bitlength_too_short:
   other: bit-length too short

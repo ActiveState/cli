@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -87,12 +88,15 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
+	osutil.RemoveConfigFile("private.key")
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() variables.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
+
+	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
+
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 	return secrets.NewExpander(suite.secretsClient)
 }
@@ -109,7 +113,15 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 	suite.Nil(failure)
 }
 
+func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
+	expanderFn := secrets.NewExpander(suite.secretsClient)
+	value, failure := expanderFn("undefined-secret", suite.projectFile)
+	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
+	suite.Zero(value)
+}
+
 func (suite *SecretsExpanderTestSuite) TestSecretSpecNotDefinedInProject() {
+	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
 	// secret is in the database, but not defined in the project
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("foo", suite.projectFile)
@@ -118,6 +130,7 @@ func (suite *SecretsExpanderTestSuite) TestSecretSpecNotDefinedInProject() {
 }
 
 func (suite *SecretsExpanderTestSuite) TestOrgNotFound() {
+	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 404)
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
@@ -127,23 +140,13 @@ func (suite *SecretsExpanderTestSuite) TestOrgNotFound() {
 }
 
 func (suite *SecretsExpanderTestSuite) TestProjectNotFound() {
+	osutil.CopyTestFileToConfigDir("self-private.key", "private.key", 0600)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 404)
 
 	expanderFn := secrets.NewExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.projectFile)
 	suite.True(failure.Type.Matches(api.FailProjectNotFound))
-	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/keypair", 404)
-
-	expanderFn := secrets.NewExpander(suite.secretsClient)
-	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.True(failure.Type.Matches(secretsapi.FailKeypairNotFound))
 	suite.Zero(value)
 }
 
