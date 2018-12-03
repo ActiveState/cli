@@ -7,12 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
-	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
-	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // DefaultRSABitLength represents the default RSA bit-length that will be assumed when
@@ -81,6 +77,12 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		},
 	})
 
+	cmd.config.Append(&commands.Command{
+		Name:        "auth",
+		Description: "keypair_auth_cmd_description",
+		Run:         cmd.ExecuteAuth,
+	})
+
 	return cmd
 }
 
@@ -111,89 +113,5 @@ func printEncodedKeypair(secretsClient *secretsapi.Client) *failures.Failure {
 	}
 	print.Line(*kp.EncryptedPrivateKey)
 	print.Line(*kp.PublicKey)
-	return nil
-}
-
-// ExecuteGenerate processes the `keypair generate` sub-command.
-func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
-	var passphrase string
-	var failure *failures.Failure
-
-	if cmd.Flags.SkipPassphrase {
-		// for the moment, we do not want to record any unencrypted private-keys
-		cmd.Flags.DryRun = true
-	}
-
-	if !cmd.Flags.DryRun {
-		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
-		_, failure = cmd.secretsClient.Authenticated()
-	}
-
-	if failure == nil && !cmd.Flags.SkipPassphrase {
-		passphrase, failure = promptForPassphrase()
-	}
-
-	if failure == nil {
-		failure = generateKeypair(cmd.secretsClient, passphrase, cmd.Flags.Bits, cmd.Flags.DryRun)
-	}
-
-	if failure != nil {
-		failures.Handle(failure, locale.T("keypair_err"))
-	}
-}
-
-func promptForPassphrase() (string, *failures.Failure) {
-	var passphrase string
-	var prompt = &survey.Password{Message: locale.T("passphrase_prompt")}
-	if err := survey.AskOne(prompt, &passphrase, surveyor.ValidateRequired); err != nil {
-		return "", FailInputPassphrase.New("keypair_err_passphrase_prompt")
-	}
-	return passphrase, nil
-}
-
-// generateKeypair implements the behavior to generate a new Secrets key-pair on behalf of the user
-// and store that back to the Secrets Service. If dry-run is enabled, a keypair will be generated
-// and printed, but not stored anywhere (thus, not used).
-func generateKeypair(secretsClient *secretsapi.Client, passphrase string, bits int, dryRun bool) *failures.Failure {
-	keypair, failure := keypairs.GenerateRSA(bits)
-	if failure != nil {
-		return failure
-	}
-
-	var encodedPrivateKey string
-	if passphrase == "" {
-		encodedPrivateKey = keypair.EncodePrivateKey()
-	} else {
-		encodedPrivateKey, failure = keypair.EncryptAndEncodePrivateKey(passphrase)
-		if failure != nil {
-			return failure
-		}
-	}
-
-	encodedPublicKey, failure := keypair.EncodePublicKey()
-	if failure != nil {
-		return failure
-	}
-
-	if !dryRun {
-		params := keys.NewSaveKeypairParams().WithKeypair(&secretModels.KeypairChange{
-			EncryptedPrivateKey: &encodedPrivateKey,
-			PublicKey:           &encodedPublicKey,
-		})
-
-		if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
-			return secretsapi.FailKeypairSave.New("keypair_err_save")
-		}
-		print.Line("Keypair generated successfully")
-
-		// save the keypair locally to avoid authenticating the keypair every time it's used
-		if failure = keypairs.Save(keypair, "private"); failure != nil {
-			return failure
-		}
-	} else {
-		print.Line(encodedPrivateKey)
-		print.Line(encodedPublicKey)
-	}
-
 	return nil
 }

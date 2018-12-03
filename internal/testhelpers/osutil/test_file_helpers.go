@@ -15,6 +15,12 @@ func CreateConfigFile(fileName string, fileMode os.FileMode) (*os.File, error) {
 	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 }
 
+// ReadConfigFile will read the contents of a file in the config dir.
+func ReadConfigFile(fileName string) (string, error) {
+	contents, err := ioutil.ReadFile(filepath.Join(config.GetDataDir(), fileName))
+	return string(contents), err
+}
+
 // RemoveConfigFile will remove a file from the config dir with the given file name.
 func RemoveConfigFile(fileName string) error {
 	return os.Remove(filepath.Join(config.GetDataDir(), fileName))

@@ -1,14 +1,10 @@
 package keypair_test
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -45,9 +41,13 @@ func (suite *KeypairCommandTestSuite) TestCommandConfig() {
 	suite.Len(conf.Arguments, 0, "number of commands args supported")
 
 	ccCmds := conf.GetCobraCmd().Commands()
-	suite.Require().Len(ccCmds, 1, "number of subcommands")
-	suite.Equal("generate", ccCmds[0].Name())
-	suite.True(ccCmds[0].HasFlags())
+	suite.Require().Len(ccCmds, 2, "number of subcommands")
+
+	suite.Equal("auth", ccCmds[0].Name())
+	suite.False(ccCmds[0].HasFlags())
+
+	suite.Equal("generate", ccCmds[1].Name())
+	suite.True(ccCmds[1].HasFlags())
 }
 
 func (suite *KeypairCommandTestSuite) TestExecute_NoArgs_AuthFailure() {
@@ -83,6 +83,7 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgsDump_OutputsKeypair() {
 	suite.NoError(failures.Handled(), "unexpected failure occurred")
 
 	suite.Contains(outStr, "RSA PRIVATE KEY")
+	suite.Contains(outStr, "ENCRYPTED")
 	suite.Contains(outStr, "RSA PUBLIC KEY")
 }
 
@@ -99,67 +100,6 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgsDump_KeypairNotFound() {
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "should be a FailNotFound failure")
-}
-
-func (suite *KeypairCommandTestSuite) TestExecute_Generate_SavesNewKeypair() {
-	cmd := keypair.NewCommand(suite.secretsClient)
-
-	var bodyKeypair *models.Keypair
-	var bodyErr error
-	httpmock.RegisterWithCode("GET", "/whoami", 200)
-	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
-		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
-		return 204, "keypair"
-	})
-
-	var execErr error
-	outStr, _ := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
-	})
-
-	suite.Require().NoError(execErr)
-	suite.Require().NoError(bodyErr)
-	suite.NoError(failures.Handled(), "unexpected failure occurred")
-
-	suite.Contains(*bodyKeypair.EncryptedPrivateKey, "RSA PRIVATE KEY")
-	suite.Contains(*bodyKeypair.PublicKey, "RSA PUBLIC KEY")
-	suite.Contains(outStr, "Keypair generated successfully")
-}
-
-func (suite *KeypairCommandTestSuite) TestExecute_Generate_SaveFails() {
-	cmd := keypair.NewCommand(suite.secretsClient)
-
-	httpmock.RegisterWithCode("GET", "/whoami", 200)
-	httpmock.RegisterWithCode("PUT", "/keypair", 400)
-
-	var execErr error
-	osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
-	})
-
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "expected failure")
-	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
-	failure := failures.Handled().(*failures.Failure)
-	suite.True(failure.Type.Matches(secretsapi.FailSave), "should be a FailSave failure")
-}
-
-func (suite *KeypairCommandTestSuite) TestExecute_Generate_DryRun() {
-	cmd := keypair.NewCommand(suite.secretsClient)
-
-	var execErr error
-	outStr, _ := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
-	})
-	suite.Require().NoError(execErr)
-	suite.Require().NoError(failures.Handled(), "is a failure")
-
-	suite.Contains(outStr, "RSA PRIVATE KEY")
-	suite.Contains(outStr, "RSA PUBLIC KEY")
 }
 
 func Test_KeypairCommand_TestSuite(t *testing.T) {

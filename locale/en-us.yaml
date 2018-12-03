@@ -524,6 +524,8 @@ keypair_generate_flag_dryrun:
   other: Do not save any changes
 keypair_generate_flag_skippassphrase:
   other: Do not require a passphrase for new Keypair (implies --dry-run)
+keypair_auth_cmd_description:
+  other: Authenticate existing Keypair for future sessions
 keypair_err:
   other: Unable to access user's Keypair
 keypair_err_not_found:
