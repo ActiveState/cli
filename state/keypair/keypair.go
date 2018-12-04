@@ -20,7 +20,7 @@ var (
 	FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
 
 	// FailInputPassphrase identifies a failure entering passphrase.
-	FailInputPassphrase = failures.Type("keypair.fail.parse", failures.FailUserInput)
+	FailInputPassphrase = failures.Type("keypair.fail.input.passphrase", failures.FailUserInput)
 )
 
 // Command represents the keypair command and its dependencies.

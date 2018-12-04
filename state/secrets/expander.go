@@ -5,59 +5,157 @@ import (
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
 	// FailUnrecognizedSecretSpec is used when no handler func is found for an Expander.
 	FailUnrecognizedSecretSpec = failures.Type("secrets.fail.unrecognized.secret_spec", variables.FailExpandVariable)
+
+	// FailInputSecretValue is used when error arises from user providing a secret value.
+	FailInputSecretValue = failures.Type("secrets.fail.input.value", failures.FailUserInput)
 )
 
-// NewExpander creates an ExpanderFunc which can decrypt stored user secrets.
+// NewExpander creates an ExpanderFunc which can retrieve and decrypt stored user secrets.
 func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
+	// memoized context
+	var expanderCtx *expanderContext
+
 	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
-		kp, failure := loadKeypairFromConfigDir()
-		if failure != nil {
-			return "", failure
-		}
+		var failure *failures.Failure
 
 		spec := projectFile.Secrets.GetByName(name)
 		if spec == nil {
 			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
 		}
 
-		org, failure := organizations.FetchByURLName(projectFile.Owner)
+		if expanderCtx == nil {
+			expanderCtx, failure = buildExpanderContext(secretsClient, projectFile)
+			if failure != nil {
+				return "", failure
+			}
+		}
+
+		value, failure := expandSecret(expanderCtx, spec)
 		if failure != nil {
 			return "", failure
 		}
-
-		proj, failure := projects.FetchByName(org.Urlname, projectFile.Name)
-		if failure != nil {
-			return "", failure
-		}
-
-		userSecrets, failure := fetchAll(secretsClient, org)
-		if failure != nil {
-			return "", failure
-		}
-
-		userSecret := findSecretWithHighestPriority(userSecrets, spec, proj)
-		if userSecret == nil {
-			return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
-		}
-
-		decrBytes, failure := kp.DecodeAndDecrypt(*userSecret.Value)
-		if failure != nil {
-			return "", failure
-		}
-
-		return string(decrBytes), nil
+		expanderCtx.CachedSecrets[spec.Name] = value
+		return value, nil
 	}
+}
+
+// NewPromptingExpander creates an ExpanderFunc which can retrieve and decrypt stored user secrets. Additionally,
+// it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
+// value with the secrets service.
+func NewPromptingExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
+	// memoized context
+	var expanderCtx *expanderContext
+
+	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+		var failure *failures.Failure
+
+		spec := projectFile.Secrets.GetByName(name)
+		if spec == nil {
+			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
+		}
+
+		if expanderCtx == nil {
+			expanderCtx, failure = buildExpanderContext(secretsClient, projectFile)
+			if failure != nil {
+				return "", failure
+			}
+		}
+
+		value, failure := expandSecret(expanderCtx, spec)
+		if failure != nil && failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
+			value, failure = promptForValue()
+			if failure != nil {
+				return "", failure
+			} else if spec.IsProject {
+				failure = saveUserSecret(secretsClient, expanderCtx.Keypair, expanderCtx.Organization, expanderCtx.Project, spec.IsUser, spec.Name, value)
+			} else {
+				failure = saveUserSecret(secretsClient, expanderCtx.Keypair, expanderCtx.Organization, nil, spec.IsUser, spec.Name, value)
+			}
+		}
+		expanderCtx.CachedSecrets[spec.Name] = value
+		return value, nil
+	}
+}
+
+func promptForValue() (string, *failures.Failure) {
+	var value string
+	var prompt = &survey.Password{Message: locale.T("secret_value_prompt")}
+	if err := survey.AskOne(prompt, &value, nil); err != nil {
+		return "", FailInputSecretValue.New("secrets_err_value_prompt")
+	}
+	return value, nil
+}
+
+type expanderContext struct {
+	Keypair       keypairs.Keypair
+	Organization  *models.Organization
+	Project       *models.Project
+	UserSecrets   []*secretsModels.UserSecret
+	CachedSecrets map[string]string
+}
+
+func buildExpanderContext(secretsClient *secretsapi.Client, projectFile *projectfile.Project) (*expanderContext, *failures.Failure) {
+	kp, failure := loadKeypairFromConfigDir()
+	if failure != nil {
+		return nil, failure
+	}
+
+	org, failure := organizations.FetchByURLName(projectFile.Owner)
+	if failure != nil {
+		return nil, failure
+	}
+
+	proj, failure := projects.FetchByName(org.Urlname, projectFile.Name)
+	if failure != nil {
+		return nil, failure
+	}
+
+	userSecrets, failure := fetchAll(secretsClient, org)
+	if failure != nil {
+		return nil, failure
+	}
+
+	return &expanderContext{
+		Keypair:       kp,
+		Organization:  org,
+		Project:       proj,
+		UserSecrets:   userSecrets,
+		CachedSecrets: map[string]string{},
+	}, nil
+}
+
+func expandSecret(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (string, *failures.Failure) {
+	if knownValue, exists := expanderCtx.CachedSecrets[spec.Name]; exists {
+		return knownValue, nil
+	}
+
+	var failure *failures.Failure
+
+	userSecret := findSecretWithHighestPriority(expanderCtx, spec)
+	if userSecret == nil {
+		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", spec.Name)
+	}
+
+	decrBytes, failure := expanderCtx.Keypair.DecodeAndDecrypt(*userSecret.Value)
+	if failure != nil {
+		return "", failure
+	}
+
+	return string(decrBytes), nil
 }
 
 // findSecretWithHighestPriority will find the most appropriately scoped secret from the provided collection given
@@ -71,15 +169,11 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 //
 // Thus, if secrets are found matching priority 1 and 3, the priority 1 secret is returned. If no secret
 // is found, nil is returned.
-func findSecretWithHighestPriority(userSecrets []*secretsModels.UserSecret, spec *projectfile.SecretSpec, project *models.Project) *secretsModels.UserSecret {
-	if project == nil {
-		return nil
-	}
-
-	projectIDStr := project.ProjectID.String()
+func findSecretWithHighestPriority(expanderCtx *expanderContext, spec *projectfile.SecretSpec) *secretsModels.UserSecret {
+	projectIDStr := expanderCtx.Project.ProjectID.String()
 
 	var selectedSecret *secretsModels.UserSecret
-	for _, userSecret := range userSecrets {
+	for _, userSecret := range expanderCtx.UserSecrets {
 		secretProjectIDStr := userSecret.ProjectID.String()
 		secretRequiresUser := *userSecret.IsUser
 		secretRequiresProject := secretProjectIDStr != ""
