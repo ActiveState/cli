@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 var (
@@ -70,17 +71,20 @@ func localKeyFilename(keyName string) string {
 }
 
 func validateKeyFile(keyFilename string) *failures.Failure {
+	if !fileutils.FileExists(keyFilename) {
+		return FailLoadNotFound.New("keypairs_err_load_not_found")
+	}
+
 	keyFileStat, err := os.Stat(keyFilename)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return FailLoadNotFound.New("keypairs_err_load_not_found")
-		}
 		return FailLoad.Wrap(err)
 	}
+
 	// allows u+rw only
 	if keyFileStat.Mode()&(0177) > 0 {
 		return FailLoadFileTooPermissive.New("keypairs_err_load_requires_mode", keyFilename, "0600")
 	}
+
 	return nil
 }
 
