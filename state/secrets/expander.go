@@ -43,13 +43,7 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 				return "", failure
 			}
 		}
-
-		value, failure := expandSecret(expanderCtx, spec)
-		if failure != nil {
-			return "", failure
-		}
-		expanderCtx.CachedSecrets[spec.Name] = value
-		return value, nil
+		return expandSecret(expanderCtx, spec)
 	}
 }
 
@@ -80,13 +74,18 @@ func NewPromptingExpander(secretsClient *secretsapi.Client) variables.ExpanderFu
 			value, failure = promptForValue()
 			if failure != nil {
 				return "", failure
-			} else if spec.IsProject {
+			}
+
+			if spec.IsProject {
 				failure = saveUserSecret(secretsClient, expanderCtx.Keypair, expanderCtx.Organization, expanderCtx.Project, spec.IsUser, spec.Name, value)
 			} else {
 				failure = saveUserSecret(secretsClient, expanderCtx.Keypair, expanderCtx.Organization, nil, spec.IsUser, spec.Name, value)
 			}
+
+			if failure != nil {
+				return "", failure
+			}
 		}
-		expanderCtx.CachedSecrets[spec.Name] = value
 		return value, nil
 	}
 }
@@ -155,7 +154,9 @@ func expandSecret(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (s
 		return "", failure
 	}
 
-	return string(decrBytes), nil
+	secretValue := string(decrBytes)
+	expanderCtx.CachedSecrets[spec.Name] = secretValue
+	return secretValue, nil
 }
 
 // findSecretWithHighestPriority will find the most appropriately scoped secret from the provided collection given

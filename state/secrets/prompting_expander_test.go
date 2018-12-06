@@ -68,10 +68,21 @@ func (suite *SecretsPromptingExpanderTestSuite) prepareWorkingExpander() variabl
 	return secrets.NewPromptingExpander(suite.secretsClient)
 }
 
-func (suite *SecretsPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+func (suite *SecretsPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
+	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
+		return 400, "something-happened"
+	})
+
+	var expandedValue string
+	var failure *failures.Failure
+	osutil.WrapStdin(func() {
+		expanderFn := suite.prepareWorkingExpander()
+		expandedValue, failure = expanderFn(secretName, suite.projectFile)
+	}, expectedValue)
+
+	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v", failure)
-	suite.Zero(value)
+	suite.Zero(expandedValue)
 }
 
 func (suite *SecretsPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName, expectedValue string, expectedIsProject, expectedIsUser bool) {
@@ -126,6 +137,14 @@ func (suite *SecretsPromptingExpanderTestSuite) TestSavesUserLevelSecret() {
 
 func (suite *SecretsPromptingExpanderTestSuite) TestSavesUserProjLevelSecret() {
 	suite.assertExpansionSaveSuccess("user-proj-secret", "so amazing", true, true)
+}
+
+func (suite *SecretsPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {
+	suite.assertExpansionSaveFailure("org-secret", "not so amazing", secretsapi.FailSave)
+}
+
+func (suite *SecretsPromptingExpanderTestSuite) TestSaveFails_ProjectLevelSecret() {
+	suite.assertExpansionSaveFailure("proj-secret", "utterly boring", secretsapi.FailSave)
 }
 
 func Test_SecretsPromptingExpander_TestSuite(t *testing.T) {
