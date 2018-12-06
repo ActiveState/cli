@@ -100,8 +100,6 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
 
 	suite.Equal("get", cc.Name())
-	suite.Equal("Get the value of a secret", cc.Short, "en-us translation")
-
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 	suite.Require().False(cc.HasAvailableFlags())
 }
