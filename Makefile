@@ -1,5 +1,6 @@
 # Go parameters
-GOCMD=go
+GOPATH?=	$(shell go env GOPATH)
+GOROOT?=	$(shell go env GOROOT)
 
 ifneq ($(OS),Windows_NT)
 	ifndef $(shell command -v go 2> /dev/null)
