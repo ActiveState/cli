@@ -50,7 +50,7 @@ func (v *SubShell) RcFileExt() string {
 
 // RcFileTemplate - see subshell.SubShell
 func (v *SubShell) RcFileTemplate() string {
-	return "state.fish"
+	return "fishrc.fish"
 }
 
 // Activate - see subshell.SubShell
