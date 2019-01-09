@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
@@ -22,6 +21,11 @@ var (
 // NewExpander creates an ExpanderFunc which can decrypt stored user secrets.
 func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+		kp, failure := loadKeypairFromConfigDir()
+		if failure != nil {
+			return "", failure
+		}
+
 		spec := projectFile.Secrets.GetByName(name)
 		if spec == nil {
 			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
@@ -33,11 +37,6 @@ func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
 		}
 
 		proj, failure := projects.FetchByName(org.Urlname, projectFile.Name)
-		if failure != nil {
-			return "", failure
-		}
-
-		kp, failure := keypairs.Fetch(secretsClient)
 		if failure != nil {
 			return "", failure
 		}

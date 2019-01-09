@@ -223,6 +223,8 @@ username_prompt:
   other: "Enter your username:"
 password_prompt:
   other: "Enter your password:"
+passphrase_prompt:
+  other: "Enter your passphrase:"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -516,6 +518,14 @@ keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
   other: Generate and upload a new Keypair
+keypair_generate_flag_bits:
+  other: Bit-length of keypair to generate
+keypair_generate_flag_dryrun:
+  other: Do not save any changes
+keypair_generate_flag_skippassphrase:
+  other: Do not require a passphrase for new Keypair (implies --dry-run)
+keypair_auth_cmd_description:
+  other: Authenticate existing Keypair for future sessions
 keypair_err:
   other: Unable to access user's Keypair
 keypair_err_not_found:
@@ -524,10 +534,20 @@ keypair_err_save:
   other: Keypair could not be saved
 keypair_err_publickey_not_found:
   other: No public-key found for user `{{.V0}}` ({{.V1}})
+keypair_err_passphrase_prompt:
+  other: The provided passphrase is invalid
+keypair_err_require_auth:
+  other: Your keypair is not authenticated, run `state keypair auth` first
 
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
   other: invalid PEM encoding
+keypairs_err_passphrase_incorrect:
+  other: provided passphrase is incorrect
 keypairs_err_invalid_rsa_publickey:
   other: provided key not an RSA public-key
+keypairs_err_load_not_found:
+  other: Authorized keypair not found
+keypairs_err_load_requires_mode:
+  other: "Keypair `{{.V0}}` file is too permissive, expects no more than `{{.V1}}` permissions"

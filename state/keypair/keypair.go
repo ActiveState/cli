@@ -7,8 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
-	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
 )
@@ -17,8 +15,13 @@ import (
 // generating new Keypairs.
 const DefaultRSABitLength int = 4096
 
-// FailKeypairParse identifies a failure during keypair parsing.
-var FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
+var (
+	// FailKeypairParse identifies a failure during keypair parsing.
+	FailKeypairParse = failures.Type("keypair.fail.parse", failures.FailUser)
+
+	// FailInputPassphrase identifies a failure entering passphrase.
+	FailInputPassphrase = failures.Type("keypair.fail.parse", failures.FailUserInput)
+)
 
 // Command represents the keypair command and its dependencies.
 type Command struct {
@@ -26,8 +29,9 @@ type Command struct {
 	secretsClient *secretsapi.Client
 
 	Flags struct {
-		Bits   int
-		DryRun bool
+		Bits           int
+		DryRun         bool
+		SkipPassphrase bool
 	}
 }
 
@@ -63,7 +67,20 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 				Type:        commands.TypeBool,
 				BoolVar:     &cmd.Flags.DryRun,
 			},
+			&commands.Flag{
+				Name:        "skip-passphrase",
+				Shorthand:   "",
+				Description: "keypair_generate_flag_skippassphrase",
+				Type:        commands.TypeBool,
+				BoolVar:     &cmd.Flags.SkipPassphrase,
+			},
 		},
+	})
+
+	cmd.config.Append(&commands.Command{
+		Name:        "auth",
+		Description: "keypair_auth_cmd_description",
+		Run:         cmd.ExecuteAuth,
 	})
 
 	return cmd
@@ -96,54 +113,5 @@ func printEncodedKeypair(secretsClient *secretsapi.Client) *failures.Failure {
 	}
 	print.Line(*kp.EncryptedPrivateKey)
 	print.Line(*kp.PublicKey)
-	return nil
-}
-
-// ExecuteGenerate processes the `keypair generate` sub-command.
-func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
-	var failure *failures.Failure
-	if !cmd.Flags.DryRun {
-		_, failure = cmd.secretsClient.Authenticated()
-	}
-
-	if failure == nil {
-		failure = generateKeypair(cmd.secretsClient, cmd.Flags.Bits, cmd.Flags.DryRun)
-	}
-
-	if failure != nil {
-		failures.Handle(failure, locale.T("keypair_err"))
-	}
-}
-
-// generateKeypair implements the behavior to generate a new Secrets key-pair on behalf of the user
-// and store that back to the Secrets Service. If dry-run is enabled, a keypair will be generated
-// and printed, but not stored anywhere (thus, not used).
-func generateKeypair(secretsClient *secretsapi.Client, bits int, dryRun bool) *failures.Failure {
-	keypair, failure := keypairs.GenerateRSA(bits)
-	if failure != nil {
-		return failure
-	}
-
-	encodedPrivateKey := keypair.EncodePrivateKey()
-	encodedPublicKey, failure := keypair.EncodePublicKey()
-	if failure != nil {
-		return failure
-	}
-
-	if !dryRun {
-		params := keys.NewSaveKeypairParams().WithKeypair(&secretModels.KeypairChange{
-			EncryptedPrivateKey: &encodedPrivateKey,
-			PublicKey:           &encodedPublicKey,
-		})
-
-		if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
-			return secretsapi.FailKeypairSave.New("keypair_err_save")
-		}
-		print.Line("Keypair generated successfully")
-	} else {
-		print.Line(encodedPrivateKey)
-		print.Line(encodedPublicKey)
-	}
-
 	return nil
 }

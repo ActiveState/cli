@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -49,6 +50,7 @@ func (suite *SecretsShareCommandTestSuite) BeforeTest(suiteName, testName string
 
 func (suite *SecretsShareCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
+	osutil.RemoveConfigFile("private.key")
 }
 
 func (suite *SecretsShareCommandTestSuite) TestCommandConfig() {
@@ -152,7 +154,8 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/keypair", 200)
+
+	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var bodyChanges []*secretsModels.UserSecretChange
 	var bodyErr error
@@ -171,7 +174,9 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 	suite.Require().Len(bodyChanges, 2)
 
 	// assert we can decrypt the changed secrets using the other user's private key
-	otherKp, parseFailure := keypairs.ParseRSA("-----BEGIN RSA PRIVATE KEY-----\nMIICXgIBAAKBgQD2d9SU+2dwfirmhsbv6lPBJFeCa/wh6VhLi3VLWDCxqCwz9p62\nfBS4t0Wbjjd2+6FWiCXrGofNXkc9uvv2GhRUB6k/ZKjSkHYDifmQ/llJIeFkdJzn\nqyjzsYovcTAYe4PCQSsIQnIyxZzIpxYpglMyJcuObwn/HRLb0r8ENRCUbQIDAQAB\nAoGBANLq8U0daAPotKXaqNwfV9VtWEYQSxBqNFlR2urDache9pTxdBkOTl1U2Yip\nR+XWqNb4ZBqx9Y1WJPk6zuxonQMuLes8dIjspAnoG1dTN/Lm+cNSuNFtCZAEsOcy\n8Sv7HuDIZcDKnHRxMGFVq8dKCldEVyMWXAro6A58qT9eSV2xAkEA+fVCjN1+hvaT\n366RZEhIeFeYz3MeTRLdSwEEDGrZJTHgteFFzug/zRluTqRzMiDiUn2nbhoeldwx\nPSVz5wJPqwJBAPxs+X2naGh0eDWd1s0Qs2Xer6vTrf1lEXXjCZkiOUYqm5mJSwpK\nzEFu37HnqBTsLPVA+mMdsx2KAAeyhc75dEcCQQD0ualXy8CGmUK8fOkCuzahBHqr\nmXUwVujs92ikU7SYkxYEXTQA2SkmQODcBGx4xvNvenED/nS1mulmiZXJtlyTAkEA\nvsO8aPGzPf2HOz3lr2QHr9zy9fArdWyEHYtPHaN3lUduAEJ5q3WLl4erFk/z/pvd\n/hr1HyK60oAQNcD8zsZG0QJARGfIn630zD8RfqSmHz5YIflAVRmQTOXHvsayo3/+\nH9cW1NPwHp1L8US7gRxkLpqH1XDy9JtaiOt0uJ2KA/pskA==\n-----END RSA PRIVATE KEY-----")
+	otherPrivKey, err := osutil.ReadTestFile("other-private.key")
+	suite.Require().NoError(err)
+	otherKp, parseFailure := keypairs.ParseRSA(otherPrivKey)
 	suite.Require().Nil(parseFailure)
 
 	suite.Equal("finders keepers", suite.decryptSecretValue(otherKp, *bodyChanges[0].Value))
