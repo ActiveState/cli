@@ -26,53 +26,17 @@ var (
 
 // NewExpander creates an ExpanderFunc which can retrieve and decrypt stored user secrets.
 func NewExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
-	// memoized context
-	var expanderCtx *expanderContext
-
-	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
-		var failure *failures.Failure
-
-		spec := projectFile.Secrets.GetByName(name)
-		if spec == nil {
-			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
-		}
-
-		if expanderCtx == nil {
-			expanderCtx, failure = buildExpanderContext(secretsClient, projectFile)
-			if failure != nil {
-				return "", failure
-			}
-		}
-		return expandSecret(expanderCtx, spec)
-	}
+	return newContextMemoizingExpanderFunc(secretsClient, expandSecret)
 }
 
 // NewPromptingExpander creates an ExpanderFunc which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
 func NewPromptingExpander(secretsClient *secretsapi.Client) variables.ExpanderFunc {
-	// memoized context
-	var expanderCtx *expanderContext
-
-	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
-		var failure *failures.Failure
-
-		spec := projectFile.Secrets.GetByName(name)
-		if spec == nil {
-			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
-		}
-
-		if expanderCtx == nil {
-			expanderCtx, failure = buildExpanderContext(secretsClient, projectFile)
-			if failure != nil {
-				return "", failure
-			}
-		}
-
+	return newContextMemoizingExpanderFunc(secretsClient, func(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (string, *failures.Failure) {
 		value, failure := expandSecret(expanderCtx, spec)
 		if failure != nil && failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
-			value, failure = promptForValue()
-			if failure != nil {
+			if value, failure = promptForValue(); failure != nil {
 				return "", failure
 			}
 
@@ -86,17 +50,9 @@ func NewPromptingExpander(secretsClient *secretsapi.Client) variables.ExpanderFu
 				return "", failure
 			}
 		}
-		return value, nil
-	}
-}
 
-func promptForValue() (string, *failures.Failure) {
-	var value string
-	var prompt = &survey.Password{Message: locale.T("secret_value_prompt")}
-	if err := survey.AskOne(prompt, &value, nil); err != nil {
-		return "", FailInputSecretValue.New("secrets_err_value_prompt")
-	}
-	return value, nil
+		return value, nil
+	})
 }
 
 type expanderContext struct {
@@ -104,7 +60,7 @@ type expanderContext struct {
 	Organization  *models.Organization
 	Project       *models.Project
 	UserSecrets   []*secretsModels.UserSecret
-	CachedSecrets map[string]string
+	cachedSecrets map[string]string
 }
 
 func buildExpanderContext(secretsClient *secretsapi.Client, projectFile *projectfile.Project) (*expanderContext, *failures.Failure) {
@@ -133,12 +89,36 @@ func buildExpanderContext(secretsClient *secretsapi.Client, projectFile *project
 		Organization:  org,
 		Project:       proj,
 		UserSecrets:   userSecrets,
-		CachedSecrets: map[string]string{},
+		cachedSecrets: map[string]string{},
 	}, nil
 }
 
+type secretExpanderFunc func(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (string, *failures.Failure)
+
+func newContextMemoizingExpanderFunc(secretsClient *secretsapi.Client, fn secretExpanderFunc) variables.ExpanderFunc {
+	// memoized context
+	var expanderCtx *expanderContext
+
+	return func(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+		var failure *failures.Failure
+
+		spec := projectFile.Secrets.GetByName(name)
+		if spec == nil {
+			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
+		}
+
+		if expanderCtx == nil {
+			expanderCtx, failure = buildExpanderContext(secretsClient, projectFile)
+			if failure != nil {
+				return "", failure
+			}
+		}
+		return fn(expanderCtx, spec)
+	}
+}
+
 func expandSecret(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (string, *failures.Failure) {
-	if knownValue, exists := expanderCtx.CachedSecrets[spec.Name]; exists {
+	if knownValue, exists := expanderCtx.cachedSecrets[spec.Name]; exists {
 		return knownValue, nil
 	}
 
@@ -155,7 +135,7 @@ func expandSecret(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (s
 	}
 
 	secretValue := string(decrBytes)
-	expanderCtx.CachedSecrets[spec.Name] = secretValue
+	expanderCtx.cachedSecrets[spec.Name] = secretValue
 	return secretValue, nil
 }
 
@@ -211,4 +191,13 @@ func findSecretWithHighestPriority(expanderCtx *expanderContext, spec *projectfi
 
 	}
 	return selectedSecret
+}
+
+func promptForValue() (string, *failures.Failure) {
+	var value string
+	var prompt = &survey.Password{Message: locale.T("secret_value_prompt")}
+	if err := survey.AskOne(prompt, &value, nil); err != nil {
+		return "", FailInputSecretValue.New("secrets_err_value_prompt")
+	}
+	return value, nil
 }
