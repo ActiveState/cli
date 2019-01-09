@@ -462,6 +462,12 @@ run_listing_commands:
 
 secrets_cmd_description:
   other: Manage Your Secrets
+secrets_get_cmd_description:
+  other: Get the value of a secret
+secrets_get_arg_name_name:
+  other: secret-name
+secrets_get_arg_name_description:
+  other: Name of Secret
 secrets_set_cmd_description:
   other: Set the value of a secret
 secrets_set_arg_name_name:
@@ -512,7 +518,7 @@ secrets_err_no_publickey_found:
 secrets_expand_err_spec_undefined:
   other: "secret specification for `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
-  other: "unable to locate information regarding secret `{{.V0}}`"
+  other: "unable to obtain value for secret `{{.V0}}`"
 
 keypair_cmd_description:
   other: Manage Your Keypair

@@ -49,11 +49,11 @@ func (suite *SecretsSetCommandTestSuite) BeforeTest(suiteName, testName string) 
 
 func (suite *SecretsSetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
-	osutil.RemoveConfigFile("private.key")
+	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
 func (suite *SecretsSetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
+	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
 
 	suite.Equal("set", cc.Name())
 	suite.Equal("Set the value of a secret", cc.Short, "en-us translation")

@@ -54,7 +54,7 @@ func (suite *SecretsShareCommandTestSuite) AfterTest(suiteName, testName string)
 }
 
 func (suite *SecretsShareCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
+	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("share", cc.Name())
 	suite.Equal("Share your organization and project secrets with another user", cc.Short, "en-us translation")
