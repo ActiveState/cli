@@ -68,7 +68,7 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 		}
 
 		if failure == nil {
-			kp, failure = keypairs.Fetch(cmd.secretsClient)
+			kp, failure = loadKeypairFromConfigDir()
 		}
 
 		if failure == nil {
