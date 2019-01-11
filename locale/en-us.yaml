@@ -225,6 +225,8 @@ password_prompt:
   other: "Enter your password:"
 passphrase_prompt:
   other: "Enter your passphrase:"
+secret_value_prompt:
+  other: "Enter value for secret:"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -514,6 +516,8 @@ secrets_err_base64_decoding:
   other: Error base64 decoding secret value
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
+secrets_err_value_prompt:
+  other: The provided secret value is invalid 
 
 secrets_expand_err_spec_undefined:
   other: "secret specification for `{{.V0}}` not defined in project"

@@ -34,7 +34,7 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	locale.Set("en-US")
 	failures.ResetHandled()
 
-	projectFile, err := loadSecretsProject() // from expander tests
+	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
 	suite.projectFile = projectFile
