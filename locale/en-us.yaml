@@ -226,7 +226,7 @@ password_prompt:
 passphrase_prompt:
   other: "Enter your passphrase:"
 secret_value_prompt:
-  other: "Enter value for secret:"
+  other: "Enter secret {{.V0}} value for {{.V1}}:"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:

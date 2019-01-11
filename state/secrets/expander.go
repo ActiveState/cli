@@ -36,7 +36,7 @@ func NewPromptingExpander(secretsClient *secretsapi.Client) variables.ExpanderFu
 	return newContextMemoizingExpanderFunc(secretsClient, func(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (string, *failures.Failure) {
 		value, failure := expandSecret(expanderCtx, spec)
 		if failure != nil && failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
-			if value, failure = promptForValue(); failure != nil {
+			if value, failure = promptForValue(spec); failure != nil {
 				return "", failure
 			}
 
@@ -193,9 +193,9 @@ func findSecretWithHighestPriority(expanderCtx *expanderContext, spec *projectfi
 	return selectedSecret
 }
 
-func promptForValue() (string, *failures.Failure) {
+func promptForValue(spec *projectfile.SecretSpec) (string, *failures.Failure) {
 	var value string
-	var prompt = &survey.Password{Message: locale.T("secret_value_prompt")}
+	var prompt = &survey.Password{Message: locale.Tr("secret_value_prompt", spec.Scope(), spec.Name)}
 	if err := survey.AskOne(prompt, &value, nil); err != nil {
 		return "", FailInputSecretValue.New("secrets_err_value_prompt")
 	}

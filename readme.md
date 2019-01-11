@@ -7,9 +7,10 @@
    * dep - https://github.com/golang/dep#installation
    * upx - https://upx.github.io/
  2. Clone this repository under `$GOPATH/src/github.com/ActiveState/cli`
- 3. Run `make init`
- 4. Run `dep ensure`
- 5. Run `make build`
+ 3. Run `git submodule init` and `git submodule update` (for tests)
+ 4. Run `make init`
+ 5. Run `dep ensure`
+ 6. Run `make build`
 
 # Development Workflow
 

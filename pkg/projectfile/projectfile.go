@@ -123,6 +123,16 @@ type SecretSpec struct {
 	IsUser    bool   `yaml:"user"`
 }
 
+// Scope returns a human readable representation of the scope of this Secret.
+func (spec SecretSpec) Scope() string {
+	if spec.IsUser {
+		return "user"
+	} else if spec.IsProject {
+		return "project"
+	}
+	return "organization"
+}
+
 // SecretSpecs adds functionality around slices of SecretSpecs.
 type SecretSpecs []*SecretSpec
 
