@@ -524,6 +524,7 @@
     "assert",
     "mock",
     "require",
+    "suite",
   ]
   pruneopts = ""
   revision = "12b6f73e6084dad08a7c6e575284b177ecafbc71"
@@ -697,6 +698,7 @@
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
+    "github.com/stretchr/testify/suite",
     "github.com/thoas/go-funk",
     "github.com/vbauerster/mpb",
     "github.com/vbauerster/mpb/decor",
