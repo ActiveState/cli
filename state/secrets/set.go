@@ -86,7 +86,9 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 }
 
 // saveUserSecret will add a new secret for this user or update an existing one.
-func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *models.Organization, project *models.Project, isUser bool, secretName, secretValue string) *failures.Failure {
+func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *models.Organization, project *models.Project,
+	isUser bool, secretName, secretValue string) *failures.Failure {
+
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
 	encrStr, failure := encrypter.EncryptAndEncode([]byte(secretValue))
 	if failure != nil {

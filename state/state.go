@@ -87,7 +87,7 @@ func init() {
 	Command.Append(secrets.NewCommand(secretsClient).Config())
 	Command.Append(keypair.NewCommand(secretsClient).Config())
 
-	variables.RegisterExpander("secrets", secrets.NewExpander(secretsClient))
+	variables.RegisterExpander("secrets", secrets.NewPromptingExpander(secretsClient))
 }
 
 func main() {
