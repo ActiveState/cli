@@ -161,6 +161,7 @@ name: valueForName
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.False(t, spec.IsProject)
 	assert.False(t, spec.IsUser)
+	assert.Equal(t, "organization", spec.Scope())
 }
 
 func TestSecretsStruct_ProjectScopedSecret(t *testing.T) {
@@ -176,6 +177,23 @@ project: true
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.True(t, spec.IsProject)
 	assert.False(t, spec.IsUser)
+	assert.Equal(t, "project", spec.Scope())
+}
+
+func TestSecretsStruct_UserScopedSecret(t *testing.T) {
+	spec := SecretSpec{}
+	dat := strings.TrimSpace(`
+name: valueForName
+user: true
+`)
+
+	err := yaml.Unmarshal([]byte(dat), &spec)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
+	assert.False(t, spec.IsProject)
+	assert.True(t, spec.IsUser)
+	assert.Equal(t, "user", spec.Scope())
 }
 
 func TestSecretsStruct_UserProjectScopedSecret(t *testing.T) {
@@ -192,6 +210,7 @@ user: true
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.True(t, spec.IsProject)
 	assert.True(t, spec.IsUser)
+	assert.Equal(t, "user-project", spec.Scope())
 }
 
 func TestParse(t *testing.T) {

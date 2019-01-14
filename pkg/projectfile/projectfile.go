@@ -125,7 +125,9 @@ type SecretSpec struct {
 
 // Scope returns a human readable representation of the scope of this Secret.
 func (spec SecretSpec) Scope() string {
-	if spec.IsUser {
+	if spec.IsUser && spec.IsProject {
+		return "user-project"
+	} else if spec.IsUser {
 		return "user"
 	} else if spec.IsProject {
 		return "project"

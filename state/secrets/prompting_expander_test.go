@@ -81,7 +81,7 @@ func (suite *SecretsPromptingExpanderTestSuite) assertExpansionSaveFailure(secre
 	}, expectedValue)
 
 	suite.Require().NotNil(failure)
-	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v", failure)
+	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)
 	suite.Zero(expandedValue)
 }
 
