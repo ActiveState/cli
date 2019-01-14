@@ -126,13 +126,13 @@ type SecretSpec struct {
 // Scope returns a human readable representation of the scope of this Secret.
 func (spec SecretSpec) Scope() string {
 	if spec.IsUser && spec.IsProject {
-		return "user-project"
+		return locale.T("secrets_scope_user_project")
 	} else if spec.IsUser {
-		return "user"
+		return locale.T("secrets_scope_user_org")
 	} else if spec.IsProject {
-		return "project"
+		return locale.T("secrets_scope_project")
 	}
-	return "organization"
+	return locale.T("secrets_scope_org")
 }
 
 // SecretSpecs adds functionality around slices of SecretSpecs.

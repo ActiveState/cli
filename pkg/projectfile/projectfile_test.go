@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -161,7 +162,7 @@ name: valueForName
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.False(t, spec.IsProject)
 	assert.False(t, spec.IsUser)
-	assert.Equal(t, "organization", spec.Scope())
+	assert.Equal(t, locale.T("secrets_scope_org"), spec.Scope())
 }
 
 func TestSecretsStruct_ProjectScopedSecret(t *testing.T) {
@@ -177,7 +178,7 @@ project: true
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.True(t, spec.IsProject)
 	assert.False(t, spec.IsUser)
-	assert.Equal(t, "project", spec.Scope())
+	assert.Equal(t, locale.T("secrets_scope_project"), spec.Scope())
 }
 
 func TestSecretsStruct_UserScopedSecret(t *testing.T) {
@@ -193,7 +194,7 @@ user: true
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.False(t, spec.IsProject)
 	assert.True(t, spec.IsUser)
-	assert.Equal(t, "user", spec.Scope())
+	assert.Equal(t, locale.T("secrets_scope_user_org"), spec.Scope())
 }
 
 func TestSecretsStruct_UserProjectScopedSecret(t *testing.T) {
@@ -210,7 +211,7 @@ user: true
 	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
 	assert.True(t, spec.IsProject)
 	assert.True(t, spec.IsUser)
-	assert.Equal(t, "user-project", spec.Scope())
+	assert.Equal(t, locale.T("secrets_scope_user_project"), spec.Scope())
 }
 
 func TestParse(t *testing.T) {
