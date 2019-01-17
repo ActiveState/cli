@@ -147,7 +147,7 @@ func (suite *SecretsSetCommandTestSuite) assertSaveSucceeds(secretName string, i
 		return 204, "empty-response"
 	})
 
-	var sharedChanges []*models.UserSecretChange
+	var sharedChanges []*models.UserSecretShare
 	if !isUser {
 		// assert secrets get pushed for other users
 		suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
@@ -181,7 +181,6 @@ func (suite *SecretsSetCommandTestSuite) assertSaveSucceeds(secretName string, i
 		suite.Require().Len(sharedChanges, 1)
 		suite.NotZero(*sharedChanges[0].Value)
 		suite.Equal(secretName, *sharedChanges[0].Name)
-		suite.False(*sharedChanges[0].IsUser)
 		suite.Equal(userChanges[0].ProjectID, sharedChanges[0].ProjectID)
 	} else {
 		suite.Require().Len(sharedChanges, 0)

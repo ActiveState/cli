@@ -157,7 +157,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	var bodyChanges []*secretsModels.UserSecretChange
+	var bodyChanges []*secretsModels.UserSecretShare
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
@@ -180,11 +180,9 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
 	suite.Require().Nil(parseFailure)
 
 	suite.Equal("finders keepers", suite.decryptSecretValue(otherKp, *bodyChanges[0].Value))
-	suite.False(*bodyChanges[0].IsUser)
 	suite.Zero(bodyChanges[0].ProjectID)
 
 	suite.Equal("early birds get worms", suite.decryptSecretValue(otherKp, *bodyChanges[1].Value))
-	suite.False(*bodyChanges[1].IsUser)
 	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), bodyChanges[1].ProjectID)
 }
 
