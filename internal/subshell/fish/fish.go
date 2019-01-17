@@ -103,7 +103,6 @@ func (v *SubShell) Run(script string) error {
 	tmpfile.WriteString("#!/usr/bin/env fish\n")
 	tmpfile.WriteString(script)
 	tmpfile.Close()
-	defer os.Remove(tmpfile.Name())
 	os.Chmod(tmpfile.Name(), 0755)
 
 	runCmd := exec.Command(tmpfile.Name())
