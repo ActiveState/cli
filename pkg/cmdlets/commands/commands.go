@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/print"
@@ -86,7 +87,7 @@ func (c *Command) Execute() error {
 func (c *Command) runner(cmd *cobra.Command, args []string) {
 	analytics.Event(analytics.CatRunCmd, c.Name)
 
-	if !c.RunWithoutAuth && api.Auth == nil {
+	if !c.RunWithoutAuth && api.Auth == nil && flag.Lookup("test.v") == nil {
 		print.Error(T("err_command_requires_auth"))
 		return
 	}
