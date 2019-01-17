@@ -82,16 +82,16 @@ func shareSecrets(secretsClient *secretsapi.Client, org *models.Organization, fo
 		return failure
 	}
 
-	otherChanges, failure := portShareableSecrets(selfSecrets, selfKeypair, otherEncrypter)
+	shares, failure := portShareableSecrets(selfSecrets, selfKeypair, otherEncrypter)
 	if failure != nil {
 		return failure
 	}
 
-	return saveOtherUserSecrets(secretsClient, org, forUser, otherChanges)
+	return saveUserSecretShares(secretsClient, org, forUser, shares)
 }
 
-func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter keypairs.Decrypter, encrypter keypairs.Encrypter) ([]*secretsModels.UserSecretChange, *failures.Failure) {
-	var otherSecrets []*secretsModels.UserSecretChange
+func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter keypairs.Decrypter, encrypter keypairs.Encrypter) ([]*secretsModels.UserSecretShare, *failures.Failure) {
+	var otherSecrets []*secretsModels.UserSecretShare
 
 	for _, selfSecret := range selfSecrets {
 		if !*selfSecret.IsUser {
@@ -105,10 +105,9 @@ func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter key
 				return nil, failure
 			}
 
-			otherSecrets = append(otherSecrets, &secretsModels.UserSecretChange{
+			otherSecrets = append(otherSecrets, &secretsModels.UserSecretShare{
 				ProjectID: selfSecret.ProjectID,
 				Name:      selfSecret.Name,
-				IsUser:    selfSecret.IsUser,
 				Value:     &ciphertext,
 			})
 		}
@@ -117,12 +116,12 @@ func portShareableSecrets(selfSecrets []*secretsModels.UserSecret, decrypter key
 	return otherSecrets, nil
 }
 
-func saveOtherUserSecrets(secretsClient *secretsapi.Client, org *models.Organization, user *models.User, changes []*secretsModels.UserSecretChange) *failures.Failure {
-	params := secrets.NewSaveOtherUserSecretsParams()
+func saveUserSecretShares(secretsClient *secretsapi.Client, org *models.Organization, user *models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+	params := secrets.NewShareUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID
-	params.UserSecrets = changes
-	_, err := secretsClient.Secrets.Secrets.SaveOtherUserSecrets(params, secretsClient.Auth)
+	params.UserSecrets = shares
+	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Debug("error sharing user secrets: %v", err)
 		return secretsapi.FailSave.New("secrets_err_save")

@@ -117,25 +117,25 @@ func (a *Client) SaveAllUserSecrets(params *SaveAllUserSecretsParams, authInfo r
 }
 
 /*
-SaveOtherUserSecrets saves a collection of user secrets for a different user
+ShareUserSecrets shares a collection of user secrets with another user
 
 Update another user's vault with any of the provided non-user scoped secrets
 */
-func (a *Client) SaveOtherUserSecrets(params *SaveOtherUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*SaveOtherUserSecretsNoContent, error) {
+func (a *Client) ShareUserSecrets(params *ShareUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*ShareUserSecretsNoContent, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewSaveOtherUserSecretsParams()
+		params = NewShareUserSecretsParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "saveOtherUserSecrets",
+		ID:                 "shareUserSecrets",
 		Method:             "PATCH",
 		PathPattern:        "/organizations/{organizationID}/user_secrets/{userID}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &SaveOtherUserSecretsReader{formats: a.formats},
+		Reader:             &ShareUserSecretsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -143,7 +143,7 @@ func (a *Client) SaveOtherUserSecrets(params *SaveOtherUserSecretsParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SaveOtherUserSecretsNoContent), nil
+	return result.(*ShareUserSecretsNoContent), nil
 
 }
 

@@ -76,7 +76,7 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 		}
 
 		if failure == nil && !cmd.Flags.IsUser {
-			failure = pushSecretToOrgUsers(cmd.secretsClient, org, project, cmd.Args.SecretName, cmd.Args.SecretValue)
+			failure = shareSecretWithOrgUsers(cmd.secretsClient, org, project, cmd.Args.SecretName, cmd.Args.SecretValue)
 		}
 	}
 
@@ -117,10 +117,9 @@ func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypt
 	return nil
 }
 
-// pushSecretToOrgUsers will share the current secret with all other users in the organization
+// shareSecretWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
-func pushSecretToOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
-	isNotUser := false
+func shareSecretWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
 	currentUserID, failure := secretsClient.Authenticated()
 	if failure != nil {
 		return failure
@@ -150,16 +149,15 @@ func pushSecretToOrgUsers(secretsClient *secretsapi.Client, org *models.Organiza
 				continue
 			}
 
-			change := &secretsModels.UserSecretChange{
-				IsUser: &isNotUser,
-				Name:   &secretName,
-				Value:  &ciphertext,
+			share := &secretsModels.UserSecretShare{
+				Name:  &secretName,
+				Value: &ciphertext,
 			}
 			if project != nil {
-				change.ProjectID = project.ProjectID
+				share.ProjectID = project.ProjectID
 			}
 
-			failure = saveOtherUserSecrets(secretsClient, org, member.User, []*secretsModels.UserSecretChange{change})
+			failure = saveUserSecretShares(secretsClient, org, member.User, []*secretsModels.UserSecretShare{share})
 			if failure != nil {
 				// a potentially unrecoverable failure, so we stop here
 				return failure
