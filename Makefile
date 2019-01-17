@@ -3,7 +3,8 @@ GOPATH?=	$(shell go env GOPATH)
 GOROOT?=	$(shell go env GOROOT)
 
 ifneq ($(OS),Windows_NT)
-	ifndef $(shell command -v go 2> /dev/null)
+	DEF=$(shell command -v go 2> /dev/null)
+	ifndef DEF
 		GOCMD=${GOROOT}/bin/go
 	endif
 else
