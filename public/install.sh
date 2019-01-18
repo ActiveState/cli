@@ -110,9 +110,9 @@ stateexe=$os-$arch
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 # Determine a fetch method
-if [ ! -z "`which wget 2>/dev/null`" ]; then
+if [ ! -z "`type -t wget 2>/dev/null`" ]; then
   fetch="wget -nv -O"
-elif [ ! -z "`which curl 2>/dev/null`" ]; then
+elif [ ! -z "`type -t curl 2>/dev/null`" ]; then
   fetch="curl -vsS -o"
 else
   error "Either wget or curl is required to download files"
