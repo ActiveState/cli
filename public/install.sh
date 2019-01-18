@@ -231,9 +231,7 @@ if [ ! -w "$profile" ]; then
   exit 1
 fi
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
-response=$(userinput y)
-response=$(echo $response | tr '[:upper:]' '[:lower:]')
-echo $response
+response=$(userinput y | tr '[:upper:]' '[:lower:]')
 if [ "$response" != "y" ]; then
   info "Installation complete."
   echo "Please manually add $installdir to your \$PATH in order to start "
