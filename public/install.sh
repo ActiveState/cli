@@ -232,7 +232,9 @@ if [ ! -w "$profile" ]; then
 fi
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
 response=$(userinput y)
-if [ "$response" != "Y" -a "$response" != "y" ]; then
+response=$(echo $response | tr '[:upper:]' '[:lower:]')
+echo $response
+if [ "$response" != "y" ]; then
   info "Installation complete."
   echo "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
