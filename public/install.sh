@@ -3,12 +3,15 @@
 #
 # Usage: ./install.sh [-b branch]
 
-USAGE="install.sh [flags]
+USAGE=`cat <<EOF
+install.sh [flags]
 
 Flags:
  -b <branch>      Specify an alternative branch to install from (eg. master)
  -n               Don't prompt for anything, just install and override any existing executables
- -h               Shows usage information (what you're currently reading)"
+ -h               Shows usage information (what you're currently reading)
+EOF
+`
 
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/prod/"
