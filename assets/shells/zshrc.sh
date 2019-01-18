@@ -5,6 +5,11 @@ precmd() { eval "$PROMPT_COMMAND" }
 {{range $K, $V := .Env}}
 export {{$K}}="{{$V}}"
 {{end}}
+
+{{range $K, $CMD := .Commands}}
+alias {{$K}}='state run {{$CMD}}'
+{{end}}
+
 cd "{{.WD}}"
 
 {{.UserScripts}}
