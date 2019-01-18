@@ -3,12 +3,24 @@
 #
 # Usage: ./install.sh [-b branch]
 
+USAGE=`cat <<EOF
+install.sh [flags]
+
+Flags:
+ -b <branch>      Specify an alternative branch to install from (eg. master)
+ -n               Don't prompt for anything, just install and override any existing executables
+ -h               Shows usage information (what you're currently reading)
+EOF
+`
+
 # URL to fetch updates from.
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/prod/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.
 STATEID="ActiveStateCLI"
+
+NOPROMPT=false
 
 info () {
   echo "$(tput bold)==> ${1}$(tput sgr0)"
@@ -22,11 +34,33 @@ error () {
   echo "$(tput setf 1)${1}$(tput sgr0)"
 }
 
+userprompt () {
+  if ! $NOPROMPT ; then
+    echo "$1"
+  fi
+}
+
+userinput () {
+  if $NOPROMPT ; then
+    echo "$1"
+  else 
+    read result
+    echo "$result"
+  fi
+}
+
 # Process command line arguments.
-while getopts "b:" opt; do
+while getopts "nb:?h" opt; do
   case $opt in
   b)
     STATEURL=`echo $STATEURL | sed -e "s/prod/$OPTARG/;"`
+    ;;
+  n)
+    NOPROMPT=true
+    ;;
+  h|?)
+    echo "${USAGE}"
+    exit 0
     ;;
   esac
 done
@@ -75,16 +109,18 @@ stateexe=$os-$arch
 
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
+# Determine a fetch method
+if [ ! -z "`type -t wget 2>/dev/null`" ]; then
+  fetch="wget -nv -O"
+elif [ ! -z "`type -t curl 2>/dev/null`" ]; then
+  fetch="curl -vsS -o"
+else
+  error "Either wget or curl is required to download files"
+  exit 1
+fi
+
 if [ ! -f $TMPDIR/$statepkg -a ! -f $TMPDIR/$stateexe ]; then
   info "Determining latest version..."
-  if [ ! -z "`which wget 2>/dev/null`" ]; then
-    fetch="wget -nv -O"
-  elif [ ! -z "`which curl 2>/dev/null`" ]; then
-    fetch="curl -vsS -o"
-  else
-    error "Either wget or curl is required to download files"
-    exit 1
-  fi
   # Determine the latest version to fetch.
   $fetch $TMPDIR/$statejson $STATEURL$statejson || exit 1
   version=`cat $TMPDIR/$statejson | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
@@ -131,8 +167,8 @@ fi
 
 # Prompt the user for a directory to install to.
 while "true"; do
-  echo -n "Please enter the installation directory [$installdir]: "
-  read input
+  userprompt "Please enter the installation directory [$installdir]: "
+  input=$(userinput $installdir)
   if [ -e "$input" -a ! -d "$input" ]; then
     warn "$input exists and is not a directory"
     continue
@@ -156,8 +192,8 @@ while "true"; do
   if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$installdir" ]; then
     warn "WARNING: installing elsewhere from previous installation"
   fi
-  echo -n "Continue? [y/N/q] "
-  read response
+  userprompt "Continue? [y/N/q] "
+  response=$(userinput y)
   case "$response" in
     [Qq])
       error "Aborting installation"
@@ -190,15 +226,15 @@ fi
 profile="`info $HOME`/.profile"
 if [ ! -w "$profile" ]; then
   info "Installation complete."
-  echo -n "Please manually add $installdir to your \$PATH in order to start "
+  echo "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   exit 1
 fi
-echo -n "Allow \$PATH to be appended to in your $profile? [y/N]"
-read response
-if [ "$response" != "Y" -a "$response" != "y" ]; then
+userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
+response=$(userinput y | tr '[:upper:]' '[:lower:]')
+if [ "$response" != "y" ]; then
   info "Installation complete."
-  echo -n "Please manually add $installdir to your \$PATH in order to start "
+  echo "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   exit 1
 fi
@@ -213,5 +249,5 @@ else
 fi
 
 info "Installation complete."
-echo -n "Please either run 'source ~/.profile' or start a new login shell in "
+echo "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
