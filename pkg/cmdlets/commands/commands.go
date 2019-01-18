@@ -1,7 +1,12 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
+
+	"github.com/ActiveState/cli/internal/print"
+
+	"github.com/ActiveState/cli/internal/api"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
@@ -15,6 +20,9 @@ var T = locale.T
 // Tt links to locale.Tt
 var Tt = locale.Tt
 
+// _bypassAuthRequirement is for testing use only
+var _bypassAuthRequirement = false
+
 // Note we only support the types that we currently have need for. You can add more as needed. Check the pflag docs
 // for reference: https://godoc.org/github.com/spf13/pflag
 const (
@@ -25,6 +33,10 @@ const (
 	// TypeBool is used to define the type for flags/args
 	TypeBool
 )
+
+func init() {
+	_bypassAuthRequirement = flag.Lookup("test.v") != nil
+}
 
 // Flag is used to define flags in our Command struct
 type Flag struct {
@@ -53,12 +65,13 @@ type Argument struct {
 
 // Command covers our command structure, all our commands instantiate a version of this struct
 type Command struct {
-	Name        string
-	Description string
-	Run         func(cmd *cobra.Command, args []string)
-	Aliases     []string
-	Flags       []*Flag
-	Arguments   []*Argument
+	Name           string
+	Description    string
+	Run            func(cmd *cobra.Command, args []string)
+	Aliases        []string
+	Flags          []*Flag
+	Arguments      []*Argument
+	RunWithoutAuth bool
 
 	UsageTemplate string
 
@@ -80,6 +93,12 @@ func (c *Command) Execute() error {
 // runner wraps the Run command
 func (c *Command) runner(cmd *cobra.Command, args []string) {
 	analytics.Event(analytics.CatRunCmd, c.Name)
+
+	if !c.RunWithoutAuth && api.Auth == nil && !_bypassAuthRequirement {
+		print.Error(T("err_command_requires_auth"))
+		return
+	}
+
 	for idx, arg := range c.Arguments {
 		if len(args) > idx {
 			(*arg.Variable) = args[idx]
