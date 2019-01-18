@@ -12,9 +12,10 @@ import (
 
 // Command holds our main command definition
 var Command = &commands.Command{
-	Name:        "self-update",
-	Description: "self-update",
-	Run:         Execute,
+	Name:           "self-update",
+	Description:    "self-update",
+	Run:            Execute,
+	RunWithoutAuth: true,
 }
 
 // Execute the current command

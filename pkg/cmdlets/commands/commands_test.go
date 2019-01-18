@@ -43,6 +43,29 @@ func TestRunCommand(t *testing.T) {
 	assert.True(t, ran)
 }
 
+func TestRunCommandRequiringAuth(t *testing.T) {
+
+	_bypassAuthRequirement = false
+	ran := false
+
+	var cmd1 = Command{
+		Name:          "foo",
+		Description:   "foo_description",
+		Aliases:       []string{"blah"},
+		Run:           func(cmd *cobra.Command, args []string) { ran = true },
+		UsageTemplate: "foo_usage_template",
+	}
+
+	cmd1.Execute()
+	assert.False(t, ran, "Doesn't run because authentication is required")
+
+	cmd1.RunWithoutAuth = true
+	cmd1.Execute()
+	assert.True(t, ran, "Runs because authentication is not required")
+
+	_bypassAuthRequirement = true
+}
+
 func TestAppend(t *testing.T) {
 
 	var cmd1 = Command{

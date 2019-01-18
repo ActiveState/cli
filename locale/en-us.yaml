@@ -561,3 +561,5 @@ keypairs_err_load_not_found:
   other: Authorized keypair not found
 keypairs_err_load_requires_mode:
   other: "Keypair `{{.V0}}` file is too permissive, expects no more than `{{.V1}}` permissions"
+err_command_requires_auth:
+  other: You need to be authenticated to run this command. Authenticate by running `state auth`.
