@@ -35,9 +35,10 @@ var SignupCommand = &commands.Command{
 
 // LogoutCommand adds the logout sub-command
 var LogoutCommand = &commands.Command{
-	Name:        "logout",
-	Description: "logout_description",
-	Run:         ExecuteLogout,
+	Name:           "logout",
+	Description:    "logout_description",
+	Run:            ExecuteLogout,
+	RunWithoutAuth: true,
 }
 
 // Args hold the arg values passed through the command line
