@@ -5,7 +5,7 @@ set -xg {{$K}} "{{$V}}"
 {{end}}
 
 {{range $K, $CMD := .Commands}}
-alias {{$K}}="state run {{$CMD}}"
+alias {{$K}}='state run {{$CMD}}'
 {{end}}
 
 cd "{{.WD}}"
