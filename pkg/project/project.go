@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
 
@@ -128,7 +129,7 @@ func (p *Project) NormalizedName() string {
 		os.Exit(1)
 	}
 
-	return rx.ReplaceAllString(p.Name(), "")
+	return strings.ToLower(rx.ReplaceAllString(p.Name(), ""))
 }
 
 // Owner returns project owner
