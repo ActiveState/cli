@@ -1,6 +1,11 @@
 package project
 
 import (
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/constraints"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -113,6 +118,19 @@ func (p *Project) Commands() []*Command {
 
 // Name returns project name
 func (p *Project) Name() string { return p.projectfile.Name }
+
+// NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
+func (p *Project) NormalizedName() string {
+	rx, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		failures.Handle(err, fmt.Sprintf("Regex failed to compile, error: %v", err))
+
+		// This should only happen while in development, hence the os.Exit
+		os.Exit(1)
+	}
+
+	return strings.ToLower(rx.ReplaceAllString(p.Name(), ""))
+}
 
 // Owner returns project owner
 func (p *Project) Owner() string { return p.projectfile.Owner }

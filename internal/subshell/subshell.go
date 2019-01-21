@@ -2,11 +2,15 @@ package subshell
 
 import (
 	"bytes"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/ActiveState/cli/internal/print"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -101,6 +105,28 @@ func getRcFile(v SubShell) (*os.File, error) {
 		}
 	}
 
+	inuse := []string{}
+	commands := map[string]string{}
+	var explicitName string
+
+	// Prepare command map to be parsed by template
+	for _, cmd := range prj.Commands() {
+		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
+
+		_, err := exec.LookPath(cmd.Name())
+		if err == nil {
+			inuse = append(inuse, cmd.Name())
+		}
+
+		commands[cmd.Name()] = cmd.Name()
+		commands[explicitName] = cmd.Name()
+	}
+
+	// If we have at least one command that's already in use then we should print a warning
+	if len(inuse) > 0 {
+		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), prj.NormalizedName(), explicitName))
+	}
+
 	rcData := map[string]interface{}{
 		"Project":     projectfile.Get(),
 		"Owner":       prj.Owner(),
@@ -108,6 +134,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 		"Env":         virtualenvironment.GetEnv(),
 		"WD":          virtualenvironment.WorkingDirectory(),
 		"UserScripts": userScripts,
+		"Commands":    commands,
 	}
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {

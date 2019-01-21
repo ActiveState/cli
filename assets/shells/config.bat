@@ -5,6 +5,10 @@ SET PROMPT=[{{.Owner}}\\{{.Name}}]$S$P$G
 set {{$K}}={{$V}}
 {{end}}
 
+{{range $K, $CMD := .Commands}}
+DOSKEY {{$K}}="state run {{$CMD}}"
+{{end}}
+
 cd {{.WD}}
 
 {{.UserScripts}}
