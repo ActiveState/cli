@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
 )
@@ -93,7 +93,7 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the keypair command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	uid, failure := cmd.secretsClient.Authenticated()
+	uid, failure := cmd.secretsClient.AuthenticatedUserID()
 
 	if failure == nil {
 		logging.Debug("(secrets.keypair) authenticated user=%s", uid.String())

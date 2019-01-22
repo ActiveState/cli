@@ -53,14 +53,14 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 		return failure
 	}
 
-	currentUserID, failure := secretsClient.Authenticated()
+	currentUserID, failure := secretsClient.AuthenticatedUserID()
 	if failure != nil {
 		return failure
 	}
 
 	updatedCtr := int(0)
 	for _, member := range members {
-		if *currentUserID != member.User.UserID {
+		if currentUserID != member.User.UserID {
 			params := secrets.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID

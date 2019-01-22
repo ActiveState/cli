@@ -62,15 +62,16 @@ func NewDefaultClient(bearerToken string) *Client {
 	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
 }
 
-// Authenticated will check with the Secrets Service to ensure the current Bearer token is a valid
-// one and return the user's UID in the response. Otherwise, this function will return a Failure.
-func (client *Client) Authenticated() (*strfmt.UUID, *failures.Failure) {
+// AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
+// is a valid one and return the user's UID in the response. Otherwise, this function will return
+// a Failure.
+func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
 	resOk, err := client.Authentication.GetWhoami(nil, client.Auth)
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return nil, api.FailAuth.New("err_api_not_authenticated")
+			return "", api.FailAuth.New("err_api_not_authenticated")
 		}
-		return nil, api.FailAuth.Wrap(err)
+		return "", api.FailAuth.Wrap(err)
 	}
-	return resOk.Payload.UID, nil
+	return *resOk.Payload.UID, nil
 }

@@ -120,7 +120,7 @@ func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypt
 // shareSecretWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
 func shareSecretWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
-	currentUserID, failure := secretsClient.Authenticated()
+	currentUserID, failure := secretsClient.AuthenticatedUserID()
 	if failure != nil {
 		return failure
 	}
@@ -131,7 +131,7 @@ func shareSecretWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organ
 	}
 
 	for _, member := range members {
-		if *currentUserID != member.User.UserID {
+		if currentUserID != member.User.UserID {
 			pubKey, failure := keypairs.FetchPublicKey(secretsClient, member.User)
 			if failure != nil {
 				if failure.Type.Matches(secretsapi.FailNotFound) {

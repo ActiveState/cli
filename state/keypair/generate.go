@@ -23,7 +23,7 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 
 	if !cmd.Flags.DryRun {
 		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
-		_, failure = cmd.secretsClient.Authenticated()
+		_, failure = cmd.secretsClient.AuthenticatedUserID()
 	}
 
 	if failure == nil && !cmd.Flags.SkipPassphrase {
