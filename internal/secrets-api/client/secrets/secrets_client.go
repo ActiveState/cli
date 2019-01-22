@@ -55,6 +55,39 @@ func (a *Client) DeleteUserSecret(params *DeleteUserSecretParams, authInfo runti
 }
 
 /*
+DiffUserSecrets relatives to current user determine what secrets another user is missing or are out of date
+
+Relative to current user, determine what secrets another user is missing or are out-of-date and return
+those specs along with the user's public-key. User-scoped secrets will not be considered.
+
+*/
+func (a *Client) DiffUserSecrets(params *DiffUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*DiffUserSecretsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDiffUserSecretsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "diffUserSecrets",
+		Method:             "GET",
+		PathPattern:        "/organizations/{organizationID}/user_secrets/{userID}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &DiffUserSecretsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DiffUserSecretsOK), nil
+
+}
+
+/*
 GetAllUserSecrets alls user s secrets for an organization
 
 Return a user's secrets from a specific organization
