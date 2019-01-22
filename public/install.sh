@@ -20,6 +20,8 @@ STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.
 STATEID="ActiveStateCLI"
 
+TERM="${TERM:=xterm}"
+
 NOPROMPT=false
 
 info () {

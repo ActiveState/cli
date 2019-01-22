@@ -48,7 +48,7 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /usr/local/go
-      TERM: xterm
+      SHELL: bash
     docker:
       - image: circleci/golang:1.10
     working_directory: /go/src/github.com/ActiveState/cli
@@ -66,7 +66,7 @@ jobs:
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
-      TERM: xterm
+      SHELL: bash
     macos:
       xcode: 9.2.0
     working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli 
