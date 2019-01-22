@@ -228,7 +228,7 @@ if [ ! -w "$profile" ]; then
   info "Installation complete."
   echo "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
-  exit 1
+  exit 0
 fi
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
 response=$(userinput y | tr '[:upper:]' '[:lower:]')
@@ -236,7 +236,7 @@ if [ "$response" != "y" ]; then
   info "Installation complete."
   echo "Please manually add $installdir to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
-  exit 1
+  exit 0
 fi
 info "Updating environment..."
 pathenv="export PATH=\"\$PATH:$installdir\" #$STATEID"
