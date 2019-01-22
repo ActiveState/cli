@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +37,8 @@ func buildShareCommand(cmd *Command) *commands.Command {
 
 // ExecuteShare processes the `secrets share` command.
 func (cmd *Command) ExecuteShare(_ *cobra.Command, args []string) {
-	projectFile := projectfile.Get()
-	org, failure := organizations.FetchByURLName(projectFile.Owner)
+	project := project.Get()
+	org, failure := organizations.FetchByURLName(project.Owner())
 	if failure == nil {
 		var member *models.Member
 		member, failure = findMemberForOrgByUsername(org, cmd.Args.ShareUserHandle)

@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -30,8 +30,8 @@ func buildSyncCommand(cmd *Command) *commands.Command {
 
 // ExecuteSync processes the `secrets sync` command.
 func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
-	projectFile := projectfile.Get()
-	org, failure := organizations.FetchByURLName(projectFile.Owner)
+	project := project.Get()
+	org, failure := organizations.FetchByURLName(project.Owner())
 
 	if failure == nil {
 		failure = synchronizeEachOrgMember(cmd.secretsClient, org)
