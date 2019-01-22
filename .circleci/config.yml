@@ -14,6 +14,7 @@ defaults:
             $GOROOT/bin/go get -u github.com/gobuffalo/packr/...
             $GOROOT/bin/go run scripts/constants-generator/main.go
             ./public/install.sh -n
+            echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
     runTests: &runTests
       run:
         name: Run unit tests
@@ -47,6 +48,7 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /usr/local/go
+      TERM: xterm
     docker:
       - image: circleci/golang:1.10
     working_directory: /go/src/github.com/ActiveState/cli
@@ -64,6 +66,7 @@ jobs:
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
+      TERM: xterm
     macos:
       xcode: 9.2.0
     working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli 
