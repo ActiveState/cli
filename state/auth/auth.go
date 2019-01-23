@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -54,6 +55,7 @@ func init() {
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
 	if api.Auth != nil {
+		// TODO skip this if we need to generate or download the private key
 		renewOK, err := api.Client.Authentication.GetRenew(nil, api.Auth)
 		if err != nil {
 			logging.Warningf("Renewing failed: %s", err)
@@ -80,6 +82,7 @@ func ExecuteSignup(cmd *cobra.Command, args []string) {
 // ExecuteLogout runs the logout command
 func ExecuteLogout(cmd *cobra.Command, args []string) {
 	api.RemoveAuth()
+	keypairs.DeleteWithDefaults()
 
 	print.Line(locale.T("logged_out"))
 }

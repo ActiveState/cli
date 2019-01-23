@@ -15,8 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -213,6 +215,8 @@ func TestExecuteToken(t *testing.T) {
 
 func TestExecuteLogout(t *testing.T) {
 	setup(t)
+	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+
 	user := setupUser(t)
 
 	httpmock.Activate(api.Prefix)
@@ -238,6 +242,10 @@ func TestExecuteLogout(t *testing.T) {
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, api.Auth, "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
+	require.Nil(t, pkstat)
+	assert.Regexp(t, "no such file or directory", err.Error())
 }
 
 func TestExecuteAuthWithTOTP(t *testing.T) {
