@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -58,13 +58,13 @@ func buildSetCommand(cmd *Command) *commands.Command {
 
 // ExecuteSet processes the `secrets set` command.
 func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
-	projectFile := projectfile.Get()
-	org, failure := organizations.FetchByURLName(projectFile.Owner)
+	currentProject := project.Get()
+	org, failure := organizations.FetchByURLName(currentProject.Owner())
 	if failure == nil {
 		var project *models.Project
 		var kp keypairs.Keypair
 		if cmd.Flags.IsProject {
-			project, failure = projects.FetchByName(org.Urlname, projectFile.Name)
+			project, failure = projects.FetchByName(org.Urlname, currentProject.Name())
 		}
 
 		if failure == nil {
@@ -120,7 +120,7 @@ func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypt
 // shareSecretWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
 func shareSecretWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
-	currentUserID, failure := secretsClient.Authenticated()
+	currentUserID, failure := secretsClient.AuthenticatedUserID()
 	if failure != nil {
 		return failure
 	}
@@ -131,7 +131,7 @@ func shareSecretWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organ
 	}
 
 	for _, member := range members {
-		if *currentUserID != member.User.UserID {
+		if currentUserID != member.User.UserID {
 			pubKey, failure := keypairs.FetchPublicKey(secretsClient, member.User)
 			if failure != nil {
 				if failure.Type.Matches(secretsapi.FailNotFound) {

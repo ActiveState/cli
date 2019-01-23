@@ -23,7 +23,7 @@ func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
 
 	if !cmd.Flags.DryRun {
 		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
-		_, failure = cmd.secretsClient.Authenticated()
+		_, failure = cmd.secretsClient.AuthenticatedUserID()
 	}
 
 	if failure == nil && !cmd.Flags.SkipPassphrase {
@@ -72,7 +72,7 @@ func generateKeypair(secretsClient *secretsapi.Client, passphrase string, bits i
 		if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
 			return secretsapi.FailKeypairSave.New("keypair_err_save")
 		}
-		print.Line("Keypair generated successfully")
+		print.Line(locale.T("keypair_generate_success"))
 
 		// save the keypair locally to avoid authenticating the keypair every time it's used
 		if failure = keypairs.SaveWithDefaults(keypair); failure != nil {

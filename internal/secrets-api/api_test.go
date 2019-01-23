@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/api"
 	apiEnv "github.com/ActiveState/cli/internal/api/environment"
-	"github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	httptransport "github.com/go-openapi/runtime/client"
@@ -50,8 +50,8 @@ func TestSecretsAPI_Authenticated_Failure(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
-	uid, failure := client.Authenticated()
-	assert.Nil(uid)
+	uid, failure := client.AuthenticatedUserID()
+	assert.Zero(uid)
 	assert.True(failure.Type.Matches(api.FailAuth), "should be an FailAuth failure")
 }
 
@@ -67,7 +67,7 @@ func TestSecretsAPI_Authenticated_Success(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 
-	uid, failure := client.Authenticated()
+	uid, failure := client.AuthenticatedUserID()
 	assert.Nil(failure)
 	assert.Equal("11110000-1111-0000-1111-000011110000", uid.String())
 }

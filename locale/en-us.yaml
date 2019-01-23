@@ -490,6 +490,10 @@ secrets_share_arg_user_name:
   other: user-handle
 secrets_share_arg_user_description:
   other: Username of user in your organization
+secrets_sync_cmd_description:
+  other: Synchronize your shareable secrets organization-wide
+secrets_sync_results_message:
+  other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
 secrets_col_name:
   other: Name
 secrets_col_scope:
@@ -534,6 +538,8 @@ keypair_generate_flag_dryrun:
   other: Do not save any changes
 keypair_generate_flag_skippassphrase:
   other: Do not require a passphrase for new Keypair (implies --dry-run)
+keypair_generate_success:
+  other: Keypair generated successfully
 keypair_auth_cmd_description:
   other: Authenticate existing Keypair for future sessions
 keypair_err:
@@ -561,6 +567,8 @@ keypairs_err_load_not_found:
   other: Authorized keypair not found
 keypairs_err_load_requires_mode:
   other: "Keypair `{{.V0}}` file is too permissive, expects no more than `{{.V1}}` permissions"
+keypairs_err_base64_decoding:
+  other: Message is not base-64 encoded
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
