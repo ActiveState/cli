@@ -1,6 +1,76 @@
 name: cli
 owner: ActiveState
 namespace: github.com/ActiveState/cli
-languages:
-  - name: Go
-    version: 1.10
+variables:
+  - name: ENV
+    value: |
+      GOPATH="${GOPATH:=`go env GOPATH`}"
+      GOROOT="${GOROOT:=`go env GOROOT`}"
+      PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+commands:
+  - name: preprocess
+    value: |
+      $variables.ENV
+      packr
+      go run scripts/constants-generator/main.go
+  - name: build
+    value: |
+      $commands.preprocess
+      pushd state
+      go build -ldflags="-s -w" -o ../build/state state.go
+      popd
+      mkdir -p public/update
+      go run scripts/update-generator/main.go -o public/update build/state
+  - name: install
+    value: |
+      $commands.preprocess
+      pushd state
+      go install state.go
+      popd
+  - name: generate-artifacts
+    value: |
+      go run scripts/artifact-generator/main.go 
+  - name: deploy-artifacts
+    value: |
+      go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
+  - name: deploy-updates
+    value: |
+      go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+  - name: generate-api-client
+    value: |
+      pushd internal
+      swagger generate client -f https://platform.activestate.com/swagger.json -A api
+      popd
+  - name: generate-secrets-client
+    value: |
+      pushd internal/secrets-api 
+      swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
+      popd
+  - name: generate-clients
+    value: |
+      $commands.generate-api-client
+      $commands.generate-secrets-client
+  - name: test
+    value: |
+      go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+  - name: clean
+    value: |
+      go clean
+      rm -Rf build
+  - name: run
+    value: |
+      $commands.build
+      build/state --help
+hooks:
+  - name: ACTIVATE
+    value: |
+      git config core.hooksPath .githooks
+      if ! type "packr" &> /dev/null; then
+        echo "packr was not found on your PATH, installing .."
+        go get -u github.com/gobuffalo/packr/...
+      fi
+      if ! type "swagger" &> /dev/null; then
+        echo "swagger was not found on your PATH, installing .."
+        go get -u github.com/go-swagger/go-swagger/cmd/swagger
+      fi
