@@ -55,7 +55,6 @@ func init() {
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
 	if api.Auth != nil {
-		// TODO skip this if we need to generate or download the private key
 		renewOK, err := api.Client.Authentication.GetRenew(nil, api.Auth)
 		if err != nil {
 			logging.Warningf("Renewing failed: %s", err)

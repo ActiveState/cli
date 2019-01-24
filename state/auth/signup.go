@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"flag"
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/users"
@@ -22,17 +21,11 @@ type signupInput struct {
 	Password2 string
 }
 
-var testSignupInput *signupInput
-
 func signup() {
 	input := &signupInput{}
 
-	if flag.Lookup("test.v") != nil {
-		input = testSignupInput
-	}
-
 	err := promptForSignup(input)
-	if err != nil && flag.Lookup("test.v") == nil {
+	if err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
@@ -43,14 +36,10 @@ func signup() {
 func signupFromLogin(username string, password string) {
 	input := &signupInput{}
 
-	if flag.Lookup("test.v") != nil {
-		input = testSignupInput
-	}
-
 	input.Username = username
 	input.Password = password
 	err := promptForSignup(input)
-	if err != nil && flag.Lookup("test.v") == nil {
+	if err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}

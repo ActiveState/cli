@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/spf13/viper"
@@ -50,11 +50,15 @@ func TestExecuteNoArgs(t *testing.T) {
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	testCredentials = &models.Credentials{}
-	testSignupInput = &signupInput{}
+	var execErr error
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+		// prompted for username and password only
+		// 10ms delay between writes to stdin
+		"baduser",
+		"badpass",
+	)
 
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, execErr, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Nil(t, api.Auth, "Did not authenticate")
 }
@@ -67,20 +71,16 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
 	httpmock.Register("GET", "/renew")
 
-	testCredentials = &models.Credentials{
+	_, err := api.Authenticate(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
-	}
-	_, err := api.Authenticate(testCredentials)
+	})
 	assert.NotNil(t, api.Auth, "Authenticated")
+	require.NoError(t, err)
 
-	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, Command.Execute(), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -92,18 +92,13 @@ func TestExecuteNoArgsLoginByPrompt(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
 
-	testCredentials = &models.Credentials{
-		Username: user.Username,
-		Password: user.Password,
-	}
+	var execErr error
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+		user.Username,
+		user.Password)
 
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -123,28 +118,23 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 		}
 		return 200, "login"
 	})
-	httpmock.Register("POST", "/users")
 	httpmock.Register("GET", "/users/uniqueUsername/test")
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
+	httpmock.Register("POST", "/users")
 
-	testCredentials = &models.Credentials{
-		Username: user.Username,
-		Password: user.Password,
-	}
+	var execErr error
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+		// prompted for username and password
+		user.Username,
+		user.Password,
+		// prompted to signup instead
+		"yes",
+		// enter new user details
+		user.Password, // confirmation
+		user.Name,
+		user.Email,
+	)
 
-	testSignupInput = &signupInput{
-		Name:      user.Name,
-		Email:     user.Email,
-		Username:  user.Username,
-		Password:  user.Password,
-		Password2: user.Password,
-	}
-
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -155,28 +145,25 @@ func TestExecuteSignup(t *testing.T) {
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
 
-	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/users/uniqueUsername/test")
 	httpmock.Register("POST", "/users")
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
+	httpmock.Register("POST", "/login")
 
 	user := setupUser(t)
-
-	testSignupInput = &signupInput{
-		Name:      user.Name,
-		Email:     user.Email,
-		Username:  user.Username,
-		Password:  user.Password,
-		Password2: user.Password,
-	}
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"signup"})
 
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	var execErr error
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+		user.Username,
+		user.Password,
+		user.Password, // confirmation
+		user.Name,
+		user.Email,
+	)
+
+	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -189,16 +176,14 @@ func TestExecuteToken(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/apikeys")
 	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
+	httpmock.Register("POST", "/apikeys")
 
-	testCredentials = &models.Credentials{
+	_, err := api.Authenticate(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
-	}
-	_, err := api.Authenticate(testCredentials)
+	})
 	token := viper.GetString("apiToken")
 	api.RemoveAuth()
 	assert.NoError(t, err, "Executed without error")
@@ -215,6 +200,7 @@ func TestExecuteToken(t *testing.T) {
 
 func TestExecuteLogout(t *testing.T) {
 	setup(t)
+	defer osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	user := setupUser(t)
@@ -223,16 +209,11 @@ func TestExecuteLogout(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
 
-	testCredentials = &models.Credentials{
+	_, err := api.Authenticate(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
-	}
-	_, err := api.Authenticate(testCredentials)
+	})
 	assert.NotNil(t, api.Auth, "Authenticated")
 
 	Cc := Command.GetCobraCmd()
@@ -263,26 +244,24 @@ func TestExecuteAuthWithTOTP(t *testing.T) {
 		}
 		return 200, "login"
 	})
-	httpmock.Register("POST", "/apikeys")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("GET", "/renew")
 
-	testCredentials = &models.Credentials{
-		Username: user.Username,
-		Password: user.Password,
-	}
+	var execErr error
+	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
+	// input for the specific field
+	osutil.WrapStdinWithDelay(10*time.Millisecond,
+		func() { execErr = Command.Execute() },
+		user.Username, user.Password, "\x04")
 
-	logging.Debug("Executing..")
-	err := Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	require.NoError(t, execErr, "Executed without error")
 	assert.Nil(t, api.Auth, "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	testCredentials.Totp = "foo"
-	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	osutil.WrapStdinWithDelay(10*time.Millisecond,
+		func() { execErr = Command.Execute() },
+		user.Username, user.Password, "foo")
+
+	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
