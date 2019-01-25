@@ -56,7 +56,7 @@ func RunHook(hookName string) error {
 
 	for _, hook := range hooks {
 		print.Info("> " + hook.Name)
-		err := subs.Run(variables.Expand(hook.Value))
+		_, err := subs.Run(variables.Expand(hook.Value))
 		if err != nil {
 			return err
 		}

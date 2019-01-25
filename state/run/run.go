@@ -16,34 +16,38 @@ import (
 )
 
 // Command holds the definition for "state run".
-var Command = &commands.Command{
-	Name:        "run",
-	Description: "run_description",
-	Run:         Execute,
+var Command *commands.Command
 
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "standalone",
-			Shorthand:   "s",
-			Description: "flag_state_run_standalone_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.Standalone,
-		},
-		&commands.Flag{
-			Name:        "list",
-			Description: "flag_state_run_standalone_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.List,
-		},
-	},
+func init() {
+	Command = &commands.Command{
+		Name:        "run",
+		Description: "run_description",
+		Run:         Execute,
 
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "arg_state_run_name",
-			Description: "arg_state_run_name_description",
-			Variable:    &Args.Name,
+		Flags: []*commands.Flag{
+			&commands.Flag{
+				Name:        "standalone",
+				Shorthand:   "s",
+				Description: "flag_state_run_standalone_description",
+				Type:        commands.TypeBool,
+				BoolVar:     &Flags.Standalone,
+			},
+			&commands.Flag{
+				Name:        "list",
+				Description: "flag_state_run_standalone_description",
+				Type:        commands.TypeBool,
+				BoolVar:     &Flags.List,
+			},
 		},
-	},
+
+		Arguments: []*commands.Argument{
+			&commands.Argument{
+				Name:        "arg_state_run_name",
+				Description: "arg_state_run_name_description",
+				Variable:    &Args.Name,
+			},
+		},
+	}
 }
 
 // Flags hold the flag values passed through the command line.
@@ -105,9 +109,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
-	err = subs.Run(command)
-	if err != nil {
+	code, err := subs.Run(command)
+	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
+		Command.Exiter(code)
 		return
 	}
 }
