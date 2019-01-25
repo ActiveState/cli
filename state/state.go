@@ -74,6 +74,8 @@ var Command = &commands.Command{
 func init() {
 	logging.Debug("init")
 
+	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
+
 	Command.Append(activate.Command)
 	Command.Append(hook.Command)
 	Command.Append(selfupdate.Command)
@@ -85,7 +87,6 @@ func init() {
 	Command.Append(env.Command)
 	Command.Append(run.Command)
 
-	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
 	Command.Append(secrets.NewCommand(secretsClient).Config())
 	Command.Append(keypair.NewCommand(secretsClient).Config())
 

@@ -3,6 +3,7 @@ package osutil
 import (
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 func replaceStdout(newOut *os.File) *os.File {
@@ -49,21 +50,39 @@ func CaptureStdout(fnToExec func()) (string, error) {
 	return outStr, err
 }
 
-// WrapStdin will buffer stdin with the lines provided as a variadic set of string before
+// WrapStdin will fill stdin with the lines provided as a variadic list of strings before
 // executing the provided function. Each line will be appended with a newline (\n) only.
 func WrapStdin(fnToExec func(), inputLines ...string) {
+	WrapStdinWithDelay(0, fnToExec, inputLines...)
+}
+
+// WrapStdinWithDelay will fill stdin with the lines provided, but with a given delay before
+// each write. This is useful if there is a reader that reads all of stdin between prompts,
+// for instance.
+func WrapStdinWithDelay(delay time.Duration, fnToExec func(), inputLines ...string) {
 	tmpIn, inWriter, err := os.Pipe()
 	if err != nil {
 		panic(err)
 	}
-	defer inWriter.Close()
 	defer tmpIn.Close()
-
 	defer replaceStdin(replaceStdin(tmpIn))
 
-	for _, line := range inputLines {
-		inWriter.Write([]byte(line + "\n"))
+	if delay > 0 {
+		// need to run this asynchornously so that the fnToExec can be processed
+		go writeLinesAndClosePipe(inWriter, inputLines, func() { time.Sleep(delay) })
+	} else {
+		writeLinesAndClosePipe(inWriter, inputLines, nil)
 	}
 
 	fnToExec() // execute the provided function
+}
+
+func writeLinesAndClosePipe(writer *os.File, lines []string, callbackFn func()) {
+	defer writer.Close()
+	for _, line := range lines {
+		if callbackFn != nil {
+			callbackFn()
+		}
+		writer.WriteString(line + "\n")
+	}
 }

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -80,6 +81,7 @@ func ExecuteSignup(cmd *cobra.Command, args []string) {
 // ExecuteLogout runs the logout command
 func ExecuteLogout(cmd *cobra.Command, args []string) {
 	api.RemoveAuth()
+	keypairs.DeleteWithDefaults()
 
 	print.Line(locale.T("logged_out"))
 }
