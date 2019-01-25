@@ -14,8 +14,7 @@ import (
 
 func plainAuth() {
 	credentials := &models.Credentials{}
-	err := promptForLogin(credentials)
-	if err != nil {
+	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
@@ -46,7 +45,6 @@ func doPlainAuth(credentials *models.Credentials) {
 	// Error checking
 	if err != nil {
 		switch err.(type) {
-
 		// Authentication failed due to username not existing
 		case *authentication.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
@@ -62,7 +60,7 @@ func doPlainAuth(credentials *models.Credentials) {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
-				print.Error(locale.T("err_auth_failed"))
+				failures.Handle(err, locale.T("err_auth_failed"))
 			}
 			return
 		case *authentication.PostLoginRetryWith:

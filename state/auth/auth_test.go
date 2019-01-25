@@ -22,6 +22,7 @@ import (
 )
 
 func setup(t *testing.T) {
+	failures.ResetHandled()
 	api.RemoveAuth()
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
@@ -59,7 +60,7 @@ func TestExecuteNoArgs(t *testing.T) {
 	)
 
 	assert.NoError(t, execErr, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Error(t, failures.Handled(), "No failure occurred")
 	assert.Nil(t, api.Auth, "Did not authenticate")
 }
 
@@ -244,6 +245,9 @@ func TestExecuteAuthWithTOTP(t *testing.T) {
 		}
 		return 200, "login"
 	})
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.Register("POST", "/apikeys")
 
 	var execErr error
 	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting

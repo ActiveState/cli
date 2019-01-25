@@ -114,16 +114,13 @@ func doSignup(input *signupInput) {
 	// Error checking
 	if err != nil {
 		switch err.(type) {
-
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			failures.Handle(err, locale.T("err_auth_signup_email_exists"))
-			return
-
 		default:
 			failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
-			return
 		}
+		return
 	}
 
 	doPlainAuth(&models.Credentials{
