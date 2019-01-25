@@ -1,8 +1,6 @@
 package variables
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
@@ -65,12 +63,7 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	project := project.Get()
-	org, failure := organizations.FetchByURLName(project.Owner())
-	if failure == nil {
-		failure = listAllUserSecrets(cmd.secretsClient, org)
-	}
-
+	failure := listAllUserSecrets(cmd.secretsClient)
 	if failure != nil {
 		failures.Handle(failure, locale.T("variables_err"))
 	}
@@ -93,16 +86,21 @@ func fetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*se
 }
 
 // listAllUserSecrets prints a list of all of the UserSecrets names and their level for this user given an Organization.
-func listAllUserSecrets(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
-	logging.Debug("listing user-secrets for org=%s", org.OrganizationID.String())
+func listAllUserSecrets(secretsClient *secretsapi.Client) *failures.Failure {
+	prj := project.Get()
+	logging.Debug("listing user-secrets for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	orgProjects, failure := projects.FetchOrganizationProjects(org.Urlname)
+	orgModel, failure := organizations.FetchByURLName(prj.Owner())
 	if failure != nil {
 		return failure
 	}
-	orgProjectMap := mapProjects(orgProjects)
 
-	userSecrets, failure := fetchAll(secretsClient, org)
+	projectModel, failure := projects.FetchByName(prj.Owner(), prj.Name())
+	if failure != nil {
+		return failure
+	}
+
+	userSecrets, failure := fetchAll(secretsClient, orgModel)
 	if failure != nil {
 		return failure
 	} else if len(userSecrets) == 0 {
@@ -111,7 +109,11 @@ func listAllUserSecrets(secretsClient *secretsapi.Client, org *models.Organizati
 
 	rows := [][]interface{}{}
 	for _, userSecret := range userSecrets {
-		rows = append(rows, []interface{}{*userSecret.Name, secretScopeDescription(userSecret, orgProjectMap)})
+		if (userSecret.ProjectID != "" && userSecret.ProjectID != projectModel.ProjectID) ||
+			(userSecret.OrganizationID != nil && *userSecret.OrganizationID != orgModel.OrganizationID) {
+			continue
+		}
+		rows = append(rows, []interface{}{*userSecret.Name, secretScopeDescription(userSecret)})
 	}
 
 	t := gotabulate.Create(rows)
@@ -133,18 +135,13 @@ func mapProjects(projects []*models.Project) projectIDMap {
 	return mapping
 }
 
-func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projectIDMap) string {
-	projName := locale.T("undefined")
-	if proj, found := projMap[userSecret.ProjectID]; found {
-		projName = proj.Name
-	}
-
+func secretScopeDescription(userSecret *secretsModels.UserSecret) string {
 	if *userSecret.IsUser && userSecret.ProjectID != "" {
-		return fmt.Sprintf("%s (%s)", locale.T("variables_scope_user_project"), projName)
+		return locale.T("variables_scope_user_project")
 	} else if *userSecret.IsUser {
 		return locale.T("variables_scope_user_org")
 	} else if userSecret.ProjectID != "" {
-		return fmt.Sprintf("%s (%s)", locale.T("variables_scope_project"), projName)
+		return locale.T("variables_scope_project")
 	} else {
 		return locale.T("variables_scope_org")
 	}
