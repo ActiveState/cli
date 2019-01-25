@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"flag"
-
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/authentication"
 	"github.com/ActiveState/cli/internal/api/client/users"
@@ -14,17 +12,10 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-var testCredentials *models.Credentials
-
 func plainAuth() {
 	credentials := &models.Credentials{}
-
-	if flag.Lookup("test.v") != nil {
-		credentials = testCredentials
-	}
-
 	err := promptForLogin(credentials)
-	if err != nil && flag.Lookup("test.v") == nil { // err is expected for prompt if this is a test
+	if err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
@@ -46,12 +37,7 @@ func promptForLogin(credentials *models.Credentials) error {
 		},
 	}
 
-	err := survey.Ask(qs, credentials)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return survey.Ask(qs, credentials)
 }
 
 func doPlainAuth(credentials *models.Credentials) {
@@ -72,7 +58,7 @@ func doPlainAuth(credentials *models.Credentials) {
 					Message: locale.T("prompt_login_to_signup"),
 				}
 				survey.AskOne(prompt, &confirmed, nil)
-				if confirmed || flag.Lookup("test.v") != nil {
+				if confirmed {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
@@ -88,9 +74,6 @@ func doPlainAuth(credentials *models.Credentials) {
 				},
 			}
 			survey.Ask(qs, credentials)
-			if flag.Lookup("test.v") != nil {
-				credentials = testCredentials
-			}
 			if credentials.Totp == "" {
 				print.Line(locale.T("login_cancelled"))
 				return

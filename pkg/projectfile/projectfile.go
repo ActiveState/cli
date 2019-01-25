@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -227,7 +228,8 @@ func GetSafe() (*Project, *failures.Failure) {
 	}
 
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
-	if projectFilePath == "" {
+	// we do not want to use a path provided by state if we're running tests
+	if projectFilePath == "" || flag.Lookup("test.v") != nil {
 		projectFilePath = getProjectFilePath()
 	}
 

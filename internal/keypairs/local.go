@@ -30,6 +30,9 @@ var (
 
 	// FailSaveFile indicates a failure when saving a keypair file.
 	FailSaveFile = failures.Type("keypairs.fail.save.file")
+
+	// FailDeleteFile indicates a failure when deleting a keypair file.
+	FailDeleteFile = failures.Type("keypairs.fail.delete.file")
 )
 
 // Load will attempt to load a Keypair using private and public-key files from the
@@ -55,6 +58,18 @@ func Save(kp Keypair, keyName string) *failures.Failure {
 	return nil
 }
 
+// Delete will delete an unencrypted and encoded private key from the local config directory. The base
+// filename (sans suffix) must be provided.
+func Delete(keyName string) *failures.Failure {
+	filename := localKeyFilename(keyName)
+	if fileutils.FileExists(filename) {
+		if err := os.Remove(filename); err != nil {
+			return FailDeleteFile.Wrap(err)
+		}
+	}
+	return nil
+}
+
 // LoadWithDefaults will call Load with the default key name (i.e. constants.KeypairLocalFileName).
 func LoadWithDefaults() (Keypair, *failures.Failure) {
 	return Load(constants.KeypairLocalFileName)
@@ -64,6 +79,11 @@ func LoadWithDefaults() (Keypair, *failures.Failure) {
 // (i.e. constants.KeypairLocalFileName).
 func SaveWithDefaults(kp Keypair) *failures.Failure {
 	return Save(kp, constants.KeypairLocalFileName)
+}
+
+// DeleteWithDefaults will call Delete with the default key name (i.e. constants.KeypairLocalFileName).
+func DeleteWithDefaults() *failures.Failure {
+	return Delete(constants.KeypairLocalFileName)
 }
 
 func localKeyFilename(keyName string) string {
