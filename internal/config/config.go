@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -29,7 +30,11 @@ func GetDataDir() string {
 
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
-	configDirs = configdir.New(configNamespace, "cli")
+	appName := C.LibraryName
+	if C.BranchName != C.ProductionBranch {
+		appName = fmt.Sprintf("%s-%s", appName, "dev")
+	}
+	configDirs = configdir.New(configNamespace, appName)
 
 	if flag.Lookup("test.v") != nil {
 		configDirs.LocalPath, _ = filepath.Abs("./testdata/generated/config")

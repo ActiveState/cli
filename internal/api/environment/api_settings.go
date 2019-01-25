@@ -50,7 +50,7 @@ func init() {
 	if apiEnvSetting, hasSettingsForEnv = apiEnvSettings[constants.APIEnv]; !hasSettingsForEnv {
 		if flag.Lookup("test.v") != nil {
 			apiEnvSetting = apiEnvSettings["test"]
-		} else if constants.BranchName == "prod" {
+		} else if constants.BranchName == constants.ProductionBranch {
 			apiEnvSetting = apiEnvSettings["prod"]
 		} else {
 			apiEnvSetting = apiEnvSettings["stage"]
