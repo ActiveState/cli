@@ -97,7 +97,7 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "0", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "0", "ActiveState"))
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
@@ -125,7 +125,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "1", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "1", "ActiveState"))
 
 	suite.Require().Len(scottrSyncChanges, 2)
 	suite.NotZero(*scottrSyncChanges[0].Value)
@@ -163,7 +163,7 @@ func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "0", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "0", "ActiveState"))
 
 	suite.False(diffedCurrentUser, "should not have diffed current user")
 }
@@ -247,7 +247,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_SavingSharedSecrets() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.T("secrets_err_save"))
+	suite.Contains(outStr, locale.T("variables_err_save"))
 }
 
 func Test_SecretsSyncCommand_TestSuite(t *testing.T) {

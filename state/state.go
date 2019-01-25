@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
-	"github.com/ActiveState/cli/state/env"
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
@@ -94,7 +93,6 @@ func register() {
 	Command.Append(projects.Command)
 	Command.Append(new.Command)
 	Command.Append(show.Command)
-	Command.Append(env.Command)
 	Command.Append(run.Command)
 
 	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())

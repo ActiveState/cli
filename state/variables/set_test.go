@@ -69,7 +69,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretNameAndValue(
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"set"})
 	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: secrets_set_arg_name_name\nArgument missing: secrets_set_arg_value_name\n")
+	suite.EqualError(err, "Argument missing: variables_set_arg_name_name\nArgument missing: variables_set_arg_value_name\n")
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 

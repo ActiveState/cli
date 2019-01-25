@@ -21,13 +21,13 @@ import (
 func buildShareCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
 		Name:        "share",
-		Description: "secrets_share_cmd_description",
+		Description: "variables_share_cmd_description",
 		Run:         cmd.ExecuteShare,
 
 		Arguments: []*commands.Argument{
 			&commands.Argument{
-				Name:        "secrets_share_arg_user_name",
-				Description: "secrets_share_arg_user_description",
+				Name:        "variables_share_arg_user_name",
+				Description: "variables_share_arg_user_description",
 				Variable:    &cmd.Args.ShareUserHandle,
 				Required:    true,
 			},
@@ -48,7 +48,7 @@ func (cmd *Command) ExecuteShare(_ *cobra.Command, args []string) {
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+		failures.Handle(failure, locale.T("variables_err"))
 	}
 }
 
@@ -124,7 +124,7 @@ func saveUserSecretShares(secretsClient *secretsapi.Client, org *models.Organiza
 	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Debug("error sharing user secrets: %v", err)
-		return secretsapi.FailSave.New("secrets_err_save")
+		return secretsapi.FailSave.New("variables_err_save")
 	}
 	return nil
 }

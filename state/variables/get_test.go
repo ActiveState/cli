@@ -108,7 +108,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretName() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get"})
 	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: secrets_get_arg_name_name\n")
+	suite.EqualError(err, "Argument missing: variables_get_arg_name_name\n")
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 

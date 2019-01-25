@@ -67,7 +67,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_RequiresUserHandle() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"share"})
 	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: secrets_share_arg_user_name\n")
+	suite.EqualError(err, "Argument missing: variables_share_arg_user_name\n")
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 

@@ -56,56 +56,56 @@ Gebruik \"[[.CommandPath]] [command] --help\" voor meer informatie over een comm
 flag_state_locale_description:
   other: Lokalisatie
 
-secrets_cmd_description:
+variables_cmd_description:
   other: Beheer geheimen
-secrets_set_cmd_description:
+variables_set_cmd_description:
   other: Set the value of a secret
-secrets_set_arg_name_name:
+variables_set_arg_name_name:
   other: secret-name
-secrets_set_arg_name_description:
+variables_set_arg_name_description:
   other: Name of Secret
-secrets_set_arg_value_name:
+variables_set_arg_value_name:
   other: secret-value
-secrets_set_arg_value_description:
+variables_set_arg_value_description:
   other: Value of unencrypted Secret
-secrets_set_flag_project:
+variables_set_flag_project:
   other: Scope the secret to the current project
-secrets_set_flag_user:
+variables_set_flag_user:
   other: Scope the secret to the current user
-secrets_share_cmd_description:
+variables_share_cmd_description:
   other: Share your organization and project secrets with another user
-secrets_share_arg_user_name:
+variables_share_arg_user_name:
   other: user-handle
-secrets_share_arg_user_description:
+variables_share_arg_user_description:
   other: Username of user in your organization
-secrets_col_name:
+variables_col_name:
   other: Name
-secrets_col_scope:
+variables_col_scope:
   other: Scope
-secrets_scope_user_project:
+variables_scope_user_project:
   other: User Project
-secrets_scope_user_org:
+variables_scope_user_org:
   other: User Organization
-secrets_scope_project:
+variables_scope_project:
   other: Project
-secrets_scope_org:
+variables_scope_org:
   other: Organization
-secrets_err:
+variables_err:
   other: Error managing user's Secrets
-secrets_err_no_secrets_found:
+variables_err_no_variables_found:
   other: Unable to find any Secrets for User
-secrets_err_encrypting:
+variables_err_encrypting:
   other: "Error encrypting a user's Secret: {{.V0}}"
-secrets_err_decrypting:
+variables_err_decrypting:
   other: "Error decrypting a user's Secret: {{.V0}}"
-secrets_err_save:
+variables_err_save:
   other: Error updating user's Secrets
-secrets_err_base64_decoding:
+variables_err_base64_decoding:
   other: Error base64 decoding secret value
 
-secrets_expand_err_spec_undefined:
+variables_expand_err_spec_undefined:
   other: "secret specification for `{{.V0}}` not defined in project"
-secrets_expand_err_not_found:
+variables_expand_err_not_found:
   other: "unable to locate information regarding secret `{{.V0}}`"
 
 keypair_cmd_description:

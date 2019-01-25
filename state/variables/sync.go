@@ -21,7 +21,7 @@ import (
 func buildSyncCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
 		Name:        "sync",
-		Description: "secrets_sync_cmd_description",
+		Description: "variables_sync_cmd_description",
 		Run:         cmd.ExecuteSync,
 	}
 }
@@ -36,7 +36,7 @@ func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+		failures.Handle(failure, locale.T("variables_err"))
 	}
 }
 
@@ -89,6 +89,6 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 		}
 	}
 
-	print.Line(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
+	print.Line(locale.Tr("variables_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
 	return nil
 }

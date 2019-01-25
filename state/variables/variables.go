@@ -45,8 +45,8 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 	}
 
 	cmd.config = &commands.Command{
-		Name:        "secrets",
-		Description: "secrets_cmd_description",
+		Name:        "variables",
+		Description: "variables_cmd_description",
 		Run:         cmd.Execute,
 	}
 
@@ -72,7 +72,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+		failures.Handle(failure, locale.T("variables_err"))
 	}
 }
 
@@ -106,7 +106,7 @@ func listAllUserSecrets(secretsClient *secretsapi.Client, org *models.Organizati
 	if failure != nil {
 		return failure
 	} else if len(userSecrets) == 0 {
-		return secretsapi.FailUserSecretNotFound.New("secrets_err_no_secrets_found")
+		return secretsapi.FailUserSecretNotFound.New("variables_err_no_variables_found")
 	}
 
 	rows := [][]interface{}{}
@@ -115,7 +115,7 @@ func listAllUserSecrets(secretsClient *secretsapi.Client, org *models.Organizati
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("secrets_col_name"), locale.T("secrets_col_scope")})
+	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_scope")})
 	t.SetAlign("left")
 
 	print.Line(t.Render("simple"))
@@ -140,12 +140,12 @@ func secretScopeDescription(userSecret *secretsModels.UserSecret, projMap projec
 	}
 
 	if *userSecret.IsUser && userSecret.ProjectID != "" {
-		return fmt.Sprintf("%s (%s)", locale.T("secrets_scope_user_project"), projName)
+		return fmt.Sprintf("%s (%s)", locale.T("variables_scope_user_project"), projName)
 	} else if *userSecret.IsUser {
-		return locale.T("secrets_scope_user_org")
+		return locale.T("variables_scope_user_org")
 	} else if userSecret.ProjectID != "" {
-		return fmt.Sprintf("%s (%s)", locale.T("secrets_scope_project"), projName)
+		return fmt.Sprintf("%s (%s)", locale.T("variables_scope_project"), projName)
 	} else {
-		return locale.T("secrets_scope_org")
+		return locale.T("variables_scope_org")
 	}
 }

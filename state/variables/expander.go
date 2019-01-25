@@ -104,7 +104,7 @@ func newContextMemoizingExpanderFunc(secretsClient *secretsapi.Client, fn secret
 
 		spec := projectFile.Secrets.GetByName(name)
 		if spec == nil {
-			return "", FailUnrecognizedSecretSpec.New("secrets_expand_err_spec_undefined", name)
+			return "", FailUnrecognizedSecretSpec.New("variables_expand_err_spec_undefined", name)
 		}
 
 		if expanderCtx == nil {
@@ -126,7 +126,7 @@ func expandSecret(expanderCtx *expanderContext, spec *projectfile.SecretSpec) (s
 
 	userSecret := findSecretWithHighestPriority(expanderCtx, spec)
 	if userSecret == nil {
-		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", spec.Name)
+		return "", secretsapi.FailUserSecretNotFound.New("variables_expand_err_not_found", spec.Name)
 	}
 
 	decrBytes, failure := expanderCtx.Keypair.DecodeAndDecrypt(*userSecret.Value)
@@ -197,7 +197,7 @@ func promptForValue(spec *projectfile.SecretSpec) (string, *failures.Failure) {
 	var value string
 	var prompt = &survey.Password{Message: locale.Tr("secret_value_prompt", spec.Scope(), spec.Name)}
 	if err := survey.AskOne(prompt, &value, nil); err != nil {
-		return "", FailInputSecretValue.New("secrets_err_value_prompt")
+		return "", FailInputSecretValue.New("variables_err_value_prompt")
 	}
 	return value, nil
 }

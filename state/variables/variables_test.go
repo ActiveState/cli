@@ -51,7 +51,7 @@ func (suite *SecretsCommandTestSuite) TestCommandConfig() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	conf := cmd.Config()
 	suite.Equal("secrets", conf.Name)
-	suite.Equal("secrets_cmd_description", conf.Description, "i18n symbol")
+	suite.Equal("variables_cmd_description", conf.Description, "i18n symbol")
 
 	subCmds := conf.GetCobraCmd().Commands()
 	suite.Require().Len(subCmds, 4, "number of subcommands")
@@ -98,7 +98,7 @@ func (suite *SecretsCommandTestSuite) TestExecute_FetchProject_NoProjectFound() 
 	suite.Contains(outStr, locale.T("err_api_project_not_found"))
 }
 
-func (suite *SecretsCommandTestSuite) TestExecute_FetchUserSecrets_NoSecretsFound() {
+func (suite *SecretsCommandTestSuite) TestExecute_FetchUservariables_NoSecretsFound() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
@@ -116,7 +116,7 @@ func (suite *SecretsCommandTestSuite) TestExecute_FetchUserSecrets_NoSecretsFoun
 	suite.Require().NoError(execErr)
 	suite.Error(failures.Handled(), "failure occurred")
 
-	suite.Contains(outStr, locale.T("secrets_err_no_secrets_found"))
+	suite.Contains(outStr, locale.T("variables_err_no_variables_found"))
 }
 
 func (suite *SecretsCommandTestSuite) TestExecute_ListAll() {
@@ -135,11 +135,11 @@ func (suite *SecretsCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().NoError(execErr)
 	suite.NoError(failures.Handled(), "unexpected failure occurred")
 
-	suite.Regexp(fmt.Sprintf("\\borg-secret\\s+%s", locale.T("secrets_scope_org")), outStr)
-	suite.Regexp(fmt.Sprintf("\\bproj-secret\\s+%s\\s\\(CodeIntel\\)", locale.T("secrets_scope_project")), outStr)
-	suite.Regexp(fmt.Sprintf("\\buser-org-secret\\s+%s", locale.T("secrets_scope_user_org")), outStr)
-	suite.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s\\(TestProj\\)", locale.T("secrets_scope_user_project")), outStr)
-	suite.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s\\(CodeIntel\\)", locale.T("secrets_scope_user_project")), outStr)
+	suite.Regexp(fmt.Sprintf("\\borg-secret\\s+%s", locale.T("variables_scope_org")), outStr)
+	suite.Regexp(fmt.Sprintf("\\bproj-secret\\s+%s\\s\\(CodeIntel\\)", locale.T("variables_scope_project")), outStr)
+	suite.Regexp(fmt.Sprintf("\\buser-org-secret\\s+%s", locale.T("variables_scope_user_org")), outStr)
+	suite.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s\\(TestProj\\)", locale.T("variables_scope_user_project")), outStr)
+	suite.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s\\(CodeIntel\\)", locale.T("variables_scope_user_project")), outStr)
 }
 
 func Test_SecretsCommand_TestSuite(t *testing.T) {

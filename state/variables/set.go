@@ -19,21 +19,21 @@ import (
 func buildSetCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
 		Name:        "set",
-		Description: "secrets_set_cmd_description",
+		Description: "variables_set_cmd_description",
 		Run:         cmd.ExecuteSet,
 
 		Flags: []*commands.Flag{
 			&commands.Flag{
 				Name:        "project",
 				Shorthand:   "p",
-				Description: "secrets_set_flag_project",
+				Description: "variables_set_flag_project",
 				Type:        commands.TypeBool,
 				BoolVar:     &cmd.Flags.IsProject,
 			},
 			&commands.Flag{
 				Name:        "user",
 				Shorthand:   "u",
-				Description: "secrets_set_flag_user",
+				Description: "variables_set_flag_user",
 				Type:        commands.TypeBool,
 				BoolVar:     &cmd.Flags.IsUser,
 			},
@@ -41,14 +41,14 @@ func buildSetCommand(cmd *Command) *commands.Command {
 
 		Arguments: []*commands.Argument{
 			&commands.Argument{
-				Name:        "secrets_set_arg_name_name",
-				Description: "secrets_set_arg_name_description",
+				Name:        "variables_set_arg_name_name",
+				Description: "variables_set_arg_name_description",
 				Variable:    &cmd.Args.SecretName,
 				Required:    true,
 			},
 			&commands.Argument{
-				Name:        "secrets_set_arg_value_name",
-				Description: "secrets_set_arg_value_description",
+				Name:        "variables_set_arg_value_name",
+				Description: "variables_set_arg_value_description",
 				Variable:    &cmd.Args.SecretValue,
 				Required:    true,
 			},
@@ -81,7 +81,7 @@ func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+		failures.Handle(failure, locale.T("variables_err"))
 	}
 }
 
@@ -111,7 +111,7 @@ func saveUserSecret(secretsClient *secretsapi.Client, encrypter keypairs.Encrypt
 	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
-		return secretsapi.FailSave.New("secrets_err_save")
+		return secretsapi.FailSave.New("variables_err_save")
 	}
 
 	return nil
