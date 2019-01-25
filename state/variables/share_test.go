@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,7 +54,7 @@ func (suite *SecretsShareCommandTestSuite) AfterTest(suiteName, testName string)
 }
 
 func (suite *SecretsShareCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
+	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("share", cc.Name())
 	suite.Equal("Share your organization and project secrets with another user", cc.Short, "en-us translation")
@@ -64,7 +64,7 @@ func (suite *SecretsShareCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_RequiresUserHandle() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"share"})
 	err := cmd.Config().Execute()
 	suite.EqualError(err, "Argument missing: secrets_share_arg_user_name\n")
@@ -72,7 +72,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_RequiresUserHandle() {
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
@@ -89,7 +89,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_OrgNotFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 404)
@@ -107,7 +107,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_OrgNotFou
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_MemberNotFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -125,7 +125,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_MemberNot
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_FetchMemberPublicKey_NotFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -148,7 +148,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchMemberPublicKey_NotF
 }
 
 func (suite *SecretsShareCommandTestSuite) TestExecute_ShareSuccess() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)

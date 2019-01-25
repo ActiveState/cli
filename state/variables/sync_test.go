@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,7 +54,7 @@ func (suite *SecretsSyncCommandTestSuite) AfterTest(suiteName, testName string) 
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[3]
+	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[3]
 
 	suite.Equal("sync", cc.Name())
 	suite.Equal("Synchronize your shareable secrets organization-wide", cc.Short, "en-us translation")
@@ -63,7 +63,7 @@ func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
@@ -80,7 +80,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -101,7 +101,7 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -138,7 +138,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -169,7 +169,7 @@ func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestFailure_NoLocalPrivateKeyFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	var execErr error
@@ -183,7 +183,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_NoLocalPrivateKeyFound() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToDecryptSecret() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -206,7 +206,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToDecryptSecret() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToEncryptNewSecret() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -229,7 +229,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToEncryptNewSecret()
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestFailure_SavingSharedSecrets() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"

@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,7 +48,7 @@ func (suite *SecretsCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *SecretsCommandTestSuite) TestCommandConfig() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	conf := cmd.Config()
 	suite.Equal("secrets", conf.Name)
 	suite.Equal("secrets_cmd_description", conf.Description, "i18n symbol")
@@ -64,7 +64,7 @@ func (suite *SecretsCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
@@ -81,7 +81,7 @@ func (suite *SecretsCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 }
 
 func (suite *SecretsCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects", 404)
@@ -99,7 +99,7 @@ func (suite *SecretsCommandTestSuite) TestExecute_FetchProject_NoProjectFound() 
 }
 
 func (suite *SecretsCommandTestSuite) TestExecute_FetchUserSecrets_NoSecretsFound() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects", 200)
@@ -120,7 +120,7 @@ func (suite *SecretsCommandTestSuite) TestExecute_FetchUserSecrets_NoSecretsFoun
 }
 
 func (suite *SecretsCommandTestSuite) TestExecute_ListAll() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects", 200)

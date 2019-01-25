@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )

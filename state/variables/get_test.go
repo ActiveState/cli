@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"os"
@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,7 +70,7 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
 	suite.prepareWorkingExpander()
 
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
 	execErr := cmd.Config().Execute()
 	suite.Require().NoError(execErr)
@@ -82,7 +82,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 
 func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
 	suite.prepareWorkingExpander()
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
@@ -97,7 +97,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName strin
 }
 
 func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
+	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
@@ -105,7 +105,7 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretName() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get"})
 	err := cmd.Config().Execute()
 	suite.EqualError(err, "Argument missing: secrets_get_arg_name_name\n")

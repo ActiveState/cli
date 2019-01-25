@@ -1,4 +1,4 @@
-package secrets
+package variables
 
 import (
 	"github.com/ActiveState/cli/internal/failures"

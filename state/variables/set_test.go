@@ -1,4 +1,4 @@
-package secrets_test
+package variables_test
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
@@ -53,7 +53,7 @@ func (suite *SecretsSetCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *SecretsSetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
+	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
 
 	suite.Equal("set", cc.Name())
 	suite.Equal("Set the value of a secret", cc.Short, "en-us translation")
@@ -66,7 +66,7 @@ func (suite *SecretsSetCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretNameAndValue() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"set"})
 	err := cmd.Config().Execute()
 	suite.EqualError(err, "Argument missing: secrets_set_arg_name_name\nArgument missing: secrets_set_arg_value_name\n")
@@ -74,7 +74,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretNameAndValue(
 }
 
 func (suite *SecretsSetCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
@@ -123,7 +123,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_UpdateUserProjectSecret_Suc
 }
 
 func (suite *SecretsSetCommandTestSuite) assertSaveSucceeds(secretName string, isProject, isUser bool) {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := variables.NewCommand(suite.secretsClient)
 
 	cmdArgs := []string{"set"}
 	if isProject {
