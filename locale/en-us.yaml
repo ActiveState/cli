@@ -194,7 +194,7 @@ auth_err_unrecoverable_keypair:
 previous_password_prompt:
   other: "Enter your previous password:"
 secret_value_prompt:
-  other: "Enter secret {{.V0}} value for {{.V1}}:"
+  other: "Enter {{.V0}} scoped value for variable '{{.V1}}'':"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -435,35 +435,35 @@ run_listing_scripts:
   other: "Available Scripts: "
 
 variables_cmd_description:
-  other: Manage Your Secrets
+  other: Manage Your Variables
 variables_get_cmd_description:
-  other: Get the value of a secret
+  other: Get the value of a variable
 variables_get_arg_name_name:
-  other: secret-name
+  other: variable-name
 variables_get_arg_name_description:
-  other: Name of Secret
+  other: Name of Variable
 variables_set_cmd_description:
-  other: Set the value of a secret
+  other: Set the value of a variable
 variables_set_arg_name_name:
-  other: secret-name
+  other: variable-name
 variables_set_arg_name_description:
-  other: Name of Secret
+  other: Name of Variable
 variables_set_arg_value_name:
-  other: secret-value
+  other: variable-value
 variables_set_arg_value_description:
-  other: Value of unencrypted Secret
+  other: Value of unencrypted Variable
 variables_set_flag_project:
-  other: Scope the secret to the current project
+  other: Scope the variable to the current project
 variables_set_flag_user:
-  other: Scope the secret to the current user
+  other: Scope the variable to the current user
 variables_share_cmd_description:
-  other: Share your organization and project secrets with another user
+  other: Share your organization and project variables with another user
 variables_share_arg_user_name:
   other: user-handle
 variables_share_arg_user_description:
   other: Username of user in your organization
 variables_sync_cmd_description:
-  other: Synchronize your shareable secrets organization-wide
+  other: Synchronize your shareable variables organization-wide
 variables_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
 variables_col_name:
@@ -479,26 +479,26 @@ variables_scope_project:
 variables_scope_org:
   other: Organization
 variables_err:
-  other: Error managing user's Secrets
+  other: Error managing user's Variables
 variables_err_no_variables_found:
-  other: Unable to find any Secrets for User
+  other: Unable to find any Variables for User
 variables_err_encrypting:
-  other: "Error encrypting a user's Secret: {{.V0}}"
+  other: "Error encrypting a user's Variable: {{.V0}}"
 variables_err_decrypting:
-  other: "Error decrypting a user's Secret: {{.V0}}"
+  other: "Error decrypting a user's Variable: {{.V0}}"
 variables_err_save:
-  other: Error updating user's Secrets
+  other: Error updating user's Variables
 variables_err_base64_decoding:
-  other: Error base64 decoding secret value
+  other: Error base64 decoding variable value
 variables_err_no_publickey_found:
   other: Unable to find any public-key for User
 variables_err_value_prompt:
-  other: The provided secret value is invalid 
+  other: The provided variable value is invalid 
 
 variables_expand_err_spec_undefined:
-  other: "secret specification for `{{.V0}}` not defined in project"
+  other: "variable specification for `{{.V0}}` not defined in project"
 variables_expand_err_not_found:
-  other: "unable to obtain value for secret `{{.V0}}`"
+  other: "unable to obtain value for variable `{{.V0}}`"
 
 keypair_cmd_description:
   other: Manage Your Keypair
