@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	"github.com/ActiveState/cli/internal/variables"
+	vars "github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
@@ -56,7 +56,7 @@ func (suite *SecretsPromptingExpanderTestSuite) AfterTest(suiteName, testName st
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *SecretsPromptingExpanderTestSuite) prepareWorkingExpander() variables.ExpanderFunc {
+func (suite *SecretsPromptingExpanderTestSuite) prepareWorkingExpander() vars.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
@@ -65,7 +65,7 @@ func (suite *SecretsPromptingExpanderTestSuite) prepareWorkingExpander() variabl
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return secrets.NewPromptingExpander(suite.secretsClient)
+	return variables.NewPromptingExpander(suite.secretsClient)
 }
 
 func (suite *SecretsPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
