@@ -53,7 +53,7 @@ commands:
       $commands.generate-secrets-client
   - name: test
     value: |
-      go test -tags 'state' -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+      go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
   - name: clean
     value: |
       go clean
