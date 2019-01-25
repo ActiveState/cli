@@ -18,10 +18,10 @@ import (
 
 var (
 	// FailUnrecognizedSecretSpec is used when no handler func is found for an Expander.
-	FailUnrecognizedSecretSpec = failures.Type("secrets.fail.unrecognized.secret_spec", variables.FailExpandVariable)
+	FailUnrecognizedSecretSpec = failures.Type("variables.fail.unrecognized.secret_spec", variables.FailExpandVariable)
 
 	// FailInputSecretValue is used when error arises from user providing a secret value.
-	FailInputSecretValue = failures.Type("secrets.fail.input.value", failures.FailUserInput)
+	FailInputSecretValue = failures.Type("variables.fail.input.value", failures.FailUserInput)
 )
 
 // NewExpander creates an ExpanderFunc which can retrieve and decrypt stored user secrets.
