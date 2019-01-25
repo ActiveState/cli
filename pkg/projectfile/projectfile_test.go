@@ -318,15 +318,6 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(cwd) // restore
 }
 
-// Call getProjectFilePath but doesn't exist
-func TestGetFail(t *testing.T) {
-	config, _ := GetSafe()
-	assert.Nil(t, config, "Config should not be set.")
-	assert.Equal(t, "", os.Getenv(constants.ProjectEnvVarName), "The state should not be activated")
-
-	Reset()
-}
-
 // TestGet the config
 func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
