@@ -1,6 +1,9 @@
 package variables
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
@@ -85,44 +88,82 @@ func fetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*se
 	return getOk.Payload, nil
 }
 
-// listAllUserSecrets prints a list of all of the UserSecrets names and their level for this user given an Organization.
-func listAllUserSecrets(secretsClient *secretsapi.Client) *failures.Failure {
+// userSecretsCurrentProject returns secrets relevant only to the current project
+func userSecretsCurrentProject(secretsClient *secretsapi.Client) ([]*secretsModels.UserSecret, *failures.Failure) {
 	prj := project.Get()
-	logging.Debug("listing user-secrets for org=%s, project=%s", prj.Owner(), prj.Name())
 
 	orgModel, failure := organizations.FetchByURLName(prj.Owner())
 	if failure != nil {
-		return failure
+		return nil, failure
 	}
 
 	projectModel, failure := projects.FetchByName(prj.Owner(), prj.Name())
 	if failure != nil {
-		return failure
+		return nil, failure
 	}
 
 	userSecrets, failure := fetchAll(secretsClient, orgModel)
 	if failure != nil {
-		return failure
+		return nil, failure
 	} else if len(userSecrets) == 0 {
-		return secretsapi.FailUserSecretNotFound.New("variables_err_no_variables_found")
+		return userSecrets, secretsapi.FailUserSecretNotFound.New("variables_err_no_variables_found")
 	}
 
-	rows := [][]interface{}{}
+	userSecretsFiltered := []*secretsModels.UserSecret{}
 	for _, userSecret := range userSecrets {
 		if (userSecret.ProjectID != "" && userSecret.ProjectID != projectModel.ProjectID) ||
 			(userSecret.OrganizationID != nil && *userSecret.OrganizationID != orgModel.OrganizationID) {
 			continue
 		}
-		rows = append(rows, []interface{}{*userSecret.Name, secretScopeDescription(userSecret)})
+		userSecretsFiltered = append(userSecretsFiltered, userSecret)
+	}
+
+	return userSecretsFiltered, nil
+}
+
+// listAllUserSecrets prints a list of all of the UserSecrets names and their level for this user given an Organization.
+func listAllUserSecrets(secretsClient *secretsapi.Client) *failures.Failure {
+	prj := project.Get()
+	logging.Debug("listing user-secrets for org=%s, project=%s", prj.Owner(), prj.Name())
+
+	userSecrets, failure := userSecretsCurrentProject(secretsClient)
+	if failure != nil {
+		return failure
+	}
+
+	rows := [][]interface{}{}
+	for _, userSecret := range userSecrets {
+		rows = append(rows, []interface{}{*userSecret.Name, locale.T("variables_value_secret"), secretScopeDescription(userSecret)})
+	}
+
+	projectVars := prj.Variables()
+	for _, projectVar := range projectVars {
+		rows = append(rows, []interface{}{projectVar.Name(), sanitizeValue(projectVar.Value()), locale.T("variables_scope_local")})
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_scope")})
+	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_value"), locale.T("variables_col_scope")})
 	t.SetAlign("left")
 
 	print.Line(t.Render("simple"))
 
 	return nil
+
+}
+
+// sanitizeValue will reduce the string length to 100 characters or the first line of text
+func sanitizeValue(v string) string {
+	v = strings.TrimSpace(v)
+	breakPos := strings.Index(v, "\n")
+
+	if len(v) > 100 {
+		v = fmt.Sprintf("%s [..]", v[0:100])
+	}
+	if breakPos != -1 {
+		v = fmt.Sprintf("%s [..]", v[0:breakPos])
+	}
+
+	return v
 }
 
 type projectIDMap map[strfmt.UUID]*models.Project

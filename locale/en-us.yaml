@@ -468,6 +468,8 @@ variables_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
 variables_col_name:
   other: Name
+variables_col_value:
+  other: Value
 variables_col_scope:
   other: Scope
 variables_scope_user_project:
@@ -478,6 +480,10 @@ variables_scope_project:
   other: Project
 variables_scope_org:
   other: Organization
+variables_scope_local:
+  other: Local
+variables_value_secret:
+  other: <encrypted>
 variables_err:
   other: Error managing user's Variables
 variables_err_no_variables_found:
