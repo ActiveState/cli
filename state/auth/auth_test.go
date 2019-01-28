@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -9,11 +10,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/spf13/viper"
@@ -24,6 +29,8 @@ import (
 func setup(t *testing.T) {
 	failures.ResetHandled()
 	api.RemoveAuth()
+	secretsapi_test.InitializeTestClient("bearer123")
+
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
@@ -109,6 +116,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	user := setupUser(t)
 
 	httpmock.Activate(api.Prefix)
+	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
 	var secondRequest bool
@@ -121,6 +129,14 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	})
 	httpmock.Register("GET", "/users/uniqueUsername/test")
 	httpmock.Register("POST", "/users")
+
+	var bodyKeypair *secretsModels.KeypairChange
+	var bodyErr error
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
+		return 204, "empty"
+	})
 
 	var execErr error
 	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
@@ -138,17 +154,30 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	require.NoError(t, bodyErr, "unmarshalling keypair save response")
+	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
+	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
 
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
 	httpmock.Activate(api.Prefix)
+	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
 	httpmock.Register("POST", "/users")
 	httpmock.Register("POST", "/login")
+
+	var bodyKeypair *secretsModels.KeypairChange
+	var bodyErr error
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
+		return 204, "empty"
+	})
 
 	user := setupUser(t)
 
@@ -167,6 +196,10 @@ func TestExecuteSignup(t *testing.T) {
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, api.Auth, "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	require.NoError(t, bodyErr, "unmarshalling keypair save response")
+	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
+	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
 
 func TestExecuteToken(t *testing.T) {

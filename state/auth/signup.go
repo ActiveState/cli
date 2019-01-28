@@ -3,6 +3,11 @@ package auth
 import (
 	"errors"
 
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+
+	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/state/keypair"
+
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/users"
 	"github.com/ActiveState/cli/internal/api/models"
@@ -31,6 +36,19 @@ func signup() {
 	}
 
 	doSignup(input)
+
+	// generate and a save a keypair for this user using their provided password as the
+	// private-key's passphrase
+	if api.Auth != nil {
+		encodedKeypair, failure := keypairs.GenerateEncodedKeypair(input.Password, keypair.DefaultRSABitLength)
+		if failure == nil {
+			failure = keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
+		}
+
+		if failure != nil {
+			failures.Handle(failure, locale.T("keypair_err_save"))
+		}
+	}
 }
 
 func signupFromLogin(username string, password string) {
@@ -45,6 +63,19 @@ func signupFromLogin(username string, password string) {
 	}
 
 	doSignup(input)
+
+	// generate and a save a keypair for this user using their provided password as the
+	// private-key's passphrase
+	if api.Auth != nil {
+		encodedKeypair, failure := keypairs.GenerateEncodedKeypair(input.Password, keypair.DefaultRSABitLength)
+		if failure == nil {
+			failure = keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
+		}
+
+		if failure != nil {
+			failures.Handle(failure, locale.T("keypair_err_save"))
+		}
+	}
 }
 
 func promptForSignup(input *signupInput) error {
