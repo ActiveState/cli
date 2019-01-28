@@ -12,26 +12,27 @@ import (
 )
 
 // ExecuteGenerate processes the `keypair generate` sub-command.
-func (cmd *Command) ExecuteGenerate(_ *cobra.Command, args []string) {
+func ExecuteGenerate(_ *cobra.Command, args []string) {
+	secretsClient := secretsapi.DefaultClient
 	var passphrase string
 	var failure *failures.Failure
 
-	if cmd.Flags.SkipPassphrase {
+	if Flags.SkipPassphrase {
 		// for the moment, we do not want to record any unencrypted private-keys
-		cmd.Flags.DryRun = true
+		Flags.DryRun = true
 	}
 
-	if !cmd.Flags.DryRun {
+	if !Flags.DryRun {
 		// ensure user is authenticated before bothering to generate keypair and ask for passphrase
-		_, failure = cmd.secretsClient.AuthenticatedUserID()
+		_, failure = secretsClient.AuthenticatedUserID()
 	}
 
-	if failure == nil && !cmd.Flags.SkipPassphrase {
+	if failure == nil && !Flags.SkipPassphrase {
 		passphrase, failure = promptForPassphrase()
 	}
 
 	if failure == nil {
-		failure = generateKeypair(cmd.secretsClient, passphrase, cmd.Flags.Bits, cmd.Flags.DryRun)
+		failure = generateKeypair(secretsClient, passphrase, Flags.Bits, Flags.DryRun)
 	}
 
 	if failure != nil {

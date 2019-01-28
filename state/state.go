@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -74,7 +73,7 @@ var Command = &commands.Command{
 func init() {
 	logging.Debug("init")
 
-	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
+	secretsapi.InitializeClient()
 
 	Command.Append(activate.Command)
 	Command.Append(hook.Command)
@@ -87,10 +86,10 @@ func init() {
 	Command.Append(env.Command)
 	Command.Append(run.Command)
 
-	Command.Append(secrets.NewCommand(secretsClient).Config())
-	Command.Append(keypair.NewCommand(secretsClient).Config())
+	Command.Append(secrets.NewCommand(secretsapi.DefaultClient).Config())
+	Command.Append(keypair.Command)
 
-	variables.RegisterExpander("secrets", secrets.NewPromptingExpander(secretsClient))
+	variables.RegisterExpander("secrets", secrets.NewPromptingExpander(secretsapi.DefaultClient))
 }
 
 func main() {

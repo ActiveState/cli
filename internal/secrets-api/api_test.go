@@ -38,6 +38,33 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	assert.True(mockClientRequest.AssertExpectations(t))
 }
 
+func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	apiSetting := apiEnv.GetSecretsAPISettings()
+	api.BearerToken = "bearer123"
+	secretsapi.InitializeClient()
+
+	client := secretsapi.DefaultClient
+	require.NotNil(client)
+	assert.NotNil(client.Auth)
+	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
+
+	rt, isRuntime := client.Transport.(*httptransport.Runtime)
+	require.True(isRuntime, "client.Transport is a Runtime")
+	assert.Equal(apiSetting.Host, rt.Host)
+	assert.Equal(apiSetting.BasePath, rt.BasePath)
+
+	// validate that the client.Auth writer sets the bearer token using the one we provided
+	mockClientRequest := new(MockClientRequest)
+	mockClientRequest.On("SetHeaderParam", "Authorization", []string{"Bearer bearer123"}).Return(nil)
+
+	authErr := client.Auth.AuthenticateRequest(mockClientRequest, nil)
+	require.NoError(authErr)
+	assert.True(mockClientRequest.AssertExpectations(t))
+}
+
 func TestSecretsAPI_Authenticated_Failure(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
