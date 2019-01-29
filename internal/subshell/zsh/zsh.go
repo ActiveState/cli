@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/osutils"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
@@ -104,10 +106,10 @@ func (v *SubShell) Deactivate() error {
 }
 
 // Run - see subshell.SubShell
-func (v *SubShell) Run(script string) error {
+func (v *SubShell) Run(script string) (int, error) {
 	tmpfile, err := ioutil.TempFile("", "bash-script")
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	tmpfile.WriteString("#!/usr/bin/env bash\n")
@@ -118,7 +120,8 @@ func (v *SubShell) Run(script string) error {
 	runCmd := exec.Command(tmpfile.Name())
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
-	return runCmd.Run()
+	err = runCmd.Run()
+	return osutils.CmdExitCode(runCmd), err
 }
 
 // IsActive - see subshell.SubShell

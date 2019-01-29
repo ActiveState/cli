@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/ActiveState/cli/internal/print"
 
@@ -72,6 +73,7 @@ type Command struct {
 	Flags          []*Flag
 	Arguments      []*Argument
 	RunWithoutAuth bool
+	Exiter         func(int)
 
 	UsageTemplate string
 
@@ -157,6 +159,8 @@ func (c *Command) Register() {
 	if c.cobraCmd != nil {
 		return
 	}
+
+	c.Exiter = os.Exit
 
 	c.cobraCmd = &cobra.Command{
 		Use:     c.Name,

@@ -121,10 +121,16 @@ commands:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
+	Command.Register()
+	exitCode := 0
+	Command.Exiter = func(code int) {
+		exitCode = code
+	}
+
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--standalone"})
 	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.Equal(t, 127, exitCode, "Execution caused exit")
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 

@@ -78,4 +78,26 @@ copy NUL %s`, tmpfile.Name()))
 	}
 
 	assert.FileExists(t, tmpfile.Name())
+
+	projectfile.Reset()
+}
+
+func TestRunCommandError(t *testing.T) {
+	pfile := &projectfile.Project{}
+	pfile.Persist()
+
+	os.Setenv("SHELL", "bash")
+
+	subs, err := Get()
+	assert.NoError(t, err)
+
+	code, err := subs.Run("some-command-that-doesnt-exist")
+	assert.Equal(t, 127, code, "Returns exit code 127")
+	assert.Error(t, err, "Returns an error")
+
+	code, err = subs.Run("exit 1")
+	assert.Equal(t, 1, code, "Returns exit code 1")
+	assert.Error(t, err, "Returns an error")
+
+	projectfile.Reset()
 }
