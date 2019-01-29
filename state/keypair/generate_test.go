@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/models"
@@ -25,7 +26,7 @@ type KeypairGenerateTestSuite struct {
 func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
 	// reset flags and failures
 	failures.ResetHandled()
-	keypair.Flags.Bits = keypair.DefaultRSABitLength
+	keypair.Flags.Bits = constants.DefaultRSABitLength
 	keypair.Flags.DryRun = false
 	keypair.Flags.SkipPassphrase = false
 

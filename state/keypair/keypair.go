@@ -1,6 +1,7 @@
 package keypair
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -10,10 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
 )
-
-// DefaultRSABitLength represents the default RSA bit-length that will be assumed when
-// generating new Keypairs.
-const DefaultRSABitLength int = 4096
 
 var (
 	// FailKeypairParse identifies a failure during keypair parsing.
@@ -49,7 +46,7 @@ var GenerateCommand = &commands.Command{
 			Description: "keypair_generate_flag_bits",
 			Type:        commands.TypeInt,
 			IntVar:      &Flags.Bits,
-			IntValue:    DefaultRSABitLength,
+			IntValue:    constants.DefaultRSABitLength,
 		},
 		&commands.Flag{
 			Name:        "dry-run",

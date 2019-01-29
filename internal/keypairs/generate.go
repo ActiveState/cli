@@ -2,6 +2,7 @@ package keypairs
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 )
 
 // EncodedKeypair encapulates a Keypair instance and the base-64 encodings on the public and private key
@@ -41,4 +42,16 @@ func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, *fail
 		EncodedPrivateKey: encodedPrivateKey,
 		EncodedPublicKey:  encodedPublicKey,
 	}, nil
+}
+
+// GenerateAndSaveEncodedKeypair first Generates and then tries to Save an EncodedKeypair. This is equivalent to calling
+// GenerateEncodedKeypair and then SaveEncodedKeypair. Upon success of both actions, the EncodedKeypair will be returned,
+// otherwise a Failure is returned.
+func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, *failures.Failure) {
+	encodedKeypair, failure := GenerateEncodedKeypair(passphrase, bits)
+	if failure == nil {
+		failure = SaveEncodedKeypair(secretsClient, encodedKeypair)
+	}
+
+	return encodedKeypair, failure
 }
