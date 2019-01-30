@@ -5,12 +5,9 @@ import (
 	"github.com/ActiveState/cli/internal/api/client/authentication"
 	"github.com/ActiveState/cli/internal/api/client/users"
 	"github.com/ActiveState/cli/internal/api/models"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -25,17 +22,7 @@ func plainAuth() {
 	doPlainAuth(credentials)
 
 	if api.Auth != nil {
-		_, failure := keypairs.FetchRaw(secretsapi.DefaultClient)
-		if failure != nil {
-			if secretsapi.FailKeypairNotFound.Matches(failure.Type) {
-				_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.DefaultClient, credentials.Password, constants.DefaultRSABitLength)
-				if failure != nil {
-					failures.Handle(failure, locale.T("keypair_err_save"))
-				}
-			} else {
-				failures.Handle(failure, locale.T("keypair_err"))
-			}
-		}
+		ensureUserKeypair(credentials.Password)
 	}
 }
 

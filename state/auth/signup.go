@@ -3,11 +3,6 @@ package auth
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/constants"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-
-	"github.com/ActiveState/cli/internal/keypairs"
-
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/api/client/users"
 	"github.com/ActiveState/cli/internal/api/models"
@@ -37,13 +32,8 @@ func signup() {
 
 	doSignup(input)
 
-	// generate and a save a keypair for this user using their provided password as the
-	// private-key's passphrase
 	if api.Auth != nil {
-		_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.DefaultClient, input.Password, constants.DefaultRSABitLength)
-		if failure != nil {
-			failures.Handle(failure, locale.T("keypair_err_save"))
-		}
+		generateKeypairForUser(input.Password)
 	}
 }
 
