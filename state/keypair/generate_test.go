@@ -44,7 +44,7 @@ func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
 func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
 	cmd := keypair.Command
 
-	var bodyKeypair *models.Keypair
+	var bodyKeypair *models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {

@@ -45,5 +45,7 @@ func ExecuteGenerate(_ *cobra.Command, args []string) {
 
 	if failure != nil {
 		failures.Handle(failure, locale.T("keypair_err"))
+	} else {
+		print.Line(locale.T("keypair_generate_success"))
 	}
 }

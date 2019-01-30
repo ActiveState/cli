@@ -53,5 +53,8 @@ func GenerateAndSaveEncodedKeypair(secretsClient *secretsapi.Client, passphrase 
 		failure = SaveEncodedKeypair(secretsClient, encodedKeypair)
 	}
 
-	return encodedKeypair, failure
+	if failure != nil {
+		return nil, failure
+	}
+	return encodedKeypair, nil
 }
