@@ -56,10 +56,26 @@ func NewClient(schema, host, basePath, bearerToken string) *Client {
 	return secretsClient
 }
 
-// NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path.
+// NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
+// a provided Bearer-token value.
 func NewDefaultClient(bearerToken string) *Client {
 	apiSetting := apiEnv.GetSecretsAPISettings()
 	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
+}
+
+// DefaultClient represents a secretsapi Client instance that can be accessed by any package
+// needing it. DefaultClient should be set by a call to InitializeClient; this, it can be nil.
+var DefaultClient *Client
+
+// InitializeClient will create new Client using defaults, including the api.BearerToken value.
+// This new Client instance will be accessible as secretapi.DefaultClient afterwards. Calling
+// this function multiple times will redefine the DefaultClient value using the defaults/constants
+// available to it at the time of the call; thus, the DefaultClient can be re-initialized this way.
+// Because this function is dependent on a runtime-value from internal/api, we are not relying on
+// the init() function for instantiation; this must be called explicitly.
+func InitializeClient() *Client {
+	DefaultClient = NewDefaultClient(api.BearerToken)
+	return DefaultClient
 }
 
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token

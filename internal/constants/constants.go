@@ -58,5 +58,9 @@ const APITokenName = "activestate-platform-cli"
 // private key in their config dir.
 const KeypairLocalFileName = "private"
 
+// DefaultRSABitLength represents the default RSA bit-length that will be assumed when
+// generating new Keypairs.
+const DefaultRSABitLength int = 4096
+
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"

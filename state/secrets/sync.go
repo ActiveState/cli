@@ -89,6 +89,6 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 		}
 	}
 
-	print.Line(locale.Tr("secrets_sync_result_message", strconv.Itoa(updatedCtr), org.Name))
+	print.Line(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCtr), org.Name))
 	return nil
 }
