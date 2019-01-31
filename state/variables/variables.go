@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/bndr/gotabulate"
-	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 )
 
@@ -66,7 +65,7 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	failure := listAllUserSecrets(cmd.secretsClient)
+	failure := listAllVariables(cmd.secretsClient)
 	if failure != nil {
 		failures.Handle(failure, locale.T("variables_err"))
 	}
@@ -121,10 +120,10 @@ func userSecretsCurrentProject(secretsClient *secretsapi.Client) ([]*secretsMode
 	return userSecretsFiltered, nil
 }
 
-// listAllUserSecrets prints a list of all of the UserSecrets names and their level for this user given an Organization.
-func listAllUserSecrets(secretsClient *secretsapi.Client) *failures.Failure {
+// listAllVariables prints a list of all of the UserSecrets names and their level for this user given an Organization.
+func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
-	logging.Debug("listing user-secrets for org=%s, project=%s", prj.Owner(), prj.Name())
+	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
 	userSecrets, failure := userSecretsCurrentProject(secretsClient)
 	if failure != nil {
@@ -164,26 +163,4 @@ func sanitizeValue(v string) string {
 	}
 
 	return v
-}
-
-type projectIDMap map[strfmt.UUID]*models.Project
-
-func mapProjects(projects []*models.Project) projectIDMap {
-	mapping := projectIDMap{}
-	for _, proj := range projects {
-		mapping[proj.ProjectID] = proj
-	}
-	return mapping
-}
-
-func secretScopeDescription(userSecret *secretsModels.UserSecret) string {
-	if *userSecret.IsUser && userSecret.ProjectID != "" {
-		return locale.T("variables_scope_user_project")
-	} else if *userSecret.IsUser {
-		return locale.T("variables_scope_user_org")
-	} else if userSecret.ProjectID != "" {
-		return locale.T("variables_scope_project")
-	} else {
-		return locale.T("variables_scope_org")
-	}
 }

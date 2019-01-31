@@ -140,18 +140,18 @@ func PlatformExpander(name string, project *projectfile.Project) (string, *failu
 
 // VariableExpander expands variables defined in the profect-file.
 func VariableExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
-	var value string
+	var value *string
 	for _, variable := range project.Variables {
 		if variable.Name == name && !constraints.IsConstrained(variable.Constraints) {
 			value = variable.Value
 			break
 		}
 	}
-	if value == "" {
+	if value == nil {
 		// Read from config file or prompt the user for a value.
-		value = ConfigValue(name, project.Path())
+		return ConfigValue(name, project.Path()), nil
 	}
-	return value, nil
+	return *value, nil
 }
 
 // EventExpander expands events defined in the project-file.

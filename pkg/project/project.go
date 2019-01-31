@@ -16,6 +16,9 @@ import (
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
 
+// Build covers the build structure
+type Build map[string]string
+
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
@@ -159,6 +162,12 @@ func GetSafe() (*Project, *failures.Failure) {
 	return &Project{pj}, nil
 }
 
+// Platform covers the platform structure
+type Platform struct {
+	platform    *projectfile.Platform
+	projectfile *projectfile.Project
+}
+
 // Source returns the source projectfile
 func (p *Platform) Source() *projectfile.Project { return p.projectfile }
 
@@ -195,6 +204,12 @@ func (p *Platform) Compiler() string {
 	return value
 }
 
+// Language covers the language structure
+type Language struct {
+	language    *projectfile.Language
+	projectfile *projectfile.Project
+}
+
 // Source returns the source projectfile
 func (l *Language) Source() *projectfile.Project { return l.projectfile }
 
@@ -228,6 +243,12 @@ func (l *Language) Packages() []Package {
 	return validPackages
 }
 
+// Package covers the package structure
+type Package struct {
+	pkg         *projectfile.Package
+	projectfile *projectfile.Project
+}
+
 // Source returns the source projectfile
 func (p *Package) Source() *projectfile.Project { return p.projectfile }
 
@@ -247,6 +268,12 @@ func (p *Package) Build() *Build {
 	return &build
 }
 
+// Variable covers the variable structure
+type Variable struct {
+	variable    *projectfile.Variable
+	projectfile *projectfile.Project
+}
+
 // Source returns the source projectfile
 func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 
@@ -255,8 +282,28 @@ func (v *Variable) Name() string { return v.variable.Name }
 
 // Value returned with all variables evaluated
 func (v *Variable) Value() string {
-	value := variables.ExpandFromProject(v.variable.Value, v.projectfile)
-	return value
+	if v.variable.Value != nil {
+		value := variables.ExpandFromProject(*v.variable.Value, v.projectfile)
+		return value
+	} else {
+		return ""
+	}
+}
+
+// Value returned with all variables evaluated
+func (v *Variable) Location() string {
+	if v.variable.Location != nil {
+		value := variables.ExpandFromProject(*v.variable.Location, v.projectfile)
+		return value
+	} else {
+		return ""
+	}
+}
+
+// Hook covers the hook structure
+type Hook struct {
+	hook        *projectfile.Hook
+	projectfile *projectfile.Project
 }
 
 // Source returns the source projectfile
@@ -271,17 +318,23 @@ func (e *Event) Value() string {
 	return value
 }
 
+// Script covers the command structure
+type Script struct {
+	script      *projectfile.Script
+	projectfile *projectfile.Project
+}
+
 // Source returns the source projectfile
-func (c *Script) Source() *projectfile.Project { return c.projectfile }
+func (script *Script) Source() *projectfile.Project { return script.projectfile }
 
 // Name returns script name
-func (c *Script) Name() string { return c.script.Name }
+func (script *Script) Name() string { return script.script.Name }
 
 // Value returned with all variables evaluated
-func (c *Script) Value() string {
-	value := variables.ExpandFromProject(c.script.Value, c.projectfile)
+func (script *Script) Value() string {
+	value := variables.ExpandFromProject(script.script.Value, script.projectfile)
 	return value
 }
 
 // Standalone returns if the script is standalone or not
-func (c *Script) Standalone() bool { return c.script.Standalone }
+func (script *Script) Standalone() bool { return script.script.Standalone }

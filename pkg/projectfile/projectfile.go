@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -12,18 +11,22 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// FailNoProject identifies a failure as being due to a missing project file
-var FailNoProject = failures.Type("projectfile.fail.noproject")
+var (
+	// FailNoProject identifies a failure as being due to a missing project file
+	FailNoProject = failures.Type("projectfile.fail.noproject")
 
-// FailParseProject identifies a failure as being due inability to parse file contents
-var FailParseProject = failures.Type("projectfile.fail.parseproject")
+	// FailParseProject identifies a failure as being due inability to parse file contents
+	FailParseProject = failures.Type("projectfile.fail.parseproject")
 
-// FailInvalidVersion identifies a failure as being due to an invalid version format
-var FailInvalidVersion = failures.Type("projectfile.fail.version")
+	// FailValidate identifies a failure during validation
+	FailValidate = failures.Type("projectfile.fail.validate")
+
+	// FailInvalidVersion identifies a failure as being due to an invalid version format
+	FailInvalidVersion = failures.Type("projectfile.fail.version")
+)
 
 // Version is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -40,10 +43,9 @@ type Project struct {
 	Environments string      `yaml:"environments"`
 	Platforms    []Platform  `yaml:"platforms"`
 	Languages    []Language  `yaml:"languages"`
-	Variables    []Variable  `yaml:"variables"`
+	Variables    []*Variable `yaml:"variables"`
 	Events       []Event     `yaml:"events"`
 	Scripts      []Script    `yaml:"scripts"`
-	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
 }
 
@@ -84,23 +86,6 @@ type Package struct {
 	Build       Build      `yaml:"build"`
 }
 
-// Variable covers the variable structure, which goes under Project
-type Variable struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints"`
-}
-
-// Hash return a hashed version of the variable
-func (v *Variable) Hash() (string, error) {
-	hash, err := hashstructure.Hash(v, nil)
-	if err != nil {
-		logging.Errorf("Cannot hash variable: %v", err)
-		return "", err
-	}
-	return fmt.Sprintf("%X", hash), nil
-}
-
 // Event covers the event structure, which goes under Project
 type Event struct {
 	Name        string     `yaml:"name"`
@@ -114,38 +99,6 @@ type Script struct {
 	Value       string     `yaml:"value"`
 	Standalone  bool       `yaml:"standalone"`
 	Constraints Constraint `yaml:"constraints"`
-}
-
-// SecretSpec covers the secret specification structure, which goes under Project
-type SecretSpec struct {
-	Name      string `yaml:"name"`
-	IsProject bool   `yaml:"project"`
-	IsUser    bool   `yaml:"user"`
-}
-
-// Scope returns a human readable representation of the scope of this Secret.
-func (spec SecretSpec) Scope() string {
-	if spec.IsUser && spec.IsProject {
-		return locale.T("variables_scope_user_project")
-	} else if spec.IsUser {
-		return locale.T("variables_scope_user_org")
-	} else if spec.IsProject {
-		return locale.T("variables_scope_project")
-	}
-	return locale.T("variables_scope_org")
-}
-
-// SecretSpecs adds functionality around slices of SecretSpecs.
-type SecretSpecs []*SecretSpec
-
-// GetByName find the SecretSpec with the requested name.
-func (specs SecretSpecs) GetByName(specName string) *SecretSpec {
-	for _, spec := range specs {
-		if strings.EqualFold(specName, spec.Name) {
-			return spec
-		}
-	}
-	return nil
 }
 
 var persistentProject *Project
@@ -163,6 +116,13 @@ func Parse(filepath string) (*Project, error) {
 
 	if err != nil {
 		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+	}
+
+	for _, variable := range project.Variables {
+		fail := variable.Parse()
+		if fail != nil {
+			return &project, fail
+		}
 	}
 
 	return &project, err

@@ -500,12 +500,18 @@ variables_err_no_publickey_found:
   other: Unable to find any public-key for User
 variables_err_value_prompt:
   other: The provided variable value is invalid 
-
 variables_expand_err_spec_undefined:
   other: "variable specification for `{{.V0}}` not defined in project"
 variables_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
-
+variables_err_invalid_pullfrom:
+  other: "Invalid pullfrom used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
+variables_err_invalid_share:
+  other: "Invalid share level used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
+variables_err_value_with_pull:
+  other: "Variable should not have a local value defined in the activestate.yaml if it's setting the share or pullfrom fields: {{.V0}}"
+variables_err_invalid_value:
+  other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
