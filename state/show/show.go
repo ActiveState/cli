@@ -6,12 +6,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scm"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
@@ -91,7 +91,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_events"))
 		for _, event := range project.Events {
 			if !constraints.IsConstrained(event.Constraints) {
-				value := variables.ExpandFromProject(event.Value, project)
+				value := expander.ExpandFromProject(event.Value, project)
 				print.Formatted("  %s: %s\n", event.Name, value)
 			}
 		}
@@ -101,7 +101,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_scripts"))
 		for _, script := range project.Scripts {
 			if !constraints.IsConstrained(script.Constraints) {
-				value := variables.ExpandFromProject(script.Value, project)
+				value := expander.ExpandFromProject(script.Value, project)
 				print.Formatted("  %s: %s\n", script.Name, value)
 			}
 		}

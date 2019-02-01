@@ -8,8 +8,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 
+	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -191,31 +191,31 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all variables evaluated
 func (p *Platform) Os() string {
-	value := variables.ExpandFromProject(p.platform.Os, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Os, p.projectfile)
 	return value
 }
 
 // Version returned with all variables evaluated
 func (p *Platform) Version() string {
-	value := variables.ExpandFromProject(p.platform.Version, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Version, p.projectfile)
 	return value
 }
 
 // Architecture with all variables evaluated
 func (p *Platform) Architecture() string {
-	value := variables.ExpandFromProject(p.platform.Architecture, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Architecture, p.projectfile)
 	return value
 }
 
 // Libc returned are constrained and all variables evaluated
 func (p *Platform) Libc() string {
-	value := variables.ExpandFromProject(p.platform.Libc, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Libc, p.projectfile)
 	return value
 }
 
 // Compiler returned are constrained and all variables evaluated
 func (p *Platform) Compiler() string {
-	value := variables.ExpandFromProject(p.platform.Compiler, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Compiler, p.projectfile)
 	return value
 }
 
@@ -238,7 +238,7 @@ func (l *Language) Version() string { return l.language.Version }
 func (l *Language) Build() *Build {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal := variables.ExpandFromProject(val, l.projectfile)
+		newVal := expander.ExpandFromProject(val, l.projectfile)
 		build[key] = newVal
 	}
 	return &build
@@ -277,7 +277,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() *Build {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal := variables.ExpandFromProject(val, p.projectfile)
+		newVal := expander.ExpandFromProject(val, p.projectfile)
 		build[key] = newVal
 	}
 	return &build
@@ -299,7 +299,7 @@ func (v *Variable) Name() string { return v.variable.Name }
 func (v *Variable) Value() string {
 	variable := v.variable
 	if variable.Value.StaticValue != nil {
-		value := variables.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
+		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
 		return value
 	} else if variable.Value.PullFrom != nil {
 		return ""
@@ -320,8 +320,8 @@ func (e *Event) Source() *projectfile.Project { return e.projectfile }
 func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all variables evaluated
-func (e *Event) Value() string {
-	value := variables.ExpandFromProject(e.event.Value, e.projectfile)
+func (h *Event) Value() string {
+	value := expander.ExpandFromProject(h.event.Value, h.projectfile)
 	return value
 }
 
@@ -339,7 +339,7 @@ func (script *Script) Name() string { return script.script.Name }
 
 // Value returned with all variables evaluated
 func (script *Script) Value() string {
-	value := variables.ExpandFromProject(script.script.Value, script.projectfile)
+	value := expander.ExpandFromProject(script.script.Value, script.projectfile)
 	return value
 }
 

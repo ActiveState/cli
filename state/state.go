@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -15,7 +16,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	vars "github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
@@ -98,7 +98,7 @@ func register() {
 	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())
 	Command.Append(keypair.Command)
 
-	vars.RegisterExpander("variables", vars.NewVarPromptingExpanderFunc(secretsapi.DefaultClient))
+	expander.RegisterExpander("variables", expander.NewVarPromptingExpanderFunc(secretsapi.DefaultClient))
 }
 
 func main() {

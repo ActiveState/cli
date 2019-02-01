@@ -1,4 +1,4 @@
-package variables_test
+package expander_test
 
 import (
 	"strings"
