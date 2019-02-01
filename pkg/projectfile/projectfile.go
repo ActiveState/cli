@@ -118,14 +118,19 @@ func Parse(filepath string) (*Project, error) {
 		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
-	for _, variable := range project.Variables {
+	return &project, project.Parse()
+}
+
+// Parse further processes the current file by parsing mixed values (something go-yaml doesnt handle)
+func (p *Project) Parse() *failures.Failure {
+	for _, variable := range p.Variables {
 		fail := variable.Parse()
 		if fail != nil {
-			return &project, fail
+			return fail
 		}
 	}
 
-	return &project, err
+	return nil
 }
 
 // Path returns the project's activestate.yaml file path.

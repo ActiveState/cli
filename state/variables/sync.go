@@ -10,9 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/print"
-	secretslib "github.com/ActiveState/cli/internal/secrets"
+	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
+	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
@@ -41,7 +41,7 @@ func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
 }
 
 func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
-	sourceKeypair, failure := loadKeypairFromConfigDir()
+	sourceKeypair, failure := secrets.LoadKeypairFromConfigDir()
 	if failure != nil {
 		return failure
 	}
@@ -59,7 +59,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 	updatedCtr := int(0)
 	for _, member := range members {
 		if currentUserID != member.User.UserID {
-			params := secrets.NewDiffUserSecretsParams()
+			params := secretsapiClient.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID
 			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, secretsClient.Auth)
@@ -76,12 +76,12 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 				}
 			}
 
-			targetShares, failure := secretslib.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
+			targetShares, failure := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
 			if failure != nil {
 				return failure
 			}
 
-			failure = saveUserSecretShares(secretsClient, org, member.User, targetShares)
+			failure = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
 			if failure != nil {
 				return failure
 			}

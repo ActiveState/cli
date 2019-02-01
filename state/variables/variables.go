@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -13,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
@@ -71,22 +68,6 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 }
 
-// fetchAll fetchs the current user's secrets for an organization.
-func fetchAll(secretsClient *secretsapi.Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
-	params := secrets.NewGetAllUserSecretsParams()
-	params.OrganizationID = org.OrganizationID
-	getOk, err := secretsClient.Secrets.Secrets.GetAllUserSecrets(params, secretsClient.Auth)
-	if err != nil {
-		switch statusCode := api.ErrorCode(err); statusCode {
-		case 401:
-			return nil, api.FailAuth.New("err_api_not_authenticated")
-		default:
-			return nil, api.FailUnknown.Wrap(err)
-		}
-	}
-	return getOk.Payload, nil
-}
-
 // userSecretsCurrentProject returns secrets relevant only to the current project
 func userSecretsCurrentProject(secretsClient *secretsapi.Client) ([]*secretsModels.UserSecret, *failures.Failure) {
 	prj := project.Get()
@@ -101,7 +82,7 @@ func userSecretsCurrentProject(secretsClient *secretsapi.Client) ([]*secretsMode
 		return nil, failure
 	}
 
-	userSecrets, failure := fetchAll(secretsClient, orgModel)
+	userSecrets, failure := secretsapi.FetchAll(secretsClient, orgModel)
 	if failure != nil {
 		return nil, failure
 	} else if len(userSecrets) == 0 {

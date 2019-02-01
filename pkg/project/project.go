@@ -91,10 +91,20 @@ func (p *Project) Variables() []*Variable {
 	variables := []*Variable{}
 	for i, variable := range p.projectfile.Variables {
 		if !constraints.IsConstrained(variable.Constraints) {
-			variables = append(variables, &Variable{&p.projectfile.Variables[i], p.projectfile})
+			variables = append(variables, &Variable{p.projectfile.Variables[i], p.projectfile})
 		}
 	}
 	return variables
+}
+
+// VariableByName returns a variable matching the given name (if any)
+func (p *Project) VariableByName(name string) *Variable {
+	for _, variable := range p.Variables() {
+		if variable.Name() == name {
+			return variable
+		}
+	}
+	return nil
 }
 
 // Events returns a reference to projectfile.Events
@@ -147,10 +157,15 @@ func (p *Project) Namespace() string { return p.projectfile.Namespace }
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
+// New creates a new Project struct
+func New(p *projectfile.Project) *Project {
+	return &Project{p}
+}
+
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	return &Project{pj}
+	return New(pj)
 }
 
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
@@ -282,22 +297,14 @@ func (v *Variable) Name() string { return v.variable.Name }
 
 // Value returned with all variables evaluated
 func (v *Variable) Value() string {
-	if v.variable.Value != nil {
-		value := variables.ExpandFromProject(*v.variable.Value, v.projectfile)
+	variable := v.variable
+	if variable.Value.StaticValue != nil {
+		value := variables.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
 		return value
-	} else {
+	} else if variable.Value.PullFrom != nil {
 		return ""
 	}
-}
-
-// Value returned with all variables evaluated
-func (v *Variable) Location() string {
-	if v.variable.Location != nil {
-		value := variables.ExpandFromProject(*v.variable.Location, v.projectfile)
-		return value
-	} else {
-		return ""
-	}
+	return ""
 }
 
 // Hook covers the hook structure

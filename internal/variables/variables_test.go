@@ -6,13 +6,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/api"
+
 	"github.com/ActiveState/cli/internal/failures"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
 
+func init() {
+	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
+	RegisterExpander("variables", NewVarPromptingExpanderFunc(secretsClient))
+}
+
 func loadProject(t *testing.T) *projectfile.Project {
+	projectfile.Reset()
+
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 platforms:
@@ -51,6 +61,10 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
+
+	fail := project.Parse()
+	assert.NoError(t, fail.ToError())
+
 	project.Persist()
 
 	return project
@@ -166,6 +180,8 @@ func TestExpandProjectEmbedded(t *testing.T) {
 
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
+	fail := project.Parse()
+	assert.NoError(t, fail.ToError())
 	project.Persist()
 
 	expanded := ExpandFromProject("$variables.foo is in $variables.foo is in $variables.foo", project)
@@ -191,6 +207,8 @@ func TestExpandDashed(t *testing.T) {
 
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
+	fail := project.Parse()
+	assert.NoError(t, fail.ToError())
 	project.Persist()
 
 	expanded := ExpandFromProject("- $variables.foo-bar -", project)

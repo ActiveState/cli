@@ -512,6 +512,8 @@ variables_err_value_with_pull:
   other: "Variable should not have a local value defined in the activestate.yaml if it's setting the share or pullfrom fields: {{.V0}}"
 variables_err_invalid_value:
   other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
+variables_err_value_empty:
+  other: "Variable has no value defined: {{.V0}}"
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -567,6 +569,12 @@ warn_script_name_in_use:
 
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
+
+secrets_err_expand_noproject:
+  other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
+developer_err_project_match:
+  other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
+
 err_version_parse:
   other: Could not parse the version field from your activestate.yaml
 err_invalid_version:

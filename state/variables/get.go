@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
@@ -29,10 +28,11 @@ func buildGetCommand(cmd *Command) *commands.Command {
 
 // ExecuteGet processes the `secrets get` command.
 func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
-	expanderFn := NewExpander(cmd.secretsClient)
-	if value, failure := expanderFn(cmd.Args.SecretName, projectfile.Get()); failure != nil {
-		failures.Handle(failure, locale.T("variables_err"))
+	prj := project.Get()
+	variable := prj.VariableByName(cmd.Args.SecretName)
+	if variable == nil {
+		failures.Handle(failures.FailUserInput.New("variables_err"), "")
 	} else {
-		fmt.Print(value) // we don't want a newline at the end
+		fmt.Print(variable.Value()) // we don't want a newline at the end
 	}
 }

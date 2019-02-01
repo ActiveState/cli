@@ -3,11 +3,15 @@ package secretsapi
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/api/models"
+
 	"github.com/ActiveState/cli/internal/api"
 	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
+	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
+	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -90,4 +94,33 @@ func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
 		return "", api.FailAuth.Wrap(err)
 	}
 	return *resOk.Payload.UID, nil
+}
+
+// FetchAll fetchs the current user's secrets for an organization.
+func FetchAll(client *Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+	params := secretsapiClient.NewGetAllUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
+	if err != nil {
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		default:
+			return nil, api.FailUnknown.Wrap(err)
+		}
+	}
+	return getOk.Payload, nil
+}
+
+func SaveSecretShares(secretsClient *Client, org *models.Organization, user *models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+	params := secretsapiClient.NewShareUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	params.UserID = user.UserID
+	params.UserSecrets = shares
+	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
+	if err != nil {
+		logging.Debug("error sharing user secrets: %v", err)
+		return FailSave.New("variables_err_save")
+	}
+	return nil
 }

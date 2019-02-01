@@ -23,6 +23,9 @@ var (
 
 	// FailValidateStaticValueWithPull described a failure due to the pullfrom and/or share fields being defined AS WELL AS a static value
 	FailValidateStaticValueWithPull = failures.Type("projectfile.fail.varstaticwithpull", FailValidate)
+
+	// FailValidateValueEmpty described a failure due to the pullfrom and/or share fields being defined AS WELL AS a static value
+	FailValidateValueEmpty = failures.Type("projectfile.fail.varempty", FailValidate)
 )
 
 // VariablePullFrom records the scope of a variable, variables won't be exposed if we're not in this scope
@@ -125,6 +128,10 @@ func (v *Variable) Validate() *failures.Failure {
 
 	if v.Value.StaticValue != nil && (v.Value.Share != nil || v.Value.PullFrom != nil) {
 		return FailValidateStaticValueWithPull.New(locale.Tr("variables_err_value_with_pull", v.Name))
+	}
+
+	if v.Value.StaticValue == nil && v.Value.Share == nil && v.Value.PullFrom == nil {
+		return FailValidateValueEmpty.New(locale.Tr("variables_err_value_empty", v.Name))
 	}
 
 	return nil

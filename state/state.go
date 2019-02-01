@@ -98,7 +98,7 @@ func register() {
 	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())
 	Command.Append(keypair.Command)
 
-	vars.RegisterExpander("secrets", secrets.NewPromptingExpander(secretsapi.DefaultClient))
+	vars.RegisterExpander("variables", vars.NewVarPromptingExpanderFunc(secretsapi.DefaultClient))
 }
 
 func main() {

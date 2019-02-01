@@ -5,10 +5,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/project"
+
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,18 +74,14 @@ func Activate() *failures.Failure {
 		return FailAlreadyActive.New("err_already_active")
 	}
 
-	project := projectfile.Get()
+	project := project.Get()
 
-	if project.Variables != nil {
-		for _, variable := range project.Variables {
-			if !constraints.IsConstrained(variable.Constraints) {
-				os.Setenv(variable.Name, variable.Value)
-			}
-		}
+	for _, variable := range project.Variables() {
+		os.Setenv(variable.Name(), variable.Value())
 	}
 
 	datadir := config.GetDataDir()
-	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner, project.Name))
+	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner(), project.Name()))
 
 	dist, fail := distribution.Obtain()
 	if fail != nil {

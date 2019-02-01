@@ -120,16 +120,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_env_vars"))
 		for _, variable := range project.Variables {
 			if !constraints.IsConstrained(variable.Constraints) {
-				value := variables.ExpandFromProject(variable.Value, project)
-				print.Formatted("  %s: %s\n", variable.Name, value)
+				print.Formatted(" - %s\n", variable.Name)
 			}
-		}
-	}
-
-	if len(project.Secrets) > 0 {
-		print.Bold("%s:", locale.T("print_state_show_secrets"))
-		for _, secret := range project.Secrets {
-			print.Formatted("  %s: project-scope=%v, user-scope=%v\n", secret.Name, secret.IsProject, secret.IsUser)
 		}
 	}
 }
