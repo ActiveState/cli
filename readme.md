@@ -2,6 +2,8 @@
 
 # Installation
 
+bogus
+
  1. Install the following dependencies:
    * Go 1.9 or later
    * dep - https://github.com/golang/dep#installation
