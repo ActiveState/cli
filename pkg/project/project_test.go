@@ -51,6 +51,22 @@ func TestProject(t *testing.T) {
 	resetProjectDir(t)
 }
 
+func TestProject_WhenInSubDirectories(t *testing.T) {
+	setProjectDir(t)
+
+	err := os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata", "sub1", "sub2"))
+	assert.NoError(t, err, "Should change dir without issue.")
+
+	prj, fail := GetSafe()
+	assert.Nil(t, fail, "Run without failure")
+	assert.Equal(t, "foo", prj.Name(), "Values should match")
+	assert.Equal(t, "carey", prj.Owner(), "Values should match")
+	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
+	assert.Equal(t, "something", prj.Environments(), "Values should match")
+	assert.Equal(t, "1.0", prj.Version(), "Values should match")
+	resetProjectDir(t)
+}
+
 func TestPlatforms(t *testing.T) {
 	setProjectDir(t)
 	prj, fail := GetSafe()

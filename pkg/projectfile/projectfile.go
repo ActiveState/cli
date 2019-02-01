@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/mitchellh/hashstructure"
@@ -207,7 +207,7 @@ func getProjectFilePath() string {
 		logging.Warning("Could not get project root path: %v", err)
 		return ""
 	}
-	return filepath.Join(root, constants.ConfigFileName)
+	return fileutils.FindFileInPath(root, constants.ConfigFileName)
 }
 
 // Get returns the project configration in an unsafe manner (exits if errors occur)

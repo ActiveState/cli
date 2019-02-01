@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -208,4 +209,26 @@ func ReadFileUnsafe(src string) []byte {
 		log.Fatalf("Cannot read file: %s, error: %s", src, err.Error())
 	}
 	return b
+}
+
+// FindFileInPath will find a file by the given file-name in the directory provided or in
+// one of the parent directories of that path by walking up the tree. If the file is found,
+// the path to that file is returned, otherwise an empty string is returned.
+func FindFileInPath(dir, filename string) string {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return ""
+	}
+	return walkPathAndFindFile(absDir, filename)
+}
+
+// walkPathAndFindFile finds a file in the provided directory or one of its parent directories.
+// walkPathAndFindFile prefers an absolute directory path.
+func walkPathAndFindFile(dir, filename string) string {
+	if file := path.Join(dir, filename); FileExists(file) {
+		return file
+	} else if parentDir := path.Dir(dir); parentDir != dir {
+		return FindFileInPath(parentDir, filename)
+	}
+	return ""
 }
