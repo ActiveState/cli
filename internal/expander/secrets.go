@@ -1,7 +1,9 @@
-package secrets
+package expander
 
 import (
 	"strings"
+
+	"github.com/ActiveState/cli/internal/secrets"
 
 	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
@@ -16,12 +18,12 @@ import (
 )
 
 // FailExpandNoProjectDefined is used when error arises from an expander function being called without a project
-var FailExpandNoProjectDefined = failures.Type("secrets.fail.expand.noproject")
+var FailExpandNoProjectDefined = failures.Type("expander.fail.secrets.expand.noproject")
 
 // FailInputSecretValue is used when error arises from user providing a secret value.
-var FailInputSecretValue = failures.Type("secrets.fail.input.value", failures.FailUserInput)
+var FailInputSecretValue = failures.Type("expander.fail.secrets.input.value", failures.FailUserInput)
 
-type Expander struct {
+type SecretExpander struct {
 	secretsClient *secretsapi.Client
 	keypair       keypairs.Keypair
 	organization  *models.Organization
@@ -31,21 +33,21 @@ type Expander struct {
 	cachedSecrets map[string]string
 }
 
-func NewExpander(secretsClient *secretsapi.Client) *Expander {
-	return &Expander{
+func NewSecretExpander(secretsClient *secretsapi.Client) *SecretExpander {
+	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
 	}
 }
 
-func (e *Expander) KeyPair() (keypairs.Keypair, *failures.Failure) {
+func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 
 	var fail *failures.Failure
 	if e.keypair == nil {
-		e.keypair, fail = LoadKeypairFromConfigDir()
+		e.keypair, fail = secrets.LoadKeypairFromConfigDir()
 		if fail != nil {
 			return nil, fail
 		}
@@ -54,7 +56,7 @@ func (e *Expander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 	return e.keypair, nil
 }
 
-func (e *Expander) Organization() (*models.Organization, *failures.Failure) {
+func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
@@ -69,7 +71,7 @@ func (e *Expander) Organization() (*models.Organization, *failures.Failure) {
 	return e.organization, nil
 }
 
-func (e *Expander) Project() (*models.Project, *failures.Failure) {
+func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
@@ -84,7 +86,7 @@ func (e *Expander) Project() (*models.Project, *failures.Failure) {
 	return e.project, nil
 }
 
-func (e *Expander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
 	org, fail := e.Organization()
 	if fail != nil {
 		return nil, fail
@@ -99,7 +101,7 @@ func (e *Expander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
 	return e.secrets, nil
 }
 
-func (e *Expander) FetchSecret(variable *projectfile.Variable) (string, *failures.Failure) {
+func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *failures.Failure) {
 	if knownValue, exists := e.cachedSecrets[variable.Name]; exists {
 		return knownValue, nil
 	}
@@ -137,7 +139,7 @@ func (e *Expander) FetchSecret(variable *projectfile.Variable) (string, *failure
 //
 // Thus, if secrets are found matching priority 1 and 3, the priority 1 secret is returned. If no secret
 // is found, nil is returned.
-func (e *Expander) FindSecretWithHighestPriority(variable *projectfile.Variable) (*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) FindSecretWithHighestPriority(variable *projectfile.Variable) (*secretsModels.UserSecret, *failures.Failure) {
 	secrets, fail := e.Secrets()
 	if fail != nil {
 		return nil, fail
@@ -190,9 +192,9 @@ func (e *Expander) FindSecretWithHighestPriority(variable *projectfile.Variable)
 	return selectedSecret, nil
 }
 
-type ExpanderFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
+type SecretExpanderFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
 
-func (e *Expander) Expand(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile
 	}
@@ -224,7 +226,7 @@ func (e *Expander) Expand(variable *projectfile.Variable, projectFile *projectfi
 	return secretValue, nil
 }
 
-func (e *Expander) ExpandWithPrompt(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile
 	}
@@ -250,9 +252,9 @@ func (e *Expander) ExpandWithPrompt(variable *projectfile.Variable, projectFile 
 		}
 
 		if variable.Value.PullFrom != nil && *variable.Value.PullFrom == projectfile.VariablePullFromProject {
-			fail = Save(e.secretsClient, keypair, org, project, variable.Value.Share == nil, variable.Name, value)
+			fail = secrets.Save(e.secretsClient, keypair, org, project, variable.Value.Share == nil, variable.Name, value)
 		} else {
-			fail = Save(e.secretsClient, keypair, org, nil, variable.Value.Share == nil, variable.Name, value)
+			fail = secrets.Save(e.secretsClient, keypair, org, nil, variable.Value.Share == nil, variable.Name, value)
 		}
 
 		if fail != nil {

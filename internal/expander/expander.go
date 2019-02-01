@@ -7,27 +7,31 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
 	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = failures.Type("variables.fail.expandvariable", failures.FailUser)
+	FailExpandVariable = failures.Type("expander.fail.expandvariable", failures.FailUser)
 
 	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = failures.Type("variables.fail.expandvariable.badcategory", FailExpandVariable)
+	FailExpandVariableBadCategory = failures.Type("expander.fail.expandvariable.badcategory", FailExpandVariable)
 
 	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = failures.Type("variables.fail.expandvariable.badName", FailExpandVariable)
+	FailExpandVariableBadName = failures.Type("expander.fail.expandvariable.badName", FailExpandVariable)
 
 	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = failures.Type("variables.fail.expandvariable.recursion", FailExpandVariable)
+	FailExpandVariableRecursion = failures.Type("expander.fail.expandvariable.recursion", FailExpandVariable)
 
 	// FailExpanderBadName is used when an Expanders name is invalid.
-	FailExpanderBadName = failures.Type("variables.fail.expander.badName", failures.FailVerify)
+	FailExpanderBadName = failures.Type("expander.fail.expander.badName", failures.FailVerify)
 
 	// FailExpanderNoFunc is used when no handler func is found for an Expander.
-	FailExpanderNoFunc = failures.Type("variables.fail.expander.noFunc", failures.FailVerify)
+	FailExpanderNoFunc = failures.Type("expander.fail.expander.noFunc", failures.FailVerify)
+
+	// FailVarNotFound is used when no handler func is found for an Expander.
+	FailVarNotFound = failures.Type("expander.fail.vars.notfound", FailExpandVariable)
 )
 
 var lastFailure *failures.Failure
@@ -159,4 +163,45 @@ func ScriptExpander(name string, project *projectfile.Project) (string, *failure
 		}
 	}
 	return value, nil
+}
+
+type VarExpander struct {
+	secretsClient   *secretsapi.Client
+	secretsExpander SecretExpanderFunc
+}
+
+func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+	var variable *projectfile.Variable
+	for _, varcheck := range projectFile.Variables {
+		if varcheck.Name == name {
+			variable = varcheck
+			break
+		}
+	}
+
+	if variable == nil {
+		return "", FailVarNotFound.New("variables_expand_err_spec_undefined", name)
+	}
+
+	if variable.Value.StaticValue != nil {
+		return *variable.Value.StaticValue, nil
+	}
+
+	return e.secretsExpander(variable, projectFile)
+}
+
+// NewVarExpanderFunc creates an ExpanderFunc which can retrieve and decrypt stored user secrets.
+func NewVarExpanderFunc(secretsClient *secretsapi.Client) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient)
+	expander := &VarExpander{secretsClient, secretsExpander.Expand}
+	return expander.Expand
+}
+
+// NewVarPromptingExpanderFunc creates an ExpanderFunc which can retrieve and decrypt stored user secrets. Additionally,
+// it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
+// value with the secrets service.
+func NewVarPromptingExpanderFunc(secretsClient *secretsapi.Client) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient)
+	expander := &VarExpander{secretsClient, secretsExpander.ExpandWithPrompt}
+	return expander.Expand
 }
