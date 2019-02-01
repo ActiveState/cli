@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -22,6 +23,7 @@ func plainAuth() {
 	doPlainAuth(credentials)
 
 	if api.Auth != nil {
+		secretsapi.InitializeClient()
 		ensureUserKeypair(credentials.Password)
 	}
 }
