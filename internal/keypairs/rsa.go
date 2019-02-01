@@ -101,6 +101,17 @@ func (keypair *RSAKeypair) DecodeAndDecrypt(msg string) ([]byte, *failures.Failu
 	return keypair.Decrypt(encrBytes)
 }
 
+// MatchPublicKey determines if a provided public-key in PEM encoded format matches this Keypair's
+// public-key.
+func (keypair *RSAKeypair) MatchPublicKey(publicKeyPEM string) bool {
+	otherPublicKey, failure := ParseRSAPublicKey(publicKeyPEM)
+	if failure != nil {
+		return false
+	}
+
+	return keypair.N.Cmp(otherPublicKey.N) == 0 && keypair.E == otherPublicKey.E
+}
+
 // GenerateRSA will generate an RSAKeypair instance given a bit-length.
 // The value for bits can be anything `>= MinimumRSABitLength`.
 func GenerateRSA(bits int) (*RSAKeypair, *failures.Failure) {

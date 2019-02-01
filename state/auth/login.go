@@ -57,12 +57,7 @@ func doPlainAuth(credentials *models.Credentials) {
 			params.SetUsername(credentials.Username)
 			_, err := api.Client.Users.UniqueUsername(params)
 			if err == nil {
-				confirmed := false
-				prompt := &survey.Confirm{
-					Message: locale.T("prompt_login_to_signup"),
-				}
-				survey.AskOne(prompt, &confirmed, nil)
-				if confirmed {
+				if surveyor.Confirm("prompt_login_to_signup") {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
