@@ -15,8 +15,7 @@ defaults:
             $GOROOT/bin/go run scripts/constants-generator/main.go
             ./public/install.sh -n
             echo "export PATH=$HOME/.local/bin:$PATH" >> /home/circleci/.bashrc
-            source /home/circleci/.bashrc
-            state auth $PLATFORM_API_TOKEN
+            /home/circleci/.local/bin/state auth $PLATFORM_API_TOKEN
     runTests: &runTests
       run:
         name: Run unit tests
