@@ -14,7 +14,7 @@ defaults:
             $GOROOT/bin/go get -u github.com/gobuffalo/packr/...
             $GOROOT/bin/go run scripts/constants-generator/main.go
             ./public/install.sh -n
-            echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
+            echo "export PATH=$HOME/.local/bin:${GOROOT}/bin:${GOPATH}/bin:${PATH}:$PATH" >> $BASH_ENV
     runTests: &runTests
       run:
         name: Run unit tests
@@ -23,6 +23,7 @@ defaults:
             $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
             echo 'mode: atomic' > coverage.txt && tail -n +2 coverage.tmp >> coverage.txt
             bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
+            ~/.local/bin/state auth $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run: 
         name: Build the CLI
