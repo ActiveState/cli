@@ -15,6 +15,7 @@ defaults:
             $GOROOT/bin/go run scripts/constants-generator/main.go
             ./public/install.sh -n
             echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
+            source $BASH_ENV
             state auth $PLATFORM_API_TOKEN
     runTests: &runTests
       run:
