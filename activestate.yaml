@@ -10,7 +10,6 @@ variables:
 commands:
   - name: preprocess
     value: |
-      $variables.ENV
       packr
       go run scripts/constants-generator/main.go
   - name: build
@@ -65,6 +64,8 @@ commands:
 hooks:
   - name: ACTIVATE
     value: |
+      $variables.ENV
+      $commands.preprocess
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
