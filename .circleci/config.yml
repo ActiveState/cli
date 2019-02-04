@@ -15,7 +15,6 @@ defaults:
             $GOROOT/bin/go run scripts/constants-generator/main.go
             ./public/install.sh -n
             echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
-            ~/.local/bin/state auth $PLATFORM_API_TOKEN
     runTests: &runTests
       run:
         name: Run unit tests
@@ -56,6 +55,9 @@ jobs:
     steps:
       - checkout
       - <<: *prepareEnv
+      - run:
+          name: Authenticate State Tool
+          command: ~/.local/bin/state auth $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
@@ -80,6 +82,9 @@ jobs:
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
       - <<: *prepareEnv
+      - run:
+          name: Authenticate State Tool
+          command: state auth $PLATFORM_API_TOKEN
       - run:
           name: Run unit tests
           command: |
