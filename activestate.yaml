@@ -10,7 +10,6 @@ variables:
 commands:
   - name: preprocess
     value: |
-      $variables.ENV
       packr
       go run scripts/constants-generator/main.go
   - name: build
@@ -29,26 +28,21 @@ commands:
       popd
   - name: generate-artifacts
     value: |
-      $variables.ENV
       go run scripts/artifact-generator/main.go 
   - name: deploy-artifacts
     value: |
-      $variables.ENV
       go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
   - name: deploy-updates
     value: |
-      $variables.ENV
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: generate-api-client
     value: |
-      $variables.ENV
       pushd internal
       swagger generate client -f https://platform.activestate.com/swagger.json -A api
       popd
   - name: generate-secrets-client
     value: |
-      $variables.ENV
       pushd internal/secrets-api 
       swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
       popd
@@ -58,11 +52,9 @@ commands:
       $commands.generate-secrets-client
   - name: test
     value: |
-      $variables.ENV
       go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
   - name: clean
     value: |
-      $variables.ENV
       go clean
       rm -Rf build
   - name: run
@@ -72,6 +64,9 @@ commands:
 hooks:
   - name: ACTIVATE
     value: |
+      $variables.ENV
+      $commands.preprocess
+      state auth $PLATFORM_API_TOKEN
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
