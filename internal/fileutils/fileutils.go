@@ -228,7 +228,7 @@ func walkPathAndFindFile(dir, filename string) string {
 	if file := path.Join(dir, filename); FileExists(file) {
 		return file
 	} else if parentDir := path.Dir(dir); parentDir != dir {
-		return FindFileInPath(parentDir, filename)
+		return walkPathAndFindFile(parentDir, filename)
 	}
 	return ""
 }
