@@ -30,7 +30,6 @@ defaults:
         command: |
           $GOBIN/packr
           state run build
-          ./build/state --version
     deployBits: &deployBits
       run: 
         name: Deploy bits
