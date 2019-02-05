@@ -61,12 +61,36 @@ var Args struct {
 	Name string
 }
 
-// Execute the run command.
-func Execute(cmd *cobra.Command, args []string) {
-	logging.Debug("Execute")
-	if Args.Name == "" {
-		Args.Name = "run" // default
+// processScriptArgs will determine which args are actually intended to be command line arguments
+// for the script that is to be run and slice them from all of the arguments passed to the `run` Command.
+// processScriptArgs will also put back any "--" provided to the `run` command.
+func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
+	dashPos := cmd.ArgsLenAtDash()
+	if dashPos == -1 {
+		// no dash provided
+		if len(allArgs) == 0 {
+			return allArgs
+		}
+		return allArgs[1:] // everything after command name
+	} else if dashPos == 0 {
+		// no command specified, dash came before any other args; put dash back at beginning
+		return append([]string{"--"}, allArgs...)
 	}
+
+	// dash came somewhere after the command name
+	return append(allArgs[1:dashPos], append([]string{"--"}, allArgs[dashPos:]...)...)
+}
+
+// Execute the run command.
+func Execute(cmd *cobra.Command, allArgs []string) {
+	logging.Debug("Execute")
+	if cmd.ArgsLenAtDash() == 0 || Args.Name == "" {
+		// no command was given and there might be args after "--" that are not intended
+		// to be part of the command name, thus the default command name is "run"
+		Args.Name = "run"
+	}
+
+	scriptArgs := processScriptArgs(cmd, allArgs)
 
 	if Flags.List {
 		ListCommands()
@@ -109,7 +133,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
-	code, err := subs.Run(command)
+	code, err := subs.Run(command, scriptArgs...)
 	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)

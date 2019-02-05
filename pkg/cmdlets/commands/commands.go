@@ -154,6 +154,12 @@ func (c *Command) argInputValidator(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// Unregister will essentially forget about the Cobra Command object so that a subsequent call to Register
+// will allow for a new Cobra Command and state to be reset.
+func (c *Command) Unregister() {
+	c.cobraCmd = nil
+}
+
 // Register will ensure that we have a cobra.Command registered, if it has already been registered this will do nothing
 func (c *Command) Register() {
 	if c.cobraCmd != nil {

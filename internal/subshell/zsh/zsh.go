@@ -106,7 +106,7 @@ func (v *SubShell) Deactivate() error {
 }
 
 // Run - see subshell.SubShell
-func (v *SubShell) Run(script string) (int, error) {
+func (v *SubShell) Run(script string, args ...string) (int, error) {
 	tmpfile, err := ioutil.TempFile("", "bash-script")
 	if err != nil {
 		return 1, err
@@ -117,7 +117,7 @@ func (v *SubShell) Run(script string) (int, error) {
 	tmpfile.Close()
 	os.Chmod(tmpfile.Name(), 0755)
 
-	runCmd := exec.Command(tmpfile.Name())
+	runCmd := exec.Command(tmpfile.Name(), args...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	err = runCmd.Run()
