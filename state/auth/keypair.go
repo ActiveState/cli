@@ -17,27 +17,26 @@ import (
 func ensureUserKeypair(passphrase string) {
 	keypairRes, failure := keypairs.FetchRaw(secretsapi.DefaultClient)
 	if failure == nil {
-		processExistingKeypairForUser(keypairRes, passphrase)
+		failure = processExistingKeypairForUser(keypairRes, passphrase)
 	} else if secretsapi.FailKeypairNotFound.Matches(failure.Type) {
-		generateKeypairForUser(passphrase)
-	} else {
-		failures.Handle(failure, locale.T("keypair_err"))
+		failure = generateKeypairForUser(passphrase)
 	}
 
-	if failures.Handled() != nil {
+	if failure != nil {
+		failures.Handle(failure, locale.T("keypair_err"))
 		doLogout()
 		print.Line(locale.T("auth_unresolved_keypair_issue_message"))
 	}
 }
 
 // generateKeypairForUser attempts to generate and save a Keypair for the currently authenticated user.
-func generateKeypairForUser(passphrase string) {
+func generateKeypairForUser(passphrase string) *failures.Failure {
 	_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.DefaultClient, passphrase, constants.DefaultRSABitLength)
 	if failure != nil {
-		failures.Handle(failure, locale.T("keypair_err_save"))
-	} else {
-		print.Line(locale.T("keypair_generate_success"))
+		return failure
 	}
+	print.Line(locale.T("keypair_generate_success"))
+	return nil
 }
 
 func validateLocalPrivateKey(publicKey string) bool {
@@ -45,33 +44,47 @@ func validateLocalPrivateKey(publicKey string) bool {
 	return failure == nil && localKeypair.MatchPublicKey(publicKey)
 }
 
-func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string) {
+// processExistingKeypairForUser will attempt to ensure the stored private-key for the user is encrypted
+// using the provided passphrase. If passphrase match fails, processExistingKeypairForUser will then try
+// validate that the locally stored private-key has a public-key matching the one provided in the keypair.
+// If public-keys match, the locally stored private-key will be encrypted with the provided passphrase
+// and uploaded for the user.
+//
+// If the previous paths result in failure, user is prompted for their previous passphrase in attempt to
+// determine if the password has changed. If successful, private-key is encrypted with passphrase provided
+// to this function and uploaded.
+//
+// If all paths fail, user is prompted to regenerate their keypair which will be encrypted with the
+// provided passphrase and then uploaded; unless the user declines, which results in failure.
+func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase string) *failures.Failure {
 	keypair, failure := keypairs.ParseEncryptedRSA(*keypairRes.EncryptedPrivateKey, passphrase)
-	if failure != nil {
-		if keypairs.FailKeypairPassphrase.Matches(failure.Type) {
-			// failed to decrypt stored private-key with provided passphrase
-			var localKeypair keypairs.Keypair
-			if localKeypair, failure = keypairs.LoadWithDefaults(); failure == nil && localKeypair.MatchPublicKey(*keypairRes.PublicKey) {
-				// locally stored private-key has a matching public-key, encrypt that with new passphrase and upload
-				var encodedKeypair *keypairs.EncodedKeypair
-				if encodedKeypair, failure = keypairs.EncodeKeypair(localKeypair, passphrase); failure == nil {
-					failure = keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
-				}
-			} else {
-				failure = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase)
-				if failure != nil && keypairs.FailKeypairPassphrase.Matches(failure.Type) {
-					failure = promptUserToRegenerateKeypair(passphrase)
-				}
-			}
-		}
-
-		if failure != nil {
-			failures.Handle(failure, locale.T("keypair_err"))
-		}
-	} else {
-		// update the locally stored private-key
-		keypairs.SaveWithDefaults(keypair)
+	if failure == nil {
+		// yay, store keypair locally just in case it isn't
+		return keypairs.SaveWithDefaults(keypair)
+	} else if !keypairs.FailKeypairPassphrase.Matches(failure.Type) {
+		// failure did not involve an unmatched passphrase
+		return failure
 	}
+
+	// failed to decrypt stored private-key with provided passphrase, try using a local private-key
+	var localKeypair keypairs.Keypair
+	localKeypair, failure = keypairs.LoadWithDefaults()
+	if failure == nil && localKeypair.MatchPublicKey(*keypairRes.PublicKey) {
+		// locally stored private-key has a matching public-key, encrypt that with new passphrase and upload
+		var encodedKeypair *keypairs.EncodedKeypair
+		if encodedKeypair, failure = keypairs.EncodeKeypair(localKeypair, passphrase); failure != nil {
+			return failure
+		}
+		return keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
+	}
+
+	// failed to validate with local private-key, try using previous passphrase
+	failure = recoverKeypairFromPreviousPassphrase(keypairRes, passphrase)
+	if failure != nil && keypairs.FailKeypairPassphrase.Matches(failure.Type) {
+		// that failed, see if they want to regenerate their passphrase
+		failure = promptUserToRegenerateKeypair(passphrase)
+	}
+	return failure
 }
 
 func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, passphrase string) *failures.Failure {

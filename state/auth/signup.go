@@ -33,7 +33,9 @@ func signup() {
 	doSignup(input)
 
 	if api.Auth != nil {
-		generateKeypairForUser(input.Password)
+		if failure := generateKeypairForUser(input.Password); failure != nil {
+			failures.Handle(failure, locale.T("keypair_err_save"))
+		}
 	}
 }
 

@@ -67,7 +67,10 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(api.Auth, "Should have been authenticated")
 
-	// TODO ensure local keypair is saved
+	// very local keypair is saved
+	localKeypair, failure := keypairs.LoadWithDefaults()
+	suite.Require().Nil(failure)
+	suite.NotNil(localKeypair)
 }
 
 func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKey_MatchesPublicKey() {
