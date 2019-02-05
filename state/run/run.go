@@ -3,6 +3,7 @@ package run
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -84,10 +85,15 @@ func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
+<<<<<<< HEAD
 	if cmd.ArgsLenAtDash() == 0 || Args.Name == "" {
 		// no command was given and there might be args after "--" that are not intended
 		// to be part of the command name, thus the default command name is "run"
 		Args.Name = "run"
+=======
+	if Args.Name == "" {
+		Args.Name = constants.DefaultScriptName
+>>>>>>> Renames Commands to Scripts in Project struct
 	}
 
 	scriptArgs := processScriptArgs(cmd, allArgs)
@@ -97,18 +103,18 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	// Determine which project command to run based on the given command name.
+	// Determine which project script to run based on the given script name.
 	prj := project.Get()
-	var command string
+	var scriptBlock string
 	var standalone bool
-	for _, cmd := range prj.Commands() {
+	for _, script := range prj.Scripts() {
 		if cmd.Name() == Args.Name {
-			command = cmd.Value()
-			standalone = cmd.Standalone()
+			scriptBlock = script.Value()
+			standalone = script.Standalone()
 			break
 		}
 	}
-	if command == "" {
+	if scriptBlock == "" {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
 		return
 	}
@@ -124,16 +130,16 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		}
 	}
 
-	// Run the command.
-	command = variables.Expand(command)
+	// Run the script.
+	scriptBlock = variables.Expand(scriptBlock)
 	subs, err := subshell.Get()
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_no_shell"))
 		return
 	}
 
-	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
-	code, err := subs.Run(command, scriptArgs...)
+	print.Info(locale.T("info_state_run_running", map[string]string{"Script": scriptBlock}))
+	code, err := subs.Run(scriptBlock, scriptArgs...)
 	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)
@@ -141,16 +147,16 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 }
 
-// ListCommands prints the available commands
+// ListCommands prints the available scripts
 func ListCommands() {
 	print.Info(locale.T("run_listing_commands"))
 
 	prj := project.Get()
-	commands := prj.Commands()
+	scripts := prj.Scripts()
 
 	rows := [][]interface{}{}
-	for k, cmd := range commands {
-		rows = append(rows, []interface{}{k, cmd.Name()})
-		print.Line(fmt.Sprintf(" * %s", cmd.Name()))
+	for k, script := range scripts {
+		rows = append(rows, []interface{}{k, script.Name()})
+		print.Line(fmt.Sprintf(" * %s", script.Name()))
 	}
 }

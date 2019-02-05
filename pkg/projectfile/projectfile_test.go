@@ -136,19 +136,19 @@ value: valueForValue`)
 	assert.NotEmpty(t, hash, "Hash has a value")
 }
 
-func TestCommandStruct(t *testing.T) {
-	command := Command{}
+func TestScriptStruct(t *testing.T) {
+	script := Script{}
 	dat := strings.TrimSpace(`
 name: valueForName
-value: valueForCommand
+value: valueForScript
 standalone: true`)
 
-	err := yaml.Unmarshal([]byte(dat), &command)
+	err := yaml.Unmarshal([]byte(dat), &script)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", command.Name, "Name should be set")
-	assert.Equal(t, "valueForCommand", command.Value, "Command should be set")
-	assert.True(t, command.Standalone, "Standalone should be set")
+	assert.Equal(t, "valueForName", script.Name, "Name should be set")
+	assert.Equal(t, "valueForScript", script.Value, "Script should be set")
+	assert.True(t, script.Standalone, "Standalone should be set")
 }
 
 func TestSecretsStruct_OrgScopedSecret(t *testing.T) {
@@ -262,9 +262,9 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Hooks[0].Name, "Hook name should be set")
 	assert.NotEmpty(t, project.Hooks[0].Value, "Hook value should be set")
 
-	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
-	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
-	assert.False(t, project.Commands[0].Standalone, "Standalone value should be set, but false")
+	assert.NotEmpty(t, project.Scripts[0].Name, "Script name should be set")
+	assert.NotEmpty(t, project.Scripts[0].Value, "Script value should be set")
+	assert.False(t, project.Scripts[0].Standalone, "Standalone value should be set, but false")
 
 	assert.Len(t, project.Secrets, 1)
 	secretSpec := project.Secrets.GetByName("org-secret")

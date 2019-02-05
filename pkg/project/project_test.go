@@ -204,35 +204,35 @@ func TestPackages(t *testing.T) {
 	resetProjectDir(t)
 }
 
-func TestCommands(t *testing.T) {
+func TestScripts(t *testing.T) {
 	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.Nil(t, fail, "Run without failure")
-	commands := prj.Commands()
-	assert.Equal(t, 1, len(commands), "Should match 1 out of three constrained items")
+	scripts := prj.Scripts()
+	assert.Equal(t, 1, len(scripts), "Should match 1 out of three constrained items")
 
-	cmd := commands[0]
+	script := scripts[0]
 
 	if runtime.GOOS == "linux" {
-		name := cmd.Name()
+		name := script.Name()
 		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		version := cmd.Value()
+		version := script.Value()
 		assert.Equal(t, "foo Linux", version, "Value should match (Linux)")
-		standalone := cmd.Standalone()
+		standalone := script.Standalone()
 		assert.True(t, standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := cmd.Name()
+		name := script.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		version := cmd.Value()
+		version := script.Value()
 		assert.Equal(t, "bar Windows", version, "Value should match (Windows)")
-		standalone := cmd.Standalone()
+		standalone := script.Standalone()
 		assert.True(t, standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := cmd.Name()
+		name := script.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		version := cmd.Value()
+		version := script.Value()
 		assert.Equal(t, "baz OSX", version, "Value should match (OSX)")
-		standalone := cmd.Standalone()
+		standalone := script.Standalone()
 		assert.True(t, standalone, "Standalone value should match (OSX)")
 	}
 	resetProjectDir(t)
