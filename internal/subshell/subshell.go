@@ -39,8 +39,8 @@ type SubShell interface {
 	// Deactivate the given subshell
 	Deactivate() error
 
-	// Run a command string that assumes this shell, returns the exit code
-	Run(script string) (int, error)
+	// Run a command string, passing the provided command-line arguments, that assumes this shell and returns the exit code
+	Run(script string, args ...string) (int, error)
 
 	// IsActive returns whether the given subshell is active
 	IsActive() bool
