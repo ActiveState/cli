@@ -47,7 +47,7 @@ hooks:
     value: '%pythonExe% %projectDir%/setup.py prepare'
   - name: AFTER_UPDATE
     value: '%pythonExe% %projectDir%/setup.py prepare'
-commands:
+scripts:
   - name: tests
     value: pytest %projectDir%/tests
   - name: debug

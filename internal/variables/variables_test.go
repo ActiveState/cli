@@ -42,7 +42,7 @@ hooks:
     value: echo 'Hello $variables.foo!'
   - name: post
     value: echo 'Hello $variables.bar!'
-commands:
+scripts:
   - name: test
     value: make test
   - name: recursive

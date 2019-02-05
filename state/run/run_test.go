@@ -31,14 +31,14 @@ func TestRunStandalone(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = fmt.Sprintf(`
-commands:
+scripts:
   - name: run
     value: |
       echo "Hello"
       touch %s`, tmpfile.Name())
 	} else {
 		contents = fmt.Sprintf(`
-commands:
+scripts:
   - name: run
     value: |
     echo "Hello"
@@ -64,14 +64,14 @@ func TestRunStandaloneCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: echo foo
     standalone: true
     `)
 	} else {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: cmd /C echo foo
     standalone: true
@@ -93,7 +93,7 @@ func TestRunUnknownCommandName(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: whatever
   `)
@@ -113,7 +113,7 @@ func TestRunUnknownCommand(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: whatever
   `)
@@ -152,12 +152,12 @@ func TestRunActivatedCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: cmd /C echo foo`)
 	}

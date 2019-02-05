@@ -33,7 +33,7 @@ type Project struct {
 	Languages    []Language  `yaml:"languages"`
 	Variables    []Variable  `yaml:"variables"`
 	Hooks        []Hook      `yaml:"hooks"`
-	Commands     []Command   `yaml:"commands"`
+	Commands     []Command   `yaml:"scripts"`
 	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
 }
