@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Command holds our main command definition
@@ -87,4 +88,12 @@ func ExecuteLogout(cmd *cobra.Command, args []string) {
 func doLogout() {
 	api.RemoveAuth()
 	keypairs.DeleteWithDefaults()
+}
+
+// promptConfirm will prompt for a yes/no confirmation and return true if confirmed.
+func promptConfirm(translationID string) (confirmed bool) {
+	survey.AskOne(&survey.Confirm{
+		Message: locale.T(translationID),
+	}, &confirmed, nil)
+	return confirmed
 }

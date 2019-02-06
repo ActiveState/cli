@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/ActiveState/cli/internal/locale"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/core"
 )
 
@@ -37,12 +36,4 @@ func isZero(v reflect.Value) bool {
 
 	// compare the types directly with more general coverage
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
-}
-
-// Confirm will prompt for a yes/no confirmation and return true if confirmed.
-func Confirm(translationID string) (confirmed bool) {
-	survey.AskOne(&survey.Confirm{
-		Message: locale.T(translationID),
-	}, &confirmed, nil)
-	return confirmed
 }
