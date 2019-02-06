@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -311,7 +312,8 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should fetch cwd")
 	os.Chdir(filepath.Join(root, "test"))
 
-	configPath := getProjectFilePath()
+	configPath, failure := getProjectFilePath()
+	require.Nil(t, failure)
 	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 

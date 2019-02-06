@@ -213,13 +213,15 @@ func ReadFileUnsafe(src string) []byte {
 
 // FindFileInPath will find a file by the given file-name in the directory provided or in
 // one of the parent directories of that path by walking up the tree. If the file is found,
-// the path to that file is returned, otherwise an empty string is returned.
-func FindFileInPath(dir, filename string) string {
+// the path to that file is returned, otherwise an failure is returned.
+func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
-		return ""
+		return "", failures.FailOS.Wrap(err)
+	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
+		return filepath, nil
 	}
-	return walkPathAndFindFile(absDir, filename)
+	return "", failures.FailNotFound.New("err_file_not_found_in_path", filename, absDir)
 }
 
 // walkPathAndFindFile finds a file in the provided directory or one of its parent directories.

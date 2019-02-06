@@ -201,11 +201,11 @@ func (p *Project) Save() error {
 }
 
 // Returns the path to the project activestate.yaml
-func getProjectFilePath() string {
+func getProjectFilePath() (string, *failures.Failure) {
 	root, err := os.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
-		return ""
+		return "", failures.FailOS.Wrap(err)
 	}
 	return fileutils.FindFileInPath(root, constants.ConfigFileName)
 }
@@ -230,7 +230,10 @@ func GetSafe() (*Project, *failures.Failure) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	// we do not want to use a path provided by state if we're running tests
 	if projectFilePath == "" || flag.Lookup("test.v") != nil {
-		projectFilePath = getProjectFilePath()
+		var failure *failures.Failure
+		if projectFilePath, failure = getProjectFilePath(); failure != nil {
+			return nil, failure
+		}
 	}
 
 	_, err := ioutil.ReadFile(projectFilePath)
