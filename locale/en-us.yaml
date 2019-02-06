@@ -225,6 +225,18 @@ password_prompt:
   other: "Enter your password:"
 passphrase_prompt:
   other: "Enter your passphrase:"
+previous_password_message:
+  other: "Your password may have changed recently. We need to reencrypt your private-key so that you may continue using your secrets, but we need your previous password in order to do so."
+auth_generate_new_keypair_message:
+  other: "There is an unrecoverable issue with your existing keypair and the best course of action is to generate a new keypair."
+auth_confirm_generate_new_keypair_prompt:
+  other: Generate new keypair?
+auth_unresolved_keypair_issue_message:
+  other: "For security purposes regarding your keypair, we are logging you out."
+auth_err_unrecoverable_keypair:
+  other: "Unrecoverable keypair issue"
+previous_password_prompt:
+  other: "Enter your previous password:"
 secret_value_prompt:
   other: "Enter secret {{.V0}} value for {{.V1}}:"
 username_prompt_signup:
@@ -251,6 +263,8 @@ err_auth_failed:
   other: Authentication failed, invalid password
 err_auth_failed_unknown_cause:
   other: Authentication failed due to an unknown cause, check the error log for more information
+auth_err_password_prompt:
+  other: The provided password is invalid
 confirm_password_account_creation:
   other: Please enter your password again to create your account.
 err_password_confirmation_failed:
@@ -553,7 +567,7 @@ keypair_err_publickey_not_found:
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
-  other: Your keypair is not authenticated, run `state keypair auth` first
+  other: Your keypair is not authenticated, run `state auth` first
 
 keypairs_err_bitlength_too_short:
   other: bit-length too short

@@ -40,12 +40,12 @@ func setup(t *testing.T) {
 	Args.Token = ""
 }
 
-func setupUser(t *testing.T) *models.UserEditable {
+func setupUser() *models.UserEditable {
 	testUser := &models.UserEditable{
 		Username: "test",
 		Email:    "test@test.tld",
-		Password: "test",
-		Name:     "test",
+		Password: "foo", // this matches the passphrase on testdata/self-private.key
+		Name:     "Test User",
 	}
 	return testUser
 }
@@ -73,7 +73,7 @@ func TestExecuteNoArgs(t *testing.T) {
 
 func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
@@ -97,7 +97,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 
 func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
@@ -121,7 +121,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
@@ -157,7 +157,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
@@ -231,7 +231,7 @@ func TestExecuteSignup(t *testing.T) {
 		return 204, "empty"
 	})
 
-	user := setupUser(t)
+	user := setupUser()
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"signup"})
@@ -256,7 +256,7 @@ func TestExecuteSignup(t *testing.T) {
 
 func TestExecuteToken(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
@@ -289,7 +289,7 @@ func TestExecuteLogout(t *testing.T) {
 	defer osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	defer httpmock.DeActivate()
@@ -317,7 +317,7 @@ func TestExecuteLogout(t *testing.T) {
 
 func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
@@ -360,7 +360,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 
 func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	setup(t)
-	user := setupUser(t)
+	user := setupUser()
 
 	httpmock.Activate(api.Prefix)
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
