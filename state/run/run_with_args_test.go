@@ -28,13 +28,13 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = fmt.Sprintf(`
-commands:
+scripts:
   - name: %s
     value: |
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
 	} else {
 		contents = fmt.Sprintf(`
-commands:
+scripts:
   - name: %s
     value: |
     echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)

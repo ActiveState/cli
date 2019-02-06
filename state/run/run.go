@@ -103,7 +103,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	var scriptBlock string
 	var standalone bool
 	for _, script := range prj.Scripts() {
-		if cmd.Name() == Args.Name {
+		if script.Name() == Args.Name {
 			scriptBlock = script.Value()
 			standalone = script.Standalone()
 			break
