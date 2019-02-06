@@ -20,8 +20,8 @@ var KnownHooks = []string{"ACTIVATE"}
 
 // Args hold the arg values passed through the command line
 var Args struct {
-	Hook    string
-	Command string
+	Hook   string
+	Script string
 }
 
 // Command Add
@@ -44,9 +44,9 @@ var Command = &commands.Command{
 			},
 		},
 		&commands.Argument{
-			Name:        "arg_hook_add_command",
-			Description: "arg_hook_add_command_description",
-			Variable:    &Args.Command,
+			Name:        "arg_hook_add_script",
+			Description: "arg_hook_add_script_description",
+			Variable:    &Args.Script,
 			Required:    true,
 		},
 	},
@@ -58,7 +58,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	// Add hook to activestate.yaml for the active project
 	project := projectfile.Get()
 
-	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Command}
+	newHook := projectfile.Hook{Name: Args.Hook, Value: Args.Script}
 
 	exists, err := hooks.HookExists(newHook, project)
 	if err != nil {

@@ -95,7 +95,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	if len(project.Scripts) > 0 {
-		print.Bold("%s:", locale.T("print_state_show_commands"))
+		print.Bold("%s:", locale.T("print_state_show_scripts"))
 		for _, script := range project.Scripts {
 			if !constraints.IsConstrained(script.Constraints) {
 				value := variables.ExpandFromProject(script.Value, project)

@@ -35,7 +35,7 @@ func init() {
 			},
 			&commands.Flag{
 				Name:        "list",
-				Description: "flag_state_run_standalone_description",
+				Description: "flag_state_run_list_description",
 				Type:        commands.TypeBool,
 				BoolVar:     &Flags.List,
 			},
@@ -85,21 +85,16 @@ func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-<<<<<<< HEAD
 	if cmd.ArgsLenAtDash() == 0 || Args.Name == "" {
 		// no command was given and there might be args after "--" that are not intended
 		// to be part of the command name, thus the default command name is "run"
-		Args.Name = "run"
-=======
-	if Args.Name == "" {
 		Args.Name = constants.DefaultScriptName
->>>>>>> Renames Commands to Scripts in Project struct
 	}
 
 	scriptArgs := processScriptArgs(cmd, allArgs)
 
 	if Flags.List {
-		ListCommands()
+		ListScripts()
 		return
 	}
 
@@ -147,9 +142,9 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 }
 
-// ListCommands prints the available scripts
-func ListCommands() {
-	print.Info(locale.T("run_listing_commands"))
+// ListScripts prints the available scripts
+func ListScripts() {
+	print.Info(locale.T("run_listing_scripts"))
 
 	prj := project.Get()
 	scripts := prj.Scripts()

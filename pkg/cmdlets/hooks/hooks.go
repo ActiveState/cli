@@ -50,7 +50,7 @@ func RunHook(hookName string) error {
 	}
 
 	// This is an exception to the rule, since RunHook can be called from many different controllers and since we
-	// want to communicate the command being ran we have a print statement here, this is not ideal and should otherwise
+	// want to communicate the script being ran we have a print statement here, this is not ideal and should otherwise
 	// be avoided
 	print.Info(locale.T("info_running_hook", map[string]interface{}{"Name": hookName}))
 
@@ -137,9 +137,9 @@ func PromptOptions(filter string) ([]string, map[string]string, error) {
 	}
 
 	for hash, hook := range hashedHooks {
-		command := strings.Replace(hook.Value, "\n", " ", -1)
-		if len(command) > 50 {
-			command = command[0:50] + ".."
+		script := strings.Replace(hook.Value, "\n", " ", -1)
+		if len(script) > 50 {
+			script = script[0:50] + ".."
 		}
 
 		constraints := []string{}
@@ -158,7 +158,7 @@ func PromptOptions(filter string) ([]string, map[string]string, error) {
 		value := locale.T("prompt_hook_option", map[string]interface{}{
 			"Hash":        hash,
 			"Hook":        hook,
-			"Command":     command,
+			"Script":      script,
 			"Constraints": constraintString,
 		})
 		options = append(options, value)

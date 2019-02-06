@@ -9,11 +9,11 @@ hook_description:
 hook_add_description:
   other: 
     >
-    add command to run on hook trigger
+    add script to run on hook trigger
 hook_remove_description:
   other: 
     >
-    remove command for hook trigger
+    remove script for hook trigger
 hook_header_id:
   other: ID
 hook_header_hook:
@@ -107,8 +107,6 @@ info_state_activate_cd:
   other: Changing into directory '{{.Dir}}'
 error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
-error_could_not_make_symlink:
-  other: "Could not create symlink, you may have to run this command with elevated permissions"
 error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
@@ -126,7 +124,7 @@ error_could_not_run_hooks:
 info_running_hook:
   other: "Running hook: {{.Name}}"
 hook_add_cannot_add_hook:
-  other: "Cannot add hook '{{.Hook}} {{.Command}}'"
+  other: "Cannot add hook '{{.Hook}} {{.Script}}'"
 hook_add_cannot_add_existing_hook:
   other: "Identical hook already configured"
 hook_remove_multiple_hooks:
@@ -141,10 +139,10 @@ arg_hook_add_hook_description:
   other: The hook that will be listened to
 error_hook_add_invalid_hook:
   other: "Invalid hook given: {{.V0}}"
-arg_hook_add_command:
-  other: COMMAND
-arg_hook_add_command_description:
-  other: The command that will be run
+arg_hook_add_script:
+  other: SCRIPT
+arg_hook_add_script_description:
+  other: The script that will be run
 arg_hook_remove_identifier:
   other: IDENTIFIER
 arg_hook_remove_identifier_description:
@@ -162,7 +160,7 @@ err_hook_cannot_find:
 prompt_hook_choose_remove:
   other: Which hook would you like to remove?
 prompt_hook_option:
-  other: "{{.Hook.Name}}: `{{.Command}}` ({{.Constraints}}{{.Hash}})"
+  other: "{{.Hook.Name}}: `{{.Script}}` ({{.Constraints}}{{.Hash}})"
 err_invalid_input:
   other: Invalid input received
 hook_removed:
@@ -358,25 +356,25 @@ error_expand_variable_project_unknown_name:
 error_expand_variable_project_unrecognized_platform_var:
   other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
-  other: Run Your Project Commands
+  other: Run Your Project Scripts
 arg_state_run_name:
-  other: command
+  other: script
 arg_state_run_name_description:
-  other: Name of command to run
+  other: Name of script to run
 flag_state_run_standalone_description:
-  other: Run a command, regardless of an activated state
+  other: Run a script, regardless of an activated state
 flag_state_run_list_description:
-  other: List available commands
+  other: List available scripts
 error_state_run_unknown_name:
-  other: The command '{{.Name}}' is not defined in activestate.yaml.
+  other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:
-  other: This command requires an activated state. Activating it now. To bypass this, use the --standalone flag.
+  other: This script requires an activated state. Activating it now. To bypass this, use the --standalone flag.
 error_state_run_activate:
-  other: Unable to activate a state for running the command in. Try manually running "state activate" first.
+  other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 info_state_run_running:
-  other: Running command {{.Command}}
+  other: Running script {{.Script}}
 error_state_run_error:
-  other: Failed to run command.
+  other: Failed to run script.
 error_state_run_no_shell:
   other: Failed to obtain shell info.
 env_description:
@@ -457,8 +455,8 @@ print_state_show_platforms:
   other: Platforms
 print_state_show_hooks:
   other: Hooks that will run
-print_state_show_commands:
-  other: Commands
+print_state_show_scripts:
+  other: Scripts
 print_state_show_languages:
   other: Languages
 print_state_show_packages:
@@ -473,8 +471,8 @@ config_variable_prompt_value:
   other: "Variable '{{.Name}}' undefined. Please enter a value:"
 err_already_active:
   other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
-run_listing_commands:
-  other: "Available Commands: "
+run_listing_scripts:
+  other: "Available Scripts: "
 
 secrets_cmd_description:
   other: Manage Your Secrets
@@ -593,7 +591,7 @@ warn_script_name_in_use:
     
     This may cause conflicts, ideally these conflicts should be resolved by renaming these scripts in your activestate.yaml.
     
-    Note that you can also access scripts by prefixing their command with your project name ({{.V1}}), eg. `{{.V2}}`
+    Note that you can also access scripts by prefixing their script with your project name ({{.V1}}), eg. `{{.V2}}`
 
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
