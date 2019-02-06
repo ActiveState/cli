@@ -104,10 +104,10 @@ type Script struct {
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, error) {
+func Parse(filepath string) (*Project, *failures.Failure) {
 	dat, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return nil, err
+		return nil, failures.FailIO.Wrap(err)
 	}
 
 	project := Project{}
@@ -207,9 +207,9 @@ func GetSafe() (*Project, *failures.Failure) {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
 	}
-	project, err := Parse(projectFilePath)
-	if err != nil {
-		return nil, FailParseProject.New(locale.T("err_parse_project"))
+	project, fail := Parse(projectFilePath)
+	if fail != nil {
+		return nil, FailParseProject.New(locale.Tr("err_parse_project", fail.Error()))
 	}
 	project.Persist()
 	return project, nil

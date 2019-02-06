@@ -1,5 +1,7 @@
 undefined:
   other: undefined
+confirmation:
+  other: "Yes"
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
@@ -470,18 +472,12 @@ variables_col_name:
   other: Name
 variables_col_value:
   other: Value
-variables_col_scope:
-  other: Scope
-variables_scope_user_project:
-  other: User Project
-variables_scope_user_org:
-  other: User Organization
-variables_scope_project:
-  other: Project
-variables_scope_org:
-  other: Organization
-variables_scope_local:
-  other: Local
+variables_col_encrypted:
+  other: Encrypted
+variables_col_shared:
+  other: Shared
+variables_value_secret_undefined:
+  other: <undefined>
 variables_value_secret:
   other: <encrypted>
 variables_err:
@@ -500,8 +496,8 @@ variables_err_no_publickey_found:
   other: Unable to find any public-key for User
 variables_err_value_prompt:
   other: The provided variable value is invalid 
-variables_expand_err_spec_undefined:
-  other: "variable specification for `{{.V0}}` not defined in project"
+variables_expand_err_undefined:
+  other: "Variable `{{.V0}}` not defined in project"
 variables_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
 variables_err_invalid_pullfrom:

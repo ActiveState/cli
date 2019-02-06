@@ -7,11 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/bndr/gotabulate"
@@ -68,61 +65,34 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 }
 
-// userSecretsCurrentProject returns secrets relevant only to the current project
-func userSecretsCurrentProject(secretsClient *secretsapi.Client) ([]*secretsModels.UserSecret, *failures.Failure) {
-	prj := project.Get()
-
-	orgModel, failure := organizations.FetchByURLName(prj.Owner())
-	if failure != nil {
-		return nil, failure
-	}
-
-	projectModel, failure := projects.FetchByName(prj.Owner(), prj.Name())
-	if failure != nil {
-		return nil, failure
-	}
-
-	userSecrets, failure := secretsapi.FetchAll(secretsClient, orgModel)
-	if failure != nil {
-		return nil, failure
-	} else if len(userSecrets) == 0 {
-		return userSecrets, secretsapi.FailUserSecretNotFound.New("variables_err_no_variables_found")
-	}
-
-	userSecretsFiltered := []*secretsModels.UserSecret{}
-	for _, userSecret := range userSecrets {
-		if (userSecret.ProjectID != "" && userSecret.ProjectID != projectModel.ProjectID) ||
-			(userSecret.OrganizationID != nil && *userSecret.OrganizationID != orgModel.OrganizationID) {
-			continue
-		}
-		userSecretsFiltered = append(userSecretsFiltered, userSecret)
-	}
-
-	return userSecretsFiltered, nil
-}
-
 // listAllVariables prints a list of all of the UserSecrets names and their level for this user given an Organization.
 func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	userSecrets, failure := userSecretsCurrentProject(secretsClient)
-	if failure != nil {
-		return failure
-	}
-
 	rows := [][]interface{}{}
-	for _, userSecret := range userSecrets {
-		rows = append(rows, []interface{}{*userSecret.Name, locale.T("variables_value_secret"), secretScopeDescription(userSecret)})
-	}
-
-	projectVars := prj.Variables()
-	for _, projectVar := range projectVars {
-		rows = append(rows, []interface{}{projectVar.Name(), sanitizeValue(projectVar.Value()), locale.T("variables_scope_local")})
+	vars := prj.Variables()
+	for _, v := range vars {
+		value := ""
+		valueCheck := v.ValueOrNil()
+		encrypted := "-"
+		shared := "-"
+		if v.IsSecret() {
+			if valueCheck == nil {
+				value = locale.T("variables_value_secret_undefined")
+			} else {
+				value = locale.T("variables_value_secret")
+			}
+			encrypted = locale.T("confirmation")
+			shared = string(*v.SharedWith())
+		} else {
+			value = *valueCheck
+		}
+		rows = append(rows, []interface{}{v.Name(), sanitizeValue(value), encrypted, shared})
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_value"), locale.T("variables_col_scope")})
+	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_value"), locale.T("variables_col_encrypted"), locale.T("variables_col_shared")})
 	t.SetAlign("left")
 
 	print.Line(t.Render("simple"))

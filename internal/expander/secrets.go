@@ -23,6 +23,7 @@ var FailExpandNoProjectDefined = failures.Type("expander.fail.secrets.expand.nop
 // FailInputSecretValue is used when error arises from user providing a secret value.
 var FailInputSecretValue = failures.Type("expander.fail.secrets.input.value", failures.FailUserInput)
 
+// SecretExpander takes care of expanding variables that we know to be secrets
 type SecretExpander struct {
 	secretsClient *secretsapi.Client
 	keypair       keypairs.Keypair
@@ -33,6 +34,7 @@ type SecretExpander struct {
 	cachedSecrets map[string]string
 }
 
+// NewSecretExpander returns a new instance of SecretExpander
 func NewSecretExpander(secretsClient *secretsapi.Client) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
@@ -40,6 +42,7 @@ func NewSecretExpander(secretsClient *secretsapi.Client) *SecretExpander {
 	}
 }
 
+// KeyPair acts as a caching layer for secrets.LoadKeypairFromConfigDir, and ensures that we have a projectfile
 func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
@@ -56,6 +59,7 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 	return e.keypair, nil
 }
 
+// Organization acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
@@ -71,6 +75,7 @@ func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure
 	return e.organization, nil
 }
 
+// Project acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
@@ -86,6 +91,7 @@ func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
 	return e.project, nil
 }
 
+// Secrets acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
 	org, fail := e.Organization()
 	if fail != nil {
@@ -101,6 +107,7 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 	return e.secrets, nil
 }
 
+// FetchSecret retrieves the secret associated with a variable
 func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *failures.Failure) {
 	if knownValue, exists := e.cachedSecrets[variable.Name]; exists {
 		return knownValue, nil
@@ -192,8 +199,10 @@ func (e *SecretExpander) FindSecretWithHighestPriority(variable *projectfile.Var
 	return selectedSecret, nil
 }
 
+// SecretExpanderFunc defines what our expander functions will be returning
 type SecretExpanderFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
 
+// Expand will expand a variable to a secret value, if no secret exists it will return an empty string
 func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile
@@ -226,6 +235,7 @@ func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *pro
 	return secretValue, nil
 }
 
+// ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
 func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile

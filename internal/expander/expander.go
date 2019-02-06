@@ -165,22 +165,24 @@ func ScriptExpander(name string, project *projectfile.Project) (string, *failure
 	return value, nil
 }
 
+// VarExpander takes car of expanding user defined variables
 type VarExpander struct {
 	secretsClient   *secretsapi.Client
 	secretsExpander SecretExpanderFunc
 }
 
+// Expand is the main expander function
 func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
 	var variable *projectfile.Variable
 	for _, varcheck := range projectFile.Variables {
-		if varcheck.Name == name {
+		if varcheck.Name == name && !constraints.IsConstrained(varcheck.Constraints) {
 			variable = varcheck
 			break
 		}
 	}
 
 	if variable == nil {
-		return "", FailVarNotFound.New("variables_expand_err_spec_undefined", name)
+		return "", FailVarNotFound.New("variables_expand_err_undefined", name)
 	}
 
 	if variable.Value.StaticValue != nil {

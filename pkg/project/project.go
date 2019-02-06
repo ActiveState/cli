@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/logging"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
@@ -295,16 +297,48 @@ func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 // Name returns variable name
 func (v *Variable) Name() string { return v.variable.Name }
 
-// Value returned with all variables evaluated
-func (v *Variable) Value() string {
+// IsSecret returns whether this variable is a secret variable or static
+func (v *Variable) IsSecret() bool { return v.variable.Value.StaticValue == nil }
+
+// IsShared returns whether this variable is shared or not
+func (v *Variable) IsShared() bool { return v.variable.Value.Share != nil }
+
+// SharedWith returns who this variable is shared with
+func (v *Variable) SharedWith() *projectfile.VariableShare { return v.variable.Value.Share }
+
+// PulledFrom returns where this variable was pulled from
+func (v *Variable) PulledFrom() *projectfile.VariablePullFrom { return v.variable.Value.PullFrom }
+
+// ValueOrNil acts as Value() except it can return a nil
+func (v *Variable) ValueOrNil() *string {
 	variable := v.variable
 	if variable.Value.StaticValue != nil {
 		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
-		return value
+		return &value
 	} else if variable.Value.PullFrom != nil {
+		client := secretsapi.GetClient()
+		secretsExpander := expander.NewSecretExpander(client)
+		value, fail := secretsExpander.Expand(v.variable, v.projectfile)
+		if fail != nil {
+			if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
+				return nil
+			}
+			logging.Error("Could not expand secret variable %s, error: %s", v.Name(), fail.Error())
+		}
+		return &value
+	} else {
+		logging.Error("Attempting to expand a variable with neither a static value nor a pullfrom value, this should never happen. Variable: %s", v.Name())
+		return nil
+	}
+}
+
+// Value returned with all variables evaluated
+func (v *Variable) Value() string {
+	value := v.ValueOrNil()
+	if value == nil {
 		return ""
 	}
-	return ""
+	return *value
 }
 
 // Hook covers the hook structure

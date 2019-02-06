@@ -40,11 +40,26 @@ var (
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
+var persistentClient *Client
+
 // Client encapsulates a Secrets Service API client and its configuration
 type Client struct {
 	*client.Secrets
 	BaseURI string
 	Auth    runtime.ClientAuthInfoWriter
+}
+
+// GetClient gets the cached (if any) client instance that was initialized using our default settings
+func GetClient() *Client {
+	if persistentClient == nil {
+		persistentClient = NewDefaultClient(api.BearerToken)
+	}
+	return persistentClient
+}
+
+// Reset will reset the client cache
+func Reset() {
+	persistentClient = nil
 }
 
 // NewClient creates a new SecretsAPI client instance using the provided HTTP settings.
@@ -94,6 +109,11 @@ func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
 		return "", api.FailAuth.Wrap(err)
 	}
 	return *resOk.Payload.UID, nil
+}
+
+// Persist will make the current client the persistentClient
+func (client *Client) Persist() {
+	persistentClient = client
 }
 
 // FetchAll fetchs the current user's secrets for an organization.
