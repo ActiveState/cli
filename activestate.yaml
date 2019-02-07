@@ -7,14 +7,14 @@ variables:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-commands:
+scripts: &scripts
   - name: preprocess
     value: |
       packr
       go run scripts/constants-generator/main.go
   - name: build
     value: |
-      $commands.preprocess
+      $scripts.preprocess
       pushd state
       go build -ldflags="-s -w" -o ../build/state state.go
       popd
@@ -22,7 +22,7 @@ commands:
       go run scripts/update-generator/main.go -o public/update build/state
   - name: install
     value: |
-      $commands.preprocess
+      $scripts.preprocess
       pushd state
       go install state.go
       popd
@@ -48,8 +48,8 @@ commands:
       popd
   - name: generate-clients
     value: |
-      $commands.generate-api-client
-      $commands.generate-secrets-client
+      $scripts.generate-api-client
+      $scripts.generate-secrets-client
   - name: test
     value: |
       go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
@@ -59,13 +59,14 @@ commands:
       rm -Rf build
   - name: run
     value: |
-      $commands.build
+      $scripts.build
       build/state --help
+commands: *scripts  # temporary alias for backwards compatibility
 hooks:
   - name: ACTIVATE
     value: |
       $variables.ENV
-      $commands.preprocess
+      $scripts.preprocess
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."

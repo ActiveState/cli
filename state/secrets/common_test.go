@@ -36,7 +36,7 @@ secrets:
     project: true
   - name: bad-base64-encoded-secret
   - name: invalid-encryption-secret
-commands:
+scripts:
   - name: echo-org-secret
     value: echo ${secrets.org-secret}
   - name: echo-upper-org-secret

@@ -30,7 +30,7 @@ func getTestProject(t *testing.T) *projectfile.Project {
 }
 
 func TestAddHookPass(t *testing.T) {
-	Args.Hook, Args.Command = "", "" // reset
+	Args.Hook, Args.Script = "", "" // reset
 	project := getTestProject(t)
 	project.Persist()
 
@@ -49,7 +49,7 @@ func TestAddHookPass(t *testing.T) {
 }
 
 func TestAddHookFail(t *testing.T) {
-	Args.Hook, Args.Command = "", "" // reset
+	Args.Hook, Args.Script = "", "" // reset
 	project := getTestProject(t)
 	project.Persist()
 
@@ -69,7 +69,7 @@ func TestAddHookFail(t *testing.T) {
 
 // Test it doesn't explode when run with no args
 func TestExecute(t *testing.T) {
-	Args.Hook, Args.Command = "", "" // reset
+	Args.Hook, Args.Script = "", "" // reset
 	project := getTestProject(t)
 	project.Persist()
 
@@ -80,7 +80,7 @@ func TestExecute(t *testing.T) {
 
 //
 func TestAddHookFailIdentical(t *testing.T) {
-	Args.Hook, Args.Command = "", "" // reset
+	Args.Hook, Args.Script = "", "" // reset
 	project := getTestProject(t)
 	project.Persist()
 

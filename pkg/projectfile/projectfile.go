@@ -33,7 +33,7 @@ type Project struct {
 	Languages    []Language  `yaml:"languages"`
 	Variables    []Variable  `yaml:"variables"`
 	Hooks        []Hook      `yaml:"hooks"`
-	Commands     []Command   `yaml:"commands"`
+	Scripts      []Script    `yaml:"scripts"`
 	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
 }
@@ -109,8 +109,8 @@ func (h *Hook) Hash() (string, error) {
 	return fmt.Sprintf("%X", hash), nil
 }
 
-// Command covers the command structure, which goes under Project
-type Command struct {
+// Script covers the script structure, which goes under Project
+type Script struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Standalone  bool       `yaml:"standalone"`

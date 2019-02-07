@@ -94,7 +94,7 @@ var expanderRegistry = map[string]ExpanderFunc{
 	"platform":  PlatformExpander,
 	"variables": VariableExpander,
 	"hooks":     HookExpander,
-	"commands":  CommandExpander,
+	"scripts":   ScriptExpander,
 }
 
 // RegisterExpander registers an ExpanderFunc for some given handler value. The handler value must not
@@ -166,12 +166,12 @@ func HookExpander(name string, project *projectfile.Project) (string, *failures.
 	return value, nil
 }
 
-// CommandExpander expands commands defined in the project-file.
-func CommandExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+// ScriptExpander expands scripts defined in the project-file.
+func ScriptExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
 	var value string
-	for _, command := range project.Commands {
-		if command.Name == name && !constraints.IsConstrained(command.Constraints) {
-			value = command.Value
+	for _, script := range project.Scripts {
+		if script.Name == name && !constraints.IsConstrained(script.Constraints) {
+			value = script.Value
 			break
 		}
 	}

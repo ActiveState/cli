@@ -42,7 +42,7 @@ hooks:
     value: foo $platform.name
     constraints:
       platform: Linux
-commands:
+scripts:
   - name: foo
     value: foo $platform.name
     standalone: true

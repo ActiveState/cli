@@ -39,7 +39,7 @@ type SubShell interface {
 	// Deactivate the given subshell
 	Deactivate() error
 
-	// Run a command string, passing the provided command-line arguments, that assumes this shell and returns the exit code
+	// Run a script string, passing the provided command-line arguments, that assumes this shell and returns the exit code
 	Run(script string, args ...string) (int, error)
 
 	// IsActive returns whether the given subshell is active
@@ -71,7 +71,7 @@ type SubShell interface {
 func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
-	// Why another check here? Because some things like hooks / run command don't take the virtualenv route,
+	// Why another check here? Because some things like hooks / run script don't take the virtualenv route,
 	// realistically this shouldn't really happen, but it's a useful failsafe for us
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
@@ -106,11 +106,11 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 
 	inuse := []string{}
-	commands := map[string]string{}
+	scripts := map[string]string{}
 	var explicitName string
 
-	// Prepare command map to be parsed by template
-	for _, cmd := range prj.Commands() {
+	// Prepare script map to be parsed by template
+	for _, cmd := range prj.Scripts() {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
 		_, err := exec.LookPath(cmd.Name())
@@ -118,11 +118,11 @@ func getRcFile(v SubShell) (*os.File, error) {
 			inuse = append(inuse, cmd.Name())
 		}
 
-		commands[cmd.Name()] = cmd.Name()
-		commands[explicitName] = cmd.Name()
+		scripts[cmd.Name()] = cmd.Name()
+		scripts[explicitName] = cmd.Name()
 	}
 
-	// If we have at least one command that's already in use then we should print a warning
+	// If we have at least one script that's already in use then we should print a warning
 	if len(inuse) > 0 {
 		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), prj.NormalizedName(), explicitName))
 	}
@@ -134,7 +134,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 		"Env":         virtualenvironment.GetEnv(),
 		"WD":          virtualenvironment.WorkingDirectory(),
 		"UserScripts": userScripts,
-		"Commands":    commands,
+		"Scripts":     scripts,
 	}
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
