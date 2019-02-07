@@ -33,7 +33,8 @@ func setProjectDir(t *testing.T) {
 type ProjectTestSuite struct {
 	suite.Suite
 
-	originalWD    string
+	testdataDir string
+
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
@@ -45,7 +46,9 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	// support test projectfile access
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
-	err = os.Chdir(filepath.Join(root, "pkg", "project", "testdata"))
+
+	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
+	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
@@ -92,16 +95,16 @@ func (suite *ProjectTestSuite) TestProject() {
 }
 
 func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
-	err := os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata", "sub1", "sub2"))
-	assert.NoError(t, err, "Should change dir without issue.")
+	err := os.Chdir(filepath.Join(suite.testdataDir, "sub1", "sub2"))
+	suite.Require().NoError(err, "Should change dir without issue.")
 
 	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "foo", prj.Name(), "Values should match")
-	assert.Equal(t, "carey", prj.Owner(), "Values should match")
-	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
-	assert.Equal(t, "something", prj.Environments(), "Values should match")
-	assert.Equal(t, "1.0", prj.Version(), "Values should match")
+	suite.Require().Nil(fail, "Run without failure")
+	suite.Equal("project", prj.Name(), "Values should match")
+	suite.Equal("ActiveState", prj.Owner(), "Values should match")
+	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
+	suite.Equal("something", prj.Environments(), "Values should match")
+	suite.Equal("1.0", prj.Version(), "Values should match")
 }
 
 func (suite *ProjectTestSuite) TestPlatforms() {
@@ -299,7 +302,6 @@ func (suite *ProjectTestSuite) TestSecretVariables() {
 	{
 		variable := prj.VariableByName("undefined-secret")
 		suite.Nil(variable.ValueOrNil(), "Should be nil as the variable has not been defined")
-		suite.Require().NoError(failures.Handled(), "unexpected failure")
 	}
 
 	{
@@ -308,6 +310,6 @@ func (suite *ProjectTestSuite) TestSecretVariables() {
 	}
 }
 
-func Test_Suite(t *testing.T) {
+func Test_ProjectTestSuite(t *testing.T) {
 	suite.Run(t, new(ProjectTestSuite))
 }
