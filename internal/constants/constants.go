@@ -67,3 +67,6 @@ const DefaultRSABitLength int = 4096
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"
+
+// ExpanderMaxDepth defines the maximum depth to fully expand a given value.
+const ExpanderMaxDepth = int(10)

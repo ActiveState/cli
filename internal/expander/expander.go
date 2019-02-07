@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
@@ -36,8 +37,6 @@ var (
 
 var lastFailure *failures.Failure
 
-var calls int // for preventing infinite recursion during recursively expansion
-
 // Failure retrieves the latest failure
 func Failure() *failures.Failure {
 	return lastFailure
@@ -52,15 +51,18 @@ func Expand(s string) string {
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
 func ExpandFromProject(s string, p *projectfile.Project) string {
-	lastFailure = nil
+	return limitExpandFromProject(0, s, p)
+}
 
-	calls++
-	if calls > 10 {
-		calls = 0 // reset
+// limitExpandFromProject limits the depth of an expansion to avoid infinite expansion of a value.
+func limitExpandFromProject(depth int, s string, p *projectfile.Project) string {
+	lastFailure = nil
+	if depth > constants.ExpanderMaxDepth {
 		lastFailure = FailExpandVariableRecursion.New("error_expand_variable_infinite_recursion", s)
 		print.Warning(lastFailure.Error())
 		return ""
 	}
+
 	regex := regexp.MustCompile("\\${?\\w+\\.[\\w-]+}?")
 	expanded := regex.ReplaceAllStringFunc(s, func(variable string) string {
 		components := strings.Split(strings.Trim(variable, "${}"), ".")
@@ -80,39 +82,18 @@ func ExpandFromProject(s string, p *projectfile.Project) string {
 		}
 
 		if value != "" {
-			value = ExpandFromProject(value, p)
+			value = limitExpandFromProject(depth+1, value, p)
 		}
 		return value
 	})
-	calls--
+
 	return expanded
 }
 
-// ExpanderFunc defines a function which can expand the name for a category. An Expander expects the name
+// Func defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(name string, project *projectfile.Project) (string, *failures.Failure)
-
-// expanderRegistry maps category names to their ExpanderFunc implementations.
-var expanderRegistry = map[string]ExpanderFunc{
-	"platform": PlatformExpander,
-	"events":   EventExpander,
-	"scripts":  ScriptExpander,
-}
-
-// RegisterExpander registers an ExpanderFunc for some given handler value. The handler value must not
-// effectively be a blank string and the ExpanderFunc must be defined. It is definitely possible to
-// replace an existing handler using this function.
-func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
-	cleanHandle := strings.TrimSpace(handle)
-	if cleanHandle == "" {
-		return FailExpanderBadName.New("variables_expander_err_empty_name")
-	} else if expanderFn == nil {
-		return FailExpanderNoFunc.New("variables_expander_err_undefined")
-	}
-	expanderRegistry[cleanHandle] = expanderFn
-	return nil
-}
+type Func func(name string, project *projectfile.Project) (string, *failures.Failure)
 
 // PlatformExpander expends metadata about the current platform.
 func PlatformExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
@@ -168,7 +149,7 @@ func ScriptExpander(name string, project *projectfile.Project) (string, *failure
 // VarExpander takes car of expanding user defined variables
 type VarExpander struct {
 	secretsClient   *secretsapi.Client
-	secretsExpander SecretExpanderFunc
+	secretsExpander SecretFunc
 }
 
 // Expand is the main expander function
@@ -192,17 +173,17 @@ func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (str
 	return e.secretsExpander(variable, projectFile)
 }
 
-// NewVarExpanderFunc creates an ExpanderFunc which can retrieve and decrypt stored user secrets.
-func NewVarExpanderFunc(secretsClient *secretsapi.Client) ExpanderFunc {
+// NewVarExpander creates an Expander which can retrieve and decrypt stored user secrets.
+func NewVarExpander(secretsClient *secretsapi.Client) Func {
 	secretsExpander := NewSecretExpander(secretsClient)
 	expander := &VarExpander{secretsClient, secretsExpander.Expand}
 	return expander.Expand
 }
 
-// NewVarPromptingExpanderFunc creates an ExpanderFunc which can retrieve and decrypt stored user secrets. Additionally,
+// NewVarPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewVarPromptingExpanderFunc(secretsClient *secretsapi.Client) ExpanderFunc {
+func NewVarPromptingExpander(secretsClient *secretsapi.Client) Func {
 	secretsExpander := NewSecretExpander(secretsClient)
 	expander := &VarExpander{secretsClient, secretsExpander.ExpandWithPrompt}
 	return expander.Expand

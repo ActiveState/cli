@@ -55,7 +55,7 @@ func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.ExpanderFunc {
+func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Func {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
@@ -64,7 +64,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Ex
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return expander.NewVarPromptingExpanderFunc(suite.secretsClient)
+	return expander.NewVarPromptingExpander(suite.secretsClient)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {

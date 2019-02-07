@@ -199,8 +199,8 @@ func (e *SecretExpander) FindSecretWithHighestPriority(variable *projectfile.Var
 	return selectedSecret, nil
 }
 
-// SecretExpanderFunc defines what our expander functions will be returning
-type SecretExpanderFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
+// SecretFunc defines what our expander functions will be returning
+type SecretFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
 func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
