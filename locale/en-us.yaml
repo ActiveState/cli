@@ -476,6 +476,8 @@ variables_col_encrypted:
   other: Encrypted
 variables_col_shared:
   other: Shared
+variables_col_store:
+  other: Store
 variables_value_secret_undefined:
   other: <undefined>
 variables_value_secret:

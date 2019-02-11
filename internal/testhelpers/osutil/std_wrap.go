@@ -9,6 +9,12 @@ import (
 	colorable "github.com/mattn/go-colorable"
 )
 
+func replaceStderr(newErr *os.File) *os.File {
+	oldErr := os.Stderr
+	os.Stderr = newErr
+	return oldErr
+}
+
 func replaceStdout(newOut *os.File) *os.File {
 	oldOut := os.Stdout
 	os.Stdout = newOut
@@ -21,14 +27,28 @@ func replaceStdin(newIn *os.File) *os.File {
 	return oldIn
 }
 
-// oldStdin := os.Stdin
-// tmpIn, inWriter, _ := os.Pipe()
-// defer func() { os.Stdin = oldStdin }()
-// os.Stdin = tmpIn
+// CaptureStderr will execute a provided function and capture anything written to stderr.
+// It will then return that output as a string along with any errors captured in the process.
+func CaptureStderr(fnToExec func()) (string, error) {
+	errReader, tmpErr, err := os.Pipe()
+	if err != nil {
+		return "", err
+	}
+	defer replaceStderr(replaceStderr(tmpErr))
 
-// cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-// inWriter.Write([]byte("abc123\n"))
-// execErr = cmd.Config().Execute()
+	fnToExec() // execute the provided function
+
+	if err = tmpErr.Close(); err != nil {
+		return "", err
+	}
+
+	errBytes, err := ioutil.ReadAll(errReader)
+	errStr := string(errBytes)
+	if err != nil {
+		err = errReader.Close()
+	}
+	return errStr, err
+}
 
 // CaptureStdout will execute a provided function and capture anything written to stdout.
 // It will then return that output as a string along with any errors captured in the process.

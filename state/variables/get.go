@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
@@ -32,7 +33,9 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	variable := prj.VariableByName(cmd.Args.SecretName)
 	if variable == nil {
 		failures.Handle(failures.FailUserInput.New("variables_err"), "")
+	} else if value, failure := variable.Value(); failure != nil {
+		failures.Handle(failure, locale.T("variables_err"))
 	} else {
-		fmt.Print(variable.Value()) // we don't want a newline at the end
+		fmt.Print(value) // we don't want a newline at the end
 	}
 }

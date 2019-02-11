@@ -12,30 +12,54 @@ func loadSecretsProject() (*projectfile.Project, error) {
 	contents := strings.TrimSpace(`
 name: SecretProject
 owner: SecretOrg
-secrets:
+variables:
   - name: undefined-secret
+    value:
+      pullfrom: organization
+      share: organization
   - name: org-secret
+    value:
+      pullfrom: organization
+      share: organization
   - name: proj-secret
-    project: true
+    value:
+      pullfrom: project
+      share: organization
   - name: user-secret
-    user: true
+    value:
+      pullfrom: organization
   - name: user-proj-secret
-    project: true
-    user: true
+    value:
+      pullfrom: project
   - name: org-secret-with-proj-value
+    value:
+      pullfrom: organization
+      share: organization
   - name: proj-secret-with-user-value
-    project: true
+    value:
+      pullfrom: project
+      share: organization
   - name: user-secret-with-user-proj-value
-    user: true
+    value:
+      pullfrom: organization
   - name: proj-secret-only-org-available
-    project: true
+    value:
+      pullfrom: project
+      share: organization
   - name: user-secret-only-proj-available
-    user: true
+    value:
+      pullfrom: organization
   - name: user-proj-secret-only-user-available
-    user: true
-    project: true
+    value:
+      pullfrom: project
   - name: bad-base64-encoded-secret
+    value:
+      pullfrom: organization
+      share: organization
   - name: invalid-encryption-secret
+    value:
+      pullfrom: organization
+      share: organization
 scripts:
   - name: echo-org-secret
     value: echo ${secrets.org-secret}
@@ -43,5 +67,10 @@ scripts:
     value: echo ${secrets.ORG-SECRET}
 `)
 
-	return project, yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), project)
+	if err != nil {
+		return nil, err
+	}
+
+	return project, project.Parse()
 }

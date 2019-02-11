@@ -30,7 +30,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	filename := filepath.Join(datadir, "log.txt")
 
 	if l.verbose {
-		fmt.Println(l.formatter.Format(ctx, message, args...))
+		fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
 	}
 
 	if l.file == nil {

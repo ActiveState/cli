@@ -93,11 +93,12 @@ func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
 
 // Secrets acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failure) {
-	org, fail := e.Organization()
-	if fail != nil {
-		return nil, fail
-	}
 	if e.secrets == nil {
+		org, fail := e.Organization()
+		if fail != nil {
+			return nil, fail
+		}
+
 		e.secrets, fail = secretsapi.FetchAll(e.secretsClient, org)
 		if fail != nil {
 			return nil, fail

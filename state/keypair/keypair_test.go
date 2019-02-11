@@ -38,7 +38,7 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgs_AuthFailure() {
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.GetCobraCmd().SetArgs([]string{})
 		execErr = cmd.Execute()
 	})

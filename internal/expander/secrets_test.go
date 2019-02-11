@@ -36,49 +36,49 @@ name: SecretProject
 owner: SecretOrg
 variables:
   - name: undefined-secret
-    value: 
+    value:
       pullfrom: organization
       share: organization
   - name: org-secret
-    value: 
+    value:
       pullfrom: organization
       share: organization
   - name: proj-secret
-    value: 
+    value:
       pullfrom: project
       share: organization
   - name: user-secret
-    value: 
+    value:
       pullfrom: organization
   - name: user-proj-secret
-    value: 
+    value:
       pullfrom: project
   - name: org-secret-with-proj-value
-    value: 
+    value:
       pullfrom: organization
       share: organization
   - name: proj-secret-with-user-value
-    value: 
+    value:
       pullfrom: project
   - name: user-secret-with-user-proj-value
-    value: 
+    value:
       pullfrom: organization
   - name: proj-secret-only-org-available
-    value: 
+    value:
       pullfrom: project
       share: organization
   - name: user-secret-only-proj-available
-    value: 
+    value:
       pullfrom: project
   - name: user-proj-secret-only-user-available
-    value: 
+    value:
       pullfrom: project
   - name: bad-base64-encoded-secret
-    value: 
+    value:
       pullfrom: organization
       share: organization
   - name: invalid-encryption-secret
-    value: 
+    value:
       pullfrom: organization
       share: organization
 `)

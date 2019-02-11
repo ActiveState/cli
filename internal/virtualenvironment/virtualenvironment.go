@@ -77,7 +77,11 @@ func Activate() *failures.Failure {
 	project := project.Get()
 
 	for _, variable := range project.Variables() {
-		os.Setenv(variable.Name(), variable.Value())
+		val, failure := variable.Value()
+		if failure != nil {
+			return failure
+		}
+		os.Setenv(variable.Name(), val)
 	}
 
 	datadir := config.GetDataDir()

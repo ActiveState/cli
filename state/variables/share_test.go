@@ -57,7 +57,7 @@ func (suite *SecretsShareCommandTestSuite) TestCommandConfig() {
 	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("share", cc.Name())
-	suite.Equal("Share your organization and project secrets with another user", cc.Short, "en-us translation")
+	suite.Equal(locale.T("variables_share_cmd_description"), cc.Short, "translation")
 
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 	suite.Require().False(cc.HasAvailableFlags())
@@ -77,7 +77,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"share", "scottr"})
 		execErr = cmd.Config().Execute()
 	})
@@ -95,7 +95,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_OrgNotFou
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 404)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"share", "scottr"})
 		execErr = cmd.Config().Execute()
 	})
@@ -113,7 +113,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchOrgMembers_MemberNot
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"share", "no-such-user"})
 		execErr = cmd.Config().Execute()
 	})
@@ -133,7 +133,7 @@ func (suite *SecretsShareCommandTestSuite) TestExecute_FetchMemberPublicKey_NotF
 	suite.secretsMock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 404)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"share", "scottr"})
 		execErr = cmd.Config().Execute()
 	})

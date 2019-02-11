@@ -35,7 +35,7 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	failures.ResetHandled()
 
 	projectFile, err := loadSecretsProject()
-	suite.Require().Nil(err, "Unmarshalled project YAML")
+	suite.Require().Nil(err, "unmarshalling custom project yaml")
 	projectFile.Persist()
 	suite.projectFile = projectFile
 
@@ -59,11 +59,10 @@ func (suite *SecretsGetCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
-
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 }
 
@@ -77,7 +76,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 	suite.Require().Error(failures.Handled(), "expected a failure")
 
 	failure := failures.Handled().(*failures.Failure)
-	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v", failure.Type)
+	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)
 }
 
 func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
@@ -122,7 +121,7 @@ func (suite *SecretsGetCommandTestSuite) TestDecryptionFailed() {
 
 func (suite *SecretsGetCommandTestSuite) TestSecretHasNoValue() {
 	// secret is defined in the project, but not in the database
-	suite.assertExpansionFailure("undefined-secret", secretsapi.FailUserSecretNotFound)
+	suite.assertExpansionSuccess("undefined-secret", "")
 }
 
 func (suite *SecretsGetCommandTestSuite) TestOrgSecret() {
@@ -161,18 +160,19 @@ func (suite *SecretsGetCommandTestSuite) TestUserSecret_PrefersUserProjScopeIfAv
 
 func (suite *SecretsGetCommandTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("proj-secret-only-org-available", secretsapi.FailUserSecretNotFound)
+	suite.assertExpansionSuccess("proj-secret-only-org-available", "")
 }
 
 func (suite *SecretsGetCommandTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("user-secret-only-proj-available", secretsapi.FailUserSecretNotFound)
+	// NOTE the user_secrets response has project scoped secret with same name
+	suite.assertExpansionSuccess("user-secret-only-proj-available", "")
 }
 
 func (suite *SecretsGetCommandTestSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionSuccess("user-proj-secret-only-user-available", "user-value")
 }
+
 func Test_SecretsGetCommand_TestSuite(t *testing.T) {
 	suite.Run(t, new(SecretsGetCommandTestSuite))
 }

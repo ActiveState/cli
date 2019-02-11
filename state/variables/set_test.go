@@ -56,7 +56,7 @@ func (suite *SecretsSetCommandTestSuite) TestCommandConfig() {
 	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
 
 	suite.Equal("set", cc.Name())
-	suite.Equal("Set the value of a secret", cc.Short, "en-us translation")
+	suite.Equal(locale.T("variables_set_cmd_description"), cc.Short, "translation")
 
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 
@@ -79,7 +79,7 @@ func (suite *SecretsSetCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated()
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"set", "secret1", "value1"})
 		execErr = cmd.Config().Execute()
 	})

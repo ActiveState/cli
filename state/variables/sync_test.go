@@ -57,7 +57,7 @@ func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
 	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[3]
 
 	suite.Equal("sync", cc.Name())
-	suite.Equal("Synchronize your shareable secrets organization-wide", cc.Short, "en-us translation")
+	suite.Equal(locale.T("variables_sync_cmd_description"), cc.Short, "translation")
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 	suite.Require().False(cc.HasAvailableFlags())
 }
@@ -68,7 +68,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		execErr = cmd.Config().Execute()
 	})
@@ -173,7 +173,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_NoLocalPrivateKeyFound() {
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		execErr = cmd.Config().Execute()
 	})
@@ -196,7 +196,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToDecryptSecret() {
 	suite.secretsMock.RegisterWithResponse("GET", diffURI, 200, diffURI+"-bad-encrypted-secret")
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		execErr = cmd.Config().Execute()
 	})
@@ -219,7 +219,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToEncryptNewSecret()
 	suite.secretsMock.RegisterWithResponse("GET", diffURI, 200, diffURI+"-bad-public-key")
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		execErr = cmd.Config().Execute()
 	})
@@ -241,7 +241,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_SavingSharedSecrets() {
 	suite.secretsMock.RegisterWithResponse("PATCH", fmt.Sprintf("/organizations/%s/user_secrets/%s", orgID, scottrID), 400, "something-happened")
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		execErr = cmd.Config().Execute()
 	})

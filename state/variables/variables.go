@@ -65,7 +65,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 }
 
-// listAllVariables prints a list of all of the UserSecrets names and their level for this user given an Organization.
+// listAllVariables prints a list of all of the variables defined for this project.
 func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
@@ -74,25 +74,37 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	vars := prj.Variables()
 	for _, v := range vars {
 		value := ""
-		valueCheck := v.ValueOrNil()
 		encrypted := "-"
+		store := "local"
 		shared := "-"
-		if v.IsSecret() {
-			if valueCheck == nil {
+		valOrNil, failure := v.ValueOrNil()
+		if failure != nil {
+			return failure
+		} else if v.IsSecret() {
+			if valOrNil == nil {
 				value = locale.T("variables_value_secret_undefined")
 			} else {
 				value = locale.T("variables_value_secret")
 			}
 			encrypted = locale.T("confirmation")
-			shared = string(*v.SharedWith())
+			if v.IsShared() {
+				shared = string(*v.SharedWith())
+			}
+			store = string(*v.PulledFrom())
 		} else {
-			value = *valueCheck
+			value = *valOrNil
 		}
-		rows = append(rows, []interface{}{v.Name(), sanitizeValue(value), encrypted, shared})
+		rows = append(rows, []interface{}{v.Name(), sanitizeValue(value), encrypted, shared, store})
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("variables_col_name"), locale.T("variables_col_value"), locale.T("variables_col_encrypted"), locale.T("variables_col_shared")})
+	t.SetHeaders([]string{
+		locale.T("variables_col_name"),
+		locale.T("variables_col_value"),
+		locale.T("variables_col_encrypted"),
+		locale.T("variables_col_shared"),
+		locale.T("variables_col_store"),
+	})
 	t.SetAlign("left")
 
 	print.Line(t.Render("simple"))
@@ -104,13 +116,12 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 // sanitizeValue will reduce the string length to 100 characters or the first line of text
 func sanitizeValue(v string) string {
 	v = strings.TrimSpace(v)
-	breakPos := strings.Index(v, "\n")
+	nlPos := strings.Index(v, "\n")
 
-	if len(v) > 100 {
-		v = fmt.Sprintf("%s [..]", v[0:100])
-	}
-	if breakPos != -1 {
-		v = fmt.Sprintf("%s [..]", v[0:breakPos])
+	if nlPos != -1 && nlPos < 100 {
+		v = fmt.Sprintf("%s [...]", v[0:nlPos])
+	} else if len(v) > 100 {
+		v = fmt.Sprintf("%s [...]", v[0:100])
 	}
 
 	return v

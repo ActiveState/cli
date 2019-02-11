@@ -310,35 +310,32 @@ func (v *Variable) SharedWith() *projectfile.VariableShare { return v.variable.V
 func (v *Variable) PulledFrom() *projectfile.VariablePullFrom { return v.variable.Value.PullFrom }
 
 // ValueOrNil acts as Value() except it can return a nil
-func (v *Variable) ValueOrNil() *string {
+func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	variable := v.variable
 	if variable.Value.StaticValue != nil {
 		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
-		return &value
-	} else if variable.Value.PullFrom != nil {
-		client := secretsapi.GetClient()
-		secretsExpander := expander.NewSecretExpander(client)
-		value, fail := secretsExpander.Expand(v.variable, v.projectfile)
-		if fail != nil {
-			if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-				return nil
-			}
-			logging.Error("Could not expand secret variable %s, error: %s", v.Name(), fail.Error())
-		}
-		return &value
-	} else {
-		logging.Error("Attempting to expand a variable with neither a static value nor a pullfrom value, this should never happen. Variable: %s", v.Name())
-		return nil
+		return &value, nil
 	}
+
+	secretsExpander := expander.NewSecretExpander(secretsapi.GetClient())
+	value, failure := secretsExpander.Expand(v.variable, v.projectfile)
+	if failure != nil {
+		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
+			return nil, nil
+		}
+		logging.Error("Could not expand secret variable %s, error: %s", v.Name(), failure.Error())
+		return nil, failure
+	}
+	return &value, nil
 }
 
 // Value returned with all variables evaluated
-func (v *Variable) Value() string {
-	value := v.ValueOrNil()
-	if value == nil {
-		return ""
+func (v *Variable) Value() (string, *failures.Failure) {
+	value, failure := v.ValueOrNil()
+	if failure != nil || value == nil {
+		return "", failure
 	}
-	return *value
+	return *value, nil
 }
 
 // Hook covers the hook structure
