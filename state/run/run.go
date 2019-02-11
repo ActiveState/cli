@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -21,25 +22,10 @@ var Command *commands.Command
 
 func init() {
 	Command = &commands.Command{
-		Name:        "run",
-		Description: "run_description",
-		Run:         Execute,
-
-		Flags: []*commands.Flag{
-			&commands.Flag{
-				Name:        "standalone",
-				Shorthand:   "s",
-				Description: "flag_state_run_standalone_description",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.Standalone,
-			},
-			&commands.Flag{
-				Name:        "list",
-				Description: "flag_state_run_list_description",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.List,
-			},
-		},
+		Name:               "run",
+		Description:        "run_description",
+		Run:                Execute,
+		DisableFlagParsing: true,
 
 		Arguments: []*commands.Argument{
 			&commands.Argument{
@@ -63,31 +49,22 @@ var Args struct {
 }
 
 // processScriptArgs will determine which args are actually intended to be command line arguments
-// for the script that is to be run and slice them from all of the arguments passed to the `run` Command.
-// processScriptArgs will also put back any "--" provided to the `run` command.
+// for the script that is to be run. The heuristic is simply: if first arg is a flag then treat all
+// args to this command as args for the script that will run; otherwise, first arg is the name of the
+// script to run, so treat remaning args as args for that script.
 func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
-	dashPos := cmd.ArgsLenAtDash()
-	if dashPos == -1 {
-		// no dash provided
-		if len(allArgs) == 0 {
-			return allArgs
-		}
-		return allArgs[1:] // everything after command name
-	} else if dashPos == 0 {
-		// no command specified, dash came before any other args; put dash back at beginning
-		return append([]string{"--"}, allArgs...)
+	if len(allArgs) == 0 || strings.HasPrefix(allArgs[0], "-") {
+		// no args or first arg is a flag
+		return allArgs
 	}
-
-	// dash came somewhere after the command name
-	return append(allArgs[1:dashPos], append([]string{"--"}, allArgs[dashPos:]...)...)
+	return allArgs[1:]
 }
 
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-	if cmd.ArgsLenAtDash() == 0 || Args.Name == "" {
-		// no command was given and there might be args after "--" that are not intended
-		// to be part of the command name, thus the default command name is "run"
+	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
+		// no command was given or first argument is a flag or "--", thus the default command name is "run"
 		Args.Name = constants.DefaultScriptName
 	}
 

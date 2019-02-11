@@ -30,12 +30,14 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 		contents = fmt.Sprintf(`
 scripts:
   - name: %s
+    standalone: true
     value: |
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
 	} else {
 		contents = fmt.Sprintf(`
 scripts:
   - name: %s
+    standalone: true
     value: |
     echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)
 	}
@@ -56,7 +58,7 @@ func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []stri
 	// without this Unregister call, positional arg state is persisted between tests
 	defer Command.Unregister()
 
-	Cc.SetArgs(append([]string{"-s"}, cmdArgs...))
+	Cc.SetArgs(cmdArgs)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
@@ -94,6 +96,11 @@ func TestArgs_NoCmd_AllArgsAfterDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "run", []string{"--", "foo", "geez"}, "ARGS|--|foo|geez||")
 }
 
+func TestArgs_NoCmd_FlagAsFirstArg(t *testing.T) {
+	// state run -- foo geez
+	assertExecCommandProcessesArgs(t, "run", []string{"-f", "--foo", "geez"}, "ARGS|-f|--foo|geez||")
+}
+
 func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {
 	// state run release -- the kraken
 	assertExecCommandProcessesArgs(t, "release", []string{"release", "--", "the", "kraken"}, "ARGS|--|the|kraken||")
@@ -107,4 +114,9 @@ func TestArgs_WithCmd_WithArgs_NoDash(t *testing.T) {
 func TestArgs_WithCmd_WithArgs_BeforeAndAfterDash(t *testing.T) {
 	// state run foo bar -- bees wax
 	assertExecCommandProcessesArgs(t, "foo", []string{"foo", "bar", "--", "bees", "wax"}, "ARGS|bar|--|bees|wax|")
+}
+
+func TestArgs_WithCmd_WithFlags_BeforeAndAfterDash(t *testing.T) {
+	// state run foo --bar -- bees --wax
+	assertExecCommandProcessesArgs(t, "foo", []string{"foo", "--bar", "--", "bees", "--wax"}, "ARGS|--bar|--|bees|--wax|")
 }
