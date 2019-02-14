@@ -187,12 +187,23 @@ func CopyFile(src, target string) *failures.Failure {
 	}
 	defer in.Close()
 
+	// Create target directory if it doesn't exist
+	dir := filepath.Dir(target)
+	if !DirExists(dir) {
+		fail := Mkdir(dir)
+		if fail != nil {
+			return fail
+		}
+	}
+
+	// Create target file
 	out, err := os.Create(target)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 	defer out.Close()
 
+	// Copy bytes to target file
 	_, err = io.Copy(out, in)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
