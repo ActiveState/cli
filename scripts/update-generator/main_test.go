@@ -27,5 +27,6 @@ func TestCreateUpdate(t *testing.T) {
 	run()
 
 	assert.FileExists(t, filepath.Join(dir, defaultPlatform+".json"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, "1.0", defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, "1.0", defaultPlatform+".gz"), "Should create update bits")
 }

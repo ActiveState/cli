@@ -110,6 +110,10 @@ func createUpdate(path string, platform string) {
 	if err != nil {
 		panic(err)
 	}
+	err = ioutil.WriteFile(filepath.Join(genDir, constants.BranchName, version, platform+".json"), b, 0755)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func printUsage() {
