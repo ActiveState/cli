@@ -16,7 +16,7 @@ scripts: &scripts
     value: |
       $scripts.preprocess
       pushd state
-      go build -ldflags="-s -w" -o ../build/state state.go
+      go build -ldflags="-s -w" -o ../build/state $(ls | grep .go | grep -v _test.go)
       popd
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update build/state
