@@ -31,60 +31,57 @@ func (cb *ClosingBuffer) Close() (err error) {
 
 var testHash = sha256.New()
 
-func TestUpdaterFetchMustReturnNonNilReaderCloser(t *testing.T) {
-	mr := &mockRequester{}
-	mr.HandleRequest(
-		func(url string) (io.ReadCloser, error) {
-			return nil, nil
-		})
-	updater := createUpdater(mr)
-	err := updater.Run()
-	assert.Error(t, err, "Fetch was expected to return non-nil ReadCloser")
+func createRequestPath(append string) string {
+	return fmt.Sprintf("%s/%s/%s", constants.CommandName, constants.BranchName, append)
 }
 
-func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
-	mr := &mockRequester{}
-	mr.HandleRequest(
-		func(url string) (io.ReadCloser, error) {
-			assert.Equal(t, "http://updates.yourdomain.com/myapp/master/"+runtime.GOOS+"-"+runtime.GOARCH+".json", url)
-			return newTestReaderCloser("{}"), nil
-		})
-	updater := createUpdater(mr)
-
-	err := updater.Run()
-	assert.Error(t, err, "Should fail because there is no update")
-}
-
-func TestUpdaterWithEmptyPayloadNoErrorNoUpdateEscapedPath(t *testing.T) {
+func mockUpdater(t *testing.T, version string) {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
 	zw.Name = "myapp"
 
 	f, err := ioutil.ReadFile(os.Args[0])
 	assert.NoError(t, err)
-	zw.Write(f)
-	zw.Close()
+	_, err = zw.Write(f)
+	assert.NoError(t, err)
+	assert.NoError(t, zw.Close())
 
-	mr := &mockRequester{}
-	mr.HandleRequest(
-		func(url string) (io.ReadCloser, error) {
-			cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
-			h := sha256.New()
-			h.Write(cb.Bytes())
-			computed := h.Sum(nil)
-			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/master/"+runtime.GOOS+"-"+runtime.GOARCH+".json", url)
-			return newTestReaderCloser(fmt.Sprintf(`{"Version": "1.3+foobar", "Sha256": "%x"}`, computed)), nil
-		})
-	mr.HandleRequest(
-		func(url string) (io.ReadCloser, error) {
-			cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
-			assert.Equal(t, "http://updates.yourdomain.com/myapp%2Bfoo/master/1.3%2Bfoobar/"+runtime.GOOS+"-"+runtime.GOARCH+".gz", url)
-			return cb, nil
-		})
-	mr.fetches = append(mr.fetches, mr.fetches[len(mr.fetches)-1]) // previous request happens twice
-	updater := createUpdaterWithEscapedCharacters(mr)
+	cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
+	h := sha256.New()
+	_, err = h.Write(cb.Bytes())
+	assert.NoError(t, err)
+	hash := h.Sum(nil)
 
-	err = updater.Run()
+	requestPath := createRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))
+	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
+
+	requestPath = createRequestPath(fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
+	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
+
+	requestPath = createRequestPath(fmt.Sprintf("%s/%s-%s.gz", version, runtime.GOOS, runtime.GOARCH))
+	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, buf.Bytes())
+}
+
+func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
+	httpmock.Activate(constants.APIUpdateURL)
+	defer httpmock.DeActivate()
+	httpmock.RegisterWithResponseBody("GET", createRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
+
+	updater := createUpdater()
+
+	err := updater.Run()
+	assert.Error(t, err, "Should fail because there is no update")
+}
+
+func TestUpdaterNoError(t *testing.T) {
+	httpmock.Activate(constants.APIUpdateURL)
+	defer httpmock.DeActivate()
+
+	mockUpdater(t, "1.3")
+
+	updater := createUpdater()
+
+	err := updater.Run()
 	assert.NoError(t, err, "Should run update")
 
 	dir, err := ioutil.TempDir("", "state-test-updater")
@@ -102,14 +99,15 @@ func TestUpdaterWithEmptyPayloadNoErrorNoUpdateEscapedPath(t *testing.T) {
 }
 
 func TestUpdaterInfoDesiredVersion(t *testing.T) {
-	mr := &mockRequester{}
-	mr.HandleRequest(
-		func(url string) (io.ReadCloser, error) {
-			assert.Equal(t, "http://updates.yourdomain.com/myapp/master/1.2.3-456/"+runtime.GOOS+"-"+runtime.GOARCH+".json", url)
-			return newTestReaderCloser(`{"Version": "1.2.3-456", "Sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`), nil
-		})
+	httpmock.Activate(constants.APIUpdateURL)
+	defer httpmock.DeActivate()
+	httpmock.RegisterWithResponseBody(
+		"GET",
+		createRequestPath(fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
+		200,
+		`{"Version": "1.2.3-456", "Sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
-	updater := createUpdater(mr)
+	updater := createUpdater()
 	updater.DesiredVersion = "1.2.3-456"
 	info, err := updater.Info()
 	assert.NoError(t, err)
@@ -145,23 +143,12 @@ func TestPrintUpdateMessageEmpty(t *testing.T) {
 	assert.Empty(t, stdout, "Should not print an update message because the version is not locked")
 }
 
-func createUpdater(mr *mockRequester) *Updater {
+func createUpdater() *Updater {
 	return &Updater{
 		CurrentVersion: "1.2",
-		APIURL:         "http://updates.yourdomain.com/",
-		Dir:            "update/",
-		CmdName:        "myapp", // app name
-		Requester:      mr,
-	}
-}
-
-func createUpdaterWithEscapedCharacters(mr *mockRequester) *Updater {
-	return &Updater{
-		CurrentVersion: "1.2+foobar",
-		APIURL:         "http://updates.yourdomain.com/",
-		Dir:            "update/",
-		CmdName:        "myapp+foo", // app name
-		Requester:      mr,
+		APIURL:         constants.APIUpdateURL,
+		Dir:            constants.UpdateStorageDir,
+		CmdName:        constants.CommandName, // app name
 	}
 }
 

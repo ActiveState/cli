@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -217,9 +216,6 @@ func (u *Updater) fetchInfo() error {
 		return nil
 	}
 	branchName := constants.BranchName
-	if flag.Lookup("test.v") != nil {
-		branchName = "master"
-	}
 	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
 	if u.DesiredVersion != "" {
 		fullURL += u.DesiredVersion + "/"
@@ -271,9 +267,6 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
 	var branchName = constants.BranchName
-	if flag.Lookup("test.v") != nil {
-		branchName = "master"
-	}
 	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.gz",
 		argCmdName, branchName, argInfoVersion, argPlatform)
 
