@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +39,7 @@ func TestTimedCheck(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
-	mockUpdater(t, "1.2.3-123")
+	updatemocks.MockUpdater(t, os.Args[0], "1.2.3-123")
 
 	update := TimedCheck()
 	assert.True(t, update, "Should want to update")

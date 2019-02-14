@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
-	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -20,14 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/assert"
 )
-
-type ClosingBuffer struct {
-	*bytes.Buffer
-}
-
-func (cb *ClosingBuffer) Close() (err error) {
-	return
-}
 
 func testdataDir(t *testing.T) string {
 	cwd, err := environment.GetRootPath()
@@ -45,37 +34,14 @@ func setupCwd(t *testing.T, withVersion bool) {
 	projectfile.Reset()
 }
 
-func mockUpdater(t *testing.T, version string) {
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.Name = constants.CommandName
-
-	testdatadir := testdataDir(t)
-	f, err := ioutil.ReadFile(filepath.Join(testdatadir, "state.sh"))
-	assert.NoError(t, err)
-	_, err = zw.Write(f)
-	assert.NoError(t, err)
-	assert.NoError(t, zw.Close())
-
-	cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
-	h := sha256.New()
-	_, err = h.Write(cb.Bytes())
-	assert.NoError(t, err)
-	hash := h.Sum(nil)
-
-	requestPath := fmt.Sprintf("%s/%s/%s/%s-%s.json", constants.CommandName, constants.BranchName, version, runtime.GOOS, runtime.GOARCH)
-	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
-
-	requestPath = fmt.Sprintf("%s/%s/%s/%s-%s.gz", constants.CommandName, constants.BranchName, version, runtime.GOOS, runtime.GOARCH)
-	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, buf.Bytes())
-}
-
 func TestForwardAndExit(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
 	setupCwd(t, true)
-	mockUpdater(t, "1.2.3-123")
+
+	testdatadir := testdataDir(t)
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), "1.2.3-123")
 
 	var exitCode int
 	exit = func(code int) {
@@ -101,7 +67,8 @@ func TestForwardNotUsed(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	setupCwd(t, false)
-	mockUpdater(t, constants.Version)
+	testdatadir := testdataDir(t)
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.Version)
 
 	exitCode := -1
 	exit = func(code int) {

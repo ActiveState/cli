@@ -2,8 +2,6 @@ package updater
 
 import (
 	"bytes"
-	"compress/gzip"
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,51 +21,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type ClosingBuffer struct {
-	*bytes.Buffer
-}
-
-func (cb *ClosingBuffer) Close() (err error) {
-	return
-}
-
-var testHash = sha256.New()
-
-func createRequestPath(append string) string {
-	return fmt.Sprintf("%s/%s/%s", constants.CommandName, constants.BranchName, append)
-}
-
-func mockUpdater(t *testing.T, version string) {
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.Name = "myapp"
-
-	f, err := ioutil.ReadFile(os.Args[0])
-	assert.NoError(t, err)
-	_, err = zw.Write(f)
-	assert.NoError(t, err)
-	assert.NoError(t, zw.Close())
-
-	cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
-	h := sha256.New()
-	_, err = h.Write(cb.Bytes())
-	assert.NoError(t, err)
-	hash := h.Sum(nil)
-
-	requestPath := createRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))
-	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
-
-	requestPath = createRequestPath(fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
-	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
-
-	requestPath = createRequestPath(fmt.Sprintf("%s/%s-%s.gz", version, runtime.GOOS, runtime.GOARCH))
-	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, buf.Bytes())
-}
-
 func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
-	httpmock.RegisterWithResponseBody("GET", createRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
+	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
 
 	updater := createUpdater()
 
@@ -77,7 +36,7 @@ func TestUpdaterNoError(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
-	mockUpdater(t, "1.3")
+	updatemocks.MockUpdater(t, os.Args[0], "1.3")
 
 	updater := createUpdater()
 
@@ -103,7 +62,7 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 	defer httpmock.DeActivate()
 	httpmock.RegisterWithResponseBody(
 		"GET",
-		createRequestPath(fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
+		updatemocks.CreateRequestPath(fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
 		200,
 		`{"Version": "1.2.3-456", "Sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
