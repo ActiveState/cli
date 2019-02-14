@@ -427,6 +427,14 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:0546ec6f20bb42e77db99ab0f63b8cf487eff9b0de854f297f93486af496e59a"
+  name = "github.com/phayes/permbits"
+  packages = ["."]
+  pruneopts = ""
+  revision = "1efae4548023f60d7a172fead76cccf194cf45de"
+
+[[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -685,10 +693,12 @@
     "github.com/gobuffalo/packr",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
+    "github.com/mattn/go-colorable",
     "github.com/mholt/archiver",
     "github.com/mitchellh/go-ps",
     "github.com/mitchellh/hashstructure",
     "github.com/nicksnyder/go-i18n/i18n",
+    "github.com/phayes/permbits",
     "github.com/pkg/errors",
     "github.com/rs/xid",
     "github.com/shibukawa/configdir",
