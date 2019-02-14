@@ -4,9 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
-
-	"github.com/fatih/color"
-	colorable "github.com/mattn/go-colorable"
 )
 
 func replaceStderr(newErr *os.File) *os.File {
@@ -27,54 +24,42 @@ func replaceStdin(newIn *os.File) *os.File {
 	return oldIn
 }
 
+// captureWrites will execute a provided function and return any bytes written to the provided
+// writer from the provided reader (assuming they are generated from something like an os.Pipe).
+func captureWrites(fnToExec func(), reader, writer *os.File) (string, error) {
+	fnToExec() // execute the provided function
+
+	if err := writer.Close(); err != nil {
+		return "", err
+	}
+
+	writeBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		err = reader.Close()
+	}
+	return string(writeBytes), err
+}
+
 // CaptureStderr will execute a provided function and capture anything written to stderr.
 // It will then return that output as a string along with any errors captured in the process.
 func CaptureStderr(fnToExec func()) (string, error) {
-	errReader, tmpErr, err := os.Pipe()
+	errReader, errWriter, err := os.Pipe()
 	if err != nil {
 		return "", err
 	}
-	defer replaceStderr(replaceStderr(tmpErr))
-
-	fnToExec() // execute the provided function
-
-	if err = tmpErr.Close(); err != nil {
-		return "", err
-	}
-
-	errBytes, err := ioutil.ReadAll(errReader)
-	errStr := string(errBytes)
-	if err != nil {
-		err = errReader.Close()
-	}
-	return errStr, err
+	defer replaceStderr(replaceStderr(errWriter))
+	return captureWrites(fnToExec, errReader, errWriter)
 }
 
 // CaptureStdout will execute a provided function and capture anything written to stdout.
 // It will then return that output as a string along with any errors captured in the process.
 func CaptureStdout(fnToExec func()) (string, error) {
-	outReader, tmpOut, err := os.Pipe()
+	outReader, outWriter, err := os.Pipe()
 	if err != nil {
 		return "", err
 	}
-	defer replaceStdout(replaceStdout(tmpOut))
-
-	// Redefine output used for color printing, otherwise these won't be captured
-	color.Output = colorable.NewColorableStdout()
-	defer func() { color.Output = colorable.NewColorableStdout() }()
-
-	fnToExec() // execute the provided function
-
-	if err = tmpOut.Close(); err != nil {
-		return "", err
-	}
-
-	outBytes, err := ioutil.ReadAll(outReader)
-	outStr := string(outBytes)
-	if err != nil {
-		err = outReader.Close()
-	}
-	return outStr, err
+	defer replaceStdout(replaceStdout(outWriter))
+	return captureWrites(fnToExec, outReader, outWriter)
 }
 
 // WrapStdin will fill stdin with the lines provided as a variadic list of strings before
