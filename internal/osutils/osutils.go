@@ -1,6 +1,7 @@
 package osutils
 
 import (
+	"os"
 	"os/exec"
 
 	"github.com/ActiveState/cli/internal/logging"
@@ -20,4 +21,18 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 		ExitStatus() int
 	}
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
+}
+
+// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
+func ExecuteAndPipeStd(command string, arg ...string) (int, *exec.Cmd, error) {
+	logging.Debug("Executing command and piping std: %s, %v", command, arg)
+
+	cmd := exec.Command(command, arg...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+	err := cmd.Run()
+	if err != nil {
+		logging.Error("Executing command returned error: %v", err)
+	}
+	return CmdExitCode(cmd), cmd, err
 }
