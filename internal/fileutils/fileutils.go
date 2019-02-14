@@ -165,9 +165,11 @@ func HashDirectory(path string) (string, *failures.Failure) {
 }
 
 // Mkdir is a small helper function to create a directory if it doesnt already exist
-func Mkdir(parent string, subpath ...string) *failures.Failure {
-	path := filepath.Join(subpath...)
-	path = filepath.Join(parent, path)
+func Mkdir(path string, subpath ...string) *failures.Failure {
+	if len(subpath) > 0 {
+		subpathStr := filepath.Join(subpath...)
+		path = filepath.Join(path, subpathStr)
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
