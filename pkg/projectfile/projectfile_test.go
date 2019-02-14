@@ -317,6 +317,8 @@ func TestSave(t *testing.T) {
 
 // Call getProjectFilePath
 func TestGetProjectFilePath(t *testing.T) {
+	Reset()
+
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()

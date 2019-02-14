@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -41,6 +42,7 @@ func setupCwd(t *testing.T, withVersion bool) {
 	}
 	err := os.Chdir(testdatadir)
 	assert.NoError(t, err, "Should change dir without issue.")
+	projectfile.Reset()
 }
 
 func mockUpdater(t *testing.T, version string) {
