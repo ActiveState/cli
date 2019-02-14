@@ -595,3 +595,31 @@ warn_script_name_in_use:
 
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
+err_version_parse:
+  other: Could not parse the version field from your activestate.yaml
+err_invalid_version:
+  other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{number}"
+downloading_state_version:
+  other: "Downloading state tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
+forward_fail:
+  other: Could not forward command to the appropriate state tool version
+forward_fail_download:
+  other: Could not forward command to the appropriate state tool version, download failed
+forward_fail_perm:
+  other: Could not forward command to the appropriate state tool version, could not make file executable
+flag_update_lock_description:
+  other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
+err_lock_failed:
+  other: Locking the version failed
+locking_version:
+  other: Locking state tool to the current version
+version_locked:
+  other: Version locked at {{.V0}}
+update_available:
+  other: |
+    A new update is available!
+
+    Your version: {{.V0}}
+    Available Version: {{.V1}}
+
+    You can update by running `state self-update`

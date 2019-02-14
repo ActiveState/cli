@@ -15,6 +15,17 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+func setCwd(t *testing.T, subdir string) {
+	cwd, err := environment.GetRootPath()
+	assert.NoError(t, err, "Should fetch cwd")
+	path := filepath.Join(cwd, "pkg", "projectfile", "testdata")
+	if subdir != "" {
+		path = filepath.Join(path, subdir)
+	}
+	err = os.Chdir(path)
+	assert.NoError(t, err, "Should change dir without issue.")
+}
+
 func TestProjectStruct(t *testing.T) {
 	project := Project{}
 	dat := strings.TrimSpace(`
@@ -317,6 +328,12 @@ func TestGetProjectFilePath(t *testing.T) {
 	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 
+	os.Setenv(constants.ProjectEnvVarName, "/some/path")
+	defer os.Unsetenv(constants.ProjectEnvVarName)
+	configPath, failure = getProjectFilePath()
+	require.Nil(t, failure)
+	assert.Equal(t, "/some/path", configPath, "Project path is properly detected using the ProjectEnvVarName")
+
 	os.Chdir(cwd) // restore
 }
 
@@ -356,4 +373,21 @@ func TestGetActivated(t *testing.T) {
 	os.Chdir(cwd) // restore
 
 	Reset()
+}
+
+func TestParseVersion(t *testing.T) {
+	setCwd(t, "")
+	version, fail := ParseVersion()
+	assert.NoError(t, fail.ToError())
+	assert.Empty(t, version, "No version exists")
+
+	setCwd(t, "withversion")
+	version, fail = ParseVersion()
+	assert.NoError(t, fail.ToError())
+	assert.NotEmpty(t, version, "Version exists")
+
+	setCwd(t, "withbadversion")
+	version, fail = ParseVersion()
+	assert.Error(t, fail.ToError())
+	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Failes with FailInvalidVersion")
 }

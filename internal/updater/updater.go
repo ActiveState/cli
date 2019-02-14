@@ -15,6 +15,8 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/kardianos/osext"
 	"gopkg.in/inconshreveable/go-update.v0"
@@ -49,6 +51,7 @@ type Updater struct {
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
 	Dir            string // Directory to store selfupdate state.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
+	DesiredVersion string
 	info           Info
 	Requester      Requester
 }
@@ -59,18 +62,7 @@ func (u *Updater) Info() (*Info, error) {
 		return &u.info, nil
 	}
 
-	dir, err := u.getExecRelativeDir(u.Dir)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		return nil, err
-	}
-	if err := up.CanUpdate(); err != nil {
-		return nil, err
-	}
-	err = u.fetchInfo()
+	err := u.fetchInfo()
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +83,44 @@ func (u *Updater) CanUpdate() bool {
 	}
 
 	return info != nil
+}
+
+// PrintUpdateMessage will print a message to stdout when an update is available.
+// This will only print the message if the current project has a version lock AND if an update is available
+func PrintUpdateMessage() {
+	versionLock, _ := projectfile.ParseVersion()
+	if versionLock == "" {
+		return
+	}
+
+	up := Updater{
+		CurrentVersion: constants.Version,
+		APIURL:         constants.APIUpdateURL,
+		Dir:            constants.UpdateStorageDir,
+		CmdName:        constants.CommandName,
+	}
+
+	info, err := up.Info()
+	if err != nil {
+		logging.Error("Could not check for updates: %v", err)
+	}
+
+	if info.Version != constants.Version {
+		print.Warning(locale.Tr("update_available", constants.Version, info.Version))
+	}
+}
+
+// Download acts as Run except that it unpacks it to the specified path rather than replace the current binary
+func (u *Updater) Download(path string) error {
+	if !u.CanUpdate() {
+		return failures.FailNotFound.New("No update available")
+	}
+
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		return err
+	}
+	return u.download(path)
 }
 
 // Run starts the update check and apply cycle.
@@ -121,6 +151,25 @@ func (u *Updater) getExecRelativeDir(dir string) (string, error) {
 	path := filepath.Join(filepath.Dir(filename), dir)
 
 	return path, nil
+}
+
+// update performs the actual update of the executable
+func (u *Updater) download(path string) error {
+	err := u.fetchInfo()
+	if err != nil {
+		return err
+	}
+	bin, err := u.fetchAndVerifyFullBin()
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(path, bin, 0666)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // update performs the actual update of the executable
@@ -171,7 +220,12 @@ func (u *Updater) fetchInfo() error {
 	if flag.Lookup("test.v") != nil {
 		branchName = "master"
 	}
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/" + url.QueryEscape(plat) + ".json"
+	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
+	if u.DesiredVersion != "" {
+		fullURL += u.DesiredVersion + "/"
+	}
+	fullURL += url.QueryEscape(plat) + ".json"
+
 	r, err := u.fetch(fullURL)
 	if err != nil {
 		return err
