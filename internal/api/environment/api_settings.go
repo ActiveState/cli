@@ -3,6 +3,8 @@ package environment
 import (
 	"flag"
 
+	"github.com/ActiveState/cli/internal/environment"
+
 	"github.com/ActiveState/cli/internal/constants"
 )
 
@@ -50,7 +52,7 @@ func init() {
 	if apiEnvSetting, hasSettingsForEnv = apiEnvSettings[constants.APIEnv]; !hasSettingsForEnv {
 		if flag.Lookup("test.v") != nil {
 			apiEnvSetting = apiEnvSettings["test"]
-		} else if constants.BranchName == constants.ProductionBranch {
+		} else if environment.TargetEnvironment() == environment.Production {
 			apiEnvSetting = apiEnvSettings["prod"]
 		} else {
 			apiEnvSetting = apiEnvSettings["stage"]

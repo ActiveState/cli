@@ -9,6 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTargetEnvironment(t *testing.T) {
+	env := TargetEnvironment()
+	assert.Contains(t, []Environment{Production, Development}, env, "Returns a valid environment")
+}
+
 func TestGetRootPath(t *testing.T) {
 	rootPath, err := GetRootPath()
 
