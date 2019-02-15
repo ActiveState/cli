@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scm"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -39,6 +40,8 @@ var Args struct {
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
+
+	updater.PrintUpdateMessage()
 
 	var project *projectfile.Project
 	if Args.Remote == "" {

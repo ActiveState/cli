@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scm"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -87,6 +88,8 @@ func clone(uriOrID string) (scm.SCMer, error) {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	updater.PrintUpdateMessage()
+
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
