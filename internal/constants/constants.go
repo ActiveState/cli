@@ -67,6 +67,3 @@ const DefaultRSABitLength int = 4096
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"
-
-// DefaultScriptName is the name of the script to run when one isn't provided
-const DefaultScriptName = "run"
