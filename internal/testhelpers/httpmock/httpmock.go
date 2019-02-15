@@ -69,9 +69,7 @@ func (mock *HTTPMock) RegisterWithResponse(method string, request string, code i
 
 // RegisterWithResponseBody will respond with the given code and responseBody, no external files involved
 func (mock *HTTPMock) RegisterWithResponseBody(method string, request string, code int, responseBody string) {
-	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
-	parent.RegisterResponder(method, request,
-		parent.NewStringResponder(code, responseBody))
+	RegisterWithResponseBytes(method, request, code, []byte(responseBody))
 }
 
 // RegisterWithResponseBytes will respond with the given code and responseBytes, no external files involved
