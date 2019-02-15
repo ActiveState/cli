@@ -1,9 +1,8 @@
 package run
 
 import (
-	"fmt"
+	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,25 +20,10 @@ var Command *commands.Command
 
 func init() {
 	Command = &commands.Command{
-		Name:        "run",
-		Description: "run_description",
-		Run:         Execute,
-
-		Flags: []*commands.Flag{
-			&commands.Flag{
-				Name:        "standalone",
-				Shorthand:   "s",
-				Description: "flag_state_run_standalone_description",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.Standalone,
-			},
-			&commands.Flag{
-				Name:        "list",
-				Description: "flag_state_run_list_description",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.List,
-			},
-		},
+		Name:               "run",
+		Description:        "run_description",
+		Run:                Execute,
+		DisableFlagParsing: true,
 
 		Arguments: []*commands.Argument{
 			&commands.Argument{
@@ -51,52 +35,21 @@ func init() {
 	}
 }
 
-// Flags hold the flag values passed through the command line.
-var Flags struct {
-	Standalone bool
-	List       bool
-}
-
 // Args hold the arg values passed through the command line.
 var Args struct {
 	Name string
 }
 
-// processScriptArgs will determine which args are actually intended to be command line arguments
-// for the script that is to be run and slice them from all of the arguments passed to the `run` Command.
-// processScriptArgs will also put back any "--" provided to the `run` command.
-func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
-	dashPos := cmd.ArgsLenAtDash()
-	if dashPos == -1 {
-		// no dash provided
-		if len(allArgs) == 0 {
-			return allArgs
-		}
-		return allArgs[1:] // everything after command name
-	} else if dashPos == 0 {
-		// no command specified, dash came before any other args; put dash back at beginning
-		return append([]string{"--"}, allArgs...)
-	}
-
-	// dash came somewhere after the command name
-	return append(allArgs[1:dashPos], append([]string{"--"}, allArgs[dashPos:]...)...)
-}
-
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-	if cmd.ArgsLenAtDash() == 0 || Args.Name == "" {
-		// no command was given and there might be args after "--" that are not intended
-		// to be part of the command name, thus the default command name is "run"
-		Args.Name = constants.DefaultScriptName
-	}
 
-	scriptArgs := processScriptArgs(cmd, allArgs)
-
-	if Flags.List {
-		ListScripts()
+	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
+		failures.Handle(failures.FailUserInput.New("error_state_run_undefined_name"), "")
 		return
 	}
+
+	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
 	prj := project.Get()
@@ -115,7 +68,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	// Activate the state if needed.
-	if !standalone && !subshell.IsActivated() && !Flags.Standalone {
+	if !standalone && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {
@@ -139,19 +92,5 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)
 		return
-	}
-}
-
-// ListScripts prints the available scripts
-func ListScripts() {
-	print.Info(locale.T("run_listing_scripts"))
-
-	prj := project.Get()
-	scripts := prj.Scripts()
-
-	rows := [][]interface{}{}
-	for k, script := range scripts {
-		rows = append(rows, []interface{}{k, script.Name()})
-		print.Line(fmt.Sprintf(" * %s", script.Name()))
 	}
 }
