@@ -32,9 +32,9 @@ func forwardAndExit(args []string) {
 	}
 
 	logging.Debug("Forwarding to version %s, arguments: %v", version, args[1:])
-	ensureForwardExists(version)
-
 	binary := forwardBin(version)
+	ensureForwardExists(binary, version)
+
 	execForwardAndExit(binary, args)
 }
 
@@ -61,9 +61,7 @@ func forwardBin(version string) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(version string) {
-	binary := forwardBin(version)
-
+func ensureForwardExists(binary, version string) {
 	if fileutils.FileExists(binary) {
 		return
 	}
