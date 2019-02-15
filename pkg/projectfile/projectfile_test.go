@@ -391,5 +391,5 @@ func TestParseVersion(t *testing.T) {
 	setCwd(t, "withbadversion")
 	version, fail = ParseVersion()
 	assert.Error(t, fail.ToError())
-	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Failes with FailInvalidVersion")
+	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Fails with FailInvalidVersion")
 }
