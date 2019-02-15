@@ -13,10 +13,9 @@ import (
 
 // Command holds our main command definition
 var Command = &commands.Command{
-	Name:           "auth",
-	Description:    "auth_description",
-	Run:            Execute,
-	RunWithoutAuth: true,
+	Name:        "auth",
+	Description: "auth_description",
+	Run:         Execute,
 
 	Arguments: []*commands.Argument{
 		&commands.Argument{
@@ -29,10 +28,9 @@ var Command = &commands.Command{
 
 // SignupCommand adds a registration sub-command
 var SignupCommand = &commands.Command{
-	Name:           "signup",
-	Description:    "signup_description",
-	Run:            ExecuteSignup,
-	RunWithoutAuth: true,
+	Name:        "signup",
+	Description: "signup_description",
+	Run:         ExecuteSignup,
 }
 
 // LogoutCommand adds the logout sub-command
