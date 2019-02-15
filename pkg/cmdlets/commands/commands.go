@@ -130,7 +130,7 @@ func (c *Command) runner(cmd *cobra.Command, args []string) {
 			}
 
 			flag := c.FlagByName(cobraFlag.Name, false)
-			if flag == nil {
+			if flag == nil || flag.OnUse == nil {
 				return
 			}
 
