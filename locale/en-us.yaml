@@ -365,6 +365,8 @@ flag_state_run_standalone_description:
   other: Run a script, regardless of an activated state
 flag_state_run_list_description:
   other: List available scripts
+error_state_run_undefined_name:
+  other: The script name must be provided
 error_state_run_unknown_name:
   other: The script '{{.Name}}' is not defined in activestate.yaml.
 info_state_run_activating_state:

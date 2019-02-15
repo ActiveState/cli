@@ -54,13 +54,14 @@ type Argument struct {
 
 // Command covers our command structure, all our commands instantiate a version of this struct
 type Command struct {
-	Name        string
-	Description string
-	Run         func(cmd *cobra.Command, args []string)
-	Aliases     []string
-	Flags       []*Flag
-	Arguments   []*Argument
-	Exiter      func(int)
+	Name               string
+	Description        string
+	Run                func(cmd *cobra.Command, args []string)
+	Aliases            []string
+	Flags              []*Flag
+	Arguments          []*Argument
+	DisableFlagParsing bool
+	Exiter             func(int)
 
 	UsageTemplate string
 
@@ -150,11 +151,12 @@ func (c *Command) Register() {
 	c.Exiter = os.Exit
 
 	c.cobraCmd = &cobra.Command{
-		Use:     c.Name,
-		Aliases: c.Aliases,
-		Short:   T(c.Description),
-		Run:     c.runner,
-		Args:    c.argInputValidator,
+		Use:                c.Name,
+		Aliases:            c.Aliases,
+		Short:              T(c.Description),
+		Run:                c.runner,
+		Args:               c.argInputValidator,
+		DisableFlagParsing: c.DisableFlagParsing,
 	}
 
 	for _, flag := range c.Flags {
