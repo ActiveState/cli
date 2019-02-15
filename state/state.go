@@ -48,8 +48,6 @@ var Command = &commands.Command{
 	Description: "state_description",
 	Run:         Execute,
 
-	RunWithoutAuth: true,
-
 	Flags: []*commands.Flag{
 		&commands.Flag{
 			Name:        "locale",
