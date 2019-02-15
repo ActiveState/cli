@@ -392,4 +392,11 @@ func TestParseVersion(t *testing.T) {
 	version, fail = ParseVersion()
 	assert.Error(t, fail.ToError())
 	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Fails with FailInvalidVersion")
+
+	path, err := ioutil.TempDir("", "ParseVersionTest")
+	require.NoError(t, err)
+	os.Chdir(path)
+	version, fail = ParseVersion()
+	require.NoError(t, fail.ToError())
+	assert.Empty(t, version, "No version exists, because no project file exists")
 }
