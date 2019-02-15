@@ -101,11 +101,7 @@ func ExecuteLock(cmd *cobra.Command, args []string) {
 func lockVersion(version string) *failures.Failure {
 	pj := projectfile.Get()
 	pj.Version = version
-	fail := pj.Save()
-	if fail != nil {
-		return fail
-	}
-	return nil
+	return pj.Save()
 }
 
 func isForwardCall() bool {
