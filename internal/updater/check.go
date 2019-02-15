@@ -51,6 +51,7 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 // TimedCheck checks for updates once per day and, if one was found within a
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
+// TimedCheck is skipped altogether if the current project has a locked version.
 func TimedCheck() bool {
 	versionLock, _ := projectfile.ParseVersion()
 	if versionLock != "" {
