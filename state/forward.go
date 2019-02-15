@@ -41,7 +41,7 @@ func forwardAndExit(args []string) {
 func execForwardAndExit(binary string, args []string) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
-	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:]...)
+	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Error("Forwarding command resulted in error: %v", err)
 	}

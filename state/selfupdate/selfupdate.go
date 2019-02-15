@@ -2,11 +2,9 @@ package selfupdate
 
 import (
 	"os"
-	"strings"
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -111,16 +109,6 @@ func lockVersion(version string) *failures.Failure {
 }
 
 func isForwardCall() bool {
-	exec, err := os.Executable()
-	if err != nil {
-		logging.Error("Cannot detect executable: %v", err)
-		failures.Handle(err, locale.T("err_update_failed"))
-		os.Exit(1)
-	}
-	logging.Debug("Executable: %s", exec)
-	datadir := config.GetDataDir()
-	if strings.Contains(exec, datadir) {
-		return true
-	}
-	return false
+	_, exists := os.LookupEnv(constants.ForwardedStateEnvVarName)
+	return exists
 }

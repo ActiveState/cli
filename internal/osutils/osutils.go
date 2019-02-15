@@ -24,10 +24,12 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 }
 
 // ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
-func ExecuteAndPipeStd(command string, arg ...string) (int, *exec.Cmd, error) {
+func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
 	logging.Debug("Executing command and piping std: %s, %v", command, arg)
 
 	cmd := exec.Command(command, arg...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	err := cmd.Run()
