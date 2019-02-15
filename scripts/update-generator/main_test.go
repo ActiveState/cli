@@ -21,7 +21,7 @@ func TestCreateUpdate(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	appPath = "build/state"
+	appPath = os.Args[0]
 	version = "1.0"
 	genDir = dir
 
