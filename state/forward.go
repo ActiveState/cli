@@ -49,10 +49,7 @@ func execForwardAndExit(binary string, args []string) {
 }
 
 func shouldForward(version string) bool {
-	if version == "" || version == constants.Version {
-		return false
-	}
-	return true
+	return !(version == "" || version == constants.Version)
 }
 
 func forwardBin(version string) string {
