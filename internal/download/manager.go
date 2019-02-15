@@ -80,11 +80,9 @@ func (m *Manager) Job(entry *Entry, progress *mpb.Progress) {
 	}
 
 	dirname := filepath.Dir(entry.Path)
-	if !fileutils.DirExists(dirname) {
-		m.failure = fileutils.Mkdir(dirname)
-		if m.failure != nil {
-			return
-		}
+	m.failure = fileutils.MkdirUnlessExists(dirname)
+	if m.failure != nil {
+		return
 	}
 
 	err := ioutil.WriteFile(entry.Path, bytes, 0666)

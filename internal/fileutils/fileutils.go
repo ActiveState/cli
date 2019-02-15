@@ -179,6 +179,14 @@ func Mkdir(path string, subpath ...string) *failures.Failure {
 	return nil
 }
 
+// MkdirUnlessExists will make the directory structure if it doesn't already exists
+func MkdirUnlessExists(path string) *failures.Failure {
+	if DirExists(path) {
+		return nil
+	}
+	return Mkdir(path)
+}
+
 // CopyFile copies a file from one location to another
 func CopyFile(src, target string) *failures.Failure {
 	in, err := os.Open(src)
@@ -189,11 +197,9 @@ func CopyFile(src, target string) *failures.Failure {
 
 	// Create target directory if it doesn't exist
 	dir := filepath.Dir(target)
-	if !DirExists(dir) {
-		fail := Mkdir(dir)
-		if fail != nil {
-			return fail
-		}
+	fail := MkdirUnlessExists(dir)
+	if fail != nil {
+		return fail
 	}
 
 	// Create target file
