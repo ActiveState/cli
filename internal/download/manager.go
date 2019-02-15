@@ -2,6 +2,9 @@ package download
 
 import (
 	"io/ioutil"
+	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -73,6 +76,12 @@ func (m *Manager) Job(entry *Entry, progress *mpb.Progress) {
 	if fail != nil {
 		m.failure = fail
 		logging.Debug("Failure occured: %v", fail)
+		return
+	}
+
+	dirname := filepath.Dir(entry.Path)
+	m.failure = fileutils.MkdirUnlessExists(dirname)
+	if m.failure != nil {
 		return
 	}
 

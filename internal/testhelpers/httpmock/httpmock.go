@@ -67,6 +67,18 @@ func (mock *HTTPMock) RegisterWithResponse(method string, request string, code i
 		parent.NewStringResponder(code, string(fileutils.ReadFileUnsafe(responseFile))))
 }
 
+// RegisterWithResponseBody will respond with the given code and responseBody, no external files involved
+func (mock *HTTPMock) RegisterWithResponseBody(method string, request string, code int, responseBody string) {
+	RegisterWithResponseBytes(method, request, code, []byte(responseBody))
+}
+
+// RegisterWithResponseBytes will respond with the given code and responseBytes, no external files involved
+func (mock *HTTPMock) RegisterWithResponseBytes(method string, request string, code int, responseBytes []byte) {
+	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	parent.RegisterResponder(method, request,
+		parent.NewBytesResponder(code, responseBytes))
+}
+
 // RegisterWithResponder register a httpmock with a custom responder
 func (mock *HTTPMock) RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
 	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
@@ -129,6 +141,18 @@ func RegisterWithCode(method string, request string, code int) {
 func RegisterWithResponse(method string, request string, code int, responseFile string) {
 	ensureDefaultMock()
 	defaultMock.RegisterWithResponse(method, request, code, responseFile)
+}
+
+// RegisterWithResponseBody defers to the default HTTPMock's RegisterWithResponseBody or errors if no default defined.
+func RegisterWithResponseBody(method string, request string, code int, responseBody string) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithResponseBody(method, request, code, responseBody)
+}
+
+// RegisterWithResponseBytes defers to the default HTTPMock's RegisterWithResponseBytes or errors if no default defined.
+func RegisterWithResponseBytes(method string, request string, code int, responseBytes []byte) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithResponseBytes(method, request, code, responseBytes)
 }
 
 // RegisterWithResponder defers to the default HTTPMock's RegisterWithResponder or errors if no default defined.

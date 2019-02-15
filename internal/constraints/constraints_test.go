@@ -21,6 +21,7 @@ func setProjectDir(t *testing.T) {
 	assert.NoError(t, err, "Should fetch cwd")
 	err = os.Chdir(filepath.Join(cwd, "internal", "constraints", "testdata"))
 	assert.NoError(t, err, "Should change dir without issue.")
+	projectfile.Reset()
 }
 
 func TestPlatformConstraints(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Runs the given updater function on a timeout.
@@ -50,7 +51,13 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 // TimedCheck checks for updates once per day and, if one was found within a
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
+// TimedCheck is skipped altogether if the current project has a locked version.
 func TimedCheck() bool {
+	versionLock, _ := projectfile.ParseVersion()
+	if versionLock != "" {
+		return false
+	}
+
 	// Determine whether or not an update check has been performed today.
 	updateCheckMarker := filepath.Join(config.GetDataDir(), "update-check")
 	marker, err := os.Stat(updateCheckMarker)

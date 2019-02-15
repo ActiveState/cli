@@ -21,6 +21,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var exit = os.Exit
+
 var appPath, version, genDir, defaultPlatform string
 
 type current struct {
@@ -95,6 +97,7 @@ func createUpdate(path string, platform string) {
 
 	// Store archived version
 	gzArchivePath := filepath.Join(genDir, constants.BranchName, version, archive, platform+".gz")
+	fmt.Printf("Creating %s\n", gzArchivePath)
 	err = ioutil.WriteFile(gzArchivePath, buf.Bytes(), 0755)
 	if err != nil {
 		panic(errors.Wrapf(err,
@@ -106,7 +109,17 @@ func createUpdate(path string, platform string) {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	err = ioutil.WriteFile(filepath.Join(genDir, constants.BranchName, platform+".json"), b, 0755)
+
+	jsonPath := filepath.Join(genDir, constants.BranchName, platform+".json")
+	fmt.Printf("Creating %s\n", jsonPath)
+	err = ioutil.WriteFile(jsonPath, b, 0755)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonPath = filepath.Join(genDir, constants.BranchName, version, platform+".json")
+	fmt.Printf("Creating %s\n", jsonPath)
+	err = ioutil.WriteFile(jsonPath, b, 0755)
 	if err != nil {
 		panic(err)
 	}
@@ -143,10 +156,10 @@ func run() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 
 	flag.Parse()
-	if flag.NArg() < 1 {
+	if flag.NArg() < 1 && flag.Lookup("test.v") == nil {
 		flag.Usage()
 		printUsage()
-		os.Exit(0)
+		exit(0)
 	}
 
 	platform := *platformFlag

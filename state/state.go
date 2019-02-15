@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
@@ -68,8 +70,9 @@ var Command = &commands.Command{
 	UsageTemplate: "usage_tpl",
 }
 
-func init() {
-	logging.Debug("init")
+// register will register any commands and expanders
+func register() {
+	logging.Debug("register")
 
 	secretsapi.InitializeClient()
 
@@ -92,10 +95,12 @@ func init() {
 
 func main() {
 	logging.Debug("main")
-
-	if updater.TimedCheck() {
+	if flag.Lookup("test.v") == nil && updater.TimedCheck() {
 		relaunch() // will not return
 	}
+
+	forwardAndExit(os.Args) // exits only if it forwards
+	register()
 
 	// This actually runs the command
 	err := Command.Execute()
@@ -134,7 +139,7 @@ func relaunch() {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 	if err := cmd.Wait(); err != nil {
-		exit(1) // no easy way to fetch exit code from cmd; we usually exit 1 on error anyway
+		logging.Error("relaunched cmd returned error: %v", err)
 	}
-	exit(0)
+	os.Exit(osutils.CmdExitCode(cmd))
 }

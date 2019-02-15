@@ -4,6 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/fatih/color"
+	colorable "github.com/mattn/go-colorable"
 )
 
 func replaceStdout(newOut *os.File) *os.File {
@@ -35,6 +38,10 @@ func CaptureStdout(fnToExec func()) (string, error) {
 		return "", err
 	}
 	defer replaceStdout(replaceStdout(tmpOut))
+
+	// Redefine output used for color printing, otherwise these won't be captured
+	color.Output = colorable.NewColorableStdout()
+	defer func() { color.Output = colorable.NewColorableStdout() }()
 
 	fnToExec() // execute the provided function
 
