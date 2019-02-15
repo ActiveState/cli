@@ -47,8 +47,9 @@ scripts:
 	return project
 }
 
-func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []string, expectedStdout string) {
-	Flags.Standalone, Args.Name = false, "" // reset
+func captureExecCommand(t *testing.T, cmdName string, cmdArgs []string) string {
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	project := setupProjectWithScriptsExpectingArgs(t, cmdName)
 	project.Persist()
@@ -66,19 +67,32 @@ func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []stri
 	})
 	require.NoError(t, execErr, "error executing command")
 	require.NoError(t, outErr, "error capturing stdout")
-	require.NoError(t, failures.Handled(), "No failure occurred")
+	return outStr
+}
 
+func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []string, expectedStdout string) {
+	outStr := captureExecCommand(t, cmdName, cmdArgs)
+
+	require.Nil(t, failures.Handled(), "unexpected failure occurred")
 	assert.Contains(t, outStr, expectedStdout)
+}
+
+func assertExecCommandFails(t *testing.T, cmdName string, cmdArgs []string, failureType *failures.FailureType) {
+	captureExecCommand(t, cmdName, cmdArgs)
+
+	handled := failures.Handled()
+	require.NotNil(t, handled, "expected a failure")
+	assert.Equal(t, failureType, handled.(*failures.Failure).Type, "No failure occurred")
 }
 
 func TestArgs_NoArgsProvided(t *testing.T) {
 	// state run
-	assertExecCommandProcessesArgs(t, "run", []string{}, "ARGS|||||")
+	assertExecCommandFails(t, "run", []string{}, failures.FailUserInput)
 }
 
-func TestArgs_OnlyDash(t *testing.T) {
+func TestArgs_NoCmd_OnlyDash(t *testing.T) {
 	// state run --
-	assertExecCommandProcessesArgs(t, "run", []string{"--"}, "ARGS|--||||")
+	assertExecCommandFails(t, "run", []string{"--"}, failures.FailUserInput)
 }
 
 func TestArgs_NameAndDashOnly(t *testing.T) {
@@ -93,12 +107,12 @@ func TestArgs_MultipleArgs_NoDash(t *testing.T) {
 
 func TestArgs_NoCmd_AllArgsAfterDash(t *testing.T) {
 	// state run -- foo geez
-	assertExecCommandProcessesArgs(t, "run", []string{"--", "foo", "geez"}, "ARGS|--|foo|geez||")
+	assertExecCommandFails(t, "run", []string{"--", "foo", "geez"}, failures.FailUserInput)
 }
 
 func TestArgs_NoCmd_FlagAsFirstArg(t *testing.T) {
 	// state run -- foo geez
-	assertExecCommandProcessesArgs(t, "run", []string{"-f", "--foo", "geez"}, "ARGS|-f|--foo|geez||")
+	assertExecCommandFails(t, "run", []string{"-f", "--foo", "geez"}, failures.FailUserInput)
 }
 
 func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {

@@ -1,10 +1,8 @@
 package run
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -37,43 +35,21 @@ func init() {
 	}
 }
 
-// Flags hold the flag values passed through the command line.
-var Flags struct {
-	Standalone bool
-	List       bool
-}
-
 // Args hold the arg values passed through the command line.
 var Args struct {
 	Name string
 }
 
-// processScriptArgs will determine which args are actually intended to be command line arguments
-// for the script that is to be run. The heuristic is simply: if first arg is a flag then treat all
-// args to this command as args for the script that will run; otherwise, first arg is the name of the
-// script to run, so treat remaning args as args for that script.
-func processScriptArgs(cmd *cobra.Command, allArgs []string) []string {
-	if len(allArgs) == 0 || strings.HasPrefix(allArgs[0], "-") {
-		// no args or first arg is a flag
-		return allArgs
-	}
-	return allArgs[1:]
-}
-
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
+
 	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
-		// no command was given or first argument is a flag or "--", thus the default command name is "run"
-		Args.Name = constants.DefaultScriptName
-	}
-
-	scriptArgs := processScriptArgs(cmd, allArgs)
-
-	if Flags.List {
-		ListScripts()
+		failures.Handle(failures.FailUserInput.New("error_state_run_undefined_name"), "")
 		return
 	}
+
+	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
 	prj := project.Get()
@@ -92,7 +68,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	// Activate the state if needed.
-	if !standalone && !subshell.IsActivated() && !Flags.Standalone {
+	if !standalone && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {
@@ -116,19 +92,5 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)
 		return
-	}
-}
-
-// ListScripts prints the available scripts
-func ListScripts() {
-	print.Info(locale.T("run_listing_scripts"))
-
-	prj := project.Get()
-	scripts := prj.Scripts()
-
-	rows := [][]interface{}{}
-	for k, script := range scripts {
-		rows = append(rows, []interface{}{k, script.Name()})
-		print.Line(fmt.Sprintf(" * %s", script.Name()))
 	}
 }
