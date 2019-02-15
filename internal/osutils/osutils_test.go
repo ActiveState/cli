@@ -34,6 +34,6 @@ func TestExecuteAndPipeStd(t *testing.T) {
 		ExecuteAndPipeStd("echo", "--out--")
 		logging.SetLevel(logging.NORMAL)
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")
 }

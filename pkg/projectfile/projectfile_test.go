@@ -17,13 +17,13 @@ import (
 
 func setCwd(t *testing.T, subdir string) {
 	cwd, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
+	require.NoError(t, err, "Should fetch cwd")
 	path := filepath.Join(cwd, "pkg", "projectfile", "testdata")
 	if subdir != "" {
 		path = filepath.Join(path, subdir)
 	}
 	err = os.Chdir(path)
-	assert.NoError(t, err, "Should change dir without issue.")
+	require.NoError(t, err, "Should change dir without issue.")
 }
 
 func TestProjectStruct(t *testing.T) {
@@ -380,12 +380,12 @@ func TestGetActivated(t *testing.T) {
 func TestParseVersion(t *testing.T) {
 	setCwd(t, "")
 	version, fail := ParseVersion()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 	assert.Empty(t, version, "No version exists")
 
 	setCwd(t, "withversion")
 	version, fail = ParseVersion()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 	assert.NotEmpty(t, version, "Version exists")
 
 	setCwd(t, "withbadversion")

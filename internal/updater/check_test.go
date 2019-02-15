@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -18,13 +20,13 @@ import (
 
 func setup(t *testing.T, withVersion bool) {
 	cwd, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
+	require.NoError(t, err, "Should fetch cwd")
 	path := filepath.Join(cwd, "internal", "updater", "testdata")
 	if withVersion {
 		path = filepath.Join(path, "withversion")
 	}
 	err = os.Chdir(path)
-	assert.NoError(t, err, "Should change dir without issue.")
+	require.NoError(t, err, "Should change dir without issue.")
 	projectfile.Reset()
 }
 

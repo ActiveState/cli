@@ -9,9 +9,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/stretchr/testify/assert"
 )
 
 type ClosingBuffer struct {
@@ -33,15 +34,15 @@ func MockUpdater(t *testing.T, filename string, version string) {
 	zw.Name = constants.CommandName
 
 	f, err := ioutil.ReadFile(filename)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = zw.Write(f)
-	assert.NoError(t, err)
-	assert.NoError(t, zw.Close())
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
 
 	cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
 	h := sha256.New()
 	_, err = h.Write(cb.Bytes())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	hash := h.Sum(nil)
 
 	requestPath := CreateRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))

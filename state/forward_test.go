@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,7 +22,7 @@ import (
 
 func testdataDir(t *testing.T) string {
 	cwd, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
+	require.NoError(t, err, "Should fetch cwd")
 	return filepath.Join(cwd, "state", "testdata")
 }
 
@@ -30,7 +32,7 @@ func setupCwd(t *testing.T, withVersion bool) {
 		testdatadir = filepath.Join(testdatadir, "withversion")
 	}
 	err := os.Chdir(testdatadir)
-	assert.NoError(t, err, "Should change dir without issue.")
+	require.NoError(t, err, "Should change dir without issue.")
 	projectfile.Reset()
 }
 
@@ -57,7 +59,7 @@ func TestForwardAndExit(t *testing.T) {
 	out, err := osutil.CaptureStdout(func() {
 		execForwardAndExit(binary, args)
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Contains(t, out, fmt.Sprintf("OUTPUT--%s--OUTPUT", strings.Join(args[1:], " ")), "state.sh mock should print our args")
 }

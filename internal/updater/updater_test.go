@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -41,17 +43,17 @@ func TestUpdaterNoError(t *testing.T) {
 	updater := createUpdater()
 
 	err := updater.Run()
-	assert.NoError(t, err, "Should run update")
+	require.NoError(t, err, "Should run update")
 
 	dir, err := ioutil.TempDir("", "state-test-updater")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	target := filepath.Join(dir, "target")
 	if fileutils.FileExists(target) {
 		os.Remove(target)
 	}
 
 	err = updater.Download(target)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.FileExists(t, target, "Downloads to target path")
 
 	os.Remove(target)
@@ -69,7 +71,7 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 	updater := createUpdater()
 	updater.DesiredVersion = "1.2.3-456"
 	info, err := updater.Info()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.NotNil(t, info, "Returns update info")
 	assert.Equal(t, "1.2.3-456", info.Version, "Should return expected version")
@@ -98,7 +100,7 @@ func TestPrintUpdateMessageEmpty(t *testing.T) {
 	stdout, err := osutil.CaptureStdout(func() {
 		PrintUpdateMessage()
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, stdout, "Should not print an update message because the version is not locked")
 }
 
