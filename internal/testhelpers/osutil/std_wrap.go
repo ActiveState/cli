@@ -41,6 +41,7 @@ func CaptureStdout(fnToExec func()) (string, error) {
 
 	// Redefine output used for color printing, otherwise these won't be captured
 	color.Output = colorable.NewColorableStdout()
+	defer func() { color.Output = colorable.NewColorableStdout() }()
 
 	fnToExec() // execute the provided function
 
