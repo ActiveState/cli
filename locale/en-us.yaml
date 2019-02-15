@@ -85,6 +85,8 @@ arg_state_activate_url_description:
   other: The URL of the repository that the project lives at
 flag_state_locale_description:
   other: Set the localisation
+flag_state_verbose_description:
+  other: Verbose output
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
