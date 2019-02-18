@@ -3,8 +3,6 @@ package secrets
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -15,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"

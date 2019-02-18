@@ -12,8 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -21,6 +19,8 @@ import (
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

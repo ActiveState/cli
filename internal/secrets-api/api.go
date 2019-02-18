@@ -3,11 +3,11 @@ package secretsapi
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/api"
-	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	apiEnv "github.com/ActiveState/cli/pkg/platform/api/environment"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"

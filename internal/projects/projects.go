@@ -1,10 +1,10 @@
 package projects
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	clientProjects "github.com/ActiveState/cli/internal/api/client/projects"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	clientProjects "github.com/ActiveState/cli/pkg/platform/api/client/projects"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 )
 
 // FetchByName fetches a project for an organization.

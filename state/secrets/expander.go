@@ -3,7 +3,6 @@ package secrets
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -12,6 +11,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )

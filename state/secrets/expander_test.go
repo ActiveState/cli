@@ -3,7 +3,6 @@ package secrets_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -13,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/internal/variables"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/stretchr/testify/suite"

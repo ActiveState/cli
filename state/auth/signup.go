@@ -3,13 +3,13 @@ package auth
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/client/users"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/client/users"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 

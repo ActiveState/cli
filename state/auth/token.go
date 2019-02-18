@@ -1,11 +1,11 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 )
 
 func tokenAuth() {

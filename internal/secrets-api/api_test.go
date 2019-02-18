@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
-	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	apiEnv "github.com/ActiveState/cli/pkg/platform/api/environment"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

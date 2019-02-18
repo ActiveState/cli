@@ -1,13 +1,13 @@
 package projects
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/client/organizations"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/client/organizations"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )

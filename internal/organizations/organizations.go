@@ -1,10 +1,10 @@
 package organizations
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	clientOrgs "github.com/ActiveState/cli/internal/api/client/organizations"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 )
 
 // FetchAll fetches all organizations for the current user.

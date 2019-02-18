@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )

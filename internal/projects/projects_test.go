@@ -3,10 +3,10 @@ package projects_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/stretchr/testify/assert"
 )
 
