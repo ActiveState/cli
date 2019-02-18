@@ -4,17 +4,21 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 func replaceStderr(newErr *os.File) *os.File {
 	oldErr := os.Stderr
 	os.Stderr = newErr
+	color.Output = newErr
 	return oldErr
 }
 
 func replaceStdout(newOut *os.File) *os.File {
 	oldOut := os.Stdout
 	os.Stdout = newOut
+	color.Output = newOut
 	return oldOut
 }
 

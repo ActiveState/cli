@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -38,10 +39,10 @@ type VarSetCommandTestSuite struct {
 }
 
 func (suite *VarSetCommandTestSuite) SetupSuite() {
-	wd, err := os.Getwd()
-	suite.Require().NoError(err, "error obtaining working-directory")
+	path, err := environment.GetRootPath()
+	suite.Require().NoError(err, "error obtaining root path")
 
-	suite.testdataDir = filepath.Join(wd, "testdata")
+	suite.testdataDir = filepath.Join(path, "state", "variables", "testdata")
 	suite.configDir = filepath.Join(suite.testdataDir, "generated", "config")
 }
 
@@ -76,9 +77,7 @@ func (suite *VarSetCommandTestSuite) TestCommandConfig() {
 
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 
-	suite.Require().True(cc.HasAvailableFlags())
-	suite.NotNil(cc.Flag("project"))
-	suite.NotNil(cc.Flag("user"))
+	suite.Require().False(cc.HasAvailableFlags())
 }
 
 func (suite *VarSetCommandTestSuite) TestExecute_RequiresNameAndValue() {

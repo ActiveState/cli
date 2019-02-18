@@ -19,7 +19,9 @@ import (
 func setup(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
+
+	err = os.Chdir(filepath.Join(root, "internal", "virtualenvironment", "testdata"))
+	assert.NoError(t, err, "unable to chdir to testdata dir")
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
