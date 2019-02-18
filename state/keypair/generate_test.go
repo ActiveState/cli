@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -23,8 +24,13 @@ type KeypairGenerateTestSuite struct {
 }
 
 func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
+	// reset flags and failures
 	failures.ResetHandled()
-	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
+	keypair.Flags.Bits = constants.DefaultRSABitLength
+	keypair.Flags.DryRun = false
+	keypair.Flags.SkipPassphrase = false
+
+	secretsClient := secretsapi_test.InitializeTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 
@@ -36,9 +42,9 @@ func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
-	cmd := keypair.NewCommand(suite.secretsClient)
+	cmd := keypair.Command
 
-	var bodyKeypair *models.Keypair
+	var bodyKeypair *models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
@@ -49,13 +55,13 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
 
 	var execErr error
 	outStr, _ := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
+		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
+		osutil.WrapStdin(func() { execErr = cmd.Execute() }, "abc123")
 	})
 
 	suite.Require().NoError(execErr)
 	suite.Require().NoError(bodyErr)
-	suite.NoError(failures.Handled(), "unexpected failure occurred")
+	suite.Require().NoError(failures.Handled(), "unexpected failure occurred")
 
 	suite.Contains(*bodyKeypair.EncryptedPrivateKey, "RSA PRIVATE KEY")
 	suite.Contains(*bodyKeypair.EncryptedPrivateKey, "ENCRYPTED")
@@ -70,15 +76,15 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestExecute_SaveFails() {
-	cmd := keypair.NewCommand(suite.secretsClient)
+	cmd := keypair.Command
 
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
 	var execErr error
 	osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
+		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
+		osutil.WrapStdin(func() { execErr = cmd.Execute() }, "abc123")
 	})
 
 	suite.Require().NoError(execErr)
@@ -89,12 +95,12 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SaveFails() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestExecute_DryRun() {
-	cmd := keypair.NewCommand(suite.secretsClient)
+	cmd := keypair.Command
 
 	var execErr error
 	outStr, _ := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
-		osutil.WrapStdin(func() { execErr = cmd.Config().Execute() }, "abc123")
+		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
+		osutil.WrapStdin(func() { execErr = cmd.Execute() }, "abc123")
 	})
 	suite.Require().NoError(execErr)
 	suite.Require().NoError(failures.Handled(), "is a failure")

@@ -1,8 +1,6 @@
 package run
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,71 +10,54 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 )
 
-func TestRunStandalone(t *testing.T) {
-	Flags.Standalone, Args.Name = false, "" // reset
-	os.Setenv("SHELL", "bash")
-
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
-	assert.NoError(t, err)
-	tmpfile.Close()
-	os.Remove(tmpfile.Name())
+func TestRunStandaloneCommand(t *testing.T) {
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	project := &projectfile.Project{}
 	var contents string
 	if runtime.GOOS != "windows" {
-		contents = fmt.Sprintf(`
-commands:
+		contents = strings.TrimSpace(`
+scripts:
   - name: run
-    value: |
-      echo "Hello"
-      touch %s`, tmpfile.Name())
+    value: echo foo
+    standalone: true
+  `)
 	} else {
-		contents = fmt.Sprintf(`
-commands:
+		contents = strings.TrimSpace(`
+scripts:
   - name: run
-    value: |
-    echo "Hello"
-    copy NUL %s`, tmpfile.Name())
+    value: cmd /C echo foo
+    standalone: true
+  `)
 	}
-	err = yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--standalone"})
+	Cc.SetArgs([]string{"run"})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	print.Line(tmpfile.Name())
-	assert.FileExists(t, tmpfile.Name())
 }
 
-func TestRunStandaloneCommand(t *testing.T) {
-	Flags.Standalone, Args.Name = false, "" // reset
+func TestRunMissingCommandName(t *testing.T) {
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	project := &projectfile.Project{}
-	var contents string
-	if runtime.GOOS != "windows" {
-		contents = strings.TrimSpace(`
-commands:
+	contents := strings.TrimSpace(`
+scripts:
   - name: run
-    value: echo foo
-    standalone: true
-    `)
-	} else {
-		contents = strings.TrimSpace(`
-commands:
-  - name: run
-    value: cmd /C echo foo
-    standalone: true
-    `)
-	}
+    value: whatever
+  `)
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
@@ -85,15 +66,19 @@ commands:
 	Cc.SetArgs([]string{""})
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	handled := failures.Handled()
+	require.NotNil(t, handled, "expected a failure")
+	assert.Equal(t, failures.FailUserInput, handled.(*failures.Failure).Type, "No failure occurred")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
-	Flags.Standalone, Args.Name = false, "" // reset
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: whatever
   `)
@@ -109,27 +94,36 @@ commands:
 }
 
 func TestRunUnknownCommand(t *testing.T) {
-	Flags.Standalone, Args.Name = false, "" // reset
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: whatever
+    standalone: true
   `)
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
+	Command.Register()
+	exitCode := 0
+	Command.Exiter = func(code int) {
+		exitCode = code
+	}
+
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--standalone"})
+	Cc.SetArgs([]string{"run"})
 	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.Equal(t, 127, exitCode, "Execution caused exit")
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
-	Flags.Standalone, Args.Name = false, "" // reset
+	Args.Name = "" // reset
+	failures.ResetHandled()
 
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
@@ -146,12 +140,12 @@ func TestRunActivatedCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
-commands:
+scripts:
   - name: run
     value: cmd /C echo foo`)
 	}
@@ -161,7 +155,7 @@ commands:
 
 	// Run the command.
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{})
+	Cc.SetArgs([]string{"run"})
 	failures.ResetHandled()
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")

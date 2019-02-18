@@ -1,7 +1,7 @@
 package constants
 
 // VersionNumber holds the current version of our cli
-const VersionNumber = "0.1.2"
+const VersionNumber = "0.2.2"
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -33,6 +33,9 @@ const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
 // ActivatedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
+// ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
+const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
@@ -57,6 +60,10 @@ const APITokenName = "activestate-platform-cli"
 // KeypairLocalFileName is the name of the file (sans extension) that will hold the user's unencrypted
 // private key in their config dir.
 const KeypairLocalFileName = "private"
+
+// DefaultRSABitLength represents the default RSA bit-length that will be assumed when
+// generating new Keypairs.
+const DefaultRSABitLength int = 4096
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"

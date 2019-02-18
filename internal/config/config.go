@@ -37,8 +37,14 @@ func ensureConfigExists() error {
 	configDirs = configdir.New(configNamespace, appName)
 
 	if flag.Lookup("test.v") != nil {
+		// TEST ONLY LOGIC
 		configDirs.LocalPath, _ = filepath.Abs("./testdata/generated/config")
 		configDir = configDirs.QueryFolders(configdir.Local)[0]
+		err := os.RemoveAll(configDir.Path)
+		if err != nil {
+			print.Error("Could not remove generated config dir for tests: %v", err)
+			os.Exit(1)
+		}
 	} else {
 		configDir = configDirs.QueryFolders(configdir.Global)[0]
 	}

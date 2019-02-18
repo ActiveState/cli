@@ -20,6 +20,14 @@ func NewDefaultTestClient(bearerToken string) *secretsapi.Client {
 	return withTestableTransport(secretsapi.NewDefaultClient(bearerToken))
 }
 
+// InitializeTestClient initializes a testable secrets client using environment defaults for schema,
+// host, and path. While this function departs from the secretsapi.InitializeClient signature, it's
+// more useful for testing.
+func InitializeTestClient(bearerToken string) *secretsapi.Client {
+	secretsapi.DefaultClient = NewDefaultTestClient(bearerToken)
+	return secretsapi.DefaultClient
+}
+
 func withTestableTransport(client *secretsapi.Client) *secretsapi.Client {
 	rt := client.Transport.(*httptransport.Runtime)
 	rt.Transport = testTransport

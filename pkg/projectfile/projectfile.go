@@ -1,15 +1,15 @@
 package projectfile
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/mitchellh/hashstructure"
@@ -22,6 +22,15 @@ var FailNoProject = failures.Type("projectfile.fail.noproject")
 // FailParseProject identifies a failure as being due inability to parse file contents
 var FailParseProject = failures.Type("projectfile.fail.parseproject")
 
+// FailInvalidVersion identifies a failure as being due to an invalid version format
+var FailInvalidVersion = failures.Type("projectfile.fail.version")
+
+// Version is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
+// the Project struct
+type Version struct {
+	Version string `yaml:"version"`
+}
+
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string      `yaml:"name"`
@@ -33,7 +42,7 @@ type Project struct {
 	Languages    []Language  `yaml:"languages"`
 	Variables    []Variable  `yaml:"variables"`
 	Hooks        []Hook      `yaml:"hooks"`
-	Commands     []Command   `yaml:"commands"`
+	Scripts      []Script    `yaml:"scripts"`
 	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
 }
@@ -109,8 +118,8 @@ func (h *Hook) Hash() (string, error) {
 	return fmt.Sprintf("%X", hash), nil
 }
 
-// Command covers the command structure, which goes under Project
-type Command struct {
+// Script covers the script structure, which goes under Project
+type Script struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Standalone  bool       `yaml:"standalone"`
@@ -180,34 +189,39 @@ func (p *Project) SetPath(path string) {
 }
 
 // Save the project to its activestate.yaml file
-func (p *Project) Save() error {
+func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
-		return err
+		return failures.FailMarshal.Wrap(err)
 	}
 
 	f, err := os.Create(p.Path())
 	defer f.Close()
 	if err != nil {
-		return err
+		return failures.FailIO.Wrap(err)
 	}
 
 	_, err = f.Write([]byte(dat))
 	if err != nil {
-		return err
+		return failures.FailIO.Wrap(err)
 	}
 
 	return nil
 }
 
 // Returns the path to the project activestate.yaml
-func getProjectFilePath() string {
+func getProjectFilePath() (string, *failures.Failure) {
+	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	if projectFilePath != "" {
+		return projectFilePath, nil
+	}
+
 	root, err := os.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
-		return ""
+		return "", failures.FailOS.Wrap(err)
 	}
-	return filepath.Join(root, constants.ConfigFileName)
+	return fileutils.FindFileInPath(root, constants.ConfigFileName)
 }
 
 // Get returns the project configration in an unsafe manner (exits if errors occur)
@@ -227,10 +241,10 @@ func GetSafe() (*Project, *failures.Failure) {
 		return persistentProject, nil
 	}
 
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	// we do not want to use a path provided by state if we're running tests
-	if projectFilePath == "" || flag.Lookup("test.v") != nil {
-		projectFilePath = getProjectFilePath()
+	projectFilePath, failure := getProjectFilePath()
+	if failure != nil {
+		return nil, failure
 	}
 
 	_, err := ioutil.ReadFile(projectFilePath)
@@ -244,6 +258,49 @@ func GetSafe() (*Project, *failures.Failure) {
 	}
 	project.Persist()
 	return project, nil
+}
+
+// ParseVersion parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
+// trip over older activestate.yaml's with breaking changes
+func ParseVersion() (string, *failures.Failure) {
+	var projectFilePath string
+	if persistentProject != nil {
+		projectFilePath = persistentProject.Path()
+	} else {
+		var fail *failures.Failure
+		projectFilePath, fail = getProjectFilePath()
+		if fail != nil {
+			// Not being able to find a project file is not a failure for the purposes of this function
+			return "", nil
+		}
+	}
+
+	if projectFilePath == "" {
+		return "", nil
+	}
+
+	dat, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return "", failures.FailIO.Wrap(err)
+	}
+
+	versionStruct := Version{}
+	err = yaml.Unmarshal([]byte(dat), &versionStruct)
+	if err != nil {
+		return "", FailParseProject.Wrap(err)
+	}
+
+	if versionStruct.Version == "" {
+		return "", nil
+	}
+
+	version := strings.TrimSpace(versionStruct.Version)
+	match, fail := regexp.MatchString("^\\d+\\.\\d+\\.\\d+-\\d+$", version)
+	if fail != nil || !match {
+		return "", FailInvalidVersion.New(locale.T("err_invalid_version"))
+	}
+
+	return versionStruct.Version, nil
 }
 
 // Reset the current state, which unsets the persistent project

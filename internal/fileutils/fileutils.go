@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -164,9 +165,11 @@ func HashDirectory(path string) (string, *failures.Failure) {
 }
 
 // Mkdir is a small helper function to create a directory if it doesnt already exist
-func Mkdir(parent string, subpath ...string) *failures.Failure {
-	path := filepath.Join(subpath...)
-	path = filepath.Join(parent, path)
+func Mkdir(path string, subpath ...string) *failures.Failure {
+	if len(subpath) > 0 {
+		subpathStr := filepath.Join(subpath...)
+		path = filepath.Join(path, subpathStr)
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
@@ -174,6 +177,14 @@ func Mkdir(parent string, subpath ...string) *failures.Failure {
 		}
 	}
 	return nil
+}
+
+// MkdirUnlessExists will make the directory structure if it doesn't already exists
+func MkdirUnlessExists(path string) *failures.Failure {
+	if DirExists(path) {
+		return nil
+	}
+	return Mkdir(path)
 }
 
 // CopyFile copies a file from one location to another
@@ -184,12 +195,21 @@ func CopyFile(src, target string) *failures.Failure {
 	}
 	defer in.Close()
 
+	// Create target directory if it doesn't exist
+	dir := filepath.Dir(target)
+	fail := MkdirUnlessExists(dir)
+	if fail != nil {
+		return fail
+	}
+
+	// Create target file
 	out, err := os.Create(target)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 	defer out.Close()
 
+	// Copy bytes to target file
 	_, err = io.Copy(out, in)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
@@ -208,4 +228,28 @@ func ReadFileUnsafe(src string) []byte {
 		log.Fatalf("Cannot read file: %s, error: %s", src, err.Error())
 	}
 	return b
+}
+
+// FindFileInPath will find a file by the given file-name in the directory provided or in
+// one of the parent directories of that path by walking up the tree. If the file is found,
+// the path to that file is returned, otherwise an failure is returned.
+func FindFileInPath(dir, filename string) (string, *failures.Failure) {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return "", failures.FailOS.Wrap(err)
+	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
+		return filepath, nil
+	}
+	return "", failures.FailNotFound.New("err_file_not_found_in_path", filename, absDir)
+}
+
+// walkPathAndFindFile finds a file in the provided directory or one of its parent directories.
+// walkPathAndFindFile prefers an absolute directory path.
+func walkPathAndFindFile(dir, filename string) string {
+	if file := path.Join(dir, filename); FileExists(file) {
+		return file
+	} else if parentDir := path.Dir(dir); parentDir != dir {
+		return walkPathAndFindFile(parentDir, filename)
+	}
+	return ""
 }

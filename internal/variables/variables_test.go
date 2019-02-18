@@ -42,11 +42,11 @@ hooks:
     value: echo 'Hello $variables.foo!'
   - name: post
     value: echo 'Hello $variables.bar!'
-commands:
+scripts:
   - name: test
     value: make test
   - name: recursive
-    value: $commands.recursive
+    value: $scripts.recursive
   `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -91,12 +91,12 @@ func TestExpandProjectHookWithConstraints(t *testing.T) {
 	}
 }
 
-func TestExpandProjectCommand(t *testing.T) {
+func TestExpandProjectScript(t *testing.T) {
 	project := loadProject(t)
 
-	expanded := ExpandFromProject("$ $commands.test", project)
+	expanded := ExpandFromProject("$ $scripts.test", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")
-	assert.Equal(t, "$ make test", expanded, "Expanded simple command")
+	assert.Equal(t, "$ make test", expanded, "Expanded simple script")
 }
 
 func TestExpandProjectAlternateSyntax(t *testing.T) {
@@ -132,7 +132,7 @@ func TestExpandProjectUnknownName(t *testing.T) {
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	project := loadProject(t)
 
-	expanded := ExpandFromProject("$commands.recursive", project)
+	expanded := ExpandFromProject("$scripts.recursive", project)
 	assert.Error(t, Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
 	assert.True(t, Failure().Type.Matches(FailExpandVariableRecursion), "Handled unknown category")

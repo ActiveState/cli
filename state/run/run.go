@@ -1,7 +1,7 @@
 package run
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -16,40 +16,23 @@ import (
 )
 
 // Command holds the definition for "state run".
-var Command = &commands.Command{
-	Name:        "run",
-	Description: "run_description",
-	Run:         Execute,
+var Command *commands.Command
 
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "standalone",
-			Shorthand:   "s",
-			Description: "flag_state_run_standalone_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.Standalone,
-		},
-		&commands.Flag{
-			Name:        "list",
-			Description: "flag_state_run_standalone_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.List,
-		},
-	},
+func init() {
+	Command = &commands.Command{
+		Name:               "run",
+		Description:        "run_description",
+		Run:                Execute,
+		DisableFlagParsing: true,
 
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "arg_state_run_name",
-			Description: "arg_state_run_name_description",
-			Variable:    &Args.Name,
+		Arguments: []*commands.Argument{
+			&commands.Argument{
+				Name:        "arg_state_run_name",
+				Description: "arg_state_run_name_description",
+				Variable:    &Args.Name,
+			},
 		},
-	},
-}
-
-// Flags hold the flag values passed through the command line.
-var Flags struct {
-	Standalone bool
-	List       bool
+	}
 }
 
 // Args hold the arg values passed through the command line.
@@ -58,35 +41,34 @@ var Args struct {
 }
 
 // Execute the run command.
-func Execute(cmd *cobra.Command, args []string) {
+func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-	if Args.Name == "" {
-		Args.Name = "run" // default
-	}
 
-	if Flags.List {
-		ListCommands()
+	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
+		failures.Handle(failures.FailUserInput.New("error_state_run_undefined_name"), "")
 		return
 	}
 
-	// Determine which project command to run based on the given command name.
+	scriptArgs := allArgs[1:]
+
+	// Determine which project script to run based on the given script name.
 	prj := project.Get()
-	var command string
+	var scriptBlock string
 	var standalone bool
-	for _, cmd := range prj.Commands() {
-		if cmd.Name() == Args.Name {
-			command = cmd.Value()
-			standalone = cmd.Standalone()
+	for _, script := range prj.Scripts() {
+		if script.Name() == Args.Name {
+			scriptBlock = script.Value()
+			standalone = script.Standalone()
 			break
 		}
 	}
-	if command == "" {
+	if scriptBlock == "" {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
 		return
 	}
 
 	// Activate the state if needed.
-	if !standalone && !subshell.IsActivated() && !Flags.Standalone {
+	if !standalone && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {
@@ -96,32 +78,19 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Run the command.
-	command = variables.Expand(command)
+	// Run the script.
+	scriptBlock = variables.Expand(scriptBlock)
 	subs, err := subshell.Get()
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_no_shell"))
 		return
 	}
 
-	print.Info(locale.T("info_state_run_running", map[string]string{"Command": command}))
-	err = subs.Run(command)
-	if err != nil {
+	print.Info(locale.T("info_state_run_running", map[string]string{"Script": scriptBlock}))
+	code, err := subs.Run(scriptBlock, scriptArgs...)
+	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
+		Command.Exiter(code)
 		return
-	}
-}
-
-// ListCommands prints the available commands
-func ListCommands() {
-	print.Info(locale.T("run_listing_commands"))
-
-	prj := project.Get()
-	commands := prj.Commands()
-
-	rows := [][]interface{}{}
-	for k, cmd := range commands {
-		rows = append(rows, []interface{}{k, cmd.Name()})
-		print.Line(fmt.Sprintf(" * %s", cmd.Name()))
 	}
 }

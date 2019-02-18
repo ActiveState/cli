@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
+
 	"github.com/ActiveState/cli/internal/environment"
 
 	"github.com/stretchr/testify/assert"
@@ -19,13 +21,21 @@ func TestCreateUpdate(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	appPath = "build/state"
+	appPath = os.Args[0]
 	version = "1.0"
 	genDir = dir
+
+	exitCode := -1
+	exit = func(code int) {
+		exitCode = code
+	}
 
 	os.Chdir(environment.GetRootPathUnsafe())
 	run()
 
-	assert.FileExists(t, filepath.Join(dir, defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, "1.0", defaultPlatform+".gz"), "Should create update bits")
+	assert.Equal(t, -1, exitCode, "exit was not called")
+
+	assert.FileExists(t, filepath.Join(dir, constants.BranchName, defaultPlatform+".json"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".json"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".gz"), "Should create update bits")
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/scm"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -39,6 +40,8 @@ var Args struct {
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
+
+	updater.PrintUpdateMessage()
 
 	var project *projectfile.Project
 	if Args.Remote == "" {
@@ -94,12 +97,12 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if len(project.Commands) > 0 {
-		print.Bold("%s:", locale.T("print_state_show_commands"))
-		for _, command := range project.Commands {
-			if !constraints.IsConstrained(command.Constraints) {
-				value := variables.ExpandFromProject(command.Value, project)
-				print.Formatted("  %s: %s\n", command.Name, value)
+	if len(project.Scripts) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_scripts"))
+		for _, script := range project.Scripts {
+			if !constraints.IsConstrained(script.Constraints) {
+				value := variables.ExpandFromProject(script.Value, project)
+				print.Formatted("  %s: %s\n", script.Name, value)
 			}
 		}
 	}

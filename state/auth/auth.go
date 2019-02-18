@@ -8,14 +8,14 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/spf13/cobra"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Command holds our main command definition
 var Command = &commands.Command{
-	Name:           "auth",
-	Description:    "auth_description",
-	Run:            Execute,
-	RunWithoutAuth: true,
+	Name:        "auth",
+	Description: "auth_description",
+	Run:         Execute,
 
 	Arguments: []*commands.Argument{
 		&commands.Argument{
@@ -28,18 +28,16 @@ var Command = &commands.Command{
 
 // SignupCommand adds a registration sub-command
 var SignupCommand = &commands.Command{
-	Name:           "signup",
-	Description:    "signup_description",
-	Run:            ExecuteSignup,
-	RunWithoutAuth: true,
+	Name:        "signup",
+	Description: "signup_description",
+	Run:         ExecuteSignup,
 }
 
 // LogoutCommand adds the logout sub-command
 var LogoutCommand = &commands.Command{
-	Name:           "logout",
-	Description:    "logout_description",
-	Run:            ExecuteLogout,
-	RunWithoutAuth: true,
+	Name:        "logout",
+	Description: "logout_description",
+	Run:         ExecuteLogout,
 }
 
 // Args hold the arg values passed through the command line
@@ -80,8 +78,19 @@ func ExecuteSignup(cmd *cobra.Command, args []string) {
 
 // ExecuteLogout runs the logout command
 func ExecuteLogout(cmd *cobra.Command, args []string) {
+	doLogout()
+	print.Line(locale.T("logged_out"))
+}
+
+func doLogout() {
 	api.RemoveAuth()
 	keypairs.DeleteWithDefaults()
+}
 
-	print.Line(locale.T("logged_out"))
+// promptConfirm will prompt for a yes/no confirmation and return true if confirmed.
+func promptConfirm(translationID string) (confirmed bool) {
+	survey.AskOne(&survey.Confirm{
+		Message: locale.T(translationID),
+	}, &confirmed, nil)
+	return confirmed
 }

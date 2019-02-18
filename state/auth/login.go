@@ -8,19 +8,24 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 func plainAuth() {
 	credentials := &models.Credentials{}
-	err := promptForLogin(credentials)
-	if err != nil {
+	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
 
 	doPlainAuth(credentials)
+
+	if api.Auth != nil {
+		secretsapi.InitializeClient()
+		ensureUserKeypair(credentials.Password)
+	}
 }
 
 func promptForLogin(credentials *models.Credentials) error {
@@ -46,23 +51,17 @@ func doPlainAuth(credentials *models.Credentials) {
 	// Error checking
 	if err != nil {
 		switch err.(type) {
-
 		// Authentication failed due to username not existing
 		case *authentication.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
 			_, err := api.Client.Users.UniqueUsername(params)
 			if err == nil {
-				confirmed := false
-				prompt := &survey.Confirm{
-					Message: locale.T("prompt_login_to_signup"),
-				}
-				survey.AskOne(prompt, &confirmed, nil)
-				if confirmed {
+				if promptConfirm("prompt_login_to_signup") {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
-				print.Error(locale.T("err_auth_failed"))
+				failures.Handle(err, locale.T("err_auth_failed"))
 			}
 			return
 		case *authentication.PostLoginRetryWith:

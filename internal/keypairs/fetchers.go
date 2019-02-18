@@ -22,14 +22,14 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failure
 	return kpOk.Payload, nil
 }
 
-// Fetch fetchs and parses the current user's keypair or returns a failure.
-func Fetch(secretsClient *secretsapi.Client) (Keypair, *failures.Failure) {
+// Fetch fetchs and parses the current user's keypair using the provided passphrase or returns a failure.
+func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, *failures.Failure) {
 	rawKP, failure := FetchRaw(secretsClient)
 	if failure != nil {
 		return nil, failure
 	}
 
-	kp, failure := ParseRSA(*rawKP.EncryptedPrivateKey)
+	kp, failure := ParseEncryptedRSA(*rawKP.EncryptedPrivateKey, passphrase)
 	if failure != nil {
 		return nil, failure
 	}

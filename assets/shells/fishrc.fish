@@ -4,7 +4,7 @@ echo - Active state: {{.Project.Owner}}/{{.Project.Name}}
 set -xg {{$K}} "{{$V}}"
 {{end}}
 
-{{range $K, $CMD := .Commands}}
+{{range $K, $CMD := .Scripts}}
 alias {{$K}}='state run {{$CMD}}'
 {{end}}
 

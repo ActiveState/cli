@@ -26,6 +26,9 @@ var (
 	// FailIO identifies a failure as an IO failure
 	FailIO = Type("failures.fail.io")
 
+	// FailOS identifies a failure as an OS failure
+	FailOS = Type("failures.fail.os")
+
 	// FailInput identifies a failure as an input failure
 	FailInput = Type("failures.fail.input", FailUser)
 

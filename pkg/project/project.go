@@ -39,9 +39,9 @@ type Package struct {
 	projectfile *projectfile.Project
 }
 
-// Command covers the command structure
-type Command struct {
-	command     *projectfile.Command
+// Script covers the script structure
+type Script struct {
+	script      *projectfile.Script
 	projectfile *projectfile.Project
 }
 
@@ -105,15 +105,15 @@ func (p *Project) Hooks() []*Hook {
 	return hooks
 }
 
-// Commands returns a reference to projectfile.Commands
-func (p *Project) Commands() []*Command {
-	commands := []*Command{}
-	for i, command := range p.projectfile.Commands {
-		if !constraints.IsConstrained(command.Constraints) {
-			commands = append(commands, &Command{&p.projectfile.Commands[i], p.projectfile})
+// Scripts returns a reference to projectfile.Scripts
+func (p *Project) Scripts() []*Script {
+	scripts := []*Script{}
+	for i, script := range p.projectfile.Scripts {
+		if !constraints.IsConstrained(script.Constraints) {
+			scripts = append(scripts, &Script{&p.projectfile.Scripts[i], p.projectfile})
 		}
 	}
-	return commands
+	return scripts
 }
 
 // Name returns project name
@@ -272,16 +272,16 @@ func (h *Hook) Value() string {
 }
 
 // Source returns the source projectfile
-func (c *Command) Source() *projectfile.Project { return c.projectfile }
+func (c *Script) Source() *projectfile.Project { return c.projectfile }
 
-// Name returns command name
-func (c *Command) Name() string { return c.command.Name }
+// Name returns script name
+func (c *Script) Name() string { return c.script.Name }
 
 // Value returned with all variables evaluated
-func (c *Command) Value() string {
-	value := variables.ExpandFromProject(c.command.Value, c.projectfile)
+func (c *Script) Value() string {
+	value := variables.ExpandFromProject(c.script.Value, c.projectfile)
 	return value
 }
 
-// Standalone returns if the command is standalone or not
-func (c *Command) Standalone() bool { return c.command.Standalone }
+// Standalone returns if the script is standalone or not
+func (c *Script) Standalone() bool { return c.script.Standalone }

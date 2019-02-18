@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+
 	"github.com/spf13/pflag"
 	funk "github.com/thoas/go-funk"
 
@@ -40,12 +42,8 @@ func TestMainError(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--foo"})
 
-	exitCode := 0
-	exit = func(code int) {
-		exitCode = 1
-	}
-
-	main()
+	exit = exiter.Exit
+	exitCode := exiter.WaitForExit(main)
 
 	assert.Equal(exitCode, 1, "main didn't exit")
 }

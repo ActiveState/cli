@@ -6,7 +6,7 @@ precmd() { eval "$PROMPT_COMMAND" }
 export {{$K}}="{{$V}}"
 {{end}}
 
-{{range $K, $CMD := .Commands}}
+{{range $K, $CMD := .Scripts}}
 alias {{$K}}='state run {{$CMD}}'
 {{end}}
 

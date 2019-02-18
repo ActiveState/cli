@@ -11,8 +11,20 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 )
+
+func setCwd(t *testing.T, subdir string) {
+	cwd, err := environment.GetRootPath()
+	require.NoError(t, err, "Should fetch cwd")
+	path := filepath.Join(cwd, "pkg", "projectfile", "testdata")
+	if subdir != "" {
+		path = filepath.Join(path, subdir)
+	}
+	err = os.Chdir(path)
+	require.NoError(t, err, "Should change dir without issue.")
+}
 
 func TestProjectStruct(t *testing.T) {
 	project := Project{}
@@ -135,19 +147,19 @@ value: valueForValue`)
 	assert.NotEmpty(t, hash, "Hash has a value")
 }
 
-func TestCommandStruct(t *testing.T) {
-	command := Command{}
+func TestScriptStruct(t *testing.T) {
+	script := Script{}
 	dat := strings.TrimSpace(`
 name: valueForName
-value: valueForCommand
+value: valueForScript
 standalone: true`)
 
-	err := yaml.Unmarshal([]byte(dat), &command)
+	err := yaml.Unmarshal([]byte(dat), &script)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", command.Name, "Name should be set")
-	assert.Equal(t, "valueForCommand", command.Value, "Command should be set")
-	assert.True(t, command.Standalone, "Standalone should be set")
+	assert.Equal(t, "valueForName", script.Name, "Name should be set")
+	assert.Equal(t, "valueForScript", script.Value, "Script should be set")
+	assert.True(t, script.Standalone, "Standalone should be set")
 }
 
 func TestSecretsStruct_OrgScopedSecret(t *testing.T) {
@@ -261,9 +273,9 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Hooks[0].Name, "Hook name should be set")
 	assert.NotEmpty(t, project.Hooks[0].Value, "Hook value should be set")
 
-	assert.NotEmpty(t, project.Commands[0].Name, "Command name should be set")
-	assert.NotEmpty(t, project.Commands[0].Value, "Command value should be set")
-	assert.False(t, project.Commands[0].Standalone, "Standalone value should be set, but false")
+	assert.NotEmpty(t, project.Scripts[0].Name, "Script name should be set")
+	assert.NotEmpty(t, project.Scripts[0].Value, "Script value should be set")
+	assert.False(t, project.Scripts[0].Standalone, "Standalone value should be set, but false")
 
 	assert.Len(t, project.Secrets, 1)
 	secretSpec := project.Secrets.GetByName("org-secret")
@@ -305,15 +317,24 @@ func TestSave(t *testing.T) {
 
 // Call getProjectFilePath
 func TestGetProjectFilePath(t *testing.T) {
+	Reset()
+
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
 	os.Chdir(filepath.Join(root, "test"))
 
-	configPath := getProjectFilePath()
+	configPath, failure := getProjectFilePath()
+	require.Nil(t, failure)
 	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
+
+	os.Setenv(constants.ProjectEnvVarName, "/some/path")
+	defer os.Unsetenv(constants.ProjectEnvVarName)
+	configPath, failure = getProjectFilePath()
+	require.Nil(t, failure)
+	assert.Equal(t, "/some/path", configPath, "Project path is properly detected using the ProjectEnvVarName")
 
 	os.Chdir(cwd) // restore
 }
@@ -354,4 +375,28 @@ func TestGetActivated(t *testing.T) {
 	os.Chdir(cwd) // restore
 
 	Reset()
+}
+
+func TestParseVersion(t *testing.T) {
+	setCwd(t, "")
+	version, fail := ParseVersion()
+	require.NoError(t, fail.ToError())
+	assert.Empty(t, version, "No version exists")
+
+	setCwd(t, "withversion")
+	version, fail = ParseVersion()
+	require.NoError(t, fail.ToError())
+	assert.NotEmpty(t, version, "Version exists")
+
+	setCwd(t, "withbadversion")
+	version, fail = ParseVersion()
+	assert.Error(t, fail.ToError())
+	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Fails with FailInvalidVersion")
+
+	path, err := ioutil.TempDir("", "ParseVersionTest")
+	require.NoError(t, err)
+	os.Chdir(path)
+	version, fail = ParseVersion()
+	require.NoError(t, fail.ToError())
+	assert.Empty(t, version, "No version exists, because no project file exists")
 }
