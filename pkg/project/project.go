@@ -6,8 +6,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/organizations"
+	"github.com/ActiveState/cli/internal/projects"
+	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 
 	"github.com/ActiveState/cli/internal/expander"
@@ -327,6 +331,53 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 		return nil, failure
 	}
 	return &value, nil
+}
+
+// Save will save the provided value for this variable to the project file if not a secret, else
+// will store back to the secrets store.
+func (v *Variable) Save(value string) *failures.Failure {
+	if v.IsSecret() {
+		return v.saveSecretValue(value)
+	}
+	return v.saveStaticValue(value)
+}
+
+func (v *Variable) saveSecretValue(value string) *failures.Failure {
+	org, failure := organizations.FetchByURLName(v.projectfile.Owner)
+	if failure != nil {
+		return failure
+	}
+
+	var project *models.Project
+	if projectfile.VariablePullFromProject == *v.PulledFrom() {
+		project, failure = projects.FetchByName(org.Urlname, v.projectfile.Name)
+		if failure != nil {
+			return failure
+		}
+	}
+
+	kp, failure := secrets.LoadKeypairFromConfigDir()
+	if failure != nil {
+		return failure
+	}
+
+	isShareable := v.IsShared() && projectfile.VariableShareOrg == *v.SharedWith()
+	failure = secrets.Save(secretsapi.GetClient(), kp, org, project, !isShareable, v.Name(), value)
+	if failure != nil {
+		return failure
+	} else if isShareable {
+		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, project, v.Name(), value)
+	}
+
+	return nil
+}
+
+func (v *Variable) saveStaticValue(value string) *failures.Failure {
+	v.variable.ValueRaw = projectfile.VariableValue{StaticValue: &value}
+	if err := v.projectfile.Save(); err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
 }
 
 // Value returned with all variables evaluated

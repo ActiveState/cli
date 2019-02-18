@@ -103,7 +103,7 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 	suite.Require().False(cc.HasAvailableFlags())
 }
 
-func (suite *SecretsSetCommandTestSuite) TestExecute_RequiresSecretName() {
+func (suite *SecretsGetCommandTestSuite) TestExecute_RequiresName() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get"})
 	err := cmd.Config().Execute()

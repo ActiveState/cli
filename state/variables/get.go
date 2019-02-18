@@ -20,7 +20,7 @@ func buildGetCommand(cmd *Command) *commands.Command {
 			&commands.Argument{
 				Name:        "variables_get_arg_name_name",
 				Description: "variables_get_arg_name_description",
-				Variable:    &cmd.Args.SecretName,
+				Variable:    &cmd.Args.Name,
 				Required:    true,
 			},
 		},
@@ -30,7 +30,7 @@ func buildGetCommand(cmd *Command) *commands.Command {
 // ExecuteGet processes the `secrets get` command.
 func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	prj := project.Get()
-	variable := prj.VariableByName(cmd.Args.SecretName)
+	variable := prj.VariableByName(cmd.Args.Name)
 	if variable == nil {
 		failures.Handle(failures.FailUserInput.New("variables_err"), "")
 	} else if value, failure := variable.Value(); failure != nil {

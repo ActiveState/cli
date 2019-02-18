@@ -20,14 +20,9 @@ type Command struct {
 	config        *commands.Command
 	secretsClient *secretsapi.Client
 
-	Flags struct {
-		IsProject bool
-		IsUser    bool
-	}
-
 	Args struct {
-		SecretName      string
-		SecretValue     string
+		Name            string
+		Value           string
 		ShareUserHandle string
 	}
 }

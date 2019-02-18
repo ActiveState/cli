@@ -502,6 +502,8 @@ variables_expand_err_undefined:
   other: "Variable `{{.V0}}` not defined in project"
 variables_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
+variable_err_undefined:
+  other: "Variable `{{.V0}}` not defined in project"
 variables_err_invalid_pullfrom:
   other: "Invalid pullfrom used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
 variables_err_invalid_share:
