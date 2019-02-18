@@ -41,7 +41,6 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 
 	cmd.config.Append(buildGetCommand(cmd))
 	cmd.config.Append(buildSetCommand(cmd))
-	cmd.config.Append(buildShareCommand(cmd))
 	cmd.config.Append(buildSyncCommand(cmd))
 
 	return cmd

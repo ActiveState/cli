@@ -62,11 +62,10 @@ func (suite *VariablesCommandTestSuite) TestCommandConfig() {
 	suite.Equal("variables_cmd_description", conf.Description, "i18n symbol")
 
 	subCmds := conf.GetCobraCmd().Commands()
-	suite.Require().Len(subCmds, 4, "number of subcommands")
+	suite.Require().Len(subCmds, 3, "number of subcommands")
 	suite.Equal("get", subCmds[0].Name())
 	suite.Equal("set", subCmds[1].Name())
-	suite.Equal("share", subCmds[2].Name())
-	suite.Equal("sync", subCmds[3].Name())
+	suite.Equal("sync", subCmds[2].Name())
 	suite.Len(conf.Flags, 0, "number of command flags supported")
 	suite.Len(conf.Arguments, 0, "number of commands args supported")
 }

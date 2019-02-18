@@ -54,7 +54,7 @@ func (suite *SecretsSyncCommandTestSuite) AfterTest(suiteName, testName string) 
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
-	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[3]
+	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("sync", cc.Name())
 	suite.Equal(locale.T("variables_sync_cmd_description"), cc.Short, "translation")
