@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/env"
-	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
@@ -77,7 +77,7 @@ func register() {
 	secretsapi.InitializeClient()
 
 	Command.Append(activate.Command)
-	Command.Append(hook.Command)
+	Command.Append(events.Command)
 	Command.Append(selfupdate.Command)
 	Command.Append(auth.Command)
 	Command.Append(organizations.Command)

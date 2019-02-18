@@ -4,24 +4,16 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: activate a project
-hook_description:
-  other: Manage Project Hooks
-hook_add_description:
-  other: 
-    >
-    add script to run on hook trigger
-hook_remove_description:
-  other: 
-    >
-    remove script for hook trigger
-hook_header_id:
+events_description:
+  other: Manage Project Events
+events_header_id:
   other: ID
-hook_header_hook:
-  other: HOOK
-hook_header_command:
-  other: COMMAND
-hook_listing_hooks:
-  other: Listing configured hooks
+events_header_event:
+  other: Event
+events_header_value:
+  other: Value
+event_listing:
+  other: Listing configured events
 usage_tpl:
   other: "
 Usage:
@@ -119,52 +111,16 @@ error_could_not_activate_venv:
   other: Could not activate the virtual environment
 warning_language_not_yet_supported:
   other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"
-error_could_not_run_hooks:
-  other: Could not run hooks
-info_running_hook:
-  other: "Running hook: {{.Name}}"
-hook_add_cannot_add_hook:
-  other: "Cannot add hook '{{.Hook}} {{.Script}}'"
-hook_add_cannot_add_existing_hook:
-  other: "Identical hook already configured"
-hook_remove_multiple_hooks:
-  other: "More than one configured hook for name given.  Use ID instead."
-hook_remove_cannot_remove:
-  other: "Cannot remove hook"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
-arg_hook_add_hook:
-  other: HOOK
-arg_hook_add_hook_description:
-  other: The hook that will be listened to
-error_hook_add_invalid_hook:
-  other: "Invalid hook given: {{.V0}}"
-arg_hook_add_script:
-  other: SCRIPT
-arg_hook_add_script_description:
-  other: The script that will be run
-arg_hook_remove_identifier:
-  other: IDENTIFIER
-arg_hook_remove_identifier_description:
-  other: Identifies what hook to remove, can be a hash or a hook name
-prompt_choose_hook:
-  other: Which hook do you wish to remove?
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_parse_project:
   other: "Could not parse project file. For more info refer to the error log"
-err_hook_cannot_list:
-  other: Cannot list hooks
-err_hook_cannot_find:
-  other: Cannot find hooks matching your query
-prompt_hook_choose_remove:
-  other: Which hook would you like to remove?
-prompt_hook_option:
-  other: "{{.Hook.Name}}: `{{.Script}}` ({{.Constraints}}{{.Hash}})"
 err_invalid_input:
   other: Invalid input received
-hook_removed:
-  other: "Hook removed: {{.Hook.Name}} ({{.Hash}})"
+events_empty:
+  other: No events found for the current environment
 err_no_update_info:
   other: Cannot retrieve update information
 no_update_available:
@@ -455,8 +411,8 @@ print_state_show_url:
   other: URL
 print_state_show_platforms:
   other: Platforms
-print_state_show_hooks:
-  other: Hooks that will run
+print_state_show_events:
+  other: Events that will run
 print_state_show_scripts:
   other: Scripts
 print_state_show_languages:
