@@ -6,21 +6,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"path/filepath"
+	"os"
 
 	"github.com/ActiveState/cli/internal/constants/preprocess"
-	"github.com/ActiveState/cli/internal/environment"
 
 	"github.com/dave/jennifer/jen"
 )
 
 func main() {
 	if flag.Lookup("test.v") == nil {
-		run()
+		run(os.Args)
 	}
 }
 
-func run() {
+func run(args []string) {
+	if len(args) < 2 || (args[1] == "--" && len(args) < 3) {
+		log.Fatalf("Usage: %s <target-file>", args[0])
+	}
+
 	f := jen.NewFile("constants")
 
 	f.HeaderComment("Do NOT manually edit this file. It is generated using scripts/constants-generator using data from constants/preprocess.")
@@ -36,7 +39,13 @@ func run() {
 		log.Fatalf("Rendering failed: %v", err)
 	}
 
-	target := filepath.Join(environment.GetRootPathUnsafe(), "internal", "constants", "generated.go")
+	target := args[1]
+	if target == "--" {
+		target = args[2]
+	}
+
+	wd, _ := os.Getwd()
+	fmt.Printf("Writing generated constants to: %s (pwd: %s)\n", target, wd)
 	ioutil.WriteFile(target, buf.Bytes(), 0666)
 
 	fmt.Println("Constants generated")
