@@ -29,7 +29,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	datadir := config.GetDataDir()
 	filename := filepath.Join(datadir, "log.txt")
 
-	// Also print to stdout if this is a test
 	if l.verbose {
 		fmt.Println(l.formatter.Format(ctx, message, args...))
 	}
