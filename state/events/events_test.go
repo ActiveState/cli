@@ -1,4 +1,4 @@
-package hook
+package events
 
 import (
 	"os"
@@ -17,22 +17,6 @@ func TestExecute(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 	assert := assert.New(t)
-
-	Command.Execute()
-
-	assert.Equal(true, true, "Execute didn't panic")
-}
-
-func TestExecuteFiltered(t *testing.T) {
-	projectfile.Reset()
-
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
-	assert := assert.New(t)
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--filter", "FIRST_INSTALL"})
 
 	Command.Execute()
 

@@ -93,7 +93,7 @@ type ExpanderFunc func(name string, project *projectfile.Project) (string, *fail
 var expanderRegistry = map[string]ExpanderFunc{
 	"platform":  PlatformExpander,
 	"variables": VariableExpander,
-	"hooks":     HookExpander,
+	"events":    EventExpander,
 	"scripts":   ScriptExpander,
 }
 
@@ -154,12 +154,12 @@ func VariableExpander(name string, project *projectfile.Project) (string, *failu
 	return value, nil
 }
 
-// HookExpander expands hooks defined in the project-file.
-func HookExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+// EventExpander expands events defined in the project-file.
+func EventExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
 	var value string
-	for _, hook := range project.Hooks {
-		if hook.Name == name && !constraints.IsConstrained(hook.Constraints) {
-			value = hook.Value
+	for _, event := range project.Events {
+		if event.Name == name && !constraints.IsConstrained(event.Constraints) {
+			value = event.Value
 			break
 		}
 	}

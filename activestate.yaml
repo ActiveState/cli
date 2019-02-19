@@ -64,7 +64,7 @@ scripts: &scripts
       $scripts.build
       build/state --help
 commands: *scripts  # temporary alias for backwards compatibility
-hooks:
+events: &events
   - name: ACTIVATE
     value: |
       $variables.ENV
@@ -78,3 +78,4 @@ hooks:
         echo "swagger was not found on your PATH, installing .."
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
       fi
+hooks: *events # temporary alias for backwards compatibility
