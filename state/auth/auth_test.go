@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ import (
 
 func setup(t *testing.T) {
 	failures.ResetHandled()
-	api.RemoveAuth()
+	authentication.Logout()
 	secretsapi_test.InitializeTestClient("bearer123")
 
 	root, err := environment.GetRootPath()
@@ -53,7 +54,7 @@ func setupUser() *models.UserEditable {
 func TestExecuteNoArgs(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
@@ -68,14 +69,14 @@ func TestExecuteNoArgs(t *testing.T) {
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.Error(t, failures.Handled(), "No failure occurred")
-	assert.Nil(t, api.Auth, "Did not authenticate")
+	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 
 func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -84,12 +85,12 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 
-	_, err := api.Authenticate(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
-	assert.NotNil(t, api.Auth, "Authenticated")
-	require.NoError(t, err)
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	require.NoError(t, fail.ToError())
 
 	assert.NoError(t, Command.Execute(), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -99,7 +100,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -115,7 +116,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 		user.Password)
 
 	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -123,7 +124,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -147,7 +148,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 		user.Password)
 
 	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
@@ -159,7 +160,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -201,7 +202,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	)
 
 	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
@@ -212,7 +213,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -246,7 +247,7 @@ func TestExecuteSignup(t *testing.T) {
 	)
 
 	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
@@ -258,7 +259,7 @@ func TestExecuteToken(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -266,21 +267,21 @@ func TestExecuteToken(t *testing.T) {
 	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
 	httpmock.Register("POST", "/apikeys")
 
-	_, err := api.Authenticate(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	token := viper.GetString("apiToken")
-	api.RemoveAuth()
-	assert.NoError(t, err, "Executed without error")
-	assert.Nil(t, api.Auth, "Not Authenticated")
+	authentication.Logout()
+	assert.NoError(t, fail.ToError(), "Executed without error")
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{token})
 
-	err = Command.Execute()
+	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -291,23 +292,25 @@ func TestExecuteLogout(t *testing.T) {
 
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
 
-	_, err := api.Authenticate(&models.Credentials{
+	auth := authentication.Get()
+	fail := auth.AuthenticateWithModel(&models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
-	assert.NotNil(t, api.Auth, "Authenticated")
+	require.NoError(t, fail.ToError())
+	assert.True(t, auth.Authenticated(), "Authenticated")
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"logout"})
 
-	err = Command.Execute()
+	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
-	assert.Nil(t, api.Auth, "Not Authenticated")
+	assert.False(t, auth.Authenticated(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
@@ -319,7 +322,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -344,7 +347,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 		user.Username, user.Password, "\x04")
 
 	require.NoError(t, execErr, "Executed without error")
-	assert.Nil(t, api.Auth, "Not Authenticated")
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
@@ -353,7 +356,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 		user.Username, user.Password, "foo")
 
 	require.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 }
@@ -362,7 +365,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 	defer failures.ResetHandled()
@@ -396,7 +399,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 		user.Username, user.Password, "\x04")
 
 	require.NoError(t, execErr, "Executed without error")
-	assert.Nil(t, api.Auth, "Not Authenticated")
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
@@ -405,7 +408,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 		user.Username, user.Password, "foo")
 
 	require.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, api.Auth, "Authenticated")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
@@ -414,7 +417,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 }
 
 func TestUsernameValidator(t *testing.T) {
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")

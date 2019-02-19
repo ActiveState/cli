@@ -3,6 +3,8 @@ package auth
 import (
 	"errors"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -32,7 +34,7 @@ func signup() {
 
 	doSignup(input)
 
-	if api.Auth != nil {
+	if authentication.Get().Authenticated() {
 		if failure := generateKeypairForUser(input.Password); failure != nil {
 			failures.Handle(failure, locale.T("keypair_err_save"))
 		}
@@ -115,7 +117,7 @@ func doSignup(input *signupInput) {
 		Password: input.Password,
 		Name:     input.Name,
 	})
-	addUserOK, err := api.Client.Users.AddUser(params)
+	addUserOK, err := api.Get().Users.AddUser(params)
 
 	// Error checking
 	if err != nil {
@@ -143,7 +145,7 @@ func usernameValidator(val interface{}) error {
 	value := val.(string)
 	params := users.NewUniqueUsernameParams()
 	params.SetUsername(value)
-	res, err := api.Client.Users.UniqueUsername(params)
+	res, err := api.Get().Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
 		return errors.New(locale.T("err_username_taken"))
 	}

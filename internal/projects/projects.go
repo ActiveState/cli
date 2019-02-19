@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // FetchByName fetches a project for an organization.
@@ -12,7 +13,7 @@ func FetchByName(orgName string, projectName string) (*models.Project, *failures
 	params := clientProjects.NewGetProjectParams()
 	params.OrganizationName = orgName
 	params.ProjectName = projectName
-	resOk, err := api.Client.Projects.GetProject(params, api.Auth)
+	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processErrorResponse(err)
 	}
@@ -23,7 +24,7 @@ func FetchByName(orgName string, projectName string) (*models.Project, *failures
 func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Failure) {
 	projParams := clientProjects.NewListProjectsParams()
 	projParams.SetOrganizationName(orgName)
-	orgProjects, err := api.Client.Projects.ListProjects(projParams, api.Auth)
+	orgProjects, err := authentication.Client().Projects.ListProjects(projParams, authentication.ClientAuth())
 	if err != nil {
 		return nil, processErrorResponse(err)
 	}

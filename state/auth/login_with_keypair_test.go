@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -33,7 +35,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	failures.ResetHandled()
 
-	suite.platformMock = httpmock.Activate(api.Prefix)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
 
 	root, err := environment.GetRootPath()
@@ -65,7 +67,7 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
-	suite.NotNil(api.Auth, "Should have been authenticated")
+	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// very local keypair is saved
 	localKeypair, failure := keypairs.LoadWithDefaults()
@@ -94,7 +96,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
-	suite.NotNil(api.Auth, "Should have been authenticated")
+	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
@@ -126,7 +128,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
-	suite.NotNil(api.Auth, "Should have been authenticated")
+	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
@@ -160,7 +162,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
-	suite.NotNil(api.Auth, "Should have been authenticated")
+	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
@@ -199,7 +201,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
-	suite.NotNil(api.Auth, "Should have been authenticated")
+	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
 	// verify encoded keypair matches generated keypair
 	suite.Require().NoError(bodyErr)
@@ -233,7 +235,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(execOutErr, "Captured stdout with error")
 	suite.Require().Error(failures.Handled(), "Expected Failure")
-	suite.Nil(api.Auth, "Should not have been authenticated")
+	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	suite.Contains(execOut, locale.T("auth_unresolved_keypair_issue_message"))
 

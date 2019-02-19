@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -25,8 +27,11 @@ func setup(t *testing.T) {
 func TestProjects(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("GET", "/organizations/organizationName/projects")
@@ -46,8 +51,11 @@ func TestProjects(t *testing.T) {
 func TestProjectsEmpty(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithResponder("GET", "/organizations", func(req *http.Request) (int, string) {
 		return 200, "organizations-empty"
@@ -65,8 +73,11 @@ func TestProjectsEmpty(t *testing.T) {
 func TestClientError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	_, fail := fetchProjects()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
@@ -83,8 +94,11 @@ func TestClientError(t *testing.T) {
 func TestAuthError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 	_, fail := fetchProjects()

@@ -3,11 +3,12 @@ package secretsapi
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	apiEnv "github.com/ActiveState/cli/pkg/platform/api/environment"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -59,7 +60,7 @@ func NewClient(schema, host, basePath, bearerToken string) *Client {
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
 func NewDefaultClient(bearerToken string) *Client {
-	apiSetting := apiEnv.GetSecretsAPISettings()
+	apiSetting := api.GetSettings(api.ServiceSecrets)
 	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
 }
 
@@ -74,7 +75,7 @@ var DefaultClient *Client
 // Because this function is dependent on a runtime-value from internal/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
 func InitializeClient() *Client {
-	DefaultClient = NewDefaultClient(api.BearerToken)
+	DefaultClient = NewDefaultClient(authentication.Get().BearerToken())
 	return DefaultClient
 }
 

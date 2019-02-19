@@ -3,6 +3,8 @@ package secrets_test
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -42,7 +44,10 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.Prefix)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+
+	suite.platformMock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
