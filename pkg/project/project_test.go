@@ -101,30 +101,30 @@ func TestPlatforms(t *testing.T) {
 	resetProjectDir(t)
 }
 
-func TestHooks(t *testing.T) {
+func TestEvents(t *testing.T) {
 	setProjectDir(t)
 	prj, fail := GetSafe()
 	assert.NoError(t, fail.ToError(), "Run without failure")
 
-	hooks := prj.Hooks()
-	assert.Equal(t, 1, len(hooks), "Should match 1 out of three constrained items")
+	events := prj.Events()
+	assert.Equal(t, 1, len(events), "Should match 1 out of three constrained items")
 
-	hook := hooks[0]
+	event := events[0]
 
 	if runtime.GOOS == "linux" {
-		name := hook.Name()
+		name := event.Name()
 		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		value := hook.Value()
+		value := event.Value()
 		assert.Equal(t, "foo Linux", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := hook.Name()
+		name := event.Name()
 		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		value := hook.Value()
+		value := event.Value()
 		assert.Equal(t, "bar Windows", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := hook.Name()
+		name := event.Name()
 		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		value := hook.Value()
+		value := event.Value()
 		assert.Equal(t, "baz OSX", value, "Value should match (OSX)")
 	}
 	resetProjectDir(t)

@@ -29,7 +29,7 @@ variables:
     value: baz $platform.name
     constraints:
       platform: OSX
-hooks:
+events:
   - name: bar
     value: bar $platform.name
     constraints:

@@ -71,7 +71,7 @@ type SubShell interface {
 func Activate(wg *sync.WaitGroup) (SubShell, error) {
 	logging.Debug("Activating Subshell")
 
-	// Why another check here? Because some things like hooks / run script don't take the virtualenv route,
+	// Why another check here? Because some things like events / run script don't take the virtualenv route,
 	// realistically this shouldn't really happen, but it's a useful failsafe for us
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
@@ -99,9 +99,9 @@ func getRcFile(v SubShell) (*os.File, error) {
 	prj := project.Get()
 
 	userScripts := ""
-	for _, hook := range prj.Hooks() {
-		if hook.Name() == "ACTIVATE" {
-			userScripts = userScripts + "\n" + hook.Value()
+	for _, event := range prj.Events() {
+		if event.Name() == "ACTIVATE" {
+			userScripts = userScripts + "\n" + event.Value()
 		}
 	}
 

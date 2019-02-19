@@ -37,7 +37,7 @@ variables:
     platform: Windows
   - name: UPPERCASE
     value: foo
-hooks:
+events:
   - name: pre
     value: echo 'Hello $variables.foo!'
   - name: post
@@ -69,23 +69,23 @@ func TestExpandProjectPlatformOs(t *testing.T) {
 	}
 }
 
-func TestExpandProjectHook(t *testing.T) {
+func TestExpandProjectEvent(t *testing.T) {
 	project := loadProject(t)
 
-	expanded := ExpandFromProject("$hooks.pre", project)
+	expanded := ExpandFromProject("$events.pre", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "echo 'Hello bar!'", expanded, "Expanded simple variable")
 }
 
-func TestExpandProjectHookWithConstraints(t *testing.T) {
+func TestExpandProjectEventWithConstraints(t *testing.T) {
 	project := loadProject(t)
 
 	if runtime.GOOS == "linux" {
-		expanded := ExpandFromProject("$hooks.post", project)
+		expanded := ExpandFromProject("$events.post", project)
 		assert.NoError(t, Failure().ToError(), "Ran without failure")
 		assert.Equal(t, "echo 'Hello baz!'", expanded, "Expanded platform-specific variable")
 	} else if runtime.GOOS == "windows" {
-		expanded := ExpandFromProject("$hooks.post", project)
+		expanded := ExpandFromProject("$events.post", project)
 		assert.NoError(t, Failure().ToError(), "Ran without failure")
 		assert.Equal(t, "echo 'Hello quux!'", expanded, "Expanded platform-specific variable")
 	}

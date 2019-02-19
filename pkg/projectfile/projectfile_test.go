@@ -131,20 +131,17 @@ value: valueForValue`)
 	assert.NotEmpty(t, hash, "Hash has a value")
 }
 
-func TestHookStruct(t *testing.T) {
-	hook := Hook{}
+func TestEventStruct(t *testing.T) {
+	event := Event{}
 	dat := strings.TrimSpace(`
 name: valueForName
 value: valueForValue`)
 
-	err := yaml.Unmarshal([]byte(dat), &hook)
+	err := yaml.Unmarshal([]byte(dat), &event)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", hook.Name, "Name should be set")
-	assert.Equal(t, "valueForValue", hook.Value, "Value should be set")
-	hash, err := hook.Hash()
-	assert.NoError(t, err, "Hashed hook")
-	assert.NotEmpty(t, hash, "Hash has a value")
+	assert.Equal(t, "valueForName", event.Name, "Name should be set")
+	assert.Equal(t, "valueForValue", event.Value, "Value should be set")
 }
 
 func TestScriptStruct(t *testing.T) {
@@ -270,8 +267,8 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Variables[0].Name, "Variable name should be set")
 	assert.NotEmpty(t, project.Variables[0].Value, "Variable value should be set")
 
-	assert.NotEmpty(t, project.Hooks[0].Name, "Hook name should be set")
-	assert.NotEmpty(t, project.Hooks[0].Value, "Hook value should be set")
+	assert.NotEmpty(t, project.Events[0].Name, "Event name should be set")
+	assert.NotEmpty(t, project.Events[0].Value, "Event value should be set")
 
 	assert.NotEmpty(t, project.Scripts[0].Name, "Script name should be set")
 	assert.NotEmpty(t, project.Scripts[0].Value, "Script value should be set")
