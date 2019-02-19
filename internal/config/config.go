@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/environment"
+
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/shibukawa/configdir"
@@ -31,7 +33,7 @@ func GetDataDir() string {
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	appName := C.LibraryName
-	if C.BranchName != C.ProductionBranch {
+	if environment.TargetEnvironment() == environment.Development {
 		appName = fmt.Sprintf("%s-%s", appName, "dev")
 	}
 	configDirs = configdir.New(configNamespace, appName)
