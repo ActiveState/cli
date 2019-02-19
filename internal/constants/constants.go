@@ -67,3 +67,27 @@ const DefaultRSABitLength int = 4096
 
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"
+
+// PlatformAPIPath is the api path used for the platform api
+const PlatformAPIPath = "/api/v1"
+
+// SecretsAPIPath is the api path used for the secrets api
+const SecretsAPIPath = "/api/secrets/v1"
+
+// PlatformURLProd is the host used for platform api calls when on production
+const PlatformURLProd = "https://platform.activestate.com" + PlatformAPIPath
+
+// SecretsURLProd is the host used for secrets api calls when on production
+const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
+
+// PlatformURLStage is the host used for platform api calls when on staging
+const PlatformURLStage = "https://staging.activestate.build" + PlatformAPIPath
+
+// SecretsURLStage is the host used for secrets api calls when on staging
+const SecretsURLStage = "https://staging.activestate.com" + SecretsAPIPath
+
+// PlatformURLDev is the host used for platform api calls when on staging
+const PlatformURLDev = PlatformURLStage
+
+// SecretsURLDev is the host used for secrets api calls when on dev
+const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
