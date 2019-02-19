@@ -45,9 +45,9 @@ type Script struct {
 	projectfile *projectfile.Project
 }
 
-// Hook covers the hook structure
-type Hook struct {
-	hook        *projectfile.Hook
+// Event covers the event structure
+type Event struct {
+	event       *projectfile.Event
 	projectfile *projectfile.Project
 }
 
@@ -94,15 +94,15 @@ func (p *Project) Variables() []*Variable {
 	return variables
 }
 
-// Hooks returns a reference to projectfile.Hooks
-func (p *Project) Hooks() []*Hook {
-	hooks := []*Hook{}
-	for i, hook := range p.projectfile.Hooks {
-		if !constraints.IsConstrained(hook.Constraints) {
-			hooks = append(hooks, &Hook{&p.projectfile.Hooks[i], p.projectfile})
+// Events returns a reference to projectfile.Events
+func (p *Project) Events() []*Event {
+	events := []*Event{}
+	for i, event := range p.projectfile.Events {
+		if !constraints.IsConstrained(event.Constraints) {
+			events = append(events, &Event{&p.projectfile.Events[i], p.projectfile})
 		}
 	}
-	return hooks
+	return events
 }
 
 // Scripts returns a reference to projectfile.Scripts
@@ -260,14 +260,14 @@ func (v *Variable) Value() string {
 }
 
 // Source returns the source projectfile
-func (h *Hook) Source() *projectfile.Project { return h.projectfile }
+func (e *Event) Source() *projectfile.Project { return e.projectfile }
 
-// Name returns Hook name
-func (h *Hook) Name() string { return h.hook.Name }
+// Name returns Event name
+func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all variables evaluated
-func (h *Hook) Value() string {
-	value := variables.ExpandFromProject(h.hook.Value, h.projectfile)
+func (e *Event) Value() string {
+	value := variables.ExpandFromProject(e.event.Value, e.projectfile)
 	return value
 }
 

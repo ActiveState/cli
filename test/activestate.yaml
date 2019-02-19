@@ -42,7 +42,7 @@ variables:
     value: '%projectDir%/src:%projectDir%/tests'
 secrets:
   - name: org-secret
-hooks:
+events:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'
   - name: AFTER_UPDATE

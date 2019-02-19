@@ -87,12 +87,12 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if len(project.Hooks) > 0 {
-		print.Bold("%s:", locale.T("print_state_show_hooks"))
-		for _, hook := range project.Hooks {
-			if !constraints.IsConstrained(hook.Constraints) {
-				value := variables.ExpandFromProject(hook.Value, project)
-				print.Formatted("  %s: %s\n", hook.Name, value)
+	if len(project.Events) > 0 {
+		print.Bold("%s:", locale.T("print_state_show_events"))
+		for _, event := range project.Events {
+			if !constraints.IsConstrained(event.Constraints) {
+				value := variables.ExpandFromProject(event.Value, project)
+				print.Formatted("  %s: %s\n", event.Name, value)
 			}
 		}
 	}

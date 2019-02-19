@@ -41,7 +41,7 @@ type Project struct {
 	Platforms    []Platform  `yaml:"platforms"`
 	Languages    []Language  `yaml:"languages"`
 	Variables    []Variable  `yaml:"variables"`
-	Hooks        []Hook      `yaml:"hooks"`
+	Events       []Event     `yaml:"events"`
 	Scripts      []Script    `yaml:"scripts"`
 	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
@@ -101,21 +101,11 @@ func (v *Variable) Hash() (string, error) {
 	return fmt.Sprintf("%X", hash), nil
 }
 
-// Hook covers the hook structure, which goes under Project
-type Hook struct {
+// Event covers the event structure, which goes under Project
+type Event struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
-}
-
-// Hash return a hashed version of the hook
-func (h *Hook) Hash() (string, error) {
-	hash, err := hashstructure.Hash(h, nil)
-	if err != nil {
-		logging.Errorf("Cannot hash hook: %v", err)
-		return "", err
-	}
-	return fmt.Sprintf("%X", hash), nil
 }
 
 // Script covers the script structure, which goes under Project
