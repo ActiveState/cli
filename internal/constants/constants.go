@@ -74,23 +74,47 @@ const ProductionBranch = "prod"
 // PlatformAPIPath is the api path used for the platform api
 const PlatformAPIPath = "/api/v1"
 
-// SecretsAPIPath is the api path used for the secrets api
-const SecretsAPIPath = "/api/secrets/v1"
-
 // PlatformURLProd is the host used for platform api calls when on production
 const PlatformURLProd = "https://platform.activestate.com" + PlatformAPIPath
-
-// SecretsURLProd is the host used for secrets api calls when on production
-const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
 
 // PlatformURLStage is the host used for platform api calls when on staging
 const PlatformURLStage = "https://staging.activestate.build" + PlatformAPIPath
 
-// SecretsURLStage is the host used for secrets api calls when on staging
-const SecretsURLStage = "https://staging.activestate.com" + SecretsAPIPath
-
 // PlatformURLDev is the host used for platform api calls when on staging
 const PlatformURLDev = PlatformURLStage
 
+// SecretsAPIPath is the api path used for the secrets api
+const SecretsAPIPath = "/api/secrets/v1"
+
+// SecretsURLProd is the host used for secrets api calls when on production
+const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
+
+// SecretsURLStage is the host used for secrets api calls when on staging
+const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
+
 // SecretsURLDev is the host used for secrets api calls when on dev
 const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
+
+// HeadChefAPIPath is the api path used for the secrets api
+const HeadChefAPIPath = "/sv/head-chef"
+
+// HeadChefURLProd is the host used for platform api calls when on production
+const HeadChefURLProd = "https://platform.activestate.com" + HeadChefAPIPath
+
+// HeadChefURLStage is the host used for platform api calls when on staging
+const HeadChefURLStage = "https://staging.activestate.build" + HeadChefAPIPath
+
+// HeadChefURLDev is the host used for platform api calls when on staging
+const HeadChefURLDev = HeadChefURLStage
+
+// InventoryAPIPath is the api path used for the secrets api
+const InventoryAPIPath = "/sv/inventory-api"
+
+// InventoryURLProd is the host used for platform api calls when on production
+const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
+
+// InventoryURLStage is the host used for platform api calls when on staging
+const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
+
+// InventoryURLDev is the host used for platform api calls when on staging
+const InventoryURLDev = InventoryURLStage
