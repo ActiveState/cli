@@ -33,8 +33,9 @@ func GetDataDir() string {
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	appName := C.LibraryName
-	if environment.TargetEnvironment() == environment.Development {
-		appName = fmt.Sprintf("%s-%s", appName, "dev")
+	targetEnv := environment.TargetEnvironment()
+	if targetEnv == environment.Development {
+		appName = fmt.Sprintf("%s-%s", appName, targetEnv.String())
 	}
 	configDirs = configdir.New(configNamespace, appName)
 

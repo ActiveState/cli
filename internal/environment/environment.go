@@ -21,6 +21,18 @@ const (
 	Development
 )
 
+// String returns a stringified version of the environment
+func (e Environment) String() string {
+	switch e {
+	case Production:
+		return "Linux"
+	case Development:
+		return "Windows"
+	default:
+		return ""
+	}
+}
+
 // TargetEnvironment returns the environment we're currently targeting
 func TargetEnvironment() Environment {
 	if constants.BranchName == constants.ProductionBranch {
