@@ -101,7 +101,7 @@ func (suite *ProjectTestSuite) TestEvents() {
 	events := prj.Events()
 	suite.Equal(1, len(events), "Should match 1 out of three constrained items")
 
-	events := events[0]
+	event := events[0]
 	name := event.Name()
 	value := event.Value()
 

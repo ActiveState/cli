@@ -30,45 +30,6 @@ type Project struct {
 	projectfile *projectfile.Project
 }
 
-// Platform covers the platform structure
-type Platform struct {
-	platform    *projectfile.Platform
-	projectfile *projectfile.Project
-}
-
-// Language covers the language structure
-type Language struct {
-	language    *projectfile.Language
-	projectfile *projectfile.Project
-}
-
-// Package covers the package structure
-type Package struct {
-	pkg         *projectfile.Package
-	projectfile *projectfile.Project
-}
-
-// Script covers the script structure
-type Script struct {
-	script      *projectfile.Script
-	projectfile *projectfile.Project
-}
-
-// Event covers the event structure
-type Event struct {
-	event       *projectfile.Event
-	projectfile *projectfile.Project
-}
-
-// Variable covers the variable structure
-type Variable struct {
-	variable    *projectfile.Variable
-	projectfile *projectfile.Project
-}
-
-// Build covers the build structure
-type Build map[string]string
-
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
 
@@ -333,6 +294,15 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	return &value, nil
 }
 
+// Value returned with all variables evaluated
+func (v *Variable) Value() (string, *failures.Failure) {
+	value, failure := v.ValueOrNil()
+	if failure != nil || value == nil {
+		return "", failure
+	}
+	return *value, nil
+}
+
 // Save will save the provided value for this variable to the project file if not a secret, else
 // will store back to the secrets store.
 func (v *Variable) Save(value string) *failures.Failure {
@@ -380,18 +350,9 @@ func (v *Variable) saveStaticValue(value string) *failures.Failure {
 	return nil
 }
 
-// Value returned with all variables evaluated
-func (v *Variable) Value() (string, *failures.Failure) {
-	value, failure := v.ValueOrNil()
-	if failure != nil || value == nil {
-		return "", failure
-	}
-	return *value, nil
-}
-
-// Hook covers the hook structure
-type Hook struct {
-	hook        *projectfile.Hook
+// Event covers the hook structure
+type Event struct {
+	event       *projectfile.Event
 	projectfile *projectfile.Project
 }
 
@@ -402,8 +363,8 @@ func (e *Event) Source() *projectfile.Project { return e.projectfile }
 func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all variables evaluated
-func (h *Event) Value() string {
-	value := expander.ExpandFromProject(h.event.Value, h.projectfile)
+func (e *Event) Value() string {
+	value := expander.ExpandFromProject(e.event.Value, e.projectfile)
 	return value
 }
 
