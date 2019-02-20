@@ -611,3 +611,9 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
+err_no_default_branch:
+  other: This project has no default branch. This indicates malformed data, please contact support!
+err_no_commit:
+  other: Project branch has no commits
+err_get_checkpoint:
+  other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
