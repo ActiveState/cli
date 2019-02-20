@@ -41,6 +41,7 @@ var T = locale.T
 // Flags hold the flag values passed through the command line
 var Flags struct {
 	Locale  string
+	Verbose bool
 	Version bool
 }
 
@@ -58,6 +59,15 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			Persist:     true,
 			StringVar:   &Flags.Locale,
+		},
+		&commands.Flag{
+			Name:        "verbose",
+			Shorthand:   "v",
+			Description: "flag_state_verbose_description",
+			Type:        commands.TypeBool,
+			Persist:     true,
+			OnUse:       onVerboseFlag,
+			BoolVar:     &Flags.Verbose,
 		},
 		&commands.Flag{
 			Name:        "version",
@@ -129,6 +139,12 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	cmd.Usage()
+}
+
+func onVerboseFlag() {
+	if Flags.Verbose {
+		logging.CurrentHandler().SetVerbose(true)
+	}
 }
 
 // When an update was found and applied, re-launch the update with the current

@@ -14,18 +14,22 @@ import (
 type fileHandler struct {
 	formatter Formatter
 	file      *os.File
+	verbose   bool
 }
 
 func (l *fileHandler) SetFormatter(f Formatter) {
 	l.formatter = f
 }
 
+func (l *fileHandler) SetVerbose(v bool) {
+	l.verbose = v
+}
+
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	datadir := config.GetDataDir()
 	filename := filepath.Join(datadir, "log.txt")
 
-	// Also print to stdout if this is a test
-	if flag.Lookup("test.v") != nil {
+	if l.verbose {
 		fmt.Println(l.formatter.Format(ctx, message, args...))
 	}
 
@@ -46,6 +50,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 }
 
 func init() {
-	handler := &fileHandler{DefaultFormatter, nil}
+	handler := &fileHandler{DefaultFormatter, nil, flag.Lookup("test.v") != nil}
 	SetHandler(handler)
 }
