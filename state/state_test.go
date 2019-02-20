@@ -44,7 +44,7 @@ func TestMainFnVerbose(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--verbose"})
 
-	out, err := osutil.CaptureStdout(func() {
+	out, err := osutil.CaptureStderr(func() {
 		main()
 	})
 	require.NoError(t, err)

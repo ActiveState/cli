@@ -3,12 +3,12 @@ package run
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
@@ -79,7 +79,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	// Run the script.
-	scriptBlock = variables.Expand(scriptBlock)
+	scriptBlock = expander.Expand(scriptBlock)
 	subs, err := subshell.Get()
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_no_shell"))

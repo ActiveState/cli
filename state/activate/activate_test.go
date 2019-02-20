@@ -24,8 +24,8 @@ func TestExecute(t *testing.T) {
 	assert := assert.New(t)
 
 	cwd, _ := os.Getwd() // store
-	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "test"))
-	assert.Nil(err, "Changed into test directory")
+	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
+	assert.Nil(err, "unable to chdir to testdata dir")
 
 	Command.Execute()
 

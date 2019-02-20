@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/kardianos/osext"
-	"gopkg.in/inconshreveable/go-update.v0"
+	update "gopkg.in/inconshreveable/go-update.v0"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"

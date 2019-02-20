@@ -23,6 +23,9 @@ var (
 	// failLegacy identifies a failure as a legacy failure, this is for internal use only
 	failLegacy = Type("failures.fail.legacy")
 
+	// FailDeveloper identifies a failure as being caused by the developer (eg. a codepath that should never happen unless a developer messed up)
+	FailDeveloper = Type("failures.fail.developer")
+
 	// FailIO identifies a failure as an IO failure
 	FailIO = Type("failures.fail.io")
 
