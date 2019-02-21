@@ -25,9 +25,9 @@ const (
 func (e Environment) String() string {
 	switch e {
 	case Production:
-		return "Linux"
+		return "prod"
 	case Development:
-		return "Windows"
+		return "dev"
 	default:
 		return ""
 	}
