@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 )
 
-// Service records available api serices
+// Service records available api services
 type Service string
 
 const (
