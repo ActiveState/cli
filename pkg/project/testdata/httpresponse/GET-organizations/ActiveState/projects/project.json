@@ -1,0 +1,35 @@
+{
+    "projectID": "00020002-0002-0002-0002-000200020002",
+    "organizationID": "00010001-0001-0001-0001-000100010001",
+    "added": "2019-02-19T17:09:47.181Z",
+    "branches": [
+        {
+            "branchID": "string",
+            "commitID": "string",
+            "default": true,
+            "label": "string",
+            "projectID": "string",
+            "tracking_type": "ignore",
+            "tracks": "string"
+        }
+    ],
+    "createdBy": "string",
+    "description": "project",
+    "languages": [
+        {
+            "ingredientID": "string",
+            "name": "string"
+        }
+    ],
+    "lastEdited": "2019-02-19T17:09:47.181Z",
+    "managed": true,
+    "name": "project",
+    "platforms": [
+        {
+            "displayName": "string",
+            "platformID": "string"
+        }
+    ],
+    "private": true,
+    "repoUrl": "string"
+}

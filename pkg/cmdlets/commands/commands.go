@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/pflag"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -35,6 +37,8 @@ type Flag struct {
 	Type        int
 	Persist     bool
 
+	OnUse func()
+
 	StringVar   *string
 	StringValue string
 	IntVar      *int
@@ -65,7 +69,8 @@ type Command struct {
 
 	UsageTemplate string
 
-	cobraCmd *cobra.Command
+	cobraCmd   *cobra.Command
+	parentCmds []*Command
 }
 
 // GetCobraCmd returns the cobra.Command that this struct is wrapping
@@ -80,9 +85,41 @@ func (c *Command) Execute() error {
 	return c.cobraCmd.Execute()
 }
 
+// FlagByName returns the relevant Flag, bubbling up to the parent commands to check for persistent flags
+func (c *Command) FlagByName(name string, persistOnly bool) *Flag {
+	for _, flag := range c.Flags {
+		if flag.Name == name && (!persistOnly || flag.Persist) {
+			return flag
+		}
+	}
+	for _, parent := range c.parentCmds {
+		if flag := parent.FlagByName(name, true); flag != nil {
+			return flag
+		}
+	}
+	return nil
+}
+
 // runner wraps the Run command
 func (c *Command) runner(cmd *cobra.Command, args []string) {
 	analytics.Event(analytics.CatRunCmd, c.Name)
+
+	// Run OnUse functions for flags
+	if !c.DisableFlagParsing {
+		cmd.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
+			if !cobraFlag.Changed {
+				return
+			}
+
+			flag := c.FlagByName(cobraFlag.Name, false)
+			if flag == nil || flag.OnUse == nil {
+				return
+			}
+
+			flag.OnUse()
+		})
+	}
+
 	for idx, arg := range c.Arguments {
 		if len(args) > idx {
 			(*arg.Variable) = args[idx]
@@ -242,5 +279,6 @@ func (c *Command) Append(subCmd *Command) {
 	c.Register()
 	subCmd.Register()
 
+	subCmd.parentCmds = append(subCmd.parentCmds, c)
 	c.cobraCmd.AddCommand(subCmd.cobraCmd)
 }

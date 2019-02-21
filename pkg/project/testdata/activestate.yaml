@@ -11,11 +11,11 @@ platforms:
     os: linux
   - name: OSX
     os: macos
-name: foo
+name: project
 environments: "something"
 version: "1.0"
 namespace: "my/name/space"
-owner: "carey"
+owner: ActiveState
 variables:
   - name: foo
     value: foo $platform.name
@@ -29,7 +29,13 @@ variables:
     value: baz $platform.name
     constraints:
       platform: OSX
-hooks:
+  - name: undefined-secret
+    value: 
+      pullfrom: organization
+  - name: defined-secret-org
+    value: 
+      pullfrom: organization
+events:
   - name: bar
     value: bar $platform.name
     constraints:

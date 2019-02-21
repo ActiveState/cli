@@ -3,11 +3,16 @@ package secretsapi
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/api"
-	apiEnv "github.com/ActiveState/cli/internal/api/environment"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
+
+	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
+	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -36,11 +41,26 @@ var (
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
+var persistentClient *Client
+
 // Client encapsulates a Secrets Service API client and its configuration
 type Client struct {
 	*client.Secrets
 	BaseURI string
 	Auth    runtime.ClientAuthInfoWriter
+}
+
+// GetClient gets the cached (if any) client instance that was initialized using our default settings
+func GetClient() *Client {
+	if persistentClient == nil {
+		persistentClient = NewDefaultClient(authentication.Get().BearerToken())
+	}
+	return persistentClient
+}
+
+// Reset will reset the client cache
+func Reset() {
+	persistentClient = nil
 }
 
 // NewClient creates a new SecretsAPI client instance using the provided HTTP settings.
@@ -59,7 +79,7 @@ func NewClient(schema, host, basePath, bearerToken string) *Client {
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
 func NewDefaultClient(bearerToken string) *Client {
-	apiSetting := apiEnv.GetSecretsAPISettings()
+	apiSetting := api.GetSettings(api.ServiceSecrets)
 	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
 }
 
@@ -71,10 +91,10 @@ var DefaultClient *Client
 // This new Client instance will be accessible as secretapi.DefaultClient afterwards. Calling
 // this function multiple times will redefine the DefaultClient value using the defaults/constants
 // available to it at the time of the call; thus, the DefaultClient can be re-initialized this way.
-// Because this function is dependent on a runtime-value from internal/api, we are not relying on
+// Because this function is dependent on a runtime-value from pkg/platform/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
 func InitializeClient() *Client {
-	DefaultClient = NewDefaultClient(api.BearerToken)
+	DefaultClient = NewDefaultClient(authentication.Get().BearerToken())
 	return DefaultClient
 }
 
@@ -90,4 +110,38 @@ func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
 		return "", api.FailAuth.Wrap(err)
 	}
 	return *resOk.Payload.UID, nil
+}
+
+// Persist will make the current client the persistentClient
+func (client *Client) Persist() {
+	persistentClient = client
+}
+
+// FetchAll fetchs the current user's secrets for an organization.
+func FetchAll(client *Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+	params := secretsapiClient.NewGetAllUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
+	if err != nil {
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		default:
+			return nil, api.FailUnknown.Wrap(err)
+		}
+	}
+	return getOk.Payload, nil
+}
+
+func SaveSecretShares(secretsClient *Client, org *models.Organization, user *models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+	params := secretsapiClient.NewShareUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	params.UserID = user.UserID
+	params.UserSecrets = shares
+	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
+	if err != nil {
+		logging.Debug("error sharing user secrets: %v", err)
+		return FailSave.New("variables_err_save")
+	}
+	return nil
 }

@@ -38,8 +38,10 @@ scripts: &scripts
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: generate-api-client
     value: |
-      pushd internal
-      swagger generate client -f https://platform.activestate.com/swagger.json -A api
+      pushd pkg/platform/api
+      wget https://platform.activestate.com/swagger.json
+      swagger generate client -f swagger.json -A api
+      rm swagger.json
       popd
   - name: generate-secrets-client
     value: |
@@ -52,7 +54,7 @@ scripts: &scripts
       $scripts.generate-secrets-client
   - name: test
     value: |
-      go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+      ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
   - name: clean
     value: |
       go clean
@@ -62,7 +64,7 @@ scripts: &scripts
       $scripts.build
       build/state --help
 commands: *scripts  # temporary alias for backwards compatibility
-hooks:
+events: &events
   - name: ACTIVATE
     value: |
       $variables.ENV
@@ -76,3 +78,4 @@ hooks:
         echo "swagger was not found on your PATH, installing .."
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
       fi
+hooks: *events # temporary alias for backwards compatibility

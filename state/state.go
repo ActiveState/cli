@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -15,20 +16,18 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/internal/variables"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
-	"github.com/ActiveState/cli/state/env"
-	"github.com/ActiveState/cli/state/hook"
+	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/run"
-	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/selfupdate"
 	"github.com/ActiveState/cli/state/show"
+	"github.com/ActiveState/cli/state/variables"
 	_ "github.com/ActiveState/state-required/require"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +40,7 @@ var T = locale.T
 // Flags hold the flag values passed through the command line
 var Flags struct {
 	Locale  string
+	Verbose bool
 	Version bool
 }
 
@@ -60,6 +60,15 @@ var Command = &commands.Command{
 			StringVar:   &Flags.Locale,
 		},
 		&commands.Flag{
+			Name:        "verbose",
+			Shorthand:   "v",
+			Description: "flag_state_verbose_description",
+			Type:        commands.TypeBool,
+			Persist:     true,
+			OnUse:       onVerboseFlag,
+			BoolVar:     &Flags.Verbose,
+		},
+		&commands.Flag{
 			Name:        "version",
 			Description: "flag_state_version_description",
 			Type:        commands.TypeBool,
@@ -77,20 +86,19 @@ func register() {
 	secretsapi.InitializeClient()
 
 	Command.Append(activate.Command)
-	Command.Append(hook.Command)
+	Command.Append(events.Command)
 	Command.Append(selfupdate.Command)
 	Command.Append(auth.Command)
 	Command.Append(organizations.Command)
 	Command.Append(projects.Command)
 	Command.Append(new.Command)
 	Command.Append(show.Command)
-	Command.Append(env.Command)
 	Command.Append(run.Command)
 
-	Command.Append(secrets.NewCommand(secretsapi.DefaultClient).Config())
+	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())
 	Command.Append(keypair.Command)
 
-	variables.RegisterExpander("secrets", secrets.NewPromptingExpander(secretsapi.DefaultClient))
+	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.DefaultClient))
 }
 
 func main() {
@@ -129,6 +137,12 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	cmd.Usage()
+}
+
+func onVerboseFlag() {
+	if Flags.Verbose {
+		logging.CurrentHandler().SetVerbose(true)
+	}
 }
 
 // When an update was found and applied, re-launch the update with the current

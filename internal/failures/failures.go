@@ -23,6 +23,9 @@ var (
 	// failLegacy identifies a failure as a legacy failure, this is for internal use only
 	failLegacy = Type("failures.fail.legacy")
 
+	// FailDeveloper identifies a failure as being caused by the developer (eg. a codepath that should never happen unless a developer messed up)
+	FailDeveloper = Type("failures.fail.developer")
+
 	// FailIO identifies a failure as an IO failure
 	FailIO = Type("failures.fail.io")
 
@@ -105,13 +108,15 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 
 	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
-	return &Failure{locale.T(message, input), f, file, line}
+	return &Failure{locale.T(message, input), f, file, line, nil}
 }
 
 // Wrap wraps another error
 func (f *FailureType) Wrap(err error) *Failure {
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
-	return f.New(err.Error())
+	fail := f.New(err.Error())
+	fail.err = err
+	return fail
 }
 
 // Failure holds an actual failure, do not call this directly, use Fail and UserFail instead
@@ -120,6 +125,7 @@ type Failure struct {
 	Type    *FailureType
 	File    string
 	Line    int
+	err     error
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
@@ -131,6 +137,9 @@ func (e Failure) Error() string {
 func (e *Failure) ToError() error {
 	if e == nil {
 		return nil
+	}
+	if e.err != nil {
+		return e.err
 	}
 	return errors.New(e.Error())
 }

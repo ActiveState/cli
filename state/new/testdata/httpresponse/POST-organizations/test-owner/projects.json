@@ -1,14 +1,35 @@
 {
-  "added": "2018-05-08T19:54:51.954Z",
-  "description": "test description",
-  "languages": [
-    "test language"
+  "added": "2019-02-19T17:09:47.140Z",
+  "branches": [
+    {
+      "branchID": "string",
+      "commitID": "string",
+      "default": true,
+      "label": "string",
+      "projectID": "string",
+      "tracking_type": "ignore",
+      "tracks": "string"
+    }
   ],
-  "name": "test-name",
-  "organizationID": "test-owner",
+  "createdBy": "string",
+  "description": "string",
+  "languages": [
+    {
+      "ingredientID": "string",
+      "name": "string"
+    }
+  ],
+  "lastEdited": "2019-02-19T17:09:47.140Z",
+  "managed": true,
+  "name": "string",
+  "organizationID": "string",
   "platforms": [
-    "test platform"
+    {
+      "displayName": "string",
+      "platformID": "string"
+    }
   ],
   "private": true,
-  "projectID": "test-name"
+  "projectID": "string",
+  "repoUrl": "string"
 }

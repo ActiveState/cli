@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -12,18 +11,22 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/mitchellh/hashstructure"
 	yaml "gopkg.in/yaml.v2"
 )
 
-// FailNoProject identifies a failure as being due to a missing project file
-var FailNoProject = failures.Type("projectfile.fail.noproject")
+var (
+	// FailNoProject identifies a failure as being due to a missing project file
+	FailNoProject = failures.Type("projectfile.fail.noproject")
 
-// FailParseProject identifies a failure as being due inability to parse file contents
-var FailParseProject = failures.Type("projectfile.fail.parseproject")
+	// FailParseProject identifies a failure as being due inability to parse file contents
+	FailParseProject = failures.Type("projectfile.fail.parseproject")
 
-// FailInvalidVersion identifies a failure as being due to an invalid version format
-var FailInvalidVersion = failures.Type("projectfile.fail.version")
+	// FailValidate identifies a failure during validation
+	FailValidate = failures.Type("projectfile.fail.validate")
+
+	// FailInvalidVersion identifies a failure as being due to an invalid version format
+	FailInvalidVersion = failures.Type("projectfile.fail.version")
+)
 
 // Version is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -40,10 +43,9 @@ type Project struct {
 	Environments string      `yaml:"environments"`
 	Platforms    []Platform  `yaml:"platforms"`
 	Languages    []Language  `yaml:"languages"`
-	Variables    []Variable  `yaml:"variables"`
-	Hooks        []Hook      `yaml:"hooks"`
+	Variables    []*Variable `yaml:"variables"`
+	Events       []Event     `yaml:"events"`
 	Scripts      []Script    `yaml:"scripts"`
-	Secrets      SecretSpecs `yaml:"secrets"`
 	path         string      // "private"
 }
 
@@ -84,38 +86,11 @@ type Package struct {
 	Build       Build      `yaml:"build"`
 }
 
-// Variable covers the variable structure, which goes under Project
-type Variable struct {
+// Event covers the event structure, which goes under Project
+type Event struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints"`
-}
-
-// Hash return a hashed version of the variable
-func (v *Variable) Hash() (string, error) {
-	hash, err := hashstructure.Hash(v, nil)
-	if err != nil {
-		logging.Errorf("Cannot hash variable: %v", err)
-		return "", err
-	}
-	return fmt.Sprintf("%X", hash), nil
-}
-
-// Hook covers the hook structure, which goes under Project
-type Hook struct {
-	Name        string     `yaml:"name"`
-	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints"`
-}
-
-// Hash return a hashed version of the hook
-func (h *Hook) Hash() (string, error) {
-	hash, err := hashstructure.Hash(h, nil)
-	if err != nil {
-		logging.Errorf("Cannot hash hook: %v", err)
-		return "", err
-	}
-	return fmt.Sprintf("%X", hash), nil
 }
 
 // Script covers the script structure, which goes under Project
@@ -126,45 +101,13 @@ type Script struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
-// SecretSpec covers the secret specification structure, which goes under Project
-type SecretSpec struct {
-	Name      string `yaml:"name"`
-	IsProject bool   `yaml:"project"`
-	IsUser    bool   `yaml:"user"`
-}
-
-// Scope returns a human readable representation of the scope of this Secret.
-func (spec SecretSpec) Scope() string {
-	if spec.IsUser && spec.IsProject {
-		return locale.T("secrets_scope_user_project")
-	} else if spec.IsUser {
-		return locale.T("secrets_scope_user_org")
-	} else if spec.IsProject {
-		return locale.T("secrets_scope_project")
-	}
-	return locale.T("secrets_scope_org")
-}
-
-// SecretSpecs adds functionality around slices of SecretSpecs.
-type SecretSpecs []*SecretSpec
-
-// GetByName find the SecretSpec with the requested name.
-func (specs SecretSpecs) GetByName(specName string) *SecretSpec {
-	for _, spec := range specs {
-		if strings.EqualFold(specName, spec.Name) {
-			return spec
-		}
-	}
-	return nil
-}
-
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(filepath string) (*Project, error) {
+func Parse(filepath string) (*Project, *failures.Failure) {
 	dat, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		return nil, err
+		return nil, failures.FailIO.Wrap(err)
 	}
 
 	project := Project{}
@@ -175,7 +118,19 @@ func Parse(filepath string) (*Project, error) {
 		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
-	return &project, err
+	return &project, project.Parse()
+}
+
+// Parse further processes the current file by parsing mixed values (something go-yaml doesnt handle)
+func (p *Project) Parse() *failures.Failure {
+	for _, variable := range p.Variables {
+		fail := variable.Parse()
+		if fail != nil {
+			return fail
+		}
+	}
+
+	return nil
 }
 
 // Path returns the project's activestate.yaml file path.
@@ -252,9 +207,9 @@ func GetSafe() (*Project, *failures.Failure) {
 		logging.Warning("Cannot load config file: %v", err)
 		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
 	}
-	project, err := Parse(projectFilePath)
-	if err != nil {
-		return nil, FailParseProject.New(locale.T("err_parse_project"))
+	project, fail := Parse(projectFilePath)
+	if fail != nil {
+		return nil, FailParseProject.New(locale.Tr("err_parse_project", fail.Error()))
 	}
 	project.Persist()
 	return project, nil

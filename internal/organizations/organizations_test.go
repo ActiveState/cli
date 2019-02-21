@@ -3,16 +3,21 @@ package organizations_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOrganizations_FetchAll(t *testing.T) {
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 
@@ -23,8 +28,11 @@ func TestOrganizations_FetchAll(t *testing.T) {
 }
 
 func TestOrganizations_FetchByURLName_Succeeds(t *testing.T) {
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations/FooOrg", 200)
 
@@ -35,8 +43,11 @@ func TestOrganizations_FetchByURLName_Succeeds(t *testing.T) {
 }
 
 func TestOrganizations_FetchByURLName_NotFound(t *testing.T) {
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations/BarOrg", 404)
 

@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
@@ -115,36 +114,17 @@ version: valueForVersion`)
 	assert.Equal(t, "valueForVersion", pkg.Version, "Version should be set")
 }
 
-func TestVariableStruct(t *testing.T) {
-	variable := Variable{}
+func TestEventStruct(t *testing.T) {
+	event := Event{}
 	dat := strings.TrimSpace(`
 name: valueForName
 value: valueForValue`)
 
-	err := yaml.Unmarshal([]byte(dat), &variable)
+	err := yaml.Unmarshal([]byte(dat), &event)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", variable.Name, "Name should be set")
-	assert.Equal(t, "valueForValue", variable.Value, "Value should be set")
-	hash, err := variable.Hash()
-	assert.NoError(t, err, "Hashed variable")
-	assert.NotEmpty(t, hash, "Hash has a value")
-}
-
-func TestHookStruct(t *testing.T) {
-	hook := Hook{}
-	dat := strings.TrimSpace(`
-name: valueForName
-value: valueForValue`)
-
-	err := yaml.Unmarshal([]byte(dat), &hook)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", hook.Name, "Name should be set")
-	assert.Equal(t, "valueForValue", hook.Value, "Value should be set")
-	hash, err := hook.Hash()
-	assert.NoError(t, err, "Hashed hook")
-	assert.NotEmpty(t, hash, "Hash has a value")
+	assert.Equal(t, "valueForName", event.Name, "Name should be set")
+	assert.Equal(t, "valueForValue", event.Value, "Value should be set")
 }
 
 func TestScriptStruct(t *testing.T) {
@@ -160,70 +140,6 @@ standalone: true`)
 	assert.Equal(t, "valueForName", script.Name, "Name should be set")
 	assert.Equal(t, "valueForScript", script.Value, "Script should be set")
 	assert.True(t, script.Standalone, "Standalone should be set")
-}
-
-func TestSecretsStruct_OrgScopedSecret(t *testing.T) {
-	spec := SecretSpec{}
-	dat := strings.TrimSpace(`
-name: valueForName
-`)
-
-	err := yaml.Unmarshal([]byte(dat), &spec)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
-	assert.False(t, spec.IsProject)
-	assert.False(t, spec.IsUser)
-	assert.Equal(t, locale.T("secrets_scope_org"), spec.Scope())
-}
-
-func TestSecretsStruct_ProjectScopedSecret(t *testing.T) {
-	spec := SecretSpec{}
-	dat := strings.TrimSpace(`
-name: valueForName
-project: true
-`)
-
-	err := yaml.Unmarshal([]byte(dat), &spec)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
-	assert.True(t, spec.IsProject)
-	assert.False(t, spec.IsUser)
-	assert.Equal(t, locale.T("secrets_scope_project"), spec.Scope())
-}
-
-func TestSecretsStruct_UserScopedSecret(t *testing.T) {
-	spec := SecretSpec{}
-	dat := strings.TrimSpace(`
-name: valueForName
-user: true
-`)
-
-	err := yaml.Unmarshal([]byte(dat), &spec)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
-	assert.False(t, spec.IsProject)
-	assert.True(t, spec.IsUser)
-	assert.Equal(t, locale.T("secrets_scope_user_org"), spec.Scope())
-}
-
-func TestSecretsStruct_UserProjectScopedSecret(t *testing.T) {
-	spec := SecretSpec{}
-	dat := strings.TrimSpace(`
-name: valueForName
-project: true
-user: true
-`)
-
-	err := yaml.Unmarshal([]byte(dat), &spec)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", spec.Name, "Name should be set")
-	assert.True(t, spec.IsProject)
-	assert.True(t, spec.IsUser)
-	assert.Equal(t, locale.T("secrets_scope_user_project"), spec.Scope())
 }
 
 func TestParse(t *testing.T) {
@@ -268,20 +184,14 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
 
 	assert.NotEmpty(t, project.Variables[0].Name, "Variable name should be set")
-	assert.NotEmpty(t, project.Variables[0].Value, "Variable value should be set")
+	assert.NotNil(t, project.Variables[0].Value.StaticValue, "Variable value should be set")
 
-	assert.NotEmpty(t, project.Hooks[0].Name, "Hook name should be set")
-	assert.NotEmpty(t, project.Hooks[0].Value, "Hook value should be set")
+	assert.NotEmpty(t, project.Events[0].Name, "Event name should be set")
+	assert.NotEmpty(t, project.Events[0].Value, "Event value should be set")
 
 	assert.NotEmpty(t, project.Scripts[0].Name, "Script name should be set")
 	assert.NotEmpty(t, project.Scripts[0].Value, "Script value should be set")
 	assert.False(t, project.Scripts[0].Standalone, "Standalone value should be set, but false")
-
-	assert.Len(t, project.Secrets, 1)
-	secretSpec := project.Secrets.GetByName("org-secret")
-	assert.NotNil(t, secretSpec)
-	assert.False(t, secretSpec.IsProject)
-	assert.False(t, secretSpec.IsUser)
 
 	assert.NotEmpty(t, project.Path(), "Path should be set")
 }
@@ -294,8 +204,8 @@ func TestSave(t *testing.T) {
 	}
 
 	path := filepath.Join(rootpath, "test", "activestate.yaml")
-	project, err := Parse(path)
-	assert.NoError(t, err, "Should parse our yaml file")
+	project, failure := Parse(path)
+	assert.Nil(t, failure, "unexpected failure parsing our yaml file")
 
 	tmpfile, err := ioutil.TempFile("", "test")
 	assert.NoError(t, err, "Should create a temp file")

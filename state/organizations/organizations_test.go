@@ -5,12 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,8 +29,11 @@ func setup(t *testing.T) {
 func TestOrganizations(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 
@@ -46,11 +51,14 @@ func TestOrganizations(t *testing.T) {
 func TestClientError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
 
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
+
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)
@@ -64,12 +72,15 @@ func TestClientError(t *testing.T) {
 func TestAuthError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)

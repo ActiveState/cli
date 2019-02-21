@@ -1,27 +1,21 @@
 undefined:
   other: undefined
+confirmation:
+  other: "Yes"
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: activate a project
-hook_description:
-  other: Manage Project Hooks
-hook_add_description:
-  other: 
-    >
-    add script to run on hook trigger
-hook_remove_description:
-  other: 
-    >
-    remove script for hook trigger
-hook_header_id:
+events_description:
+  other: Manage Project Events
+events_header_id:
   other: ID
-hook_header_hook:
-  other: HOOK
-hook_header_command:
-  other: COMMAND
-hook_listing_hooks:
-  other: Listing configured hooks
+events_header_event:
+  other: Event
+events_header_value:
+  other: Value
+event_listing:
+  other: Listing configured events
 usage_tpl:
   other: "
 Usage:
@@ -85,6 +79,8 @@ arg_state_activate_url_description:
   other: The URL of the repository that the project lives at
 flag_state_locale_description:
   other: Set the localisation
+flag_state_verbose_description:
+  other: Verbose output
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -119,52 +115,16 @@ error_could_not_activate_venv:
   other: Could not activate the virtual environment
 warning_language_not_yet_supported:
   other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"
-error_could_not_run_hooks:
-  other: Could not run hooks
-info_running_hook:
-  other: "Running hook: {{.Name}}"
-hook_add_cannot_add_hook:
-  other: "Cannot add hook '{{.Hook}} {{.Script}}'"
-hook_add_cannot_add_existing_hook:
-  other: "Identical hook already configured"
-hook_remove_multiple_hooks:
-  other: "More than one configured hook for name given.  Use ID instead."
-hook_remove_cannot_remove:
-  other: "Cannot remove hook"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
-arg_hook_add_hook:
-  other: HOOK
-arg_hook_add_hook_description:
-  other: The hook that will be listened to
-error_hook_add_invalid_hook:
-  other: "Invalid hook given: {{.V0}}"
-arg_hook_add_script:
-  other: SCRIPT
-arg_hook_add_script_description:
-  other: The script that will be run
-arg_hook_remove_identifier:
-  other: IDENTIFIER
-arg_hook_remove_identifier_description:
-  other: Identifies what hook to remove, can be a hash or a hook name
-prompt_choose_hook:
-  other: Which hook do you wish to remove?
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_parse_project:
   other: "Could not parse project file. For more info refer to the error log"
-err_hook_cannot_list:
-  other: Cannot list hooks
-err_hook_cannot_find:
-  other: Cannot find hooks matching your query
-prompt_hook_choose_remove:
-  other: Which hook would you like to remove?
-prompt_hook_option:
-  other: "{{.Hook.Name}}: `{{.Script}}` ({{.Constraints}}{{.Hash}})"
 err_invalid_input:
   other: Invalid input received
-hook_removed:
-  other: "Hook removed: {{.Hook.Name}} ({{.Hash}})"
+events_empty:
+  other: No events found for the current environment
 err_no_update_info:
   other: Cannot retrieve update information
 no_update_available:
@@ -236,7 +196,7 @@ auth_err_unrecoverable_keypair:
 previous_password_prompt:
   other: "Enter your previous password:"
 secret_value_prompt:
-  other: "Enter secret {{.V0}} value for {{.V1}}:"
+  other: "Enter {{.V0}} scoped value for variable '{{.V1}}'':"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -455,8 +415,8 @@ print_state_show_url:
   other: URL
 print_state_show_platforms:
   other: Platforms
-print_state_show_hooks:
-  other: Hooks that will run
+print_state_show_events:
+  other: Events that will run
 print_state_show_scripts:
   other: Scripts
 print_state_show_languages:
@@ -476,72 +436,84 @@ err_already_active:
 run_listing_scripts:
   other: "Available Scripts: "
 
-secrets_cmd_description:
-  other: Manage Your Secrets
-secrets_get_cmd_description:
-  other: Get the value of a secret
-secrets_get_arg_name_name:
-  other: secret-name
-secrets_get_arg_name_description:
-  other: Name of Secret
-secrets_set_cmd_description:
-  other: Set the value of a secret
-secrets_set_arg_name_name:
-  other: secret-name
-secrets_set_arg_name_description:
-  other: Name of Secret
-secrets_set_arg_value_name:
-  other: secret-value
-secrets_set_arg_value_description:
-  other: Value of unencrypted Secret
-secrets_set_flag_project:
-  other: Scope the secret to the current project
-secrets_set_flag_user:
-  other: Scope the secret to the current user
-secrets_share_cmd_description:
-  other: Share your organization and project secrets with another user
-secrets_share_arg_user_name:
+variables_cmd_description:
+  other: Manage Your Variables
+variables_get_cmd_description:
+  other: Get the value of a variable
+variables_get_arg_name_name:
+  other: variable-name
+variables_get_arg_name_description:
+  other: Name of Variable
+variables_set_cmd_description:
+  other: Set the value of a variable
+variables_set_arg_name_name:
+  other: variable-name
+variables_set_arg_name_description:
+  other: Name of Variable
+variables_set_arg_value_name:
+  other: variable-value
+variables_set_arg_value_description:
+  other: Value of unencrypted Variable
+variables_set_flag_project:
+  other: Scope the variable to the current project
+variables_set_flag_user:
+  other: Scope the variable to the current user
+variables_share_cmd_description:
+  other: Share your organization and project variables with another user
+variables_share_arg_user_name:
   other: user-handle
-secrets_share_arg_user_description:
+variables_share_arg_user_description:
   other: Username of user in your organization
-secrets_sync_cmd_description:
-  other: Synchronize your shareable secrets organization-wide
-secrets_sync_results_message:
+variables_sync_cmd_description:
+  other: Synchronize your shareable variables organization-wide
+variables_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
-secrets_col_name:
+variables_col_name:
   other: Name
-secrets_col_scope:
-  other: Scope
-secrets_scope_user_project:
-  other: User Project
-secrets_scope_user_org:
-  other: User Organization
-secrets_scope_project:
-  other: Project
-secrets_scope_org:
-  other: Organization
-secrets_err:
-  other: Error managing user's Secrets
-secrets_err_no_secrets_found:
-  other: Unable to find any Secrets for User
-secrets_err_encrypting:
-  other: "Error encrypting a user's Secret: {{.V0}}"
-secrets_err_decrypting:
-  other: "Error decrypting a user's Secret: {{.V0}}"
-secrets_err_save:
-  other: Error updating user's Secrets
-secrets_err_base64_decoding:
-  other: Error base64 decoding secret value
-secrets_err_no_publickey_found:
+variables_col_value:
+  other: Value
+variables_col_encrypted:
+  other: Encrypted
+variables_col_shared:
+  other: Shared
+variables_col_store:
+  other: Store
+variables_value_secret_undefined:
+  other: <undefined>
+variables_value_secret:
+  other: <encrypted>
+variables_err:
+  other: Error managing user's Variables
+variables_err_no_variables_found:
+  other: Unable to find any Variables for User
+variables_err_encrypting:
+  other: "Error encrypting a user's Variable: {{.V0}}"
+variables_err_decrypting:
+  other: "Error decrypting a user's Variable: {{.V0}}"
+variables_err_save:
+  other: Error updating user's Variables
+variables_err_base64_decoding:
+  other: Error base64 decoding variable value
+variables_err_no_publickey_found:
   other: Unable to find any public-key for User
-secrets_err_value_prompt:
-  other: The provided secret value is invalid 
-
-secrets_expand_err_spec_undefined:
-  other: "secret specification for `{{.V0}}` not defined in project"
-secrets_expand_err_not_found:
-  other: "unable to obtain value for secret `{{.V0}}`"
-
+variables_err_value_prompt:
+  other: The provided variable value is invalid 
+variables_expand_err_undefined:
+  other: "Variable `{{.V0}}` not defined in project"
+variables_expand_err_not_found:
+  other: "unable to obtain value for variable `{{.V0}}`"
+variable_err_undefined:
+  other: "Variable `{{.V0}}` not defined in project"
+variables_err_invalid_pullfrom:
+  other: "Invalid pullfrom used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
+variables_err_invalid_share:
+  other: "Invalid share level used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
+variables_err_value_with_pull:
+  other: "Variable should not have a local value defined in the activestate.yaml if it's setting the share or pullfrom fields: {{.V0}}"
+variables_err_invalid_value:
+  other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
+variables_err_value_empty:
+  other: "Variable has no value defined: {{.V0}}"
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -597,6 +569,12 @@ warn_script_name_in_use:
 
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
+
+secrets_err_expand_noproject:
+  other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
+developer_err_project_match:
+  other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
+
 err_version_parse:
   other: Could not parse the version field from your activestate.yaml
 err_invalid_version:
@@ -625,3 +603,11 @@ update_available:
     Available Version: {{.V1}}
 
     You can update by running `state self-update`
+err_no_credentials:
+  other: Cannot authenticate without credentials
+err_token_list:
+  other: "Something went wrong whilst trying to retrieve api tokens: {{.V0}}"
+err_token_delete:
+  other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
+err_token_create:
+  other: "Something went wrong whilst trying to create an api token: {{.V0}}"
