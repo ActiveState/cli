@@ -47,22 +47,32 @@ var urlsByEnv = map[string]urlsByService{
 	},
 }
 
-var serviceURLs urlsByService
+var serviceURLs = map[Service]*url.URL{}
 
 // init determines the name of the API environment to use. It prefers a custom
 // APIEnv env variable if available. If not defined or no setting found for the provided
 // custom value, then the apiEnvName determines if this is test, prod, or stage based on
 // a few factors. The default is always stage.
 func init() {
+	serviceURLStrings := urlsByService{}
+
 	var hasURL bool
-	if serviceURLs, hasURL = urlsByEnv[constants.APIEnv]; !hasURL {
+	if serviceURLStrings, hasURL = urlsByEnv[constants.APIEnv]; !hasURL {
 		if flag.Lookup("test.v") != nil {
-			serviceURLs = urlsByEnv["test"]
+			serviceURLStrings = urlsByEnv["test"]
 		} else if constants.BranchName == "prod" {
-			serviceURLs = urlsByEnv["prod"]
+			serviceURLStrings = urlsByEnv["prod"]
 		} else {
-			serviceURLs = urlsByEnv["stage"]
+			serviceURLStrings = urlsByEnv["stage"]
 		}
+	}
+
+	for sv, urlStr := range serviceURLStrings {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			log.Panicf("Invalid URL format: %s", urlStr)
+		}
+		serviceURLs[sv] = u
 	}
 }
 
@@ -73,12 +83,7 @@ func GetServiceURL(service Service) *url.URL {
 		log.Panicf("API Service does not exist: %v", service)
 	}
 
-	u, err := url.Parse(serviceURL)
-	if err != nil {
-		log.Panicf("Invalid URL format: %s", serviceURL)
-	}
-
-	return u
+	return serviceURL
 }
 
 // GetSettings returns the environmental settings for the specified service
