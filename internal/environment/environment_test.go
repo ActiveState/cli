@@ -1,8 +1,10 @@
-package environment
+package environment_test
 
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/environment"
 
 	_ "github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -10,12 +12,12 @@ import (
 )
 
 func TestTargetEnvironment(t *testing.T) {
-	env := TargetEnvironment()
-	assert.Contains(t, []Environment{Production, Development}, env, "Returns a valid environment")
+	env := environment.TargetEnvironment()
+	assert.Contains(t, []environment.Environment{environment.Production, environment.Development}, env, "Returns a valid environment")
 }
 
 func TestGetRootPath(t *testing.T) {
-	rootPath, err := GetRootPath()
+	rootPath, err := environment.GetRootPath()
 
 	if err != nil {
 		t.Fatal(err)
