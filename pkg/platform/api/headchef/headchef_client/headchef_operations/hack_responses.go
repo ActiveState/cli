@@ -32,6 +32,27 @@ func (o *HackReader) ReadResponse(response runtime.ClientResponse, consumer runt
 		}
 		return result, nil
 
+	case 250:
+		result := NewHack()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return result, nil
+
+	case 251:
+		result := NewHack()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return result, nil
+
+	case 252:
+		result := NewHack()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return result, nil
+
 	case 400:
 		result := NewHackBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -64,6 +85,93 @@ func (o *HackOK) Error() string {
 func (o *HackOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.StatusMessageEnvelope)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewHack creates a Hack with default headers values
+func NewHack() *Hack {
+	return &Hack{}
+}
+
+/*Hack handles this case with default header values.
+
+build_completed
+*/
+type Hack struct {
+	Payload *headchef_models.BuildCompleted
+}
+
+func (o *Hack) Error() string {
+	return fmt.Sprintf("[GET /][%d] hack  %+v", 250, o.Payload)
+}
+
+func (o *Hack) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.BuildCompleted)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewHack creates a Hack with default headers values
+func NewHack() *Hack {
+	return &Hack{}
+}
+
+/*Hack handles this case with default header values.
+
+build_failed
+*/
+type Hack struct {
+	Payload *headchef_models.BuildFailed
+}
+
+func (o *Hack) Error() string {
+	return fmt.Sprintf("[GET /][%d] hack  %+v", 251, o.Payload)
+}
+
+func (o *Hack) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.BuildFailed)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewHack creates a Hack with default headers values
+func NewHack() *Hack {
+	return &Hack{}
+}
+
+/*Hack handles this case with default header values.
+
+build_started
+*/
+type Hack struct {
+	Payload *headchef_models.BuildStarted
+}
+
+func (o *Hack) Error() string {
+	return fmt.Sprintf("[GET /][%d] hack  %+v", 252, o.Payload)
+}
+
+func (o *Hack) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.BuildStarted)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -26,7 +26,7 @@ func New() *inventory_operations.Client {
 func Init(apiSetting api.Settings, auth *runtime.ClientAuthInfoWriter) *inventory_operations.Client {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	if flag.Lookup("test.v") != nil {
-		transportRuntime.SetDebug(true)
+		//transportRuntime.SetDebug(true)
 		transportRuntime.Transport = transport
 	}
 

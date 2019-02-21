@@ -617,3 +617,5 @@ err_no_commit:
   other: Project branch has no commits
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
+err_no_effective_recipe:
+  other: Your project does not have a configuration that is compatible with your platform

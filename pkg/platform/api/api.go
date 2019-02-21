@@ -48,7 +48,7 @@ func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *client.APIClient {
 func Init(apiSetting Settings, auth *runtime.ClientAuthInfoWriter) *client.APIClient {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	if flag.Lookup("test.v") != nil {
-		transportRuntime.SetDebug(true)
+		//transportRuntime.SetDebug(true)
 		transportRuntime.Transport = transport
 	}
 

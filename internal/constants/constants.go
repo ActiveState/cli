@@ -96,16 +96,19 @@ const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
 const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
 
 // HeadChefAPIPath is the api path used for the secrets api
-const HeadChefAPIPath = "/sv/head-chef"
+const HeadChefAPIPath = "/sv/head-chef/"
 
 // HeadChefURLProd is the host used for platform api calls when on production
-const HeadChefURLProd = "https://platform.activestate.com" + HeadChefAPIPath
+const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
 
 // HeadChefURLStage is the host used for platform api calls when on staging
-const HeadChefURLStage = "https://staging.activestate.build" + HeadChefAPIPath
+const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
 
 // HeadChefURLDev is the host used for platform api calls when on staging
 const HeadChefURLDev = HeadChefURLStage
+
+// HeadChefOrigin is the Origin header to use when making head-chef requests
+const HeadChefOrigin = "https://localhost"
 
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api"
