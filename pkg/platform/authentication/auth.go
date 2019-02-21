@@ -76,13 +76,13 @@ func Logout() {
 	Reset()
 }
 
-// New creates a new version of Auth with default settings
-func New() *Auth {
-	return Init()
+// Init creates a new version of Auth with default settings
+func Init() *Auth {
+	return New()
 }
 
-// Init initializes a new version of Auth
-func Init() *Auth {
+// New creates a new version of Auth
+func New() *Auth {
 	auth := &Auth{}
 
 	apiToken := viper.GetString("apiToken")
