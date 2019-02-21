@@ -88,7 +88,6 @@ func TestClientError(t *testing.T) {
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Command still executes without error")
-	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestAuthError(t *testing.T) {

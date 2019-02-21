@@ -6,17 +6,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/expander"
 
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 )
 
 func init() {
-	secretsClient := secretsapi.NewDefaultClient(api.BearerToken)
+	secretsClient := secretsapi.NewDefaultClient(authentication.Get().BearerToken())
 	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsClient))
 }
 

@@ -11,12 +11,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
 
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/secrets-api/client"
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -57,7 +53,7 @@ type Client struct {
 // GetClient gets the cached (if any) client instance that was initialized using our default settings
 func GetClient() *Client {
 	if persistentClient == nil {
-		persistentClient = NewDefaultClient(api.BearerToken)
+		persistentClient = NewDefaultClient(authentication.Get().BearerToken())
 	}
 	return persistentClient
 }
@@ -95,7 +91,7 @@ var DefaultClient *Client
 // This new Client instance will be accessible as secretapi.DefaultClient afterwards. Calling
 // this function multiple times will redefine the DefaultClient value using the defaults/constants
 // available to it at the time of the call; thus, the DefaultClient can be re-initialized this way.
-// Because this function is dependent on a runtime-value from internal/api, we are not relying on
+// Because this function is dependent on a runtime-value from pkg/platform/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
 func InitializeClient() *Client {
 	DefaultClient = NewDefaultClient(authentication.Get().BearerToken())
