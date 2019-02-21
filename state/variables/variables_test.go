@@ -56,7 +56,7 @@ func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 }
 
-func (suite *VariablesCommandTestSuite) xTestCommandConfig() {
+func (suite *VariablesCommandTestSuite) TestCommandConfig() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	conf := cmd.Config()
 	suite.Equal("variables", conf.Name)
@@ -71,7 +71,7 @@ func (suite *VariablesCommandTestSuite) xTestCommandConfig() {
 	suite.Len(conf.Arguments, 0, "number of commands args supported")
 }
 
-func (suite *VariablesCommandTestSuite) xTestExecute_FetchOrgNotAuthenticated() {
+func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
@@ -88,7 +88,7 @@ func (suite *VariablesCommandTestSuite) xTestExecute_FetchOrgNotAuthenticated() 
 	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
 
-func (suite *VariablesCommandTestSuite) xTestExecute_FetchProject_NoProjectFound() {
+func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
