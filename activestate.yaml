@@ -38,8 +38,10 @@ scripts: &scripts
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: generate-api-client
     value: |
-      pushd internal
-      swagger generate client -f https://platform.activestate.com/swagger.json -A api
+      pushd pkg/platform/api
+      wget https://platform.activestate.com/swagger.json
+      swagger generate client -f swagger.json -A api
+      rm swagger.json
       popd
   - name: generate-secrets-client
     value: |

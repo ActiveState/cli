@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
@@ -39,7 +41,10 @@ func (suite *ValueOrNilTestSuite) BeforeTest(suiteName, testName string) {
 	secretsClient.Persist()
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.Prefix)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+
+	suite.platformMock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 }
 
 func (suite *ValueOrNilTestSuite) AfterTest(suiteName, testName string) {

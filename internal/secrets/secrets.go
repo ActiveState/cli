@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -9,6 +8,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 )
 
 // Save will add a new secret for this user or update an existing one.

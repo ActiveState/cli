@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
@@ -17,6 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
@@ -46,7 +47,10 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.Prefix)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+
+	suite.platformMock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {

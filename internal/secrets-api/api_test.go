@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
-	apiEnv "github.com/ActiveState/cli/internal/api/environment"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,7 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	apiSetting := apiEnv.GetSecretsAPISettings()
+	apiSetting := api.GetSettings(api.ServiceSecrets)
 	client := secretsapi.NewDefaultClient("bearer123")
 	require.NotNil(client)
 	assert.NotNil(client.Auth)
@@ -42,8 +41,7 @@ func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	apiSetting := apiEnv.GetSecretsAPISettings()
-	api.BearerToken = "bearer123"
+	apiSetting := api.GetSettings(api.ServiceSecrets)
 	secretsapi.InitializeClient()
 
 	client := secretsapi.DefaultClient
@@ -58,7 +56,7 @@ func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
 
 	// validate that the client.Auth writer sets the bearer token using the one we provided
 	mockClientRequest := new(MockClientRequest)
-	mockClientRequest.On("SetHeaderParam", "Authorization", []string{"Bearer bearer123"}).Return(nil)
+	mockClientRequest.On("SetHeaderParam", "Authorization", []string{"Bearer "}).Return(nil)
 
 	authErr := client.Auth.AuthenticateRequest(mockClientRequest, nil)
 	require.NoError(authErr)

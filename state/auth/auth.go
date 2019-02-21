@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -52,8 +52,8 @@ func init() {
 
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
-	if api.Auth != nil {
-		renewOK, err := api.Client.Authentication.GetRenew(nil, api.Auth)
+	if authentication.Get().Authenticated() {
+		renewOK, err := authentication.Client().Authentication.GetRenew(nil, authentication.ClientAuth())
 		if err != nil {
 			logging.Warningf("Renewing failed: %s", err)
 		} else {
@@ -83,7 +83,7 @@ func ExecuteLogout(cmd *cobra.Command, args []string) {
 }
 
 func doLogout() {
-	api.RemoveAuth()
+	authentication.Logout()
 	keypairs.DeleteWithDefaults()
 }
 

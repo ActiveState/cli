@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,8 +22,11 @@ func TestNewInEmptyDir(t *testing.T) {
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Fetched cwd")
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -56,8 +60,11 @@ func TestNewInNonEmptyDir(t *testing.T) {
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
 	assert.NoError(t, err, "Wrote dummy file")
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -90,8 +97,11 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 	err = os.Mkdir(filepath.Join(tmpdir, "test-name"), 0755)
 	assert.NoError(t, err, "Wrote dummy directory")
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -120,8 +130,11 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
 	assert.NoError(t, err, "Wrote dummy file")
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -146,8 +159,11 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 func TestNewWithBadPath(t *testing.T) {
 	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -194,8 +210,11 @@ func TestNewWithNoOwner(t *testing.T) {
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
@@ -223,8 +242,11 @@ func TestNewPlatformProjectExists(t *testing.T) {
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
-	httpmock.Activate(api.Prefix)
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("GET", "/organizations/test-owner/projects/test-name")

@@ -3,8 +3,6 @@ package variables
 import (
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,6 +12,8 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )

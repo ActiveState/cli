@@ -3,10 +3,11 @@ package organizations
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/api"
-	clientOrgs "github.com/ActiveState/cli/internal/api/client/organizations"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // FetchAll fetches all organizations for the current user.
@@ -16,7 +17,7 @@ func FetchAll() ([]*models.Organization, *failures.Failure) {
 	personal := false
 	params.SetMemberOnly(&memberOnly)
 	params.SetPersonal(&personal)
-	res, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
+	res, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 
 	if err != nil {
 		return nil, processErrorResponse(err)
@@ -29,7 +30,7 @@ func FetchAll() ([]*models.Organization, *failures.Failure) {
 func FetchByURLName(urlName string) (*models.Organization, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationName = urlName
-	resOk, err := api.Client.Organizations.GetOrganization(params, api.Auth)
+	resOk, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processErrorResponse(err)
 	}
@@ -40,7 +41,7 @@ func FetchByURLName(urlName string) (*models.Organization, *failures.Failure) {
 func FetchMembers(urlName string) ([]*models.Member, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	resOk, err := api.Client.Organizations.GetOrganizationMembers(params, api.Auth)
+	resOk, err := authentication.Client().Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processErrorResponse(err)
 	}

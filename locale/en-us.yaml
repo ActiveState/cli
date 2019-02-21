@@ -603,3 +603,11 @@ update_available:
     Available Version: {{.V1}}
 
     You can update by running `state self-update`
+err_no_credentials:
+  other: Cannot authenticate without credentials
+err_token_list:
+  other: "Something went wrong whilst trying to retrieve api tokens: {{.V0}}"
+err_token_delete:
+  other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
+err_token_create:
+  other: "Something went wrong whilst trying to create an api token: {{.V0}}"

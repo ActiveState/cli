@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"testing"
 
-	apiModels "github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	apiModels "github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )

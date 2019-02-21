@@ -6,13 +6,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"

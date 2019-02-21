@@ -2,30 +2,71 @@
     {
         "projectID": "00020002-0002-0002-0002-000200020002",
         "organizationID": "00010001-0001-0001-0001-000100010001",
-        "name": "CodeIntel",
+        "added": "2019-02-19T17:09:47.113Z",
+        "branches": [
+            {
+                "branchID": "string",
+                "commitID": "string",
+                "default": true,
+                "label": "string",
+                "projectID": "string",
+                "tracking_type": "ignore",
+                "tracks": "string"
+            }
+        ],
+        "createdBy": "string",
         "description": "CodeIntel",
         "languages": [
-            "test language"
+            {
+                "ingredientID": "string",
+                "name": "string"
+            }
         ],
+        "lastEdited": "2019-02-19T17:09:47.113Z",
+        "managed": true,
+        "name": "CodeIntel",
         "platforms": [
-            "test platform"
+            {
+                "displayName": "string",
+                "platformID": "string"
+            }
         ],
         "private": true,
-        "added": "2018-05-08T19:54:51.954Z"
+        "repoUrl": "string"
     },
     {
         "projectID": "00020002-0002-0002-0002-000200020003",
         "organizationID": "00010001-0001-0001-0001-000100010001",
-        "name": "TestProj",
+        "added": "2019-02-19T17:09:47.113Z",
+        "branches": [
+            {
+                "branchID": "string",
+                "commitID": "string",
+                "default": true,
+                "label": "string",
+                "projectID": "string",
+                "tracking_type": "ignore",
+                "tracks": "string"
+            }
+        ],
+        "createdBy": "string",
         "description": "TestProj",
         "languages": [
-            "test language"
+            {
+                "ingredientID": "string",
+                "name": "string"
+            }
         ],
+        "lastEdited": "2019-02-19T17:09:47.113Z",
+        "managed": true,
+        "name": "TestProj",
         "platforms": [
-            "test platform"
+            {
+                "displayName": "string",
+                "platformID": "string"
+            }
         ],
         "private": true,
-        "added": "2018-05-08T19:54:51.954Z"
+        "repoUrl": "string"
     }
 ]
-  

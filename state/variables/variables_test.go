@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 
-	"github.com/ActiveState/cli/internal/api"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -18,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/stretchr/testify/suite"
 )
@@ -47,7 +48,7 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.Prefix)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
 }
 
 func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
@@ -111,6 +112,9 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound(
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := variables.NewCommand(suite.secretsClient)
+
+	suite.platformMock.Register("POST", "/login")
+	authentication.Get().AuthenticateWithToken("")
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)

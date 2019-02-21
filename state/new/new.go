@@ -8,16 +8,17 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/client/organizations"
-	"github.com/ActiveState/cli/internal/api/client/projects"
-	"github.com/ActiveState/cli/internal/api/models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api/client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/api/client/projects"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -78,7 +79,7 @@ var Args struct {
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	if api.Auth == nil && flag.Lookup("test.v") == nil {
+	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
 		print.Error(locale.T("error_state_new_no_auth"))
 		return
 	}
@@ -100,7 +101,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		params := organizations.NewListOrganizationsParams()
 		memberOnly := true
 		params.SetMemberOnly(&memberOnly)
-		orgs, err := api.Client.Organizations.ListOrganizations(params, api.Auth)
+		orgs, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 		if err != nil {
 			logging.Errorf("Unable to fetch organizations: %s", err)
 			print.Error(locale.T("error_state_new_fetch_organizations"))
@@ -128,7 +129,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(Flags.Owner)
 	addParams.SetProject(&models.Project{Name: Args.Name})
-	_, err := api.Client.Projects.AddProject(addParams, api.Auth)
+	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		logging.Errorf("Unable to create Platform project: %s", err)
 		print.Error(locale.T("error_state_new_project_add"))

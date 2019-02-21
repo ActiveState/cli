@@ -1,14 +1,35 @@
 {
-    "projectID": "00020002-0002-0002-0002-000200020002",
-    "organizationID": "00010001-0001-0001-0001-000100010001",
-    "name": "CodeIntel",
-    "description": "CodeIntel",
-    "languages": [
-        "test language"
+    "added": "2019-02-19T16:58:03.026Z",
+    "branches": [
+        {
+            "branchID": "string",
+            "commitID": "string",
+            "default": true,
+            "label": "string",
+            "projectID": "string",
+            "tracking_type": "ignore",
+            "tracks": "string"
+        }
     ],
+    "createdBy": "string",
+    "description": "string",
+    "languages": [
+        {
+            "ingredientID": "string",
+            "name": "string"
+        }
+    ],
+    "lastEdited": "2019-02-19T16:58:03.026Z",
+    "managed": true,
+    "name": "CodeIntel",
+    "organizationID": "string",
     "platforms": [
-        "test platform"
+        {
+            "displayName": "string",
+            "platformID": "string"
+        }
     ],
     "private": true,
-    "added": "2018-05-08T19:54:51.954Z"
+    "projectID": "string",
+    "repoUrl": "string"
 }

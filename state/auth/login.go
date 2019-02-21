@@ -1,15 +1,16 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/client/authentication"
-	"github.com/ActiveState/cli/internal/api/client/users"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	apiAuth "github.com/ActiveState/cli/pkg/platform/api/client/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/client/users"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -22,7 +23,7 @@ func plainAuth() {
 
 	doPlainAuth(credentials)
 
-	if api.Auth != nil {
+	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
 		ensureUserKeypair(credentials.Password)
 	}
@@ -46,16 +47,17 @@ func promptForLogin(credentials *models.Credentials) error {
 }
 
 func doPlainAuth(credentials *models.Credentials) {
-	loginOK, err := api.Authenticate(credentials)
+	auth := authentication.Get()
+	fail := auth.AuthenticateWithModel(credentials)
 
 	// Error checking
-	if err != nil {
-		switch err.(type) {
+	if fail != nil {
+		switch fail.ToError().(type) {
 		// Authentication failed due to username not existing
-		case *authentication.PostLoginUnauthorized:
+		case *apiAuth.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
-			_, err := api.Client.Users.UniqueUsername(params)
+			_, err := api.Get().Users.UniqueUsername(params)
 			if err == nil {
 				if promptConfirm("prompt_login_to_signup") {
 					signupFromLogin(credentials.Username, credentials.Password)
@@ -64,7 +66,7 @@ func doPlainAuth(credentials *models.Credentials) {
 				failures.Handle(err, locale.T("err_auth_failed"))
 			}
 			return
-		case *authentication.PostLoginRetryWith:
+		case *apiAuth.PostLoginRetryWith:
 			var qs = []*survey.Question{
 				{
 					Name:     "totp",
@@ -80,12 +82,12 @@ func doPlainAuth(credentials *models.Credentials) {
 			doPlainAuth(credentials)
 			return
 		default:
-			failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
+			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
 			return
 		}
 	}
 
 	print.Line(locale.T("login_success_welcome_back", map[string]string{
-		"Name": loginOK.Payload.User.Username,
+		"Name": auth.WhoAmI(),
 	}))
 }

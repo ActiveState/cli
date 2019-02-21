@@ -1,13 +1,14 @@
 package projects
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/client/organizations"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +31,7 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
-	orgs, err := api.Client.Organizations.ListOrganizations(orgParams, api.Auth)
+	orgs, err := authentication.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return nil, api.FailAuth.New("err_api_not_authenticated")
@@ -44,7 +45,7 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			return nil, err
 		}
 		for _, project := range orgProjects {
-			projectsList = append(projectsList, projectWithOrg{project.Name, project.Description, org.Name})
+			projectsList = append(projectsList, projectWithOrg{project.Name, *project.Description, org.Name})
 		}
 	}
 	return projectsList, nil

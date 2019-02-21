@@ -1,12 +1,12 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/api"
-	"github.com/ActiveState/cli/internal/api/models"
 	"github.com/ActiveState/cli/internal/failures"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
 	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 )
 
 // FetchRaw fetchs the current user's encoded and unparsed keypair or returns a failure.
