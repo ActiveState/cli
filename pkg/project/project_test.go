@@ -185,21 +185,49 @@ func (suite *ProjectTestSuite) TestScripts() {
 
 	script := scripts[0]
 	name := script.Name()
-	version := script.Value()
+	value := script.Value()
 	standalone := script.Standalone()
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("foo Linux", version, "Value should match (Linux)")
+		suite.Equal("foo Linux", value, "Value should match (Linux)")
 		suite.True(standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("bar Windows", version, "Value should match (Windows)")
+		suite.Equal("bar Windows", value, "Value should match (Windows)")
 		suite.True(standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("baz OSX", version, "Value should match (OSX)")
+		suite.Equal("baz OSX", value, "Value should match (OSX)")
 		suite.True(standalone, "Standalone value should match (OSX)")
+	}
+}
+
+func (suite *ProjectTestSuite) TestScriptByName() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
+
+	script := prj.ScriptByName("noop")
+	suite.Nil(script)
+
+	if runtime.GOOS == "linux" {
+		script = prj.ScriptByName("foo")
+		suite.Require().NotNil(script)
+		suite.Equal("foo", script.Name(), "Names should match (Linux)")
+		suite.Equal("foo Linux", script.Value(), "Value should match (Linux)")
+		suite.True(script.Standalone(), "Standalone value should match (Linux)")
+	} else if runtime.GOOS == "windows" {
+		script = prj.ScriptByName("bar")
+		suite.Require().NotNil(script)
+		suite.Equal("bar", script.Name(), "Name should match (Windows)")
+		suite.Equal("bar Windows", script.Value(), "Value should match (Windows)")
+		suite.True(script.Standalone(), "Standalone value should match (Windows)")
+	} else if runtime.GOOS == "darwin" {
+		script = prj.ScriptByName("baz")
+		suite.Require().NotNil(script)
+		suite.Equal("baz", script.Name(), "Names should match (OSX)")
+		suite.Equal("baz OSX", script.Value(), "Value should match (OSX)")
+		suite.True(script.Standalone(), "Standalone value should match (OSX)")
 	}
 }
 

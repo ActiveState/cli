@@ -7,6 +7,10 @@ variables:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+  - name: CLI_BUILDFLAGS
+    value: -ldflags="-s -w"
+  - name: CLI_PKGS
+    value: ./state
 scripts: &scripts
   - name: preprocess
     value: |
@@ -15,17 +19,13 @@ scripts: &scripts
   - name: build
     value: |
       $scripts.preprocess
-      pushd state
-      go build -ldflags="-s -w" -o ../build/state $(ls | grep .go | grep -v _test.go)
-      popd
+      go build -o ./build/state ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update build/state
+      go run scripts/update-generator/main.go -o public/update ./build/state
   - name: install
     value: |
       $scripts.preprocess
-      pushd state
-      go install state.go
-      popd
+      go install ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
   - name: generate-artifacts
     value: |
       go run scripts/artifact-generator/main.go 

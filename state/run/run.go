@@ -53,22 +53,14 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	// Determine which project script to run based on the given script name.
 	prj := project.Get()
-	var scriptBlock string
-	var standalone bool
-	for _, script := range prj.Scripts() {
-		if script.Name() == Args.Name {
-			scriptBlock = script.Value()
-			standalone = script.Standalone()
-			break
-		}
-	}
-	if scriptBlock == "" {
+	script := prj.ScriptByName(Args.Name)
+	if script == nil {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
 		return
 	}
 
 	// Activate the state if needed.
-	if !standalone && !subshell.IsActivated() {
+	if !script.Standalone() && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
 		var fail = virtualenvironment.Activate()
 		if fail != nil {
@@ -79,7 +71,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	// Run the script.
-	scriptBlock = expander.Expand(scriptBlock)
+	scriptBlock := expander.Expand(script.Value())
 	subs, err := subshell.Get()
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_no_shell"))
