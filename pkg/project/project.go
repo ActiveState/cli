@@ -96,6 +96,16 @@ func (p *Project) Scripts() []*Script {
 	return scripts
 }
 
+// ScriptByName returns a reference to a projectfile.Script with a given name.
+func (p *Project) ScriptByName(name string) *Script {
+	for _, script := range p.Scripts() {
+		if script.Name() == name {
+			return script
+		}
+	}
+	return nil
+}
+
 // Name returns project name
 func (p *Project) Name() string { return p.projectfile.Name }
 
