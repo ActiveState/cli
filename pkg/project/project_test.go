@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"os"
@@ -7,263 +7,225 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/stretchr/testify/suite"
 )
 
-var cwd string
+type ProjectTestSuite struct {
+	suite.Suite
 
-func setProjectDir(t *testing.T) {
-	var err error
-	cwd, err = environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
-	err = os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata"))
-	assert.NoError(t, err, "Should change dir without issue.")
-	projectfile.Reset()
+	testdataDir string
 }
 
-func resetProjectDir(t *testing.T) {
-	os.Chdir(cwd)
+func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
+	failures.ResetHandled()
+
+	// support test projectfile access
+	root, err := environment.GetRootPath()
+	suite.Require().NoError(err, "Should detect root path")
+
+	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
+	err = os.Chdir(suite.testdataDir)
+	suite.Require().NoError(err, "Should change dir without issue.")
 }
 
-func TestGet(t *testing.T) {
-	setProjectDir(t)
-	config := Get()
-	assert.NotNil(t, config, "Config should be set")
-	resetProjectDir(t)
+func (suite *ProjectTestSuite) TestGet() {
+	config := project.Get()
+	suite.NotNil(config, "Config should be set")
 }
 
-func TestGetSafe(t *testing.T) {
-	setProjectDir(t)
-	val, fail := GetSafe()
-	assert.NoError(t, fail.ToError(), "Run without failure")
-	assert.NotNil(t, val, "Config should be set")
-	resetProjectDir(t)
+func (suite *ProjectTestSuite) TestGetSafe() {
+	val, fail := project.GetSafe()
+	suite.NoError(fail.ToError(), "Run without failure")
+	suite.NotNil(val, "Config should be set")
 }
 
-func TestProject(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "foo", prj.Name(), "Values should match")
-	assert.Equal(t, "carey", prj.Owner(), "Values should match")
-	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
-	assert.Equal(t, "something", prj.Environments(), "Values should match")
-	assert.Equal(t, "1.0", prj.Version(), "Values should match")
-	resetProjectDir(t)
+func (suite *ProjectTestSuite) TestProject() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
+	suite.Equal("project", prj.Name(), "Values should match")
+	suite.Equal("ActiveState", prj.Owner(), "Values should match")
+	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
+	suite.Equal("something", prj.Environments(), "Values should match")
+	suite.Equal("1.0", prj.Version(), "Values should match")
 }
 
-func TestProject_WhenInSubDirectories(t *testing.T) {
-	setProjectDir(t)
+func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
+	err := os.Chdir(filepath.Join(suite.testdataDir, "sub1", "sub2"))
+	suite.Require().NoError(err, "Should change dir without issue.")
 
-	err := os.Chdir(filepath.Join(cwd, "pkg", "project", "testdata", "sub1", "sub2"))
-	assert.NoError(t, err, "Should change dir without issue.")
-
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
-	assert.Equal(t, "foo", prj.Name(), "Values should match")
-	assert.Equal(t, "carey", prj.Owner(), "Values should match")
-	assert.Equal(t, "my/name/space", prj.Namespace(), "Values should match")
-	assert.Equal(t, "something", prj.Environments(), "Values should match")
-	assert.Equal(t, "1.0", prj.Version(), "Values should match")
-	resetProjectDir(t)
+	prj, fail := project.GetSafe()
+	suite.Require().Nil(fail, "Run without failure")
+	suite.Equal("project", prj.Name(), "Values should match")
+	suite.Equal("ActiveState", prj.Owner(), "Values should match")
+	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
+	suite.Equal("something", prj.Environments(), "Values should match")
+	suite.Equal("1.0", prj.Version(), "Values should match")
 }
 
-func TestPlatforms(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+func (suite *ProjectTestSuite) TestPlatforms() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
 	val := prj.Platforms()
 	plat := val[0]
-	assert.Equal(t, 4, len(val), "Values should match")
+	suite.Equal(4, len(val), "Values should match")
 
 	name := plat.Name()
-	assert.Equal(t, "fullexample", name, "Names should match")
+	suite.Equal("fullexample", name, "Names should match")
 
 	os := plat.Os()
-	assert.Equal(t, "darwin", os, "OS should match")
+	suite.Equal("darwin", os, "OS should match")
 
 	var version string
 	version = plat.Version()
-	assert.Equal(t, "10.0", version, "Version should match")
+	suite.Equal("10.0", version, "Version should match")
 
 	var arch string
 	arch = plat.Architecture()
-	assert.Equal(t, "x386", arch, "Arch should match")
+	suite.Equal("x386", arch, "Arch should match")
 
 	var libc string
 	libc = plat.Libc()
-	assert.Equal(t, "gnu", libc, "Libc should match")
+	suite.Equal("gnu", libc, "Libc should match")
 
 	var compiler string
 	compiler = plat.Compiler()
-	assert.Equal(t, "gcc", compiler, "Compiler should match")
-	resetProjectDir(t)
+	suite.Equal("gcc", compiler, "Compiler should match")
 }
 
-func TestEvents(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.NoError(t, fail.ToError(), "Run without failure")
+func (suite *ProjectTestSuite) TestEvents() {
+	prj, fail := project.GetSafe()
+	suite.NoError(fail.ToError(), "Run without failure")
 
 	events := prj.Events()
-	assert.Equal(t, 1, len(events), "Should match 1 out of three constrained items")
+	suite.Equal(1, len(events), "Should match 1 out of three constrained items")
 
 	event := events[0]
+	name := event.Name()
+	value := event.Value()
 
 	if runtime.GOOS == "linux" {
-		name := event.Name()
-		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		value := event.Value()
-		assert.Equal(t, "foo Linux", value, "Value should match (Linux)")
+		suite.Equal("foo", name, "Names should match (Linux)")
+		suite.Equal("foo Linux", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := event.Name()
-		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		value := event.Value()
-		assert.Equal(t, "bar Windows", value, "Value should match (Windows)")
+		suite.Equal("bar", name, "Name should match (Windows)")
+		suite.Equal("bar Windows", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := event.Name()
-		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		value := event.Value()
-		assert.Equal(t, "baz OSX", value, "Value should match (OSX)")
+		suite.Equal("baz", name, "Names should match (OSX)")
+		suite.Equal("baz OSX", value, "Value should match (OSX)")
 	}
-	resetProjectDir(t)
 }
 
-func TestLanguages(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+func (suite *ProjectTestSuite) TestLanguages() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
 
 	languages := prj.Languages()
-	assert.Equal(t, 2, len(languages), "Should match 1 out of three constrained items")
+	suite.Equal(2, len(languages), "Should match 1 out of three constrained items")
 
 	lang := languages[0]
+	name := lang.Name()
+	version := lang.Version()
+	build := lang.Build()
 
 	if runtime.GOOS == "linux" {
-		name := lang.Name()
-		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		version := lang.Version()
-		assert.Equal(t, "1.1", version, "Version should match (Linux)")
-		build := lang.Build()
-		assert.Equal(t, "--foo Linux", (*build)["override"], "Build value should match (Linux)")
+		suite.Equal("foo", name, "Names should match (Linux)")
+		suite.Equal("1.1", version, "Version should match (Linux)")
+		suite.Equal("--foo Linux", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := lang.Name()
-		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		version := lang.Version()
-		assert.Equal(t, "1.2", version, "Version should match (Windows)")
-		build := lang.Build()
-		assert.Equal(t, "--bar Windows", (*build)["override"], "Build value should match (Windows)")
+		suite.Equal("bar", name, "Name should match (Windows)")
+		suite.Equal("1.2", version, "Version should match (Windows)")
+		suite.Equal("--bar Windows", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := lang.Name()
-		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		version := lang.Version()
-		assert.Equal(t, "1.3", version, "Version should match (OSX)")
-		build := lang.Build()
-		assert.Equal(t, "--baz OSX", (*build)["override"], "Build value should match (OSX)")
+		suite.Equal("baz", name, "Names should match (OSX)")
+		suite.Equal("1.3", version, "Version should match (OSX)")
+		suite.Equal("--baz OSX", (*build)["override"], "Build value should match (OSX)")
 	}
-	resetProjectDir(t)
 }
 
-func TestPackages(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+func (suite *ProjectTestSuite) TestPackages() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
 	languages := prj.Languages()
-	var language *Language
+	var language *project.Language
 	for _, l := range languages {
 		if l.Name() == "packages" {
 			language = l
 		}
 	}
 	packages := language.Packages()
-	assert.Equal(t, 1, len(packages), "Should match 1 out of three constrained items")
+	suite.Equal(1, len(packages), "Should match 1 out of three constrained items")
 
 	pkg := packages[0]
+	name := pkg.Name()
+	version := pkg.Version()
+	build := pkg.Build()
 
 	if runtime.GOOS == "linux" {
-		name := pkg.Name()
-		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		version := pkg.Version()
-		assert.Equal(t, "1.1", version, "Version should match (Linux)")
-		build := pkg.Build()
-		assert.Equal(t, "--foo Linux", (*build)["override"], "Build value should match (Linux)")
+		suite.Equal("foo", name, "Names should match (Linux)")
+		suite.Equal("1.1", version, "Version should match (Linux)")
+		suite.Equal("--foo Linux", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := pkg.Name()
-		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		version := pkg.Version()
-		assert.Equal(t, "1.2", version, "Version should match (Windows)")
-		build := pkg.Build()
-		assert.Equal(t, "--bar Windows", (*build)["override"], "Build value should match (Windows)")
+		suite.Equal("bar", name, "Name should match (Windows)")
+		suite.Equal("1.2", version, "Version should match (Windows)")
+		suite.Equal("--bar Windows", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := pkg.Name()
-		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		version := pkg.Version()
-		assert.Equal(t, "1.3", version, "Version should match (OSX)")
-		build := pkg.Build()
-		assert.Equal(t, "--baz OSX", (*build)["override"], "Build value should match (OSX)")
+		suite.Equal("baz", name, "Names should match (OSX)")
+		suite.Equal("1.3", version, "Version should match (OSX)")
+		suite.Equal("--baz OSX", (*build)["override"], "Build value should match (OSX)")
 	}
-	resetProjectDir(t)
 }
 
-func TestScripts(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+func (suite *ProjectTestSuite) TestScripts() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
 	scripts := prj.Scripts()
-	assert.Equal(t, 1, len(scripts), "Should match 1 out of three constrained items")
+	suite.Equal(1, len(scripts), "Should match 1 out of three constrained items")
 
 	script := scripts[0]
+	name := script.Name()
+	version := script.Value()
+	standalone := script.Standalone()
 
 	if runtime.GOOS == "linux" {
-		name := script.Name()
-		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		version := script.Value()
-		assert.Equal(t, "foo Linux", version, "Value should match (Linux)")
-		standalone := script.Standalone()
-		assert.True(t, standalone, "Standalone value should match (Linux)")
+		suite.Equal("foo", name, "Names should match (Linux)")
+		suite.Equal("foo Linux", version, "Value should match (Linux)")
+		suite.True(standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := script.Name()
-		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		version := script.Value()
-		assert.Equal(t, "bar Windows", version, "Value should match (Windows)")
-		standalone := script.Standalone()
-		assert.True(t, standalone, "Standalone value should match (Windows)")
+		suite.Equal("bar", name, "Name should match (Windows)")
+		suite.Equal("bar Windows", version, "Value should match (Windows)")
+		suite.True(standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := script.Name()
-		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		version := script.Value()
-		assert.Equal(t, "baz OSX", version, "Value should match (OSX)")
-		standalone := script.Standalone()
-		assert.True(t, standalone, "Standalone value should match (OSX)")
+		suite.Equal("baz", name, "Names should match (OSX)")
+		suite.Equal("baz OSX", version, "Value should match (OSX)")
+		suite.True(standalone, "Standalone value should match (OSX)")
 	}
-	resetProjectDir(t)
 }
 
-func TestVariables(t *testing.T) {
-	setProjectDir(t)
-	prj, fail := GetSafe()
-	assert.Nil(t, fail, "Run without failure")
+func (suite *ProjectTestSuite) TestVariables() {
+	prj, fail := project.GetSafe()
+	suite.Nil(fail, "Run without failure")
 	variables := prj.Variables()
-	assert.Equal(t, 1, len(variables), "Should match 1 out of three constrained items")
 
 	variable := variables[0]
 
+	name := variable.Name()
+	value, failure := variable.Value()
+	suite.Require().Nil(failure)
+
 	if runtime.GOOS == "linux" {
-		name := variable.Name()
-		assert.Equal(t, "foo", name, "Names should match (Linux)")
-		value := variable.Value()
-		assert.Equal(t, "foo Linux", value, "Value should match (Linux)")
+		suite.Equal("foo", name, "Names should match (Linux)")
+		suite.Equal("foo Linux", value, "Value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		name := variable.Name()
-		assert.Equal(t, "bar", name, "Name should match (Windows)")
-		value := variable.Value()
-		assert.Equal(t, "bar Windows", value, "Value should match (Windows)")
+		suite.Equal("bar", name, "Name should match (Windows)")
+		suite.Equal("bar Windows", value, "Value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		name := variable.Name()
-		assert.Equal(t, "baz", name, "Names should match (OSX)")
-		value := variable.Value()
-		assert.Equal(t, "baz OSX", value, "Value should match (OSX)")
+		suite.Equal("baz", name, "Names should match (OSX)")
+		suite.Equal("baz OSX", value, "Value should match (OSX)")
 	}
-	resetProjectDir(t)
+}
+
+func Test_ProjectTestSuite(t *testing.T) {
+	suite.Run(t, new(ProjectTestSuite))
 }

@@ -65,6 +65,9 @@ const KeypairLocalFileName = "private"
 // generating new Keypairs.
 const DefaultRSABitLength int = 4096
 
+// ExpanderMaxDepth defines the maximum depth to fully expand a given value.
+const ExpanderMaxDepth = int(10)
+
 // ProductionBranch is the branch used for production builds
 const ProductionBranch = "prod"
 

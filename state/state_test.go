@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/stretchr/testify/require"
 
 	"github.com/spf13/pflag"
 	funk "github.com/thoas/go-funk"
@@ -34,6 +36,21 @@ func TestMainFn(t *testing.T) {
 	main()
 
 	assert.Equal(true, true, "main didn't panic")
+}
+
+func TestMainFnVerbose(t *testing.T) {
+	assert := assert.New(t)
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--verbose"})
+
+	out, err := osutil.CaptureStderr(func() {
+		main()
+	})
+	require.NoError(t, err)
+
+	assert.Equal(true, true, "main didn't panic")
+	assert.Contains(out, "[DEBUG ")
 }
 
 func TestMainError(t *testing.T) {

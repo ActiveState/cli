@@ -1,6 +1,8 @@
 package organizations
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/client/organizations"
@@ -44,6 +46,20 @@ func FetchMembers(urlName string) ([]*models.Member, *failures.Failure) {
 		return nil, processErrorResponse(err)
 	}
 	return resOk.Payload, nil
+}
+
+func FetchMember(org *models.Organization, name string) (*models.Member, *failures.Failure) {
+	members, failure := FetchMembers(org.Urlname)
+	if failure != nil {
+		return nil, failure
+	}
+
+	for _, member := range members {
+		if strings.EqualFold(name, member.User.Username) {
+			return member, nil
+		}
+	}
+	return nil, api.FailNotFound.New("err_api_member_not_found")
 }
 
 func processErrorResponse(err error) *failures.Failure {

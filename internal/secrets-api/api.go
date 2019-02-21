@@ -9,6 +9,14 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/models"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/secrets-api/client"
+	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
+	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -37,11 +45,26 @@ var (
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
+var persistentClient *Client
+
 // Client encapsulates a Secrets Service API client and its configuration
 type Client struct {
 	*client.Secrets
 	BaseURI string
 	Auth    runtime.ClientAuthInfoWriter
+}
+
+// GetClient gets the cached (if any) client instance that was initialized using our default settings
+func GetClient() *Client {
+	if persistentClient == nil {
+		persistentClient = NewDefaultClient(api.BearerToken)
+	}
+	return persistentClient
+}
+
+// Reset will reset the client cache
+func Reset() {
+	persistentClient = nil
 }
 
 // NewClient creates a new SecretsAPI client instance using the provided HTTP settings.
@@ -91,4 +114,38 @@ func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
 		return "", api.FailAuth.Wrap(err)
 	}
 	return *resOk.Payload.UID, nil
+}
+
+// Persist will make the current client the persistentClient
+func (client *Client) Persist() {
+	persistentClient = client
+}
+
+// FetchAll fetchs the current user's secrets for an organization.
+func FetchAll(client *Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+	params := secretsapiClient.NewGetAllUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
+	if err != nil {
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		default:
+			return nil, api.FailUnknown.Wrap(err)
+		}
+	}
+	return getOk.Payload, nil
+}
+
+func SaveSecretShares(secretsClient *Client, org *models.Organization, user *models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+	params := secretsapiClient.NewShareUserSecretsParams()
+	params.OrganizationID = org.OrganizationID
+	params.UserID = user.UserID
+	params.UserSecrets = shares
+	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
+	if err != nil {
+		logging.Debug("error sharing user secrets: %v", err)
+		return FailSave.New("variables_err_save")
+	}
+	return nil
 }

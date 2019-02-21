@@ -120,6 +120,7 @@ func SetOutput(w io.Writer) {
 //a pluggable logger interface
 type LoggingHandler interface {
 	SetFormatter(Formatter)
+	SetVerbose(bool)
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 }
 
@@ -129,6 +130,9 @@ type strandardHandler struct {
 
 func (l *strandardHandler) SetFormatter(f Formatter) {
 	l.formatter = f
+}
+
+func (l *strandardHandler) SetVerbose(v bool) {
 }
 
 // default handling interface - just

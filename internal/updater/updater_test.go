@@ -86,12 +86,12 @@ func TestPrintUpdateMessage(t *testing.T) {
 	requestPath := fmt.Sprintf("%s/%s/%s-%s.json", constants.CommandName, constants.BranchName, runtime.GOOS, runtime.GOARCH)
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, `{"Version": "1.2.3-456", "Sha256": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
-	stdout, err := osutil.CaptureStdout(func() {
+	outStr, err := osutil.CaptureStdout(func() {
 		PrintUpdateMessage()
 	})
 	assert.NoError(t, err)
 
-	assert.Contains(t, stdout, locale.Tr("update_available", constants.Version, "1.2.3-456"), "Should print an update message")
+	assert.Contains(t, outStr, locale.Tr("update_available", constants.Version, "1.2.3-456"), "Should print an update message")
 }
 
 func TestPrintUpdateMessageEmpty(t *testing.T) {

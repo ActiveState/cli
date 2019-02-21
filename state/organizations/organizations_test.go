@@ -58,7 +58,7 @@ func TestClientError(t *testing.T) {
 	authentication.Get().AuthenticateWithToken("")
 
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)
@@ -80,7 +80,7 @@ func TestAuthError(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
+	outStr, outErr := osutil.CaptureStderr(func() {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)

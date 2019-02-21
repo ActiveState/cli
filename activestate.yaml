@@ -54,7 +54,7 @@ scripts: &scripts
       $scripts.generate-secrets-client
   - name: test
     value: |
-      go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+      ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
   - name: clean
     value: |
       go clean

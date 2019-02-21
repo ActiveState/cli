@@ -2,6 +2,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -89,6 +90,44 @@ func TestFlags(t *testing.T) {
 		assert.Equal(t, "flag", pf.Name, "flag is set")
 		assert.Equal(t, "value", pf.Value, "flag is set")
 	})
+}
+
+func TestFlagsUseCb(t *testing.T) {
+
+	var registered int
+	var used int
+	var onUse = func() {
+		used++
+	}
+
+	var createCmd = func() *Command {
+		registered++
+		var bvar bool
+		return &Command{
+			Name: fmt.Sprintf("foo%d", registered),
+			Flags: []*Flag{
+				&Flag{
+					Name:    fmt.Sprintf("flag%d", registered),
+					Type:    TypeBool,
+					BoolVar: &bvar,
+					Persist: true,
+					OnUse:   onUse,
+				},
+			},
+			Run: func(cmd *cobra.Command, args []string) {},
+		}
+	}
+
+	cmd1 := createCmd()
+	cmd2 := createCmd()
+
+	cmd1.Append(cmd2)
+
+	Cc := cmd1.GetCobraCmd()
+	Cc.SetArgs([]string{"foo2", "--flag1", "--flag2"})
+	cmd1.Execute()
+
+	assert.Equal(t, 2, used, "Should call onUse twice")
 
 }
 

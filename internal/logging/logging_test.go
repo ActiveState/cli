@@ -21,6 +21,9 @@ func (l *Test1Handler) SetFormatter(f Formatter) {
 	l.formatter = f
 }
 
+func (l *Test1Handler) SetVerbose(v bool) {
+}
+
 func (l *Test1Handler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	l.messages = append(l.messages, fmt.Sprintf("%s", message))
 
@@ -135,6 +138,9 @@ func (t *TestHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 func (t *TestHandler) SetFormatter(fmt Formatter) {
 	t.formatter = fmt
+}
+
+func (l *TestHandler) SetVerbose(v bool) {
 }
 
 func Test_Handler(t *testing.T) {
