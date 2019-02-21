@@ -611,3 +611,10 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
+
+installer_err_invalid_workingdir:
+  other: Working directory '{{.V0}}' does not exist or is not a directory
+installer_err_notfound_archive:
+  other: Archive '{{.V0}}' does not exist
+installer_err_badext_archive:
+  other: Archive '{{.V0}}' expected to have .tar.gz or .tgz extension
