@@ -34,7 +34,7 @@ func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	appName := C.LibraryName
 	targetEnv := environment.TargetEnvironment()
-	if targetEnv == environment.Development {
+	if targetEnv != environment.Production {
 		appName = fmt.Sprintf("%s-%s", appName, targetEnv.String())
 	}
 	configDirs = configdir.New(configNamespace, appName)
