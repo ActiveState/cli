@@ -2,8 +2,11 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/environment"
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
@@ -29,7 +32,12 @@ func GetDataDir() string {
 
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
-	configDirs = configdir.New(configNamespace, "cli")
+	appName := C.LibraryName
+	targetEnv := environment.TargetEnvironment()
+	if targetEnv != environment.Production {
+		appName = fmt.Sprintf("%s-%s", appName, targetEnv.String())
+	}
+	configDirs = configdir.New(configNamespace, appName)
 
 	if flag.Lookup("test.v") != nil {
 		// TEST ONLY LOGIC

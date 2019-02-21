@@ -15,7 +15,7 @@ scripts: &scripts
   - name: preprocess
     value: |
       packr
-      go run scripts/constants-generator/main.go
+      go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
     value: |
       $scripts.preprocess

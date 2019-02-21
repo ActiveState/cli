@@ -12,7 +12,7 @@ defaults:
             mkdir -p $TEST_RESULTS
             $GOROOT/bin/go get github.com/jstemmer/go-junit-report
             $GOROOT/bin/go get -u github.com/gobuffalo/packr/...
-            $GOROOT/bin/go run scripts/constants-generator/main.go
+            $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
             ./public/install.sh -n
             echo "export PATH=$HOME/.local/bin:${GOROOT}/bin:${GOPATH}/bin:${PATH}:$PATH" >> $BASH_ENV
     runTests: &runTests

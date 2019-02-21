@@ -9,7 +9,37 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
 )
+
+// Environment identifies an environment.. what else can I say?
+type Environment int
+
+const (
+	Production Environment = iota
+	Development
+)
+
+// String returns a stringified version of the environment
+func (e Environment) String() string {
+	switch e {
+	case Production:
+		return "prod"
+	case Development:
+		return "dev"
+	default:
+		return ""
+	}
+}
+
+// TargetEnvironment returns the environment we're currently targeting
+func TargetEnvironment() Environment {
+	if constants.BranchName == constants.ProductionBranch {
+		return Production
+	}
+	return Development
+}
 
 // GetRootPath returns the root path of the library we're under
 func GetRootPath() (string, error) {
