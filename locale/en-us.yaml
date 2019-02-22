@@ -612,9 +612,17 @@ err_token_delete:
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
 
-installer_err_invalid_workingdir:
+installer_err_workingdir_invalid:
   other: Working directory '{{.V0}}' does not exist or is not a directory
-installer_err_notfound_archive:
-  other: Archive '{{.V0}}' does not exist
-installer_err_badext_archive:
-  other: Archive '{{.V0}}' expected to have .tar.gz or .tgz extension
+installer_err_archive_notfound:
+  other: Distribution archive '{{.V0}}' does not exist
+installer_err_archive_badext:
+  other: Expected distribution archive '{{.V0}}' to have .tar.gz or .tgz extension
+installer_err_dist_missing_root_dir:
+  other: Expected distribution installer '{{.V0}}' to contain directory named '{{.V1}}'
+installer_err_dist_no_install_script:
+  other: Expected distribution installer '{{.V0}}' to provide install script '{{.V1}}'
+installer_err_dist_install_script_no_exec:
+  other: Install script '{{.V1}}' not executable for distribution '{{.V0}}'
+installer_err_installscript_failed:
+  other: Installation of {{.V0}} failed with '{{.V1}}'
