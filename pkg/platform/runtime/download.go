@@ -3,10 +3,10 @@ package runtime
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/model/projects"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

@@ -3,6 +3,9 @@ package headchef
 import (
 	"encoding/json"
 	"net/url"
+	"time"
+
+	"github.com/gorilla/websocket"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/go-openapi/strfmt"
@@ -15,7 +18,7 @@ import (
 	"github.com/sacOO7/gowebsocket"
 )
 
-var test string = `{"build_request_id":"f4cb6b30-fd90-5b01-a297-b3111e0706a4","recipe":{"platform_id":"eef02e93-f4a9-5cca-a131-a388ecf57442","recipe_id":"f4cb6b30-fd90-5b01-a297-b3111e0706a4","resolved_requirements":[{"ingredient":{"ingredient_id":"1bf08759-25a9-5b49-8008-9a370634404e","name":"ActivePythonEnterprise-3.5.4.3504-source-626c6001.zip","description":"","namespace":"pre-platform-installer"},"ingredient_version":{"description":"pre-platform installer for ActivePythonEnterprise-3.5.4.3504-source-626c6001.zip","ingredient_id":"1bf08759-25a9-5b49-8008-9a370634404e","ingredient_version_id":"7f255b06-b74c-5496-94e0-db3eb698f884","is_stable_release":true,"release_date":"1970-01-01T00:00:00.000Z","revision":1,"source_uri":"https://www.activestate.com/","version":"1"}},{"ingredient":{"ingredient_id":"85374083-8434-59fe-8e7c-54e46dbda8af","name":"ActivePythonEnterprise-3.6.6.3606-source-63c815b2.tar.gz","description":"","namespace":"pre-platform-installer"},"ingredient_version":{"description":"pre-platform installer for ActivePythonEnterprise-3.6.6.3606-source-63c815b2.tar.gz","ingredient_id":"85374083-8434-59fe-8e7c-54e46dbda8af","ingredient_version_id":"67f71792-34b4-5400-b606-64afc253ab53","is_stable_release":true,"release_date":"1970-01-01T00:00:00.000Z","revision":1,"source_uri":"https://www.activestate.com/","version":"1"}}]},"requester":{"project_id":"9082cbea-2938-413a-8b1c-2188b578f5ce","organization_id":"2b53beaa-5189-4358-b980-ce236a5269b4","user_id":"7a481c85-5521-4899-82fb-71bae071c486"}}`
+var DefaultDialer *websocket.Dialer
 
 var (
 	FailRequestConnect = failures.Type("headchef.fail.request.connect", failures.FailNetwork)
@@ -49,14 +52,17 @@ type RequestBuildCompleted func(headchef_models.BuildCompleted)
 type RequestFailure func(*failures.Failure)
 type RequestClose func()
 
-func NewRequest(recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester) *Request {
-	return InitRequest(api.GetServiceURL(api.ServiceHeadChef), recipe, requestor)
+func InitRequest(recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester) *Request {
+	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), recipe, requestor, DefaultDialer)
 }
 
-func InitRequest(u *url.URL, recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester) *Request {
+func NewRequest(u *url.URL, recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester, dialer *websocket.Dialer) *Request {
 	logging.Debug("connecting to head-chef at %s", u.String())
 
 	socket := gowebsocket.New(u.String())
+	if dialer != nil {
+		socket.WebsocketDialer = dialer
+	}
 	socket.RequestHeader.Set("Origin", constants.HeadChefOrigin)
 
 	request := &Request{socket: socket, recipe: recipe, requestor: requestor}
@@ -119,6 +125,14 @@ func (r *Request) triggerClose() {
 	}
 }
 
+func (r *Request) close() {
+	// Work around strange bug where socket.Close() times out on writing the close message.
+	// Oddly the timeout imposed close call works just fine.
+	// I've only encountered this issue in tests, so might be an issue with our testing library
+	r.socket.Conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
+	go r.socket.Close() // run in subroutine so the close doesn't block anything, it's of no consequence
+}
+
 func (r *Request) handleMessage(message string, socket gowebsocket.Socket) {
 	if r.handleValidationError(message) {
 		return
@@ -154,6 +168,9 @@ func (r *Request) handleStatusMessage(message string) (handled bool) {
 		logging.Error("Could not unmarshal websocket response, error: %v", err)
 		return false
 	}
+	if envelope.Type == nil {
+		return false // this isn't a status message
+	}
 
 	switch *envelope.Type {
 	// Build Started
@@ -175,20 +192,25 @@ func (r *Request) handleStatusMessage(message string) (handled bool) {
 		} else {
 			r.triggerBuildCompleted(response)
 		}
-		r.socket.Close()
+		r.close()
 		return true
 
 	// Build Failed
 	case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
 		response := headchef_models.BuildFailed{}
-		err := response.UnmarshalBinary([]byte(envelope.Body.(string)))
+		json, err := json.Marshal(envelope.Body)
+		if err != nil {
+			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
+			return true
+		}
+		err = response.UnmarshalBinary(json)
 		if err != nil {
 			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
 		} else {
 			logging.Warning("head-chef build failed with the following errors: %v", response.Errors)
 			r.triggerBuildFailed(response.Message)
 		}
-		r.socket.Close()
+		r.close()
 		return true
 	}
 
@@ -202,9 +224,8 @@ func (r *Request) Start() {
 	}
 	r.socket.OnTextMessage = r.handleMessage
 	r.socket.OnDisconnected = func(err error, socket gowebsocket.Socket) {
-		if err != nil {
-			r.triggerFailure(FailRequestAtDisconnect.Wrap(err))
-		}
+		// The error here is useless, because gowebsocket just forwards the close message as an error, regardless of whether
+		// it actually is one
 		r.triggerClose()
 	}
 
