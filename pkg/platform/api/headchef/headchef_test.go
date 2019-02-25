@@ -35,10 +35,11 @@ func (suite *HeadchefTestSuite) PerformRequest() *RequestResult {
 	result := &RequestResult{}
 
 	buildRecipe := &headchef_models.BuildRequestRecipe{}
-	requestor := &headchef_models.BuildRequestRequester{}
+	requester := &headchef_models.BuildRequestRequester{}
+	buildRequest := &headchef_models.BuildRequest{Requester: requester, Recipe: buildRecipe}
 	u, err := url.Parse("ws://example.org/ws")
 	suite.Require().NoError(err)
-	req := headchef.NewRequest(u, buildRecipe, requestor, suite.mock.Dialer())
+	req := headchef.NewRequest(u, buildRequest, suite.mock.Dialer())
 
 	req.OnBuildStarted(func() {
 		result.BuildStarted = true

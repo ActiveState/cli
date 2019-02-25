@@ -26,7 +26,11 @@ var Get func(url string) ([]byte, *failures.Failure)
 var GetWithProgress func(url string, progress *mpb.Progress) ([]byte, *failures.Failure)
 
 func init() {
-	if flag.Lookup("test.v") != nil {
+	SetMocking(flag.Lookup("test.v") != nil)
+}
+
+func SetMocking(useMocking bool) {
+	if useMocking {
 		Get = _testHTTPGet
 		GetWithProgress = _testHTTPGetWithProgress
 	} else {
@@ -42,10 +46,15 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 
 func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s", url)
-	resp, err := http.Head(url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
 	}
+
+	if resp.StatusCode != 200 {
+		return nil, failures.FailNetwork.New("error_status_code", strconv.Itoa(resp.StatusCode))
+	}
+
 	length := resp.Header.Get("Content-Length")
 	total, err := strconv.Atoi(length)
 	if err != nil {
@@ -68,10 +77,6 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 		return nil, failures.FailNetwork.Wrap(err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("error_status_code", strconv.Itoa(resp.StatusCode))
-	}
 
 	src := resp.Body
 	var dst bytes.Buffer

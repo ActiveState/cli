@@ -19,7 +19,13 @@ var (
 	FailNoEffectiveRecipe = failures.Type("model.fail.recipes.noeffective")
 )
 
+var OS sysinfo.OsInfo
+
 type Recipe = inventory_models.RecipeResponseRecipesItems0
+
+func init() {
+	OS = sysinfo.OS()
+}
 
 func FetchRecipesForProject(pj *models.Project) ([]*Recipe, *failures.Failure) {
 	branch, fail := projects.DefaultBranch(pj)
@@ -72,9 +78,9 @@ func EffectiveRecipe(recipes []*Recipe) (*Recipe, *failures.Failure) {
 			continue
 		}
 
-		if (*platform.OsName == inventory_models.PlatformOsNameLinux /*&& sysinfo.OS() == sysinfo.Linux*/) ||
-			(*platform.OsName == inventory_models.PlatformOsNameMacOS && sysinfo.OS() == sysinfo.Mac) ||
-			(*platform.OsName == inventory_models.PlatformOsNameWindows && sysinfo.OS() == sysinfo.Windows) {
+		if (*platform.OsName == inventory_models.PlatformOsNameLinux && OS == sysinfo.Linux) ||
+			(*platform.OsName == inventory_models.PlatformOsNameMacOS && OS == sysinfo.Mac) ||
+			(*platform.OsName == inventory_models.PlatformOsNameWindows && OS == sysinfo.Windows) {
 			return recipe, nil
 		}
 	}

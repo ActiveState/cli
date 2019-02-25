@@ -35,7 +35,7 @@ type Settings struct {
 
 type urlsByService map[Service]string
 
-var urlsByEnv = map[string]urlsByService{
+var UrlsByEnv = map[string]urlsByService{
 	"prod": {
 		ServicePlatform:  constants.PlatformURLProd,
 		ServiceSecrets:   constants.SecretsURLProd,
@@ -55,14 +55,10 @@ var urlsByEnv = map[string]urlsByService{
 		ServiceInventory: constants.InventoryURLDev,
 	},
 	"test": {
-		ServicePlatform:  constants.PlatformURLDev,
-		ServiceSecrets:   constants.SecretsURLDev,
-		ServiceHeadChef:  constants.HeadChefURLDev,
-		ServiceInventory: constants.InventoryURLDev,
-		// ServicePlatform:  "https://testing.tld" + constants.PlatformAPIPath,
-		// ServiceSecrets:   "https://secrets.testing.tld" + constants.SecretsAPIPath,
-		// ServiceHeadChef:  "https://headchef.testing.tld" + constants.HeadChefAPIPath,
-		// ServiceInventory: "https://inventory.testing.tld" + constants.InventoryAPIPath,
+		ServicePlatform:  "https://testing.tld" + constants.PlatformAPIPath,
+		ServiceSecrets:   "https://secrets.testing.tld" + constants.SecretsAPIPath,
+		ServiceHeadChef:  "https://headchef.testing.tld" + constants.HeadChefAPIPath,
+		ServiceInventory: "https://inventory.testing.tld" + constants.InventoryAPIPath,
 	},
 }
 
@@ -73,16 +69,20 @@ var serviceURLs = map[Service]*url.URL{}
 // custom value, then the apiEnvName determines if this is test, prod, or stage based on
 // a few factors. The default is always stage.
 func init() {
+	DetectServiceURLs()
+}
+
+func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
 	var hasURL bool
-	if serviceURLStrings, hasURL = urlsByEnv[constants.APIEnv]; !hasURL {
+	if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
 		if flag.Lookup("test.v") != nil {
-			serviceURLStrings = urlsByEnv["test"]
+			serviceURLStrings = UrlsByEnv["test"]
 		} else if constants.BranchName == "prod" {
-			serviceURLStrings = urlsByEnv["prod"]
+			serviceURLStrings = UrlsByEnv["prod"]
 		} else {
-			serviceURLStrings = urlsByEnv["stage"]
+			serviceURLStrings = UrlsByEnv["stage"]
 		}
 	}
 

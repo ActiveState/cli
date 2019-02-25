@@ -8,13 +8,11 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/google/uuid"
 	"github.com/sacOO7/gowebsocket"
 )
 
@@ -35,9 +33,8 @@ var (
 )
 
 type Request struct {
-	socket    gowebsocket.Socket
-	recipe    *headchef_models.BuildRequestRecipe
-	requestor *headchef_models.BuildRequestRequester
+	socket       gowebsocket.Socket
+	buildRequest *headchef_models.BuildRequest
 
 	onBuildStarted   RequestBuildStarted
 	onBuildFailed    RequestBuildFailed
@@ -52,11 +49,11 @@ type RequestBuildCompleted func(headchef_models.BuildCompleted)
 type RequestFailure func(*failures.Failure)
 type RequestClose func()
 
-func InitRequest(recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester) *Request {
-	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), recipe, requestor, DefaultDialer)
+func InitRequest(buildRequest *headchef_models.BuildRequest) *Request {
+	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest, DefaultDialer)
 }
 
-func NewRequest(u *url.URL, recipe *headchef_models.BuildRequestRecipe, requestor *headchef_models.BuildRequestRequester, dialer *websocket.Dialer) *Request {
+func NewRequest(u *url.URL, buildRequest *headchef_models.BuildRequest, dialer *websocket.Dialer) *Request {
 	logging.Debug("connecting to head-chef at %s", u.String())
 
 	socket := gowebsocket.New(u.String())
@@ -65,7 +62,7 @@ func NewRequest(u *url.URL, recipe *headchef_models.BuildRequestRecipe, requesto
 	}
 	socket.RequestHeader.Set("Origin", constants.HeadChefOrigin)
 
-	request := &Request{socket: socket, recipe: recipe, requestor: requestor}
+	request := &Request{socket: socket, buildRequest: buildRequest}
 
 	return request
 }
@@ -233,13 +230,7 @@ func (r *Request) Start() {
 		logging.Debug("Connected")
 
 		// Send our build request
-		uuid := strfmt.UUID(uuid.New().String())
-		buildRequest := headchef_models.BuildRequest{
-			BuildRequestID: &uuid,
-			Recipe:         r.recipe,
-			Requester:      r.requestor,
-		}
-		bytes, err := buildRequest.MarshalBinary()
+		bytes, err := r.buildRequest.MarshalBinary()
 		if err != nil {
 			r.triggerFailure(FailRequestMarshal.Wrap(err))
 		}
