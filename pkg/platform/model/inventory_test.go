@@ -5,6 +5,7 @@ import (
 
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,6 +29,15 @@ func (suite *InventoryTestSuite) TestGetInventory() {
 	platforms, fail := model.FetchPlatforms()
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(platforms, "Returns platforms")
+}
+
+func (suite *InventoryTestSuite) TestFetchPlatformByUID() {
+	suite.invMock.MockPlatforms()
+
+	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
+	platform, fail := model.FetchPlatformByUID(uid)
+	suite.Require().NoError(fail.ToError())
+	suite.Equal(uid, *platform.PlatformID, "Returns platform")
 }
 
 func TestInventorySuite(t *testing.T) {
