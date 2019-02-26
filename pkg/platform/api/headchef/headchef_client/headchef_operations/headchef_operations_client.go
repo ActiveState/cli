@@ -27,7 +27,7 @@ type Client struct {
 /*
 Hack hack API
 */
-func (a *Client) Hack(params *HackParams) (*HackOK, *Hack, *Hack, *Hack, error) {
+func (a *Client) Hack(params *HackParams) (*HackOK, *HackCreated, *HackAccepted, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewHackParams()
@@ -46,19 +46,17 @@ func (a *Client) Hack(params *HackParams) (*HackOK, *Hack, *Hack, *Hack, error) 
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	switch value := result.(type) {
 	case *HackOK:
-		return value, nil, nil, nil, nil
-	case *Hack:
-		return nil, value, nil, nil, nil
-	case *Hack:
-		return nil, nil, value, nil, nil
-	case *Hack:
-		return nil, nil, nil, value, nil
+		return value, nil, nil, nil
+	case *HackCreated:
+		return nil, value, nil, nil
+	case *HackAccepted:
+		return nil, nil, value, nil
 	}
-	return nil, nil, nil, nil, nil
+	return nil, nil, nil, nil
 
 }
 
