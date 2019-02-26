@@ -1,0 +1,7 @@
+[
+    {
+        "namespace": "string",
+        "requirement": "string",
+        "version_constraint": "string"
+    }
+]

@@ -32,6 +32,15 @@ var (
 	FailRequestValidation = failures.Type("headchef.fail.request.validation")
 )
 
+type Requester interface {
+	OnBuildStarted(f RequestBuildStarted)
+	OnBuildFailed(f RequestBuildFailed)
+	OnBuildCompleted(f RequestBuildCompleted)
+	OnFailure(f RequestFailure)
+	OnClose(f RequestClose)
+	Start()
+}
+
 type Request struct {
 	socket       gowebsocket.Socket
 	buildRequest *headchef_models.BuildRequest
@@ -49,11 +58,13 @@ type RequestBuildCompleted func(headchef_models.BuildCompleted)
 type RequestFailure func(*failures.Failure)
 type RequestClose func()
 
-func InitRequest(buildRequest *headchef_models.BuildRequest) *Request {
+type InitRequester func(buildRequest *headchef_models.BuildRequest) Requester
+
+func InitRequest(buildRequest *headchef_models.BuildRequest) Requester {
 	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest, DefaultDialer)
 }
 
-func NewRequest(u *url.URL, buildRequest *headchef_models.BuildRequest, dialer *websocket.Dialer) *Request {
+func NewRequest(u *url.URL, buildRequest *headchef_models.BuildRequest, dialer *websocket.Dialer) Requester {
 	logging.Debug("connecting to head-chef at %s", u.String())
 
 	socket := gowebsocket.New(u.String())

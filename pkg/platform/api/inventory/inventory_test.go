@@ -5,19 +5,17 @@ import (
 
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
+	inventoryMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	httpmock.Activate(api.GetServiceURL(api.ServiceInventory).String())
-	defer httpmock.DeActivate()
+	mock := inventoryMock.Init()
+	mock.MockPlatforms()
+	defer mock.Close()
 
-	httpmock.Register("GET", "/platforms")
-
-	client := inventory.New()
+	client := inventory.Init()
 	_, err := client.Platforms(inventory_operations.NewPlatformsParams())
 	assert.NoError(t, err)
 }

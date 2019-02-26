@@ -55,11 +55,16 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 		return nil, failures.FailNetwork.New("error_status_code", strconv.Itoa(resp.StatusCode))
 	}
 
+	var total int
 	length := resp.Header.Get("Content-Length")
-	total, err := strconv.Atoi(length)
-	if err != nil {
-		logging.Debug("Content-length: %v", length)
-		return nil, failures.FailInput.Wrap(err)
+	if length == "" {
+		total = 1
+	} else {
+		total, err = strconv.Atoi(length)
+		if err != nil {
+			logging.Debug("Content-length: %v", length)
+			return nil, failures.FailInput.Wrap(err)
+		}
 	}
 
 	var bar *mpb.Bar

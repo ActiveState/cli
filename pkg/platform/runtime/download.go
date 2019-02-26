@@ -25,12 +25,17 @@ var (
 )
 
 type RuntimeDownload struct {
-	project   *project.Project
-	targetDir string
+	project           *project.Project
+	targetDir         string
+	headchefRequester headchef.InitRequester
 }
 
-func InitRuntimeDownload(project *project.Project, targetDir string) *RuntimeDownload {
-	return &RuntimeDownload{project, targetDir}
+func InitRuntimeDownload(targetDir string) *RuntimeDownload {
+	return &RuntimeDownload{project.Get(), targetDir, headchef.InitRequest}
+}
+
+func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) *RuntimeDownload {
+	return &RuntimeDownload{project, targetDir, headchefRequester}
 }
 
 func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
@@ -78,14 +83,16 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 
 	var artifactURL *url.URL
 
-	request := headchef.InitRequest(buildRequest)
+	request := r.headchefRequester(buildRequest)
 	request.OnBuildCompleted(func(response headchef_models.BuildCompleted) {
 		logging.Debug("Build Completed")
 		if len(response.Artifacts) == 0 {
-			FailNoArtifacts.New(locale.T("err_no_artifacts"))
+			fail = FailNoArtifacts.New(locale.T("err_no_artifacts"))
+			return
 		}
 		if len(response.Artifacts) > 1 {
-			FailNoArtifacts.New(locale.T("err_multi_artifacts"))
+			fail = FailMultipleArtifacts.New(locale.T("err_multi_artifacts"))
+			return
 		}
 		var err error
 		artifactURL, err = url.Parse(response.Artifacts[0].URI.String())
@@ -105,7 +112,7 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 
 	request.OnFailure(func(failure *failures.Failure) {
 		logging.Debug("Failure: %v", failure)
-		fail = fail
+		fail = failure
 	})
 
 	request.OnClose(func() {

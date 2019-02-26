@@ -1,27 +1,57 @@
 package model_test
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/pkg/platform/api/models"
+
+	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
+	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/ActiveState/cli/pkg/platform/model/projects"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestFetchRecipeForProject(t *testing.T) {
-	fail := authentication.Get().AuthenticateWithToken("Y2UyYTU3ZDktNmJkYS00NTIwLTlkNDEtZmEwMjllMzM4NzZlJlp1Wnl1VnVMa2ViYTk4OTlb")
-	assert.NoError(t, fail.ToError())
+type RecipeTestSuite struct {
+	suite.Suite
+	invMock  *invMock.Mock
+	apiMock  *apiMock.Mock
+	authMock *authMock.Mock
+}
 
-	pj, fail := projects.FetchByName("ActiveState", "ActivePython-3.5")
-	assert.NoError(t, fail.ToError())
+func (suite *RecipeTestSuite) BeforeTest(suiteName, testName string) {
+	suite.invMock = invMock.Init()
+	suite.apiMock = apiMock.Init()
+	suite.authMock = authMock.Init()
+}
 
-	recipe, fail := model.FetchRecipeForProject(pj)
-	assert.NoError(t, fail.ToError())
+func (suite *RecipeTestSuite) AfterTest(suiteName, testName string) {
+	suite.invMock.Close()
+	suite.apiMock.Close()
+	suite.authMock.Close()
+}
 
-	fmt.Printf("%v", recipe)
-	assert.False(t, true)
+func (suite *RecipeTestSuite) TestGetRecipe() {
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockVcsGetCheckpoint()
+	suite.invMock.MockOrderRecipes()
+
+	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
+	platforms, fail := model.FetchRecipesForProject(&models.Project{
+		Branches: models.Branches{
+			&models.Branch{
+				BranchID: uid,
+				Default:  true,
+				CommitID: &uid,
+			},
+		},
+	})
+	suite.Require().NoError(fail.ToError())
+	suite.NotEmpty(platforms, "Returns platforms")
+}
+
+func TestRecipeSuite(t *testing.T) {
+	suite.Run(t, new(RecipeTestSuite))
 }
