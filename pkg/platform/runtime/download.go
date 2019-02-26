@@ -24,20 +24,24 @@ var (
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
 
+// RuntimeDownload is the main struct for tracking a runtime download
 type RuntimeDownload struct {
 	project           *project.Project
 	targetDir         string
 	headchefRequester headchef.InitRequester
 }
 
+// InitRuntimeDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
 func InitRuntimeDownload(targetDir string) *RuntimeDownload {
 	return &RuntimeDownload{project.Get(), targetDir, headchef.InitRequest}
 }
 
+// NewRuntimeDownload creates a new RuntimeDownload using all custom args
 func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) *RuntimeDownload {
 	return &RuntimeDownload{project, targetDir, headchefRequester}
 }
 
+// fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
 func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
 	platProject, fail := projects.FetchByName(r.project.Owner(), r.project.Name())
@@ -73,6 +77,7 @@ func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *f
 	return buildRequest, nil
 }
 
+// fetchArtifact will retrieve the artifact information from the head-chef (ie language installer)
 func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 	buildRequest, fail := r.fetchBuildRequest()
 	if fail != nil {
@@ -131,6 +136,7 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 	return artifactURL, fail
 }
 
+// Download is the main function used to kick off the runtime download
 func (r *RuntimeDownload) Download() (filename string, fail *failures.Failure) {
 	artifactURL, fail := r.fetchArtifact()
 	if fail != nil {
