@@ -31,7 +31,7 @@ func GetDataDir() string {
 func ensureConfigExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	appName := C.LibraryName
-	appName = fmt.Sprintf("%s-%s", appName, constants.BranchName)
+	appName = fmt.Sprintf("%s-%s", appName, C.BranchName)
 	configDirs = configdir.New(configNamespace, appName)
 
 	if flag.Lookup("test.v") != nil {
