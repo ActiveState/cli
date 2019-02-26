@@ -27,8 +27,12 @@ type HeadchefTestSuite struct {
 	mock *wsmock.WsMock
 }
 
-func (suite *HeadchefTestSuite) SetupTest() {
+func (suite *HeadchefTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = wsmock.Init()
+}
+
+func (suite *HeadchefTestSuite) AfterTest(suiteName, testName string) {
+	go suite.mock.Close()
 }
 
 func (suite *HeadchefTestSuite) PerformRequest() *RequestResult {
