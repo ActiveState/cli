@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/failures"
+
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 
@@ -104,6 +106,20 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	_, fail := r.Download()
 
 	suite.Equal(model.FailSignS3URL.Name, fail.Type.Name)
+}
+
+func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
+	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.BuildFailure))
+	_, fail := r.Download()
+
+	suite.Equal(runtime.FailBuild.Name, fail.Type.Name)
+}
+
+func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
+	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.RegularFailure))
+	_, fail := r.Download()
+
+	suite.Equal(failures.FailDeveloper.Name, fail.Type.Name)
 }
 
 func TestRuntimeDLSuite(t *testing.T) {

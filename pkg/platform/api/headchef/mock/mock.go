@@ -17,6 +17,8 @@ const (
 	NoArtifacts RequesterOptions = 1 << iota
 	MultiArtifacts
 	InvalidURL
+	BuildFailure
+	RegularFailure
 )
 
 type HeadchefRequesterMock struct {
@@ -53,27 +55,49 @@ func (r *HeadchefRequesterMock) option(op RequesterOptions) bool {
 	return r.options&op != 0
 }
 
+func (r *HeadchefRequesterMock) simulateCompleteBuild() {
+	r.buildStarted()
+	artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
+	if !r.option(NoArtifacts) {
+		u := strfmt.URI("http://test.tld/archive.tar.gz")
+		if r.option(InvalidURL) {
+			u = strfmt.URI("htps;/not-a-url")
+		}
+		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
+			URI: &u,
+		})
+		if r.option(MultiArtifacts) {
+			artifacts = append(artifacts, artifacts[0])
+		}
+	}
+	r.buildCompleted(headchef_models.BuildCompleted{
+		Artifacts: artifacts,
+	})
+	r.close()
+}
+
+func (r *HeadchefRequesterMock) simulateFailedBuild() {
+	r.buildStarted()
+	r.buildFailed("buildfailed")
+	r.close()
+}
+
+func (r *HeadchefRequesterMock) simulateFailure() {
+	r.buildStarted()
+	r.failure(failures.FailDeveloper.New("test failure"))
+	r.close()
+}
+
 func (r *HeadchefRequesterMock) Start() {
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		r.buildStarted()
-		artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
-		if !r.option(NoArtifacts) {
-			u := strfmt.URI("http://test.tld/archive.tar.gz")
-			if r.option(InvalidURL) {
-				u = strfmt.URI("htps;/not-a-url")
-			}
-			artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
-				URI: &u,
-			})
-			if r.option(MultiArtifacts) {
-				artifacts = append(artifacts, artifacts[0])
-			}
+		if r.option(BuildFailure) {
+			r.simulateFailedBuild()
+		} else if r.option(RegularFailure) {
+			r.simulateFailure()
+		} else {
+			r.simulateCompleteBuild()
 		}
-		r.buildCompleted(headchef_models.BuildCompleted{
-			Artifacts: artifacts,
-		})
-		r.close()
 	}()
 }
 
