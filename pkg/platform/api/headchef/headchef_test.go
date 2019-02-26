@@ -90,13 +90,11 @@ func (suite *HeadchefTestSuite) TestSuccesfulBuild() {
 func (suite *HeadchefTestSuite) TestBuildFailure() {
 	suite.mock.QueueResponse("build_started")
 	suite.mock.QueueResponse("build_failed")
-	suite.mock.QueueResponse("build_completed")
 
 	result := suite.PerformRequest()
 
 	suite.True(result.BuildStarted, "Fired OnBuildStarted")
 	suite.True(result.BuildFailed, "Fired OnBuildFailed")
-	suite.False(result.BuildCompleted, "Did not fire OnBuildCompleted because the build failure should have closed the connection")
 }
 
 func (suite *HeadchefTestSuite) TestValidationFailure() {
