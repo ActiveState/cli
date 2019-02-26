@@ -68,8 +68,14 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// ProductionBranch is the branch used for production builds
-const ProductionBranch = "prod"
+// StableBranch is the branch mapped to stable builds
+const StableBranch = "stable"
+
+// UnstableBranch is the branch used for unstable builds
+const UnstableBranch = "unstable"
+
+// ExperimentalBranch is the branch used for experimental builds
+const ExperimentalBranch = "master"
 
 // PlatformAPIPath is the api path used for the platform api
 const PlatformAPIPath = "/api/v1"
