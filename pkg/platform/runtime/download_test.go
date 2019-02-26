@@ -3,6 +3,7 @@ package runtime_test
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -85,6 +86,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 
 	suite.Require().NoError(fail.ToError())
 	suite.Equal("archive.tar.gz", filename)
+	suite.FileExists(filepath.Join(suite.dir, filename))
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
