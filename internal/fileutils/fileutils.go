@@ -50,6 +50,8 @@ func ReplaceAll(filename, find, replace string) error {
 	if err != nil {
 		return err
 	}
+	defer os.Remove(tmpfile.Name())
+
 	chunks := bytes.Split(fileBytes, findBytes)
 	for i, chunk := range chunks {
 		// Write chunk up to found bytes.

@@ -84,20 +84,20 @@ func (installer *ActivePythonInstaller) Install() *failures.Failure {
 
 	python, failure := installer.locatePythonExecutable()
 	if failure != nil {
-		os.RemoveAll(installer.DistributionDir())
+		removeDistributionDir(installer.DistributionDir())
 		return failure
 	}
 
 	// get prefixes for relocation
 	prefixes, failure := installer.extractRelocationPrefixes(python)
 	if failure != nil {
-		os.RemoveAll(installer.DistributionDir())
+		removeDistributionDir(installer.DistributionDir())
 		return failure
 	}
 
 	// relocate python
 	if failure = installer.relocatePathPrefixes(prefixes); failure != nil {
-		os.RemoveAll(installer.DistributionDir())
+		removeDistributionDir(installer.DistributionDir())
 		return failure
 
 	}
@@ -169,4 +169,12 @@ func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) 
 		}
 	}
 	return nil
+}
+
+// removeDistributionDir will remove a given directory and log any errors resulting from
+// that removal. No errors are returned.
+func removeDistributionDir(dir string) {
+	if err := os.RemoveAll(dir); err != nil {
+		logging.Errorf("attempting to remove distribution dir '%s': %v", dir, err)
+	}
 }
