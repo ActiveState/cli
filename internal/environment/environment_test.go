@@ -11,11 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTargetEnvironment(t *testing.T) {
-	env := environment.TargetEnvironment()
-	assert.Contains(t, []environment.Environment{environment.Production, environment.Development}, env, "Returns a valid environment")
-}
-
 func TestGetRootPath(t *testing.T) {
 	rootPath, err := environment.GetRootPath()
 
