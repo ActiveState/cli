@@ -22,6 +22,12 @@ scripts: &scripts
       go build -o ./build/state ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/state
+  - name: build-external
+    value: |
+      $scripts.preprocess
+      go build -tags external -o ./build/state ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
+      mkdir -p public/update
+      go run scripts/update-generator/main.go -o public/update ./build/state
   - name: install
     value: |
       $scripts.preprocess
