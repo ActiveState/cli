@@ -94,3 +94,12 @@ const PlatformURLDev = PlatformURLStage
 
 // SecretsURLDev is the host used for secrets api calls when on dev
 const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
+
+// ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
+const ActivePythonDistsDir = "python"
+
+// ActivePythonExecutable represents the ActivePython executable.
+const ActivePythonExecutable = "python3"
+
+// ActivePythonInstallDir represents the directory within a distribution tarball where the distribution exists.
+const ActivePythonInstallDir = "INSTALLDIR"

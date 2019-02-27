@@ -618,11 +618,11 @@ installer_err_archive_notfound:
   other: Distribution archive '{{.V0}}' does not exist
 installer_err_archive_badext:
   other: Expected distribution archive '{{.V0}}' to have .tar.gz or .tgz extension
-installer_err_dist_missing_root_dir:
-  other: Expected distribution installer '{{.V0}}' to contain directory named '{{.V1}}'
-installer_err_dist_no_install_script:
-  other: Expected distribution installer '{{.V0}}' to provide install script '{{.V1}}'
-installer_err_dist_install_script_no_exec:
-  other: Install script '{{.V1}}' not executable for distribution '{{.V0}}'
-installer_err_installscript_failed:
-  other: Installation of {{.V0}} failed with '{{.V1}}'
+installer_err_dist_missing_install_dir:
+  other: Expected distribution '{{.V0}}' to contain directory named '{{.V1}}'
+installer_err_dist_no_executable:
+  other: Expected distribution installer '{{.V0}}' to include '{{.V1}}'
+installer_err_dist_executable_not_exec:
+  other: Executable '{{.V1}}' does not have execute permissions for distribution '{{.V0}}'
+installer_err_fail_obtain_prefixes:
+  other: Unable to obtain relocation prefixes for distribution '{{.V0}}'

@@ -11,3 +11,7 @@ ignored = ["github.com/dave/jennifer"]
 [[constraint]]
   branch = "v1"
   name = "gopkg.in/jarcoal/httpmock.v1"
+
+[[constraint]]
+  name = "github.com/mholt/archiver"
+  version = "3.1.1"

@@ -76,7 +76,11 @@ func ReplaceAll(filename, find, replace string) error {
 	if err := os.Chmod(tmpfile.Name(), stat.Mode()); err != nil {
 		return err
 	}
-	return os.Rename(tmpfile.Name(), filename)
+
+	if failure := CopyFile(tmpfile.Name(), filename); failure != nil {
+		return failure.ToError()
+	}
+	return nil
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file

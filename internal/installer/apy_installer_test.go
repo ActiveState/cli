@@ -1,10 +1,12 @@
 package installer_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installer"
@@ -25,9 +27,8 @@ func (suite *APYInstallerTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.dataDir = path.Join(root, "internal", "installer", "testdata")
 
-	suite.workingDir = path.Join(suite.dataDir, "generated", "installer")
-	failure := fileutils.MkdirUnlessExists(suite.workingDir)
-	suite.Require().Nil(failure, "failure creating test installer dir")
+	suite.workingDir, err = ioutil.TempDir("", "apy-install-test")
+	suite.Require().NoError(err, "failure creating working temp dir")
 }
 
 func (suite *APYInstallerTestSuite) AfterTest(suiteName, testName string) {
@@ -91,7 +92,7 @@ func (suite *APYInstallerTestSuite) TestNew_Success() {
 	apyInstaller := suite.newInstaller(archivePath)
 	suite.Implements((*installer.Installer)(nil), apyInstaller)
 	suite.Equal("apy-good-installer", apyInstaller.DistributionName())
-	suite.Equal(path.Join(suite.workingDir, installer.ActivePythonDistsDir, "apy-good-installer"), apyInstaller.DistributionDir())
+	suite.Equal(path.Join(suite.workingDir, constants.ActivePythonDistsDir, "apy-good-installer"), apyInstaller.DistributionDir())
 	suite.Equal(archivePath, apyInstaller.ArchivePath())
 }
 
@@ -100,65 +101,81 @@ func (suite *APYInstallerTestSuite) TestInstall_BadArchive() {
 	failure := apyInstaller.Install()
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailArchiveInvalid, failure.Type)
-	suite.Contains(failure.Error(), "create new gzip reader: EOF")
+	suite.Contains(failure.Error(), "EOF")
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_ArchiveHasNoValidRootDir_ForTarGz() {
+func (suite *APYInstallerTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz() {
 	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "empty.tar.gz"))
 	failure := apyInstaller.Install()
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailDistInvalid, failure.Type)
-	suite.Equal(locale.Tr("installer_err_dist_missing_root_dir", apyInstaller.ArchivePath(), "empty"), failure.Error())
+	suite.Equal(locale.Tr("installer_err_dist_missing_install_dir", apyInstaller.ArchivePath(), path.Join("empty", "INSTALLDIR")), failure.Error())
+	suite.False(fileutils.DirExists(path.Join(path.Dir(apyInstaller.DistributionDir()), constants.ActivePythonInstallDir)), "interim install-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist-dir still exists")
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_DistHasNoValidRootDir_ForTgz() {
+func (suite *APYInstallerTestSuite) TestInstall_DistHasNoInstallDir_ForTgz() {
 	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "empty.tgz"))
 	failure := apyInstaller.Install()
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailDistInvalid, failure.Type)
-	suite.Equal(locale.Tr("installer_err_dist_missing_root_dir", apyInstaller.ArchivePath(), "empty"), failure.Error())
+	suite.Equal(locale.Tr("installer_err_dist_missing_install_dir", apyInstaller.ArchivePath(), path.Join("empty", "INSTALLDIR")), failure.Error())
+	suite.False(fileutils.DirExists(path.Join(path.Dir(apyInstaller.DistributionDir()), constants.ActivePythonInstallDir)), "interim install-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist-dir still exists")
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_DistMissingInstallScript() {
-	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-missing-script.tar.gz"))
+func (suite *APYInstallerTestSuite) TestInstall_DistMissingPythonExecutable() {
+	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-missing-python-binary.tar.gz"))
 	failure := apyInstaller.Install()
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailDistInvalid, failure.Type)
 
-	suite.Equal(locale.Tr("installer_err_dist_no_install_script", apyInstaller.ArchivePath(), installer.ActivePythonInstallScript), failure.Error())
+	suite.Equal(locale.Tr("installer_err_dist_no_executable", apyInstaller.ArchivePath(), constants.ActivePythonExecutable), failure.Error())
+	suite.False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist-dir still exists")
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_DistInstallScriptNotExecutable() {
-	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-nonexec-script.tar.gz"))
+func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
+	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-noexec-python.tar.gz"))
 	failure := apyInstaller.Install()
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailDistInvalid, failure.Type)
 
-	suite.Equal(locale.Tr("installer_err_dist_install_script_no_exec", apyInstaller.ArchivePath(), installer.ActivePythonInstallScript), failure.Error())
+	suite.Equal(locale.Tr("installer_err_dist_executable_not_exec", apyInstaller.ArchivePath(), constants.ActivePythonExecutable), failure.Error())
+	suite.False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist-dir still exists")
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_Successful() {
+func (suite *APYInstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
+	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-fail-prefixes.tar.gz"))
+	failure := apyInstaller.Install()
+	suite.Require().NotNil(failure)
+	suite.Require().Equal(installer.FailDistInvalid, failure.Type)
+	suite.Equal(locale.Tr("installer_err_fail_obtain_prefixes", "apy-fail-prefixes"), failure.Error())
+
+	suite.False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist-dir still exists")
+}
+
+func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-good-installer.tar.gz"))
 	failure := apyInstaller.Install()
 	suite.Require().Nil(failure)
 
-	suite.Require().True(fileutils.DirExists(path.Join(suite.workingDir, installer.ActivePythonDistsDir)),
-		"expected python dir under working-dir to exist")
 	suite.Require().True(fileutils.DirExists(apyInstaller.DistributionDir()), "expected dist dir to exist")
 
+	// assert relocation prefixes were extracted
 	installLog := path.Join(apyInstaller.DistributionDir(), "install.log")
-	suite.Require().True(fileutils.FileExists(installLog), "expected install log to be created")
-	suite.Contains(string(fileutils.ReadFileUnsafe(installLog)), "successful install")
-}
+	suite.Require().True(fileutils.FileExists(installLog), "expected test-only install log to be created")
+	logContents := string(fileutils.ReadFileUnsafe(installLog))
+	suite.Contains(logContents, "import activestate; print(*activestate.prefixes, sep='\\n')")
+	suite.Contains(logContents, "success")
 
-func (suite *APYInstallerTestSuite) TestInstall_InstallerFails() {
-	apyInstaller := suite.newInstaller(path.Join(suite.dataDir, "apy-fail-installer.tar.gz"))
-	failure := apyInstaller.Install()
-	suite.Require().NotNil(failure)
-	suite.Require().Equal(installer.FailDistInstallation, failure.Type)
-	suite.Equal(locale.Tr("installer_err_installscript_failed", "apy-fail-installer", "exit status 1"), failure.Error())
+	// assert files in installation go relocated
+	pathToPython := path.Join(apyInstaller.DistributionDir(), "bin", constants.ActivePythonExecutable)
 
-	suite.Require().False(fileutils.DirExists(apyInstaller.DistributionDir()), "dist dir should be removed")
+	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.DistributionDir(), "bin", "a-script")))
+	suite.Contains(ascriptContents, pathToPython)
+
+	fooPyLib := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.DistributionDir(), "lib", "foo.py")))
+	suite.Contains(fooPyLib, pathToPython)
 }
 
 func Test_APYInstallerTestSuite(t *testing.T) {

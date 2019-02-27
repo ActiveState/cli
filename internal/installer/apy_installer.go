@@ -1,23 +1,19 @@
 package installer
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/mholt/archiver"
 )
-
-// ActivePythonDistsDir represents the base name a the directory where apy dists will be installed under.
-const ActivePythonDistsDir = "python"
-
-// ActivePythonInstallScript represents the canonical apy installer script name.
-const ActivePythonInstallScript = "install.sh"
 
 // ActivePythonInstaller is an Installer for ActivePython distributions.
 type ActivePythonInstaller struct {
@@ -38,21 +34,21 @@ func apyDistName(archivePath string) string {
 
 // NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the following:
 //
-// 1. the provided working-dir (e.g. a virtualenvironment dir) exists
+// 1. the provided install-dir (e.g. a virtualenvironment dir) exists
 // 2. the provided installer archive exists and is named with .tar.gz or .tgz
-func NewActivePythonInstaller(workingDir, installerArchivePath string) (*ActivePythonInstaller, *failures.Failure) {
-	if !fileutils.DirExists(workingDir) {
-		return nil, FailWorkingDirInvalid.New("installer_err_workingdir_invalid", workingDir)
+func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActivePythonInstaller, *failures.Failure) {
+	if !fileutils.DirExists(installDir) {
+		return nil, FailWorkingDirInvalid.New("installer_err_workingdir_invalid", installDir)
 	} else if !fileutils.FileExists(installerArchivePath) {
 		return nil, FailArchiveInvalid.New("installer_err_archive_notfound", installerArchivePath)
-	} else if !archiver.TarGz.Match(installerArchivePath) {
+	} else if archiver.DefaultTarGz.CheckExt(installerArchivePath) != nil {
 		return nil, FailArchiveInvalid.New("installer_err_archive_badext", installerArchivePath)
 	}
 
 	distName := apyDistName(installerArchivePath)
 	return &ActivePythonInstaller{
 		distName:    distName,
-		distDir:     path.Join(workingDir, ActivePythonDistsDir, distName),
+		distDir:     path.Join(installDir, constants.ActivePythonDistsDir, distName),
 		archivePath: installerArchivePath,
 	}, nil
 }
@@ -75,71 +71,95 @@ func (installer *ActivePythonInstaller) ArchivePath() string {
 // Install will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython distribution to the configured distribution dir.
 func (installer *ActivePythonInstaller) Install() *failures.Failure {
-	installerDir, failure := installer.unpackInstaller()
+	if failure := installer.unpackDist(); failure != nil {
+		return failure
+	}
+
+	python, failure := installer.locatePythonExecutable()
 	if failure != nil {
-		return failure
-	}
-	defer os.RemoveAll(installerDir)
-
-	installScript, failure := installer.locateInstallScript(installerDir)
-	if failure != nil {
-		return failure
-	}
-
-	// prep distribution directory
-	if failure := fileutils.MkdirUnlessExists(installer.DistributionDir()); failure != nil {
-		return failure
-	}
-
-	// run the installer
-	if failure := installer.execInstallerScript(installScript); failure != nil {
 		os.RemoveAll(installer.DistributionDir())
 		return failure
+	}
+
+	// get prefixes for relocation
+	prefixes, failure := installer.extractRelocationPrefixes(python)
+	if failure != nil {
+		os.RemoveAll(installer.DistributionDir())
+		return failure
+	}
+
+	// relocate python
+	if failure = installer.relocatePathPrefixes(prefixes); failure != nil {
+		os.RemoveAll(installer.DistributionDir())
+		return failure
+
+	}
+	return nil
+}
+
+// unpackDist will extract the `DistributionName/INSTALLDIR` directory from the distribution archive
+// to the parent dir of `DistributionDir`, and then rename INSTALLDIR to the value of `DistributionName`.
+func (installer *ActivePythonInstaller) unpackDist() *failures.Failure {
+	installDirParent := path.Dir(installer.DistributionDir())
+	installDir := path.Join(installDirParent, constants.ActivePythonInstallDir)
+
+	err := archiver.DefaultTarGz.Extract(installer.ArchivePath(),
+		path.Join(installer.DistributionName(), constants.ActivePythonInstallDir),
+		installDirParent)
+	if err != nil {
+		return FailArchiveInvalid.Wrap(err)
+	}
+
+	if !fileutils.DirExists(installDir) {
+		return FailDistInvalid.New("installer_err_dist_missing_install_dir", installer.ArchivePath(),
+			path.Join(installer.DistributionName(), constants.ActivePythonInstallDir))
+	}
+
+	err = os.Rename(installDir, installer.DistributionDir())
+	if err != nil {
+		os.RemoveAll(installDir)
+		return FailDistInvalid.Wrap(err)
 	}
 
 	return nil
 }
 
-// unpackInstaller will create a temporary directory to unpack the installer archive's tarball to. It
-// will then attempt to unpack the installer archive to the temp-dir. If successful, the path to the
-// temp-dir is returned; otherwise the failure is. Upon success, you will then need to remove the
-// temp-dir yourself.
-func (installer *ActivePythonInstaller) unpackInstaller() (string, *failures.Failure) {
-	installerDir, err := ioutil.TempDir("", installer.DistributionName())
+// locatePythonExecutable will locate the path to the python binary in the distribution dir.
+func (installer *ActivePythonInstaller) locatePythonExecutable() (string, *failures.Failure) {
+	python3 := path.Join(installer.DistributionDir(), "bin", constants.ActivePythonExecutable)
+	if !fileutils.FileExists(python3) {
+		return "", FailDistInvalid.New("installer_err_dist_no_executable", installer.ArchivePath(), constants.ActivePythonExecutable)
+	} else if !fileutils.IsExecutable(python3) {
+		return "", FailDistInvalid.New("installer_err_dist_executable_not_exec", installer.ArchivePath(), constants.ActivePythonExecutable)
+	}
+	return python3, nil
+}
+
+// extractRelocationPrefixes will extract the prefixes that need to be replaced in a relocation
+// for this installation.
+func (installer *ActivePythonInstaller) extractRelocationPrefixes(python string) ([]string, *failures.Failure) {
+	prefixBytes, err := exec.Command(python, "-c", "import activestate; print(*activestate.prefixes, sep='\\n')").Output()
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
-	} else if err := archiver.TarGz.Open(installer.ArchivePath(), installerDir); err != nil {
-		os.RemoveAll(installerDir)
-		return "", FailArchiveInvalid.Wrap(err)
-	}
-	return installerDir, nil
-}
-
-// locateInstallScript will locate the path to an ActivePython installer script in the unpacked installer archive.
-func (installer *ActivePythonInstaller) locateInstallScript(installerDir string) (string, *failures.Failure) {
-	installScriptDir := path.Join(installerDir, installer.DistributionName())
-	installScript := path.Join(installScriptDir, ActivePythonInstallScript)
-	if !fileutils.DirExists(installScriptDir) {
-		return "", FailDistInvalid.New("installer_err_dist_missing_root_dir", installer.ArchivePath(), installer.DistributionName())
-	} else if !fileutils.FileExists(installScript) {
-		return "", FailDistInvalid.New("installer_err_dist_no_install_script", installer.ArchivePath(), ActivePythonInstallScript)
-	} else if !fileutils.IsExecutable(installScript) {
-		return "", FailDistInvalid.New("installer_err_dist_install_script_no_exec", installer.ArchivePath(), ActivePythonInstallScript)
-	}
-	return installScript, nil
-}
-
-func (installer *ActivePythonInstaller) execInstallerScript(installScript string) *failures.Failure {
-	// apy installer tarballs come with an install.sh that accepts a "-I <install-dir>" flag
-	installCmd := exec.Command(installScript, "-I", installer.DistributionDir())
-	installCmd.Stdin, installCmd.Stdout, installCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-
-	if err := installCmd.Run(); err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
-			return FailDistInstallation.New("installer_err_installscript_failed", installer.DistributionName(), err.Error())
+			logging.Errorf("obtaining relocation prefixes: %v", err)
+			return nil, FailDistInvalid.New("installer_err_fail_obtain_prefixes", installer.DistributionName())
 		}
-		return FailDistInstallation.Wrap(err)
+		return nil, FailDistInvalid.Wrap(err)
 	}
+	return strings.Split(string(prefixBytes), "\n"), nil
+}
 
+// relocatePathPrefixes will look through all of the files in this installation and replace any
+// character sequence in those files containing any value from the the prefixes slice. Prefixes
+// assumed to be a slice of paths of some sort.
+func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) *failures.Failure {
+	for _, prefix := range prefixes {
+		if len(prefix) > 0 && prefix != installer.DistributionDir() {
+			err := fileutils.ReplaceAllInDirectory(installer.DistributionDir(), prefix, installer.DistributionDir())
+			if err != nil {
+				return FailDistInstallation.Wrap(err)
+			}
+		}
+	}
 	return nil
 }
