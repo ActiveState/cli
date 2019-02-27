@@ -17,6 +17,12 @@ const (
 
 	// ServiceSecrets is our service that's used purely for setting and storing secrets
 	ServiceSecrets = "secrets"
+
+	// ServiceHeadChef is our service that's used to kick off and track builds
+	ServiceHeadChef = "headchef"
+
+	// ServiceInventory is our service that's used to query available inventory and dependencies
+	ServiceInventory = "inventory"
 )
 
 // Settings encapsulates settings needed for an API endpoint
@@ -24,26 +30,35 @@ type Settings struct {
 	Schema   string
 	Host     string
 	BasePath string
+	URL      *url.URL
 }
 
 type urlsByService map[Service]string
 
-var urlsByEnv = map[string]urlsByService{
+var UrlsByEnv = map[string]urlsByService{
 	"prod": {
-		ServicePlatform: constants.PlatformURLProd,
-		ServiceSecrets:  constants.SecretsURLProd,
+		ServicePlatform:  constants.PlatformURLProd,
+		ServiceSecrets:   constants.SecretsURLProd,
+		ServiceHeadChef:  constants.HeadChefURLProd,
+		ServiceInventory: constants.InventoryURLProd,
 	},
 	"stage": {
-		ServicePlatform: constants.PlatformURLStage,
-		ServiceSecrets:  constants.SecretsURLStage,
+		ServicePlatform:  constants.PlatformURLStage,
+		ServiceSecrets:   constants.SecretsURLStage,
+		ServiceHeadChef:  constants.HeadChefURLStage,
+		ServiceInventory: constants.InventoryURLStage,
 	},
 	"dev": {
-		ServicePlatform: constants.PlatformURLDev,
-		ServiceSecrets:  constants.SecretsURLDev,
+		ServicePlatform:  constants.PlatformURLDev,
+		ServiceSecrets:   constants.SecretsURLDev,
+		ServiceHeadChef:  constants.HeadChefURLDev,
+		ServiceInventory: constants.InventoryURLDev,
 	},
 	"test": {
-		ServicePlatform: "https://testing.tld" + constants.PlatformAPIPath,
-		ServiceSecrets:  "https://secrets.testing.tld" + constants.SecretsAPIPath,
+		ServicePlatform:  "https://testing.tld" + constants.PlatformAPIPath,
+		ServiceSecrets:   "https://secrets.testing.tld" + constants.SecretsAPIPath,
+		ServiceHeadChef:  "https://headchef.testing.tld" + constants.HeadChefAPIPath,
+		ServiceInventory: "https://inventory.testing.tld" + constants.InventoryAPIPath,
 	},
 }
 
@@ -54,16 +69,20 @@ var serviceURLs = map[Service]*url.URL{}
 // custom value, then the apiEnvName determines if this is test, prod, or stage based on
 // a few factors. The default is always stage.
 func init() {
+	DetectServiceURLs()
+}
+
+func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
 	var hasURL bool
-	if serviceURLStrings, hasURL = urlsByEnv[constants.APIEnv]; !hasURL {
+	if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
 		if flag.Lookup("test.v") != nil {
-			serviceURLStrings = urlsByEnv["test"]
+			serviceURLStrings = UrlsByEnv["test"]
 		} else if constants.BranchName == "prod" {
-			serviceURLStrings = urlsByEnv["prod"]
+			serviceURLStrings = UrlsByEnv["prod"]
 		} else {
-			serviceURLStrings = urlsByEnv["stage"]
+			serviceURLStrings = UrlsByEnv["stage"]
 		}
 	}
 
@@ -89,5 +108,5 @@ func GetServiceURL(service Service) *url.URL {
 // GetSettings returns the environmental settings for the specified service
 func GetSettings(service Service) Settings {
 	u := GetServiceURL(service)
-	return Settings{u.Scheme, u.Host, u.Path}
+	return Settings{u.Scheme, u.Host, u.Path, u}
 }

@@ -68,29 +68,35 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// ProductionBranch is the branch used for production builds
-const ProductionBranch = "prod"
+// StableBranch is the branch mapped to stable builds
+const StableBranch = "stable"
+
+// UnstableBranch is the branch used for unstable builds
+const UnstableBranch = "unstable"
+
+// ExperimentalBranch is the branch used for experimental builds
+const ExperimentalBranch = "master"
 
 // PlatformAPIPath is the api path used for the platform api
 const PlatformAPIPath = "/api/v1"
 
-// SecretsAPIPath is the api path used for the secrets api
-const SecretsAPIPath = "/api/secrets/v1"
-
 // PlatformURLProd is the host used for platform api calls when on production
 const PlatformURLProd = "https://platform.activestate.com" + PlatformAPIPath
-
-// SecretsURLProd is the host used for secrets api calls when on production
-const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
 
 // PlatformURLStage is the host used for platform api calls when on staging
 const PlatformURLStage = "https://staging.activestate.build" + PlatformAPIPath
 
-// SecretsURLStage is the host used for secrets api calls when on staging
-const SecretsURLStage = "https://staging.activestate.com" + SecretsAPIPath
-
 // PlatformURLDev is the host used for platform api calls when on staging
 const PlatformURLDev = PlatformURLStage
+
+// SecretsAPIPath is the api path used for the secrets api
+const SecretsAPIPath = "/api/secrets/v1"
+
+// SecretsURLProd is the host used for secrets api calls when on production
+const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
+
+// SecretsURLStage is the host used for secrets api calls when on staging
+const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
 
 // SecretsURLDev is the host used for secrets api calls when on dev
 const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
@@ -103,3 +109,30 @@ const ActivePythonExecutable = "python3"
 
 // ActivePythonInstallDir represents the directory within a distribution tarball where the distribution exists.
 const ActivePythonInstallDir = "INSTALLDIR"
+
+// HeadChefAPIPath is the api path used for the secrets api
+const HeadChefAPIPath = "/sv/head-chef/"
+
+// HeadChefURLProd is the host used for platform api calls when on production
+const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
+
+// HeadChefURLStage is the host used for platform api calls when on staging
+const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
+
+// HeadChefURLDev is the host used for platform api calls when on staging
+const HeadChefURLDev = HeadChefURLStage
+
+// HeadChefOrigin is the Origin header to use when making head-chef requests
+const HeadChefOrigin = "https://localhost"
+
+// InventoryAPIPath is the api path used for the secrets api
+const InventoryAPIPath = "/sv/inventory-api"
+
+// InventoryURLProd is the host used for platform api calls when on production
+const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
+
+// InventoryURLStage is the host used for platform api calls when on staging
+const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
+
+// InventoryURLDev is the host used for platform api calls when on staging
+const InventoryURLDev = InventoryURLStage

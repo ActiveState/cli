@@ -14,7 +14,7 @@ EOF
 `
 
 # URL to fetch updates from.
-STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/prod/"
+STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.
@@ -55,7 +55,7 @@ userinput () {
 while getopts "nb:?h" opt; do
   case $opt in
   b)
-    STATEURL=`echo $STATEURL | sed -e "s/prod/$OPTARG/;"`
+    STATEURL=`echo $STATEURL | sed -e "s/unstable/$OPTARG/;"`
     ;;
   n)
     NOPROMPT=true

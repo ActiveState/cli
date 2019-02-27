@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,6 +29,7 @@ type VariablesCommandTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	authMock      *authMock.Mock
 }
 
 func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
@@ -49,11 +50,15 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+
+	suite.authMock = authMock.Init()
+	suite.authMock.MockLoggedin()
 }
 
 func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	httpmock.DeActivate()
+	suite.authMock.Close()
 }
 
 func (suite *VariablesCommandTestSuite) TestCommandConfig() {
@@ -112,9 +117,6 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound(
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := variables.NewCommand(suite.secretsClient)
-
-	suite.platformMock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)

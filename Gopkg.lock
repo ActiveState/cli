@@ -272,6 +272,22 @@
   version = "v0.0.1"
 
 [[projects]]
+  digest = "1:a25a2c5ae694b01713fb6cd03c3b1ac1ccc1902b9f0a922680a88ec254f968e1"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = ""
+  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
+  version = "v1.1.0"
+
+[[projects]]
+  digest = "1:09aa5dd1332b93c96bde671bafb053249dc813febf7d5ca84e8f382ba255d67d"
+  name = "github.com/gorilla/websocket"
+  packages = ["."]
+  pruneopts = ""
+  revision = "66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d"
+  version = "v1.4.0"
+
+[[projects]]
   branch = "master"
   digest = "1:147d671753effde6d3bcd58fc74c1d67d740196c84c280c762a5417319499972"
   name = "github.com/hashicorp/hcl"
@@ -462,12 +478,36 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:795f2f3bd625b237925ebfe4df96172515be8303225442ec8ac1ba58bfe70862"
+  name = "github.com/posener/wstest"
+  packages = ["."]
+  pruneopts = ""
+  revision = "04b166ca0bf1313d8abf8625b59c5979c7bc59a2"
+  version = "v1.1"
+
+[[projects]]
   digest = "1:0c2dfe3fd3435ffcdaab41656491d146eb0d24730e2fad0f45919e07e8d7eb3d"
   name = "github.com/rs/xid"
   packages = ["."]
   pruneopts = ""
   revision = "02dd45c33376f85d1064355dc790dcc4850596b1"
   version = "v1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:3763511b38744179c12c34edd3a0694bdfe653f5f5a509a02e600c90ce3593f3"
+  name = "github.com/sacOO7/go-logger"
+  packages = ["."]
+  pruneopts = ""
+  revision = "9ac9add5a50dd3649add2c4e1edaeade5c5afed7"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8ce895867af5828f68994b0881d82e11d5bee059e4ba5e12ebf46179f9096f99"
+  name = "github.com/sacOO7/gowebsocket"
+  packages = ["."]
+  pruneopts = ""
+  revision = "1436bb906a4e8e77e1ac1c2b4934444f77900c7f"
 
 [[projects]]
   branch = "master"
@@ -710,6 +750,8 @@
     "github.com/go-openapi/swag",
     "github.com/go-openapi/validate",
     "github.com/gobuffalo/packr",
+    "github.com/google/uuid",
+    "github.com/gorilla/websocket",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mholt/archiver",
@@ -718,7 +760,9 @@
     "github.com/nicksnyder/go-i18n/i18n",
     "github.com/phayes/permbits",
     "github.com/pkg/errors",
+    "github.com/posener/wstest",
     "github.com/rs/xid",
+    "github.com/sacOO7/gowebsocket",
     "github.com/shibukawa/configdir",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",

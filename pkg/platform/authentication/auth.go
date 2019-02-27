@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/spf13/viper"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -33,6 +34,10 @@ var (
 
 	// FailTokenCreate identifies a failure in creating tokens through the api
 	FailTokenCreate = failures.Type("authentication.fail.tokencreate", api.FailUnknown)
+
+	// FailNotAuthenticated is a helper failure that can be used by other libraries when they require authentication but
+	// we aren't authenticated
+	FailNotAuthenticated = failures.Type("authentication.fail.notauthed")
 )
 
 var exit = os.Exit
@@ -177,6 +182,14 @@ func (s *Auth) WhoAmI() string {
 		return s.user.Username
 	}
 	return ""
+}
+
+// UserID returns the user ID for the currently authenticated user, or nil if not authenticated
+func (s *Auth) UserID() *strfmt.UUID {
+	if s.user != nil {
+		return &s.user.UserID
+	}
+	return nil
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance

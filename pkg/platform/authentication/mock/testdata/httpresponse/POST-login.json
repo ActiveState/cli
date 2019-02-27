@@ -1,0 +1,27 @@
+{
+  "token": "string",
+  "user": {
+    "EULAAccepted": "2018-04-30T21:08:04.744Z",
+    "TOTPEnabled": true,
+    "acl": {
+      "additionalProp1": true,
+      "additionalProp2": true,
+      "additionalProp3": true
+    },
+    "added": "2018-04-30T21:08:04.744Z",
+    "datetimeFormat": "string",
+    "email": "test@test.tld",
+    "expires": "2018-04-30T21:08:04.744Z",
+    "lastLogin": "2018-04-30T21:08:04.744Z",
+    "name": "test",
+    "organizations": [
+      {
+        "name": "string",
+        "role": "string"
+      }
+    ],
+    "timezone": "string",
+    "userID": "test",
+    "username": "test"
+  }
+}

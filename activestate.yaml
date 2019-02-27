@@ -28,7 +28,7 @@ scripts: &scripts
       go install ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
   - name: generate-artifacts
     value: |
-      go run scripts/artifact-generator/main.go 
+      go run scripts/artifact-generator/main.go
   - name: deploy-artifacts
     value: |
       go run scripts/s3-deployer/main.go public/distro ca-central-1 cli-artifacts distro
@@ -38,20 +38,34 @@ scripts: &scripts
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: generate-api-client
     value: |
-      pushd pkg/platform/api
-      wget https://platform.activestate.com/swagger.json
-      swagger generate client -f swagger.json -A api
-      rm swagger.json
+      WD=$(pwd)
+      pushd pkg/platform/api/platform
+      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yml -A platform -a platform_operations -m platform_models -c platform_client
       popd
   - name: generate-secrets-client
     value: |
+      WD=$(pwd)
       pushd internal/secrets-api 
-      swagger generate client -f ../../../secrets-svc/api/swagger.yml -A secrets-api
+      swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yml -A secrets-api
+      popd
+  - name: generate-headchef-client
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/headchef
+      swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
+      popd
+  - name: generate-inventory-client
+    value: |
+      WD=$(pwd)
+      pushd pkg/platform/api/inventory
+      swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/inventory-api/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
     value: |
       $scripts.generate-api-client
       $scripts.generate-secrets-client
+      $scripts.generate-headchef-client
+      $scripts.generate-inventory-client
   - name: test
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
@@ -63,7 +77,7 @@ scripts: &scripts
     value: |
       $scripts.build
       build/state --help
-commands: *scripts  # temporary alias for backwards compatibility
+commands: *scripts # temporary alias for backwards compatibility
 events: &events
   - name: ACTIVATE
     value: |
