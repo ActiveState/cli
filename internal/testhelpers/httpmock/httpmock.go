@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	parent "gopkg.in/jarcoal/httpmock.v1"
 )
@@ -25,7 +26,7 @@ var defaultMock *HTTPMock
 func Activate(prefix string) *HTTPMock {
 	urlPrefix := strings.TrimSuffix(prefix, "/")
 	if _, mockExists := httpMocks[urlPrefix]; mockExists {
-		panic("mock with prefix=%s already active, deactive old mocks first")
+		logging.Warning("Activating http mock for a prefix that is already in use, this could cause issues. Prefix=%s", urlPrefix)
 	}
 
 	mock := &HTTPMock{urlPrefix: urlPrefix}

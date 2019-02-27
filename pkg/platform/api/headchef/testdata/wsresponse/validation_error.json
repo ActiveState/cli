@@ -1,0 +1,8 @@
+{
+    "validation_errors": [
+        {
+            "jsonPath": "test",
+            "error": "test"
+        }
+    ]
+}

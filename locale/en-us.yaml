@@ -611,3 +611,21 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
+err_no_default_branch:
+  other: This project has no default branch. This indicates malformed data, please contact support!
+err_no_commit:
+  other: Project branch has no commits
+err_get_checkpoint:
+  other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
+err_no_effective_recipe:
+  other: Your project does not have a configuration that is compatible with your platform
+err_no_artifacts:
+  other: Your project does not seem to produce any artifacts
+err_no_valid_artifact:
+  other: Your project is not producing any usable artifacts, is your state tool up to date?
+err_runtime_download_no_response:
+  other: Could not find bits associated with your runtime environment, please contact support
+err_signs3_invalid_url:
+  other: API Responded with an invalid S3 URL, please contact support
+err_artifact_invalid_url:
+  other: API Responded with an invalid artifact URL, please contact support
