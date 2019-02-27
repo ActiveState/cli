@@ -626,3 +626,5 @@ installer_err_dist_executable_not_exec:
   other: Executable '{{.V1}}' does not have execute permissions for distribution '{{.V0}}'
 installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for distribution '{{.V0}}'
+installer_err_dist_already_exists:
+  other: Distribution '{{.V0}}' already installed

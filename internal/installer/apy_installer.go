@@ -36,6 +36,7 @@ func apyDistName(archivePath string) string {
 //
 // 1. the provided install-dir (e.g. a virtualenvironment dir) exists
 // 2. the provided installer archive exists and is named with .tar.gz or .tgz
+// 3. that a distribution with the same qualified-name is not already installed
 func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActivePythonInstaller, *failures.Failure) {
 	if !fileutils.DirExists(installDir) {
 		return nil, FailWorkingDirInvalid.New("installer_err_workingdir_invalid", installDir)
@@ -46,9 +47,15 @@ func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActiveP
 	}
 
 	distName := apyDistName(installerArchivePath)
+	distDir := path.Join(installDir, constants.ActivePythonDistsDir, distName)
+
+	if fileutils.DirExists(distDir) {
+		return nil, FailDistInstallation.New("installer_err_dist_already_exists", distName)
+	}
+
 	return &ActivePythonInstaller{
 		distName:    distName,
-		distDir:     path.Join(installDir, constants.ActivePythonDistsDir, distName),
+		distDir:     distDir,
 		archivePath: installerArchivePath,
 	}, nil
 }

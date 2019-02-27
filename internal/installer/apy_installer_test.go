@@ -17,8 +17,8 @@ import (
 type APYInstallerTestSuite struct {
 	suite.Suite
 
-	dataDir    string
-	workingDir string
+	dataDir        string
+	baseInstallDir string
 }
 
 func (suite *APYInstallerTestSuite) BeforeTest(suiteName, testName string) {
@@ -27,61 +27,74 @@ func (suite *APYInstallerTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.dataDir = path.Join(root, "internal", "installer", "testdata")
 
-	suite.workingDir, err = ioutil.TempDir("", "apy-install-test")
+	suite.baseInstallDir, err = ioutil.TempDir("", "apy-install-test")
 	suite.Require().NoError(err, "failure creating working temp dir")
 }
 
 func (suite *APYInstallerTestSuite) AfterTest(suiteName, testName string) {
-	err := os.RemoveAll(suite.workingDir)
+	err := os.RemoveAll(suite.baseInstallDir)
 	suite.Require().NoError(err, "failure removing working dir")
 }
 
 func (suite *APYInstallerTestSuite) TestNew_WorkingDirDoesNotExist() {
 	apyInstaller, failure := installer.NewActivePythonInstaller("/no/such/dir", "/no/such/archive.tar.gz")
+	suite.Require().Nil(apyInstaller)
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailWorkingDirInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_workingdir_invalid", "/no/such/dir"), failure.Error())
-	suite.Nil(apyInstaller)
 }
 
 func (suite *APYInstallerTestSuite) TestNew_WorkingDirNotADirectory() {
-	workingDirFile := path.Join(suite.workingDir, "a.file")
+	workingDirFile := path.Join(suite.baseInstallDir, "a.file")
 
 	file, failure := fileutils.Touch(workingDirFile)
 	suite.Require().Nil(failure, "failure touching test file")
 	suite.Require().NoError(file.Close(), "failure closing test file")
 
 	apyInstaller, failure := installer.NewActivePythonInstaller(workingDirFile, "/no/such/archive.tar.gz")
+	suite.Require().Nil(apyInstaller)
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailWorkingDirInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_workingdir_invalid", workingDirFile), failure.Error())
-	suite.Nil(apyInstaller)
 }
 
 func (suite *APYInstallerTestSuite) TestNew_ArchiveDoesNotExist() {
-	apyInstaller, failure := installer.NewActivePythonInstaller(suite.workingDir, "/no/such/archive.tar.gz")
+	apyInstaller, failure := installer.NewActivePythonInstaller(suite.baseInstallDir, "/no/such/archive.tar.gz")
+	suite.Require().Nil(apyInstaller)
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailArchiveInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), failure.Error())
-	suite.Nil(apyInstaller)
 }
 
 func (suite *APYInstallerTestSuite) TestNew_ArchiveNotTarGz() {
-	invalidArchive := path.Join(suite.workingDir, "archive.file")
+	invalidArchive := path.Join(suite.baseInstallDir, "archive.file")
 
 	file, failure := fileutils.Touch(invalidArchive)
 	suite.Require().Nil(failure, "failure touching test file")
 	suite.Require().NoError(file.Close(), "failure closing test file")
 
-	apyInstaller, failure := installer.NewActivePythonInstaller(suite.workingDir, invalidArchive)
+	apyInstaller, failure := installer.NewActivePythonInstaller(suite.baseInstallDir, invalidArchive)
+	suite.Require().Nil(apyInstaller)
 	suite.Require().NotNil(failure)
 	suite.Equal(installer.FailArchiveInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), failure.Error())
-	suite.Nil(apyInstaller)
+}
+
+func (suite *APYInstallerTestSuite) TestNew_DistributionDirAlreadyExists() {
+	distDir := path.Join(suite.baseInstallDir, constants.ActivePythonDistsDir, "empty")
+	failure := fileutils.MkdirUnlessExists(distDir)
+	suite.Require().Nil(failure, "trying to precreate dist-dir")
+
+	archivePath := path.Join(suite.dataDir, "empty.tar.gz")
+	apyInstaller, failure := installer.NewActivePythonInstaller(suite.baseInstallDir, archivePath)
+	suite.Require().Nil(apyInstaller)
+	suite.Require().NotNil(failure)
+	suite.Equal(installer.FailDistInstallation, failure.Type)
+	suite.Equal(locale.Tr("installer_err_dist_already_exists", "empty"), failure.Error())
 }
 
 func (suite *APYInstallerTestSuite) newInstaller(archivePath string) *installer.ActivePythonInstaller {
-	apyInstaller, failure := installer.NewActivePythonInstaller(suite.workingDir, archivePath)
+	apyInstaller, failure := installer.NewActivePythonInstaller(suite.baseInstallDir, archivePath)
 	suite.Require().Nil(failure)
 	suite.Require().NotNil(apyInstaller)
 	return apyInstaller
@@ -92,7 +105,7 @@ func (suite *APYInstallerTestSuite) TestNew_Success() {
 	apyInstaller := suite.newInstaller(archivePath)
 	suite.Implements((*installer.Installer)(nil), apyInstaller)
 	suite.Equal("apy-good-installer", apyInstaller.DistributionName())
-	suite.Equal(path.Join(suite.workingDir, constants.ActivePythonDistsDir, "apy-good-installer"), apyInstaller.DistributionDir())
+	suite.Equal(path.Join(suite.baseInstallDir, constants.ActivePythonDistsDir, "apy-good-installer"), apyInstaller.DistributionDir())
 	suite.Equal(archivePath, apyInstaller.ArchivePath())
 }
 
