@@ -148,7 +148,7 @@ func (installer *ActivePythonInstaller) extractRelocationPrefixes(python string)
 	prefixBytes, err := exec.Command(python, "-c", "import activestate; print(*activestate.prefixes, sep='\\n')").Output()
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
-			logging.Errorf("obtaining relocation prefixes: %v", err)
+			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
 			return nil, FailDistInvalid.New("installer_err_fail_obtain_prefixes", installer.DistributionName())
 		}
 		return nil, FailDistInvalid.Wrap(err)
