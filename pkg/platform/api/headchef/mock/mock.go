@@ -15,7 +15,7 @@ const NoOptions RequesterOptions = 0
 
 const (
 	NoArtifacts RequesterOptions = 1 << iota
-	MultiArtifacts
+	InvalidArtifact
 	InvalidURL
 	BuildFailure
 	RegularFailure
@@ -59,16 +59,17 @@ func (r *HeadchefRequesterMock) simulateCompleteBuild() {
 	r.buildStarted()
 	artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
 	if !r.option(NoArtifacts) {
-		u := strfmt.URI("http://test.tld/archive.tar.gz")
+		filename := "archive.tar.gz"
+		if r.option(InvalidArtifact) {
+			filename = "archive.zip"
+		}
+		u := strfmt.URI("http://test.tld/" + filename)
 		if r.option(InvalidURL) {
-			u = strfmt.URI("htps;/not-a-url")
+			u = strfmt.URI("htps;/not-a-url/" + filename)
 		}
 		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
 			URI: &u,
 		})
-		if r.option(MultiArtifacts) {
-			artifacts = append(artifacts, artifacts[0])
-		}
 	}
 	r.buildCompleted(headchef_models.BuildCompleted{
 		Artifacts: artifacts,

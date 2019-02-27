@@ -3,6 +3,7 @@ package runtime
 import (
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
@@ -15,11 +16,15 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+const InstallerExtension = ".tar.gz"
+
+const InstallerTestsSubstr = "-tests."
+
 var (
 	FailNoCommit           = failures.Type("runtime.fail.nocommit")
 	FailNoResponse         = failures.Type("runtime.fail.noresponse")
 	FailNoArtifacts        = failures.Type("runtime.fail.noartifacts")
-	FailMultipleArtifacts  = failures.Type("runtime.fail.multiartifacts")
+	FailNoValidArtifact    = failures.Type("runtime.fail.novalidartifact")
 	FailBuild              = failures.Type("runtime.fail.build")
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
@@ -95,12 +100,22 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 			fail = FailNoArtifacts.New(locale.T("err_no_artifacts"))
 			return
 		}
-		if len(response.Artifacts) > 1 {
-			fail = FailMultipleArtifacts.New(locale.T("err_multi_artifacts"))
+
+		var artifact *headchef_models.BuildCompletedArtifactsItems0
+		for _, artf := range response.Artifacts {
+			filename := filepath.Base(artf.URI.String())
+			if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
+				artifact = artf
+				break
+			}
+		}
+		if artifact == nil {
+			fail = FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
 			return
 		}
+
 		var err error
-		artifactURL, err = url.Parse(response.Artifacts[0].URI.String())
+		artifactURL, err = url.Parse(artifact.URI.String())
 		if err != nil {
 			fail = FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
 		}

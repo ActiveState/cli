@@ -96,11 +96,11 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 	suite.Equal(runtime.FailNoArtifacts.Name, fail.Type.Name)
 }
 
-func (suite *RuntimeDLTestSuite) TestGetRuntimeDLMultiArtifacts() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.MultiArtifacts))
+func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidArtifact() {
+	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidArtifact))
 	_, fail := r.Download()
 
-	suite.Equal(runtime.FailMultipleArtifacts.Name, fail.Type.Name)
+	suite.Equal(runtime.FailNoValidArtifact.Name, fail.Type.Name)
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
