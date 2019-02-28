@@ -44,14 +44,14 @@ type ProjectSimple struct {
 type Project struct {
 	Name         string      `yaml:"name"`
 	Owner        string      `yaml:"owner"`
-	Namespace    string      `yaml:"namespace",omitempty`
-	Version      string      `yaml:"version",omitempty`
-	Environments string      `yaml:"environments",omitempty`
-	Platforms    []Platform  `yaml:"platforms",omitempty`
-	Languages    []Language  `yaml:"languages",omitempty`
-	Variables    []*Variable `yaml:"variables",omitempty`
-	Events       []Event     `yaml:"events",omitempty`
-	Scripts      []Script    `yaml:"scripts",omitempty`
+	Namespace    string      `yaml:"namespace,omitempty"`
+	Version      string      `yaml:"version,omitempty"`
+	Environments string      `yaml:"environments,omitempty"`
+	Platforms    []Platform  `yaml:"platforms,omitempty"`
+	Languages    []Language  `yaml:"languages,omitempty"`
+	Variables    []*Variable `yaml:"variables,omitempty"`
+	Events       []Event     `yaml:"events,omitempty"`
+	Scripts      []Script    `yaml:"scripts,omitempty"`
 	path         string      // "private"
 }
 
