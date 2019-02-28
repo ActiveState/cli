@@ -174,14 +174,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 
 	suite.Require().True(fileutils.DirExists(apyInstaller.DistributionDir()), "expected dist dir to exist")
 
-	// assert relocation prefixes were extracted
-	installLog := path.Join(apyInstaller.DistributionDir(), "install.log")
-	suite.Require().True(fileutils.FileExists(installLog), "expected test-only install log to be created")
-	logContents := string(fileutils.ReadFileUnsafe(installLog))
-	suite.Contains(logContents, "import activestate; print(*activestate.prefixes, sep='\\n')")
-	suite.Contains(logContents, "success")
-
-	// assert files in installation go relocated
+	// assert files in installation get relocated
 	pathToPython := path.Join(apyInstaller.DistributionDir(), "bin", constants.ActivePythonExecutable)
 
 	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.DistributionDir(), "bin", "a-script")))
