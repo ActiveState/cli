@@ -1,10 +1,15 @@
 package python
 
 import (
+	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/failures"
@@ -134,16 +139,39 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 // Env - see virtualenvironment.VirtualEnvironment
 func (v *VirtualEnvironment) Env() map[string]string {
-	path := filepath.Join(v.datadir, "bin")
-	// Windows Python directory does NOT contain a `bin` directory for
-	// binaries
-	if runtime.GOOS == "windows" {
-		path = filepath.Join(v.datadir, "language") + string(os.PathListSeparator) + path
-	} else {
-		path = filepath.Join(v.datadir, "language", "bin") + string(os.PathListSeparator) + path
+	env := map[string]string{}
+	if distPath, found := v.pathToAnyDistribution(); found {
+		logging.Debug("found distribution '%s'", distPath)
+		env["PATH"] = path.Join(distPath, "bin")
+	}
+	return env
+}
+
+// pathToAnyDistribution will return the path to the first distribution dir found.
+func (v *VirtualEnvironment) pathToAnyDistribution() (string, bool) {
+	distsDirPath := path.Join(v.datadir, constants.ActivePythonDistsDir)
+	if !fileutils.DirExists(distsDirPath) {
+		logging.Debug("distributions dir '%s' does not exist", distsDirPath)
+		return "", false
 	}
 
-	return map[string]string{
-		"PATH": path,
+	distsDir, err := os.Open(distsDirPath)
+	if err != nil {
+		logging.Error("accessing distributions dir '%s': %v", distsDirPath, err)
+		return "", false
 	}
+	defer distsDir.Close()
+
+	// read one directory name
+	distDirNames, err := distsDir.Readdirnames(1)
+	if err != nil {
+		if err == io.EOF {
+			logging.Debug("no distributions found in '%s'", distsDirPath)
+		} else {
+			logging.Error("reading dir names from distributions dir '%s': %v", distsDirPath, err)
+		}
+		return "", false
+	}
+
+	return path.Join(distsDirPath, distDirNames[0]), true
 }
