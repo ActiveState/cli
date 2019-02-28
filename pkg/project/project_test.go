@@ -127,19 +127,23 @@ func (suite *ProjectTestSuite) TestLanguages() {
 	lang := languages[0]
 	name := lang.Name()
 	version := lang.Version()
+	id := lang.ID()
 	build := lang.Build()
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
 		suite.Equal("1.1", version, "Version should match (Linux)")
+		suite.Equal("foo1.1", id, "ID should match (Linux)")
 		suite.Equal("--foo Linux", (*build)["override"], "Build value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		suite.Equal("bar", name, "Name should match (Windows)")
 		suite.Equal("1.2", version, "Version should match (Windows)")
+		suite.Equal("bar1.2", id, "ID should match (Windows)")
 		suite.Equal("--bar Windows", (*build)["override"], "Build value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		suite.Equal("baz", name, "Names should match (OSX)")
 		suite.Equal("1.3", version, "Version should match (OSX)")
+		suite.Equal("baz1.3", id, "ID should match (OSX)")
 		suite.Equal("--baz OSX", (*build)["override"], "Build value should match (OSX)")
 	}
 }

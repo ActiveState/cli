@@ -211,6 +211,11 @@ func (l *Language) Name() string { return l.language.Name }
 // Version with all variables evaluated
 func (l *Language) Version() string { return l.language.Version }
 
+// ID is an identifier for this language; e.g. the Name + Version
+func (l *Language) ID() string {
+	return l.Name() + l.Version()
+}
+
 // Build with all variables evaluated
 func (l *Language) Build() *Build {
 	build := Build{}
