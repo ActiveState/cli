@@ -35,6 +35,7 @@ var (
 	failTargetDirExists  = failures.Type("activate.fail.direxists", failures.FailUserInput)
 )
 
+// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_]+)$`
 
 // Command holds our main command definition
@@ -113,6 +114,8 @@ func Execute(cmd *cobra.Command, args []string) {
 
 }
 
+// activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
+// to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
 func activateFromNamespace(namespace string) *failures.Failure {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(namespace)
@@ -123,10 +126,13 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	org := groups[1]
 	name := groups[2]
 
+	// Ensure that the project exists and that we have access to it
 	_, fail := projects.FetchByName(org, name)
 	if fail != nil {
 		return fail
 	}
+
+	var directory string
 
 	// Change to already checked out project if it exists
 	projectPaths := getPathsForNamespace(namespace)
@@ -136,27 +142,34 @@ func activateFromNamespace(namespace string) *failures.Failure {
 			return fail
 		}
 		if confirmedPath != nil {
-			os.Chdir(*confirmedPath)
-			return nil
+			directory = *confirmedPath
 		}
 	}
 
-	// Determine where to create our project
-	directory, fail := determineProjectPath(namespace)
-	if fail != nil {
-		return fail
+	// Otherwise ask the user for the directory
+	if directory == "" {
+		// Determine where to create our project
+		directory, fail = determineProjectPath(namespace)
+		if fail != nil {
+			return fail
+		}
+
+		// Actually create the project
+		fail = createProject(org, name, directory)
+		if fail != nil {
+			return fail
+		}
 	}
 
-	// Actually create the project
-	fail = createProject(org, name, directory)
-	if fail != nil {
-		return fail
+	err := os.Chdir(directory)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
 	}
-
-	os.Chdir(directory)
 	return nil
 }
 
+// savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this
+// namespace is used
 func savePathForNamespace(namespace, path string) {
 	key := fmt.Sprintf("project_%s", namespace)
 	paths := getPathsForNamespace(namespace)
@@ -164,6 +177,8 @@ func savePathForNamespace(namespace, path string) {
 	viper.Set(key, paths)
 }
 
+// getPathsForNamespace returns any locations that this namespace is used, it strips out duplicates and paths that are
+// no longer valid
 func getPathsForNamespace(namespace string) []string {
 	key := fmt.Sprintf("project_%s", namespace)
 	paths := viper.GetStringSlice(key)
@@ -175,6 +190,7 @@ func getPathsForNamespace(namespace string) []string {
 	return paths
 }
 
+// createProject will create a project file (activestate.yaml) at the given location
 func createProject(org, project, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
@@ -187,11 +203,15 @@ func createProject(org, project, directory string) *failures.Failure {
 	}
 
 	pj.SetPath(filepath.Join(directory, constants.ConfigFileName))
-	pj.Save()
+	fail := pj.Save()
+	if fail != nil {
+		return fail
+	}
 
 	return nil
 }
 
+// determineProjectPath will prompt the user for a location to save the project at
 func determineProjectPath(namespace string) (string, *failures.Failure) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -199,10 +219,13 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 	}
 
 	directory := filepath.Join(wd, namespace)
-	survey.AskOne(&survey.Input{
+	err = survey.AskOne(&survey.Input{
 		Message: locale.Tr("activate_namespace_location", namespace),
 		Default: directory,
 	}, &directory, nil)
+	if err != nil {
+		return "", failures.FailUserInput.Wrap(err)
+	}
 
 	if fileutils.DirExists(directory) {
 		return "", failTargetDirExists.New(locale.Tr("err_namespace_dir_exists"))
@@ -211,6 +234,7 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 	return directory, nil
 }
 
+// confirmProjectPath will prompt the user for which project path they wish to use
 func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *failures.Failure) {
 	if len(projectPaths) == 0 {
 		return nil, nil
