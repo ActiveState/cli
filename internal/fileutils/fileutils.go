@@ -50,6 +50,8 @@ func ReplaceAll(filename, find, replace string) error {
 	if err != nil {
 		return err
 	}
+	defer os.Remove(tmpfile.Name())
+
 	chunks := bytes.Split(fileBytes, findBytes)
 	for i, chunk := range chunks {
 		// Write chunk up to found bytes.
@@ -76,7 +78,11 @@ func ReplaceAll(filename, find, replace string) error {
 	if err := os.Chmod(tmpfile.Name(), stat.Mode()); err != nil {
 		return err
 	}
-	return os.Rename(tmpfile.Name(), filename)
+
+	if failure := CopyFile(tmpfile.Name(), filename); failure != nil {
+		return failure.ToError()
+	}
+	return nil
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
@@ -93,6 +99,14 @@ func ReplaceAllInDirectory(path string, find, replace string) error {
 	}
 
 	return nil
+}
+
+// IsExecutable determines if the file at the given path has any execute permissions.
+// This function does not care whether the current user can has enough privilege to
+// execute the file.
+func IsExecutable(path string) bool {
+	stat, err := os.Stat(path)
+	return err == nil && (stat.Mode()&(0111) > 0)
 }
 
 // FileExists checks if the given file (not folder) exists
@@ -252,4 +266,15 @@ func walkPathAndFindFile(dir, filename string) string {
 		return walkPathAndFindFile(parentDir, filename)
 	}
 	return ""
+}
+
+// Touch will attempt to "touch" a given filename by trying to open it read-only or create
+// the file with 0644 perms if it does not exist. A File handle will be returned if no issues
+// arise. You will need to Close() the file.
+func Touch(filepath string) (*os.File, *failures.Failure) {
+	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+	return file, nil
 }
