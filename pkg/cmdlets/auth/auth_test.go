@@ -43,6 +43,8 @@ func setup(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
 	authCmd.Args.Token = ""
+
+	authlet.OpenURI = func(uri string) error { return nil }
 }
 
 func setupUser() *models.UserEditable {
@@ -520,10 +522,17 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
+	var openURICalled bool
+	authlet.OpenURI = func(uri string) error {
+		openURICalled = true
+		return nil
+	}
+
 	osutil.WrapStdinWithDelay(50*time.Millisecond, func() {
 		authlet.RequireAuthentication("")
 	}, terminal.KeyArrowDown, terminal.KeyArrowDown, "", user.Username, user.Password)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.True(t, openURICalled, "OpenURI was called")
 }

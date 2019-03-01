@@ -1,8 +1,6 @@
 package auth
 
 import (
-	"flag"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,6 +16,10 @@ import (
 	"github.com/skratchdot/open-golang/open"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
+
+// OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
+// overwritten in tests
+var OpenURI = open.Run
 
 var (
 	// FailLoginPrompt indicates a failure during the login prompt
@@ -68,12 +70,10 @@ func RequireAuthentication(message string) *failures.Failure {
 	case locale.T("prompt_signup_action"):
 		Signup()
 	case locale.T("prompt_signup_browser_action"):
-		if flag.Lookup("test.v") == nil {
-			err := open.Run(constants.PlatformSignupURL)
-			if err != nil {
-				logging.Error("Could not open browser: %v", err)
-				return FailBrowserOpen.New(locale.Tr("err_browser_open", constants.PlatformSignupURL))
-			}
+		err := OpenURI(constants.PlatformSignupURL)
+		if err != nil {
+			logging.Error("Could not open browser: %v", err)
+			return FailBrowserOpen.New(locale.Tr("err_browser_open", constants.PlatformSignupURL))
 		}
 		print.Info(locale.T("prompt_login_after_browser_signup"))
 		Authenticate()
