@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"os"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -14,14 +16,20 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-func plainAuth() {
+var (
+	// FailLoginPrompt indicates a failure during the login prompt
+	FailLoginPrompt = failures.Type("auth.fail.loginprompt", failures.FailUserInput)
+)
+
+// Authenticate will prompt the user for authentication
+func Authenticate() {
 	credentials := &models.Credentials{}
 	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
 	}
 
-	doPlainAuth(credentials)
+	AuthenticateWithCredentials(credentials)
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
@@ -29,7 +37,7 @@ func plainAuth() {
 	}
 }
 
-func promptForLogin(credentials *models.Credentials) error {
+func promptForLogin(credentials *models.Credentials) *failures.Failure {
 	var qs = []*survey.Question{
 		{
 			Name:     "username",
@@ -43,10 +51,16 @@ func promptForLogin(credentials *models.Credentials) error {
 		},
 	}
 
-	return survey.Ask(qs, credentials)
+	err := survey.Ask(qs, credentials)
+	if err != nil {
+		return FailLoginPrompt.Wrap(err)
+	}
+	return nil
 }
 
-func doPlainAuth(credentials *models.Credentials) {
+// AuthenticateWithCredentials wil lauthenticate using the given credentials, it's main purpose is to communicate
+// any failures to the end-user
+func AuthenticateWithCredentials(credentials *models.Credentials) {
 	auth := authentication.Get()
 	fail := auth.AuthenticateWithModel(credentials)
 
@@ -79,7 +93,7 @@ func doPlainAuth(credentials *models.Credentials) {
 				print.Line(locale.T("login_cancelled"))
 				return
 			}
-			doPlainAuth(credentials)
+			AuthenticateWithCredentials(credentials)
 			return
 		default:
 			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))

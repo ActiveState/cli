@@ -5,10 +5,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Command holds our main command definition
@@ -65,7 +65,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	if Args.Token == "" {
-		plainAuth()
+		authlet.Authenticate()
 	} else {
 		tokenAuth()
 	}
@@ -73,7 +73,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 // ExecuteSignup runs the signup command
 func ExecuteSignup(cmd *cobra.Command, args []string) {
-	signup()
+	authlet.Signup()
 }
 
 // ExecuteLogout runs the logout command
@@ -85,12 +85,4 @@ func ExecuteLogout(cmd *cobra.Command, args []string) {
 func doLogout() {
 	authentication.Logout()
 	keypairs.DeleteWithDefaults()
-}
-
-// promptConfirm will prompt for a yes/no confirmation and return true if confirmed.
-func promptConfirm(translationID string) (confirmed bool) {
-	survey.AskOne(&survey.Confirm{
-		Message: locale.T(translationID),
-	}, &confirmed, nil)
-	return confirmed
 }
