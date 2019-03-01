@@ -278,3 +278,18 @@ func Touch(filepath string) (*os.File, *failures.Failure) {
 	}
 	return file, nil
 }
+
+// IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
+func IsEmptyDir(path string) (bool, *failures.Failure) {
+	dir, err := os.Open(path)
+	if err != nil {
+		return false, failures.FailIO.Wrap(err)
+	}
+
+	files, err := dir.Readdir(1)
+	if err != nil && err != io.EOF {
+		return false, failures.FailIO.Wrap(err)
+	}
+
+	return (len(files) == 0), nil
+}

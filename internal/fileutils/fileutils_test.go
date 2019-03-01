@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -122,4 +124,37 @@ func TestReplaceAllExe(t *testing.T) {
 	newOutput, err := cmd.Output()
 	assert.NoError(t, err, "Replacement exe ran")
 	assert.Equal(t, bytes.Replace(oldOutput, []byte("%%FIND%%"), []byte("REPL\x00\x00\x00\x00"), -1), newOutput, "Copy succeeded")
+}
+
+func TestEmptyDir_IsEmpty(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-dir-is-empty")
+	require.NoError(t, err)
+
+	isEmpty, failure := IsEmptyDir(tmpdir)
+	require.Nil(t, failure)
+	assert.True(t, isEmpty)
+}
+
+func TestEmptyDir_HasRegularFile(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-dir-has-file")
+	require.NoError(t, err)
+
+	f, failure := Touch(path.Join(tmpdir, "regular-file"))
+	require.Nil(t, failure)
+	defer os.Remove(f.Name())
+
+	isEmpty, failure := IsEmptyDir(tmpdir)
+	require.Nil(t, failure)
+	assert.False(t, isEmpty)
+}
+
+func TestEmptyDir_HasSubDir(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-dir-has-dir")
+	require.NoError(t, err)
+
+	require.Nil(t, Mkdir(path.Join(tmpdir, "some-dir")))
+
+	isEmpty, failure := IsEmptyDir(tmpdir)
+	require.Nil(t, failure)
+	assert.False(t, isEmpty)
 }
