@@ -609,6 +609,24 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
+
+installer_err_workingdir_invalid:
+  other: Working directory '{{.V0}}' does not exist or is not a directory
+installer_err_archive_notfound:
+  other: Distribution archive '{{.V0}}' does not exist
+installer_err_archive_badext:
+  other: Expected distribution archive '{{.V0}}' to have .tar.gz or .tgz extension
+installer_err_dist_missing_install_dir:
+  other: Expected distribution '{{.V0}}' to contain directory named '{{.V1}}'
+installer_err_dist_no_executable:
+  other: Expected distribution installer '{{.V0}}' to include '{{.V1}}'
+installer_err_dist_executable_not_exec:
+  other: Executable '{{.V1}}' does not have execute permissions for distribution '{{.V0}}'
+installer_err_fail_obtain_prefixes:
+  other: Unable to obtain relocation prefixes for distribution '{{.V0}}'
+installer_err_dist_already_exists:
+  other: Distribution '{{.V0}}' already installed
+
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:

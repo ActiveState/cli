@@ -211,7 +211,7 @@ func InstallArtifact(distArtf Artifact, source string, entry *download.Entry) *f
 		return failures.FailVerify.New("err_hash_mismatch", source, hash, distArtf.Hash)
 	}
 
-	err := archiver.TarGz.Open(source, path)
+	err := archiver.DefaultTarGz.Unarchive(source, path)
 	if err != nil {
 		return failures.FailArchiving.Wrap(err)
 	}

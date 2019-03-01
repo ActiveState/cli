@@ -264,6 +264,14 @@
   version = "v1.10.7"
 
 [[projects]]
+  digest = "1:6a6322a15aa8e99bd156fbba0aae4e5d67b4bb05251d860b348a45dfdcba9cce"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  pruneopts = ""
+  revision = "2a8bb927dd31d8daada140a5d09578521ce5c36a"
+  version = "v0.0.1"
+
+[[projects]]
   digest = "1:a25a2c5ae694b01713fb6cd03c3b1ac1ccc1902b9f0a922680a88ec254f968e1"
   name = "github.com/google/uuid"
   packages = ["."]
@@ -382,12 +390,12 @@
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
 
 [[projects]]
-  digest = "1:e6cee0e684c4abef5358249d6f6673a154bea173ac4c3ad8014d1f891212a928"
+  digest = "1:e26c759de83ce6fe27f99082458a7ad9fcc51a95215b4f5bbacd1345b61bc6ba"
   name = "github.com/mholt/archiver"
   packages = ["."]
   pruneopts = ""
-  revision = "cdc68dd1f170b8dfc1a0d2231b5bb0967ed67006"
-  version = "v2.0"
+  revision = "d572b2e8b82726cee9476d1b9d63a7fe9b601ff1"
+  version = "v3.1.1"
 
 [[projects]]
   branch = "master"
@@ -441,6 +449,17 @@
   packages = ["."]
   pruneopts = ""
   revision = "1efae4548023f60d7a172fead76cccf194cf45de"
+
+[[projects]]
+  digest = "1:21b276e792044150a96175edd51d653649b9fd175c51a4613f2741b411c6d674"
+  name = "github.com/pierrec/lz4"
+  packages = [
+    ".",
+    "internal/xxh32",
+  ]
+  pruneopts = ""
+  revision = "062282ea0dcff40c9fb8525789eef9644b1fbd6e"
+  version = "v2.1.0"
 
 [[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
@@ -602,6 +621,14 @@
   ]
   pruneopts = ""
   revision = "2369fd78a2e035be0c0ad346fd2b2b0875c3e64f"
+
+[[projects]]
+  branch = "master"
+  digest = "1:5d5ea0c53c32b0465b910eb1d98b045c2f14c416880c54dd5356a1c6b4569041"
+  name = "github.com/xi2/xz"
+  packages = ["."]
+  pruneopts = ""
+  revision = "48954b6210f8d154cb5f8484d3a3e1f83489309e"
 
 [[projects]]
   branch = "master"

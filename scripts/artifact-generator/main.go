@@ -165,7 +165,7 @@ func createArtifact(name string, srcPath string, kind string, targetPath string,
 	target := path.Join(targetPath, "artifact.tar.gz")
 
 	fmt.Printf(" \\- Writing interim file: %s\n", target)
-	err = archiver.TarGz.Make(target, source)
+	err = archiver.DefaultTarGz.Archive(source, target)
 	if err != nil {
 		log.Fatalf("Archive creation failed: %s", err.Error())
 	}
