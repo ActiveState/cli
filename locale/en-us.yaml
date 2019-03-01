@@ -73,10 +73,10 @@ Additional help topics: [[range .Commands]]
 [[if .HasAvailableSubCommands]]
 [[BR]][[BR]]
 Use \"[[.CommandPath]] [command] --help\" for more information about a command.[[end]][[BR]]"
-arg_state_activate_url:
-  other: URL
-arg_state_activate_url_description:
-  other: The URL of the repository that the project lives at
+arg_state_activate_namespace:
+  other: ORG/PROJECT
+arg_state_activate_namespace_description:
+  other: The namespace of the project that you wish to activate
 flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:
@@ -167,8 +167,6 @@ info_activating_state:
   other: "Activating state: {{.Owner}}/{{.Name}}"
 info_state_active_repoexists:
   other: "Repo already exists: {{.Path}}"
-err_no_scm_for_path:
-  other: No source code control could be detected on {{.V0}}
 panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
@@ -300,7 +298,7 @@ err_api_not_authenticated:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: Unable to find requested Project
+  other: The requested project does not exist on the ActiveState Platform
 err_api_member_not_found:
   other: Unable to find requested Member
 variables_expander_err_empty_name:
@@ -647,3 +645,15 @@ err_signs3_invalid_url:
   other: API Responded with an invalid S3 URL, please contact support
 err_artifact_invalid_url:
   other: API Responded with an invalid artifact URL, please contact support
+err_activate_namespace:
+  other: Could not activate project for the given namespace
+err_invalid_namespace:
+  other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes."
+err_namespace_dir_exists:
+  other: "Target directory already exists"
+activate_namespace_existing:
+  other: "You already have this project checked out, which one would you like to activate?"
+activate_select_optout:
+  other: "None, I want to create a new checkout"
+activate_namespace_location:
+  other: Where would you like to checkout {{.V0}}?

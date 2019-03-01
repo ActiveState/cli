@@ -3,163 +3,172 @@ package activate
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/cli/pkg/platform/api"
+
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+
+	"github.com/ActiveState/cli/internal/constants"
 
 	"github.com/ActiveState/cli/internal/environment"
-
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/stretchr/testify/assert"
+	projMock "github.com/ActiveState/cli/internal/projects/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-func init() {
+const ProjectNamespace = "string/string"
+
+type ActivateTestSuite struct {
+	suite.Suite
+	authMock *authMock.Mock
+	projMock *projMock.Mock
+	dir      string
+}
+
+func (suite *ActivateTestSuite) SetupSuite() {
 	if os.Getenv("CI") == "true" {
 		os.Setenv("SHELL", "/bin/bash")
 	}
 }
 
-func TestExecute(t *testing.T) {
-	assert := assert.New(t)
+func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
+	suite.authMock = authMock.Init()
+	suite.projMock = projMock.Init()
 
-	cwd, _ := os.Getwd() // store
+	var err error
+
+	suite.dir, err = ioutil.TempDir("", "activate-test")
+	suite.Require().NoError(err)
+
+	err = os.Chdir(suite.dir)
+	suite.Require().NoError(err)
+
+	// For some reason the working directory looks different once you cd into it (on mac), so ensure we use the right version
+	suite.dir, err = os.Getwd()
+	suite.Require().NoError(err)
+}
+
+func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
+	suite.authMock.Close()
+	suite.projMock.Close()
+	err := os.RemoveAll(suite.dir)
+	suite.Require().NoError(err)
+}
+
+func (suite *ActivateTestSuite) TestExecute() {
 	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
-	assert.Nil(err, "unable to chdir to testdata dir")
+	suite.Nil(err, "unable to chdir to testdata dir")
 
 	Command.Execute()
 
-	assert.Equal(true, true, "Execute didn't panic")
-	assert.NoError(failures.Handled(), "No failure occurred")
-
-	err = os.Chdir(cwd)
-	assert.Nil(err, "Changed back to original cwd")
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func TestExecuteGitClone(t *testing.T) {
-	cwd, _ := os.Getwd() // store
-	repo, err := filepath.Abs(filepath.Join("..", "..", "internal", "scm", "git", "testdata", "repo"))
-	assert.Nil(t, err, "The test Git repository exists")
+func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject()
 
-	tempdir, err := ioutil.TempDir("", "cli-")
-	assert.Nil(t, err, "A temporary directory was created")
-	err = os.Chdir(tempdir)
-	assert.Nil(t, err, "Changed into temporary directory")
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
 
-	// Test basic clone.
-	_, err = os.Stat(filepath.Join(tempdir, "repo"))
-	Flags.Path = ""
-	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { Command.Execute() }, "")
 
-	Command.GetCobraCmd().SetArgs([]string{repo})
-	Command.Execute()
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
 
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
-
-	_, err = os.Stat(filepath.Join(tempdir, "repo"))
-	assert.Nil(t, err, "The cloned repository exists")
-
-	files := []string{"foo.txt", "bar.txt", "baz.txt"}
-	for _, file := range files {
-		_, err = os.Stat(filepath.Join(tempdir, "repo", file))
-		assert.Nil(t, err, "The cloned repository contains an expected file")
-	}
-
-	// Test clone with specified directory.
-	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
-	Flags.Path = ""
-	os.Chdir(tempdir)
-	assert.True(t, os.IsNotExist(err), "The cloned repository does not exist yet")
-
-	Command.GetCobraCmd().SetArgs([]string{repo, "--path", "repo2"})
-	Command.Execute()
-
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
-
-	newCwd, _ := os.Getwd()
-	assert.Equal(t, "repo2", filepath.Base(newCwd), "The cloned repository exists and was changed into")
-
-	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
-	assert.Nil(t, err, "The cloned repository exists")
-	for _, file := range files {
-		_, err = os.Stat(filepath.Join(tempdir, "repo2", file))
-		assert.Nil(t, err, "The cloned repository contains an expected file")
-	}
-
-	// Test clone of invalid repository.
-	Flags.Path = ""
-	os.Chdir(tempdir)
-
-	Command.GetCobraCmd().SetArgs([]string{cwd})
-	Command.Execute()
-
-	assert.Error(t, failures.Handled(), "Failure occurred")
-	failures.ResetHandled()
-
-	err = os.Chdir(cwd) // restore
-	assert.Nil(t, err, "Changed back to original directory")
-	err = os.RemoveAll(tempdir) // clean up
-	assert.Nil(t, err, "The temporary directory was removed")
+	suite.FileExists(filepath.Join(suite.dir, ProjectNamespace, constants.ConfigFileName))
 }
 
-func TestExecuteGitCloneRemote(t *testing.T) {
-	cwd, _ := os.Getwd() // store
-	_, exists := os.LookupEnv("TF_BUILD")
-	if exists {
-		//we're on VS Team Services and this will all break so skip
-		return
-	}
-	tempdir, err := ioutil.TempDir("", "cli-")
-	assert.Nil(t, err, "A temporary directory was created")
-	err = os.Chdir(tempdir)
-	assert.Nil(t, err, "Changed into temporary directory")
+func (suite *ActivateTestSuite) TestActivateFromNamespace() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject()
 
-	Flags.Path = ""
-	os.Chdir(tempdir)
+	fail := suite.executeWithInput(ProjectNamespace, "")
+	suite.Require().NoError(fail.ToError())
+	suite.FileExists(filepath.Join(suite.dir, ProjectNamespace, constants.ConfigFileName))
+}
 
-	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/repo.git"})
-	Command.Execute()
+func (suite *ActivateTestSuite) TestActivateFromNamespaceCustomDir() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject()
 
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
+	targetDir, err := ioutil.TempDir(suite.dir, "CustomDir")
+	suite.Require().NoError(err)
+	suite.Require().NoError(os.Remove(targetDir))
 
-	_, err = os.Stat(filepath.Join(tempdir, "repo"))
-	assert.Nil(t, err, "The cloned repository exists")
+	fail := suite.executeWithInput(ProjectNamespace, targetDir)
+	suite.Require().NoError(fail.ToError())
+	suite.FileExists(filepath.Join(targetDir, constants.ConfigFileName))
+}
 
-	files := []string{"foo.txt", "bar.txt", "baz.txt"}
-	for _, file := range files {
-		_, err = os.Stat(filepath.Join(tempdir, "repo", file))
-		assert.Nil(t, err, "The cloned repository contains an expected file")
-	}
+func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject()
 
-	Flags.Path = ""
-	os.Chdir(tempdir)
+	// Set up first checkout
+	implicitDir := filepath.Join(suite.dir, ProjectNamespace)
+	fail := suite.executeWithInput(ProjectNamespace, "")
+	suite.Require().NoError(fail.ToError())
+	suite.FileExists(filepath.Join(implicitDir, constants.ConfigFileName))
+	savePathForNamespace(ProjectNamespace, implicitDir)
 
-	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/does-not-exist.git", "--path", "repo2"})
-	Command.Execute()
+	// Now set up the second
+	targetDir, err := ioutil.TempDir(suite.dir, "DontUseExisting")
+	suite.Require().NoError(err)
+	suite.Require().NoError(os.Remove(targetDir))
+	fail = suite.executeWithInput(ProjectNamespace, terminal.KeyArrowDown, "", targetDir)
+	suite.Require().NoError(fail.ToError())
+	suite.FileExists(filepath.Join(targetDir, constants.ConfigFileName))
+}
 
-	assert.Error(t, failures.Handled(), "Failure occurred")
-	failures.ResetHandled()
+func (suite *ActivateTestSuite) TestActivateFromNamespaceUseExisting() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject()
 
-	_, err = os.Stat(filepath.Join(tempdir, "repo2"))
-	assert.Error(t, err, "The non-existant repository did not have an ActiveState config file; no clone happened")
+	// Set up first checkout
+	implicitDir := filepath.Join(suite.dir, ProjectNamespace)
+	fail := suite.executeWithInput(ProjectNamespace, "")
+	suite.Require().NoError(fail.ToError())
+	suite.FileExists(filepath.Join(implicitDir, constants.ConfigFileName))
+	savePathForNamespace(ProjectNamespace, implicitDir)
 
-	Flags.Path = ""
-	os.Chdir(tempdir)
+	os.Chdir(suite.dir)
 
-	Command.GetCobraCmd().SetArgs([]string{"git@github.com:ActiveState/repo.git", "--path", "repo3", "--branch", "branched"})
-	Command.Execute()
+	fail = suite.executeWithInput(ProjectNamespace, "")
+	suite.Require().NoError(fail.ToError())
 
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
+	wd, err := os.Getwd()
+	suite.Require().NoError(err)
+	wd, err = filepath.Abs(wd)
+	suite.Require().NoError(err)
+	suite.Equal(implicitDir, wd)
+}
 
-	out, _ := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
-	assert.Equal(t, "branched", strings.Trim(string(out), "\n"), "Should be under our defined branch")
+func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
+	fail := activateFromNamespace("foo")
+	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
+}
 
-	err = os.Chdir(cwd) // restore
-	assert.Nil(t, err, "Changed back to original directory")
-	err = os.RemoveAll(tempdir) // clean up
-	assert.Nil(t, err, "The temporary directory was removed")
+func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
+	suite.authMock.MockLoggedin()
+	suite.projMock.MockGetProject404()
+
+	fail := activateFromNamespace(ProjectNamespace)
+	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
+}
+
+func (suite *ActivateTestSuite) executeWithInput(namespace string, input ...interface{}) *failures.Failure {
+	var fail *failures.Failure
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
+	return fail
+}
+
+func TestActivateSuite(t *testing.T) {
+	suite.Run(t, new(ActivateTestSuite))
 }

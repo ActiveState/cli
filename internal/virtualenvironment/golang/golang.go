@@ -1,20 +1,15 @@
 package golang
 
 import (
-	"net/url"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/scm"
-
 	"github.com/ActiveState/cli/internal/artifact"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
@@ -113,23 +108,6 @@ func (v *VirtualEnvironment) namespace() string {
 	project := projectfile.Get()
 	if project.Namespace != "" {
 		return project.Namespace
-	}
-
-	projectPath := filepath.Dir(project.Path())
-	scmm := scm.FromPath(projectPath)
-	if scmm != nil {
-		uri := scmm.URI()
-
-		if uri[0:4] == "git@" {
-			uri = strings.Replace(uri, ":", "/", 1)
-			uri = strings.Replace(uri, "git@", "http://", 1)
-		}
-		uri = strings.Replace(uri, ".git", "", 1)
-
-		url, err := url.Parse(uri)
-		if err == nil {
-			return path.Join(url.Hostname(), url.Path)
-		}
 	}
 
 	return path.Join(constants.DefaultNamespaceDomain, project.Owner, project.Name)

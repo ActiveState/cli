@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -34,18 +34,24 @@ type Version struct {
 	Version string `yaml:"version"`
 }
 
+// ProjectSimple reflects a bare basic project structure
+type ProjectSimple struct {
+	Name  string `yaml:"name"`
+	Owner string `yaml:"owner"`
+}
+
 // Project covers the top level project structure of our yaml
 type Project struct {
 	Name         string      `yaml:"name"`
 	Owner        string      `yaml:"owner"`
-	Namespace    string      `yaml:"namespace"`
-	Version      string      `yaml:"version"`
-	Environments string      `yaml:"environments"`
-	Platforms    []Platform  `yaml:"platforms"`
-	Languages    []Language  `yaml:"languages"`
-	Variables    []*Variable `yaml:"variables"`
-	Events       []Event     `yaml:"events"`
-	Scripts      []Script    `yaml:"scripts"`
+	Namespace    string      `yaml:"namespace,omitempty"`
+	Version      string      `yaml:"version,omitempty"`
+	Environments string      `yaml:"environments,omitempty"`
+	Platforms    []Platform  `yaml:"platforms,omitempty"`
+	Languages    []Language  `yaml:"languages,omitempty"`
+	Variables    []*Variable `yaml:"variables,omitempty"`
+	Events       []Event     `yaml:"events,omitempty"`
+	Scripts      []Script    `yaml:"scripts,omitempty"`
 	path         string      // "private"
 }
 

@@ -24,3 +24,7 @@ func (m *Mock) Close() {
 func (m *Mock) MockGetProject() {
 	m.httpmock.Register("GET", "/organizations/string/projects/string")
 }
+
+func (m *Mock) MockGetProject404() {
+	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
+}

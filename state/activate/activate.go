@@ -2,21 +2,37 @@ package activate
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
+	"regexp"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/scm"
+	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
+
+var (
+	failInvalidNamespace = failures.Type("activate.fail.invalidnamespace", failures.FailUserInput)
+	failTargetDirExists  = failures.Type("activate.fail.direxists", failures.FailUserInput)
+)
+
+// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
+const NamespaceRegex = `^([\w-_]+)\/([\w-_]+)$`
 
 // Command holds our main command definition
 var Command = &commands.Command{
@@ -32,58 +48,25 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Path,
 		},
-		&commands.Flag{
-			Name:        "branch",
-			Shorthand:   "",
-			Description: "flag_state_activate_branch_description",
-			Type:        commands.TypeString,
-			StringVar:   &Flags.Branch,
-		},
 	},
 
 	Arguments: []*commands.Argument{
 		&commands.Argument{
-			Name:        "arg_state_activate_url",
-			Description: "arg_state_activate_url_description",
-			Variable:    &Args.URL,
+			Name:        "arg_state_activate_namespace",
+			Description: "arg_state_activate_namespace_description",
+			Variable:    &Args.Namespace,
 		},
 	},
 }
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Path   string
-	Branch string
+	Path string
 }
 
 // Args hold the arg values passed through the command line
 var Args struct {
-	URL string
-}
-
-// Clones the repository specified by a given URI or ID and returns it. Any
-// error that occurs during the clone process is also returned.
-func clone(uriOrID string) (scm.SCMer, error) {
-	scm := scm.FromRemote(uriOrID)
-	if scm != nil {
-		if Flags.Path != "" {
-			scm.SetPath(Flags.Path)
-		}
-		if Flags.Branch != "" {
-			scm.SetBranch(Flags.Branch)
-		}
-		if scm.TargetExists() {
-			print.Info(locale.T("info_state_active_repoexists", map[string]interface{}{"Path": scm.Path()}))
-			return scm, nil
-		}
-		if err := scm.Clone(); err != nil {
-			print.Error(locale.T("error_state_activate"))
-			return nil, err
-		}
-	} else {
-		return nil, failures.FailUser.New("activating from ID is not implemented yet") // TODO: activate from ID
-	}
-	return scm, nil
+	Namespace string
 }
 
 // Execute the activate command
@@ -93,23 +76,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
-	if Args.URL != "" {
-		scm, err := clone(Args.URL)
-		if err != nil {
-			failures.Handle(err, locale.T("error_cannot_clone_uri", map[string]interface{}{"URI": Args.URL}))
+	if Args.Namespace != "" {
+		fail := activateFromNamespace(Args.Namespace)
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_activate_namespace"))
 			return
-		}
-
-		print.Info(locale.T("info_state_activate_cd", map[string]interface{}{"Dir": scm.Path()}))
-		os.Chdir(scm.Path())
-
-		if Flags.Branch != "" {
-			print.Info(locale.T("info_state_activate_branch", map[string]interface{}{"Branch": scm.Branch()}))
-			err = scm.CheckoutBranch()
-			if err != nil {
-				failures.Handle(err, locale.T("error_cannot_checkout_branch"))
-				return
-			}
 		}
 	}
 
@@ -120,6 +91,9 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return
 	}
+
+	// Save path to project for future use
+	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.Path()))
 
 	_, err := subshell.Activate(&wg)
 	if err != nil {
@@ -134,4 +108,146 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	print.Bold(locale.T("info_deactivated", project))
 
+}
+
+// activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
+// to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
+func activateFromNamespace(namespace string) *failures.Failure {
+	rx := regexp.MustCompile(NamespaceRegex)
+	groups := rx.FindStringSubmatch(namespace)
+	if len(groups) != 3 {
+		return failInvalidNamespace.New(locale.Tr("err_invalid_namespace", namespace))
+	}
+
+	org := groups[1]
+	name := groups[2]
+
+	// Ensure that the project exists and that we have access to it
+	_, fail := projects.FetchByName(org, name)
+	if fail != nil {
+		return fail
+	}
+
+	var directory string
+
+	// Change to already checked out project if it exists
+	projectPaths := getPathsForNamespace(namespace)
+	if len(projectPaths) > 0 {
+		confirmedPath, fail := confirmProjectPath(projectPaths)
+		if fail != nil {
+			return fail
+		}
+		if confirmedPath != nil {
+			directory = *confirmedPath
+		}
+	}
+
+	// Otherwise ask the user for the directory
+	if directory == "" {
+		// Determine where to create our project
+		directory, fail = determineProjectPath(namespace)
+		if fail != nil {
+			return fail
+		}
+
+		// Actually create the project
+		fail = createProject(org, name, directory)
+		if fail != nil {
+			return fail
+		}
+	}
+
+	err := os.Chdir(directory)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
+}
+
+// savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this
+// namespace is used
+func savePathForNamespace(namespace, path string) {
+	key := fmt.Sprintf("project_%s", namespace)
+	paths := getPathsForNamespace(namespace)
+	paths = append(paths, path)
+	viper.Set(key, paths)
+}
+
+// getPathsForNamespace returns any locations that this namespace is used, it strips out duplicates and paths that are
+// no longer valid
+func getPathsForNamespace(namespace string) []string {
+	key := fmt.Sprintf("project_%s", namespace)
+	paths := viper.GetStringSlice(key)
+	paths = funk.FilterString(paths, func(path string) bool {
+		return fileutils.FileExists(filepath.Join(path, constants.ConfigFileName))
+	})
+	paths = funk.UniqString(paths)
+	viper.Set(key, paths)
+	return paths
+}
+
+// createProject will create a project file (activestate.yaml) at the given location
+func createProject(org, project, directory string) *failures.Failure {
+	err := os.MkdirAll(directory, 0755)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
+	pj := projectfile.Project{
+		Name:  project,
+		Owner: org,
+	}
+
+	pj.SetPath(filepath.Join(directory, constants.ConfigFileName))
+	fail := pj.Save()
+	if fail != nil {
+		return fail
+	}
+
+	return nil
+}
+
+// determineProjectPath will prompt the user for a location to save the project at
+func determineProjectPath(namespace string) (string, *failures.Failure) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", failures.FailRuntime.Wrap(err)
+	}
+
+	directory := filepath.Join(wd, namespace)
+	err = survey.AskOne(&survey.Input{
+		Message: locale.Tr("activate_namespace_location", namespace),
+		Default: directory,
+	}, &directory, nil)
+	if err != nil {
+		return "", failures.FailUserInput.Wrap(err)
+	}
+
+	if fileutils.DirExists(directory) {
+		return "", failTargetDirExists.New(locale.Tr("err_namespace_dir_exists"))
+	}
+
+	return directory, nil
+}
+
+// confirmProjectPath will prompt the user for which project path they wish to use
+func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *failures.Failure) {
+	if len(projectPaths) == 0 {
+		return nil, nil
+	}
+
+	var path string
+	var noneStr = locale.T("activate_select_optout")
+	err := survey.AskOne(&survey.Select{
+		Message: locale.T("activate_namespace_existing"),
+		Options: append(projectPaths, noneStr),
+	}, &path, nil)
+	if err != nil {
+		return nil, failures.FailUserInput.Wrap(err)
+	}
+	if path != "" && path != noneStr {
+		return &path, nil
+	}
+
+	return nil, nil
 }

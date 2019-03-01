@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/scm"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -46,8 +45,6 @@ func Execute(cmd *cobra.Command, args []string) {
 	var project *projectfile.Project
 	if Args.Remote == "" {
 		project = projectfile.Get()
-	} else if scm := scm.FromRemote(Args.Remote); scm != nil {
-		// TODO: remote fetching of activestate.yaml and parsing
 	} else {
 		path := Args.Remote
 		projectFile := filepath.Join(Args.Remote, constants.ConfigFileName)
