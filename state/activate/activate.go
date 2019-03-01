@@ -8,26 +8,22 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/projects"
-
-	"github.com/thoas/go-funk"
-
-	"github.com/spf13/viper"
-	"gopkg.in/AlecAivazis/survey.v1"
-
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
