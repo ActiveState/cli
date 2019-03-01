@@ -8,17 +8,15 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
-
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-
 	"github.com/ActiveState/cli/internal/constants"
-
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	projMock "github.com/ActiveState/cli/internal/projects/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
 const ProjectNamespace = "string/string"
@@ -34,6 +32,8 @@ func (suite *ActivateTestSuite) SetupSuite() {
 	if os.Getenv("CI") == "true" {
 		os.Setenv("SHELL", "/bin/bash")
 	}
+
+	authMock.Init().MockLoggedin()
 }
 
 func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {

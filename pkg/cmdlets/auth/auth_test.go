@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var Command = authCmd.Command
@@ -432,4 +433,97 @@ func TestUsernameValidator(t *testing.T) {
 
 	err = authlet.UsernameValidator("test")
 	assert.Error(t, err, "Username is not unique")
+}
+
+func TestRequireAuthenticationLogin(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.Register("POST", "/apikeys")
+	httpmock.Register("GET", "/renew")
+	secretsapiMock.Register("GET", "/keypair")
+
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() {
+		authlet.RequireAuthentication("")
+	}, "", user.Username, user.Password)
+
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestRequireAuthenticationLoginFail(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("GET", "/users/uniqueUsername/test")
+	httpmock.RegisterWithCode("POST", "/login", 401)
+
+	var fail *failures.Failure
+	osutil.WrapStdinWithDelay(10*time.Millisecond, func() {
+		fail = authlet.RequireAuthentication("")
+	}, "", user.Username, user.Password)
+
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
+	require.Error(t, fail.ToError(), "Failure occurred")
+	assert.Equal(t, authlet.FailNotAuthenticated.Name, fail.Type.Name)
+}
+
+func TestRequireAuthenticationSignup(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("GET", "/users/uniqueUsername/test")
+	httpmock.Register("POST", "/users")
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.Register("POST", "/apikeys")
+
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		return 204, "empty"
+	})
+
+	osutil.WrapStdinWithDelay(50*time.Millisecond, func() {
+		authlet.RequireAuthentication("")
+	}, terminal.KeyArrowDown, "", user.Username, user.Password, user.Password, user.Name, user.Email)
+
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestRequireAuthenticationSignupBrowser(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.Register("POST", "/apikeys")
+	httpmock.Register("GET", "/renew")
+	secretsapiMock.Register("GET", "/keypair")
+
+	osutil.WrapStdinWithDelay(50*time.Millisecond, func() {
+		authlet.RequireAuthentication("")
+	}, terminal.KeyArrowDown, terminal.KeyArrowDown, "", user.Username, user.Password)
+
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }

@@ -1,10 +1,12 @@
 package auth
 
 import (
-	"os"
+	"flag"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
@@ -13,12 +15,19 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/skratchdot/open-golang/open"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
 	// FailLoginPrompt indicates a failure during the login prompt
 	FailLoginPrompt = failures.Type("auth.fail.loginprompt", failures.FailUserInput)
+
+	// FailNotAuthenticated conveys a failure to authenticate by the user
+	FailNotAuthenticated = failures.Type("auth.fail.notauthenticated", failures.FailUserInput)
+
+	// FailBrowserOpen indicates a failure to open the users browser
+	FailBrowserOpen = failures.Type("auth.failure.browseropen")
 )
 
 // Authenticate will prompt the user for authentication
@@ -35,6 +44,46 @@ func Authenticate() {
 		secretsapi.InitializeClient()
 		ensureUserKeypair(credentials.Password)
 	}
+}
+
+// RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
+// is not succesful it will return a failure
+func RequireAuthentication(message string) *failures.Failure {
+	if authentication.Get().Authenticated() {
+		return nil
+	}
+
+	print.Info(message)
+
+	var choice string
+	prompt := &survey.Select{
+		Message: locale.T("prompt_login_or_signup"),
+		Options: []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")},
+	}
+	survey.AskOne(prompt, &choice, nil)
+
+	switch choice {
+	case locale.T("prompt_login_action"):
+		Authenticate()
+	case locale.T("prompt_signup_action"):
+		Signup()
+	case locale.T("prompt_signup_browser_action"):
+		if flag.Lookup("test.v") == nil {
+			err := open.Run(constants.PlatformSignupURL)
+			if err != nil {
+				logging.Error("Could not open browser: %v", err)
+				return FailBrowserOpen.New(locale.Tr("err_browser_open", constants.PlatformSignupURL))
+			}
+		}
+		print.Info(locale.T("prompt_login_after_browser_signup"))
+		Authenticate()
+	}
+
+	if !authentication.Get().Authenticated() {
+		return FailNotAuthenticated.New(locale.T("err_auth_required"))
+	}
+
+	return nil
 }
 
 func promptForLogin(credentials *models.Credentials) *failures.Failure {
