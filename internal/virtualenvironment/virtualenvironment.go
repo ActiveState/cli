@@ -1,6 +1,9 @@
 package virtualenvironment
 
 import (
+	"crypto/sha1"
+	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,6 +41,9 @@ type VirtualEnvironmenter interface {
 
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
+
+	// CacheDir returns the configured cache dir for this venv. Typically language installations will be stored here.
+	CacheDir() string
 }
 
 type artifactHashable struct {
@@ -58,7 +64,6 @@ func Activate() *failures.Failure {
 	}
 
 	project := project.Get()
-	dataDir := path.Join(config.GetDataDir(), "virtual", project.Owner(), project.Name())
 
 	// expand project vars to environment vars
 	for _, variable := range project.Variables() {
@@ -70,7 +75,7 @@ func Activate() *failures.Failure {
 	}
 
 	for _, lang := range project.Languages() {
-		if _, failure := activateLanguage(lang, dataDir); failure != nil {
+		if _, failure := activateLanguage(lang); failure != nil {
 			return failure
 		}
 	}
@@ -81,17 +86,21 @@ func Activate() *failures.Failure {
 // activateLanguage returns an environment for the given language, this will activate the
 // virtual directory structure and set up the necessary environment variables if the venv
 // wasnt already initialized, otherwise it will just return the venv.
-func activateLanguage(lang *project.Language, dataDir string) (VirtualEnvironmenter, *failures.Failure) {
+func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.Failure) {
 	if venv, ok := venvs[lang.ID()]; ok {
 		return venv, nil
 	}
+
+	dataDir := path.Join(config.GetDataDir(), "virtual", lang.Source().Owner, lang.Source().Name)
+	hashedLangSpace := shortHash(lang.Source().Owner + "-" + lang.Source().Name + "-" + lang.ID())
+	cacheDir := path.Join(config.GetCacheDir(), hashedLangSpace)
 
 	var venv VirtualEnvironmenter
 	var failure *failures.Failure
 
 	switch strings.ToLower(lang.Name()) {
 	case "python", "python3":
-		venv = python.NewVirtualEnvironment(dataDir)
+		venv = python.NewVirtualEnvironment(dataDir, cacheDir)
 		failure = venv.Activate()
 	default:
 		return nil, failures.FailUser.New(locale.Tr("warning_language_not_yet_supported", lang.Name()))
@@ -148,4 +157,17 @@ func WorkingDirectory() string {
 	}
 
 	return wd
+}
+
+// shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
+//
+// For example:
+//   shortHash("ActiveState-TestProject-python2")
+// 	 => e784c7e0
+//
+// This is useful for creating a shortened namespace for language installations.
+func shortHash(data string) string {
+	h := sha1.New()
+	io.WriteString(h, data)
+	return fmt.Sprintf("%x", h.Sum(nil)[:4])
 }

@@ -37,6 +37,7 @@ func setup(t *testing.T) {
 
 func shutdown() {
 	os.RemoveAll(configDir.Path)
+	os.RemoveAll(cacheDir.Path)
 }
 
 func TestInit(t *testing.T) {

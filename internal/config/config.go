@@ -15,11 +15,13 @@ import (
 var configNamespace = C.ConfigNamespace
 var configDirs configdir.ConfigDir
 var configDir *configdir.Config
+var cacheDir *configdir.Config
 
 var exit = os.Exit
 
 func init() {
 	ensureConfigExists()
+	ensureCacheExists()
 	readInConfig()
 }
 
@@ -28,7 +30,12 @@ func GetDataDir() string {
 	return configDir.Path
 }
 
-func ensureConfigExists() error {
+// GetCacheDir returns the path to an activestate cache dir.
+func GetCacheDir() string {
+	return cacheDir.Path
+}
+
+func ensureConfigExists() {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	appName := C.LibraryName
 	appName = fmt.Sprintf("%s-%s", appName, C.BranchName)
@@ -60,8 +67,18 @@ func ensureConfigExists() error {
 			exit(1)
 		}
 	}
+}
 
-	return nil
+func ensureCacheExists() {
+	appName := C.LibraryName
+	if flag.Lookup("test.v") != nil {
+		appName += "-test"
+	}
+	cacheDir = configdir.New(configNamespace, appName).QueryCacheFolder()
+	if err := cacheDir.MkdirAll(); err != nil {
+		print.Error("Can't create cache directory: %s", err)
+		exit(1)
+	}
 }
 
 func readInConfig() {
