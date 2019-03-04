@@ -153,9 +153,6 @@ owner: Foo`)
 	project.SetPath(filepath.Join(root, "foo"))
 	project.Persist()
 
-	ns := venv.namespace()
-	assert.Equal(t, constants.LibraryNamespace+constants.LibraryName, ns, "Should detect namespace from remote")
-
 	project = projectfile.Project{}
 	dat = strings.TrimSpace(`
 name: Bar
@@ -166,7 +163,7 @@ namespace: foo.bar/foo/bar`)
 	assert.NoError(t, err, "Should create project struct")
 	project.Persist()
 
-	ns = venv.namespace()
+	ns := venv.namespace()
 	assert.Equal(t, "foo.bar/foo/bar", ns, "Should detect namespace from namespace property")
 
 	project = projectfile.Project{}
