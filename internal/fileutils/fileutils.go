@@ -278,3 +278,48 @@ func Touch(filepath string) (*os.File, *failures.Failure) {
 	}
 	return file, nil
 }
+
+// IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
+func IsEmptyDir(path string) (bool, *failures.Failure) {
+	dir, err := os.Open(path)
+	if err != nil {
+		return false, failures.FailIO.Wrap(err)
+	}
+
+	files, err := dir.Readdir(1)
+	if err != nil && err != io.EOF {
+		return false, failures.FailIO.Wrap(err)
+	}
+
+	return (len(files) == 0), nil
+}
+
+// MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
+// must already exist.
+func MoveAllFiles(fromPath, toPath string) *failures.Failure {
+	if !DirExists(fromPath) {
+		return failures.FailOS.New("err_os_not_a_directory", fromPath)
+	} else if !DirExists(toPath) {
+		return failures.FailOS.New("err_os_not_a_directory", toPath)
+	}
+
+	// read all child files and dirs
+	dir, err := os.Open(fromPath)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	fileInfos, err := dir.Readdir(-1)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	// any found files and dirs
+	for _, fileInfo := range fileInfos {
+		err := os.Rename(path.Join(fromPath, fileInfo.Name()), path.Join(toPath, fileInfo.Name()))
+		if err != nil {
+			return failures.FailOS.Wrap(err)
+		}
+	}
+	return nil
+}

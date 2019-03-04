@@ -17,7 +17,7 @@ import (
 
 // ActivePythonInstaller is an Installer for ActivePython distributions.
 type ActivePythonInstaller struct {
-	distDir     string
+	installDir  string
 	archivePath string
 	distName    string
 }
@@ -32,30 +32,40 @@ func apyDistName(archivePath string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(filepath.Base(archivePath), ".tar.gz"), ".tgz")
 }
 
+// func validate
+
 // NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the following:
 //
-// 1. the provided install-dir (e.g. a virtualenvironment dir) exists
+// 1. the provided install-dir exists as a directory or can be created
 // 2. the provided installer archive exists and is named with .tar.gz or .tgz
-// 3. that a distribution with the same qualified-name is not already installed
+// 3. that a distribution is not already installed in the install-dir
 func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActivePythonInstaller, *failures.Failure) {
-	if !fileutils.DirExists(installDir) {
-		return nil, FailWorkingDirInvalid.New("installer_err_workingdir_invalid", installDir)
-	} else if !fileutils.FileExists(installerArchivePath) {
+	if !fileutils.FileExists(installerArchivePath) {
 		return nil, FailArchiveInvalid.New("installer_err_archive_notfound", installerArchivePath)
 	} else if archiver.DefaultTarGz.CheckExt(installerArchivePath) != nil {
 		return nil, FailArchiveInvalid.New("installer_err_archive_badext", installerArchivePath)
 	}
 
-	distName := apyDistName(installerArchivePath)
-	distDir := path.Join(installDir, constants.ActivePythonDistsDir, distName)
-
-	if fileutils.DirExists(distDir) {
-		return nil, FailDistInstallation.New("installer_err_dist_already_exists", distName)
+	if fileutils.FileExists(installDir) {
+		// install-dir exists, but is a regular file
+		return nil, FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
+	} else if !fileutils.DirExists(installDir) {
+		// make install-dir if does not exist
+		if failure := fileutils.Mkdir(installDir); failure != nil {
+			return nil, failure
+		}
+	} else if isEmpty, failure := fileutils.IsEmptyDir(installDir); !isEmpty || failure != nil {
+		if failure != nil {
+			logging.Error("reading files in directory '%s': %v", installDir, failure.ToError())
+		}
+		return nil, FailDistInstallation.New("installer_err_dist_already_exists", installDir)
 	}
+
+	distName := apyDistName(installerArchivePath)
 
 	return &ActivePythonInstaller{
 		distName:    distName,
-		distDir:     distDir,
+		installDir:  installDir,
 		archivePath: installerArchivePath,
 	}, nil
 }
@@ -65,9 +75,9 @@ func (installer *ActivePythonInstaller) DistributionName() string {
 	return installer.distName
 }
 
-// DistributionDir is the directory where this distribution will install to.
-func (installer *ActivePythonInstaller) DistributionDir() string {
-	return installer.distDir
+// InstallDir is the directory where this distribution will install to.
+func (installer *ActivePythonInstaller) InstallDir() string {
+	return installer.installDir
 }
 
 // ArchivePath is the path to the installer archive.
@@ -76,28 +86,30 @@ func (installer *ActivePythonInstaller) ArchivePath() string {
 }
 
 // Install will unpack the installer archive, locate the install script, and then use the installer
-// script to install an ActivePython distribution to the configured distribution dir.
+// script to install an ActivePython distribution to the configured distribution dir. Any failures
+// during this process will result in a failed installation and the install-dir being removed.
 func (installer *ActivePythonInstaller) Install() *failures.Failure {
 	if failure := installer.unpackDist(); failure != nil {
+		removeInstallDir(installer.installDir)
 		return failure
 	}
 
 	python, failure := installer.locatePythonExecutable()
 	if failure != nil {
-		removeDistributionDir(installer.DistributionDir())
+		removeInstallDir(installer.InstallDir())
 		return failure
 	}
 
 	// get prefixes for relocation
 	prefixes, failure := installer.extractRelocationPrefixes(python)
 	if failure != nil {
-		removeDistributionDir(installer.DistributionDir())
+		removeInstallDir(installer.InstallDir())
 		return failure
 	}
 
 	// relocate python
 	if failure = installer.relocatePathPrefixes(prefixes); failure != nil {
-		removeDistributionDir(installer.DistributionDir())
+		removeInstallDir(installer.InstallDir())
 		return failure
 
 	}
@@ -105,27 +117,31 @@ func (installer *ActivePythonInstaller) Install() *failures.Failure {
 }
 
 // unpackDist will extract the `DistributionName/INSTALLDIR` directory from the distribution archive
-// to the parent dir of `DistributionDir`, and then rename INSTALLDIR to the value of `DistributionName`.
+// to the configured installation dir. It will then move all files from install-dir/INSTALLDIR to
+// its parent (install-dir) and finally remove install-dir/INSTALLDIR.
 func (installer *ActivePythonInstaller) unpackDist() *failures.Failure {
-	installDirParent := path.Dir(installer.DistributionDir())
-	installDir := path.Join(installDirParent, constants.ActivePythonInstallDir)
+	tmpInstallDir := path.Join(installer.installDir, constants.ActivePythonInstallDir)
 
 	err := archiver.DefaultTarGz.Extract(installer.ArchivePath(),
 		path.Join(installer.DistributionName(), constants.ActivePythonInstallDir),
-		installDirParent)
+		installer.installDir)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
 
-	if !fileutils.DirExists(installDir) {
+	if !fileutils.DirExists(tmpInstallDir) {
 		return FailDistInvalid.New("installer_err_dist_missing_install_dir", installer.ArchivePath(),
 			path.Join(installer.DistributionName(), constants.ActivePythonInstallDir))
 	}
 
-	err = os.Rename(installDir, installer.DistributionDir())
-	if err != nil {
-		os.RemoveAll(installDir)
-		return FailDistInvalid.Wrap(err)
+	if failure := fileutils.MoveAllFiles(tmpInstallDir, installer.installDir); failure != nil {
+		logging.Error("moving files from %s after unpacking distribution: %v", tmpInstallDir, failure.ToError())
+		return FailDistInstallation.New("installer_err_dist_move_files_failed", tmpInstallDir)
+	}
+
+	if err = os.RemoveAll(tmpInstallDir); err != nil {
+		logging.Error("removing %s after unpacking distribution: %v", tmpInstallDir, err)
+		return FailDistInstallation.New("installer_err_dist_rm_installdir", tmpInstallDir)
 	}
 
 	return nil
@@ -133,7 +149,7 @@ func (installer *ActivePythonInstaller) unpackDist() *failures.Failure {
 
 // locatePythonExecutable will locate the path to the python binary in the distribution dir.
 func (installer *ActivePythonInstaller) locatePythonExecutable() (string, *failures.Failure) {
-	python3 := path.Join(installer.DistributionDir(), "bin", constants.ActivePythonExecutable)
+	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePythonExecutable)
 	if !fileutils.FileExists(python3) {
 		return "", FailDistInvalid.New("installer_err_dist_no_executable", installer.ArchivePath(), constants.ActivePythonExecutable)
 	} else if !fileutils.IsExecutable(python3) {
@@ -161,8 +177,8 @@ func (installer *ActivePythonInstaller) extractRelocationPrefixes(python string)
 // assumed to be a slice of paths of some sort.
 func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) *failures.Failure {
 	for _, prefix := range prefixes {
-		if len(prefix) > 0 && prefix != installer.DistributionDir() {
-			err := fileutils.ReplaceAllInDirectory(installer.DistributionDir(), prefix, installer.DistributionDir())
+		if len(prefix) > 0 && prefix != installer.InstallDir() {
+			err := fileutils.ReplaceAllInDirectory(installer.InstallDir(), prefix, installer.InstallDir())
 			if err != nil {
 				return FailDistInstallation.Wrap(err)
 			}
@@ -171,10 +187,10 @@ func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) 
 	return nil
 }
 
-// removeDistributionDir will remove a given directory and log any errors resulting from
+// removeInstallDir will remove a given directory and log any errors resulting from
 // that removal. No errors are returned.
-func removeDistributionDir(dir string) {
+func removeInstallDir(dir string) {
 	if err := os.RemoveAll(dir); err != nil {
-		logging.Errorf("attempting to remove distribution dir '%s': %v", dir, err)
+		logging.Errorf("attempting to remove install dir '%s': %v", dir, err)
 	}
 }

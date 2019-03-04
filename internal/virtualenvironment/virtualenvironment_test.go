@@ -13,7 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -25,9 +27,6 @@ func setup(t *testing.T) {
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
-	os.RemoveAll(filepath.Join(datadir, "packages"))
-	os.RemoveAll(filepath.Join(datadir, "languages"))
-	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 
 	venvs = make(map[string]VirtualEnvironmenter)
 }
@@ -38,14 +37,15 @@ func teardown() {
 
 func TestActivate(t *testing.T) {
 	setup(t)
+	defer teardown()
 
 	fail := Activate()
-	if runtime.GOOS != "windows" {
-		assert.NoError(t, fail.ToError(), "Should activate")
-	} else {
+	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
-		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+		require.Error(t, fail, "Symlinking requires admin privilages for now")
+	} else {
+		require.NoError(t, fail.ToError(), "Should activate")
 	}
 
 	setup(t)
@@ -57,12 +57,12 @@ func TestActivate(t *testing.T) {
 	project.Persist()
 
 	fail = Activate()
-	if runtime.GOOS != "windows" {
-		assert.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
-	} else {
+	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
-		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+		require.Error(t, fail, "Symlinking requires admin privilages for now")
+	} else {
+		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 	}
 
 	setup(t)
@@ -77,39 +77,37 @@ func TestActivate(t *testing.T) {
 	project.Persist()
 
 	fail = Activate()
-	if runtime.GOOS != "windows" {
-		assert.NoError(t, fail.ToError(), "Should activate, even if no packages are defined")
-	} else {
+	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
-		assert.Error(t, fail, "Symlinking requires admin privilages for now")
+		require.Error(t, fail, "Symlinking requires admin privilages for now")
+	} else {
+		require.NoError(t, fail.ToError(), "Should activate, even if no packages are defined")
 	}
-
-	teardown()
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {
 	setup(t)
+	defer teardown()
 
 	project := projectfile.Get()
-	language := projectfile.Language{Name: "foo"}
-	project.Languages = append(project.Languages, language)
+	project.Languages = append(project.Languages, projectfile.Language{
+		Name: "foo",
+	})
 	project.Persist()
 
 	err := Activate()
 	assert.Error(t, err, "Should not activate due to unknown language")
-
-	teardown()
 }
 
 func TestActivateFailureAlreadyActive(t *testing.T) {
 	setup(t)
+	defer teardown()
 
 	os.Setenv(constants.ActivatedStateEnvVarName, "test")
 
-	fail := Activate()
-	assert.Error(t, fail.ToError(), "Should not activate due to unknown language")
-	assert.Equal(t, fail.Type.Name, "virtualenvironment.fail.alreadyactive")
-
-	teardown()
+	failure := Activate()
+	require.NotNil(t, failure, "expected a failure")
+	assert.Equal(t, FailAlreadyActive, failure.Type)
+	assert.Equal(t, locale.T("err_already_active"), failure.Error())
 }
