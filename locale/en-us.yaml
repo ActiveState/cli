@@ -661,3 +661,6 @@ activate_select_optout:
   other: "None, I want to create a new checkout"
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
+
+err_os_not_a_directory:
+  other: Expected '{{.V0}}' to be a valid directory

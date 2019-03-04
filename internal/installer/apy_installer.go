@@ -134,8 +134,8 @@ func (installer *ActivePythonInstaller) unpackDist() *failures.Failure {
 			path.Join(installer.DistributionName(), constants.ActivePythonInstallDir))
 	}
 
-	if err := moveFiles(tmpInstallDir, installer.installDir); err != nil {
-		logging.Error("moving files from %s after unpacking distribution: %v", tmpInstallDir, err)
+	if failure := fileutils.MoveAllFiles(tmpInstallDir, installer.installDir); failure != nil {
+		logging.Error("moving files from %s after unpacking distribution: %v", tmpInstallDir, failure.ToError())
 		return FailDistInstallation.New("installer_err_dist_move_files_failed", tmpInstallDir)
 	}
 
@@ -193,27 +193,4 @@ func removeInstallDir(dir string) {
 	if err := os.RemoveAll(dir); err != nil {
 		logging.Errorf("attempting to remove install dir '%s': %v", dir, err)
 	}
-}
-
-// moveFiles will move all of the files/dirs from one directory to another.
-func moveFiles(fromPath, toPath string) error {
-	// read all child files and dirs
-	dir, err := os.Open(fromPath)
-	if err != nil {
-		return err
-	}
-
-	fileInfos, err := dir.Readdir(-1)
-	if err != nil {
-		return err
-	}
-
-	// any found files and dirs
-	for _, fileInfo := range fileInfos {
-		err := os.Rename(path.Join(fromPath, fileInfo.Name()), path.Join(toPath, fileInfo.Name()))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
