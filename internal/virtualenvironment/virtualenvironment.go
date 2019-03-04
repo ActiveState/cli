@@ -41,9 +41,6 @@ type VirtualEnvironmenter interface {
 
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
-
-	// CacheDir returns the configured cache dir for this venv. Typically language installations will be stored here.
-	CacheDir() string
 }
 
 type artifactHashable struct {
@@ -91,7 +88,6 @@ func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.F
 		return venv, nil
 	}
 
-	dataDir := path.Join(config.GetDataDir(), "virtual", lang.Source().Owner, lang.Source().Name)
 	hashedLangSpace := shortHash(lang.Source().Owner + "-" + lang.Source().Name + "-" + lang.ID())
 	cacheDir := path.Join(config.GetCacheDir(), hashedLangSpace)
 
@@ -100,7 +96,7 @@ func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.F
 
 	switch strings.ToLower(lang.Name()) {
 	case "python", "python3":
-		venv = python.NewVirtualEnvironment(dataDir, cacheDir)
+		venv = python.NewVirtualEnvironment(cacheDir)
 		failure = venv.Activate()
 	default:
 		return nil, failures.FailUser.New(locale.Tr("warning_language_not_yet_supported", lang.Name()))

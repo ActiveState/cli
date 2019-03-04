@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -17,6 +16,7 @@ type PythonTestSuite struct {
 	suite.Suite
 
 	testDir string
+	dataDir string
 }
 
 func (suite *PythonTestSuite) BeforeTest(suiteName, testName string) {
@@ -30,6 +30,7 @@ func (suite *PythonTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.testDir = filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")
 	fileutils.MkdirUnlessExists(suite.testDir)
+	suite.dataDir = path.Join(suite.testDir, "venv-python3-empty")
 
 	suite.Require().NoError(os.Chdir(suite.testDir), "Should change dir")
 }
@@ -41,38 +42,32 @@ func (suite *PythonTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *PythonTestSuite) TestLanguage() {
-	venv := NewVirtualEnvironment("/tmp", "/cache")
+	venv := NewVirtualEnvironment("/tmp")
 	suite.Equal("python3", venv.Language(), "Should return python")
 }
 
 func (suite *PythonTestSuite) TestDirs() {
-	venv := NewVirtualEnvironment("/foo", "/bar")
+	venv := NewVirtualEnvironment("/foo")
 	suite.Equal("/foo", venv.DataDir(), "Should set the data-dir")
-	suite.Equal("/bar", venv.CacheDir(), "Should set the cache-dir")
 }
 
 func (suite *PythonTestSuite) TestActivate() {
-	dataDir := filepath.Join(config.GetDataDir(), "test")
-	cacheDir := filepath.Join(config.GetCacheDir(), "test")
-	venv := NewVirtualEnvironment(dataDir, cacheDir)
-	venv.Activate()
-	suite.DirExists(filepath.Join(venv.DataDir(), "bin"))
-	suite.DirExists(filepath.Join(venv.DataDir(), "lib"))
+	venv := NewVirtualEnvironment(suite.dataDir)
+	suite.Nil(venv.Activate())
 }
 
 func (suite *PythonTestSuite) TestEnv_NoDistsInstalled() {
-	cacheDir := path.Join(suite.testDir, "venv-python3-empty")
-	venv := NewVirtualEnvironment(suite.testDir, cacheDir)
+	venv := NewVirtualEnvironment(suite.dataDir)
 	suite.Equal(map[string]string{
-		"PATH": path.Join(cacheDir, "bin") + string(os.PathListSeparator) + path.Join(suite.testDir, "bin"),
+		"PATH": path.Join(suite.dataDir, "bin"),
 	}, venv.Env())
 }
 
 func (suite *PythonTestSuite) TestEnv_WithDistInstalled() {
-	cacheDir := path.Join(suite.testDir, "venv-python3")
-	venv := NewVirtualEnvironment(suite.testDir, cacheDir)
+	dataDir := path.Join(suite.testDir, "venv-python3")
+	venv := NewVirtualEnvironment(dataDir)
 	suite.Equal(map[string]string{
-		"PATH": path.Join(cacheDir, "bin") + string(os.PathListSeparator) + path.Join(suite.testDir, "bin"),
+		"PATH": path.Join(dataDir, "bin"),
 	}, venv.Env())
 }
 
