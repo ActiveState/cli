@@ -40,6 +40,12 @@ func apyDistName(archivePath string) string {
 // 2. the provided installer archive exists and is named with .tar.gz or .tgz
 // 3. that a distribution is not already installed in the install-dir
 func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActivePythonInstaller, *failures.Failure) {
+	if !fileutils.FileExists(installerArchivePath) {
+		return nil, FailArchiveInvalid.New("installer_err_archive_notfound", installerArchivePath)
+	} else if archiver.DefaultTarGz.CheckExt(installerArchivePath) != nil {
+		return nil, FailArchiveInvalid.New("installer_err_archive_badext", installerArchivePath)
+	}
+
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
 		return nil, FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
@@ -48,10 +54,6 @@ func NewActivePythonInstaller(installDir, installerArchivePath string) (*ActiveP
 		if failure := fileutils.Mkdir(installDir); failure != nil {
 			return nil, failure
 		}
-	} else if !fileutils.FileExists(installerArchivePath) {
-		return nil, FailArchiveInvalid.New("installer_err_archive_notfound", installerArchivePath)
-	} else if archiver.DefaultTarGz.CheckExt(installerArchivePath) != nil {
-		return nil, FailArchiveInvalid.New("installer_err_archive_badext", installerArchivePath)
 	} else if isEmpty, failure := fileutils.IsEmptyDir(installDir); !isEmpty || failure != nil {
 		if failure != nil {
 			logging.Error("reading files in directory '%s': %v", installDir, failure.ToError())
