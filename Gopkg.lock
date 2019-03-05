@@ -526,6 +526,14 @@
   revision = "e180dbdc8da04c4fa04272e875ce64949f38bd3e"
 
 [[projects]]
+  branch = "master"
+  digest = "1:f7a084a435d404d8a4cb0cfab6d5567afa19d539cf64c1bd01587f179bc4b203"
+  name = "github.com/skratchdot/open-golang"
+  packages = ["open"]
+  pruneopts = ""
+  revision = "a2dfa6d0dab6634ecf39251031a3d52db73b5c7e"
+
+[[projects]]
   digest = "1:dae0d7dd55563fd389e7263a32d2030022ef29cceff941336e53f6520e0308c0"
   name = "github.com/spf13/afero"
   packages = [
@@ -773,6 +781,7 @@
     "github.com/rs/xid",
     "github.com/sacOO7/gowebsocket",
     "github.com/shibukawa/configdir",
+    "github.com/skratchdot/open-golang/open",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",

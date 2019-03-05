@@ -142,3 +142,6 @@ const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/dep
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
+
+// PlatformSignupURL is the account creation url used by the platform
+const PlatformSignupURL = "https://platform.activestate.com/create-account"
