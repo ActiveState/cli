@@ -136,3 +136,9 @@ const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 
 // InventoryURLDev is the host used for platform api calls when on staging
 const InventoryURLDev = InventoryURLStage
+
+// DeprecationInfoURL is the URL we check against to see what versions are deprecated
+const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
+
+// DateFormatUser is the date format we use when communicating with the end-user
+const DateFormatUser = "January 02, 2006"

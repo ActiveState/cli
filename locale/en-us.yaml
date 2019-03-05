@@ -609,7 +609,6 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
-
 installer_err_installdir_isfile:
   other: Expected installation path '{{.V0}}' to be a directory
 installer_err_archive_notfound:
@@ -630,7 +629,6 @@ installer_err_dist_move_files_failed:
   other: Unable to move distribution files from '{{.V0}}'
 installer_err_dist_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking distribution
-
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -661,6 +659,21 @@ activate_select_optout:
   other: "None, I want to create a new checkout"
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
-
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
+warn_deprecation:
+  other: | 
+    You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+    
+    Please update soon!
+err_deprecation:
+  other: |
+    You are running a version of the state tool that is no longer supported! You will be encountering issues. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+      
+    Please update now!"
