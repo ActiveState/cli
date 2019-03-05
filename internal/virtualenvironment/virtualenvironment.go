@@ -1,23 +1,21 @@
 package virtualenvironment
 
 import (
+	"crypto/sha1"
+	"fmt"
+	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/project"
 
-	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/virtualenvironment/golang"
-	"github.com/ActiveState/cli/internal/virtualenvironment/perl"
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
@@ -38,23 +36,11 @@ type VirtualEnvironmenter interface {
 	// Language returns the language name
 	Language() string
 
-	// Artifact holds the *projectfile.Language for this venv
-	Artifact() *artifact.Artifact
-
-	// SetArtifact sets the language meta
-	SetArtifact(*artifact.Artifact)
-
 	// WorkingDirectory returns the working directory for this venv, or an empty string if it has no preference
 	WorkingDirectory() string
 
 	// DataDir returns the configured data dir for this venv
 	DataDir() string
-
-	// SetDataDir sets the configured data for this venv
-	SetDataDir(string)
-
-	// LoadArtifact should load the given artifact into the venv
-	LoadArtifact(*artifact.Artifact) *failures.Failure
 }
 
 type artifactHashable struct {
@@ -76,6 +62,7 @@ func Activate() *failures.Failure {
 
 	project := project.Get()
 
+	// expand project vars to environment vars
 	for _, variable := range project.Variables() {
 		val, failure := variable.Value()
 		if failure != nil {
@@ -84,45 +71,43 @@ func Activate() *failures.Failure {
 		os.Setenv(variable.Name(), val)
 	}
 
-	datadir := config.GetDataDir()
-	os.RemoveAll(filepath.Join(datadir, "virtual", project.Owner(), project.Name()))
-
-	dist, fail := distribution.Obtain()
-	if fail != nil {
-		return fail
-	}
-
-	// Load Languages
-	for _, artf := range dist.Languages {
-		fail = createLanguageFolderStructure(artf)
-		if fail != nil {
-			return fail
-		}
-
-		env, fail := GetVenv(artf)
-		if fail != nil {
-			// Ideally this should fail. See https://www.pivotaltracker.com/story/show/158699349
-			print.Warning("Cannot load venv for artifact: %s, error: %s", artf.Meta.Name, fail.Error())
-			return nil
-			//return fail
-		}
-
-		// Load language artifact
-		fail = env.LoadArtifact(artf)
-		if fail != nil {
-			return fail
-		}
-
-		// Load Artifacts belonging to language
-		for _, subArtf := range dist.Artifacts[artf.Hash] {
-			fail := env.LoadArtifact(subArtf)
-			if fail != nil {
-				return fail
-			}
+	for _, lang := range project.Languages() {
+		if _, failure := activateLanguage(lang); failure != nil {
+			return failure
 		}
 	}
 
 	return nil
+}
+
+// activateLanguage returns an environment for the given language, this will activate the
+// virtual directory structure and set up the necessary environment variables if the venv
+// wasnt already initialized, otherwise it will just return the venv.
+func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.Failure) {
+	if venv, ok := venvs[lang.ID()]; ok {
+		return venv, nil
+	}
+
+	hashedLangSpace := shortHash(lang.Source().Owner + "-" + lang.Source().Name + "-" + lang.ID())
+	cacheDir := path.Join(config.GetCacheDir(), hashedLangSpace)
+
+	var venv VirtualEnvironmenter
+	var failure *failures.Failure
+
+	switch strings.ToLower(lang.Name()) {
+	case "python", "python3":
+		venv = python.NewVirtualEnvironment(cacheDir)
+		failure = venv.Activate()
+	default:
+		return nil, failures.FailUser.New(locale.Tr("warning_language_not_yet_supported", lang.Name()))
+	}
+
+	if failure != nil {
+		return nil, failure
+	}
+
+	venvs[lang.ID()] = venv
+	return venv, nil
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
@@ -170,75 +155,15 @@ func WorkingDirectory() string {
 	return wd
 }
 
-// GetVenv returns an environment for the given project and language, this will initialize the virtual directory structure
-// and set up the necessary environment variables if the venv wasnt already initialized, otherwise it will just return
-// the venv struct
-func GetVenv(artf *artifact.Artifact) (VirtualEnvironmenter, *failures.Failure) {
-	if _, ok := venvs[artf.Hash]; ok {
-		return venvs[artf.Hash], nil
-	}
-
-	var venv VirtualEnvironmenter
-
-	switch strings.ToLower(artf.Meta.Name) {
-	case "python2", "python3":
-		venv = &python.VirtualEnvironment{}
-		fail := ActivateLanguageVenv(artf, venv)
-
-		if fail != nil {
-			return nil, fail
-		}
-	case "go":
-		venv = &golang.VirtualEnvironment{}
-		fail := ActivateLanguageVenv(artf, venv)
-
-		if fail != nil {
-			return nil, fail
-		}
-	case "perl":
-		venv = &perl.VirtualEnvironment{}
-		fail := ActivateLanguageVenv(artf, venv)
-
-		if fail != nil {
-			return nil, fail
-		}
-	default:
-		var T = locale.T
-		return nil, failures.FailUser.New(T("warning_language_not_yet_supported", map[string]interface{}{
-			"Language": artf.Meta.Name,
-		}))
-	}
-
-	venvs[artf.Hash] = venv
-	return venv, nil
-}
-
-// ActivateLanguageVenv activates the virtual environment for the given language
-func ActivateLanguageVenv(artf *artifact.Artifact, venv VirtualEnvironmenter) *failures.Failure {
-	project := projectfile.Get()
-	datadir := config.GetDataDir()
-	datadir = filepath.Join(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
-
-	err := os.RemoveAll(datadir)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-
-	venv.SetArtifact(artf)
-	venv.SetDataDir(datadir)
-
-	return venv.Activate()
-}
-
-func createLanguageFolderStructure(artf *artifact.Artifact) *failures.Failure {
-	project := projectfile.Get()
-	datadir := config.GetDataDir()
-
-	if fail := fileutils.Mkdir(datadir, "packages"); fail != nil {
-		return fail
-	}
-
-	fileutils.Mkdir(datadir, "virtual", project.Owner, project.Name, artf.Meta.Name, artf.Meta.Version)
-
-	return nil
+// shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
+//
+// For example:
+//   shortHash("ActiveState-TestProject-python2")
+// 	 => e784c7e0
+//
+// This is useful for creating a shortened namespace for language installations.
+func shortHash(data string) string {
+	h := sha1.New()
+	io.WriteString(h, data)
+	return fmt.Sprintf("%x", h.Sum(nil)[:4])
 }

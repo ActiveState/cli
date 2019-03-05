@@ -2,160 +2,75 @@ package python
 
 import (
 	"os"
+	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/ActiveState/cli/internal/artifact"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/distribution"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 )
 
-func setup(t *testing.T) {
+type PythonTestSuite struct {
+	suite.Suite
+
+	testDir string
+	dataDir string
+}
+
+func (suite *PythonTestSuite) BeforeTest(suiteName, testName string) {
 	pjfile := projectfile.Project{}
 	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Python", Version: "2"})
 	pjfile.Languages = append(pjfile.Languages, projectfile.Language{Name: "Python", Version: "3"})
 	pjfile.Persist()
+
 	cwd, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
-	testDir := filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")
-	os.Mkdir(testDir, os.ModePerm) // For now there is nothing in the testdata dir so it's not cloned.  Don't care if it errors out.
-	err = os.Chdir(testDir)
-	assert.NoError(t, err, "Should change dir")
+	suite.Require().NoError(err, "unable to obtain the cwd")
+
+	suite.testDir = filepath.Join(cwd, "internal", "virtualenvironment", "python", "testdata")
+	fileutils.MkdirUnlessExists(suite.testDir)
+	suite.dataDir = path.Join(suite.testDir, "venv-python3-empty")
+
+	suite.Require().NoError(os.Chdir(suite.testDir), "Should change dir")
 }
 
-func teardown(t *testing.T) {
+func (suite *PythonTestSuite) AfterTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should fetch cwd")
+	suite.Require().NoError(err, "Should fetch cwd")
 	os.Chdir(root)
-
-	datadir := config.GetDataDir()
-	os.RemoveAll(filepath.Join(datadir, "virtual"))
-	os.RemoveAll(filepath.Join(datadir, "packages"))
-	os.RemoveAll(filepath.Join(datadir, "languages"))
-	os.RemoveAll(filepath.Join(datadir, "artifacts"))
 }
 
-func TestLanguage(t *testing.T) {
-	venv := &VirtualEnvironment{}
-	assert.Equal(t, "python3", venv.Language(), "Should return python")
-
-	venv.SetArtifact(&artifact.Artifact{
-		Meta: &artifact.Meta{
-			Name: "python2",
-		},
-		Path: "test",
-	})
-	assert.Equal(t, "python2", venv.Language(), "Should return python")
-	teardown(t)
+func (suite *PythonTestSuite) TestLanguage() {
+	venv := NewVirtualEnvironment("/tmp")
+	suite.Equal("python3", venv.Language(), "Should return python")
 }
 
-func TestDataDir(t *testing.T) {
-	venv := &VirtualEnvironment{}
-	assert.Empty(t, venv.DataDir())
-
-	venv.SetDataDir("/foo")
-	assert.NotEmpty(t, venv.DataDir(), "Should set the datadir")
-	teardown(t)
+func (suite *PythonTestSuite) TestDirs() {
+	venv := NewVirtualEnvironment("/foo")
+	suite.Equal("/foo", venv.DataDir(), "Should set the data-dir")
 }
 
-func TestLanguageMeta(t *testing.T) {
-	setup(t)
-
-	venv := &VirtualEnvironment{}
-	assert.Nil(t, venv.Artifact(), "Should not have artifact info")
-
-	venv.SetArtifact(&artifact.Artifact{
-		Meta: &artifact.Meta{
-			Name: "test",
-		},
-		Path: "test",
-	})
-	assert.NotNil(t, venv.Artifact(), "Should have artifact info")
-	teardown(t)
+func (suite *PythonTestSuite) TestActivate() {
+	venv := NewVirtualEnvironment(suite.dataDir)
+	suite.Nil(venv.Activate())
 }
 
-func TestLoadPackageFromPath(t *testing.T) {
-	setup(t)
-
-	venv := &VirtualEnvironment{}
-
-	datadir := filepath.Join(os.TempDir(), "as-state-test")
-	os.RemoveAll(datadir)
-	os.Mkdir(datadir, os.ModePerm)
-	venv.SetDataDir(datadir)
-
-	dist, fail := distribution.Obtain()
-	assert.NoError(t, fail.ToError())
-
-	var language *artifact.Artifact
-	for _, lang := range dist.Languages {
-		if lang.Meta.Name == venv.Language() {
-			language = lang
-			break
-		}
-	}
-
-	fail = venv.LoadArtifact(language)
-	if runtime.GOOS != "windows" {
-		assert.NoError(t, fail.ToError(), "Loads artifact without errors")
-	} else {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// artifacts should not load correctly.
-		assert.Error(t, fail, "Symlinking requires admin privilages for now")
-	}
-	artf := dist.Artifacts[language.Hash][0]
-	// Manually generate expect home where packages will be linked
-	langPkgDir := filepath.Join(datadir, "language", "lib", "python2.7", "site-packages")
-	os.MkdirAll(langPkgDir, os.ModePerm)
-
-	fail = venv.LoadArtifact(artf)
-	if runtime.GOOS != "windows" {
-		assert.NoError(t, fail.ToError(), "Loads artifact without errors")
-	} else {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// artifacts should not load correctly.
-		assert.Error(t, fail, "Symlinking requires admin privilages for now")
-	}
-
-	// Todo: Test with datadir as source, not the archived version
-	if runtime.GOOS != "windows" {
-		assert.FileExists(t, filepath.Join(langPkgDir, artf.Meta.Name, "artifact.json"), "Should create a package symlink")
-	} else {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// the symlinked file should not exist.  Check if it was created or not. Skip if not.
-		_, err := os.Stat(filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"))
-		if err == nil {
-			assert.FileExists(t, filepath.Join(datadir, "language", "Lib", "site-packages", artf.Meta.Name, "artifact.json"), "Should create a package symlink")
-		}
-	}
-	teardown(t)
+func (suite *PythonTestSuite) TestEnv_NoDistsInstalled() {
+	venv := NewVirtualEnvironment(suite.dataDir)
+	suite.Equal(map[string]string{
+		"PATH": path.Join(suite.dataDir, "bin"),
+	}, venv.Env())
 }
 
-func TestActivate(t *testing.T) {
-	setup(t)
+func (suite *PythonTestSuite) TestEnv_WithDistInstalled() {
+	dataDir := path.Join(suite.testDir, "venv-python3")
+	venv := NewVirtualEnvironment(dataDir)
+	suite.Equal(map[string]string{
+		"PATH": path.Join(dataDir, "bin"),
+	}, venv.Env())
+}
 
-	venv := &VirtualEnvironment{}
-
-	venv.SetArtifact(&artifact.Artifact{
-		Meta: &artifact.Meta{
-			Name:    "python",
-			Version: "2.7.11",
-		},
-		Path: "test",
-	})
-
-	datadir := config.GetDataDir()
-	datadir = filepath.Join(datadir, "test")
-	venv.SetDataDir(datadir)
-
-	venv.Activate()
-
-	assert.DirExists(t, filepath.Join(venv.DataDir(), "bin"))
-	assert.DirExists(t, filepath.Join(venv.DataDir(), "lib"))
-	teardown(t)
+func Test_PythonTestSuite(t *testing.T) {
+	suite.Run(t, new(PythonTestSuite))
 }

@@ -114,7 +114,7 @@ error_unsupported_language:
 error_could_not_activate_venv:
   other: Could not activate the virtual environment
 warning_language_not_yet_supported:
-  other: "Warning: Your project configuration includes {{.Language}}, but this language is not yet supported"
+  other: "Warning: Your project configuration includes {{.V0}}, but this language is not yet supported"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
 err_no_projectfile:
@@ -610,8 +610,8 @@ err_token_delete:
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
 
-installer_err_workingdir_invalid:
-  other: Working directory '{{.V0}}' does not exist or is not a directory
+installer_err_installdir_isfile:
+  other: Expected installation path '{{.V0}}' to be a directory
 installer_err_archive_notfound:
   other: Distribution archive '{{.V0}}' does not exist
 installer_err_archive_badext:
@@ -625,7 +625,11 @@ installer_err_dist_executable_not_exec:
 installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for distribution '{{.V0}}'
 installer_err_dist_already_exists:
-  other: Distribution '{{.V0}}' already installed
+  other: A distribution is already installed at '{{.V0}}'
+installer_err_dist_move_files_failed:
+  other: Unable to move distribution files from '{{.V0}}'
+installer_err_dist_rm_installdir:
+  other: Unable to remove '{{.V0}}' after unpacking distribution
 
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
@@ -675,3 +679,6 @@ err_browser_open:
   other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
+
+err_os_not_a_directory:
+  other: Expected '{{.V0}}' to be a valid directory

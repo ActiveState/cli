@@ -37,6 +37,9 @@ func setup(t *testing.T) {
 
 func shutdown() {
 	os.RemoveAll(configDir.Path)
+	if cacheDir != nil {
+		os.RemoveAll(cacheDir.Path)
+	}
 }
 
 func TestInit(t *testing.T) {
@@ -112,4 +115,25 @@ func TestSave(t *testing.T) {
 	}
 
 	assert.Equal(true, funk.Contains(string(dat), "foo: bar"), "Config should contain our newly added field")
+}
+
+func TestEnsureCacheDir(t *testing.T) {
+	shutdown()
+	defer shutdown()
+
+	assert.False(t, dirExists(GetCacheDir()), "'%s' should not exist", GetCacheDir())
+	ensureCacheExists()
+	assert.True(t, dirExists(GetCacheDir()), "'%s' should now exist", GetCacheDir())
+}
+
+// dirExists just implement fileutils.DirExists. We can't use the one from fileutils since an import cycle
+// is created when doing so.
+func dirExists(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	mode := fi.Mode()
+	return mode.IsDir()
 }
