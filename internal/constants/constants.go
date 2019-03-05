@@ -136,3 +136,6 @@ const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 
 // InventoryURLDev is the host used for platform api calls when on staging
 const InventoryURLDev = InventoryURLStage
+
+// PlatformSignupURL is the account creation url used by the platform
+const PlatformSignupURL = "https://platform.activestate.com/create-account"

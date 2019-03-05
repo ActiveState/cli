@@ -23,7 +23,8 @@ type signupInput struct {
 	Password2 string
 }
 
-func signup() {
+// Signup will prompt the user to create an account
+func Signup() {
 	input := &signupInput{}
 
 	err := promptForSignup(input)
@@ -65,7 +66,7 @@ func promptForSignup(input *signupInput) error {
 			{
 				Name:     "username",
 				Prompt:   &survey.Input{Message: locale.T("username_prompt_signup")},
-				Validate: survey.ComposeValidators(surveyor.ValidateRequired, usernameValidator),
+				Validate: survey.ComposeValidators(surveyor.ValidateRequired, UsernameValidator),
 			},
 			{
 				Name:     "password",
@@ -131,7 +132,7 @@ func doSignup(input *signupInput) {
 		return
 	}
 
-	doPlainAuth(&models.Credentials{
+	AuthenticateWithCredentials(&models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
 	})
@@ -141,7 +142,8 @@ func doSignup(input *signupInput) {
 	}))
 }
 
-func usernameValidator(val interface{}) error {
+// UsernameValidator verifies whether the chosen username is usable
+func UsernameValidator(val interface{}) error {
 	value := val.(string)
 	params := users.NewUniqueUsernameParams()
 	params.SetUsername(value)
