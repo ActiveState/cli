@@ -1,4 +1,4 @@
-package selfupdate
+package update
 
 import (
 	"os"
@@ -17,8 +17,8 @@ import (
 
 // Command holds our main command definition
 var Command = &commands.Command{
-	Name:        "self-update",
-	Description: "self-update",
+	Name:        "update",
+	Description: "update",
 	Run:         Execute,
 
 	Flags: []*commands.Flag{
