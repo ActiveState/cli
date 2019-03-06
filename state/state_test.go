@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/require"
@@ -74,4 +76,15 @@ func TestExecute(t *testing.T) {
 	Execute(Cc, []string{"--help"})
 
 	assert.Equal(true, true, "Execute didn't panic")
+}
+
+func TestUnstableWarning(t *testing.T) {
+	defer func() { branchName = constants.BranchName }()
+	branchName = "anything-but-stable"
+	out, err := osutil.CaptureStderr(func() {
+		main()
+	})
+	require.NoError(t, err)
+
+	assert.Contains(t, out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }

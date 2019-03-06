@@ -139,3 +139,6 @@ const InventoryURLDev = InventoryURLStage
 
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com/create-account"
+
+// BugTrackerURL is the URL of our bug tracker
+const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"

@@ -681,3 +681,9 @@ err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
+unstable_version_warning:
+  other: | 
+    You are running an unstable version of the state tool. Please do not use this on production environments or any other
+    sort of environment that is sensitive to destructive changes.
+
+    If you encounter any bugs or issues please report them at {{.V0}}
