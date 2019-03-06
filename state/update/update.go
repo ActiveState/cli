@@ -18,7 +18,7 @@ import (
 // Command holds our main command definition
 var Command = &commands.Command{
 	Name:        "update",
-	Description: "update",
+	Description: "update_description",
 	Run:         Execute,
 
 	Flags: []*commands.Flag{
