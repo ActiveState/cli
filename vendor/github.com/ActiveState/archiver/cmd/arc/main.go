@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mholt/archiver"
+	"github.com/ActiveState/archiver"
 	"github.com/nwaples/rardecode"
 )
 

@@ -7,12 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/logging"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/mholt/archiver"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // ActivePythonInstaller is an Installer for ActivePython runtimeributions.

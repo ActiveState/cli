@@ -3,10 +3,10 @@ package runtime
 import (
 	"os"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/mholt/archiver"
 )
 
 var (
