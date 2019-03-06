@@ -25,7 +25,7 @@ func setup(t *testing.T) {
 
 	viper.Reset()
 
-	configPath := filepath.Join(configDir.Path, C.ConfigFileName)
+	configPath := filepath.Join(configDir.Path, C.InternalConfigFileName)
 
 	if _, err := os.Stat(configPath); err == nil {
 		err := os.Remove(configPath)
@@ -47,11 +47,11 @@ func TestInit(t *testing.T) {
 
 	assert := assert.New(t)
 
-	assert.Equal(false, configDir.Exists(C.ConfigFileName), "Config dir should not exist")
+	assert.Equal(false, configDir.Exists(C.InternalConfigFileName), "Config dir should not exist")
 
 	ensureConfigExists()
 
-	assert.Equal(true, configDir.Exists(C.ConfigFileName), "Config dir should exist")
+	assert.Equal(true, configDir.Exists(C.InternalConfigFileName), "Config dir should exist")
 }
 
 func TestInitCorrupt(t *testing.T) {
@@ -59,11 +59,11 @@ func TestInitCorrupt(t *testing.T) {
 
 	assert := assert.New(t)
 
-	file, _ := configDir.Create(C.ConfigFileName)
+	file, _ := configDir.Create(C.InternalConfigFileName)
 	file.Close()
 
 	data := []byte("&")
-	path := filepath.Join(configDir.Path, C.ConfigFileName)
+	path := filepath.Join(configDir.Path, C.InternalConfigFileName)
 	err := ioutil.WriteFile(path, data, 0644)
 
 	if err != nil {
@@ -85,17 +85,17 @@ func TestSave(t *testing.T) {
 	setup(t)
 
 	assert := assert.New(t)
-	path := filepath.Join(configDir.Path, C.ConfigFileName)
+	path := filepath.Join(configDir.Path, C.InternalConfigFileName)
 
-	if !configDir.Exists(C.ConfigFileName) {
-		file, _ := configDir.Create(C.ConfigFileName)
+	if !configDir.Exists(C.InternalConfigFileName) {
+		file, _ := configDir.Create(C.InternalConfigFileName)
 		file.Close()
 	}
 
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
-	viper.SetConfigName(C.ConfigName)
-	viper.SetConfigType(C.ConfigFileType)
+	viper.SetConfigName(configName)
+	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir.Path)
 
 	print.Line(configDir.Path)
