@@ -97,12 +97,12 @@ func (v *SubShell) Deactivate() error {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(script string, args ...string) (int, error) {
-	tmpfile, err := ioutil.TempFile("", "fish-script")
+	tmpfile, err := ioutil.TempFile("", "bash-script")
 	if err != nil {
 		return 1, err
 	}
 
-	tmpfile.WriteString("#!/usr/bin/env fish\n")
+	tmpfile.WriteString("#!/usr/bin/env bash\n")
 	tmpfile.WriteString(script)
 	tmpfile.Close()
 	os.Chmod(tmpfile.Name(), 0755)
