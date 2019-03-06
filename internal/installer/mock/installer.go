@@ -18,7 +18,7 @@ func NewMockInstaller() *Installer {
 // Install for Installer.
 func (installer *Installer) Install() *failures.Failure {
 	args := installer.Called()
-	if failure := args.Get(1); failure != nil {
+	if failure := args.Get(0); failure != nil {
 		return failure.(*failures.Failure)
 	}
 	return nil

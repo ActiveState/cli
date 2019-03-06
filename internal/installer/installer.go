@@ -1,6 +1,8 @@
 package installer
 
 import (
+	"path"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
@@ -37,5 +39,5 @@ func (installer *RuntimeInstaller) Install() *failures.Failure {
 		return failure
 	}
 
-	return installer.runtimeInstaller.Install(archivePath)
+	return installer.runtimeInstaller.Install(path.Join(installer.runtimeInstaller.InstallDir(), archivePath))
 }

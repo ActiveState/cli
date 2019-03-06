@@ -127,7 +127,7 @@ func (suite *APYInstallerTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz(
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_runtime_missing_install_dir", archivePath, path.Join("empty", "INSTALLDIR")), failure.Error())
 	suite.False(fileutils.DirExists(path.Join(path.Dir(apyInstaller.InstallDir()), constants.ActivePythonInstallDir)), "interim install-dir still exists")
-	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "runtime-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() {
@@ -138,7 +138,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() 
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_runtime_missing_install_dir", archivePath, path.Join("empty", "INSTALLDIR")), failure.Error())
 	suite.False(fileutils.DirExists(path.Join(path.Dir(apyInstaller.InstallDir()), constants.ActivePythonInstallDir)), "interim install-dir still exists")
-	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "runtime-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable() {
@@ -149,7 +149,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable()
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
 	suite.Equal(locale.Tr("installer_err_runtime_no_executable", archivePath, constants.ActivePythonExecutable), failure.Error())
-	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "runtime-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
@@ -160,7 +160,7 @@ func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
 	suite.Equal(locale.Tr("installer_err_runtime_executable_not_exec", archivePath, constants.ActivePythonExecutable), failure.Error())
-	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "runtime-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
@@ -170,7 +170,7 @@ func (suite *APYInstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 	suite.Require().Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_fail_obtain_prefixes", "apy-fail-prefixes"), failure.Error())
 
-	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "runtime-dir still exists")
+	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
@@ -178,20 +178,24 @@ func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 	failure := apyInstaller.Install(path.Join(suite.dataDir, "apy-good-installer.tar.gz"))
 	suite.Require().Nil(failure)
 
-	suite.Require().True(fileutils.DirExists(apyInstaller.InstallDir()), "expected runtime dir to exist")
+	suite.Require().True(fileutils.DirExists(apyInstaller.InstallDir()), "expected install-dir to exist")
 
-	// make sure INSTALLDIR gets removed
-	suite.False(fileutils.DirExists(path.Join(apyInstaller.InstallDir(), constants.ActivePythonInstallDir)),
-		"expected INSTALLDIR not to exist in runtime-dir")
+	// make sure apy-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
+	suite.False(fileutils.DirExists(path.Join(apyInstaller.InstallDir(), "apy-good-installer")),
+		"expected INSTALLDIR not to exist in install-dir")
 
 	// assert files in installation get relocated
-	pathToPython := path.Join(apyInstaller.InstallDir(), "bin", constants.ActivePythonExecutable)
+	pathToPython3 := path.Join(apyInstaller.InstallDir(), "bin", constants.ActivePythonExecutable)
+	suite.Require().True(fileutils.FileExists(pathToPython3), "python3 exists")
+	suite.Require().True(
+		fileutils.FileExists(path.Join(apyInstaller.InstallDir(), "bin", "python")),
+		"python hard-link exists")
 
 	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.InstallDir(), "bin", "a-script")))
-	suite.Contains(ascriptContents, pathToPython)
+	suite.Contains(ascriptContents, pathToPython3)
 
 	fooPyLib := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.InstallDir(), "lib", "foo.py")))
-	suite.Contains(fooPyLib, pathToPython)
+	suite.Contains(fooPyLib, pathToPython3)
 }
 
 func Test_APYInstallerTestSuite(t *testing.T) {

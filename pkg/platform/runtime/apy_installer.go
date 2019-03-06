@@ -91,10 +91,9 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 		return failure
 	}
 
-	tmpInstallDir := path.Join(installer.installDir, constants.ActivePythonInstallDir)
-
-	err := archiver.DefaultTarGz.Extract(archivePath,
-		path.Join(runtimeName, constants.ActivePythonInstallDir),
+	tmpRuntimeDir := path.Join(installer.installDir, runtimeName)
+	tmpInstallDir := path.Join(tmpRuntimeDir, constants.ActivePythonInstallDir)
+	err := archiver.DefaultTarGz.Unarchive(archivePath,
 		installer.installDir)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
@@ -110,9 +109,9 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
 	}
 
-	if err = os.RemoveAll(tmpInstallDir); err != nil {
-		logging.Error("removing %s after unpacking runtimeribution: %v", tmpInstallDir, err)
-		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpInstallDir)
+	if err = os.RemoveAll(tmpRuntimeDir); err != nil {
+		logging.Error("removing %s after unpacking runtimeribution: %v", tmpRuntimeDir, err)
+		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
 	}
 
 	return nil
@@ -149,6 +148,7 @@ func (installer *ActivePythonInstaller) extractRelocationPrefixes(runtimeName st
 func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) *failures.Failure {
 	for _, prefix := range prefixes {
 		if len(prefix) > 0 && prefix != installer.InstallDir() {
+			logging.Debug("relocating '%s' to '%s'", prefix, installer.InstallDir())
 			err := fileutils.ReplaceAllInDirectory(installer.InstallDir(), prefix, installer.InstallDir())
 			if err != nil {
 				return FailRuntimeInstallation.Wrap(err)
