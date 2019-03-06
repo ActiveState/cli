@@ -136,3 +136,6 @@ const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 
 // InventoryURLDev is the host used for platform api calls when on staging
 const InventoryURLDev = InventoryURLStage
+
+// NullByte represents the null-terminator byte
+const NullByte byte = 0

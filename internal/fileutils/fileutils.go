@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -31,7 +32,7 @@ func ReplaceAll(filename, find, replace string) error {
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
-	if bytes.IndexByte(fileBytes, '0') != -1 {
+	if bytes.IndexByte(fileBytes, constants.NullByte) != -1 {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
 			return errors.New("replacement text cannot be longer than search text in a binary file")
@@ -44,6 +45,12 @@ func ReplaceAll(filename, find, replace string) error {
 		}
 	}
 
+	chunks := bytes.Split(fileBytes, findBytes)
+	if len(chunks) < 2 {
+		// nothing to replace
+		return nil
+	}
+
 	// Open a temporary file for the replacement file and then perform the search
 	// and replace.
 	tmpfile, err := ioutil.TempFile("", "activestatecli-fileutils")
@@ -52,7 +59,6 @@ func ReplaceAll(filename, find, replace string) error {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	chunks := bytes.Split(fileBytes, findBytes)
 	for i, chunk := range chunks {
 		// Write chunk up to found bytes.
 		if _, err := tmpfile.Write(chunk); err != nil {
@@ -73,12 +79,19 @@ func ReplaceAll(filename, find, replace string) error {
 		return err
 	}
 
-	// Replace the original file.
+	// make the target file temporarily writable
 	stat, _ := os.Stat(filename)
-	if err := os.Chmod(tmpfile.Name(), stat.Mode()); err != nil {
+	if err := os.Chmod(filename, os.ModePerm); err != nil {
 		return err
 	}
+	defer func() {
+		// put original permissions back on original file
+		os.Chmod(filename, stat.Mode().Perm())
+	}()
 
+	// we copy file contents instead of renaming the temp file in the event the two files
+	// are on different partitions. golang doesn't like to move files across partitions
+	// it would seem.
 	if failure := CopyFile(tmpfile.Name(), filename); failure != nil {
 		return failure.ToError()
 	}
