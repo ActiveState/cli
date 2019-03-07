@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 
@@ -129,7 +131,17 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	name := groups[2]
 
 	// Ensure that the project exists and that we have access to it
-	_, fail := projects.FetchByName(org, name)
+	project, fail := projects.FetchByName(org, name)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := projects.DefaultBranch(project)
+	if fail != nil {
+		return fail
+	}
+
+	languages, fail := model.FetchLanguagesForBranch(branch)
 	if fail != nil {
 		return fail
 	}
@@ -157,7 +169,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 
 		// Actually create the project
-		fail = createProject(org, name, directory)
+		fail = createProject(org, name, languages, directory)
 		if fail != nil {
 			return fail
 		}
@@ -193,15 +205,20 @@ func getPathsForNamespace(namespace string) []string {
 }
 
 // createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project, directory string) *failures.Failure {
+func createProject(org, project string, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 
 	pj := projectfile.Project{
-		Name:  project,
-		Owner: org,
+		Name:      project,
+		Owner:     org,
+		Languages: []projectfile.Language{},
+	}
+
+	for _, language := range languages {
+		pj.Languages = append(pj.Languages, projectfile.Language{Name: language})
 	}
 
 	pj.SetPath(filepath.Join(directory, constants.ConfigFileName))

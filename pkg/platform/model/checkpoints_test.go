@@ -35,6 +35,16 @@ func (suite *CheckpointTestSuite) TestGetCheckpoint() {
 	suite.NotEmpty(response, "Returns checkpoints")
 }
 
+func (suite *CheckpointTestSuite) TestGetLanguages() {
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockVcsGetCheckpointPython()
+
+	response, fail := model.FetchLanguagesForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
+	suite.Require().NoError(fail.ToError())
+	suite.NotEmpty(response, "Returns checkpoints")
+	suite.Equal("Python", response[0], "Returns Python")
+}
+
 func TestCheckpointSuite(t *testing.T) {
 	suite.Run(t, new(CheckpointTestSuite))
 }
