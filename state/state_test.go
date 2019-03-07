@@ -83,9 +83,7 @@ func TestDeprecated(t *testing.T) {
 	defer mock.Close()
 	mock.MockDeprecated()
 
-	out, err := osutil.CaptureStdout(func() {
-		main()
-	})
+	out, err := osutil.CaptureStdout(main)
 	require.NoError(t, err)
 	require.Contains(t, out, locale.Tr("warn_deprecation", "")[0:50])
 }
