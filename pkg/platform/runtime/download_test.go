@@ -85,6 +85,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 	filename, fail := r.Download()
 
 	suite.Require().NoError(fail.ToError())
+	suite.Implements((*runtime.Downloader)(nil), r)
 	suite.Equal("archive.tar.gz", filename)
 	suite.FileExists(filepath.Join(suite.dir, filename))
 }

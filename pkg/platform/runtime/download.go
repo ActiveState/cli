@@ -29,6 +29,13 @@ var (
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
 
+// Downloader defines the behavior required to be a runtime downloader.
+type Downloader interface {
+	// Download will attempt to download some runtime locally and return back the filename of
+	// the downloaded archive or a Failure.
+	Download() (string, *failures.Failure)
+}
+
 // RuntimeDownload is the main struct for tracking a runtime download
 type RuntimeDownload struct {
 	project           *project.Project

@@ -13,12 +13,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-
-	"github.com/mholt/archiver"
 )
 
 // Distribution reflects the data contained in the distribution.json file

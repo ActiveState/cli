@@ -61,6 +61,9 @@ var (
 
 	// FailThirdParty identifies a failure due to a third party component (ie. we cannot infer the real reason)
 	FailThirdParty = Type("failures.fail.thirdparty")
+
+	// FailInvalidArgument identifies a failure as being due to an argument to a function being invalid.
+	FailInvalidArgument = Type("failures.fail.invalid_arg")
 )
 
 var handled error

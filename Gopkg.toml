@@ -13,5 +13,5 @@ ignored = ["github.com/dave/jennifer"]
   name = "gopkg.in/jarcoal/httpmock.v1"
 
 [[constraint]]
-  name = "github.com/mholt/archiver"
+  name = "github.com/ActiveState/archiver"
   version = "3.1.1"

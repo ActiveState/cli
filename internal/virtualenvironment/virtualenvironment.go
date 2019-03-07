@@ -72,6 +72,7 @@ func Activate() *failures.Failure {
 	}
 
 	for _, lang := range project.Languages() {
+		logging.Debug("Activating Virtual Environment: %+q", lang.ID())
 		if _, failure := activateLanguage(lang); failure != nil {
 			return failure
 		}
@@ -96,13 +97,21 @@ func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.F
 
 	switch strings.ToLower(lang.Name()) {
 	case "python", "python3":
-		venv = python.NewVirtualEnvironment(cacheDir)
-		failure = venv.Activate()
+		rtInstaller, failure := python.NewInstaller(cacheDir)
+		if failure != nil {
+			return nil, failure
+		}
+
+		venv, failure = python.NewVirtualEnvironment(cacheDir, rtInstaller)
+		if failure != nil {
+			return nil, failure
+		}
 	default:
 		return nil, failures.FailUser.New(locale.Tr("warning_language_not_yet_supported", lang.Name()))
 	}
 
-	if failure != nil {
+	logging.Debug("Activating Virtual Environment: %s", venv.Language())
+	if failure = venv.Activate(); failure != nil {
 		return nil, failure
 	}
 
