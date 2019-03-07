@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
@@ -46,9 +47,7 @@ func TestMainFnVerbose(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--verbose"})
 
-	out, err := osutil.CaptureStderr(func() {
-		main()
-	})
+	out, err := osutil.CaptureStderr(main)
 	require.NoError(t, err)
 
 	assert.Equal(true, true, "main didn't panic")
@@ -78,6 +77,15 @@ func TestExecute(t *testing.T) {
 	assert.Equal(true, true, "Execute didn't panic")
 }
 
+func TestUnstableWarning(t *testing.T) {
+	defer func() { branchName = constants.BranchName }()
+	branchName = "anything-but-stable"
+	out, err := osutil.CaptureStderr(main)
+	require.NoError(t, err)
+
+	assert.Contains(t, out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
 func TestDeprecated(t *testing.T) {
 	mock := depMock.Init()
 	defer mock.Close()
@@ -93,9 +101,7 @@ func TestExpired(t *testing.T) {
 	defer mock.Close()
 	mock.MockExpired()
 
-	out, err := osutil.CaptureStdout(func() {
-		main()
-	})
+	out, err := osutil.CaptureStdout(main)
 	require.NoError(t, err)
 	require.Contains(t, out, locale.Tr("err_deprecation", "")[0:50])
 }
