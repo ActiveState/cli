@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/ActiveState/cli/internal/deprecation"
+
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -73,6 +75,21 @@ func main() {
 	}
 
 	forwardAndExit(os.Args) // exits only if it forwards
+
+	// Check for deprecation
+	deprecated, fail := deprecation.Check()
+	if fail != nil && !fail.Type.Matches(deprecation.FailTimeout) {
+		logging.Error("Could not check for deprecation: %s", fail.Error())
+	}
+	if deprecated != nil {
+		date := deprecated.Date.Format(constants.DateFormatUser)
+		if !deprecated.DateReached {
+			print.Warning(locale.Tr("warn_deprecation", date, deprecated.Reason))
+		} else {
+			print.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
+		}
+	}
+
 	register()
 
 	// This actually runs the command
