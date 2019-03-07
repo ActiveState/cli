@@ -3,9 +3,8 @@ package print
 import (
 	"fmt"
 
-	"github.com/mattn/go-colorable"
-
 	"github.com/fatih/color"
+	"github.com/mattn/go-colorable"
 )
 
 // Stderr will send most print calls to stderr rather than stdout during its execution.
