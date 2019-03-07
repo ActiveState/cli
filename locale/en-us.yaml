@@ -681,3 +681,5 @@ err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
+update_description:
+  other: Updates the state tool to the latest available version
