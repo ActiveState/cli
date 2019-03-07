@@ -4,7 +4,17 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-colorable"
 )
+
+// Stderr will send most print calls to stderr rather than stdout during its execution.
+// This is a temporary function meant to avoid scope creep, stderr should be handled properly - https://www.pivotaltracker.com/story/show/164437345
+func Stderr(call func()) {
+	output := color.Output
+	color.Output = colorable.NewColorableStderr()
+	defer func() { color.Output = output }()
+	call()
+}
 
 // Line aliases to fmt.Println
 func Line(a ...interface{}) (n int, err error) {
