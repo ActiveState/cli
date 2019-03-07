@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -87,4 +88,26 @@ func TestUnstableWarning(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
+func TestDeprecated(t *testing.T) {
+	mock := depMock.Init()
+	defer mock.Close()
+	mock.MockDeprecated()
+
+	out, err := osutil.CaptureStdout(main)
+	require.NoError(t, err)
+	require.Contains(t, out, locale.Tr("warn_deprecation", "")[0:50])
+}
+
+func TestExpired(t *testing.T) {
+	mock := depMock.Init()
+	defer mock.Close()
+	mock.MockExpired()
+
+	out, err := osutil.CaptureStdout(func() {
+		main()
+	})
+	require.NoError(t, err)
+	require.Contains(t, out, locale.Tr("err_deprecation", "")[0:50])
 }

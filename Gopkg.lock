@@ -288,6 +288,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:b759103c9b4135568253c17d2866064cde398e93764b611caabf5aa8e3059685"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = ""
+  revision = "d40cf49b3a77bba84a7afdbd7f1dc295d114efb1"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:147d671753effde6d3bcd58fc74c1d67d740196c84c280c762a5417319499972"
   name = "github.com/hashicorp/hcl"
@@ -760,6 +768,7 @@
     "github.com/gobuffalo/packr",
     "github.com/google/uuid",
     "github.com/gorilla/websocket",
+    "github.com/hashicorp/go-version",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mholt/archiver",
