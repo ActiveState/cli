@@ -296,6 +296,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:b759103c9b4135568253c17d2866064cde398e93764b611caabf5aa8e3059685"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = ""
+  revision = "d40cf49b3a77bba84a7afdbd7f1dc295d114efb1"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:147d671753effde6d3bcd58fc74c1d67d740196c84c280c762a5417319499972"
   name = "github.com/hashicorp/hcl"
@@ -516,6 +524,14 @@
   packages = ["."]
   pruneopts = ""
   revision = "e180dbdc8da04c4fa04272e875ce64949f38bd3e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f7a084a435d404d8a4cb0cfab6d5567afa19d539cf64c1bd01587f179bc4b203"
+  name = "github.com/skratchdot/open-golang"
+  packages = ["open"]
+  pruneopts = ""
+  revision = "a2dfa6d0dab6634ecf39251031a3d52db73b5c7e"
 
 [[projects]]
   digest = "1:dae0d7dd55563fd389e7263a32d2030022ef29cceff941336e53f6520e0308c0"
@@ -753,6 +769,7 @@
     "github.com/gobuffalo/packr",
     "github.com/google/uuid",
     "github.com/gorilla/websocket",
+    "github.com/hashicorp/go-version",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mitchellh/go-ps",
@@ -764,6 +781,7 @@
     "github.com/rs/xid",
     "github.com/sacOO7/gowebsocket",
     "github.com/shibukawa/configdir",
+    "github.com/skratchdot/open-golang/open",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
     "github.com/spf13/viper",

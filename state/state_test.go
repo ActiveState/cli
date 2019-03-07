@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/require"
@@ -74,4 +76,26 @@ func TestExecute(t *testing.T) {
 	Execute(Cc, []string{"--help"})
 
 	assert.Equal(true, true, "Execute didn't panic")
+}
+
+func TestDeprecated(t *testing.T) {
+	mock := depMock.Init()
+	defer mock.Close()
+	mock.MockDeprecated()
+
+	out, err := osutil.CaptureStdout(main)
+	require.NoError(t, err)
+	require.Contains(t, out, locale.Tr("warn_deprecation", "")[0:50])
+}
+
+func TestExpired(t *testing.T) {
+	mock := depMock.Init()
+	defer mock.Close()
+	mock.MockExpired()
+
+	out, err := osutil.CaptureStdout(func() {
+		main()
+	})
+	require.NoError(t, err)
+	require.Contains(t, out, locale.Tr("err_deprecation", "")[0:50])
 }

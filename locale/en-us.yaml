@@ -611,7 +611,6 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
-
 installer_err_installdir_isfile:
   other: Expected installation path '{{.V0}}' to be a directory
 installer_err_archive_notfound:
@@ -663,6 +662,43 @@ activate_select_optout:
   other: "None, I want to create a new checkout"
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
-
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
+warn_deprecation:
+  other: | 
+    You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+    
+    Please update soon!
+err_deprecation:
+  other: |
+    You are running a version of the state tool that is no longer supported! You will be encountering issues. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+      
+    Please update now!"
+err_auth_required:
+  other: Authentication is required
+auth_required_activate:
+  other: You need to be authenticated to activate an ActiveState Platform project
+prompt_login_or_signup:
+  other: Would you like to login to an existing ActiveState Platform account, or create a new account?
+prompt_login_action:
+  other: Login with my existing account
+prompt_signup_action:
+  other: Signup for a new account
+prompt_signup_browser_action:
+  other: Signup for a new account using the ActiveState Platform website
+prompt_login_after_browser_signup:
+  other: Please login once you've registered your account
+err_browser_open:
+  other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
+err_activate_auth_required:
+  other: Activating a project requires you to be authenticated against the ActiveState Platform
+err_os_not_a_directory:
+  other: Expected '{{.V0}}' to be a valid directory
+update_description:
+  other: Updates the state tool to the latest available version

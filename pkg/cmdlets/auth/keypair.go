@@ -24,7 +24,7 @@ func ensureUserKeypair(passphrase string) {
 
 	if failure != nil {
 		failures.Handle(failure, locale.T("keypair_err"))
-		doLogout()
+		Logout()
 		print.Line(locale.T("auth_unresolved_keypair_issue_message"))
 	}
 }

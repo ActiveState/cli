@@ -34,7 +34,13 @@ func Warning(format string, a ...interface{}) {
 
 // Info prints the given string as an info message
 func Info(format string, a ...interface{}) {
-	Bold("==> "+format, a...)
+	c := color.New(color.Bold, color.FgBlue)
+	if len(a) == 0 {
+		c.Println(format)
+	} else {
+		c.Printf(format, a...)
+		c.Println()
+	}
 }
 
 // Bold prints the given string as bolded message

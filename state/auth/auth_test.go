@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -51,28 +50,7 @@ func setupUser() *models.UserEditable {
 	return testUser
 }
 
-func TestExecuteNoArgs(t *testing.T) {
-	setup(t)
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithCode("POST", "/login", 401)
-
-	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
-		// prompted for username and password only
-		// 10ms delay between writes to stdin
-		"baduser",
-		"badpass",
-	)
-
-	assert.NoError(t, execErr, "Executed without error")
-	assert.Error(t, failures.Handled(), "No failure occurred")
-	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
-}
-
-func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
+func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
@@ -94,120 +72,6 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 
 	assert.NoError(t, Command.Execute(), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-}
-
-func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
-	setup(t)
-	user := setupUser()
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
-	defer httpmock.DeActivate()
-
-	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("POST", "/apikeys")
-	secretsapiMock.Register("GET", "/keypair")
-
-	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password)
-
-	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-}
-
-func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
-	setup(t)
-	user := setupUser()
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
-	defer httpmock.DeActivate()
-
-	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("POST", "/apikeys")
-
-	var bodyKeypair *secretsModels.KeypairChange
-	var bodyErr error
-	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
-	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
-		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
-		return 204, "empty"
-	})
-
-	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password)
-
-	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-
-	require.NoError(t, bodyErr, "unmarshalling keypair save response")
-	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
-	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
-}
-
-func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
-	setup(t)
-	user := setupUser()
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
-	defer httpmock.DeActivate()
-
-	var secondRequest bool
-	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
-		if !secondRequest {
-			secondRequest = true
-			return 401, "login"
-		}
-		return 200, "login"
-	})
-	httpmock.Register("GET", "/users/uniqueUsername/test")
-	httpmock.Register("POST", "/users")
-
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("POST", "/apikeys")
-
-	var bodyKeypair *secretsModels.KeypairChange
-	var bodyErr error
-	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
-	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
-		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
-		return 204, "empty"
-	})
-
-	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
-		// prompted for username and password
-		user.Username,
-		user.Password,
-		// prompted to signup instead
-		"yes",
-		// enter new user details
-		user.Password, // confirmation
-		user.Name,
-		user.Email,
-	)
-
-	assert.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-
-	require.NoError(t, bodyErr, "unmarshalling keypair save response")
-	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
-	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
 
 func TestExecuteSignup(t *testing.T) {
@@ -238,7 +102,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password,
 		user.Password, // confirmation
@@ -316,117 +180,4 @@ func TestExecuteLogout(t *testing.T) {
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	require.Nil(t, pkstat)
 	assert.Regexp(t, "no such file or directory", err.Error())
-}
-
-func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
-	setup(t)
-	user := setupUser()
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
-		bodyBytes, _ := ioutil.ReadAll(req.Body)
-		bodyString := string(bodyBytes)
-		if !strings.Contains(bodyString, "totp") {
-			return 449, "login"
-		}
-		return 200, "login"
-	})
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("POST", "/apikeys")
-	secretsapiMock.Register("GET", "/keypair")
-
-	var execErr error
-	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
-	// input for the specific field
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "\x04")
-
-	require.NoError(t, execErr, "Executed without error")
-	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
-
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "foo")
-
-	require.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
-}
-
-func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
-	setup(t)
-	user := setupUser()
-
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
-	defer httpmock.DeActivate()
-	defer failures.ResetHandled()
-
-	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
-		bodyBytes, _ := ioutil.ReadAll(req.Body)
-		bodyString := string(bodyBytes)
-		if !strings.Contains(bodyString, "totp") {
-			return 449, "login"
-		}
-		return 200, "login"
-	})
-	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
-	httpmock.Register("POST", "/apikeys")
-
-	var bodyKeypair *secretsModels.KeypairChange
-	var bodyErr error
-	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
-	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
-		reqBody, _ := ioutil.ReadAll(req.Body)
-		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
-		return 204, "empty"
-	})
-
-	var execErr error
-	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
-	// input for the specific field
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "\x04")
-
-	require.NoError(t, execErr, "Executed without error")
-	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
-
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "foo")
-
-	require.NoError(t, execErr, "Executed without error")
-	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-
-	require.NoError(t, bodyErr, "unmarshalling keypair save response")
-	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
-	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
-}
-
-func TestUsernameValidator(t *testing.T) {
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
-	defer httpmock.DeActivate()
-
-	httpmock.Register("GET", "/users/uniqueUsername/test")
-
-	err := usernameValidator("test")
-	assert.NoError(t, err, "Username is unique")
-
-	httpmock.RegisterWithCode("GET", "/users/uniqueUsername/test", 400)
-
-	err = usernameValidator("test")
-	assert.Error(t, err, "Username is not unique")
 }
