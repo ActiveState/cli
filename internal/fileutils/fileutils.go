@@ -13,10 +13,12 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 )
+
+// nullByte represents the null-terminator byte
+const nullByte byte = 0
 
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
@@ -32,7 +34,7 @@ func ReplaceAll(filename, find, replace string) error {
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
-	if bytes.IndexByte(fileBytes, constants.NullByte) != -1 {
+	if bytes.IndexByte(fileBytes, nullByte) != -1 {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
 			return errors.New("replacement text cannot be longer than search text in a binary file")

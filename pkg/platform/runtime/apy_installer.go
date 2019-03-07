@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// ActivePythonInstaller is an Installer for ActivePython runtimeributions.
+// ActivePythonInstaller is an Installer for ActivePython runtimes.
 type ActivePythonInstaller struct {
 	installDir string
 }
@@ -22,7 +22,7 @@ type ActivePythonInstaller struct {
 // NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the following:
 //
 // 1. the provided install-dir exists as a directory or can be created
-// 2. that a runtimeribution is not already installed in the install-dir
+// 2. that a runtime is not already installed in the install-dir
 func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failures.Failure) {
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
@@ -44,13 +44,13 @@ func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failu
 	}, nil
 }
 
-// InstallDir is the directory where this runtimeribution will install to.
+// InstallDir is the directory where this runtime will install to.
 func (installer *ActivePythonInstaller) InstallDir() string {
 	return installer.installDir
 }
 
 // Install will unpack the installer archive, locate the install script, and then use the installer
-// script to install an ActivePython runtimeribution to the configured runtimeribution dir. Any failures
+// script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
 func (installer *ActivePythonInstaller) Install(archivePath string) *failures.Failure {
 	runtimeName := apyRuntimeName(archivePath)
@@ -82,7 +82,7 @@ func (installer *ActivePythonInstaller) Install(archivePath string) *failures.Fa
 	return nil
 }
 
-// unpackRuntime will extract the `RuntimeName/INSTALLDIR` directory from the runtimeribution archive
+// unpackRuntime will extract the `RuntimeName/INSTALLDIR` directory from the runtime archive
 // to the configured installation dir. It will then move all files from install-dir/INSTALLDIR to
 // its parent (install-dir) and finally remove install-dir/INSTALLDIR.
 func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath string) *failures.Failure {
@@ -104,19 +104,19 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 	}
 
 	if failure := fileutils.MoveAllFiles(tmpInstallDir, installer.installDir); failure != nil {
-		logging.Error("moving files from %s after unpacking runtimeribution: %v", tmpInstallDir, failure.ToError())
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, failure.ToError())
 		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
 	}
 
 	if err = os.RemoveAll(tmpRuntimeDir); err != nil {
-		logging.Error("removing %s after unpacking runtimeribution: %v", tmpRuntimeDir, err)
+		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
 		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
 	}
 
 	return nil
 }
 
-// locatePythonExecutable will locate the path to the python binary in the runtimeribution dir.
+// locatePythonExecutable will locate the path to the python binary in the runtime dir.
 func (installer *ActivePythonInstaller) locatePythonExecutable(archivePath string) (string, *failures.Failure) {
 	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePythonExecutable)
 	if !fileutils.FileExists(python3) {
@@ -157,12 +157,12 @@ func (installer *ActivePythonInstaller) relocatePathPrefixes(prefixes []string) 
 	return nil
 }
 
-// apyRuntimeName uses the filename of the archive to determine a qualified name of a runtimeribution. The assumption
+// apyRuntimeName uses the filename of the archive to determine a qualified name of a runtime. The assumption
 // is that the archive filename is something like:
 //
 // /path/to/ActivePython-3.5.4.3504-linux-x86_64-glibc-2.12-404899.tar.gz
 //
-// Thus, the runtimeribution name would be: ActivePython-3.5.4.3504-linux-x86_64-glibc-2.12-404899
+// Thus, the runtime name would be: ActivePython-3.5.4.3504-linux-x86_64-glibc-2.12-404899
 func apyRuntimeName(archivePath string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(filepath.Base(archivePath), ".tar.gz"), ".tgz")
 }

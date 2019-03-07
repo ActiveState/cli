@@ -52,7 +52,7 @@ func (suite *PythonTestSuite) TestNew_InstallerNil() {
 	venv, failure := python.NewVirtualEnvironment("/tmp", nil)
 	suite.Require().Nil(venv, "python venv should be nil")
 	suite.Require().NotNil(failure)
-	suite.Equal(failures.FailVerify, failure.Type)
+	suite.Equal(failures.FailInvalidArgument, failure.Type)
 	suite.Equal(locale.Tr("venv_installer_is_nil"), failure.Error())
 }
 

@@ -38,7 +38,8 @@ func (suite *DownloadInstallerTestSuite) TestDownloadFails() {
 
 func (suite *DownloadInstallerTestSuite) TestInstallFails() {
 	suite.mockDownloader.On("Download").Return("runtime-archive.tar.gz", nil)
-	suite.mockInstaller.On("Install", "runtime-archive.tar.gz").Return(FailureToInstall)
+	suite.mockInstaller.On("InstallDir").Return("/path/to/install")
+	suite.mockInstaller.On("Install", "/path/to/install/runtime-archive.tar.gz").Return(FailureToInstall)
 
 	installer := installer.NewRuntimeInstaller(suite.mockDownloader, suite.mockInstaller)
 	suite.Equal(FailureToInstall, installer.Install())

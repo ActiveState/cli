@@ -662,8 +662,6 @@ activate_select_optout:
   other: "None, I want to create a new checkout"
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
-err_os_not_a_directory:
-  other: Expected '{{.V0}}' to be a valid directory
 warn_deprecation:
   other: | 
     You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 

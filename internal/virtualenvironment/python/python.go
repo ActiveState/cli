@@ -3,10 +3,10 @@ package python
 import (
 	"path"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installer"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
 // NewInstaller creates a new installer.RuntimeInstaller which can install python for this virtualenvironment.
@@ -27,7 +27,7 @@ type VirtualEnvironment struct {
 // NewVirtualEnvironment returns a configured python virtualenvironment.
 func NewVirtualEnvironment(dataDir string, pythonInstaller installer.Installer) (*VirtualEnvironment, *failures.Failure) {
 	if pythonInstaller == nil {
-		return nil, failures.FailVerify.New("venv_installer_is_nil")
+		return nil, failures.FailInvalidArgument.New("venv_installer_is_nil")
 	}
 
 	return &VirtualEnvironment{
