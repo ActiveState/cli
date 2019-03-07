@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
@@ -12,7 +13,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-var configNamespace = C.ConfigNamespace
+var configName string
+var configType string
+var configNamespace = C.InternalConfigNamespace
 var configDirs configdir.ConfigDir
 var configDir *configdir.Config
 var cacheDir *configdir.Config
@@ -20,6 +23,8 @@ var cacheDir *configdir.Config
 var exit = os.Exit
 
 func init() {
+	configType = filepath.Ext(C.InternalConfigFileName)[1:]
+	configName = strings.TrimSuffix(C.InternalConfigFileName, "."+configType)
 	ensureConfigExists()
 	ensureCacheExists()
 	readInConfig()
@@ -54,8 +59,8 @@ func ensureConfigExists() {
 		configDir = configDirs.QueryFolders(configdir.Global)[0]
 	}
 
-	if !configDir.Exists(C.ConfigFileName) {
-		configFile, err := configDir.Create(C.ConfigFileName)
+	if !configDir.Exists(C.InternalConfigFileName) {
+		configFile, err := configDir.Create(C.InternalConfigFileName)
 		if err != nil {
 			print.Error("Can't create config: %s", err)
 			exit(1)
@@ -84,8 +89,8 @@ func ensureCacheExists() {
 func readInConfig() {
 	// Prepare viper, which is a library that automates configuration
 	// management between files, env vars and the CLI
-	viper.SetConfigName(C.ConfigName)
-	viper.SetConfigType(C.ConfigFileType)
+	viper.SetConfigName(configName)
+	viper.SetConfigType(configType)
 	viper.AddConfigPath(configDir.Path)
 	viper.AddConfigPath(".")
 
