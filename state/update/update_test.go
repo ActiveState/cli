@@ -1,4 +1,4 @@
-package selfupdate
+package update
 
 import (
 	"os"
@@ -21,7 +21,7 @@ func TestExecute(t *testing.T) {
 	updatemocks.MockUpdater(t, os.Args[0], "1.2.3-123")
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"self-update"})
+	Cc.SetArgs([]string{"update"})
 
 	Command.Execute()
 

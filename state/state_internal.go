@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/run"
-	"github.com/ActiveState/cli/state/selfupdate"
 	"github.com/ActiveState/cli/state/show"
+	"github.com/ActiveState/cli/state/update"
 	"github.com/ActiveState/cli/state/variables"
 )
 
@@ -27,7 +27,7 @@ func register() {
 
 	Command.Append(activate.Command)
 	Command.Append(events.Command)
-	Command.Append(selfupdate.Command)
+	Command.Append(update.Command)
 	Command.Append(auth.Command)
 	Command.Append(organizations.Command)
 	Command.Append(projects.Command)
