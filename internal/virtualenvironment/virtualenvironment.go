@@ -21,6 +21,8 @@ import (
 	funk "github.com/thoas/go-funk"
 )
 
+var persisted *VirtualEnvironment
+
 // FailAlreadyActive is a failure given when a project is already active
 var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
@@ -43,16 +45,27 @@ type VirtualEnvironmenter interface {
 	DataDir() string
 }
 
-type artifactHashable struct {
-	Name    string
-	Version string
-	Build   map[string]string
+type VirtualEnvironment struct {
+	venvs               map[string]VirtualEnvironmenter
+	onDownloadArtifacts func()
+	onInstallArtifacts  func()
 }
 
-var venvs = make(map[string]VirtualEnvironmenter)
+// Get returns a persisted version of VirtualEnvironment{}
+func Get() *VirtualEnvironment {
+	if persisted == nil {
+		persisted = Init()
+	}
+	return persisted
+}
+
+// Init creates an instance of VirtualEnvironment{} with default settings
+func Init() *VirtualEnvironment {
+	return &VirtualEnvironment{venvs: make(map[string]VirtualEnvironmenter)}
+}
 
 // Activate the virtual environment
-func Activate() *failures.Failure {
+func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
@@ -73,7 +86,7 @@ func Activate() *failures.Failure {
 
 	for _, lang := range project.Languages() {
 		logging.Debug("Activating Virtual Environment: %+q", lang.ID())
-		if _, failure := activateLanguage(lang); failure != nil {
+		if _, failure := v.activateLanguage(lang); failure != nil {
 			return failure
 		}
 	}
@@ -81,11 +94,15 @@ func Activate() *failures.Failure {
 	return nil
 }
 
+func (v *VirtualEnvironment) OnDownloadArtifacts(f func()) { v.onDownloadArtifacts = f }
+
+func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts = f }
+
 // activateLanguage returns an environment for the given language, this will activate the
 // virtual directory structure and set up the necessary environment variables if the venv
 // wasnt already initialized, otherwise it will just return the venv.
-func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.Failure) {
-	if venv, ok := venvs[lang.ID()]; ok {
+func (v *VirtualEnvironment) activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.Failure) {
+	if venv, ok := v.venvs[lang.ID()]; ok {
 		return venv, nil
 	}
 
@@ -102,6 +119,9 @@ func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.F
 			return nil, failure
 		}
 
+		rtInstaller.OnDownload(v.onDownloadArtifacts)
+		rtInstaller.OnInstall(v.onInstallArtifacts)
+
 		venv, failure = python.NewVirtualEnvironment(cacheDir, rtInstaller)
 		if failure != nil {
 			return nil, failure
@@ -115,15 +135,15 @@ func activateLanguage(lang *project.Language) (VirtualEnvironmenter, *failures.F
 		return nil, failure
 	}
 
-	venvs[lang.ID()] = venv
+	v.venvs[lang.ID()] = venv
 	return venv, nil
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func GetEnv() map[string]string {
+func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env := map[string]string{}
 
-	for _, venv := range venvs {
+	for _, venv := range v.venvs {
 		for k, v := range venv.Env() {
 			if k == "PATH" && funk.Contains(env, "PATH") {
 				env["PATH"] = v + string(os.PathListSeparator) + env["PATH"]
@@ -147,8 +167,8 @@ func GetEnv() map[string]string {
 }
 
 // WorkingDirectory returns the working directory to use for the current environment
-func WorkingDirectory() string {
-	for _, venv := range venvs {
+func (v *VirtualEnvironment) WorkingDirectory() string {
+	for _, venv := range v.venvs {
 		wd := venv.WorkingDirectory()
 		if wd != "" {
 			return wd

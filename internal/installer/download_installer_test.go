@@ -26,6 +26,25 @@ func (suite *DownloadInstallerTestSuite) BeforeTest(suiteName, testName string) 
 	suite.mockDownloader = rmock.NewMockDownloader()
 }
 
+func (suite *DownloadInstallerTestSuite) TestEvents() {
+	suite.mockDownloader.On("Download").Return("runtime-archive.tar.gz", nil)
+	suite.mockInstaller.On("InstallDir").Return("/path/to/install")
+	suite.mockInstaller.On("Install", "/path/to/install/runtime-archive.tar.gz").Return(FailureToInstall)
+
+	installer := installer.NewRuntimeInstaller(suite.mockDownloader, suite.mockInstaller)
+
+	onDownloadCalled := false
+	onInstallCalled := false
+
+	installer.OnDownload(func() { onDownloadCalled = true })
+	installer.OnInstall(func() { onInstallCalled = true })
+
+	installer.Install()
+
+	suite.True(onDownloadCalled, "OnDownload is triggered")
+	suite.True(onInstallCalled, "OnInstall is triggered")
+}
+
 func (suite *DownloadInstallerTestSuite) TestDownloadFails() {
 	suite.mockDownloader.On("Download").Return("", FailureToDownload)
 

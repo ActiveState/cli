@@ -706,3 +706,7 @@ unstable_version_warning:
     If you encounter any bugs or issues please report them at {{.V0}}
 update_description:
   other: Updates the state tool to the latest available version
+downloading_artifacts:
+  other: Downloading required artifacts
+installing_artifacts:
+  other: Installing required artifacts

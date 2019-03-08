@@ -94,7 +94,10 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	project := projectfile.Get()
 	print.Info(locale.T("info_activating_state", project))
-	fail = virtualenvironment.Activate()
+	venv := virtualenvironment.Init()
+	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+	fail = venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return

@@ -62,7 +62,10 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
-		var fail = virtualenvironment.Activate()
+		venv := virtualenvironment.Init()
+		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+		var fail = venv.Activate()
 		if fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
 			failures.Handle(fail, locale.T("error_state_run_activate"))
