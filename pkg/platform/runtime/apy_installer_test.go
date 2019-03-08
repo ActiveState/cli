@@ -65,18 +65,6 @@ func (suite *APYInstallerTestSuite) TestNew_InstallDirCreatedIfDoesNotExist() {
 	suite.True(fileutils.DirExists(suite.installDir), "install-dir should have been created")
 }
 
-func (suite *APYInstallerTestSuite) TestNew_RuntimeAlreadyInstalled() {
-	f, failure := fileutils.Touch(path.Join(suite.installDir, "regular-file"))
-	suite.Require().Nil(failure, "trying to touch a file in the install-dir")
-	defer os.Remove(f.Name())
-
-	apyInstaller, failure := runtime.NewActivePythonInstaller(suite.installDir)
-	suite.Require().Nil(apyInstaller)
-	suite.Require().NotNil(failure)
-	suite.Equal(runtime.FailRuntimeInstallation, failure.Type)
-	suite.Equal(locale.Tr("installer_err_runtime_already_exists", suite.installDir), failure.Error())
-}
-
 func (suite *APYInstallerTestSuite) TestNew_Success() {
 	apyInstaller := suite.newInstaller()
 	suite.Implements((*runtime.Installer)(nil), apyInstaller)
@@ -99,7 +87,7 @@ func (suite *APYInstallerTestSuite) TestInstall_ArchiveNotTarGz() {
 	suite.Require().Nil(failure)
 	suite.Require().NotNil(apyInstaller)
 
-	invalidArchive := path.Join(suite.installDir, "archive.file")
+	invalidArchive := path.Join(suite.dataDir, "empty.archive")
 
 	file, failure := fileutils.Touch(invalidArchive)
 	suite.Require().Nil(failure, "failure touching test file")
