@@ -27,19 +27,42 @@ func setup(t *testing.T) {
 
 	datadir := config.GetDataDir()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
-
-	venvs = make(map[string]VirtualEnvironmenter)
 }
 
 func teardown() {
 	projectfile.Reset()
 }
 
+func TestPersist(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	v1 := Get()
+	v2 := Get()
+	assert.True(t, v1 == v2, "Should return same pointer")
+}
+
+func TestEvents(t *testing.T) {
+	venv := Init()
+	onDownloadCalled := false
+	onInstallCalled := false
+
+	venv.OnDownloadArtifacts(func() { onDownloadCalled = true })
+	venv.OnInstallArtifacts(func() { onInstallCalled = true })
+
+	venv.onDownloadArtifacts()
+	venv.onInstallArtifacts()
+
+	assert.True(t, onDownloadCalled, "OnDownloadArtifacts is triggered")
+	assert.True(t, onInstallCalled, "OnInstallArtifacts is triggered")
+}
+
 func TestActivate(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	fail := Activate()
+	venv := Init()
+	fail := venv.Activate()
 	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
@@ -56,7 +79,8 @@ func TestActivate(t *testing.T) {
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
-	fail = Activate()
+	venv = Init()
+	fail = venv.Activate()
 	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
@@ -76,7 +100,8 @@ func TestActivate(t *testing.T) {
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
-	fail = Activate()
+	venv = Init()
+	fail = venv.Activate()
 	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
@@ -96,7 +121,8 @@ func TestActivateFailureUnknownLanguage(t *testing.T) {
 	})
 	project.Persist()
 
-	err := Activate()
+	venv := Init()
+	err := venv.Activate()
 	assert.Error(t, err, "Should not activate due to unknown language")
 }
 
@@ -106,7 +132,8 @@ func TestActivateFailureAlreadyActive(t *testing.T) {
 
 	os.Setenv(constants.ActivatedStateEnvVarName, "test")
 
-	failure := Activate()
+	venv := Init()
+	failure := venv.Activate()
 	require.NotNil(t, failure, "expected a failure")
 	assert.Equal(t, FailAlreadyActive, failure.Type)
 	assert.Equal(t, locale.T("err_already_active"), failure.Error())

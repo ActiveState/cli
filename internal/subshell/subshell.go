@@ -131,8 +131,8 @@ func getRcFile(v SubShell) (*os.File, error) {
 		"Project":     projectfile.Get(),
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
-		"Env":         virtualenvironment.GetEnv(),
-		"WD":          virtualenvironment.WorkingDirectory(),
+		"Env":         virtualenvironment.Get().GetEnv(),
+		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
 	}
