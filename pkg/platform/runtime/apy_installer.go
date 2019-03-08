@@ -19,10 +19,8 @@ type ActivePythonInstaller struct {
 	installDir string
 }
 
-// NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the following:
-//
-// 1. the provided install-dir exists as a directory or can be created
-// 2. that a runtime is not already installed in the install-dir
+// NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the provided install-dir
+// exists as a directory or can be created.
 func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failures.Failure) {
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
@@ -32,11 +30,6 @@ func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failu
 		if failure := fileutils.Mkdir(installDir); failure != nil {
 			return nil, failure
 		}
-	} else if isEmpty, failure := fileutils.IsEmptyDir(installDir); !isEmpty || failure != nil {
-		if failure != nil {
-			logging.Error("reading files in directory '%s': %v", installDir, failure.ToError())
-		}
-		return nil, FailRuntimeInstallation.New("installer_err_runtime_already_exists", installDir)
 	}
 
 	return &ActivePythonInstaller{
