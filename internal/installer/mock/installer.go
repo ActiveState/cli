@@ -23,3 +23,9 @@ func (installer *Installer) Install() *failures.Failure {
 	}
 	return nil
 }
+
+// OnDownload registers a function to be called when a download occurs
+func (installer *Installer) OnDownload(f func()) {}
+
+// OnInstall registers a function to be called when an install occurs
+func (installer *Installer) OnInstall(f func()) {}
