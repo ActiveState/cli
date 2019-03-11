@@ -7,7 +7,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
-	"github.com/ActiveState/cli/state/selfupdate"
+	"github.com/ActiveState/cli/state/update"
 )
 
 // register will register any commands and expanders
@@ -17,6 +17,6 @@ func register() {
 	secretsapi.InitializeClient()
 
 	Command.Append(activate.Command)
-	Command.Append(selfupdate.Command)
+	Command.Append(update.Command)
 	Command.Append(auth.Command)
 }
