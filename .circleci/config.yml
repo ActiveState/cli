@@ -32,10 +32,10 @@ defaults:
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "unstable" ]]; then
             echo "Building for external use"
-            state run build-external
+            APIENV=prod state run build-external
           else
             echo "Building for internal use"
-            state run build
+            APIENV=prod state run build
           fi
     deployBits: &deployBits
       run:
