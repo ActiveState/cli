@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/run"
+	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/selfupdate"
 	"github.com/ActiveState/cli/state/show"
 	"github.com/ActiveState/cli/state/variables"
@@ -34,6 +35,7 @@ func register() {
 	Command.Append(new.Command)
 	Command.Append(show.Command)
 	Command.Append(run.Command)
+	Command.Append(scripts.Command)
 
 	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())
 	Command.Append(keypair.Command)

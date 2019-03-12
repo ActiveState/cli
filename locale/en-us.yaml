@@ -315,6 +315,8 @@ error_expand_variable_project_unrecognized_platform_var:
   other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
   other: Run Your Project Scripts
+scripts_description:
+  other: Show project scripts 
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
