@@ -146,5 +146,5 @@ const PlatformSignupURL = "https://platform.activestate.com/create-account"
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 
-// UserAgentTemplate is the template used to generate the actual user agent, which includes runtime information as well as built information
+// UserAgentTemplate is the template used to generate the actual user agent, which includes runtime information as well as build information
 const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architecture}})"
