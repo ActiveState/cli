@@ -1,12 +1,18 @@
 package api
 
 import (
+	"bytes"
 	"flag"
+	"log"
 	"net/http"
 	"reflect"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/client"
+	"github.com/ActiveState/sysinfo"
+	"github.com/alecthomas/template"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -32,8 +38,6 @@ var (
 	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
 
-var transport http.RoundTripper
-
 // New will create a new API client using default settings (for an authenticated version use the NewWithAuth version)
 func New() *client.APIClient {
 	return Init(GetSettings(ServicePlatform), nil)
@@ -47,9 +51,10 @@ func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *client.APIClient {
 // Init initializes a new api client
 func Init(apiSetting Settings, auth *runtime.ClientAuthInfoWriter) *client.APIClient {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
+	transportRuntime.Transport = NewUserAgentTripper()
+
 	if flag.Lookup("test.v") != nil {
 		transportRuntime.SetDebug(true)
-		transportRuntime.Transport = transport
 	}
 
 	if auth != nil {
@@ -64,6 +69,51 @@ func Get() *client.APIClient {
 		persist = New()
 	}
 	return persist
+}
+
+// UserAgentTripper is an implementation of http.RoundTripper that adds our useragent
+type UserAgentTripper struct{}
+
+// RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
+func (r *UserAgentTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", r.UserAgent())
+	return http.DefaultTransport.RoundTrip(req)
+}
+
+// UserAgent returns the user agent used by the state tool
+func (r *UserAgentTripper) UserAgent() string {
+	var osVersionStr string
+	osVersion, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Error("Could not detect OS version: %v", err)
+	} else {
+		osVersionStr = osVersion.Version
+	}
+
+	agentTemplate, err := template.New("").Parse(constants.UserAgentTemplate)
+	if err != nil {
+		log.Panicf("Parsing user agent template failed: %v", err)
+	}
+
+	var userAgent bytes.Buffer
+	agentTemplate.Execute(&userAgent, struct {
+		UserAgent    string
+		OS           string
+		OSVersion    string
+		Architecture string
+	}{
+		UserAgent:    constants.UserAgent,
+		OS:           sysinfo.OS().String(),
+		OSVersion:    osVersionStr,
+		Architecture: sysinfo.Architecture().String(),
+	})
+
+	return userAgent.String()
+}
+
+// NewUserAgentTripper creates a new instance of UserAgentTripper
+func NewUserAgentTripper() http.RoundTripper {
+	return &UserAgentTripper{}
 }
 
 // ErrorCode tries to retrieve the code associated with an API error

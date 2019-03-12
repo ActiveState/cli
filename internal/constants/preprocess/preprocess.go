@@ -27,6 +27,9 @@ func init() {
 	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, Constants["BuildNumber"]()) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["APIEnv"] = func() string { return strings.TrimSpace(os.Getenv("APIENV")) }
+	Constants["UserAgent"] = func() string {
+		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), Constants["BranchName"](), Constants["APIEnv"]())
+	}
 }
 
 func getCmdOutput(cmdString string) string {

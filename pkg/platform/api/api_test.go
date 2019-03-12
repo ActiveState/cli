@@ -1,7 +1,10 @@
 package api_test
 
 import (
+	"net/http"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/constants"
 
 	"github.com/ActiveState/cli/pkg/platform/api/client/status"
 
@@ -11,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	httptransport "github.com/go-openapi/runtime/client"
 )
@@ -36,6 +40,22 @@ func TestNewWithAuth(t *testing.T) {
 	client := api.NewWithAuth(&authInfo)
 	_, err := client.Status.GetInfo(status.NewGetInfoParams(), authInfo)
 	assert.NoError(t, err)
+}
+
+func TestUserAgent(t *testing.T) {
+	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	defer httpmock.DeActivate()
+
+	var userAgent string
+	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
+		userAgent = req.Header.Get("User-Agent")
+		return 200, "login"
+	})
+
+	client := api.New()
+	_, err := client.Authentication.PostLogin(authentication.NewPostLoginParams())
+	require.NoError(t, err)
+	assert.Contains(t, userAgent, constants.UserAgent)
 }
 
 func TestPersist(t *testing.T) {
