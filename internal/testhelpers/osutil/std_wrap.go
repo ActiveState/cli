@@ -67,6 +67,20 @@ func CaptureStdout(fnToExec func()) (string, error) {
 	return captureWrites(fnToExec, outReader, outWriter)
 }
 
+// CaptureStdoutWithError will execute a provided function and capture anything written to stdout.
+// It will then return that output as a string along with any errors captured in the process.
+func CaptureStdoutWithError(fnToExec func() error) (string, error) {
+	outReader, outWriter, err := os.Pipe()
+	if err != nil {
+		return "", err
+	}
+	defer replaceStdout(replaceStdout(outWriter))
+	var wrapFunc = func() {
+		fnToExec()
+	}
+	return captureWrites(wrapFunc, outReader, outWriter)
+}
+
 // WrapStdin will fill stdin with the lines provided as a variadic list of strings before
 // executing the provided function. Each line will be appended with a newline (\n) only.
 func WrapStdin(fnToExec func(), inputLines ...interface{}) {
