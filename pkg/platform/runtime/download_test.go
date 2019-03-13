@@ -7,20 +7,12 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
-
-	"github.com/ActiveState/cli/internal/download"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-
-	projMock "github.com/ActiveState/cli/internal/projects/mock"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
-	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
-	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
-	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,12 +22,8 @@ type RuntimeDLTestSuite struct {
 	project *project.Project
 	dir     string
 
-	httpMock *httpmock.HTTPMock
-	hcMock   *hcMock.Mock
-	invMock  *invMock.Mock
-	apiMock  *apiMock.Mock
-	authMock *authMock.Mock
-	projMock *projMock.Mock
+	hcMock *hcMock.Mock
+	rtMock *rtMock.Mock
 }
 
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
@@ -47,34 +35,14 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	suite.hcMock = hcMock.Init()
-	suite.invMock = invMock.Init()
-	suite.apiMock = apiMock.Init()
-	suite.authMock = authMock.Init()
-	suite.projMock = projMock.Init()
-	suite.httpMock = httpmock.Activate("http://test.tld/")
+	suite.rtMock = rtMock.Init()
 
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockVcsGetCheckpoint()
-	suite.apiMock.MockSignS3URI()
-	suite.invMock.MockOrderRecipes()
-	suite.invMock.MockPlatforms()
-	suite.projMock.MockGetProject()
-
-	suite.httpMock.RegisterWithResponse("GET", "archive.tar.gz", 200, "archive.tar.gz")
-
-	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
-	download.SetMocking(false)
-
-	model.OS = sysinfo.Linux // for now we only support linux, so force it
+	suite.rtMock.MockFullRuntime()
 }
 
 func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
+	suite.rtMock.Close()
 	suite.hcMock.Close()
-	suite.invMock.Close()
-	suite.apiMock.Close()
-	suite.authMock.Close()
-	suite.projMock.Close()
-	httpmock.DeActivate()
 
 	err := os.RemoveAll(suite.dir)
 	suite.Require().NoError(err)

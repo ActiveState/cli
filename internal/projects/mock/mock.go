@@ -25,6 +25,10 @@ func (m *Mock) MockGetProject() {
 	m.httpmock.Register("GET", "/organizations/string/projects/string")
 }
 
+func (m *Mock) MockGetProjectDiffCommit() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
+}
+
 func (m *Mock) MockGetProject404() {
 	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
 }

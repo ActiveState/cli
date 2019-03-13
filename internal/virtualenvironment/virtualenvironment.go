@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/api/models"
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -16,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
@@ -47,6 +49,8 @@ type VirtualEnvironmenter interface {
 
 type VirtualEnvironment struct {
 	venvs               map[string]VirtualEnvironmenter
+	project             *project.Project
+	projectModel        *models.Project
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 }
@@ -61,7 +65,7 @@ func Get() *VirtualEnvironment {
 
 // Init creates an instance of VirtualEnvironment{} with default settings
 func Init() *VirtualEnvironment {
-	return &VirtualEnvironment{venvs: make(map[string]VirtualEnvironmenter)}
+	return &VirtualEnvironment{venvs: make(map[string]VirtualEnvironmenter), project: project.Get()}
 }
 
 // Activate the virtual environment
@@ -73,10 +77,8 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		return FailAlreadyActive.New("err_already_active")
 	}
 
-	project := project.Get()
-
 	// expand project vars to environment vars
-	for _, variable := range project.Variables() {
+	for _, variable := range v.project.Variables() {
 		val, failure := variable.Value()
 		if failure != nil {
 			return failure
@@ -84,7 +86,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		os.Setenv(variable.Name(), val)
 	}
 
-	for _, lang := range project.Languages() {
+	for _, lang := range v.project.Languages() {
 		logging.Debug("Activating Virtual Environment: %+q", lang.ID())
 		if _, failure := v.activateLanguage(lang); failure != nil {
 			return failure
@@ -106,7 +108,11 @@ func (v *VirtualEnvironment) activateLanguage(lang *project.Language) (VirtualEn
 		return venv, nil
 	}
 
-	hashedLangSpace := shortHash(lang.Source().Owner + "-" + lang.Source().Name + "-" + lang.ID())
+	hashedLangSpace, fail := v.getLanguageHash(lang)
+	if fail != nil {
+		return nil, fail
+	}
+
 	cacheDir := path.Join(config.GetCacheDir(), hashedLangSpace)
 
 	var venv VirtualEnvironmenter
@@ -184,6 +190,39 @@ func (v *VirtualEnvironment) WorkingDirectory() string {
 	return wd
 }
 
+// fetchProjectModel gets the API version of the project, caches the result (repeat calls use cache)
+func (v *VirtualEnvironment) fetchProjectModel() (*models.Project, *failures.Failure) {
+	if v.projectModel == nil {
+		var fail *failures.Failure
+		v.projectModel, fail = projects.FetchByName(v.project.Owner(), v.project.Name())
+		if fail != nil {
+			return nil, fail
+		}
+	}
+
+	return v.projectModel, nil
+}
+
+// getLanguageHash gets a hash for the current project specific to the given language
+func (v *VirtualEnvironment) getLanguageHash(lang *project.Language) (string, *failures.Failure) {
+	pjm, fail := v.fetchProjectModel()
+	if fail != nil {
+		return "", fail
+	}
+
+	branch, fail := projects.DefaultBranch(pjm)
+	if fail != nil {
+		return "", fail
+	}
+
+	var commitID string
+	if branch.CommitID != nil {
+		commitID = branch.CommitID.String()
+	}
+
+	return shortHash(v.project.Owner(), v.project.Name(), lang.ID(), commitID), nil
+}
+
 // shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
 //
 // For example:
@@ -191,8 +230,8 @@ func (v *VirtualEnvironment) WorkingDirectory() string {
 // 	 => e784c7e0
 //
 // This is useful for creating a shortened namespace for language installations.
-func shortHash(data string) string {
+func shortHash(data ...string) string {
 	h := sha1.New()
-	io.WriteString(h, data)
+	io.WriteString(h, strings.Join(data, ""))
 	return fmt.Sprintf("%x", h.Sum(nil)[:4])
 }
