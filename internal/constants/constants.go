@@ -12,17 +12,14 @@ const LibraryNamespace = "github.com/ActiveState/"
 // CommandName holds the name of our command
 const CommandName = "state"
 
-// ConfigNamespace holds the appdata folder name under which we store our config
-const ConfigNamespace = "activestate"
+// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileName
+const ConfigFileName = "activestate.yaml"
 
-// ConfigName is used to inform viper and our config lib about the name of the config file
-const ConfigName = "activestate"
+// InternalConfigNamespace holds the appdata folder name under which we store our config
+const InternalConfigNamespace = "activestate"
 
-// ConfigFileName is effectively the same as ConfigName, but includes our preferred extension
-const ConfigFileName = ConfigName + ".yaml"
-
-// ConfigFileType is our preferred file type for our config file, this must match ConfigFileName
-const ConfigFileType = "yaml"
+// InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
+const InternalConfigFileName = "config.yaml"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
@@ -137,5 +134,17 @@ const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 // InventoryURLDev is the host used for platform api calls when on staging
 const InventoryURLDev = InventoryURLStage
 
+// DeprecationInfoURL is the URL we check against to see what versions are deprecated
+const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
+
+// DateFormatUser is the date format we use when communicating with the end-user
+const DateFormatUser = "January 02, 2006"
+
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com/create-account"
+
+// BugTrackerURL is the URL of our bug tracker
+const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
+
+// UserAgentTemplate is the template used to generate the actual user agent, which includes runtime information as well as build information
+const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architecture}})"

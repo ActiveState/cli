@@ -80,6 +80,15 @@ func (mock *HTTPMock) RegisterWithResponseBytes(method string, request string, c
 		parent.NewBytesResponder(code, responseBytes))
 }
 
+// RegisterWithResponderBody register a httpmock with a custom responder that returns the response body
+func (mock *HTTPMock) RegisterWithResponderBody(method string, request string, cb func(req *http.Request) (int, string)) {
+	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	parent.RegisterResponder(method, request, func(req *http.Request) (*http.Response, error) {
+		code, responseData := cb(req)
+		return parent.NewStringResponse(code, responseData), nil
+	})
+}
+
 // RegisterWithResponder register a httpmock with a custom responder
 func (mock *HTTPMock) RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
 	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
@@ -154,6 +163,12 @@ func RegisterWithResponseBody(method string, request string, code int, responseB
 func RegisterWithResponseBytes(method string, request string, code int, responseBytes []byte) {
 	ensureDefaultMock()
 	defaultMock.RegisterWithResponseBytes(method, request, code, responseBytes)
+}
+
+// RegisterWithResponderBody defers to the default HTTPMock's RegisterWithResponderBody or errors if no default defined.
+func RegisterWithResponderBody(method string, request string, code int, cb func(req *http.Request) (int, string)) {
+	ensureDefaultMock()
+	defaultMock.RegisterWithResponderBody(method, request, cb)
 }
 
 // RegisterWithResponder defers to the default HTTPMock's RegisterWithResponder or errors if no default defined.

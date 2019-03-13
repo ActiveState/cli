@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/ActiveState/cli/internal/deprecation"
+
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,6 +22,8 @@ import (
 )
 
 var exit = os.Exit
+
+var branchName = constants.BranchName
 
 // T links to locale.T
 var T = locale.T
@@ -73,7 +77,28 @@ func main() {
 	}
 
 	forwardAndExit(os.Args) // exits only if it forwards
+
+	// Check for deprecation
+	deprecated, fail := deprecation.Check()
+	if fail != nil && !fail.Type.Matches(deprecation.FailTimeout) {
+		logging.Error("Could not check for deprecation: %s", fail.Error())
+	}
+	if deprecated != nil {
+		date := deprecated.Date.Format(constants.DateFormatUser)
+		if !deprecated.DateReached {
+			print.Warning(locale.Tr("warn_deprecation", date, deprecated.Reason))
+		} else {
+			print.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
+		}
+	}
+
 	register()
+
+	if branchName != constants.StableBranch {
+		print.Stderr(func() {
+			print.Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+		})
+	}
 
 	// This actually runs the command
 	err := Command.Execute()

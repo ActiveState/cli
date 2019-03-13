@@ -109,6 +109,8 @@ error_could_not_activate_subshell:
   other: Could not activate a new subshell
 info_deactivated:
   other: Deactivated {{.Owner}}/{{.Name}}
+venv_installer_is_nil:
+  other: Provided installer should not be nil
 error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
 error_could_not_activate_venv:
@@ -611,27 +613,26 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
-
 installer_err_installdir_isfile:
   other: Expected installation path '{{.V0}}' to be a directory
 installer_err_archive_notfound:
   other: Distribution archive '{{.V0}}' does not exist
 installer_err_archive_badext:
-  other: Expected distribution archive '{{.V0}}' to have .tar.gz or .tgz extension
-installer_err_dist_missing_install_dir:
-  other: Expected distribution '{{.V0}}' to contain directory named '{{.V1}}'
-installer_err_dist_no_executable:
-  other: Expected distribution installer '{{.V0}}' to include '{{.V1}}'
-installer_err_dist_executable_not_exec:
-  other: Executable '{{.V1}}' does not have execute permissions for distribution '{{.V0}}'
+  other: Expected runtime archive '{{.V0}}' to have .tar.gz or .tgz extension
+installer_err_runtime_missing_install_dir:
+  other: Expected runtime '{{.V0}}' to contain directory named '{{.V1}}'
+installer_err_runtime_no_executable:
+  other: Expected runtime installer '{{.V0}}' to include '{{.V1}}'
+installer_err_runtime_executable_not_exec:
+  other: Executable '{{.V1}}' does not have execute permissions for runtime '{{.V0}}'
 installer_err_fail_obtain_prefixes:
-  other: Unable to obtain relocation prefixes for distribution '{{.V0}}'
-installer_err_dist_already_exists:
-  other: A distribution is already installed at '{{.V0}}'
-installer_err_dist_move_files_failed:
-  other: Unable to move distribution files from '{{.V0}}'
-installer_err_dist_rm_installdir:
-  other: Unable to remove '{{.V0}}' after unpacking distribution
+  other: Unable to obtain relocation prefixes for runtime '{{.V0}}'
+installer_err_runtime_already_exists:
+  other: A runtime is already installed at '{{.V0}}'
+installer_err_runtime_move_files_failed:
+  other: Unable to move runtime files from '{{.V0}}'
+installer_err_runtime_rm_installdir:
+  other: Unable to remove '{{.V0}}' after unpacking runtime
 
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
@@ -663,6 +664,22 @@ activate_select_optout:
   other: "None, I want to create a new checkout"
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
+warn_deprecation:
+  other: | 
+    You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+    
+    Please update soon!
+err_deprecation:
+  other: |
+    You are running a version of the state tool that is no longer supported! You will be encountering issues. 
+    
+    Reason for deprecation: 
+      {{.V1}}
+      
+    Please update now!"
 err_auth_required:
   other: Authentication is required
 auth_required_activate:
@@ -685,3 +702,15 @@ err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
+unstable_version_warning:
+  other: | 
+    You are running an unstable version of the state tool. Please do not use this on production environments or any other
+    sort of environment that is sensitive to destructive changes.
+
+    If you encounter any bugs or issues please report them at {{.V0}}
+update_description:
+  other: Updates the state tool to the latest available version
+downloading_artifacts:
+  other: Downloading required artifacts
+installing_artifacts:
+  other: Installing required artifacts

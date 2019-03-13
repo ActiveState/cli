@@ -13,12 +13,43 @@ import (
 )
 
 var (
-	FailNoCommit      = failures.Type("model.fail.nocommit")
+	// FailNoCommit is a failure due to a non-existent commit
+	FailNoCommit = failures.Type("model.fail.nocommit")
+
+	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
 )
 
+// Checkpoint represents a collection of requirements
 type Checkpoint []*models.Checkpoint
 
+// FetchLanguagesForBranch fetches a list of language names for the given branch
+func FetchLanguagesForBranch(branch *models.Branch) ([]string, *failures.Failure) {
+	if branch.CommitID == nil {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
+	}
+
+	return FetchLanguagesForCommit(*branch.CommitID)
+}
+
+// FetchLanguagesForCommit fetches a list of language names for the given commit
+func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure) {
+	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	languages := []string{}
+	for _, requirement := range checkpoint {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguage) {
+			languages = append(languages, requirement.Requirement)
+		}
+	}
+
+	return languages, nil
+}
+
+// FetchCheckpointForBranch fetches the checkpoint for the given branch
 func FetchCheckpointForBranch(branch *models.Branch) (Checkpoint, *failures.Failure) {
 	if branch.CommitID == nil {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
@@ -27,6 +58,7 @@ func FetchCheckpointForBranch(branch *models.Branch) (Checkpoint, *failures.Fail
 	return FetchCheckpointForCommit(*branch.CommitID)
 }
 
+// FetchCheckpointForBranch fetches the checkpoint for the given commit
 func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
 	auth := authentication.Get()
 	params := version_control.NewGetCheckpointParams()
@@ -40,6 +72,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failu
 	return response.Payload, nil
 }
 
+// CheckpointToOrder converts a checkpoint to an order
 func CheckpointToOrder(checkpoint Checkpoint) *inventory_models.Order {
 	timestamp := strfmt.DateTime(time.Now())
 	return &inventory_models.Order{
@@ -49,11 +82,12 @@ func CheckpointToOrder(checkpoint Checkpoint) *inventory_models.Order {
 	}
 }
 
+// CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
 func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRequirementsItems0 {
 	result := []*inventory_models.OrderRequirementsItems0{}
 
 	for _, req := range checkpoint {
-		if req.Namespace == NamespacePlatform {
+		if NamespaceMatch(req.Namespace, NamespacePlatform) {
 			continue
 		}
 		result = append(result, &inventory_models.OrderRequirementsItems0{
@@ -66,11 +100,12 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRe
 	return result
 }
 
+// CheckpointToPlatforms strips platforms from a checkpoint
 func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	result := []strfmt.UUID{}
 
 	for _, req := range checkpoint {
-		if req.Namespace != NamespacePlatform {
+		if !NamespaceMatch(req.Namespace, NamespacePlatform) {
 			continue
 		}
 		result = append(result, strfmt.UUID(req.Requirement))

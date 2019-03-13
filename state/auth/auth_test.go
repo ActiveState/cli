@@ -102,7 +102,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password,
 		user.Password, // confirmation

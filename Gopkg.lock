@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:18193bad9248e21f2f74d5b2bcaf4ee03ed347cdf3fed7fd05201555eddfb854"
+  name = "github.com/ActiveState/archiver"
+  packages = ["."]
+  pruneopts = ""
+  revision = "2a719fbf9298df11a27bcceb1f2722bc23f7cf04"
+  version = "v3.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:22b3ebaeb7d3121a3ef09b11aedcf0790f959cc6da203682ceab0d512bf28fb3"
   name = "github.com/ActiveState/go-ogle-analytics"
@@ -288,6 +296,14 @@
   version = "v1.4.0"
 
 [[projects]]
+  digest = "1:b759103c9b4135568253c17d2866064cde398e93764b611caabf5aa8e3059685"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = ""
+  revision = "d40cf49b3a77bba84a7afdbd7f1dc295d114efb1"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:147d671753effde6d3bcd58fc74c1d67d740196c84c280c762a5417319499972"
   name = "github.com/hashicorp/hcl"
@@ -388,14 +404,6 @@
   packages = ["."]
   pruneopts = ""
   revision = "9520e82c474b0a04dd04f8a40959027271bab992"
-
-[[projects]]
-  digest = "1:e26c759de83ce6fe27f99082458a7ad9fcc51a95215b4f5bbacd1345b61bc6ba"
-  name = "github.com/mholt/archiver"
-  packages = ["."]
-  pruneopts = ""
-  revision = "d572b2e8b82726cee9476d1b9d63a7fe9b601ff1"
-  version = "v3.1.1"
 
 [[projects]]
   branch = "master"
@@ -740,6 +748,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/ActiveState/archiver",
     "github.com/ActiveState/go-ogle-analytics",
     "github.com/ActiveState/state-required/require",
     "github.com/ActiveState/sysinfo",
@@ -760,9 +769,9 @@
     "github.com/gobuffalo/packr",
     "github.com/google/uuid",
     "github.com/gorilla/websocket",
+    "github.com/hashicorp/go-version",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
-    "github.com/mholt/archiver",
     "github.com/mitchellh/go-ps",
     "github.com/mitchellh/mapstructure",
     "github.com/nicksnyder/go-i18n/i18n",

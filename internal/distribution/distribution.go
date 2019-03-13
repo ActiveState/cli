@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/artifact"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
@@ -17,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/sysinfo"
-	"github.com/mholt/archiver"
 	"github.com/vbauerster/mpb"
 	"github.com/vbauerster/mpb/decor"
 )
