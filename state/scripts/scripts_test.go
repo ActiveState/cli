@@ -32,7 +32,9 @@ scripts:
 	}
 
 	{
-		str, err := osutil.CaptureStdoutWithError(Command.Execute)
+		str, err := osutil.CaptureStdout(func() {
+			Command.Execute()
+		})
 		assert.NoError(t, err, "Executed without error")
 		assert.Equal(t, " * run\n", str, "Outputs don't match")
 	}

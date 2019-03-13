@@ -3,6 +3,7 @@ package scripts
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
@@ -22,7 +23,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	scripts := project.Get().Scripts()
 
 	if len(scripts) == 0 {
-		fmt.Println("You have no scripts in your project yet.")
+
+		fmt.Println(locale.T("scripts_no_scripts"))
 	}
 
 	for _, script := range scripts {
