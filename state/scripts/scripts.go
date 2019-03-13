@@ -23,7 +23,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	scripts := project.Get().Scripts()
 
 	if len(scripts) == 0 {
-
 		fmt.Println(locale.T("scripts_no_scripts"))
 	}
 
