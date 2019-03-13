@@ -67,8 +67,8 @@ func CaptureStdout(fnToExec func()) (string, error) {
 	return captureWrites(fnToExec, outReader, outWriter)
 }
 
-// CaptureStdoutWithError will execute a provided function and capture anything written to stdout.
-// It will then return that output as a string along with any errors captured in the process.
+// CaptureStdoutWithError is the same as CaptureStdout except it can take
+// a func that returns an err.  This function suppresses the error.
 func CaptureStdoutWithError(fnToExec func() error) (string, error) {
 	outReader, outWriter, err := os.Pipe()
 	if err != nil {
