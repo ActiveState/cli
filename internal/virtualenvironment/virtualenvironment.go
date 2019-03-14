@@ -25,6 +25,9 @@ import (
 
 var persisted *VirtualEnvironment
 
+// The directory that is used as the basis of the language installation directory
+var cacheDir string
+
 // FailAlreadyActive is a failure given when a project is already active
 var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", failures.FailUser)
 
@@ -53,6 +56,10 @@ type VirtualEnvironment struct {
 	projectModel        *models.Project
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
+}
+
+func init() {
+	cacheDir = config.GetCacheDir()
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -113,14 +120,14 @@ func (v *VirtualEnvironment) activateLanguage(lang *project.Language) (VirtualEn
 		return nil, fail
 	}
 
-	cacheDir := path.Join(config.GetCacheDir(), hashedLangSpace)
+	langCacheDir := path.Join(cacheDir, hashedLangSpace)
 
 	var venv VirtualEnvironmenter
 	var failure *failures.Failure
 
 	switch strings.ToLower(lang.Name()) {
 	case "python", "python3":
-		rtInstaller, failure := python.NewInstaller(cacheDir)
+		rtInstaller, failure := python.NewInstaller(langCacheDir)
 		if failure != nil {
 			return nil, failure
 		}
@@ -128,7 +135,7 @@ func (v *VirtualEnvironment) activateLanguage(lang *project.Language) (VirtualEn
 		rtInstaller.OnDownload(v.onDownloadArtifacts)
 		rtInstaller.OnInstall(v.onInstallArtifacts)
 
-		venv, failure = python.NewVirtualEnvironment(cacheDir, rtInstaller)
+		venv, failure = python.NewVirtualEnvironment(langCacheDir, rtInstaller)
 		if failure != nil {
 			return nil, failure
 		}

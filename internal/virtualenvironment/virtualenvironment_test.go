@@ -1,6 +1,7 @@
 package virtualenvironment
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/projects/mock"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,8 +30,10 @@ func setup(t *testing.T) {
 	err = os.Chdir(filepath.Join(root, "internal", "virtualenvironment", "testdata"))
 	assert.NoError(t, err, "unable to chdir to testdata dir")
 
-	datadir := config.GetDataDir()
-	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	cacheDir, err = ioutil.TempDir("", "venv")
+	require.NoError(t, err)
+	err = os.RemoveAll(cacheDir)
+	require.NoError(t, err)
 
 	rtMock = rtmock.Init()
 	rtMock.MockFullRuntime()

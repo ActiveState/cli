@@ -9,6 +9,7 @@ import (
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/sysinfo"
 )
 
@@ -53,6 +54,7 @@ func (m *Mock) MockFullRuntime() {
 
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)
+	runtime.InitRequester = m.hcMock.Requester(hcMock.NoOptions)
 
 	model.OS = sysinfo.Linux // for now we only support linux, so force it
 
