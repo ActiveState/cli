@@ -4,7 +4,6 @@ import tempfile
 import time
 import unittest
 import warnings
-from logging import Logger
 import pexpect
 from pexpect.popen_spawn import PopenSpawn
 import psutil

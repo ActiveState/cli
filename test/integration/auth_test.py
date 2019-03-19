@@ -1,9 +1,4 @@
-import os
-from os import path
-import signal
-import pexpect
 import time
-from pexpect.popen_spawn import PopenSpawn
 import helpers
 
 class TestAuth(helpers.IntegrationTest):
