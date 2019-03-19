@@ -160,6 +160,11 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 		env["PATH"] = env["PATH"] + string(os.PathListSeparator) + os.Getenv("PATH")
 	}
 
+	// Avoid leaking project
+	if funk.Contains(env, constants.ProjectEnvVarName) {
+		delete(env, constants.ProjectEnvVarName)
+	}
+
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 
