@@ -18,6 +18,9 @@ const ConfigFileName = "activestate.yaml"
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
 
+// ConfigEnvVarName is the env var used to override the config dir that the state tool uses
+const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
+
 // InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileName = "config.yaml"
 
