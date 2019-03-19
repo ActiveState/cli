@@ -33,17 +33,10 @@ class IntegrationTest(unittest.TestCase):
 
     def tearDown(self):
         time.sleep(0.1) # Required to ensure the child process has had time to quit
-        pid = self.pid()
 
-        status = ""
-        try:
-            p = psutil.Process(pid)
-            status = p.status()
-        except psutil.NoSuchProcess:
-            pass
-        if status == "running":
-            os.kill(pid, signal.SIGQUIT)
-            self.fail("Command is still running after test, sent SIGQUIT signal to %d" % pid)
+        if self.is_running():
+            self.send_quit()
+            self.fail("Command is still running after test, sent QUIT signal to %d" % self.pid())
 
     def pid(self):
         if is_windows:
@@ -89,12 +82,17 @@ class IntegrationTest(unittest.TestCase):
         self.child.sendline(message)
 
     def send_quit(self):
-        try:
+        if self.is_running():
             os.kill(self.pid(), signal.SIGQUIT)
-        except ProcessLookupError:
-            pass
         if not is_windows:
             self.child.close()
+
+    def is_running(self):
+        try:
+            status = psutil.Process(self.pid()).status()
+        except psutil.NoSuchProcess:
+            return False
+        return status == "running"
 
     def wait(self, code=0, timeout=10):
         try:
