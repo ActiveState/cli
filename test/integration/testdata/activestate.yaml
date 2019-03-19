@@ -1,0 +1,6 @@
+name: cli
+owner: ActiveState
+events:
+  - name: ACTIVATE
+    value: |
+      echo activated

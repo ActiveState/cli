@@ -77,6 +77,10 @@ scripts: &scripts
   - name: test
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+  - name: integration-tests
+    standalone: true
+    value: |
+      python3 -m unittest discover -s test/integration -p '*_test.py'
   - name: clean
     value: |
       go clean

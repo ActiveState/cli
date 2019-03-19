@@ -55,6 +55,9 @@ func ensureConfigExists() {
 			print.Error("Could not remove generated config dir for tests: %v", err)
 			os.Exit(1)
 		}
+	} else if os.Getenv(C.ConfigEnvVarName) != "" {
+		configDirs.LocalPath = os.Getenv(C.ConfigEnvVarName)
+		configDir = configDirs.QueryFolders(configdir.Local)[0]
 	} else {
 		configDir = configDirs.QueryFolders(configdir.Global)[0]
 	}

@@ -138,3 +138,15 @@ func TestActivateFailureAlreadyActive(t *testing.T) {
 	assert.Equal(t, FailAlreadyActive, failure.Type)
 	assert.Equal(t, locale.T("err_already_active"), failure.Error())
 }
+
+func TestEnv(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
+
+	venv := Init()
+	env := venv.GetEnv()
+
+	assert.NotContains(t, env, constants.ProjectEnvVarName)
+}
