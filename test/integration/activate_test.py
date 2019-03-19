@@ -9,7 +9,7 @@ class TestActivate(helpers.IntegrationTest):
     def test_activate(self):
         self.spawn("")
         self.expect("Usage:")
-        self.assertEqual(0, self.wait(), "exits with code 0")
+        self.wait()
 
     def test_activate_project(self):
         path = os.path.join(dir_path, "testdata")
