@@ -2,12 +2,12 @@ package mock
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/stretchr/testify/mock"
+	testifyMock "github.com/stretchr/testify/mock"
 )
 
 // Installer is a testify Mock object.
 type Installer struct {
-	mock.Mock
+	testifyMock.Mock
 }
 
 // NewMockInstaller returns a new testify/mock.Mock Installer.

@@ -1,22 +1,27 @@
 package virtualenvironment
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/ActiveState/cli/internal/projects/mock"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
+	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 )
+
+var rtMock *rtmock.Mock
 
 func setup(t *testing.T) {
 	root, err := environment.GetRootPath()
@@ -25,12 +30,18 @@ func setup(t *testing.T) {
 	err = os.Chdir(filepath.Join(root, "internal", "virtualenvironment", "testdata"))
 	assert.NoError(t, err, "unable to chdir to testdata dir")
 
-	datadir := config.GetDataDir()
-	os.RemoveAll(filepath.Join(datadir, "virtual"))
+	cacheDir, err = ioutil.TempDir("", "venv")
+	require.NoError(t, err)
+	err = os.RemoveAll(cacheDir)
+	require.NoError(t, err)
+
+	rtMock = rtmock.Init()
+	rtMock.MockFullRuntime()
 }
 
 func teardown() {
 	projectfile.Reset()
+	rtMock.Close()
 }
 
 func TestPersist(t *testing.T) {
@@ -74,8 +85,8 @@ func TestActivate(t *testing.T) {
 	setup(t)
 	project := &projectfile.Project{}
 	dat := strings.TrimSpace(`
-		name: valueForName
-		owner: valueForOwner`)
+		name: string
+		owner: string`)
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
@@ -88,27 +99,53 @@ func TestActivate(t *testing.T) {
 	} else {
 		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 	}
+}
 
+func TestActivateRuntimeEnvironment(t *testing.T) {
 	setup(t)
-	project = &projectfile.Project{}
-	dat = strings.TrimSpace(`
-		name: valueForName
-		owner: valueForOwner
-		languages:
-		- name: Python
-		version: 2.7.12`)
+	defer teardown()
+
+	project := &projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: string
+owner: string
+languages:
+    - name: Python3`)
 	yaml.Unmarshal([]byte(dat), &project)
 	project.Persist()
 
+	venv := Init()
+	fail := venv.Activate()
+	require.NoError(t, fail.ToError(), "Should activate")
+}
+
+func TestUpdateRuntimeEnv(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	pjf := &projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: string
+owner: string
+languages:
+    - name: Python3`)
+	yaml.Unmarshal([]byte(dat), &pjf)
+	pjf.Persist()
+	pj := project.Get()
+
+	venv := Init()
+	hash1, fail := venv.getLanguageHash(pj.Languages()[0])
+	require.NoError(t, fail.ToError())
+
+	mock := mock.Init()
+	defer mock.Close()
+	mock.MockGetProjectDiffCommit()
+
 	venv = Init()
-	fail = venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate, even if no packages are defined")
-	}
+	hash2, fail := venv.getLanguageHash(pj.Languages()[0])
+	require.NoError(t, fail.ToError())
+
+	assert.NotEqual(t, hash1, hash2, "Should produce different hashes because the remote commit changed")
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {

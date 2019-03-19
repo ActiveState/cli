@@ -29,6 +29,9 @@ var (
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
 
+// InitRequester is the requester used for downloaded, exported for testing purposes
+var InitRequester headchef.InitRequester = headchef.InitRequest
+
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
@@ -45,7 +48,7 @@ type RuntimeDownload struct {
 
 // InitRuntimeDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
 func InitRuntimeDownload(targetDir string) *RuntimeDownload {
-	return &RuntimeDownload{project.Get(), targetDir, headchef.InitRequest}
+	return &RuntimeDownload{project.Get(), targetDir, InitRequester}
 }
 
 // NewRuntimeDownload creates a new RuntimeDownload using all custom args
