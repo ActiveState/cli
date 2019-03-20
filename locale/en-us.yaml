@@ -704,10 +704,7 @@ scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 unstable_version_warning:
   other: | 
-    You are running an unstable version of the state tool. Please do not use this on production environments or any other
-    sort of environment that is sensitive to destructive changes.
-
-    If you encounter any bugs or issues please report them at {{.V0}}
+    You are running an unstable version of the state tool. Expect breaking changes.
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
