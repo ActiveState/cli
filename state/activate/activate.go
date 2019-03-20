@@ -36,7 +36,7 @@ var (
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_]+)$`
+const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
 // Command holds our main command definition
 var Command = &commands.Command{
