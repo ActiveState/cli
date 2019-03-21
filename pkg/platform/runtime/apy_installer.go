@@ -115,18 +115,21 @@ func (installer *ActivePythonInstaller) locatePythonExecutable(archivePath strin
 	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePython3Executable)
 
 	var executable string
+	var executablePath string
 	if fileutils.FileExists(python3) {
-		executable = python3
+		executable = constants.ActivePython3Executable
+		executablePath = python3
 	} else if fileutils.FileExists(python2) {
-		executable = python2
+		executable = constants.ActivePython2Executable
+		executablePath = python2
 	} else {
 		return "", FailRuntimeInvalid.New("installer_err_runtime_no_executable", archivePath, constants.ActivePython2Executable, constants.ActivePython3Executable)
 	}
 
-	if !fileutils.IsExecutable(executable) {
+	if !fileutils.IsExecutable(executablePath) {
 		return "", FailRuntimeInvalid.New("installer_err_runtime_executable_not_exec", archivePath, executable)
 	}
-	return executable, nil
+	return executablePath, nil
 }
 
 // extractRelocationPrefixes will extract the prefixes that need to be replaced in a relocation
