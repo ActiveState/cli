@@ -111,19 +111,31 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
 func (installer *ActivePythonInstaller) locatePythonExecutable(archivePath string) (string, *failures.Failure) {
-	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePythonExecutable)
-	if !fileutils.FileExists(python3) {
-		return "", FailRuntimeInvalid.New("installer_err_runtime_no_executable", archivePath, constants.ActivePythonExecutable)
-	} else if !fileutils.IsExecutable(python3) {
-		return "", FailRuntimeInvalid.New("installer_err_runtime_executable_not_exec", archivePath, constants.ActivePythonExecutable)
+	python2 := path.Join(installer.InstallDir(), "bin", constants.ActivePython2Executable)
+	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePython3Executable)
+
+	var executable string
+	var executablePath string
+	if fileutils.FileExists(python3) {
+		executable = constants.ActivePython3Executable
+		executablePath = python3
+	} else if fileutils.FileExists(python2) {
+		executable = constants.ActivePython2Executable
+		executablePath = python2
+	} else {
+		return "", FailRuntimeInvalid.New("installer_err_runtime_no_executable", archivePath, constants.ActivePython2Executable, constants.ActivePython3Executable)
 	}
-	return python3, nil
+
+	if !fileutils.IsExecutable(executablePath) {
+		return "", FailRuntimeInvalid.New("installer_err_runtime_executable_not_exec", archivePath, executable)
+	}
+	return executablePath, nil
 }
 
 // extractRelocationPrefixes will extract the prefixes that need to be replaced in a relocation
 // for this installation.
 func (installer *ActivePythonInstaller) extractRelocationPrefixes(runtimeName string, python string) ([]string, *failures.Failure) {
-	prefixBytes, err := exec.Command(python, "-c", "import activestate; print(*activestate.prefixes, sep='\\n')").Output()
+	prefixBytes, err := exec.Command(python, "-c", "import activestate; print('\\n'.join(activestate.prefixes))").Output()
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
 			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))

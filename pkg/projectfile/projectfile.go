@@ -57,12 +57,12 @@ type Project struct {
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
-	Name         string `yaml:"name"`
-	Os           string `yaml:"os"`
-	Version      string `yaml:"version"`
-	Architecture string `yaml:"architecture"`
-	Libc         string `yaml:"libc"`
-	Compiler     string `yaml:"compiler"`
+	Name         string `yaml:"name,omitempty"`
+	Os           string `yaml:"os,omitempty"`
+	Version      string `yaml:"version,omitempty"`
+	Architecture string `yaml:"architecture,omitempty"`
+	Libc         string `yaml:"libc,omitempty"`
+	Compiler     string `yaml:"compiler,omitempty"`
 }
 
 // Build covers the build map, which can go under languages or packages
@@ -72,39 +72,39 @@ type Build map[string]string
 // Language covers the language structure, which goes under Project
 type Language struct {
 	Name        string     `yaml:"name"`
-	Version     string     `yaml:"version"`
-	Constraints Constraint `yaml:"constraints"`
-	Build       Build      `yaml:"build"`
-	Packages    []Package  `yaml:"packages"`
+	Version     string     `yaml:"version,omitempty"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
+	Build       Build      `yaml:"build,omitempty"`
+	Packages    []Package  `yaml:"packages,omitempty"`
 }
 
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
-	Platform    string `yaml:"platform"`
-	Environment string `yaml:"environment"`
+	Platform    string `yaml:"platform,omitempty"`
+	Environment string `yaml:"environment,omitempty"`
 }
 
 // Package covers the package structure, which goes under the language struct
 type Package struct {
 	Name        string     `yaml:"name"`
 	Version     string     `yaml:"version"`
-	Constraints Constraint `yaml:"constraints"`
-	Build       Build      `yaml:"build"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
+	Build       Build      `yaml:"build,omitempty"`
 }
 
 // Event covers the event structure, which goes under Project
 type Event struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
-	Constraints Constraint `yaml:"constraints"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
 }
 
 // Script covers the script structure, which goes under Project
 type Script struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
-	Standalone  bool       `yaml:"standalone"`
-	Constraints Constraint `yaml:"constraints"`
+	Standalone  bool       `yaml:"standalone,omitempty"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
 }
 
 var persistentProject *Project

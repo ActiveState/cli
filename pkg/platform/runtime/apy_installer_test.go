@@ -136,7 +136,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable()
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
-	suite.Equal(locale.Tr("installer_err_runtime_no_executable", archivePath, constants.ActivePythonExecutable), failure.Error())
+	suite.Equal(locale.Tr("installer_err_runtime_no_executable", archivePath, constants.ActivePython2Executable, constants.ActivePython3Executable), failure.Error())
 	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
@@ -147,7 +147,7 @@ func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
-	suite.Equal(locale.Tr("installer_err_runtime_executable_not_exec", archivePath, constants.ActivePythonExecutable), failure.Error())
+	suite.Equal(locale.Tr("installer_err_runtime_executable_not_exec", archivePath, constants.ActivePython3Executable), failure.Error())
 	suite.False(fileutils.DirExists(apyInstaller.InstallDir()), "install-dir still exists")
 }
 
@@ -173,7 +173,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 		"expected INSTALLDIR not to exist in install-dir")
 
 	// assert files in installation get relocated
-	pathToPython3 := path.Join(apyInstaller.InstallDir(), "bin", constants.ActivePythonExecutable)
+	pathToPython3 := path.Join(apyInstaller.InstallDir(), "bin", constants.ActivePython3Executable)
 	suite.Require().True(fileutils.FileExists(pathToPython3), "python3 exists")
 	suite.Require().True(
 		fileutils.FileExists(path.Join(apyInstaller.InstallDir(), "bin", "python")),
