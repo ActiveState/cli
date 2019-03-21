@@ -83,7 +83,7 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})
 
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { Command.Execute() }, "")
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { Command.Execute() }, "")
 
 	suite.Equal(true, true, "Execute didn't panic")
 	suite.NoError(failures.Handled(), "No failure occurred")
@@ -181,7 +181,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 
 func (suite *ActivateTestSuite) executeWithInput(namespace string, input ...interface{}) *failures.Failure {
 	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
 	return fail
 }
 

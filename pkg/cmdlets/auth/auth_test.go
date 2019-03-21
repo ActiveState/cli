@@ -66,7 +66,7 @@ func TestExecuteNoArgs(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// prompted for username and password only
 		// 10ms delay between writes to stdin
 		"baduser",
@@ -117,7 +117,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	secretsapiMock.Register("GET", "/keypair")
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password)
 
@@ -149,7 +149,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password)
 
@@ -195,7 +195,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// prompted for username and password
 		user.Username,
 		user.Password,
@@ -244,7 +244,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password,
 		user.Password, // confirmation
@@ -348,7 +348,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	var execErr error
 	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
 	// input for the specific field
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
+	osutil.WrapStdinWithDelay(100*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "\x04")
 
@@ -357,7 +357,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
+	osutil.WrapStdinWithDelay(100*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "foo")
 
@@ -400,7 +400,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	var execErr error
 	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
 	// input for the specific field
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
+	osutil.WrapStdinWithDelay(100*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "\x04")
 
@@ -409,7 +409,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(10*time.Millisecond,
+	osutil.WrapStdinWithDelay(100*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "foo")
 
@@ -452,7 +452,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() {
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() {
 		authlet.RequireAuthentication("")
 	}, "", user.Username, user.Password)
 
@@ -471,7 +471,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() {
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() {
 		fail = authlet.RequireAuthentication("")
 	}, "", user.Username, user.Password)
 
