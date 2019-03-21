@@ -61,7 +61,7 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.secretsapiMock.Register("GET", "/keypair")
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
 		"testuser", "foo")
 
@@ -90,7 +90,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
 		"testuser", "bar")
 
@@ -120,7 +120,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
 		"testuser", "bar",
 		// passphrase mismatch, prompt for old passphrase
@@ -154,7 +154,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
 		"testuser", "bar",
 		// passphrase mismatch, prompt for old passphrase
@@ -191,7 +191,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
 		"testuser", "newpassword",
 		// passphrase mismatch, prompt for old passphrase
@@ -223,7 +223,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 
 	var execErr error
 	execOut, execOutErr := osutil.CaptureStdout(func() {
-		osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+		osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 			// login
 			"testuser", "newpassword",
 			// passphrase mismatch, prompt for old passphrase

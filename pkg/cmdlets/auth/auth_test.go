@@ -195,7 +195,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(10*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
 		// prompted for username and password
 		user.Username,
 		user.Password,
