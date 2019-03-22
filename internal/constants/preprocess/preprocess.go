@@ -18,7 +18,12 @@ import (
 var Constants = map[string]func() string{}
 
 func init() {
-	Constants["BranchName"] = func() string { return getCmdOutput("git rev-parse --abbrev-ref HEAD") }
+	Constants["BranchName"] = func() string {
+		if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
+			return branch
+		}
+		return getCmdOutput("git rev-parse --abbrev-ref HEAD")
+	}
 	Constants["BuildNumber"] = func() string {
 		out := getCmdOutput("git rev-list --abbrev-commit HEAD")
 		return strconv.Itoa(len(strings.Split(out, "\n")))
