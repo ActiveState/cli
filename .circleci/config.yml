@@ -65,7 +65,7 @@ jobs:
           name: Prepare Code-Climate Integration
           command: |
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
-            chmod +x ./cc-test-reporter
+            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
@@ -97,7 +97,7 @@ jobs:
           name: Prepare Code-Climate Integration
           command: |
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
-            chmod +x ./cc-test-reporter
+            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
