@@ -40,7 +40,7 @@ defaults:
       run:
         name: Run integration tests
         command: |
-          pushd tests/integration
+          pushd test/integration
           pip install -r requirements.txt
           state run integration-tests
           popd
