@@ -28,16 +28,18 @@ defaults:
       run:
         name: Build the CLI
         command: |
-          $GOBIN/packr
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-          echo "Building for internal use"
-          APIENV=prod state run build
-
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
             APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
           fi
+
+          echo "Building for internal use"
+          APIENV=prod state run build
+    runIntegrationTests: &runIntegrationTests
+      run:
+        name: Run integration tests
+        command: state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -73,6 +75,7 @@ jobs:
           command: ~/.local/bin/state auth $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
+      - <<: *runIntegrationTests
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
@@ -109,6 +112,8 @@ jobs:
             state run test
       - <<: *buildCli
       - <<: *deployBits
+      # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
+      #- <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
 workflows:
