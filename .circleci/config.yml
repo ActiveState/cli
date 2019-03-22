@@ -39,7 +39,11 @@ defaults:
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
-        command: state run integration-tests
+        command: |
+          pushd tests/integration
+          pip install -r requirements.txt
+          state run integration-tests
+          popd
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -61,13 +65,13 @@ jobs:
       SHELL: bash
     docker:
       - image: circleci/golang:1.10
-      - image: circleci/python:3.7
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
       - run:
-          name: Prepare Code-Climate Integration
+          name: Install Dependencies
           command: |
+            apt-get install python3 python3-pip
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
@@ -93,14 +97,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Golang
+          name: Install Dependencies
           command: |
             cd /private/tmp
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
-      - run:
-          name: Prepare Code-Climate Integration
-          command: |
+
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
