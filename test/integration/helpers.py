@@ -7,6 +7,7 @@ import warnings
 import pexpect
 from pexpect.popen_spawn import PopenSpawn
 import psutil
+import shutil
 
 is_windows = os.name == 'nt'
 
@@ -55,6 +56,11 @@ class IntegrationTest(unittest.TestCase):
     def clear_config(self):
         self.set_config(tempfile.mkdtemp())
 
+    def clear_cache(self):
+        cache_dir = os.path.expanduser("~/.cache/activestate/cli")
+        if os.path.isdir(cache_dir):
+            shutil.rmtree(cache_dir)
+
     def set_config(self, config_dir):
         self.config_dir = config_dir
         self.env = os.environ.copy()
@@ -68,6 +74,16 @@ class IntegrationTest(unittest.TestCase):
     def expect(self, pattern, timeout=2):
         try:
             idx = self.child.expect(pattern, timeout=timeout)
+        except pexpect.EOF:
+            self.send_quit()
+            self.expect_failure("Reached EOF", pattern)
+        except pexpect.TIMEOUT:
+            self.send_quit()
+            raise self.expect_failure("Reached timeout", pattern)
+
+    def expect_exact(self, pattern, timeout=2):
+        try:
+            idx = self.child.expect_exact(pattern, timeout=timeout)
         except pexpect.EOF:
             self.send_quit()
             self.expect_failure("Reached EOF", pattern)
@@ -93,6 +109,10 @@ class IntegrationTest(unittest.TestCase):
         except psutil.NoSuchProcess:
             return False
         return status == "running"
+
+    def wait_ready(self, timeout=10):
+        self.send("echo wait_ready_$HOME")
+        self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
 
     def wait(self, code=0, timeout=10):
         try:
