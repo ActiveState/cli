@@ -61,6 +61,7 @@ jobs:
       SHELL: bash
     docker:
       - image: circleci/golang:1.10
+      - image: circleci/python:3.7
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
