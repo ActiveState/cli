@@ -19,10 +19,10 @@ defaults:
       run:
         name: Run unit tests
         command: |
-          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=coverage.tmp `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
+          /tmp/cc-test-reporter before-build
+          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          echo 'mode: atomic' > coverage.txt && tail -n +2 coverage.tmp >> coverage.txt
-          bash <(curl -s https://codecov.io/bash) -t a05a9f2a-2365-48a7-88dc-b62c6de254b7
+          /tmp/cc-test-reporter after-build --coverage-input-type gocov --exit-code $?
           ~/.local/bin/state auth $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run:
@@ -61,6 +61,11 @@ jobs:
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
+      - run:
+          name: Prepare Code-Climate Integration
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
+            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
@@ -88,6 +93,11 @@ jobs:
             cd /private/tmp
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
+      - run:
+          name: Prepare Code-Climate Integration
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
+            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
