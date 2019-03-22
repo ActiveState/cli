@@ -42,8 +42,8 @@ defaults:
         command: |
           pushd test/integration
           pip3 install -r requirements.txt
-          state run integration-tests
           popd
+          state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
