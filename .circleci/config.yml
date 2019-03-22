@@ -30,12 +30,13 @@ defaults:
         command: |
           $GOBIN/packr
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$BRANCH" == "unstable" ]]; then
+
+          echo "Building for internal use"
+          APIENV=prod state run build
+
+          if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            APIENV=prod state run build-external
-          else
-            echo "Building for internal use"
-            APIENV=prod state run build
+            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
           fi
     deployBits: &deployBits
       run:
