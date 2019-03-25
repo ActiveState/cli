@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListInvitationsReader is a Reader for the ListInvitations structure.
@@ -68,7 +68,7 @@ func NewListInvitationsOK() *ListInvitationsOK {
 Pending Invitations
 */
 type ListInvitationsOK struct {
-	Payload []*models.Invitation
+	Payload []*mono_models.Invitation
 }
 
 func (o *ListInvitationsOK) Error() string {
@@ -95,7 +95,7 @@ func NewListInvitationsBadRequest() *ListInvitationsBadRequest {
 Bad Request
 */
 type ListInvitationsBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListInvitationsBadRequest) Error() string {
@@ -104,7 +104,7 @@ func (o *ListInvitationsBadRequest) Error() string {
 
 func (o *ListInvitationsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +124,7 @@ func NewListInvitationsForbidden() *ListInvitationsForbidden {
 Forbidden
 */
 type ListInvitationsForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListInvitationsForbidden) Error() string {
@@ -133,7 +133,7 @@ func (o *ListInvitationsForbidden) Error() string {
 
 func (o *ListInvitationsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +153,7 @@ func NewListInvitationsInternalServerError() *ListInvitationsInternalServerError
 Server Error
 */
 type ListInvitationsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListInvitationsInternalServerError) Error() string {
@@ -162,7 +162,7 @@ func (o *ListInvitationsInternalServerError) Error() string {
 
 func (o *ListInvitationsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

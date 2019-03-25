@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddCommitParams creates a new AddCommitParams object
@@ -64,7 +64,7 @@ for the add commit operation typically these are written to a http.Request
 type AddCommitParams struct {
 
 	/*Commit*/
-	Commit *models.CommitEditable
+	Commit *mono_models.CommitEditable
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,13 +105,13 @@ func (o *AddCommitParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithCommit adds the commit to the add commit params
-func (o *AddCommitParams) WithCommit(commit *models.CommitEditable) *AddCommitParams {
+func (o *AddCommitParams) WithCommit(commit *mono_models.CommitEditable) *AddCommitParams {
 	o.SetCommit(commit)
 	return o
 }
 
 // SetCommit adds the commit to the add commit params
-func (o *AddCommitParams) SetCommit(commit *models.CommitEditable) {
+func (o *AddCommitParams) SetCommit(commit *mono_models.CommitEditable) {
 	o.Commit = commit
 }
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetComponentReader is a Reader for the GetComponent structure.
@@ -54,7 +54,7 @@ func NewGetComponentOK() *GetComponentOK {
 Component Record
 */
 type GetComponentOK struct {
-	Payload *models.Component
+	Payload *mono_models.Component
 }
 
 func (o *GetComponentOK) Error() string {
@@ -63,7 +63,7 @@ func (o *GetComponentOK) Error() string {
 
 func (o *GetComponentOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Component)
+	o.Payload = new(mono_models.Component)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewGetComponentNotFound() *GetComponentNotFound {
 Not Found
 */
 type GetComponentNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetComponentNotFound) Error() string {
@@ -92,7 +92,7 @@ func (o *GetComponentNotFound) Error() string {
 
 func (o *GetComponentNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

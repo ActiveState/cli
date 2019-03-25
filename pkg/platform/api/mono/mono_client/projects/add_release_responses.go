@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddReleaseReader is a Reader for the AddRelease structure.
@@ -82,7 +82,7 @@ func NewAddReleaseOK() *AddReleaseOK {
 Release Added
 */
 type AddReleaseOK struct {
-	Payload *models.Release
+	Payload *mono_models.Release
 }
 
 func (o *AddReleaseOK) Error() string {
@@ -91,7 +91,7 @@ func (o *AddReleaseOK) Error() string {
 
 func (o *AddReleaseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Release)
+	o.Payload = new(mono_models.Release)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -111,7 +111,7 @@ func NewAddReleaseBadRequest() *AddReleaseBadRequest {
 Bad Request
 */
 type AddReleaseBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddReleaseBadRequest) Error() string {
@@ -120,7 +120,7 @@ func (o *AddReleaseBadRequest) Error() string {
 
 func (o *AddReleaseBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -140,7 +140,7 @@ func NewAddReleaseForbidden() *AddReleaseForbidden {
 Unauthorized
 */
 type AddReleaseForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddReleaseForbidden) Error() string {
@@ -149,7 +149,7 @@ func (o *AddReleaseForbidden) Error() string {
 
 func (o *AddReleaseForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -169,7 +169,7 @@ func NewAddReleaseNotFound() *AddReleaseNotFound {
 Not Found
 */
 type AddReleaseNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddReleaseNotFound) Error() string {
@@ -178,7 +178,7 @@ func (o *AddReleaseNotFound) Error() string {
 
 func (o *AddReleaseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -198,7 +198,7 @@ func NewAddReleaseConflict() *AddReleaseConflict {
 Conflict
 */
 type AddReleaseConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddReleaseConflict) Error() string {
@@ -207,7 +207,7 @@ func (o *AddReleaseConflict) Error() string {
 
 func (o *AddReleaseConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -227,7 +227,7 @@ func NewAddReleaseInternalServerError() *AddReleaseInternalServerError {
 Server Error
 */
 type AddReleaseInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddReleaseInternalServerError) Error() string {
@@ -236,7 +236,7 @@ func (o *AddReleaseInternalServerError) Error() string {
 
 func (o *AddReleaseInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

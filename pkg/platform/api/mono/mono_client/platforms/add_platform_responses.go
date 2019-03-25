@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddPlatformReader is a Reader for the AddPlatform structure.
@@ -75,7 +75,7 @@ func NewAddPlatformOK() *AddPlatformOK {
 Platform Created
 */
 type AddPlatformOK struct {
-	Payload *models.Platform
+	Payload *mono_models.Platform
 }
 
 func (o *AddPlatformOK) Error() string {
@@ -84,7 +84,7 @@ func (o *AddPlatformOK) Error() string {
 
 func (o *AddPlatformOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Platform)
+	o.Payload = new(mono_models.Platform)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewAddPlatformBadRequest() *AddPlatformBadRequest {
 Bad Request
 */
 type AddPlatformBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddPlatformBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *AddPlatformBadRequest) Error() string {
 
 func (o *AddPlatformBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewAddPlatformForbidden() *AddPlatformForbidden {
 Forbidden
 */
 type AddPlatformForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddPlatformForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *AddPlatformForbidden) Error() string {
 
 func (o *AddPlatformForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewAddPlatformConflict() *AddPlatformConflict {
 Conflict
 */
 type AddPlatformConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddPlatformConflict) Error() string {
@@ -171,7 +171,7 @@ func (o *AddPlatformConflict) Error() string {
 
 func (o *AddPlatformConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewAddPlatformInternalServerError() *AddPlatformInternalServerError {
 Server Error
 */
 type AddPlatformInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddPlatformInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *AddPlatformInternalServerError) Error() string {
 
 func (o *AddPlatformInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

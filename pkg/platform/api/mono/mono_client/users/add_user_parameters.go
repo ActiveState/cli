@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddUserParams creates a new AddUserParams object
@@ -67,7 +67,7 @@ type AddUserParams struct {
 	  User to add
 
 	*/
-	User *models.UserEditable
+	User *mono_models.UserEditable
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddUserParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithUser adds the user to the add user params
-func (o *AddUserParams) WithUser(user *models.UserEditable) *AddUserParams {
+func (o *AddUserParams) WithUser(user *mono_models.UserEditable) *AddUserParams {
 	o.SetUser(user)
 	return o
 }
 
 // SetUser adds the user to the add user params
-func (o *AddUserParams) SetUser(user *models.UserEditable) {
+func (o *AddUserParams) SetUser(user *mono_models.UserEditable) {
 	o.User = user
 }
 

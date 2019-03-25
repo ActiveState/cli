@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditMemberReader is a Reader for the EditMember structure.
@@ -75,7 +75,7 @@ func NewEditMemberOK() *EditMemberOK {
 Membership Roster
 */
 type EditMemberOK struct {
-	Payload []*models.Member
+	Payload []*mono_models.Member
 }
 
 func (o *EditMemberOK) Error() string {
@@ -102,7 +102,7 @@ func NewEditMemberBadRequest() *EditMemberBadRequest {
 Bad Request
 */
 type EditMemberBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditMemberBadRequest) Error() string {
@@ -111,7 +111,7 @@ func (o *EditMemberBadRequest) Error() string {
 
 func (o *EditMemberBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -131,7 +131,7 @@ func NewEditMemberForbidden() *EditMemberForbidden {
 Forbidden
 */
 type EditMemberForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditMemberForbidden) Error() string {
@@ -140,7 +140,7 @@ func (o *EditMemberForbidden) Error() string {
 
 func (o *EditMemberForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -160,7 +160,7 @@ func NewEditMemberNotFound() *EditMemberNotFound {
 Not Found
 */
 type EditMemberNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditMemberNotFound) Error() string {
@@ -169,7 +169,7 @@ func (o *EditMemberNotFound) Error() string {
 
 func (o *EditMemberNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -189,7 +189,7 @@ func NewEditMemberInternalServerError() *EditMemberInternalServerError {
 Server Error
 */
 type EditMemberInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditMemberInternalServerError) Error() string {
@@ -198,7 +198,7 @@ func (o *EditMemberInternalServerError) Error() string {
 
 func (o *EditMemberInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

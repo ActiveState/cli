@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListSessionsReader is a Reader for the ListSessions structure.
@@ -47,7 +47,7 @@ func NewListSessionsOK() *ListSessionsOK {
 Success
 */
 type ListSessionsOK struct {
-	Payload []*models.Session
+	Payload []*mono_models.Session
 }
 
 func (o *ListSessionsOK) Error() string {

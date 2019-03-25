@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddPlatformParams creates a new AddPlatformParams object
@@ -67,7 +67,7 @@ type AddPlatformParams struct {
 	  Platform to add
 
 	*/
-	Platform *models.Platform
+	Platform *mono_models.Platform
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddPlatformParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithPlatform adds the platform to the add platform params
-func (o *AddPlatformParams) WithPlatform(platform *models.Platform) *AddPlatformParams {
+func (o *AddPlatformParams) WithPlatform(platform *mono_models.Platform) *AddPlatformParams {
 	o.SetPlatform(platform)
 	return o
 }
 
 // SetPlatform adds the platform to the add platform params
-func (o *AddPlatformParams) SetPlatform(platform *models.Platform) {
+func (o *AddPlatformParams) SetPlatform(platform *mono_models.Platform) {
 	o.Platform = platform
 }
 

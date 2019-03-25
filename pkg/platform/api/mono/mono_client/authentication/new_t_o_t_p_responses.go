@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewTOTPReader is a Reader for the NewTOTP structure.
@@ -54,7 +54,7 @@ func NewNewTOTPOK() *NewTOTPOK {
 New TOTP Key
 */
 type NewTOTPOK struct {
-	Payload *models.TOTPKey
+	Payload *mono_models.TOTPKey
 }
 
 func (o *NewTOTPOK) Error() string {
@@ -63,7 +63,7 @@ func (o *NewTOTPOK) Error() string {
 
 func (o *NewTOTPOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.TOTPKey)
+	o.Payload = new(mono_models.TOTPKey)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewNewTOTPBadRequest() *NewTOTPBadRequest {
 Bad Request
 */
 type NewTOTPBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *NewTOTPBadRequest) Error() string {
@@ -92,7 +92,7 @@ func (o *NewTOTPBadRequest) Error() string {
 
 func (o *NewTOTPBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

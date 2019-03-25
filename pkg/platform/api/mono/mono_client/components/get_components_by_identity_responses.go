@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetComponentsByIdentityReader is a Reader for the GetComponentsByIdentity structure.
@@ -47,7 +47,7 @@ func NewGetComponentsByIdentityOK() *GetComponentsByIdentityOK {
 Success
 */
 type GetComponentsByIdentityOK struct {
-	Payload []*models.Component
+	Payload []*mono_models.Component
 }
 
 func (o *GetComponentsByIdentityOK) Error() string {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddIngredientReader is a Reader for the AddIngredient structure.
@@ -68,7 +68,7 @@ func NewAddIngredientOK() *AddIngredientOK {
 Ingredient Created
 */
 type AddIngredientOK struct {
-	Payload *models.Ingredient
+	Payload *mono_models.Ingredient
 }
 
 func (o *AddIngredientOK) Error() string {
@@ -77,7 +77,7 @@ func (o *AddIngredientOK) Error() string {
 
 func (o *AddIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Ingredient)
+	o.Payload = new(mono_models.Ingredient)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewAddIngredientBadRequest() *AddIngredientBadRequest {
 Bad Request
 */
 type AddIngredientBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddIngredientBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *AddIngredientBadRequest) Error() string {
 
 func (o *AddIngredientBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewAddIngredientForbidden() *AddIngredientForbidden {
 Forbidden
 */
 type AddIngredientForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddIngredientForbidden) Error() string {
@@ -135,7 +135,7 @@ func (o *AddIngredientForbidden) Error() string {
 
 func (o *AddIngredientForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewAddIngredientConflict() *AddIngredientConflict {
 Conflict
 */
 type AddIngredientConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddIngredientConflict) Error() string {
@@ -164,7 +164,7 @@ func (o *AddIngredientConflict) Error() string {
 
 func (o *AddIngredientConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

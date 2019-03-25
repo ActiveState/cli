@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditReleaseParams creates a new EditReleaseParams object
@@ -74,7 +74,7 @@ type EditReleaseParams struct {
 	*/
 	ProjectName string
 	/*Release*/
-	Release *models.Release
+	Release *mono_models.Release
 	/*ReleaseID
 	  release to fetch
 
@@ -142,13 +142,13 @@ func (o *EditReleaseParams) SetProjectName(projectName string) {
 }
 
 // WithRelease adds the release to the edit release params
-func (o *EditReleaseParams) WithRelease(release *models.Release) *EditReleaseParams {
+func (o *EditReleaseParams) WithRelease(release *mono_models.Release) *EditReleaseParams {
 	o.SetRelease(release)
 	return o
 }
 
 // SetRelease adds the release to the edit release params
-func (o *EditReleaseParams) SetRelease(release *models.Release) {
+func (o *EditReleaseParams) SetRelease(release *mono_models.Release) {
 	o.Release = release
 }
 

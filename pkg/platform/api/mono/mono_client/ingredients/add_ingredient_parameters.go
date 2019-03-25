@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddIngredientParams creates a new AddIngredientParams object
@@ -67,7 +67,7 @@ type AddIngredientParams struct {
 	  Ingredient to add
 
 	*/
-	Ingredient *models.Ingredient
+	Ingredient *mono_models.Ingredient
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddIngredientParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithIngredient adds the ingredient to the add ingredient params
-func (o *AddIngredientParams) WithIngredient(ingredient *models.Ingredient) *AddIngredientParams {
+func (o *AddIngredientParams) WithIngredient(ingredient *mono_models.Ingredient) *AddIngredientParams {
 	o.SetIngredient(ingredient)
 	return o
 }
 
 // SetIngredient adds the ingredient to the add ingredient params
-func (o *AddIngredientParams) SetIngredient(ingredient *models.Ingredient) {
+func (o *AddIngredientParams) SetIngredient(ingredient *mono_models.Ingredient) {
 	o.Ingredient = ingredient
 }
 

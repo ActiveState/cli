@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListComponentsReader is a Reader for the ListComponents structure.
@@ -47,7 +47,7 @@ func NewListComponentsOK() *ListComponentsOK {
 Success
 */
 type ListComponentsOK struct {
-	Payload []*models.Component
+	Payload []*mono_models.Component
 }
 
 func (o *ListComponentsOK) Error() string {

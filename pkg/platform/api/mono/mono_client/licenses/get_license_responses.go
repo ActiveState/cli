@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetLicenseReader is a Reader for the GetLicense structure.
@@ -54,7 +54,7 @@ func NewGetLicenseOK() *GetLicenseOK {
 License Record
 */
 type GetLicenseOK struct {
-	Payload *models.License
+	Payload *mono_models.License
 }
 
 func (o *GetLicenseOK) Error() string {
@@ -63,7 +63,7 @@ func (o *GetLicenseOK) Error() string {
 
 func (o *GetLicenseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.License)
+	o.Payload = new(mono_models.License)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewGetLicenseNotFound() *GetLicenseNotFound {
 Not Found
 */
 type GetLicenseNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetLicenseNotFound) Error() string {
@@ -92,7 +92,7 @@ func (o *GetLicenseNotFound) Error() string {
 
 func (o *GetLicenseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListScansReader is a Reader for the ListScans structure.
@@ -47,7 +47,7 @@ func NewListScansOK() *ListScansOK {
 Success
 */
 type ListScansOK struct {
-	Payload []*models.Scan
+	Payload []*mono_models.Scan
 }
 
 func (o *ListScansOK) Error() string {

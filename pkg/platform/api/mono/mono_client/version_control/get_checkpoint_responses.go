@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetCheckpointReader is a Reader for the GetCheckpoint structure.
@@ -54,7 +54,7 @@ func NewGetCheckpointOK() *GetCheckpointOK {
 Get the checkpoint for the given commit
 */
 type GetCheckpointOK struct {
-	Payload []*models.Checkpoint
+	Payload []*mono_models.Checkpoint
 }
 
 func (o *GetCheckpointOK) Error() string {
@@ -81,7 +81,7 @@ func NewGetCheckpointNotFound() *GetCheckpointNotFound {
 checkpoint was not found
 */
 type GetCheckpointNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetCheckpointNotFound) Error() string {
@@ -90,7 +90,7 @@ func (o *GetCheckpointNotFound) Error() string {
 
 func (o *GetCheckpointNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

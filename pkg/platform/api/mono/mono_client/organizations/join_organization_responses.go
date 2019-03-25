@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // JoinOrganizationReader is a Reader for the JoinOrganization structure.
@@ -76,7 +76,7 @@ func NewJoinOrganizationOK() *JoinOrganizationOK {
 Membership Roster
 */
 type JoinOrganizationOK struct {
-	Payload []*models.Member
+	Payload []*mono_models.Member
 }
 
 func (o *JoinOrganizationOK) Error() string {
@@ -103,7 +103,7 @@ func NewJoinOrganizationBadRequest() *JoinOrganizationBadRequest {
 Bad Request
 */
 type JoinOrganizationBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *JoinOrganizationBadRequest) Error() string {
@@ -112,7 +112,7 @@ func (o *JoinOrganizationBadRequest) Error() string {
 
 func (o *JoinOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -132,7 +132,7 @@ func NewJoinOrganizationForbidden() *JoinOrganizationForbidden {
 Forbidden
 */
 type JoinOrganizationForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *JoinOrganizationForbidden) Error() string {
@@ -141,7 +141,7 @@ func (o *JoinOrganizationForbidden) Error() string {
 
 func (o *JoinOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -161,7 +161,7 @@ func NewJoinOrganizationNotFound() *JoinOrganizationNotFound {
 Not Found
 */
 type JoinOrganizationNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *JoinOrganizationNotFound) Error() string {
@@ -170,7 +170,7 @@ func (o *JoinOrganizationNotFound) Error() string {
 
 func (o *JoinOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -190,7 +190,7 @@ func NewJoinOrganizationInternalServerError() *JoinOrganizationInternalServerErr
 Server Error
 */
 type JoinOrganizationInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *JoinOrganizationInternalServerError) Error() string {
@@ -199,7 +199,7 @@ func (o *JoinOrganizationInternalServerError) Error() string {
 
 func (o *JoinOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationLimitsReader is a Reader for the GetOrganizationLimits structure.
@@ -68,7 +68,7 @@ func NewGetOrganizationLimitsOK() *GetOrganizationLimitsOK {
 Success
 */
 type GetOrganizationLimitsOK struct {
-	Payload *models.Limits
+	Payload *mono_models.Limits
 }
 
 func (o *GetOrganizationLimitsOK) Error() string {
@@ -77,7 +77,7 @@ func (o *GetOrganizationLimitsOK) Error() string {
 
 func (o *GetOrganizationLimitsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Limits)
+	o.Payload = new(mono_models.Limits)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewGetOrganizationLimitsForbidden() *GetOrganizationLimitsForbidden {
 Forbidden
 */
 type GetOrganizationLimitsForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationLimitsForbidden) Error() string {
@@ -106,7 +106,7 @@ func (o *GetOrganizationLimitsForbidden) Error() string {
 
 func (o *GetOrganizationLimitsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewGetOrganizationLimitsNotFound() *GetOrganizationLimitsNotFound {
 Not Found
 */
 type GetOrganizationLimitsNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationLimitsNotFound) Error() string {
@@ -135,7 +135,7 @@ func (o *GetOrganizationLimitsNotFound) Error() string {
 
 func (o *GetOrganizationLimitsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewGetOrganizationLimitsInternalServerError() *GetOrganizationLimitsInterna
 Server Error
 */
 type GetOrganizationLimitsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationLimitsInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *GetOrganizationLimitsInternalServerError) Error() string {
 
 func (o *GetOrganizationLimitsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

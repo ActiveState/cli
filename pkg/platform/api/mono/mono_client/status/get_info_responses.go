@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetInfoReader is a Reader for the GetInfo structure.
@@ -61,7 +61,7 @@ func NewGetInfoOK() *GetInfoOK {
 Success
 */
 type GetInfoOK struct {
-	Payload *models.SysInfo
+	Payload *mono_models.SysInfo
 }
 
 func (o *GetInfoOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetInfoOK) Error() string {
 
 func (o *GetInfoOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.SysInfo)
+	o.Payload = new(mono_models.SysInfo)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewGetInfoUnauthorized() *GetInfoUnauthorized {
 Unauthenticated
 */
 type GetInfoUnauthorized struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInfoUnauthorized) Error() string {
@@ -99,7 +99,7 @@ func (o *GetInfoUnauthorized) Error() string {
 
 func (o *GetInfoUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewGetInfoForbidden() *GetInfoForbidden {
 Unauthorized
 */
 type GetInfoForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInfoForbidden) Error() string {
@@ -128,7 +128,7 @@ func (o *GetInfoForbidden) Error() string {
 
 func (o *GetInfoForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

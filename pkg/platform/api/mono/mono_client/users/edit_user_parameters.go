@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditUserParams creates a new EditUserParams object
@@ -64,7 +64,7 @@ for the edit user operation typically these are written to a http.Request
 type EditUserParams struct {
 
 	/*User*/
-	User *models.UserEditable
+	User *mono_models.UserEditable
 	/*Username
 	  username of desired User
 
@@ -110,13 +110,13 @@ func (o *EditUserParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithUser adds the user to the edit user params
-func (o *EditUserParams) WithUser(user *models.UserEditable) *EditUserParams {
+func (o *EditUserParams) WithUser(user *mono_models.UserEditable) *EditUserParams {
 	o.SetUser(user)
 	return o
 }
 
 // SetUser adds the user to the edit user params
-func (o *EditUserParams) SetUser(user *models.UserEditable) {
+func (o *EditUserParams) SetUser(user *mono_models.UserEditable) {
 	o.User = user
 }
 

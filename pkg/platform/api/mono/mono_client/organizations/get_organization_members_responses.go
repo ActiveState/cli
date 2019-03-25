@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationMembersReader is a Reader for the GetOrganizationMembers structure.
@@ -68,7 +68,7 @@ func NewGetOrganizationMembersOK() *GetOrganizationMembersOK {
 Success
 */
 type GetOrganizationMembersOK struct {
-	Payload []*models.Member
+	Payload []*mono_models.Member
 }
 
 func (o *GetOrganizationMembersOK) Error() string {
@@ -95,7 +95,7 @@ func NewGetOrganizationMembersForbidden() *GetOrganizationMembersForbidden {
 Forbidden
 */
 type GetOrganizationMembersForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationMembersForbidden) Error() string {
@@ -104,7 +104,7 @@ func (o *GetOrganizationMembersForbidden) Error() string {
 
 func (o *GetOrganizationMembersForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +124,7 @@ func NewGetOrganizationMembersNotFound() *GetOrganizationMembersNotFound {
 Not Found
 */
 type GetOrganizationMembersNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationMembersNotFound) Error() string {
@@ -133,7 +133,7 @@ func (o *GetOrganizationMembersNotFound) Error() string {
 
 func (o *GetOrganizationMembersNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +153,7 @@ func NewGetOrganizationMembersInternalServerError() *GetOrganizationMembersInter
 Server Error
 */
 type GetOrganizationMembersInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationMembersInternalServerError) Error() string {
@@ -162,7 +162,7 @@ func (o *GetOrganizationMembersInternalServerError) Error() string {
 
 func (o *GetOrganizationMembersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

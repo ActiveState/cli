@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetEmailVerificationLinkReader is a Reader for the GetEmailVerificationLink structure.
@@ -102,7 +102,7 @@ func NewGetEmailVerificationLinkBadRequest() *GetEmailVerificationLinkBadRequest
 Email is already verified
 */
 type GetEmailVerificationLinkBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailVerificationLinkBadRequest) Error() string {
@@ -111,7 +111,7 @@ func (o *GetEmailVerificationLinkBadRequest) Error() string {
 
 func (o *GetEmailVerificationLinkBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -131,7 +131,7 @@ func NewGetEmailVerificationLinkForbidden() *GetEmailVerificationLinkForbidden {
 Forbidden
 */
 type GetEmailVerificationLinkForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailVerificationLinkForbidden) Error() string {
@@ -140,7 +140,7 @@ func (o *GetEmailVerificationLinkForbidden) Error() string {
 
 func (o *GetEmailVerificationLinkForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -160,7 +160,7 @@ func NewGetEmailVerificationLinkNotFound() *GetEmailVerificationLinkNotFound {
 Email not found
 */
 type GetEmailVerificationLinkNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailVerificationLinkNotFound) Error() string {
@@ -169,7 +169,7 @@ func (o *GetEmailVerificationLinkNotFound) Error() string {
 
 func (o *GetEmailVerificationLinkNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -189,7 +189,7 @@ func NewGetEmailVerificationLinkInternalServerError() *GetEmailVerificationLinkI
 Server Error
 */
 type GetEmailVerificationLinkInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailVerificationLinkInternalServerError) Error() string {
@@ -198,7 +198,7 @@ func (o *GetEmailVerificationLinkInternalServerError) Error() string {
 
 func (o *GetEmailVerificationLinkInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // InviteOrganizationReader is a Reader for the InviteOrganization structure.
@@ -76,7 +76,7 @@ func NewInviteOrganizationOK() *InviteOrganizationOK {
 Invitation Sent
 */
 type InviteOrganizationOK struct {
-	Payload []*models.Invitation
+	Payload []*mono_models.Invitation
 }
 
 func (o *InviteOrganizationOK) Error() string {
@@ -103,7 +103,7 @@ func NewInviteOrganizationBadRequest() *InviteOrganizationBadRequest {
 Bad Request
 */
 type InviteOrganizationBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *InviteOrganizationBadRequest) Error() string {
@@ -112,7 +112,7 @@ func (o *InviteOrganizationBadRequest) Error() string {
 
 func (o *InviteOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -132,7 +132,7 @@ func NewInviteOrganizationForbidden() *InviteOrganizationForbidden {
 Forbidden
 */
 type InviteOrganizationForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *InviteOrganizationForbidden) Error() string {
@@ -141,7 +141,7 @@ func (o *InviteOrganizationForbidden) Error() string {
 
 func (o *InviteOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -161,7 +161,7 @@ func NewInviteOrganizationNotFound() *InviteOrganizationNotFound {
 Not Found
 */
 type InviteOrganizationNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *InviteOrganizationNotFound) Error() string {
@@ -170,7 +170,7 @@ func (o *InviteOrganizationNotFound) Error() string {
 
 func (o *InviteOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -190,7 +190,7 @@ func NewInviteOrganizationInternalServerError() *InviteOrganizationInternalServe
 Server Error
 */
 type InviteOrganizationInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *InviteOrganizationInternalServerError) Error() string {
@@ -199,7 +199,7 @@ func (o *InviteOrganizationInternalServerError) Error() string {
 
 func (o *InviteOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

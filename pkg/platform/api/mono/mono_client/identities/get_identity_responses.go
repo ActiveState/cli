@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetIdentityReader is a Reader for the GetIdentity structure.
@@ -54,7 +54,7 @@ func NewGetIdentityOK() *GetIdentityOK {
 Identity Record
 */
 type GetIdentityOK struct {
-	Payload *models.Identity
+	Payload *mono_models.Identity
 }
 
 func (o *GetIdentityOK) Error() string {
@@ -63,7 +63,7 @@ func (o *GetIdentityOK) Error() string {
 
 func (o *GetIdentityOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Identity)
+	o.Payload = new(mono_models.Identity)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewGetIdentityNotFound() *GetIdentityNotFound {
 Not Found
 */
 type GetIdentityNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetIdentityNotFound) Error() string {
@@ -92,7 +92,7 @@ func (o *GetIdentityNotFound) Error() string {
 
 func (o *GetIdentityNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

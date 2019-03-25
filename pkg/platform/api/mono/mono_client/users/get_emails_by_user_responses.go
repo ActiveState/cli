@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetEmailsByUserReader is a Reader for the GetEmailsByUser structure.
@@ -61,7 +61,7 @@ func NewGetEmailsByUserOK() *GetEmailsByUserOK {
 Email records
 */
 type GetEmailsByUserOK struct {
-	Payload []*models.Email
+	Payload []*mono_models.Email
 }
 
 func (o *GetEmailsByUserOK) Error() string {
@@ -88,7 +88,7 @@ func NewGetEmailsByUserForbidden() *GetEmailsByUserForbidden {
 Forbidden
 */
 type GetEmailsByUserForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailsByUserForbidden) Error() string {
@@ -97,7 +97,7 @@ func (o *GetEmailsByUserForbidden) Error() string {
 
 func (o *GetEmailsByUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -117,7 +117,7 @@ func NewGetEmailsByUserInternalServerError() *GetEmailsByUserInternalServerError
 Server Error
 */
 type GetEmailsByUserInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetEmailsByUserInternalServerError) Error() string {
@@ -126,7 +126,7 @@ func (o *GetEmailsByUserInternalServerError) Error() string {
 
 func (o *GetEmailsByUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

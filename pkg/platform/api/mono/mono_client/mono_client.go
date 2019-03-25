@@ -30,7 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 )
 
-// Default API client HTTP client.
+// Default mono HTTP client.
 var Default = NewHTTPClient(nil)
 
 const (
@@ -45,14 +45,14 @@ const (
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file
 var DefaultSchemes = []string{"http", "https"}
 
-// NewHTTPClient creates a new API client HTTP client.
-func NewHTTPClient(formats strfmt.Registry) *APIClient {
+// NewHTTPClient creates a new mono HTTP client.
+func NewHTTPClient(formats strfmt.Registry) *Mono {
 	return NewHTTPClientWithConfig(formats, nil)
 }
 
-// NewHTTPClientWithConfig creates a new API client HTTP client,
+// NewHTTPClientWithConfig creates a new mono HTTP client,
 // using a customizable transport config.
-func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *APIClient {
+func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Mono {
 	// ensure nullable parameters have default
 	if cfg == nil {
 		cfg = DefaultTransportConfig()
@@ -63,14 +63,14 @@ func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *API
 	return New(transport, formats)
 }
 
-// New creates a new API client client
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *APIClient {
+// New creates a new mono client
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	// ensure nullable parameters have default
 	if formats == nil {
 		formats = strfmt.Default
 	}
 
-	cli := new(APIClient)
+	cli := new(Mono)
 	cli.Transport = transport
 
 	cli.Authentication = authentication.New(transport, formats)
@@ -149,8 +149,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 	return cfg
 }
 
-// APIClient is a client for API client
-type APIClient struct {
+// Mono is a client for mono
+type Mono struct {
 	Authentication *authentication.Client
 
 	Components *components.Client
@@ -189,7 +189,7 @@ type APIClient struct {
 }
 
 // SetTransport changes the transport on the client and all its subresources
-func (c *APIClient) SetTransport(transport runtime.ClientTransport) {
+func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 
 	c.Authentication.SetTransport(transport)

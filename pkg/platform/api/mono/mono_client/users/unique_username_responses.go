@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UniqueUsernameReader is a Reader for the UniqueUsername structure.
@@ -61,7 +61,7 @@ func NewUniqueUsernameOK() *UniqueUsernameOK {
 Username available
 */
 type UniqueUsernameOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UniqueUsernameOK) Error() string {
@@ -70,7 +70,7 @@ func (o *UniqueUsernameOK) Error() string {
 
 func (o *UniqueUsernameOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewUniqueUsernameBadRequest() *UniqueUsernameBadRequest {
 Bad Request
 */
 type UniqueUsernameBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UniqueUsernameBadRequest) Error() string {
@@ -99,7 +99,7 @@ func (o *UniqueUsernameBadRequest) Error() string {
 
 func (o *UniqueUsernameBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewUniqueUsernameConflict() *UniqueUsernameConflict {
 Username Conflict
 */
 type UniqueUsernameConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UniqueUsernameConflict) Error() string {
@@ -128,7 +128,7 @@ func (o *UniqueUsernameConflict) Error() string {
 
 func (o *UniqueUsernameConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

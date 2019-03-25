@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewResetPasswordParams creates a new ResetPasswordParams object
@@ -67,7 +67,7 @@ type ResetPasswordParams struct {
 	  Reset Request
 
 	*/
-	ResetRequest *models.PasswordReset
+	ResetRequest *mono_models.PasswordReset
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *ResetPasswordParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithResetRequest adds the resetRequest to the reset password params
-func (o *ResetPasswordParams) WithResetRequest(resetRequest *models.PasswordReset) *ResetPasswordParams {
+func (o *ResetPasswordParams) WithResetRequest(resetRequest *mono_models.PasswordReset) *ResetPasswordParams {
 	o.SetResetRequest(resetRequest)
 	return o
 }
 
 // SetResetRequest adds the resetRequest to the reset password params
-func (o *ResetPasswordParams) SetResetRequest(resetRequest *models.PasswordReset) {
+func (o *ResetPasswordParams) SetResetRequest(resetRequest *mono_models.PasswordReset) {
 	o.ResetRequest = resetRequest
 }
 

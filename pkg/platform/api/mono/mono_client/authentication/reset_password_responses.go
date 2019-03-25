@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ResetPasswordReader is a Reader for the ResetPassword structure.
@@ -68,7 +68,7 @@ func NewResetPasswordOK() *ResetPasswordOK {
 Success
 */
 type ResetPasswordOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ResetPasswordOK) Error() string {
@@ -77,7 +77,7 @@ func (o *ResetPasswordOK) Error() string {
 
 func (o *ResetPasswordOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewResetPasswordBadRequest() *ResetPasswordBadRequest {
 Bad Request
 */
 type ResetPasswordBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ResetPasswordBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *ResetPasswordBadRequest) Error() string {
 
 func (o *ResetPasswordBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewResetPasswordForbidden() *ResetPasswordForbidden {
 Forbidden
 */
 type ResetPasswordForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ResetPasswordForbidden) Error() string {
@@ -135,7 +135,7 @@ func (o *ResetPasswordForbidden) Error() string {
 
 func (o *ResetPasswordForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewResetPasswordInternalServerError() *ResetPasswordInternalServerError {
 Server Error
 */
 type ResetPasswordInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ResetPasswordInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *ResetPasswordInternalServerError) Error() string {
 
 func (o *ResetPasswordInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

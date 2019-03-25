@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetIngredientReader is a Reader for the GetIngredient structure.
@@ -61,7 +61,7 @@ func NewGetIngredientOK() *GetIngredientOK {
 Success
 */
 type GetIngredientOK struct {
-	Payload *models.Ingredient
+	Payload *mono_models.Ingredient
 }
 
 func (o *GetIngredientOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetIngredientOK) Error() string {
 
 func (o *GetIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Ingredient)
+	o.Payload = new(mono_models.Ingredient)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewGetIngredientNotFound() *GetIngredientNotFound {
 Not Found
 */
 type GetIngredientNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetIngredientNotFound) Error() string {
@@ -99,7 +99,7 @@ func (o *GetIngredientNotFound) Error() string {
 
 func (o *GetIngredientNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewGetIngredientInternalServerError() *GetIngredientInternalServerError {
 Server Error
 */
 type GetIngredientInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetIngredientInternalServerError) Error() string {
@@ -128,7 +128,7 @@ func (o *GetIngredientInternalServerError) Error() string {
 
 func (o *GetIngredientInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

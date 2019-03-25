@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UpdateBillingDateReader is a Reader for the UpdateBillingDate structure.
@@ -76,7 +76,7 @@ func NewUpdateBillingDateOK() *UpdateBillingDateOK {
 Billing date updated
 */
 type UpdateBillingDateOK struct {
-	Payload *models.Organization
+	Payload *mono_models.Organization
 }
 
 func (o *UpdateBillingDateOK) Error() string {
@@ -85,7 +85,7 @@ func (o *UpdateBillingDateOK) Error() string {
 
 func (o *UpdateBillingDateOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Organization)
+	o.Payload = new(mono_models.Organization)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -105,7 +105,7 @@ func NewUpdateBillingDateBadRequest() *UpdateBillingDateBadRequest {
 Bad Request
 */
 type UpdateBillingDateBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBillingDateBadRequest) Error() string {
@@ -114,7 +114,7 @@ func (o *UpdateBillingDateBadRequest) Error() string {
 
 func (o *UpdateBillingDateBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -134,7 +134,7 @@ func NewUpdateBillingDateForbidden() *UpdateBillingDateForbidden {
 Forbidden
 */
 type UpdateBillingDateForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBillingDateForbidden) Error() string {
@@ -143,7 +143,7 @@ func (o *UpdateBillingDateForbidden) Error() string {
 
 func (o *UpdateBillingDateForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -163,7 +163,7 @@ func NewUpdateBillingDateNotFound() *UpdateBillingDateNotFound {
 Not Found
 */
 type UpdateBillingDateNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBillingDateNotFound) Error() string {
@@ -172,7 +172,7 @@ func (o *UpdateBillingDateNotFound) Error() string {
 
 func (o *UpdateBillingDateNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -192,7 +192,7 @@ func NewUpdateBillingDateInternalServerError() *UpdateBillingDateInternalServerE
 Server Error
 */
 type UpdateBillingDateInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBillingDateInternalServerError) Error() string {
@@ -201,7 +201,7 @@ func (o *UpdateBillingDateInternalServerError) Error() string {
 
 func (o *UpdateBillingDateInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UpdateBranchReader is a Reader for the UpdateBranch structure.
@@ -75,7 +75,7 @@ func NewUpdateBranchOK() *UpdateBranchOK {
 Branch was updated, returns resulting branch
 */
 type UpdateBranchOK struct {
-	Payload *models.Branch
+	Payload *mono_models.Branch
 }
 
 func (o *UpdateBranchOK) Error() string {
@@ -84,7 +84,7 @@ func (o *UpdateBranchOK) Error() string {
 
 func (o *UpdateBranchOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Branch)
+	o.Payload = new(mono_models.Branch)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewUpdateBranchBadRequest() *UpdateBranchBadRequest {
 Bad Request
 */
 type UpdateBranchBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBranchBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *UpdateBranchBadRequest) Error() string {
 
 func (o *UpdateBranchBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewUpdateBranchForbidden() *UpdateBranchForbidden {
 Forbidden
 */
 type UpdateBranchForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBranchForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *UpdateBranchForbidden) Error() string {
 
 func (o *UpdateBranchForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewUpdateBranchNotFound() *UpdateBranchNotFound {
 branch was not found
 */
 type UpdateBranchNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBranchNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *UpdateBranchNotFound) Error() string {
 
 func (o *UpdateBranchNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewUpdateBranchInternalServerError() *UpdateBranchInternalServerError {
 Server Error
 */
 type UpdateBranchInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UpdateBranchInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *UpdateBranchInternalServerError) Error() string {
 
 func (o *UpdateBranchInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

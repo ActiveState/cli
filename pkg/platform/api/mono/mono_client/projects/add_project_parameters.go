@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddProjectParams creates a new AddProjectParams object
@@ -72,7 +72,7 @@ type AddProjectParams struct {
 	  Project to add/update
 
 	*/
-	Project *models.Project
+	Project *mono_models.Project
 
 	timeout    time.Duration
 	Context    context.Context
@@ -124,13 +124,13 @@ func (o *AddProjectParams) SetOrganizationName(organizationName string) {
 }
 
 // WithProject adds the project to the add project params
-func (o *AddProjectParams) WithProject(project *models.Project) *AddProjectParams {
+func (o *AddProjectParams) WithProject(project *mono_models.Project) *AddProjectParams {
 	o.SetProject(project)
 	return o
 }
 
 // SetProject adds the project to the add project params
-func (o *AddProjectParams) SetProject(project *models.Project) {
+func (o *AddProjectParams) SetProject(project *mono_models.Project) {
 	o.Project = project
 }
 

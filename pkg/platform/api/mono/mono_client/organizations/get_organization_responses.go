@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationReader is a Reader for the GetOrganization structure.
@@ -61,7 +61,7 @@ func NewGetOrganizationOK() *GetOrganizationOK {
 Organization Record
 */
 type GetOrganizationOK struct {
-	Payload *models.Organization
+	Payload *mono_models.Organization
 }
 
 func (o *GetOrganizationOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetOrganizationOK) Error() string {
 
 func (o *GetOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Organization)
+	o.Payload = new(mono_models.Organization)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewGetOrganizationNotFound() *GetOrganizationNotFound {
 Not Found
 */
 type GetOrganizationNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationNotFound) Error() string {
@@ -99,7 +99,7 @@ func (o *GetOrganizationNotFound) Error() string {
 
 func (o *GetOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewGetOrganizationInternalServerError() *GetOrganizationInternalServerError
 Server Error
 */
 type GetOrganizationInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationInternalServerError) Error() string {
@@ -128,7 +128,7 @@ func (o *GetOrganizationInternalServerError) Error() string {
 
 func (o *GetOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

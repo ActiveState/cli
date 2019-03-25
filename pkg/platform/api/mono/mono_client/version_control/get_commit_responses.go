@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetCommitReader is a Reader for the GetCommit structure.
@@ -54,7 +54,7 @@ func NewGetCommitOK() *GetCommitOK {
 Get commit details
 */
 type GetCommitOK struct {
-	Payload *models.Commit
+	Payload *mono_models.Commit
 }
 
 func (o *GetCommitOK) Error() string {
@@ -63,7 +63,7 @@ func (o *GetCommitOK) Error() string {
 
 func (o *GetCommitOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Commit)
+	o.Payload = new(mono_models.Commit)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewGetCommitNotFound() *GetCommitNotFound {
 commit was not found
 */
 type GetCommitNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetCommitNotFound) Error() string {
@@ -92,7 +92,7 @@ func (o *GetCommitNotFound) Error() string {
 
 func (o *GetCommitNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditBillingParams creates a new EditBillingParams object
@@ -67,7 +67,7 @@ type EditBillingParams struct {
 	  updated billing information
 
 	*/
-	BillingInformation *models.BillingInformationEditable
+	BillingInformation *mono_models.BillingInformationEditable
 	/*OrganizationName
 	  desired organization
 
@@ -113,13 +113,13 @@ func (o *EditBillingParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBillingInformation adds the billingInformation to the edit billing params
-func (o *EditBillingParams) WithBillingInformation(billingInformation *models.BillingInformationEditable) *EditBillingParams {
+func (o *EditBillingParams) WithBillingInformation(billingInformation *mono_models.BillingInformationEditable) *EditBillingParams {
 	o.SetBillingInformation(billingInformation)
 	return o
 }
 
 // SetBillingInformation adds the billingInformation to the edit billing params
-func (o *EditBillingParams) SetBillingInformation(billingInformation *models.BillingInformationEditable) {
+func (o *EditBillingParams) SetBillingInformation(billingInformation *mono_models.BillingInformationEditable) {
 	o.BillingInformation = billingInformation
 }
 

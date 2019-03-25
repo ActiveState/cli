@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddEmailReader is a Reader for the AddEmail structure.
@@ -83,7 +83,7 @@ func NewAddEmailOK() *AddEmailOK {
 Email added
 */
 type AddEmailOK struct {
-	Payload *models.Email
+	Payload *mono_models.Email
 }
 
 func (o *AddEmailOK) Error() string {
@@ -92,7 +92,7 @@ func (o *AddEmailOK) Error() string {
 
 func (o *AddEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Email)
+	o.Payload = new(mono_models.Email)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -112,7 +112,7 @@ func NewAddEmailBadRequest() *AddEmailBadRequest {
 Bad Request
 */
 type AddEmailBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddEmailBadRequest) Error() string {
@@ -121,7 +121,7 @@ func (o *AddEmailBadRequest) Error() string {
 
 func (o *AddEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -141,7 +141,7 @@ func NewAddEmailForbidden() *AddEmailForbidden {
 Forbidden
 */
 type AddEmailForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddEmailForbidden) Error() string {
@@ -150,7 +150,7 @@ func (o *AddEmailForbidden) Error() string {
 
 func (o *AddEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -170,7 +170,7 @@ func NewAddEmailNotFound() *AddEmailNotFound {
 Not Found
 */
 type AddEmailNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddEmailNotFound) Error() string {
@@ -179,7 +179,7 @@ func (o *AddEmailNotFound) Error() string {
 
 func (o *AddEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -199,7 +199,7 @@ func NewAddEmailConflict() *AddEmailConflict {
 Conflict
 */
 type AddEmailConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddEmailConflict) Error() string {
@@ -208,7 +208,7 @@ func (o *AddEmailConflict) Error() string {
 
 func (o *AddEmailConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -228,7 +228,7 @@ func NewAddEmailInternalServerError() *AddEmailInternalServerError {
 Server Error
 */
 type AddEmailInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddEmailInternalServerError) Error() string {
@@ -237,7 +237,7 @@ func (o *AddEmailInternalServerError) Error() string {
 
 func (o *AddEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

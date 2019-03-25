@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetRenewReader is a Reader for the GetRenew structure.
@@ -47,7 +47,7 @@ func NewGetRenewOK() *GetRenewOK {
 Success
 */
 type GetRenewOK struct {
-	Payload *models.JWT
+	Payload *mono_models.JWT
 }
 
 func (o *GetRenewOK) Error() string {
@@ -56,7 +56,7 @@ func (o *GetRenewOK) Error() string {
 
 func (o *GetRenewOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.JWT)
+	o.Payload = new(mono_models.JWT)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

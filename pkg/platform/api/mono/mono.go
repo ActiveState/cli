@@ -11,20 +11,20 @@ import (
 )
 
 // persist contains the active API Client connection
-var persist *mono_client.APIClient
+var persist *mono_client.Mono
 
 // New will create a new API client using default settings (for an authenticated version use the NewWithAuth version)
-func New() *mono_client.APIClient {
+func New() *mono_client.Mono {
 	return Init(api.GetSettings(api.ServiceMono), nil)
 }
 
 // NewWithAuth creates a new API client using default settings and the provided authentication info
-func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *mono_client.APIClient {
+func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *mono_client.Mono {
 	return Init(api.GetSettings(api.ServiceMono), auth)
 }
 
 // Init initializes a new api client
-func Init(apiSetting api.Settings, auth *runtime.ClientAuthInfoWriter) *mono_client.APIClient {
+func Init(apiSetting api.Settings, auth *runtime.ClientAuthInfoWriter) *mono_client.Mono {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
@@ -39,7 +39,7 @@ func Init(apiSetting api.Settings, auth *runtime.ClientAuthInfoWriter) *mono_cli
 }
 
 // Get returns a cached version of the default api client
-func Get() *mono_client.APIClient {
+func Get() *mono_client.Mono {
 	if persist == nil {
 		persist = New()
 	}

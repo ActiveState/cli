@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditOrganizationLimitsParams creates a new EditOrganizationLimitsParams object
@@ -67,7 +67,7 @@ type EditOrganizationLimitsParams struct {
 	  the limits to set
 
 	*/
-	Limits *models.LimitsEditable
+	Limits *mono_models.LimitsEditable
 	/*OrganizationName
 	  desired organization
 
@@ -113,13 +113,13 @@ func (o *EditOrganizationLimitsParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithLimits adds the limits to the edit organization limits params
-func (o *EditOrganizationLimitsParams) WithLimits(limits *models.LimitsEditable) *EditOrganizationLimitsParams {
+func (o *EditOrganizationLimitsParams) WithLimits(limits *mono_models.LimitsEditable) *EditOrganizationLimitsParams {
 	o.SetLimits(limits)
 	return o
 }
 
 // SetLimits adds the limits to the edit organization limits params
-func (o *EditOrganizationLimitsParams) SetLimits(limits *models.LimitsEditable) {
+func (o *EditOrganizationLimitsParams) SetLimits(limits *mono_models.LimitsEditable) {
 	o.Limits = limits
 }
 

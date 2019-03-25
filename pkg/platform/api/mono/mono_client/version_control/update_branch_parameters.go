@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewUpdateBranchParams creates a new UpdateBranchParams object
@@ -64,7 +64,7 @@ for the update branch operation typically these are written to a http.Request
 type UpdateBranchParams struct {
 
 	/*Branch*/
-	Branch *models.BranchEditable
+	Branch *mono_models.BranchEditable
 	/*BranchID*/
 	BranchID strfmt.UUID
 
@@ -107,13 +107,13 @@ func (o *UpdateBranchParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBranch adds the branch to the update branch params
-func (o *UpdateBranchParams) WithBranch(branch *models.BranchEditable) *UpdateBranchParams {
+func (o *UpdateBranchParams) WithBranch(branch *mono_models.BranchEditable) *UpdateBranchParams {
 	o.SetBranch(branch)
 	return o
 }
 
 // SetBranch adds the branch to the update branch params
-func (o *UpdateBranchParams) SetBranch(branch *models.BranchEditable) {
+func (o *UpdateBranchParams) SetBranch(branch *mono_models.BranchEditable) {
 	o.Branch = branch
 }
 

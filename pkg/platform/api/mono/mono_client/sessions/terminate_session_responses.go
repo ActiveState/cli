@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // TerminateSessionReader is a Reader for the TerminateSession structure.
@@ -54,7 +54,7 @@ func NewTerminateSessionOK() *TerminateSessionOK {
 Session Record
 */
 type TerminateSessionOK struct {
-	Payload *models.Session
+	Payload *mono_models.Session
 }
 
 func (o *TerminateSessionOK) Error() string {
@@ -63,7 +63,7 @@ func (o *TerminateSessionOK) Error() string {
 
 func (o *TerminateSessionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Session)
+	o.Payload = new(mono_models.Session)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewTerminateSessionNotFound() *TerminateSessionNotFound {
 Not Found
 */
 type TerminateSessionNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *TerminateSessionNotFound) Error() string {
@@ -92,7 +92,7 @@ func (o *TerminateSessionNotFound) Error() string {
 
 func (o *TerminateSessionNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationTierReader is a Reader for the GetOrganizationTier structure.
@@ -68,7 +68,7 @@ func NewGetOrganizationTierOK() *GetOrganizationTierOK {
 Success
 */
 type GetOrganizationTierOK struct {
-	Payload *models.Tier
+	Payload *mono_models.Tier
 }
 
 func (o *GetOrganizationTierOK) Error() string {
@@ -77,7 +77,7 @@ func (o *GetOrganizationTierOK) Error() string {
 
 func (o *GetOrganizationTierOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Tier)
+	o.Payload = new(mono_models.Tier)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewGetOrganizationTierForbidden() *GetOrganizationTierForbidden {
 Forbidden
 */
 type GetOrganizationTierForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationTierForbidden) Error() string {
@@ -106,7 +106,7 @@ func (o *GetOrganizationTierForbidden) Error() string {
 
 func (o *GetOrganizationTierForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewGetOrganizationTierNotFound() *GetOrganizationTierNotFound {
 Forbidden
 */
 type GetOrganizationTierNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationTierNotFound) Error() string {
@@ -135,7 +135,7 @@ func (o *GetOrganizationTierNotFound) Error() string {
 
 func (o *GetOrganizationTierNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewGetOrganizationTierInternalServerError() *GetOrganizationTierInternalSer
 Server Error
 */
 type GetOrganizationTierInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationTierInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *GetOrganizationTierInternalServerError) Error() string {
 
 func (o *GetOrganizationTierInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

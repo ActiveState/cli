@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteInviteReader is a Reader for the DeleteInvite structure.
@@ -68,7 +68,7 @@ func NewDeleteInviteOK() *DeleteInviteOK {
 Invitation Delete
 */
 type DeleteInviteOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteInviteOK) Error() string {
@@ -77,7 +77,7 @@ func (o *DeleteInviteOK) Error() string {
 
 func (o *DeleteInviteOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewDeleteInviteForbidden() *DeleteInviteForbidden {
 Forbidden
 */
 type DeleteInviteForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteInviteForbidden) Error() string {
@@ -106,7 +106,7 @@ func (o *DeleteInviteForbidden) Error() string {
 
 func (o *DeleteInviteForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewDeleteInviteNotFound() *DeleteInviteNotFound {
 Not Found
 */
 type DeleteInviteNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteInviteNotFound) Error() string {
@@ -135,7 +135,7 @@ func (o *DeleteInviteNotFound) Error() string {
 
 func (o *DeleteInviteNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewDeleteInviteInternalServerError() *DeleteInviteInternalServerError {
 Server Error
 */
 type DeleteInviteInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteInviteInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *DeleteInviteInternalServerError) Error() string {
 
 func (o *DeleteInviteInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

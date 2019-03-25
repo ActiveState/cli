@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddLanguageReader is a Reader for the AddLanguage structure.
@@ -68,7 +68,7 @@ func NewAddLanguageOK() *AddLanguageOK {
 Language Created
 */
 type AddLanguageOK struct {
-	Payload *models.Language
+	Payload *mono_models.Language
 }
 
 func (o *AddLanguageOK) Error() string {
@@ -77,7 +77,7 @@ func (o *AddLanguageOK) Error() string {
 
 func (o *AddLanguageOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Language)
+	o.Payload = new(mono_models.Language)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewAddLanguageBadRequest() *AddLanguageBadRequest {
 Bad Request
 */
 type AddLanguageBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddLanguageBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *AddLanguageBadRequest) Error() string {
 
 func (o *AddLanguageBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewAddLanguageForbidden() *AddLanguageForbidden {
 Forbidden
 */
 type AddLanguageForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddLanguageForbidden) Error() string {
@@ -135,7 +135,7 @@ func (o *AddLanguageForbidden) Error() string {
 
 func (o *AddLanguageForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewAddLanguageConflict() *AddLanguageConflict {
 Conflict
 */
 type AddLanguageConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddLanguageConflict) Error() string {
@@ -164,7 +164,7 @@ func (o *AddLanguageConflict) Error() string {
 
 func (o *AddLanguageConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

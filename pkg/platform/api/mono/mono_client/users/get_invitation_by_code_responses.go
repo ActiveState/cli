@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetInvitationByCodeReader is a Reader for the GetInvitationByCode structure.
@@ -75,7 +75,7 @@ func NewGetInvitationByCodeOK() *GetInvitationByCodeOK {
 Invitation
 */
 type GetInvitationByCodeOK struct {
-	Payload *models.Invitation
+	Payload *mono_models.Invitation
 }
 
 func (o *GetInvitationByCodeOK) Error() string {
@@ -84,7 +84,7 @@ func (o *GetInvitationByCodeOK) Error() string {
 
 func (o *GetInvitationByCodeOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Invitation)
+	o.Payload = new(mono_models.Invitation)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewGetInvitationByCodeBadRequest() *GetInvitationByCodeBadRequest {
 Bad Request
 */
 type GetInvitationByCodeBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInvitationByCodeBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *GetInvitationByCodeBadRequest) Error() string {
 
 func (o *GetInvitationByCodeBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewGetInvitationByCodeForbidden() *GetInvitationByCodeForbidden {
 Forbidden
 */
 type GetInvitationByCodeForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInvitationByCodeForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *GetInvitationByCodeForbidden) Error() string {
 
 func (o *GetInvitationByCodeForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewGetInvitationByCodeNotFound() *GetInvitationByCodeNotFound {
 Not Found
 */
 type GetInvitationByCodeNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInvitationByCodeNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *GetInvitationByCodeNotFound) Error() string {
 
 func (o *GetInvitationByCodeNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewGetInvitationByCodeInternalServerError() *GetInvitationByCodeInternalSer
 Server Error
 */
 type GetInvitationByCodeInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetInvitationByCodeInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *GetInvitationByCodeInternalServerError) Error() string {
 
 func (o *GetInvitationByCodeInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

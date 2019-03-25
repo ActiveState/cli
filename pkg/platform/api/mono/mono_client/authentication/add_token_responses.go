@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddTokenReader is a Reader for the AddToken structure.
@@ -54,7 +54,7 @@ func NewAddTokenOK() *AddTokenOK {
 Success
 */
 type AddTokenOK struct {
-	Payload *models.NewToken
+	Payload *mono_models.NewToken
 }
 
 func (o *AddTokenOK) Error() string {
@@ -63,7 +63,7 @@ func (o *AddTokenOK) Error() string {
 
 func (o *AddTokenOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.NewToken)
+	o.Payload = new(mono_models.NewToken)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewAddTokenBadRequest() *AddTokenBadRequest {
 Bad Request
 */
 type AddTokenBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddTokenBadRequest) Error() string {
@@ -92,7 +92,7 @@ func (o *AddTokenBadRequest) Error() string {
 
 func (o *AddTokenBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

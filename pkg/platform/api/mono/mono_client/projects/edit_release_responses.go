@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditReleaseReader is a Reader for the EditRelease structure.
@@ -75,7 +75,7 @@ func NewEditReleaseOK() *EditReleaseOK {
 Release updated
 */
 type EditReleaseOK struct {
-	Payload *models.Release
+	Payload *mono_models.Release
 }
 
 func (o *EditReleaseOK) Error() string {
@@ -84,7 +84,7 @@ func (o *EditReleaseOK) Error() string {
 
 func (o *EditReleaseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Release)
+	o.Payload = new(mono_models.Release)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewEditReleaseBadRequest() *EditReleaseBadRequest {
 Bad Request
 */
 type EditReleaseBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditReleaseBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *EditReleaseBadRequest) Error() string {
 
 func (o *EditReleaseBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewEditReleaseForbidden() *EditReleaseForbidden {
 Unauthorized
 */
 type EditReleaseForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditReleaseForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *EditReleaseForbidden) Error() string {
 
 func (o *EditReleaseForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewEditReleaseNotFound() *EditReleaseNotFound {
 Not Found
 */
 type EditReleaseNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditReleaseNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *EditReleaseNotFound) Error() string {
 
 func (o *EditReleaseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewEditReleaseInternalServerError() *EditReleaseInternalServerError {
 Server Error
 */
 type EditReleaseInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditReleaseInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *EditReleaseInternalServerError) Error() string {
 
 func (o *EditReleaseInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteEmailReader is a Reader for the DeleteEmail structure.
@@ -76,7 +76,7 @@ func NewDeleteEmailOK() *DeleteEmailOK {
 Email deleted
 */
 type DeleteEmailOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteEmailOK) Error() string {
@@ -85,7 +85,7 @@ func (o *DeleteEmailOK) Error() string {
 
 func (o *DeleteEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -105,7 +105,7 @@ func NewDeleteEmailBadRequest() *DeleteEmailBadRequest {
 Bad Request
 */
 type DeleteEmailBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteEmailBadRequest) Error() string {
@@ -114,7 +114,7 @@ func (o *DeleteEmailBadRequest) Error() string {
 
 func (o *DeleteEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -134,7 +134,7 @@ func NewDeleteEmailForbidden() *DeleteEmailForbidden {
 Forbidden
 */
 type DeleteEmailForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteEmailForbidden) Error() string {
@@ -143,7 +143,7 @@ func (o *DeleteEmailForbidden) Error() string {
 
 func (o *DeleteEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -163,7 +163,7 @@ func NewDeleteEmailNotFound() *DeleteEmailNotFound {
 Not Found
 */
 type DeleteEmailNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteEmailNotFound) Error() string {
@@ -172,7 +172,7 @@ func (o *DeleteEmailNotFound) Error() string {
 
 func (o *DeleteEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -192,7 +192,7 @@ func NewDeleteEmailInternalServerError() *DeleteEmailInternalServerError {
 Server Error
 */
 type DeleteEmailInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteEmailInternalServerError) Error() string {
@@ -201,7 +201,7 @@ func (o *DeleteEmailInternalServerError) Error() string {
 
 func (o *DeleteEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

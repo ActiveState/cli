@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // KomodoAuthorizedReader is a Reader for the KomodoAuthorized structure.
@@ -89,7 +89,7 @@ func NewKomodoAuthorizedBadRequest() *KomodoAuthorizedBadRequest {
 Bad Request
 */
 type KomodoAuthorizedBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *KomodoAuthorizedBadRequest) Error() string {
@@ -98,7 +98,7 @@ func (o *KomodoAuthorizedBadRequest) Error() string {
 
 func (o *KomodoAuthorizedBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -118,7 +118,7 @@ func NewKomodoAuthorizedForbidden() *KomodoAuthorizedForbidden {
 Forbidden
 */
 type KomodoAuthorizedForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *KomodoAuthorizedForbidden) Error() string {
@@ -127,7 +127,7 @@ func (o *KomodoAuthorizedForbidden) Error() string {
 
 func (o *KomodoAuthorizedForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -147,7 +147,7 @@ func NewKomodoAuthorizedInternalServerError() *KomodoAuthorizedInternalServerErr
 Server Error
 */
 type KomodoAuthorizedInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *KomodoAuthorizedInternalServerError) Error() string {
@@ -156,7 +156,7 @@ func (o *KomodoAuthorizedInternalServerError) Error() string {
 
 func (o *KomodoAuthorizedInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

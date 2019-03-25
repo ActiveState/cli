@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditOrganizationParams creates a new EditOrganizationParams object
@@ -64,7 +64,7 @@ for the edit organization operation typically these are written to a http.Reques
 type EditOrganizationParams struct {
 
 	/*Organization*/
-	Organization *models.OrganizationEditable
+	Organization *mono_models.OrganizationEditable
 	/*OrganizationName
 	  organizationName of desired organization
 
@@ -110,13 +110,13 @@ func (o *EditOrganizationParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithOrganization adds the organization to the edit organization params
-func (o *EditOrganizationParams) WithOrganization(organization *models.OrganizationEditable) *EditOrganizationParams {
+func (o *EditOrganizationParams) WithOrganization(organization *mono_models.OrganizationEditable) *EditOrganizationParams {
 	o.SetOrganization(organization)
 	return o
 }
 
 // SetOrganization adds the organization to the edit organization params
-func (o *EditOrganizationParams) SetOrganization(organization *models.OrganizationEditable) {
+func (o *EditOrganizationParams) SetOrganization(organization *mono_models.OrganizationEditable) {
 	o.Organization = organization
 }
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListFormatsReader is a Reader for the ListFormats structure.
@@ -61,7 +61,7 @@ func NewListFormatsOK() *ListFormatsOK {
 Success
 */
 type ListFormatsOK struct {
-	Payload []*models.Format
+	Payload []*mono_models.Format
 }
 
 func (o *ListFormatsOK) Error() string {
@@ -88,7 +88,7 @@ func NewListFormatsNotFound() *ListFormatsNotFound {
 Not Found
 */
 type ListFormatsNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListFormatsNotFound) Error() string {
@@ -97,7 +97,7 @@ func (o *ListFormatsNotFound) Error() string {
 
 func (o *ListFormatsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -117,7 +117,7 @@ func NewListFormatsInternalServerError() *ListFormatsInternalServerError {
 Server Error
 */
 type ListFormatsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListFormatsInternalServerError) Error() string {
@@ -126,7 +126,7 @@ func (o *ListFormatsInternalServerError) Error() string {
 
 func (o *ListFormatsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

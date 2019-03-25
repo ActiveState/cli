@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIdentitiesReader is a Reader for the ListIdentities structure.
@@ -47,7 +47,7 @@ func NewListIdentitiesOK() *ListIdentitiesOK {
 Success
 */
 type ListIdentitiesOK struct {
-	Payload []*models.Identity
+	Payload []*mono_models.Identity
 }
 
 func (o *ListIdentitiesOK) Error() string {

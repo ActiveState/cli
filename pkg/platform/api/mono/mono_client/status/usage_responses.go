@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UsageReader is a Reader for the Usage structure.
@@ -61,7 +61,7 @@ func NewUsageOK() *UsageOK {
 Success
 */
 type UsageOK struct {
-	Payload *models.UsageInfo
+	Payload *mono_models.UsageInfo
 }
 
 func (o *UsageOK) Error() string {
@@ -70,7 +70,7 @@ func (o *UsageOK) Error() string {
 
 func (o *UsageOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.UsageInfo)
+	o.Payload = new(mono_models.UsageInfo)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewUsageBadRequest() *UsageBadRequest {
 Bad Request
 */
 type UsageBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UsageBadRequest) Error() string {
@@ -99,7 +99,7 @@ func (o *UsageBadRequest) Error() string {
 
 func (o *UsageBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewUsageForbidden() *UsageForbidden {
 Unauthorized
 */
 type UsageForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *UsageForbidden) Error() string {
@@ -128,7 +128,7 @@ func (o *UsageForbidden) Error() string {
 
 func (o *UsageForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

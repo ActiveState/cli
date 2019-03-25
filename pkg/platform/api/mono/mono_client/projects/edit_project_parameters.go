@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditProjectParams creates a new EditProjectParams object
@@ -69,7 +69,7 @@ type EditProjectParams struct {
 	*/
 	OrganizationName string
 	/*Project*/
-	Project *models.Project
+	Project *mono_models.Project
 	/*ProjectName
 	  projectName of desired project
 
@@ -126,13 +126,13 @@ func (o *EditProjectParams) SetOrganizationName(organizationName string) {
 }
 
 // WithProject adds the project to the edit project params
-func (o *EditProjectParams) WithProject(project *models.Project) *EditProjectParams {
+func (o *EditProjectParams) WithProject(project *mono_models.Project) *EditProjectParams {
 	o.SetProject(project)
 	return o
 }
 
 // SetProject adds the project to the edit project params
-func (o *EditProjectParams) SetProject(project *models.Project) {
+func (o *EditProjectParams) SetProject(project *mono_models.Project) {
 	o.Project = project
 }
 

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetTiersReader is a Reader for the GetTiers structure.
@@ -68,7 +68,7 @@ func NewGetTiersOK() *GetTiersOK {
 Get all available tiers
 */
 type GetTiersOK struct {
-	Payload []*models.Tier
+	Payload []*mono_models.Tier
 }
 
 func (o *GetTiersOK) Error() string {
@@ -95,7 +95,7 @@ func NewGetTiersForbidden() *GetTiersForbidden {
 Forbidden
 */
 type GetTiersForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetTiersForbidden) Error() string {
@@ -104,7 +104,7 @@ func (o *GetTiersForbidden) Error() string {
 
 func (o *GetTiersForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +124,7 @@ func NewGetTiersNotFound() *GetTiersNotFound {
 No tiers available
 */
 type GetTiersNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetTiersNotFound) Error() string {
@@ -133,7 +133,7 @@ func (o *GetTiersNotFound) Error() string {
 
 func (o *GetTiersNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +153,7 @@ func NewGetTiersInternalServerError() *GetTiersInternalServerError {
 Server Error
 */
 type GetTiersInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetTiersInternalServerError) Error() string {
@@ -162,7 +162,7 @@ func (o *GetTiersInternalServerError) Error() string {
 
 func (o *GetTiersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

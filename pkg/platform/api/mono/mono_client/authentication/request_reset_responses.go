@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // RequestResetReader is a Reader for the RequestReset structure.
@@ -61,7 +61,7 @@ func NewRequestResetOK() *RequestResetOK {
 Success
 */
 type RequestResetOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *RequestResetOK) Error() string {
@@ -70,7 +70,7 @@ func (o *RequestResetOK) Error() string {
 
 func (o *RequestResetOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewRequestResetBadRequest() *RequestResetBadRequest {
 Bad Request
 */
 type RequestResetBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *RequestResetBadRequest) Error() string {
@@ -99,7 +99,7 @@ func (o *RequestResetBadRequest) Error() string {
 
 func (o *RequestResetBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewRequestResetInternalServerError() *RequestResetInternalServerError {
 Server Error
 */
 type RequestResetInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *RequestResetInternalServerError) Error() string {
@@ -128,7 +128,7 @@ func (o *RequestResetInternalServerError) Error() string {
 
 func (o *RequestResetInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

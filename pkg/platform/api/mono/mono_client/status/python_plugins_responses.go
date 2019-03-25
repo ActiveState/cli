@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // PythonPluginsReader is a Reader for the PythonPlugins structure.
@@ -47,7 +47,7 @@ func NewPythonPluginsOK() *PythonPluginsOK {
 Success
 */
 type PythonPluginsOK struct {
-	Payload []*models.PythonPlugin
+	Payload []*mono_models.PythonPlugin
 }
 
 func (o *PythonPluginsOK) Error() string {

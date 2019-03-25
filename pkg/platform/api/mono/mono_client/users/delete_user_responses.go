@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteUserReader is a Reader for the DeleteUser structure.
@@ -75,7 +75,7 @@ func NewDeleteUserOK() *DeleteUserOK {
 User deleted
 */
 type DeleteUserOK struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteUserOK) Error() string {
@@ -84,7 +84,7 @@ func (o *DeleteUserOK) Error() string {
 
 func (o *DeleteUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewDeleteUserBadRequest() *DeleteUserBadRequest {
 Bad Request
 */
 type DeleteUserBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteUserBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *DeleteUserBadRequest) Error() string {
 
 func (o *DeleteUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewDeleteUserForbidden() *DeleteUserForbidden {
 Forbidden
 */
 type DeleteUserForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteUserForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *DeleteUserForbidden) Error() string {
 
 func (o *DeleteUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewDeleteUserNotFound() *DeleteUserNotFound {
 Not Found
 */
 type DeleteUserNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteUserNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *DeleteUserNotFound) Error() string {
 
 func (o *DeleteUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewDeleteUserInternalServerError() *DeleteUserInternalServerError {
 Server Error
 */
 type DeleteUserInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DeleteUserInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *DeleteUserInternalServerError) Error() string {
 
 func (o *DeleteUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

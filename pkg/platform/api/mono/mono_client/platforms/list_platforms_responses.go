@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListPlatformsReader is a Reader for the ListPlatforms structure.
@@ -47,7 +47,7 @@ func NewListPlatformsOK() *ListPlatformsOK {
 Success
 */
 type ListPlatformsOK struct {
-	Payload []*models.Platform
+	Payload []*mono_models.Platform
 }
 
 func (o *ListPlatformsOK) Error() string {

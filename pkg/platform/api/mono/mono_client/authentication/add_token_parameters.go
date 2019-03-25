@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddTokenParams creates a new AddTokenParams object
@@ -64,7 +64,7 @@ for the add token operation typically these are written to a http.Request
 type AddTokenParams struct {
 
 	/*TokenOptions*/
-	TokenOptions *models.TokenEditable
+	TokenOptions *mono_models.TokenEditable
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,13 +105,13 @@ func (o *AddTokenParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithTokenOptions adds the tokenOptions to the add token params
-func (o *AddTokenParams) WithTokenOptions(tokenOptions *models.TokenEditable) *AddTokenParams {
+func (o *AddTokenParams) WithTokenOptions(tokenOptions *mono_models.TokenEditable) *AddTokenParams {
 	o.SetTokenOptions(tokenOptions)
 	return o
 }
 
 // SetTokenOptions adds the tokenOptions to the add token params
-func (o *AddTokenParams) SetTokenOptions(tokenOptions *models.TokenEditable) {
+func (o *AddTokenParams) SetTokenOptions(tokenOptions *mono_models.TokenEditable) {
 	o.TokenOptions = tokenOptions
 }
 

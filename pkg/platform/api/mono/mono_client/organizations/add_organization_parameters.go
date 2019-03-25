@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddOrganizationParams creates a new AddOrganizationParams object
@@ -67,7 +67,7 @@ type AddOrganizationParams struct {
 	  Organization to add
 
 	*/
-	Organization *models.OrganizationEditable
+	Organization *mono_models.OrganizationEditable
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddOrganizationParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithOrganization adds the organization to the add organization params
-func (o *AddOrganizationParams) WithOrganization(organization *models.OrganizationEditable) *AddOrganizationParams {
+func (o *AddOrganizationParams) WithOrganization(organization *mono_models.OrganizationEditable) *AddOrganizationParams {
 	o.SetOrganization(organization)
 	return o
 }
 
 // SetOrganization adds the organization to the add organization params
-func (o *AddOrganizationParams) SetOrganization(organization *models.OrganizationEditable) {
+func (o *AddOrganizationParams) SetOrganization(organization *mono_models.OrganizationEditable) {
 	o.Organization = organization
 }
 

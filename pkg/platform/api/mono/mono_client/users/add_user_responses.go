@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddUserReader is a Reader for the AddUser structure.
@@ -68,7 +68,7 @@ func NewAddUserOK() *AddUserOK {
 Successfully Created
 */
 type AddUserOK struct {
-	Payload *models.JWT
+	Payload *mono_models.JWT
 }
 
 func (o *AddUserOK) Error() string {
@@ -77,7 +77,7 @@ func (o *AddUserOK) Error() string {
 
 func (o *AddUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.JWT)
+	o.Payload = new(mono_models.JWT)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewAddUserBadRequest() *AddUserBadRequest {
 Bad Request
 */
 type AddUserBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddUserBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *AddUserBadRequest) Error() string {
 
 func (o *AddUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewAddUserConflict() *AddUserConflict {
 Conflict
 */
 type AddUserConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddUserConflict) Error() string {
@@ -135,7 +135,7 @@ func (o *AddUserConflict) Error() string {
 
 func (o *AddUserConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewAddUserInternalServerError() *AddUserInternalServerError {
 Server Error
 */
 type AddUserInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddUserInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *AddUserInternalServerError) Error() string {
 
 func (o *AddUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

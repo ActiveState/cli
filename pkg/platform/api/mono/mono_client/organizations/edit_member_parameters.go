@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditMemberParams creates a new EditMemberParams object
@@ -67,7 +67,7 @@ type EditMemberParams struct {
 	  Member Attributes
 
 	*/
-	MemberAttrs *models.MemberEditable
+	MemberAttrs *mono_models.MemberEditable
 	/*OrganizationName
 	  organizationID of desired organization
 
@@ -118,13 +118,13 @@ func (o *EditMemberParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithMemberAttrs adds the memberAttrs to the edit member params
-func (o *EditMemberParams) WithMemberAttrs(memberAttrs *models.MemberEditable) *EditMemberParams {
+func (o *EditMemberParams) WithMemberAttrs(memberAttrs *mono_models.MemberEditable) *EditMemberParams {
 	o.SetMemberAttrs(memberAttrs)
 	return o
 }
 
 // SetMemberAttrs adds the memberAttrs to the edit member params
-func (o *EditMemberParams) SetMemberAttrs(memberAttrs *models.MemberEditable) {
+func (o *EditMemberParams) SetMemberAttrs(memberAttrs *mono_models.MemberEditable) {
 	o.MemberAttrs = memberAttrs
 }
 

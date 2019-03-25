@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListLicensesReader is a Reader for the ListLicenses structure.
@@ -47,7 +47,7 @@ func NewListLicensesOK() *ListLicensesOK {
 Success
 */
 type ListLicensesOK struct {
-	Payload []*models.License
+	Payload []*mono_models.License
 }
 
 func (o *ListLicensesOK) Error() string {

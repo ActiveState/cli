@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIngredientVersionsReader is a Reader for the ListIngredientVersions structure.
@@ -54,7 +54,7 @@ func NewListIngredientVersionsOK() *ListIngredientVersionsOK {
 Success
 */
 type ListIngredientVersionsOK struct {
-	Payload []*models.IngredientVersion
+	Payload []*mono_models.IngredientVersion
 }
 
 func (o *ListIngredientVersionsOK) Error() string {
@@ -81,7 +81,7 @@ func NewListIngredientVersionsBadRequest() *ListIngredientVersionsBadRequest {
 Bad Request
 */
 type ListIngredientVersionsBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListIngredientVersionsBadRequest) Error() string {
@@ -90,7 +90,7 @@ func (o *ListIngredientVersionsBadRequest) Error() string {
 
 func (o *ListIngredientVersionsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

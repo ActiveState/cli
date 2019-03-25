@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddFormatParams creates a new AddFormatParams object
@@ -72,7 +72,7 @@ type AddFormatParams struct {
 	  Format details
 
 	*/
-	Format *models.Format
+	Format *mono_models.Format
 	/*OrganizationName
 	  desired organization
 
@@ -139,13 +139,13 @@ func (o *AddFormatParams) SetDistroID(distroID strfmt.UUID) {
 }
 
 // WithFormat adds the format to the add format params
-func (o *AddFormatParams) WithFormat(format *models.Format) *AddFormatParams {
+func (o *AddFormatParams) WithFormat(format *mono_models.Format) *AddFormatParams {
 	o.SetFormat(format)
 	return o
 }
 
 // SetFormat adds the format to the add format params
-func (o *AddFormatParams) SetFormat(format *models.Format) {
+func (o *AddFormatParams) SetFormat(format *mono_models.Format) {
 	o.Format = format
 }
 

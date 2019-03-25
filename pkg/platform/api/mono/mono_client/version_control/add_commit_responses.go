@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddCommitReader is a Reader for the AddCommit structure.
@@ -82,7 +82,7 @@ func NewAddCommitOK() *AddCommitOK {
 Create a new commit
 */
 type AddCommitOK struct {
-	Payload *models.Commit
+	Payload *mono_models.Commit
 }
 
 func (o *AddCommitOK) Error() string {
@@ -91,7 +91,7 @@ func (o *AddCommitOK) Error() string {
 
 func (o *AddCommitOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Commit)
+	o.Payload = new(mono_models.Commit)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -111,7 +111,7 @@ func NewAddCommitBadRequest() *AddCommitBadRequest {
 Bad Request
 */
 type AddCommitBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddCommitBadRequest) Error() string {
@@ -120,7 +120,7 @@ func (o *AddCommitBadRequest) Error() string {
 
 func (o *AddCommitBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -140,7 +140,7 @@ func NewAddCommitForbidden() *AddCommitForbidden {
 Forbidden
 */
 type AddCommitForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddCommitForbidden) Error() string {
@@ -149,7 +149,7 @@ func (o *AddCommitForbidden) Error() string {
 
 func (o *AddCommitForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -169,7 +169,7 @@ func NewAddCommitNotFound() *AddCommitNotFound {
 branch was not found
 */
 type AddCommitNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddCommitNotFound) Error() string {
@@ -178,7 +178,7 @@ func (o *AddCommitNotFound) Error() string {
 
 func (o *AddCommitNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -198,7 +198,7 @@ func NewAddCommitConflict() *AddCommitConflict {
 Commit changes conflict with checkpoint
 */
 type AddCommitConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddCommitConflict) Error() string {
@@ -207,7 +207,7 @@ func (o *AddCommitConflict) Error() string {
 
 func (o *AddCommitConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -227,7 +227,7 @@ func NewAddCommitInternalServerError() *AddCommitInternalServerError {
 Server Error
 */
 type AddCommitInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddCommitInternalServerError) Error() string {
@@ -236,7 +236,7 @@ func (o *AddCommitInternalServerError) Error() string {
 
 func (o *AddCommitInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

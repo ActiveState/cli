@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditUserReader is a Reader for the EditUser structure.
@@ -75,7 +75,7 @@ func NewEditUserOK() *EditUserOK {
 User updated
 */
 type EditUserOK struct {
-	Payload *models.User
+	Payload *mono_models.User
 }
 
 func (o *EditUserOK) Error() string {
@@ -84,7 +84,7 @@ func (o *EditUserOK) Error() string {
 
 func (o *EditUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(mono_models.User)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewEditUserBadRequest() *EditUserBadRequest {
 Bad Request
 */
 type EditUserBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditUserBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *EditUserBadRequest) Error() string {
 
 func (o *EditUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewEditUserForbidden() *EditUserForbidden {
 Forbidden
 */
 type EditUserForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditUserForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *EditUserForbidden) Error() string {
 
 func (o *EditUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewEditUserNotFound() *EditUserNotFound {
 Not Found
 */
 type EditUserNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditUserNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *EditUserNotFound) Error() string {
 
 func (o *EditUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewEditUserInternalServerError() *EditUserInternalServerError {
 Server Error
 */
 type EditUserInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *EditUserInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *EditUserInternalServerError) Error() string {
 
 func (o *EditUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

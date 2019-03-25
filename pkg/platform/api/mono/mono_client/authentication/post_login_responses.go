@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // PostLoginReader is a Reader for the PostLogin structure.
@@ -68,7 +68,7 @@ func NewPostLoginOK() *PostLoginOK {
 Success
 */
 type PostLoginOK struct {
-	Payload *models.JWT
+	Payload *mono_models.JWT
 }
 
 func (o *PostLoginOK) Error() string {
@@ -77,7 +77,7 @@ func (o *PostLoginOK) Error() string {
 
 func (o *PostLoginOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.JWT)
+	o.Payload = new(mono_models.JWT)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewPostLoginBadRequest() *PostLoginBadRequest {
 Bad Request
 */
 type PostLoginBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *PostLoginBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *PostLoginBadRequest) Error() string {
 
 func (o *PostLoginBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewPostLoginUnauthorized() *PostLoginUnauthorized {
 Invalid credentials
 */
 type PostLoginUnauthorized struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *PostLoginUnauthorized) Error() string {
@@ -135,7 +135,7 @@ func (o *PostLoginUnauthorized) Error() string {
 
 func (o *PostLoginUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewPostLoginRetryWith() *PostLoginRetryWith {
 TOTP Required
 */
 type PostLoginRetryWith struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *PostLoginRetryWith) Error() string {
@@ -164,7 +164,7 @@ func (o *PostLoginRetryWith) Error() string {
 
 func (o *PostLoginRetryWith) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListProjectsReader is a Reader for the ListProjects structure.
@@ -61,7 +61,7 @@ func NewListProjectsOK() *ListProjectsOK {
 Success
 */
 type ListProjectsOK struct {
-	Payload []*models.Project
+	Payload []*mono_models.Project
 }
 
 func (o *ListProjectsOK) Error() string {
@@ -88,7 +88,7 @@ func NewListProjectsNotFound() *ListProjectsNotFound {
 Not Found
 */
 type ListProjectsNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListProjectsNotFound) Error() string {
@@ -97,7 +97,7 @@ func (o *ListProjectsNotFound) Error() string {
 
 func (o *ListProjectsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -117,7 +117,7 @@ func NewListProjectsInternalServerError() *ListProjectsInternalServerError {
 Server Error
 */
 type ListProjectsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListProjectsInternalServerError) Error() string {
@@ -126,7 +126,7 @@ func (o *ListProjectsInternalServerError) Error() string {
 
 func (o *ListProjectsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

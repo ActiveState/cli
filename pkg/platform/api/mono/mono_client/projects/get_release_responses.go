@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetReleaseReader is a Reader for the GetRelease structure.
@@ -61,7 +61,7 @@ func NewGetReleaseOK() *GetReleaseOK {
 Success
 */
 type GetReleaseOK struct {
-	Payload *models.Release
+	Payload *mono_models.Release
 }
 
 func (o *GetReleaseOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetReleaseOK) Error() string {
 
 func (o *GetReleaseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Release)
+	o.Payload = new(mono_models.Release)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewGetReleaseNotFound() *GetReleaseNotFound {
 Not Found
 */
 type GetReleaseNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetReleaseNotFound) Error() string {
@@ -99,7 +99,7 @@ func (o *GetReleaseNotFound) Error() string {
 
 func (o *GetReleaseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewGetReleaseInternalServerError() *GetReleaseInternalServerError {
 Server Error
 */
 type GetReleaseInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetReleaseInternalServerError) Error() string {
@@ -128,7 +128,7 @@ func (o *GetReleaseInternalServerError) Error() string {
 
 func (o *GetReleaseInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

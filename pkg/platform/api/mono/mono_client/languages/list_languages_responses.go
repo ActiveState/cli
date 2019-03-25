@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListLanguagesReader is a Reader for the ListLanguages structure.
@@ -47,7 +47,7 @@ func NewListLanguagesOK() *ListLanguagesOK {
 Success
 */
 type ListLanguagesOK struct {
-	Payload []*models.Language
+	Payload []*mono_models.Language
 }
 
 func (o *ListLanguagesOK) Error() string {

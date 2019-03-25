@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SetPreferredEmailReader is a Reader for the SetPreferredEmail structure.
@@ -75,7 +75,7 @@ func NewSetPreferredEmailOK() *SetPreferredEmailOK {
 Email updated
 */
 type SetPreferredEmailOK struct {
-	Payload *models.Email
+	Payload *mono_models.Email
 }
 
 func (o *SetPreferredEmailOK) Error() string {
@@ -84,7 +84,7 @@ func (o *SetPreferredEmailOK) Error() string {
 
 func (o *SetPreferredEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Email)
+	o.Payload = new(mono_models.Email)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewSetPreferredEmailBadRequest() *SetPreferredEmailBadRequest {
 Bad Request
 */
 type SetPreferredEmailBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SetPreferredEmailBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *SetPreferredEmailBadRequest) Error() string {
 
 func (o *SetPreferredEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewSetPreferredEmailForbidden() *SetPreferredEmailForbidden {
 Forbidden
 */
 type SetPreferredEmailForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SetPreferredEmailForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *SetPreferredEmailForbidden) Error() string {
 
 func (o *SetPreferredEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewSetPreferredEmailNotFound() *SetPreferredEmailNotFound {
 Not Found
 */
 type SetPreferredEmailNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SetPreferredEmailNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *SetPreferredEmailNotFound) Error() string {
 
 func (o *SetPreferredEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewSetPreferredEmailInternalServerError() *SetPreferredEmailInternalServerE
 Server Error
 */
 type SetPreferredEmailInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SetPreferredEmailInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *SetPreferredEmailInternalServerError) Error() string {
 
 func (o *SetPreferredEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

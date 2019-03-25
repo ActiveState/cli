@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddLanguageParams creates a new AddLanguageParams object
@@ -67,7 +67,7 @@ type AddLanguageParams struct {
 	  Language to add
 
 	*/
-	Language *models.Language
+	Language *mono_models.Language
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddLanguageParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithLanguage adds the language to the add language params
-func (o *AddLanguageParams) WithLanguage(language *models.Language) *AddLanguageParams {
+func (o *AddLanguageParams) WithLanguage(language *mono_models.Language) *AddLanguageParams {
 	o.SetLanguage(language)
 	return o
 }
 
 // SetLanguage adds the language to the add language params
-func (o *AddLanguageParams) SetLanguage(language *models.Language) {
+func (o *AddLanguageParams) SetLanguage(language *mono_models.Language) {
 	o.Language = language
 }
 

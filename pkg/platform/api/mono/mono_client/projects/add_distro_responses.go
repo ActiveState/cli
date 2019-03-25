@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddDistroReader is a Reader for the AddDistro structure.
@@ -75,7 +75,7 @@ func NewAddDistroOK() *AddDistroOK {
 Distro Added
 */
 type AddDistroOK struct {
-	Payload *models.Distro
+	Payload *mono_models.Distro
 }
 
 func (o *AddDistroOK) Error() string {
@@ -84,7 +84,7 @@ func (o *AddDistroOK) Error() string {
 
 func (o *AddDistroOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Distro)
+	o.Payload = new(mono_models.Distro)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewAddDistroBadRequest() *AddDistroBadRequest {
 Bad Request
 */
 type AddDistroBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddDistroBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *AddDistroBadRequest) Error() string {
 
 func (o *AddDistroBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewAddDistroForbidden() *AddDistroForbidden {
 Unauthorized
 */
 type AddDistroForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddDistroForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *AddDistroForbidden) Error() string {
 
 func (o *AddDistroForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewAddDistroConflict() *AddDistroConflict {
 Conflict
 */
 type AddDistroConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddDistroConflict) Error() string {
@@ -171,7 +171,7 @@ func (o *AddDistroConflict) Error() string {
 
 func (o *AddDistroConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewAddDistroInternalServerError() *AddDistroInternalServerError {
 Server Error
 */
 type AddDistroInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddDistroInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *AddDistroInternalServerError) Error() string {
 
 func (o *AddDistroInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewEditIdentityParams creates a new EditIdentityParams object
@@ -64,7 +64,7 @@ for the edit identity operation typically these are written to a http.Request
 type EditIdentityParams struct {
 
 	/*Identity*/
-	Identity *models.IdentityEditable
+	Identity *mono_models.IdentityEditable
 	/*IdentityID
 	  identityID of desired identity
 
@@ -110,13 +110,13 @@ func (o *EditIdentityParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithIdentity adds the identity to the edit identity params
-func (o *EditIdentityParams) WithIdentity(identity *models.IdentityEditable) *EditIdentityParams {
+func (o *EditIdentityParams) WithIdentity(identity *mono_models.IdentityEditable) *EditIdentityParams {
 	o.SetIdentity(identity)
 	return o
 }
 
 // SetIdentity adds the identity to the edit identity params
-func (o *EditIdentityParams) SetIdentity(identity *models.IdentityEditable) {
+func (o *EditIdentityParams) SetIdentity(identity *mono_models.IdentityEditable) {
 	o.Identity = identity
 }
 

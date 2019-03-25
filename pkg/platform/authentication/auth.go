@@ -47,7 +47,7 @@ var persist *Auth
 
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
-	client      *mono_client.APIClient
+	client      *mono_client.Mono
 	clientAuth  *runtime.ClientAuthInfoWriter
 	bearerToken string
 	user        *mono_models.User
@@ -62,7 +62,7 @@ func Get() *Auth {
 }
 
 // Client is a shortcut for calling Client() on the persisted auth
-func Client() *mono_client.APIClient {
+func Client() *mono_client.Mono {
 	return Get().Client()
 }
 
@@ -203,7 +203,7 @@ func (s *Auth) Logout() {
 }
 
 // Client will return an API client that has authentication set up
-func (s *Auth) Client() *mono_client.APIClient {
+func (s *Auth) Client() *mono_client.Mono {
 	if s.client == nil {
 		s.client = mono.NewWithAuth(s.clientAuth)
 	}

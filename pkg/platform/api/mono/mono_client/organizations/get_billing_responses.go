@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetBillingReader is a Reader for the GetBilling structure.
@@ -68,7 +68,7 @@ func NewGetBillingOK() *GetBillingOK {
 Success
 */
 type GetBillingOK struct {
-	Payload *models.BillingInformation
+	Payload *mono_models.BillingInformation
 }
 
 func (o *GetBillingOK) Error() string {
@@ -77,7 +77,7 @@ func (o *GetBillingOK) Error() string {
 
 func (o *GetBillingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.BillingInformation)
+	o.Payload = new(mono_models.BillingInformation)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewGetBillingForbidden() *GetBillingForbidden {
 Forbidden
 */
 type GetBillingForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetBillingForbidden) Error() string {
@@ -106,7 +106,7 @@ func (o *GetBillingForbidden) Error() string {
 
 func (o *GetBillingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewGetBillingNotFound() *GetBillingNotFound {
 Not Found
 */
 type GetBillingNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetBillingNotFound) Error() string {
@@ -135,7 +135,7 @@ func (o *GetBillingNotFound) Error() string {
 
 func (o *GetBillingNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewGetBillingInternalServerError() *GetBillingInternalServerError {
 Server Error
 */
 type GetBillingInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetBillingInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *GetBillingInternalServerError) Error() string {
 
 func (o *GetBillingInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

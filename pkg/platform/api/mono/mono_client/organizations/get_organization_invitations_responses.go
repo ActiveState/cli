@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationInvitationsReader is a Reader for the GetOrganizationInvitations structure.
@@ -61,7 +61,7 @@ func NewGetOrganizationInvitationsOK() *GetOrganizationInvitationsOK {
 Success
 */
 type GetOrganizationInvitationsOK struct {
-	Payload []*models.Invitation
+	Payload []*mono_models.Invitation
 }
 
 func (o *GetOrganizationInvitationsOK) Error() string {
@@ -88,7 +88,7 @@ func NewGetOrganizationInvitationsForbidden() *GetOrganizationInvitationsForbidd
 Forbidden
 */
 type GetOrganizationInvitationsForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationInvitationsForbidden) Error() string {
@@ -97,7 +97,7 @@ func (o *GetOrganizationInvitationsForbidden) Error() string {
 
 func (o *GetOrganizationInvitationsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -117,7 +117,7 @@ func NewGetOrganizationInvitationsInternalServerError() *GetOrganizationInvitati
 Server Error
 */
 type GetOrganizationInvitationsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetOrganizationInvitationsInternalServerError) Error() string {
@@ -126,7 +126,7 @@ func (o *GetOrganizationInvitationsInternalServerError) Error() string {
 
 func (o *GetOrganizationInvitationsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

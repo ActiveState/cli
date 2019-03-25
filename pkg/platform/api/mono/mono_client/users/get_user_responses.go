@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetUserReader is a Reader for the GetUser structure.
@@ -61,7 +61,7 @@ func NewGetUserOK() *GetUserOK {
 User Record
 */
 type GetUserOK struct {
-	Payload *models.User
+	Payload *mono_models.User
 }
 
 func (o *GetUserOK) Error() string {
@@ -70,7 +70,7 @@ func (o *GetUserOK) Error() string {
 
 func (o *GetUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(mono_models.User)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -90,7 +90,7 @@ func NewGetUserNotFound() *GetUserNotFound {
 Not Found
 */
 type GetUserNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetUserNotFound) Error() string {
@@ -99,7 +99,7 @@ func (o *GetUserNotFound) Error() string {
 
 func (o *GetUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -119,7 +119,7 @@ func NewGetUserInternalServerError() *GetUserInternalServerError {
 Server Error
 */
 type GetUserInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *GetUserInternalServerError) Error() string {
@@ -128,7 +128,7 @@ func (o *GetUserInternalServerError) Error() string {
 
 func (o *GetUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -14,7 +14,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SearchEmailsReader is a Reader for the SearchEmails structure.
@@ -62,7 +62,7 @@ func NewSearchEmailsOK() *SearchEmailsOK {
 Search for users matching the given search string
 */
 type SearchEmailsOK struct {
-	Payload []*models.User
+	Payload []*mono_models.User
 }
 
 func (o *SearchEmailsOK) Error() string {
@@ -89,7 +89,7 @@ func NewSearchEmailsForbidden() *SearchEmailsForbidden {
 Forbidden
 */
 type SearchEmailsForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SearchEmailsForbidden) Error() string {
@@ -98,7 +98,7 @@ func (o *SearchEmailsForbidden) Error() string {
 
 func (o *SearchEmailsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -118,7 +118,7 @@ func NewSearchEmailsInternalServerError() *SearchEmailsInternalServerError {
 Server Error
 */
 type SearchEmailsInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SearchEmailsInternalServerError) Error() string {
@@ -127,7 +127,7 @@ func (o *SearchEmailsInternalServerError) Error() string {
 
 func (o *SearchEmailsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListActivitiesReader is a Reader for the ListActivities structure.
@@ -47,7 +47,7 @@ func NewListActivitiesOK() *ListActivitiesOK {
 Success
 */
 type ListActivitiesOK struct {
-	Payload []*models.Activity
+	Payload []*mono_models.Activity
 }
 
 func (o *ListActivitiesOK) Error() string {

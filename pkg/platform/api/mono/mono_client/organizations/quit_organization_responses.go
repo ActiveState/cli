@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // QuitOrganizationReader is a Reader for the QuitOrganization structure.
@@ -68,7 +68,7 @@ func NewQuitOrganizationOK() *QuitOrganizationOK {
 Membership updated
 */
 type QuitOrganizationOK struct {
-	Payload []*models.Member
+	Payload []*mono_models.Member
 }
 
 func (o *QuitOrganizationOK) Error() string {
@@ -95,7 +95,7 @@ func NewQuitOrganizationBadRequest() *QuitOrganizationBadRequest {
 Bad Request
 */
 type QuitOrganizationBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *QuitOrganizationBadRequest) Error() string {
@@ -104,7 +104,7 @@ func (o *QuitOrganizationBadRequest) Error() string {
 
 func (o *QuitOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +124,7 @@ func NewQuitOrganizationForbidden() *QuitOrganizationForbidden {
 Unauthorized
 */
 type QuitOrganizationForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *QuitOrganizationForbidden) Error() string {
@@ -133,7 +133,7 @@ func (o *QuitOrganizationForbidden) Error() string {
 
 func (o *QuitOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +153,7 @@ func NewQuitOrganizationInternalServerError() *QuitOrganizationInternalServerErr
 Server Error
 */
 type QuitOrganizationInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *QuitOrganizationInternalServerError) Error() string {
@@ -162,7 +162,7 @@ func (o *QuitOrganizationInternalServerError) Error() string {
 
 func (o *QuitOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

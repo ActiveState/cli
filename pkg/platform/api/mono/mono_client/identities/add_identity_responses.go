@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddIdentityReader is a Reader for the AddIdentity structure.
@@ -54,7 +54,7 @@ func NewAddIdentityOK() *AddIdentityOK {
 Identity Created
 */
 type AddIdentityOK struct {
-	Payload *models.Identity
+	Payload *mono_models.Identity
 }
 
 func (o *AddIdentityOK) Error() string {
@@ -63,7 +63,7 @@ func (o *AddIdentityOK) Error() string {
 
 func (o *AddIdentityOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Identity)
+	o.Payload = new(mono_models.Identity)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewAddIdentityBadRequest() *AddIdentityBadRequest {
 Bad Request
 */
 type AddIdentityBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddIdentityBadRequest) Error() string {
@@ -92,7 +92,7 @@ func (o *AddIdentityBadRequest) Error() string {
 
 func (o *AddIdentityBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

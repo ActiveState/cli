@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddIdentityParams creates a new AddIdentityParams object
@@ -67,7 +67,7 @@ type AddIdentityParams struct {
 	  Identity to add
 
 	*/
-	Identity *models.IdentityEditable
+	Identity *mono_models.IdentityEditable
 
 	timeout    time.Duration
 	Context    context.Context
@@ -108,13 +108,13 @@ func (o *AddIdentityParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithIdentity adds the identity to the add identity params
-func (o *AddIdentityParams) WithIdentity(identity *models.IdentityEditable) *AddIdentityParams {
+func (o *AddIdentityParams) WithIdentity(identity *mono_models.IdentityEditable) *AddIdentityParams {
 	o.SetIdentity(identity)
 	return o
 }
 
 // SetIdentity adds the identity to the add identity params
-func (o *AddIdentityParams) SetIdentity(identity *models.IdentityEditable) {
+func (o *AddIdentityParams) SetIdentity(identity *mono_models.IdentityEditable) {
 	o.Identity = identity
 }
 

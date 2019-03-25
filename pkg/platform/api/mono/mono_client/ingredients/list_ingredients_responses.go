@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIngredientsReader is a Reader for the ListIngredients structure.
@@ -47,7 +47,7 @@ func NewListIngredientsOK() *ListIngredientsOK {
 Success
 */
 type ListIngredientsOK struct {
-	Payload []*models.Ingredient
+	Payload []*mono_models.Ingredient
 }
 
 func (o *ListIngredientsOK) Error() string {

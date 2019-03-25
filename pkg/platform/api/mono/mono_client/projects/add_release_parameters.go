@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewAddReleaseParams creates a new AddReleaseParams object
@@ -77,7 +77,7 @@ type AddReleaseParams struct {
 	  Release details
 
 	*/
-	Release *models.Release
+	Release *mono_models.Release
 
 	timeout    time.Duration
 	Context    context.Context
@@ -140,13 +140,13 @@ func (o *AddReleaseParams) SetProjectName(projectName string) {
 }
 
 // WithRelease adds the release to the add release params
-func (o *AddReleaseParams) WithRelease(release *models.Release) *AddReleaseParams {
+func (o *AddReleaseParams) WithRelease(release *mono_models.Release) *AddReleaseParams {
 	o.SetRelease(release)
 	return o
 }
 
 // SetRelease adds the release to the add release params
-func (o *AddReleaseParams) SetRelease(release *models.Release) {
+func (o *AddReleaseParams) SetRelease(release *mono_models.Release) {
 	o.Release = release
 }
 

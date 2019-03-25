@@ -16,7 +16,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // NewPostLoginParams creates a new PostLoginParams object
@@ -64,7 +64,7 @@ for the post login operation typically these are written to a http.Request
 type PostLoginParams struct {
 
 	/*Credentials*/
-	Credentials *models.Credentials
+	Credentials *mono_models.Credentials
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,13 +105,13 @@ func (o *PostLoginParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithCredentials adds the credentials to the post login params
-func (o *PostLoginParams) WithCredentials(credentials *models.Credentials) *PostLoginParams {
+func (o *PostLoginParams) WithCredentials(credentials *mono_models.Credentials) *PostLoginParams {
 	o.SetCredentials(credentials)
 	return o
 }
 
 // SetCredentials adds the credentials to the post login params
-func (o *PostLoginParams) SetCredentials(credentials *models.Credentials) {
+func (o *PostLoginParams) SetCredentials(credentials *mono_models.Credentials) {
 	o.Credentials = credentials
 }
 

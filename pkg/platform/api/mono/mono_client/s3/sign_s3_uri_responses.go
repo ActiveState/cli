@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SignS3URIReader is a Reader for the SignS3URI structure.
@@ -68,7 +68,7 @@ func NewSignS3URIOK() *SignS3URIOK {
 Success
 */
 type SignS3URIOK struct {
-	Payload *models.SignedURI
+	Payload *mono_models.SignedURI
 }
 
 func (o *SignS3URIOK) Error() string {
@@ -77,7 +77,7 @@ func (o *SignS3URIOK) Error() string {
 
 func (o *SignS3URIOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.SignedURI)
+	o.Payload = new(mono_models.SignedURI)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -97,7 +97,7 @@ func NewSignS3URIBadRequest() *SignS3URIBadRequest {
 Bad Request
 */
 type SignS3URIBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SignS3URIBadRequest) Error() string {
@@ -106,7 +106,7 @@ func (o *SignS3URIBadRequest) Error() string {
 
 func (o *SignS3URIBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -126,7 +126,7 @@ func NewSignS3URIForbidden() *SignS3URIForbidden {
 Forbidden
 */
 type SignS3URIForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SignS3URIForbidden) Error() string {
@@ -135,7 +135,7 @@ func (o *SignS3URIForbidden) Error() string {
 
 func (o *SignS3URIForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -155,7 +155,7 @@ func NewSignS3URIInternalServerError() *SignS3URIInternalServerError {
 Server Error
 */
 type SignS3URIInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *SignS3URIInternalServerError) Error() string {
@@ -164,7 +164,7 @@ func (o *SignS3URIInternalServerError) Error() string {
 
 func (o *SignS3URIInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

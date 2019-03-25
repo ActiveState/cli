@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DisableTOTPReader is a Reader for the DisableTOTP structure.
@@ -54,7 +54,7 @@ func NewDisableTOTPOK() *DisableTOTPOK {
 Disabled TOTP
 */
 type DisableTOTPOK struct {
-	Payload *models.User
+	Payload *mono_models.User
 }
 
 func (o *DisableTOTPOK) Error() string {
@@ -63,7 +63,7 @@ func (o *DisableTOTPOK) Error() string {
 
 func (o *DisableTOTPOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.User)
+	o.Payload = new(mono_models.User)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -83,7 +83,7 @@ func NewDisableTOTPBadRequest() *DisableTOTPBadRequest {
 Bad Request
 */
 type DisableTOTPBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *DisableTOTPBadRequest) Error() string {
@@ -92,7 +92,7 @@ func (o *DisableTOTPBadRequest) Error() string {
 
 func (o *DisableTOTPBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListUsersReader is a Reader for the ListUsers structure.
@@ -54,7 +54,7 @@ func NewListUsersOK() *ListUsersOK {
 Success
 */
 type ListUsersOK struct {
-	Payload []*models.User
+	Payload []*mono_models.User
 }
 
 func (o *ListUsersOK) Error() string {
@@ -81,7 +81,7 @@ func NewListUsersInternalServerError() *ListUsersInternalServerError {
 Server Error
 */
 type ListUsersInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *ListUsersInternalServerError) Error() string {
@@ -90,7 +90,7 @@ func (o *ListUsersInternalServerError) Error() string {
 
 func (o *ListUsersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

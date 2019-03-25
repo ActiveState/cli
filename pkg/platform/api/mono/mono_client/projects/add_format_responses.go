@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddFormatReader is a Reader for the AddFormat structure.
@@ -75,7 +75,7 @@ func NewAddFormatOK() *AddFormatOK {
 Distro Added
 */
 type AddFormatOK struct {
-	Payload *models.Format
+	Payload *mono_models.Format
 }
 
 func (o *AddFormatOK) Error() string {
@@ -84,7 +84,7 @@ func (o *AddFormatOK) Error() string {
 
 func (o *AddFormatOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Format)
+	o.Payload = new(mono_models.Format)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewAddFormatBadRequest() *AddFormatBadRequest {
 Bad Request
 */
 type AddFormatBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddFormatBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *AddFormatBadRequest) Error() string {
 
 func (o *AddFormatBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewAddFormatForbidden() *AddFormatForbidden {
 Unauthorized
 */
 type AddFormatForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddFormatForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *AddFormatForbidden) Error() string {
 
 func (o *AddFormatForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewAddFormatConflict() *AddFormatConflict {
 Conflict
 */
 type AddFormatConflict struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddFormatConflict) Error() string {
@@ -171,7 +171,7 @@ func (o *AddFormatConflict) Error() string {
 
 func (o *AddFormatConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewAddFormatInternalServerError() *AddFormatInternalServerError {
 Server Error
 */
 type AddFormatInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *AddFormatInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *AddFormatInternalServerError) Error() string {
 
 func (o *AddFormatInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

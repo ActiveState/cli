@@ -13,7 +13,7 @@ import (
 
 	strfmt "github.com/go-openapi/strfmt"
 
-	models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // VerifyEmailReader is a Reader for the VerifyEmail structure.
@@ -75,7 +75,7 @@ func NewVerifyEmailOK() *VerifyEmailOK {
 Email updated
 */
 type VerifyEmailOK struct {
-	Payload *models.Email
+	Payload *mono_models.Email
 }
 
 func (o *VerifyEmailOK) Error() string {
@@ -84,7 +84,7 @@ func (o *VerifyEmailOK) Error() string {
 
 func (o *VerifyEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Email)
+	o.Payload = new(mono_models.Email)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -104,7 +104,7 @@ func NewVerifyEmailBadRequest() *VerifyEmailBadRequest {
 Invalid Code
 */
 type VerifyEmailBadRequest struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *VerifyEmailBadRequest) Error() string {
@@ -113,7 +113,7 @@ func (o *VerifyEmailBadRequest) Error() string {
 
 func (o *VerifyEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -133,7 +133,7 @@ func NewVerifyEmailForbidden() *VerifyEmailForbidden {
 Forbidden
 */
 type VerifyEmailForbidden struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *VerifyEmailForbidden) Error() string {
@@ -142,7 +142,7 @@ func (o *VerifyEmailForbidden) Error() string {
 
 func (o *VerifyEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -162,7 +162,7 @@ func NewVerifyEmailNotFound() *VerifyEmailNotFound {
 Not Found
 */
 type VerifyEmailNotFound struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *VerifyEmailNotFound) Error() string {
@@ -171,7 +171,7 @@ func (o *VerifyEmailNotFound) Error() string {
 
 func (o *VerifyEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -191,7 +191,7 @@ func NewVerifyEmailInternalServerError() *VerifyEmailInternalServerError {
 Server Error
 */
 type VerifyEmailInternalServerError struct {
-	Payload *models.Message
+	Payload *mono_models.Message
 }
 
 func (o *VerifyEmailInternalServerError) Error() string {
@@ -200,7 +200,7 @@ func (o *VerifyEmailInternalServerError) Error() string {
 
 func (o *VerifyEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
