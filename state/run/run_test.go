@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -46,6 +48,33 @@ scripts:
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestRunNoProjectInheritance(t *testing.T) {
+	Args.Name = "" // reset
+	failures.ResetHandled()
+
+	project := &projectfile.Project{}
+	contents := strings.TrimSpace(`
+scripts:
+  - name: run
+    value: echo $ACTIVESTATE_PROJECT
+    standalone: true
+  `)
+	err := yaml.Unmarshal([]byte(contents), project)
+	assert.Nil(t, err, "Unmarshalled YAML")
+	project.Persist()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"run"})
+
+	out, err := osutil.CaptureStdout(func() {
+		err := Command.Execute()
+		require.NoError(t, err)
+	})
+	require.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Equal(t, "Running script echo $ACTIVESTATE_PROJECT", strings.TrimSpace(out), "ACTIVESTATE_PROJECT is empty")
 }
 
 func TestRunMissingCommandName(t *testing.T) {
