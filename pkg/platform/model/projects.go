@@ -4,15 +4,15 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	clientProjects "github.com/ActiveState/cli/pkg/platform/api/client/projects"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
 
 // FetchProjectByName fetches a project for an organization.
-func FetchProjectByName(orgName string, projectName string) (*models.Project, *failures.Failure) {
+func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
 	params := clientProjects.NewGetProjectParams()
 	params.OrganizationName = orgName
 	params.ProjectName = projectName
@@ -24,7 +24,7 @@ func FetchProjectByName(orgName string, projectName string) (*models.Project, *f
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
-func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Failure) {
+func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, *failures.Failure) {
 	projParams := clientProjects.NewListProjectsParams()
 	projParams.SetOrganizationName(orgName)
 	orgProjects, err := authentication.Client().Projects.ListProjects(projParams, authentication.ClientAuth())
@@ -35,7 +35,7 @@ func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Fai
 }
 
 // DefaultBranchForProject retrieves the default branch for the given project
-func DefaultBranchForProject(pj *models.Project) (*models.Branch, *failures.Failure) {
+func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *failures.Failure) {
 	for _, branch := range pj.Branches {
 		if branch.Default {
 			return branch, nil

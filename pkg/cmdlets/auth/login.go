@@ -8,10 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
-	"github.com/ActiveState/cli/pkg/platform/api"
-	apiAuth "github.com/ActiveState/cli/pkg/platform/api/client/authentication"
-	"github.com/ActiveState/cli/pkg/platform/api/client/users"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
+	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/skratchdot/open-golang/open"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -34,7 +34,7 @@ var (
 
 // Authenticate will prompt the user for authentication
 func Authenticate() {
-	credentials := &models.Credentials{}
+	credentials := &mono_models.Credentials{}
 	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
@@ -86,7 +86,7 @@ func RequireAuthentication(message string) *failures.Failure {
 	return nil
 }
 
-func promptForLogin(credentials *models.Credentials) *failures.Failure {
+func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
 	var qs = []*survey.Question{
 		{
 			Name:     "username",
@@ -109,7 +109,7 @@ func promptForLogin(credentials *models.Credentials) *failures.Failure {
 
 // AuthenticateWithCredentials wil lauthenticate using the given credentials, it's main purpose is to communicate
 // any failures to the end-user
-func AuthenticateWithCredentials(credentials *models.Credentials) {
+func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 	auth := authentication.Get()
 	fail := auth.AuthenticateWithModel(credentials)
 
@@ -120,7 +120,7 @@ func AuthenticateWithCredentials(credentials *models.Credentials) {
 		case *apiAuth.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
-			_, err := api.Get().Users.UniqueUsername(params)
+			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
 				if promptConfirm("prompt_login_to_signup") {
 					signupFromLogin(credentials.Username, credentials.Password)

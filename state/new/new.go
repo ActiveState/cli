@@ -16,9 +16,9 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/platform/api/client/organizations"
-	"github.com/ActiveState/cli/pkg/platform/api/client/projects"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -128,7 +128,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	// Create the project on the ActiveState Platform.
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(Flags.Owner)
-	addParams.SetProject(&models.Project{Name: Args.Name})
+	addParams.SetProject(&mono_models.Project{Name: Args.Name})
 	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		logging.Errorf("Unable to create Platform project: %s", err)

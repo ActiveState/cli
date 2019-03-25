@@ -35,7 +35,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	failures.ResetHandled()
 
-	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
 
 	root, err := environment.GetRootPath()

@@ -9,16 +9,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/api/models"
-	"github.com/ActiveState/cli/pkg/project"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
 )
@@ -53,7 +52,7 @@ type VirtualEnvironmenter interface {
 type VirtualEnvironment struct {
 	venvs               map[string]VirtualEnvironmenter
 	project             *project.Project
-	projectModel        *models.Project
+	projectModel        *mono_models.Project
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 }
@@ -203,7 +202,7 @@ func (v *VirtualEnvironment) WorkingDirectory() string {
 }
 
 // fetchProjectModel gets the API version of the project, caches the result (repeat calls use cache)
-func (v *VirtualEnvironment) fetchProjectModel() (*models.Project, *failures.Failure) {
+func (v *VirtualEnvironment) fetchProjectModel() (*mono_models.Project, *failures.Failure) {
 	if v.projectModel == nil {
 		var fail *failures.Failure
 		v.projectModel, fail = model.FetchProjectByName(v.project.Owner(), v.project.Name())

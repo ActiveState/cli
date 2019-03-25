@@ -77,17 +77,17 @@ const UnstableBranch = "unstable"
 // ExperimentalBranch is the branch used for experimental builds
 const ExperimentalBranch = "master"
 
-// PlatformAPIPath is the api path used for the platform api
-const PlatformAPIPath = "/api/v1"
+// MonoAPIPath is the api path used for the platform api
+const MonoAPIPath = "/api/v1"
 
-// PlatformURLProd is the host used for platform api calls when on production
-const PlatformURLProd = "https://platform.activestate.com" + PlatformAPIPath
+// MonoURLProd is the host used for platform api calls when on production
+const MonoURLProd = "https://platform.activestate.com" + MonoAPIPath
 
-// PlatformURLStage is the host used for platform api calls when on staging
-const PlatformURLStage = "https://staging.activestate.build" + PlatformAPIPath
+// MonoURLStage is the host used for platform api calls when on staging
+const MonoURLStage = "https://staging.activestate.build" + MonoAPIPath
 
-// PlatformURLDev is the host used for platform api calls when on staging
-const PlatformURLDev = PlatformURLStage
+// MonoURLDev is the host used for platform api calls when on staging
+const MonoURLDev = MonoURLStage
 
 // SecretsAPIPath is the api path used for the secrets api
 const SecretsAPIPath = "/api/secrets/v1"

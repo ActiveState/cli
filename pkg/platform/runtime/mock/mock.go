@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
-	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"

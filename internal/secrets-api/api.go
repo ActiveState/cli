@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets-api/client"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
@@ -118,7 +118,7 @@ func (client *Client) Persist() {
 }
 
 // FetchAll fetchs the current user's secrets for an organization.
-func FetchAll(client *Client, org *models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
+func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
@@ -133,7 +133,7 @@ func FetchAll(client *Client, org *models.Organization) ([]*secretsModels.UserSe
 	return getOk.Payload, nil
 }
 
-func SaveSecretShares(secretsClient *Client, org *models.Organization, user *models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+func SaveSecretShares(secretsClient *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
 	params := secretsapiClient.NewShareUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID

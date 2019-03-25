@@ -20,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authCmd "github.com/ActiveState/cli/state/auth"
 	"github.com/spf13/viper"
@@ -47,8 +47,8 @@ func setup(t *testing.T) {
 	authlet.OpenURI = func(uri string) error { return nil }
 }
 
-func setupUser() *models.UserEditable {
-	testUser := &models.UserEditable{
+func setupUser() *mono_models.UserEditable {
+	testUser := &mono_models.UserEditable{
 		Username: "test",
 		Email:    "test@test.tld",
 		Password: "foo", // this matches the passphrase on testdata/self-private.key
@@ -60,7 +60,7 @@ func setupUser() *models.UserEditable {
 func TestExecuteNoArgs(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
@@ -82,7 +82,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -91,7 +91,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 
-	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -106,7 +106,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -130,7 +130,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -166,7 +166,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -219,7 +219,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -265,7 +265,7 @@ func TestExecuteToken(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -273,7 +273,7 @@ func TestExecuteToken(t *testing.T) {
 	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
 	httpmock.Register("POST", "/apikeys")
 
-	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -298,13 +298,13 @@ func TestExecuteLogout(t *testing.T) {
 
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
 
 	a := authentication.Get()
-	fail := a.AuthenticateWithModel(&models.Credentials{
+	fail := a.AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -328,7 +328,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -371,7 +371,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 	defer failures.ResetHandled()
@@ -423,7 +423,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 }
 
 func TestUsernameValidator(t *testing.T) {
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -441,7 +441,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -464,7 +464,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -484,7 +484,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -511,7 +511,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 

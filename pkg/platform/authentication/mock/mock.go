@@ -14,7 +14,7 @@ var mock *httpmock.HTTPMock
 
 func Init() *Mock {
 	return &Mock{
-		httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String()),
+		httpmock.Activate(api.GetServiceURL(api.ServiceMono).String()),
 	}
 }
 
