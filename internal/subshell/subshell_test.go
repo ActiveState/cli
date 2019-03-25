@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -78,6 +82,31 @@ copy NUL %s`, tmpfile.Name()))
 	}
 
 	assert.FileExists(t, tmpfile.Name())
+
+	projectfile.Reset()
+}
+
+func TestRunCommandNoProjectEnv(t *testing.T) {
+	pfile := &projectfile.Project{}
+	pfile.Persist()
+
+	os.Setenv("SHELL", "bash")
+	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
+
+	subs, err := Get()
+	assert.NoError(t, err)
+
+	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	assert.NoError(t, err)
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
+
+	out, err := osutil.CaptureStdout(func() {
+		_, err := subs.Run(`echo $ACTIVESTATE_PROJECT`)
+		require.NoError(t, err)
+	})
+	require.NoError(t, err)
+	assert.Empty(t, strings.TrimSpace(out), "Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
 
 	projectfile.Reset()
 }

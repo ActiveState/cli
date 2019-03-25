@@ -28,16 +28,22 @@ defaults:
       run:
         name: Build the CLI
         command: |
-          $GOBIN/packr
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-          echo "Building for internal use"
-          APIENV=prod state run build
-
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
             APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
           fi
+
+          echo "Building for internal use"
+          APIENV=prod state run build
+    runIntegrationTests: &runIntegrationTests
+      run:
+        name: Run integration tests
+        command: |
+          pushd test/integration
+          pip3 install -r requirements.txt
+          popd
+          build/state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -63,8 +69,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Prepare Code-Climate Integration
+          name: Install Dependencies
           command: |
+            sudo apt-get install python3 python3-pip
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
@@ -73,6 +80,7 @@ jobs:
           command: ~/.local/bin/state auth $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
+      - <<: *runIntegrationTests
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
@@ -89,14 +97,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Golang
+          name: Install Dependencies
           command: |
             cd /private/tmp
             curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
-      - run:
-          name: Prepare Code-Climate Integration
-          command: |
+
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
@@ -109,6 +115,8 @@ jobs:
             state run test
       - <<: *buildCli
       - <<: *deployBits
+      # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
+      #- <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
 workflows:
