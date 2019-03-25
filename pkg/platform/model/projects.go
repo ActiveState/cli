@@ -18,7 +18,7 @@ func FetchProjectByName(orgName string, projectName string) (*models.Project, *f
 	params.ProjectName = projectName
 	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, processErrorResponse(err)
+		return nil, processProjectErrorResponse(err)
 	}
 	return resOk.Payload, nil
 }
@@ -29,7 +29,7 @@ func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Fai
 	projParams.SetOrganizationName(orgName)
 	orgProjects, err := authentication.Client().Projects.ListProjects(projParams, authentication.ClientAuth())
 	if err != nil {
-		return nil, processErrorResponse(err)
+		return nil, processProjectErrorResponse(err)
 	}
 	return orgProjects.Payload, nil
 }
@@ -44,7 +44,7 @@ func DefaultBranchForProject(pj *models.Project) (*models.Branch, *failures.Fail
 	return nil, FailNoDefaultBranch.New(locale.T("err_no_default_branch"))
 }
 
-func processErrorResponse(err error) *failures.Failure {
+func processProjectErrorResponse(err error) *failures.Failure {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")

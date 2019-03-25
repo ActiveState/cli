@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
@@ -328,7 +327,7 @@ func (v *Variable) Save(value string) *failures.Failure {
 }
 
 func (v *Variable) saveSecretValue(value string) *failures.Failure {
-	org, failure := organizations.FetchByURLName(v.projectfile.Owner)
+	org, failure := model.FetchOrgByURLName(v.projectfile.Owner)
 	if failure != nil {
 		return failure
 	}

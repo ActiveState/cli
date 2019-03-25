@@ -1,4 +1,4 @@
-package organizations
+package model
 
 import (
 	"strings"
@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-// FetchAll fetches all organizations for the current user.
-func FetchAll() ([]*models.Organization, *failures.Failure) {
+// FetchOrganizations fetches all organizations for the current user.
+func FetchOrganizations() ([]*models.Organization, *failures.Failure) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	personal := false
@@ -20,36 +20,37 @@ func FetchAll() ([]*models.Organization, *failures.Failure) {
 	res, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 
 	if err != nil {
-		return nil, processErrorResponse(err)
+		return nil, processOrgErrorResponse(err)
 	}
 
 	return res.Payload, nil
 }
 
-// FetchByURLName fetches an organization accessible to the current user by it's URL Name.
-func FetchByURLName(urlName string) (*models.Organization, *failures.Failure) {
+// FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
+func FetchOrgByURLName(urlName string) (*models.Organization, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationName = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, processErrorResponse(err)
+		return nil, processOrgErrorResponse(err)
 	}
 	return resOk.Payload, nil
 }
 
-// FetchMembers fetches the members of an organization accessible to the current user by it's URL Name.
-func FetchMembers(urlName string) ([]*models.Member, *failures.Failure) {
+// FetchOrgMembers fetches the members of an organization accessible to the current user by it's URL Name.
+func FetchOrgMembers(urlName string) ([]*models.Member, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, processErrorResponse(err)
+		return nil, processOrgErrorResponse(err)
 	}
 	return resOk.Payload, nil
 }
 
-func FetchMember(org *models.Organization, name string) (*models.Member, *failures.Failure) {
-	members, failure := FetchMembers(org.Urlname)
+// FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
+func FetchOrgMember(org *models.Organization, name string) (*models.Member, *failures.Failure) {
+	members, failure := FetchOrgMembers(org.Urlname)
 	if failure != nil {
 		return nil, failure
 	}
@@ -62,7 +63,7 @@ func FetchMember(org *models.Organization, name string) (*models.Member, *failur
 	return nil, api.FailNotFound.New("err_api_member_not_found")
 }
 
-func processErrorResponse(err error) *failures.Failure {
+func processOrgErrorResponse(err error) *failures.Failure {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")

@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +29,7 @@ func buildSyncCommand(cmd *Command) *commands.Command {
 // ExecuteSync processes the `secrets sync` command.
 func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
 	project := project.Get()
-	org, failure := organizations.FetchByURLName(project.Owner())
+	org, failure := model.FetchOrgByURLName(project.Owner())
 
 	if failure == nil {
 		failure = synchronizeEachOrgMember(cmd.secretsClient, org)
@@ -46,7 +46,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Orga
 		return failure
 	}
 
-	members, failure := organizations.FetchMembers(org.Urlname)
+	members, failure := model.FetchOrgMembers(org.Urlname)
 	if failure != nil {
 		return failure
 	}

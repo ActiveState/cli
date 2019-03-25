@@ -60,3 +60,15 @@ func (m *Mock) MockGetProjectDiffCommit() {
 func (m *Mock) MockGetProject404() {
 	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
 }
+
+func (m *Mock) MockGetOrganizations() {
+	httpmock.RegisterWithCode("GET", "/organizations", 200)
+}
+
+func (m *Mock) MockGetOrganization() {
+	httpmock.RegisterWithCode("GET", "/organizations/string", 200)
+}
+
+func (m *Mock) MockGetOrganization404() {
+	httpmock.RegisterWithCode("GET", "/organizations/string", 404)
+}

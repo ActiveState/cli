@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/organizations"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
@@ -66,7 +65,7 @@ func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure
 	}
 	var fail *failures.Failure
 	if e.organization == nil {
-		e.organization, fail = organizations.FetchByURLName(e.projectFile.Owner)
+		e.organization, fail = model.FetchOrgByURLName(e.projectFile.Owner)
 		if fail != nil {
 			return nil, fail
 		}
