@@ -6,15 +6,17 @@ package keys
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // NewSaveKeypairParams creates a new SaveKeypairParams object
@@ -65,7 +67,7 @@ type SaveKeypairParams struct {
 	  Keypair to create or update
 
 	*/
-	Keypair *models.KeypairChange
+	Keypair *secrets_models.KeypairChange
 
 	timeout    time.Duration
 	Context    context.Context
@@ -106,13 +108,13 @@ func (o *SaveKeypairParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithKeypair adds the keypair to the save keypair params
-func (o *SaveKeypairParams) WithKeypair(keypair *models.KeypairChange) *SaveKeypairParams {
+func (o *SaveKeypairParams) WithKeypair(keypair *secrets_models.KeypairChange) *SaveKeypairParams {
 	o.SetKeypair(keypair)
 	return o
 }
 
 // SetKeypair adds the keypair to the save keypair params
-func (o *SaveKeypairParams) SetKeypair(keypair *models.KeypairChange) {
+func (o *SaveKeypairParams) SetKeypair(keypair *secrets_models.KeypairChange) {
 	o.Keypair = keypair
 }
 

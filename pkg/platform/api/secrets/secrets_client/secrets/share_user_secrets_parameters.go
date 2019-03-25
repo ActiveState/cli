@@ -6,15 +6,17 @@ package secrets
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // NewShareUserSecretsParams creates a new ShareUserSecretsParams object
@@ -75,7 +77,7 @@ type ShareUserSecretsParams struct {
 	  Collection of secrets to create or update
 
 	*/
-	UserSecrets []*models.UserSecretShare
+	UserSecrets []*secrets_models.UserSecretShare
 
 	timeout    time.Duration
 	Context    context.Context
@@ -138,13 +140,13 @@ func (o *ShareUserSecretsParams) SetUserID(userID strfmt.UUID) {
 }
 
 // WithUserSecrets adds the userSecrets to the share user secrets params
-func (o *ShareUserSecretsParams) WithUserSecrets(userSecrets []*models.UserSecretShare) *ShareUserSecretsParams {
+func (o *ShareUserSecretsParams) WithUserSecrets(userSecrets []*secrets_models.UserSecretShare) *ShareUserSecretsParams {
 	o.SetUserSecrets(userSecrets)
 	return o
 }
 
 // SetUserSecrets adds the userSecrets to the share user secrets params
-func (o *ShareUserSecretsParams) SetUserSecrets(userSecrets []*models.UserSecretShare) {
+func (o *ShareUserSecretsParams) SetUserSecrets(userSecrets []*secrets_models.UserSecretShare) {
 	o.UserSecrets = userSecrets
 }
 

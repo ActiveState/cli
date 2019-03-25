@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // GetWhoamiReader is a Reader for the GetWhoami structure.
@@ -52,7 +54,7 @@ func NewGetWhoamiOK() *GetWhoamiOK {
 Success
 */
 type GetWhoamiOK struct {
-	Payload *models.UID
+	Payload *secrets_models.UID
 }
 
 func (o *GetWhoamiOK) Error() string {
@@ -61,7 +63,7 @@ func (o *GetWhoamiOK) Error() string {
 
 func (o *GetWhoamiOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.UID)
+	o.Payload = new(secrets_models.UID)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -81,7 +83,7 @@ func NewGetWhoamiUnauthorized() *GetWhoamiUnauthorized {
 Invalid credentials
 */
 type GetWhoamiUnauthorized struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetWhoamiUnauthorized) Error() string {
@@ -90,7 +92,7 @@ func (o *GetWhoamiUnauthorized) Error() string {
 
 func (o *GetWhoamiUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

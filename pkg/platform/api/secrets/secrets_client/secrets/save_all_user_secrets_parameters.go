@@ -6,15 +6,17 @@ package secrets
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // NewSaveAllUserSecretsParams creates a new SaveAllUserSecretsParams object
@@ -70,7 +72,7 @@ type SaveAllUserSecretsParams struct {
 	  Collection of secrets to create or update
 
 	*/
-	UserSecrets []*models.UserSecretChange
+	UserSecrets []*secrets_models.UserSecretChange
 
 	timeout    time.Duration
 	Context    context.Context
@@ -122,13 +124,13 @@ func (o *SaveAllUserSecretsParams) SetOrganizationID(organizationID strfmt.UUID)
 }
 
 // WithUserSecrets adds the userSecrets to the save all user secrets params
-func (o *SaveAllUserSecretsParams) WithUserSecrets(userSecrets []*models.UserSecretChange) *SaveAllUserSecretsParams {
+func (o *SaveAllUserSecretsParams) WithUserSecrets(userSecrets []*secrets_models.UserSecretChange) *SaveAllUserSecretsParams {
 	o.SetUserSecrets(userSecrets)
 	return o
 }
 
 // SetUserSecrets adds the userSecrets to the save all user secrets params
-func (o *SaveAllUserSecretsParams) SetUserSecrets(userSecrets []*models.UserSecretChange) {
+func (o *SaveAllUserSecretsParams) SetUserSecrets(userSecrets []*secrets_models.UserSecretChange) {
 	o.UserSecrets = userSecrets
 }
 

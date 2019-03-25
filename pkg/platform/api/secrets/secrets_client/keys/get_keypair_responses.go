@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // GetKeypairReader is a Reader for the GetKeypair structure.
@@ -66,7 +68,7 @@ func NewGetKeypairOK() *GetKeypairOK {
 Success
 */
 type GetKeypairOK struct {
-	Payload *models.Keypair
+	Payload *secrets_models.Keypair
 }
 
 func (o *GetKeypairOK) Error() string {
@@ -75,7 +77,7 @@ func (o *GetKeypairOK) Error() string {
 
 func (o *GetKeypairOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Keypair)
+	o.Payload = new(secrets_models.Keypair)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,7 +97,7 @@ func NewGetKeypairUnauthorized() *GetKeypairUnauthorized {
 Invalid credentials
 */
 type GetKeypairUnauthorized struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetKeypairUnauthorized) Error() string {
@@ -104,7 +106,7 @@ func (o *GetKeypairUnauthorized) Error() string {
 
 func (o *GetKeypairUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +126,7 @@ func NewGetKeypairNotFound() *GetKeypairNotFound {
 Not Found
 */
 type GetKeypairNotFound struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetKeypairNotFound) Error() string {
@@ -133,7 +135,7 @@ func (o *GetKeypairNotFound) Error() string {
 
 func (o *GetKeypairNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +155,7 @@ func NewGetKeypairInternalServerError() *GetKeypairInternalServerError {
 Server Error
 */
 type GetKeypairInternalServerError struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetKeypairInternalServerError) Error() string {
@@ -162,7 +164,7 @@ func (o *GetKeypairInternalServerError) Error() string {
 
 func (o *GetKeypairInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

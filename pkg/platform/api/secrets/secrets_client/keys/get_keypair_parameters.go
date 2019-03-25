@@ -6,14 +6,15 @@ package keys
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
+
 	strfmt "github.com/go-openapi/strfmt"
-	"golang.org/x/net/context"
 )
 
 // NewGetKeypairParams creates a new GetKeypairParams object

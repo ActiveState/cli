@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // SaveKeypairReader is a Reader for the SaveKeypair structure.
@@ -87,7 +89,7 @@ func NewSaveKeypairBadRequest() *SaveKeypairBadRequest {
 Bad Request
 */
 type SaveKeypairBadRequest struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *SaveKeypairBadRequest) Error() string {
@@ -96,7 +98,7 @@ func (o *SaveKeypairBadRequest) Error() string {
 
 func (o *SaveKeypairBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -116,7 +118,7 @@ func NewSaveKeypairUnauthorized() *SaveKeypairUnauthorized {
 Invalid credentials
 */
 type SaveKeypairUnauthorized struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *SaveKeypairUnauthorized) Error() string {
@@ -125,7 +127,7 @@ func (o *SaveKeypairUnauthorized) Error() string {
 
 func (o *SaveKeypairUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -145,7 +147,7 @@ func NewSaveKeypairInternalServerError() *SaveKeypairInternalServerError {
 Server Error
 */
 type SaveKeypairInternalServerError struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *SaveKeypairInternalServerError) Error() string {
@@ -154,7 +156,7 @@ func (o *SaveKeypairInternalServerError) Error() string {
 
 func (o *SaveKeypairInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

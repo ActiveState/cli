@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // GetPublicKeyReader is a Reader for the GetPublicKey structure.
@@ -66,7 +68,7 @@ func NewGetPublicKeyOK() *GetPublicKeyOK {
 Success
 */
 type GetPublicKeyOK struct {
-	Payload *models.PublicKey
+	Payload *secrets_models.PublicKey
 }
 
 func (o *GetPublicKeyOK) Error() string {
@@ -75,7 +77,7 @@ func (o *GetPublicKeyOK) Error() string {
 
 func (o *GetPublicKeyOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.PublicKey)
+	o.Payload = new(secrets_models.PublicKey)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -95,7 +97,7 @@ func NewGetPublicKeyUnauthorized() *GetPublicKeyUnauthorized {
 Invalid credentials
 */
 type GetPublicKeyUnauthorized struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetPublicKeyUnauthorized) Error() string {
@@ -104,7 +106,7 @@ func (o *GetPublicKeyUnauthorized) Error() string {
 
 func (o *GetPublicKeyUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -124,7 +126,7 @@ func NewGetPublicKeyNotFound() *GetPublicKeyNotFound {
 Not Found
 */
 type GetPublicKeyNotFound struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetPublicKeyNotFound) Error() string {
@@ -133,7 +135,7 @@ func (o *GetPublicKeyNotFound) Error() string {
 
 func (o *GetPublicKeyNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -153,7 +155,7 @@ func NewGetPublicKeyInternalServerError() *GetPublicKeyInternalServerError {
 Server Error
 */
 type GetPublicKeyInternalServerError struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *GetPublicKeyInternalServerError) Error() string {
@@ -162,7 +164,7 @@ func (o *GetPublicKeyInternalServerError) Error() string {
 
 func (o *GetPublicKeyInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

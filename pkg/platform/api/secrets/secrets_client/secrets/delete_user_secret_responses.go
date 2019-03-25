@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
+
 	strfmt "github.com/go-openapi/strfmt"
+
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // DeleteUserSecretReader is a Reader for the DeleteUserSecret structure.
@@ -87,7 +89,7 @@ func NewDeleteUserSecretUnauthorized() *DeleteUserSecretUnauthorized {
 Invalid credentials
 */
 type DeleteUserSecretUnauthorized struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *DeleteUserSecretUnauthorized) Error() string {
@@ -96,7 +98,7 @@ func (o *DeleteUserSecretUnauthorized) Error() string {
 
 func (o *DeleteUserSecretUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -116,7 +118,7 @@ func NewDeleteUserSecretNotFound() *DeleteUserSecretNotFound {
 Not Found
 */
 type DeleteUserSecretNotFound struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *DeleteUserSecretNotFound) Error() string {
@@ -125,7 +127,7 @@ func (o *DeleteUserSecretNotFound) Error() string {
 
 func (o *DeleteUserSecretNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -145,7 +147,7 @@ func NewDeleteUserSecretInternalServerError() *DeleteUserSecretInternalServerErr
 Server Error
 */
 type DeleteUserSecretInternalServerError struct {
-	Payload *models.Message
+	Payload *secrets_models.Message
 }
 
 func (o *DeleteUserSecretInternalServerError) Error() string {
@@ -154,7 +156,7 @@ func (o *DeleteUserSecretInternalServerError) Error() string {
 
 func (o *DeleteUserSecretInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Message)
+	o.Payload = new(secrets_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -6,12 +6,14 @@ package secrets_client
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	strfmt "github.com/go-openapi/strfmt"
 )
 
 // Default secrets HTTP client.
