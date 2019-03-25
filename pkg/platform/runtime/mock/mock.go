@@ -2,7 +2,6 @@ package mock
 
 import (
 	"github.com/ActiveState/cli/internal/download"
-	projMock "github.com/ActiveState/cli/internal/projects/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
@@ -19,7 +18,6 @@ type Mock struct {
 	invMock  *invMock.Mock
 	apiMock  *apiMock.Mock
 	authMock *authMock.Mock
-	projMock *projMock.Mock
 }
 
 var mock *httpmock.HTTPMock
@@ -31,7 +29,6 @@ func Init() *Mock {
 		invMock.Init(),
 		apiMock.Init(),
 		authMock.Init(),
-		projMock.Init(),
 	}
 }
 
@@ -41,16 +38,15 @@ func (m *Mock) Close() {
 	m.invMock.Close()
 	m.apiMock.Close()
 	m.authMock.Close()
-	m.projMock.Close()
 }
 
 func (m *Mock) MockFullRuntime() {
 	m.authMock.MockLoggedin()
 	m.apiMock.MockVcsGetCheckpoint()
 	m.apiMock.MockSignS3URI()
+	m.apiMock.MockGetProject()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
-	m.projMock.MockGetProject()
 
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)

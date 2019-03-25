@@ -1,4 +1,4 @@
-package projects
+package model
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var FailNoDefaultBranch = failures.Type("projects.fail.nodefaultbranch")
+var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
 
-// FetchByName fetches a project for an organization.
-func FetchByName(orgName string, projectName string) (*models.Project, *failures.Failure) {
+// FetchProjectByName fetches a project for an organization.
+func FetchProjectByName(orgName string, projectName string) (*models.Project, *failures.Failure) {
 	params := clientProjects.NewGetProjectParams()
 	params.OrganizationName = orgName
 	params.ProjectName = projectName
@@ -34,8 +34,8 @@ func FetchOrganizationProjects(orgName string) ([]*models.Project, *failures.Fai
 	return orgProjects.Payload, nil
 }
 
-// DefaultBranch retrieves the default branch for the given project
-func DefaultBranch(pj *models.Project) (*models.Branch, *failures.Failure) {
+// DefaultBranchForProject retrieves the default branch for the given project
+func DefaultBranchForProject(pj *models.Project) (*models.Branch, *failures.Failure) {
 	for _, branch := range pj.Branches {
 		if branch.Default {
 			return branch, nil

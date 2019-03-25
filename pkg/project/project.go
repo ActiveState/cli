@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/organizations"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
@@ -335,7 +335,7 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 
 	var project *models.Project
 	if projectfile.VariablePullFromProject == *v.PulledFrom() {
-		project, failure = projects.FetchByName(org.Urlname, v.projectfile.Name)
+		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
 		if failure != nil {
 			return failure
 		}

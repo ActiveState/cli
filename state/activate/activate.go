@@ -8,21 +8,18 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
-
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -134,12 +131,12 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	name := groups[2]
 
 	// Ensure that the project exists and that we have access to it
-	project, fail := projects.FetchByName(org, name)
+	project, fail := model.FetchProjectByName(org, name)
 	if fail != nil {
 		return fail
 	}
 
-	branch, fail := projects.DefaultBranch(project)
+	branch, fail := model.DefaultBranchForProject(project)
 	if fail != nil {
 		return fail
 	}

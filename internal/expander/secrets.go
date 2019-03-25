@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/organizations"
-	"github.com/ActiveState/cli/internal/projects"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -82,7 +82,7 @@ func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
 	}
 	var fail *failures.Failure
 	if e.project == nil {
-		e.project, fail = projects.FetchByName(e.projectFile.Owner, e.projectFile.Name)
+		e.project, fail = model.FetchProjectByName(e.projectFile.Owner, e.projectFile.Name)
 		if fail != nil {
 			return nil, fail
 		}

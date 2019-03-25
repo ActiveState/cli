@@ -25,12 +25,12 @@ func (m *Mock) Close() {
 	httpmock.DeActivate()
 }
 
-func (m *Mock) MockVcsGetCheckpoint() {
-	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
-}
-
 func (m *Mock) MockSignS3URI() {
 	m.httpmock.Register("GET", "/s3/sign/http:%2F%2Ftest.tld%2Farchive.tar.gz")
+}
+
+func (m *Mock) MockVcsGetCheckpoint() {
+	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
 }
 
 func (m *Mock) MockVcsGetCheckpointPython() {
@@ -47,4 +47,16 @@ func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *models.Checkpoint) {
 	}
 	json := fmt.Sprintf("[%s]", string(jsonBytes))
 	m.httpmock.RegisterWithResponseBody("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint", 200, json)
+}
+
+func (m *Mock) MockGetProject() {
+	m.httpmock.Register("GET", "/organizations/string/projects/string")
+}
+
+func (m *Mock) MockGetProjectDiffCommit() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
+}
+
+func (m *Mock) MockGetProject404() {
+	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
 }
