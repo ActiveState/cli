@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 type Mock struct {
@@ -34,13 +34,13 @@ func (m *Mock) MockVcsGetCheckpoint() {
 }
 
 func (m *Mock) MockVcsGetCheckpointPython() {
-	m.MockVcsGetCheckpointCustomReq(&models.Checkpoint{
+	m.MockVcsGetCheckpointCustomReq(&mono_models.Checkpoint{
 		Namespace:   "language",
 		Requirement: "Python",
 	})
 }
 
-func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *models.Checkpoint) {
+func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *mono_models.Checkpoint) {
 	jsonBytes, err := requirement.MarshalBinary()
 	if err != nil {
 		log.Panicf("Error during marshalling requirement: %v", err)

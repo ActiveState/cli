@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/client/s3"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 

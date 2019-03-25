@@ -5,18 +5,13 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-
-	"github.com/ActiveState/cli/pkg/platform/api/client/status"
-
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/pkg/platform/api/client/authentication"
-
 	"github.com/ActiveState/cli/pkg/platform/api"
-
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/status"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	httptransport "github.com/go-openapi/runtime/client"
 )
 
 func TestNew(t *testing.T) {

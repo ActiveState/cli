@@ -9,9 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/client"
-	"github.com/ActiveState/cli/pkg/platform/api/client/authentication"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/viper"
@@ -46,10 +46,10 @@ var persist *Auth
 
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
-	client      *client.APIClient
+	client      *mono_client.APIClient
 	clientAuth  *runtime.ClientAuthInfoWriter
 	bearerToken string
-	user        *models.User
+	user        *mono_models.User
 }
 
 // Get returns a cached version of Auth
@@ -61,7 +61,7 @@ func Get() *Auth {
 }
 
 // Client is a shortcut for calling Client() on the persisted auth
-func Client() *client.APIClient {
+func Client() *mono_client.APIClient {
 	return Get().Client()
 }
 
@@ -135,7 +135,7 @@ func (s *Auth) Authenticate() *failures.Failure {
 }
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
-func (s *Auth) AuthenticateWithModel(credentials *models.Credentials) *failures.Failure {
+func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *failures.Failure {
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
 	loginOK, err := api.Get().Authentication.PostLogin(params)
@@ -162,7 +162,7 @@ func (s *Auth) AuthenticateWithModel(credentials *models.Credentials) *failures.
 
 // AuthenticateWithUser will try to authenticate using the given credentials
 func (s *Auth) AuthenticateWithUser(username, password, totp string) *failures.Failure {
-	return s.AuthenticateWithModel(&models.Credentials{
+	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Username: username,
 		Password: password,
 		Totp:     totp,
@@ -171,7 +171,7 @@ func (s *Auth) AuthenticateWithUser(username, password, totp string) *failures.F
 
 // AuthenticateWithToken will try to authenticate using the given token
 func (s *Auth) AuthenticateWithToken(token string) *failures.Failure {
-	return s.AuthenticateWithModel(&models.Credentials{
+	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Token: token,
 	})
 }
@@ -202,7 +202,7 @@ func (s *Auth) Logout() {
 }
 
 // Client will return an API client that has authentication set up
-func (s *Auth) Client() *client.APIClient {
+func (s *Auth) Client() *mono_client.APIClient {
 	if s.client == nil {
 		s.client = api.NewWithAuth(s.clientAuth)
 	}
@@ -238,7 +238,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 	}
 
 	params := authentication.NewAddTokenParams()
-	params.SetTokenOptions(&models.TokenEditable{Name: constants.APITokenName})
+	params.SetTokenOptions(&mono_models.TokenEditable{Name: constants.APITokenName})
 	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())
 	if err != nil {
 		return FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))

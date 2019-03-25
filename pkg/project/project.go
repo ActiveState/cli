@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/expander"
@@ -332,7 +332,7 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 		return failure
 	}
 
-	var project *models.Project
+	var project *mono_models.Project
 	if projectfile.VariablePullFromProject == *v.PulledFrom() {
 		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
 		if failure != nil {

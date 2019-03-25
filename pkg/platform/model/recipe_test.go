@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
@@ -42,11 +42,11 @@ func (suite *RecipeTestSuite) AfterTest(suiteName, testName string) {
 	suite.authMock.Close()
 }
 
-func (suite *RecipeTestSuite) mockProject() *models.Project {
+func (suite *RecipeTestSuite) mockProject() *mono_models.Project {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-	return &models.Project{
-		Branches: models.Branches{
-			&models.Branch{
+	return &mono_models.Project{
+		Branches: mono_models.Branches{
+			&mono_models.Branch{
 				BranchID: uid,
 				Default:  true,
 				CommitID: &uid,

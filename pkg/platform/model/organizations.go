@@ -5,13 +5,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/client/organizations"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // FetchOrganizations fetches all organizations for the current user.
-func FetchOrganizations() ([]*models.Organization, *failures.Failure) {
+func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
 	personal := false
@@ -27,7 +27,7 @@ func FetchOrganizations() ([]*models.Organization, *failures.Failure) {
 }
 
 // FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
-func FetchOrgByURLName(urlName string) (*models.Organization, *failures.Failure) {
+func FetchOrgByURLName(urlName string) (*mono_models.Organization, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationName = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
@@ -38,7 +38,7 @@ func FetchOrgByURLName(urlName string) (*models.Organization, *failures.Failure)
 }
 
 // FetchOrgMembers fetches the members of an organization accessible to the current user by it's URL Name.
-func FetchOrgMembers(urlName string) ([]*models.Member, *failures.Failure) {
+func FetchOrgMembers(urlName string) ([]*mono_models.Member, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganizationMembers(params, authentication.ClientAuth())
@@ -49,7 +49,7 @@ func FetchOrgMembers(urlName string) ([]*models.Member, *failures.Failure) {
 }
 
 // FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
-func FetchOrgMember(org *models.Organization, name string) (*models.Member, *failures.Failure) {
+func FetchOrgMember(org *mono_models.Organization, name string) (*mono_models.Member, *failures.Failure) {
 	members, failure := FetchOrgMembers(org.Urlname)
 	if failure != nil {
 		return nil, failure

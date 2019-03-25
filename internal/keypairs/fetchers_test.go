@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
-	apiModels "github.com/ActiveState/cli/pkg/platform/api/models"
+	apiModels "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )

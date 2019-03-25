@@ -12,7 +12,7 @@ import (
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
@@ -40,7 +40,7 @@ func (cmd *Command) ExecuteSync(_ *cobra.Command, args []string) {
 	}
 }
 
-func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *models.Organization) *failures.Failure {
+func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization) *failures.Failure {
 	sourceKeypair, failure := secrets.LoadKeypairFromConfigDir()
 	if failure != nil {
 		return failure

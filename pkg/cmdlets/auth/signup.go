@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/client/users"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -112,7 +112,7 @@ func promptForSignup(input *signupInput) error {
 
 func doSignup(input *signupInput) {
 	params := users.NewAddUserParams()
-	params.SetUser(&models.UserEditable{
+	params.SetUser(&mono_models.UserEditable{
 		Email:    input.Email,
 		Username: input.Username,
 		Password: input.Password,
@@ -132,7 +132,7 @@ func doSignup(input *signupInput) {
 		return
 	}
 
-	AuthenticateWithCredentials(&models.Credentials{
+	AuthenticateWithCredentials(&mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
 	})

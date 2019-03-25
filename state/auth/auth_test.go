@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -40,8 +40,8 @@ func setup(t *testing.T) {
 	Args.Token = ""
 }
 
-func setupUser() *models.UserEditable {
-	testUser := &models.UserEditable{
+func setupUser() *mono_models.UserEditable {
+	testUser := &mono_models.UserEditable{
 		Username: "test",
 		Email:    "test@test.tld",
 		Password: "foo", // this matches the passphrase on testdata/self-private.key
@@ -63,7 +63,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 
-	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -131,7 +131,7 @@ func TestExecuteToken(t *testing.T) {
 	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
 	httpmock.Register("POST", "/apikeys")
 
-	fail := authentication.Get().AuthenticateWithModel(&models.Credentials{
+	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -162,7 +162,7 @@ func TestExecuteLogout(t *testing.T) {
 	httpmock.Register("POST", "/login")
 
 	auth := authentication.Get()
-	fail := auth.AuthenticateWithModel(&models.Credentials{
+	fail := auth.AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})

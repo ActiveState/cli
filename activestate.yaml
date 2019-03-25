@@ -45,8 +45,8 @@ scripts: &scripts
   - name: generate-api-client
     value: |
       WD=$(pwd)
-      pushd pkg/platform/api/platform
-      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yml -A platform -a platform_operations -m platform_models -c platform_client
+      pushd pkg/platform/api/mono
+      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yml -A mono -a mono_operations -m mono_models -c mono_client
       popd
   - name: generate-secrets-client
     value: |
