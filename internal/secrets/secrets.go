@@ -4,10 +4,10 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/logging"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/expander"
 
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"

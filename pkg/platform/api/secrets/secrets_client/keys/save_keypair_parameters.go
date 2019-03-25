@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	models "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"

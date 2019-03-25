@@ -2,9 +2,9 @@ package keypairs
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 var (

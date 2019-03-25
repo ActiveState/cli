@@ -1,4 +1,4 @@
-package secretsapi_test
+package secrets_test
 
 import (
 	"net/url"

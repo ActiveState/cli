@@ -6,11 +6,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	apiModels "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
@@ -69,7 +69,7 @@ func (suite *KeypairFetcherTestSuite) TestFetchRaw_Success() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
 	kp, failure := keypairs.FetchRaw(suite.secretsClient)
 	suite.Require().Nil(failure)
-	suite.IsType(&models.Keypair{}, kp)
+	suite.IsType(&secrets_models.Keypair{}, kp)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchPublicKey_NotFound() {

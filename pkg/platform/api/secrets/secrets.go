@@ -1,4 +1,4 @@
-package secretsapi
+package secrets
 
 import (
 	"fmt"
@@ -7,12 +7,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/secrets-api/client"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client"
 
-	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -45,7 +45,7 @@ var persistentClient *Client
 
 // Client encapsulates a Secrets Service API client and its configuration
 type Client struct {
-	*client.Secrets
+	*secrets_client.Secrets
 	BaseURI string
 	Auth    runtime.ClientAuthInfoWriter
 }
@@ -69,7 +69,7 @@ func Reset() {
 func NewClient(schema, host, basePath, bearerToken string) *Client {
 	logging.Debug("secrets-api scheme=%s host=%s base_path=%s", schema, host, basePath)
 	secretsClient := &Client{
-		Secrets: client.New(httptransport.New(host, basePath, []string{schema}), strfmt.Default),
+		Secrets: secrets_client.New(httptransport.New(host, basePath, []string{schema}), strfmt.Default),
 		BaseURI: fmt.Sprintf("%s://%s%s", schema, host, basePath),
 		Auth:    httptransport.BearerToken(bearerToken),
 	}

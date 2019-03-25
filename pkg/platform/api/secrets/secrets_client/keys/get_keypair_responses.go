@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	models "github.com/ActiveState/cli/internal/secrets-api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/go-openapi/runtime"
 	strfmt "github.com/go-openapi/strfmt"
 )

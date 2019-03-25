@@ -8,11 +8,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/stretchr/testify/suite"
 )
@@ -44,7 +44,7 @@ func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
 func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
 	cmd := keypair.Command
 
-	var bodyKeypair *models.KeypairChange
+	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {

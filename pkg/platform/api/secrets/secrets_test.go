@@ -1,13 +1,13 @@
-package secretsapi_test
+package secrets_test
 
 import (
 	"fmt"
 	"testing"
 
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
