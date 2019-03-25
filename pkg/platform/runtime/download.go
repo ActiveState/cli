@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -59,7 +58,7 @@ func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequ
 // fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
 func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
-	platProject, fail := projects.FetchByName(r.project.Owner(), r.project.Name())
+	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
 		return nil, fail
 	}

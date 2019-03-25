@@ -8,11 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/projects/mock"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -137,7 +136,7 @@ languages:
 	hash1, fail := venv.getLanguageHash(pj.Languages()[0])
 	require.NoError(t, fail.ToError())
 
-	mock := mock.Init()
+	mock := apiMock.Init()
 	defer mock.Close()
 	mock.MockGetProjectDiffCommit()
 

@@ -3,9 +3,9 @@ package organizations
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/organizations"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +20,7 @@ var Command = &commands.Command{
 
 // Execute the organizations command.
 func Execute(cmd *cobra.Command, args []string) {
-	orgs, fail := organizations.FetchAll()
+	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
 		failures.Handle(fail, locale.T("organizations_err"))
 		return

@@ -7,16 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	projMock "github.com/ActiveState/cli/internal/projects/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -26,7 +24,6 @@ const ProjectNamespace = "string/string"
 type ActivateTestSuite struct {
 	suite.Suite
 	authMock *authMock.Mock
-	projMock *projMock.Mock
 	apiMock  *apiMock.Mock
 	dir      string
 }
@@ -41,7 +38,6 @@ func (suite *ActivateTestSuite) SetupSuite() {
 
 func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
-	suite.projMock = projMock.Init()
 	suite.apiMock = apiMock.Init()
 
 	var err error
@@ -59,7 +55,6 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.authMock.Close()
-	suite.projMock.Close()
 	suite.apiMock.Close()
 	err := os.RemoveAll(suite.dir)
 	suite.Require().NoError(err)
@@ -77,7 +72,7 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject()
+	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpointPython()
 
 	Cc := Command.GetCobraCmd()
@@ -93,7 +88,7 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespace() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject()
+	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpointPython()
 
 	fail := suite.executeWithInput(ProjectNamespace, "")
@@ -109,7 +104,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespace() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceCustomDir() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject()
+	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpointPython()
 
 	targetDir, err := ioutil.TempDir(suite.dir, "CustomDir")
@@ -123,7 +118,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceCustomDir() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject()
+	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpointPython()
 
 	// Set up first checkout
@@ -144,7 +139,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceUseExisting() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject()
+	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpointPython()
 
 	// Set up first checkout
@@ -173,7 +168,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.authMock.MockLoggedin()
-	suite.projMock.MockGetProject404()
+	suite.apiMock.MockGetProject404()
 
 	fail := activateFromNamespace(ProjectNamespace)
 	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)

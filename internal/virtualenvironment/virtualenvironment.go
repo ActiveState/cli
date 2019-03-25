@@ -17,8 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
 )
@@ -206,7 +206,7 @@ func (v *VirtualEnvironment) WorkingDirectory() string {
 func (v *VirtualEnvironment) fetchProjectModel() (*models.Project, *failures.Failure) {
 	if v.projectModel == nil {
 		var fail *failures.Failure
-		v.projectModel, fail = projects.FetchByName(v.project.Owner(), v.project.Name())
+		v.projectModel, fail = model.FetchProjectByName(v.project.Owner(), v.project.Name())
 		if fail != nil {
 			return nil, fail
 		}
@@ -222,7 +222,7 @@ func (v *VirtualEnvironment) getLanguageHash(lang *project.Language) (string, *f
 		return "", fail
 	}
 
-	branch, fail := projects.DefaultBranch(pjm)
+	branch, fail := model.DefaultBranchForProject(pjm)
 	if fail != nil {
 		return "", fail
 	}

@@ -3,7 +3,6 @@ package model
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
@@ -28,7 +27,7 @@ func init() {
 }
 
 func FetchRecipesForProject(pj *models.Project) ([]*Recipe, *failures.Failure) {
-	branch, fail := projects.DefaultBranch(pj)
+	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return nil, fail
 	}

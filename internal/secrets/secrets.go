@@ -4,11 +4,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/organizations"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
 	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // Save will add a new secret for this user or update an existing one.
@@ -51,7 +51,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organizatio
 		return failure
 	}
 
-	members, failure := organizations.FetchMembers(org.Urlname)
+	members, failure := model.FetchOrgMembers(org.Urlname)
 	if failure != nil {
 		return failure
 	}
