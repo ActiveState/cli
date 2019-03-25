@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/surveyor"
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -120,7 +120,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 		case *apiAuth.PostLoginUnauthorized:
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
-			_, err := api.Get().Users.UniqueUsername(params)
+			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
 				if promptConfirm("prompt_login_to_signup") {
 					signupFromLogin(credentials.Username, credentials.Password)

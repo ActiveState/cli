@@ -54,7 +54,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -77,7 +77,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
 	defer httpmock.DeActivate()
 
@@ -123,7 +123,7 @@ func TestExecuteToken(t *testing.T) {
 	setup(t)
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -156,7 +156,7 @@ func TestExecuteLogout(t *testing.T) {
 
 	user := setupUser()
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")

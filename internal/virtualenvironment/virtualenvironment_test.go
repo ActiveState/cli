@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
-	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"

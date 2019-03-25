@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/surveyor"
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -118,7 +118,7 @@ func doSignup(input *signupInput) {
 		Password: input.Password,
 		Name:     input.Name,
 	})
-	addUserOK, err := api.Get().Users.AddUser(params)
+	addUserOK, err := mono.Get().Users.AddUser(params)
 
 	// Error checking
 	if err != nil {
@@ -147,7 +147,7 @@ func UsernameValidator(val interface{}) error {
 	value := val.(string)
 	params := users.NewUniqueUsernameParams()
 	params.SetUsername(value)
-	res, err := api.Get().Users.UniqueUsername(params)
+	res, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil || *res.Payload.Code != int64(200) {
 		return errors.New(locale.T("err_username_taken"))
 	}

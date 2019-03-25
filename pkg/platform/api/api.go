@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"flag"
 	"log"
 	"net/http"
 	"reflect"
@@ -10,16 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/sysinfo"
 	"github.com/alecthomas/template"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
 )
-
-// persist contains the active API Client connection
-var persist *mono_client.APIClient
 
 var (
 	// FailUnknown is the failure type used for API requests with an unexpected error
@@ -37,39 +29,6 @@ var (
 	// FailProjectNotFound is used when a project could not be found
 	FailProjectNotFound = failures.Type("api.fail.project.not_found", FailNotFound)
 )
-
-// New will create a new API client using default settings (for an authenticated version use the NewWithAuth version)
-func New() *mono_client.APIClient {
-	return Init(GetSettings(ServicePlatform), nil)
-}
-
-// NewWithAuth creates a new API client using default settings and the provided authentication info
-func NewWithAuth(auth *runtime.ClientAuthInfoWriter) *mono_client.APIClient {
-	return Init(GetSettings(ServicePlatform), auth)
-}
-
-// Init initializes a new api client
-func Init(apiSetting Settings, auth *runtime.ClientAuthInfoWriter) *mono_client.APIClient {
-	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
-	transportRuntime.Transport = NewUserAgentTripper()
-
-	if flag.Lookup("test.v") != nil {
-		transportRuntime.SetDebug(true)
-	}
-
-	if auth != nil {
-		transportRuntime.DefaultAuthentication = *auth
-	}
-	return mono_client.New(transportRuntime, strfmt.Default)
-}
-
-// Get returns a cached version of the default api client
-func Get() *mono_client.APIClient {
-	if persist == nil {
-		persist = New()
-	}
-	return persist
-}
 
 // UserAgentTripper is an implementation of http.RoundTripper that adds our useragent
 type UserAgentTripper struct{}

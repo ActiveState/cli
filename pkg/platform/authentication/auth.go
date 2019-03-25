@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -138,7 +139,7 @@ func (s *Auth) Authenticate() *failures.Failure {
 func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *failures.Failure {
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
-	loginOK, err := api.Get().Authentication.PostLogin(params)
+	loginOK, err := mono.Get().Authentication.PostLogin(params)
 
 	if err != nil {
 		s.Logout()
@@ -204,7 +205,7 @@ func (s *Auth) Logout() {
 // Client will return an API client that has authentication set up
 func (s *Auth) Client() *mono_client.APIClient {
 	if s.client == nil {
-		s.client = api.NewWithAuth(s.clientAuth)
+		s.client = mono.NewWithAuth(s.clientAuth)
 	}
 	if !s.Authenticated() {
 		if fail := s.Authenticate(); fail != nil {
