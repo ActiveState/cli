@@ -75,14 +75,16 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	var hasURL bool
-	if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
-		if flag.Lookup("test.v") != nil {
-			serviceURLStrings = UrlsByEnv["test"]
-		} else if constants.BranchName == "prod" {
-			serviceURLStrings = UrlsByEnv["prod"]
-		} else {
-			serviceURLStrings = UrlsByEnv["stage"]
+	if flag.Lookup("test.v") != nil {
+		serviceURLStrings = UrlsByEnv["test"]
+	} else {
+		var hasURL bool
+		if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
+			if constants.BranchName == "prod" {
+				serviceURLStrings = UrlsByEnv["prod"]
+			} else {
+				serviceURLStrings = UrlsByEnv["stage"]
+			}
 		}
 	}
 
