@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/logging"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"

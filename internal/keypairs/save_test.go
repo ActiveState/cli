@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 
 	"github.com/ActiveState/cli/internal/failures"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,7 +47,7 @@ func (suite *KeypairSaveTestSuite) TestSave_Fails() {
 }
 
 func (suite *KeypairSaveTestSuite) TestSave_Succeeds() {
-	var bodyKeypair *models.KeypairChange
+	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)

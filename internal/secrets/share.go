@@ -3,7 +3,7 @@ package secrets
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // ShareFromDiff decrypts a source user's secrets that they are sharing and re-encrypts those secrets using

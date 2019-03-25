@@ -13,12 +13,12 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
@@ -115,7 +115,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 	suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
 
 	suite.secretsMock.RegisterWithCode("GET", fmt.Sprintf("/organizations/%s/user_secrets/%s/diff", orgID, scottrID), 200)
-	var scottrSyncChanges []*models.UserSecretShare
+	var scottrSyncChanges []*secrets_models.UserSecretShare
 	suite.secretsMock.RegisterWithResponder("PATCH", fmt.Sprintf("/organizations/%s/user_secrets/%s", orgID, scottrID), func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
 		json.Unmarshal(reqBody, &scottrSyncChanges)

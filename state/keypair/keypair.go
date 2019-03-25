@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/spf13/cobra"
 )
 

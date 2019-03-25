@@ -6,9 +6,9 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/surveyor"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 

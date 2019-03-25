@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/spf13/cobra"
 )
 
