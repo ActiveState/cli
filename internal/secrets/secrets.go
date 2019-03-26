@@ -4,15 +4,15 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/organizations"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsapiClient "github.com/ActiveState/cli/internal/secrets-api/client/secrets"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // Save will add a new secret for this user or update an existing one.
-func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *models.Organization, project *models.Project,
+func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
 	isUser bool, secretName, secretValue string) *failures.Failure {
 
 	logging.Debug("attempting to upsert user-secret for org=%s", org.OrganizationID.String())
@@ -45,13 +45,13 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 // ShareWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
-func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *models.Organization, project *models.Project, secretName, secretValue string) *failures.Failure {
+func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) *failures.Failure {
 	currentUserID, failure := secretsClient.AuthenticatedUserID()
 	if failure != nil {
 		return failure
 	}
 
-	members, failure := organizations.FetchMembers(org.Urlname)
+	members, failure := model.FetchOrgMembers(org.Urlname)
 	if failure != nil {
 		return failure
 	}

@@ -5,9 +5,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/api/client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
 )
@@ -21,10 +21,10 @@ var (
 )
 
 // Checkpoint represents a collection of requirements
-type Checkpoint []*models.Checkpoint
+type Checkpoint []*mono_models.Checkpoint
 
 // FetchLanguagesForBranch fetches a list of language names for the given branch
-func FetchLanguagesForBranch(branch *models.Branch) ([]string, *failures.Failure) {
+func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Failure) {
 	if branch.CommitID == nil {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
@@ -50,7 +50,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 }
 
 // FetchCheckpointForBranch fetches the checkpoint for the given branch
-func FetchCheckpointForBranch(branch *models.Branch) (Checkpoint, *failures.Failure) {
+func FetchCheckpointForBranch(branch *mono_models.Branch) (Checkpoint, *failures.Failure) {
 	if branch.CommitID == nil {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}

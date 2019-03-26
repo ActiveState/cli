@@ -11,12 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
@@ -47,7 +47,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")

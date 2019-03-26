@@ -3,7 +3,7 @@ package secretsapi_test
 import (
 	"net/http"
 
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	httptransport "github.com/go-openapi/runtime/client"
 )
 

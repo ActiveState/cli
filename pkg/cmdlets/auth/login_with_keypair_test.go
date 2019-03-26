@@ -16,11 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,7 +35,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	failures.ResetHandled()
 
-	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	suite.secretsapiMock = httpmock.Activate(secretsapi_test.NewDefaultTestClient("bearing123").BaseURI)
 
 	root, err := environment.GetRootPath()

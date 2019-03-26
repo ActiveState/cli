@@ -9,11 +9,11 @@ import (
 )
 
 func TestGetServiceURL(t *testing.T) {
-	u := api.GetServiceURL(api.ServicePlatform)
-	assert.Equal(t, "https://testing.tld"+constants.PlatformAPIPath, u.String(), "Returns the expected service url")
+	u := api.GetServiceURL(api.ServiceMono)
+	assert.Equal(t, "https://testing.tld"+constants.MonoAPIPath, u.String(), "Returns the expected service url")
 }
 
 func TestGetSettings(t *testing.T) {
-	s := api.GetSettings(api.ServicePlatform)
+	s := api.GetSettings(api.ServiceMono)
 	assert.Equal(t, "testing.tld", s.Host)
 }

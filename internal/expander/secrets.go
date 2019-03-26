@@ -8,11 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/organizations"
-	"github.com/ActiveState/cli/internal/projects"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
@@ -27,8 +26,8 @@ var FailInputSecretValue = failures.Type("expander.fail.secrets.input.value", fa
 type SecretExpander struct {
 	secretsClient *secretsapi.Client
 	keypair       keypairs.Keypair
-	organization  *models.Organization
-	project       *models.Project
+	organization  *mono_models.Organization
+	project       *mono_models.Project
 	projectFile   *projectfile.Project
 	secrets       []*secretsModels.UserSecret
 	cachedSecrets map[string]string
@@ -60,13 +59,13 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 }
 
 // Organization acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure) {
+func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
 	if e.organization == nil {
-		e.organization, fail = organizations.FetchByURLName(e.projectFile.Owner)
+		e.organization, fail = model.FetchOrgByURLName(e.projectFile.Owner)
 		if fail != nil {
 			return nil, fail
 		}
@@ -76,13 +75,13 @@ func (e *SecretExpander) Organization() (*models.Organization, *failures.Failure
 }
 
 // Project acts as a caching layer, and ensures that we have a projectfile
-func (e *SecretExpander) Project() (*models.Project, *failures.Failure) {
+func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
 	if e.project == nil {
-		e.project, fail = projects.FetchByName(e.projectFile.Owner, e.projectFile.Name)
+		e.project, fail = model.FetchProjectByName(e.projectFile.Owner, e.projectFile.Name)
 		if fail != nil {
 			return nil, fail
 		}

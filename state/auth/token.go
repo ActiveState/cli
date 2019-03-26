@@ -4,13 +4,13 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func tokenAuth() {
 	auth := authentication.Get()
-	fail := auth.AuthenticateWithModel(&models.Credentials{
+	fail := auth.AuthenticateWithModel(&mono_models.Credentials{
 		Token: Args.Token,
 	})
 

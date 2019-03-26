@@ -3,13 +3,12 @@ package model
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
 )
 
@@ -27,8 +26,8 @@ func init() {
 	OS = sysinfo.OS()
 }
 
-func FetchRecipesForProject(pj *models.Project) ([]*Recipe, *failures.Failure) {
-	branch, fail := projects.DefaultBranch(pj)
+func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failure) {
+	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return nil, fail
 	}
@@ -55,7 +54,7 @@ func FetchRecipesForProject(pj *models.Project) ([]*Recipe, *failures.Failure) {
 	return recipe.Payload.Recipes, nil
 }
 
-func FetchEffectiveRecipeForProject(pj *models.Project) (*Recipe, *failures.Failure) {
+func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
 	recipes, fail := FetchRecipesForProject(pj)
 	if fail != nil {
 		return nil, fail

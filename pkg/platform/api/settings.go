@@ -12,8 +12,8 @@ import (
 type Service string
 
 const (
-	// ServicePlatform is our main service for api endpoints
-	ServicePlatform Service = "platform"
+	// ServiceMono is our main service for api endpoints, "Mono" refers to its monolithic nature, one that we're trying to get away from
+	ServiceMono Service = "platform"
 
 	// ServiceSecrets is our service that's used purely for setting and storing secrets
 	ServiceSecrets = "secrets"
@@ -37,25 +37,25 @@ type urlsByService map[Service]string
 
 var UrlsByEnv = map[string]urlsByService{
 	"prod": {
-		ServicePlatform:  constants.PlatformURLProd,
+		ServiceMono:      constants.MonoURLProd,
 		ServiceSecrets:   constants.SecretsURLProd,
 		ServiceHeadChef:  constants.HeadChefURLProd,
 		ServiceInventory: constants.InventoryURLProd,
 	},
 	"stage": {
-		ServicePlatform:  constants.PlatformURLStage,
+		ServiceMono:      constants.MonoURLStage,
 		ServiceSecrets:   constants.SecretsURLStage,
 		ServiceHeadChef:  constants.HeadChefURLStage,
 		ServiceInventory: constants.InventoryURLStage,
 	},
 	"dev": {
-		ServicePlatform:  constants.PlatformURLDev,
+		ServiceMono:      constants.MonoURLDev,
 		ServiceSecrets:   constants.SecretsURLDev,
 		ServiceHeadChef:  constants.HeadChefURLDev,
 		ServiceInventory: constants.InventoryURLDev,
 	},
 	"test": {
-		ServicePlatform:  "https://testing.tld" + constants.PlatformAPIPath,
+		ServiceMono:      "https://testing.tld" + constants.MonoAPIPath,
 		ServiceSecrets:   "https://secrets.testing.tld" + constants.SecretsAPIPath,
 		ServiceHeadChef:  "https://headchef.testing.tld" + constants.HeadChefAPIPath,
 		ServiceInventory: "https://inventory.testing.tld" + constants.InventoryAPIPath,
@@ -75,14 +75,16 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	var hasURL bool
-	if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
-		if flag.Lookup("test.v") != nil {
-			serviceURLStrings = UrlsByEnv["test"]
-		} else if constants.BranchName == "prod" {
-			serviceURLStrings = UrlsByEnv["prod"]
-		} else {
-			serviceURLStrings = UrlsByEnv["stage"]
+	if flag.Lookup("test.v") != nil {
+		serviceURLStrings = UrlsByEnv["test"]
+	} else {
+		var hasURL bool
+		if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
+			if constants.BranchName == "prod" {
+				serviceURLStrings = UrlsByEnv["prod"]
+			} else {
+				serviceURLStrings = UrlsByEnv["stage"]
+			}
 		}
 	}
 

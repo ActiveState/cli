@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	apiMock "github.com/ActiveState/cli/pkg/platform/api/mock"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"

@@ -2,11 +2,11 @@ package keypairs
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/client/keys"
-	secretModels "github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
+	secretModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )
 
 // FetchRaw fetchs the current user's encoded and unparsed keypair or returns a failure.
@@ -38,7 +38,7 @@ func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, *failu
 }
 
 // FetchPublicKey fetchs the PublicKey for a sepcific user.
-func FetchPublicKey(secretsClient *secretsapi.Client, user *models.User) (Encrypter, *failures.Failure) {
+func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, *failures.Failure) {
 	params := keys.NewGetPublicKeyParams()
 	params.UserID = user.UserID
 	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, secretsClient.Auth)

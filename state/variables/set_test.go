@@ -16,12 +16,12 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/go-openapi/strfmt"
@@ -62,7 +62,7 @@ func (suite *VarSetCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
@@ -160,7 +160,7 @@ func (suite *VarSetCommandTestSuite) assertSaveSucceeds(secretName string, isPro
 	}
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	var userChanges []*models.UserSecretChange
+	var userChanges []*secrets_models.UserSecretChange
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
@@ -168,7 +168,7 @@ func (suite *VarSetCommandTestSuite) assertSaveSucceeds(secretName string, isPro
 		return 204, "empty-response"
 	})
 
-	var sharedChanges []*models.UserSecretShare
+	var sharedChanges []*secrets_models.UserSecretShare
 	if !isUserOnly {
 		// assert secrets get pushed for other users
 		suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)

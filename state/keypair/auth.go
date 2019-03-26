@@ -4,8 +4,8 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	secretsModels "github.com/ActiveState/cli/internal/secrets-api/models"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/spf13/cobra"
 )
 

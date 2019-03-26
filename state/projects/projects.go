@@ -4,11 +4,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/projects"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/client/organizations"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +40,7 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	}
 	projectsList := []projectWithOrg{}
 	for _, org := range orgs.Payload {
-		orgProjects, err := projects.FetchOrganizationProjects(org.Urlname)
+		orgProjects, err := model.FetchOrganizationProjects(org.Urlname)
 		if err != nil {
 			return nil, err
 		}

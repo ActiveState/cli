@@ -8,10 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
-	"github.com/ActiveState/cli/internal/secrets-api/models"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -97,7 +97,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Fails_OnSave() {
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase() {
-	var bodyKeypair *models.KeypairChange
+	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
@@ -123,7 +123,7 @@ func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_NoPassphrase(
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerateAndSave_Success_WithPassphrase() {
-	var bodyKeypair *models.KeypairChange
+	var bodyKeypair *secrets_models.KeypairChange
 	var bodyErr error
 	httpmock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)

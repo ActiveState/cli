@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/print"
+	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -65,6 +66,9 @@ type SubShell interface {
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string
+
+	// SetEnv sets the environment up for the given subshell
+	SetEnv(env []string)
 }
 
 // Activate the virtual environment
@@ -193,6 +197,11 @@ func Get() (SubShell, error) {
 
 	subs.SetBinary(binary)
 	subs.SetRcFile(rcFile)
+
+	env := funk.FilterString(os.Environ(), func(s string) bool {
+		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
+	})
+	subs.SetEnv(env)
 
 	return subs, nil
 }

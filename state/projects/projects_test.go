@@ -27,7 +27,7 @@ func setup(t *testing.T) {
 func TestProjects(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -51,7 +51,7 @@ func TestProjects(t *testing.T) {
 func TestProjectsEmpty(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -73,7 +73,7 @@ func TestProjectsEmpty(t *testing.T) {
 func TestClientError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -93,7 +93,7 @@ func TestClientError(t *testing.T) {
 func TestAuthError(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")

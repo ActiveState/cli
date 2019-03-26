@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/stretchr/testify/suite"
 )

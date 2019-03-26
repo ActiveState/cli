@@ -19,6 +19,7 @@ type SubShell struct {
 	rcFile *os.File
 	cmd    *exec.Cmd
 	wg     *sync.WaitGroup
+	env    []string
 }
 
 // Shell - see subshell.SubShell
@@ -54,6 +55,11 @@ func (v *SubShell) RcFileExt() string {
 // RcFileTemplate - see subshell.SubShell
 func (v *SubShell) RcFileTemplate() string {
 	return "zshrc.sh"
+}
+
+// SetEnv - see subshell.SetEnv
+func (v *SubShell) SetEnv(env []string) {
+	v.env = env
 }
 
 // Activate - see subshell.SubShell
@@ -119,6 +125,7 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 
 	runCmd := exec.Command(tmpfile.Name(), args...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	runCmd.Env = v.env
 
 	err = runCmd.Run()
 	return osutils.CmdExitCode(runCmd), err

@@ -3,13 +3,13 @@ package authentication
 import (
 	"testing"
 
-	clientAuth "github.com/ActiveState/cli/pkg/platform/api/client/authentication"
+	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/pkg/platform/api/models"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,8 +18,8 @@ func setup(t *testing.T) {
 	Logout()
 }
 
-func setupUser(t *testing.T) *models.UserEditable {
-	return &models.UserEditable{
+func setupUser(t *testing.T) *mono_models.UserEditable {
+	return &mono_models.UserEditable{
 		Username: "test",
 		Email:    "test@test.tld",
 		Password: "test",
@@ -31,7 +31,7 @@ func TestAuth(t *testing.T) {
 	setup(t)
 	user := setupUser(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -39,7 +39,7 @@ func TestAuth(t *testing.T) {
 	httpmock.Register("GET", "/apikeys")
 	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
 
-	credentials := &models.Credentials{
+	credentials := &mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	}
@@ -68,12 +68,12 @@ func TestPersist(t *testing.T) {
 func TestAuthInvalidUser(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	credentials := &models.Credentials{
+	credentials := &mono_models.Credentials{
 		Username: "testFailure",
 		Password: "testFailure",
 	}
@@ -85,7 +85,7 @@ func TestAuthInvalidUser(t *testing.T) {
 func TestAuthInvalidToken(t *testing.T) {
 	setup(t)
 
-	httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)

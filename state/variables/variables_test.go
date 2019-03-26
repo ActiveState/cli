@@ -13,11 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	secretsapi "github.com/ActiveState/cli/internal/secrets-api"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/state/variables"
 	"github.com/stretchr/testify/suite"
@@ -49,7 +49,7 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsClient = secretsClient
 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServicePlatform).String())
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
