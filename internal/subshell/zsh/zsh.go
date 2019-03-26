@@ -75,7 +75,6 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	if fail != nil {
 		return fail
 	}
-	os.Setenv("ZDOTDIR", path)
 
 	shellArgs := []string{}
 	cmd := exec.Command(v.Binary(), shellArgs...)
