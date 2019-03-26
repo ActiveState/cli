@@ -2,7 +2,6 @@ package analytics
 
 import (
 	"flag"
-	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
@@ -31,21 +30,17 @@ func setup() {
 		return
 	}
 
-	// NOTE: hostname logging is for internal use only and should be removed before we go into production
-	// this is to track how we're doing on dogfooding
-	hostname := "unknown"
-	_hostname, err := os.Hostname()
-	if err == nil {
-		hostname = _hostname
-		id = hostname
-	} else {
-		logging.Error("Cannot detect hostname: %s", err.Error())
-	}
-
 	client.ClientID(id)
 	client.CustomDimensionMap(map[string]string{
-		"1": hostname,
+		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
+		// "1": "hostname (deprected)"
+		"2": constants.Version,
+		"3": constants.BranchName,
 	})
+
+	if id == "unknown" {
+		Event("error", "unknown machine id")
+	}
 }
 
 // Event logs an event to google analytics
