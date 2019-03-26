@@ -22,7 +22,19 @@ func (installer *Installer) InstallDir() string {
 }
 
 // Install for Installer.
-func (installer *Installer) Install(archivePath string) *failures.Failure {
-	args := installer.Called(archivePath)
-	return args.Get(0).(*failures.Failure)
+func (installer *Installer) Install() *failures.Failure {
+	installer.Called()
+	return nil
 }
+
+// InstallFromArchive for Installer.
+func (installer *Installer) InstallFromArchive(archive string) *failures.Failure {
+	installer.Called()
+	return nil
+}
+
+// OnDownload registers a function to be called when a download occurs
+func (installer *Installer) OnDownload(f func()) {}
+
+// OnInstall registers a function to be called when an install occurs
+func (installer *Installer) OnInstall(f func()) {}

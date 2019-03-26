@@ -29,8 +29,26 @@ type Installer interface {
 	// InstallDir is the base directory where a runtime will be installed to.
 	InstallDir() string
 
-	// Install will perform the actual installation of a runtime given an installer archive.
-	Install(archivePath string) *failures.Failure
+	// Install will download the installer and perform the install
+	Install() *failures.Failure
+
+	// InstallFromArchive will perform the actual installation of a runtime given an installer archive.
+	InstallFromArchive(archivePath string) *failures.Failure
+
+	// OnDownload is triggered when the installer is being downloaded
+	OnDownload(func())
+
+	// OnInstall is triggered when the installer is being ran (ie. being installed)
+	OnInstall(func())
+}
+
+// RuntimeInstaller implements an Installer that works with a runtime.Downloader and a
+// runtime.Installer. Effectively, upon calling Install, the RuntimeInstaller will first
+// try and Download an archive, then it will try to install that downloaded archive.
+type RuntimeInstaller struct {
+	runtimeDownloader Downloader
+	onDownload        func()
+	onInstall         func()
 }
 
 // validateArchiveTarGz ensures the given path to archive is an actual file and that its suffix is a well-known

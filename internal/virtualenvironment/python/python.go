@@ -5,27 +5,17 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installer"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
-
-// NewInstaller creates a new installer.RuntimeInstaller which can install python for this virtualenvironment.
-func NewInstaller(targetDir string) (installer.Installer, *failures.Failure) {
-	apyInstaller, failure := runtime.NewActivePythonInstaller(targetDir)
-	if failure != nil {
-		return nil, failure
-	}
-	return installer.NewRuntimeInstaller(runtime.InitRuntimeDownload(targetDir), apyInstaller), nil
-}
 
 // VirtualEnvironment covers the virtualenvironment.VirtualEnvironment interface, reference that for documentation
 type VirtualEnvironment struct {
 	dataDir   string
-	installer installer.Installer
+	installer runtime.Installer
 }
 
 // NewVirtualEnvironment returns a configured python virtualenvironment.
-func NewVirtualEnvironment(dataDir string, pythonInstaller installer.Installer) (*VirtualEnvironment, *failures.Failure) {
+func NewVirtualEnvironment(dataDir string, pythonInstaller runtime.Installer) (*VirtualEnvironment, *failures.Failure) {
 	if pythonInstaller == nil {
 		return nil, failures.FailInvalidArgument.New("venv_installer_is_nil")
 	}
