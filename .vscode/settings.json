@@ -13,5 +13,15 @@
         "**/vendor": true,
         "**/scripts/artifact_generator": true,
         "**/pkg": true
-    }
+    },
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./test",
+        "-p",
+        "*_test.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
 }
