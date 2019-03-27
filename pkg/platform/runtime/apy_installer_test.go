@@ -8,11 +8,17 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	rmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 )
+
+var FailTest = failures.Type("runtime_test.fail")
+var FailureToDownload = FailTest.New("unable to download")
 
 type APYInstallerTestSuite struct {
 	suite.Suite
@@ -36,28 +42,28 @@ func (suite *APYInstallerTestSuite) AfterTest(suiteName, testName string) {
 	suite.Require().NoError(err, "failure removing working dir")
 }
 
-func (suite *APYInstallerTestSuite) newInstaller() *runtime.ActivePythonInstaller {
-	apyInstaller, failure := runtime.NewActivePythonInstaller(suite.installDir)
+func (suite *APYInstallerTestSuite) newInstaller() runtime.Installer {
+	apyInstaller, failure := runtime.InitActivePythonInstaller(suite.installDir)
 	suite.Require().Nil(failure)
 	suite.Require().NotNil(apyInstaller)
 	return apyInstaller
 }
 
-func (suite *APYInstallerTestSuite) TestNew_InstallDirNotADirectory() {
+func (suite *APYInstallerTestSuite) TestInit_InstallDirNotADirectory() {
 	workingDirFile := path.Join(suite.installDir, "a.file")
 
 	file, failure := fileutils.Touch(workingDirFile)
 	suite.Require().Nil(failure, "failure touching test file")
 	suite.Require().NoError(file.Close(), "failure closing test file")
 
-	apyInstaller, failure := runtime.NewActivePythonInstaller(workingDirFile)
+	apyInstaller, failure := runtime.InitActivePythonInstaller(workingDirFile)
 	suite.Require().Nil(apyInstaller)
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailInstallDirInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_installdir_isfile", workingDirFile), failure.Error())
 }
 
-func (suite *APYInstallerTestSuite) TestNew_InstallDirCreatedIfDoesNotExist() {
+func (suite *APYInstallerTestSuite) TestInit_InstallDirCreatedIfDoesNotExist() {
 	suite.Require().NoError(os.RemoveAll(suite.installDir))
 	suite.Require().False(fileutils.DirExists(suite.installDir), "install-dir should have been removed")
 
@@ -65,25 +71,37 @@ func (suite *APYInstallerTestSuite) TestNew_InstallDirCreatedIfDoesNotExist() {
 	suite.True(fileutils.DirExists(suite.installDir), "install-dir should have been created")
 }
 
-func (suite *APYInstallerTestSuite) TestNew_Success() {
+func (suite *APYInstallerTestSuite) TestInit_Success() {
 	apyInstaller := suite.newInstaller()
 	suite.Implements((*runtime.Installer)(nil), apyInstaller)
 	suite.Equal(suite.installDir, apyInstaller.InstallDir())
 }
 
-func (suite *APYInstallerTestSuite) TestInstall_ArchiveDoesNotExist() {
-	apyInstaller, failure := runtime.NewActivePythonInstaller(suite.installDir)
+func (suite *APYInstallerTestSuite) TestInstall_DownloadFails() {
+	mockDownloader := rmock.NewMockDownloader()
+	mockDownloader.On("Download").Return("", FailureToDownload)
+	apyInstaller, failure := runtime.NewActivePythonInstaller(suite.installDir, mockDownloader)
 	suite.Require().NotNil(apyInstaller)
 	suite.Require().Nil(failure)
 
-	failure = apyInstaller.Install("/no/such/archive.tar.gz")
+	suite.Equal(FailureToDownload, apyInstaller.Install())
+
+	mockDownloader.AssertExpectations(suite.T())
+}
+
+func (suite *APYInstallerTestSuite) TestInstall_ArchiveDoesNotExist() {
+	apyInstaller, failure := runtime.InitActivePythonInstaller(suite.installDir)
+	suite.Require().NotNil(apyInstaller)
+	suite.Require().Nil(failure)
+
+	failure = apyInstaller.InstallFromArchive("/no/such/archive.tar.gz")
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailArchiveInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), failure.Error())
 }
 
 func (suite *APYInstallerTestSuite) TestInstall_ArchiveNotTarGz() {
-	apyInstaller, failure := runtime.NewActivePythonInstaller(suite.installDir)
+	apyInstaller, failure := runtime.InitActivePythonInstaller(suite.installDir)
 	suite.Require().Nil(failure)
 	suite.Require().NotNil(apyInstaller)
 
@@ -93,7 +111,7 @@ func (suite *APYInstallerTestSuite) TestInstall_ArchiveNotTarGz() {
 	suite.Require().Nil(failure, "failure touching test file")
 	suite.Require().NoError(file.Close(), "failure closing test file")
 
-	failure = apyInstaller.Install(invalidArchive)
+	failure = apyInstaller.InstallFromArchive(invalidArchive)
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailArchiveInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), failure.Error())
@@ -101,7 +119,7 @@ func (suite *APYInstallerTestSuite) TestInstall_ArchiveNotTarGz() {
 
 func (suite *APYInstallerTestSuite) TestInstall_BadArchive() {
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(path.Join(suite.dataDir, "badarchive.tar.gz"))
+	failure := apyInstaller.InstallFromArchive(path.Join(suite.dataDir, "badarchive.tar.gz"))
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailArchiveInvalid, failure.Type)
 	suite.Contains(failure.Error(), "EOF")
@@ -110,7 +128,7 @@ func (suite *APYInstallerTestSuite) TestInstall_BadArchive() {
 func (suite *APYInstallerTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz() {
 	archivePath := path.Join(suite.dataDir, "empty.tar.gz")
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(archivePath)
+	failure := apyInstaller.InstallFromArchive(archivePath)
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_runtime_missing_install_dir", archivePath, path.Join("empty", "INSTALLDIR")), failure.Error())
@@ -121,7 +139,7 @@ func (suite *APYInstallerTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz(
 func (suite *APYInstallerTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() {
 	archivePath := path.Join(suite.dataDir, "empty.tgz")
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(path.Join(suite.dataDir, "empty.tgz"))
+	failure := apyInstaller.InstallFromArchive(path.Join(suite.dataDir, "empty.tgz"))
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_runtime_missing_install_dir", archivePath, path.Join("empty", "INSTALLDIR")), failure.Error())
@@ -132,7 +150,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() 
 func (suite *APYInstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable() {
 	archivePath := path.Join(suite.dataDir, "apy-missing-python-binary.tar.gz")
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(archivePath)
+	failure := apyInstaller.InstallFromArchive(archivePath)
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
@@ -143,7 +161,7 @@ func (suite *APYInstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable()
 func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
 	archivePath := path.Join(suite.dataDir, "apy-noexec-python.tar.gz")
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(archivePath)
+	failure := apyInstaller.InstallFromArchive(archivePath)
 	suite.Require().NotNil(failure)
 	suite.Equal(runtime.FailRuntimeInvalid, failure.Type)
 
@@ -153,7 +171,7 @@ func (suite *APYInstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
 
 func (suite *APYInstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(path.Join(suite.dataDir, "apy-fail-prefixes.tar.gz"))
+	failure := apyInstaller.InstallFromArchive(path.Join(suite.dataDir, "apy-fail-prefixes.tar.gz"))
 	suite.Require().NotNil(failure)
 	suite.Require().Equal(runtime.FailRuntimeInvalid, failure.Type)
 	suite.Equal(locale.Tr("installer_err_fail_obtain_prefixes", "apy-fail-prefixes"), failure.Error())
@@ -163,7 +181,7 @@ func (suite *APYInstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 
 func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 	apyInstaller := suite.newInstaller()
-	failure := apyInstaller.Install(path.Join(suite.dataDir, "apy-good-installer.tar.gz"))
+	failure := apyInstaller.InstallFromArchive(path.Join(suite.dataDir, "apy-good-installer.tar.gz"))
 	suite.Require().Nil(failure)
 
 	suite.Require().True(fileutils.DirExists(apyInstaller.InstallDir()), "expected install-dir to exist")
@@ -184,6 +202,31 @@ func (suite *APYInstallerTestSuite) TestInstall_RelocationSuccessful() {
 
 	fooPyLib := string(fileutils.ReadFileUnsafe(path.Join(apyInstaller.InstallDir(), "lib", "foo.py")))
 	suite.Contains(fooPyLib, pathToPython3)
+}
+
+func (suite *APYInstallerTestSuite) TestInstall_EventsCalled() {
+	runtimeMock := rmock.Init()
+	runtimeMock.MockFullRuntime()
+	defer runtimeMock.Close()
+
+	pjfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "string",
+	}
+	pjfile.Persist()
+
+	apyInstaller := suite.newInstaller()
+
+	onDownloadCalled := false
+	onInstallCalled := false
+
+	apyInstaller.OnDownload(func() { onDownloadCalled = true })
+	apyInstaller.OnInstall(func() { onInstallCalled = true })
+
+	apyInstaller.Install()
+
+	suite.True(onDownloadCalled, "OnDownload is triggered")
+	suite.True(onInstallCalled, "OnInstall is triggered")
 }
 
 func Test_APYInstallerTestSuite(t *testing.T) {

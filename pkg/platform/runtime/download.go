@@ -46,12 +46,12 @@ type RuntimeDownload struct {
 }
 
 // InitRuntimeDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitRuntimeDownload(targetDir string) *RuntimeDownload {
+func InitRuntimeDownload(targetDir string) Downloader {
 	return &RuntimeDownload{project.Get(), targetDir, InitRequester}
 }
 
 // NewRuntimeDownload creates a new RuntimeDownload using all custom args
-func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) *RuntimeDownload {
+func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) Downloader {
 	return &RuntimeDownload{project, targetDir, headchefRequester}
 }
 

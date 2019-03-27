@@ -16,12 +16,21 @@ import (
 
 // ActivePythonInstaller is an Installer for ActivePython runtimes.
 type ActivePythonInstaller struct {
-	installDir string
+	installDir        string
+	runtimeDownloader Downloader
+	onDownload        func()
+	onInstall         func()
+}
+
+// InitActivePythonInstaller creates a new ActivePythonInstaller after verifying the provided install-dir
+// exists as a directory or can be created.
+func InitActivePythonInstaller(installDir string) (Installer, *failures.Failure) {
+	return NewActivePythonInstaller(installDir, InitRuntimeDownload(installDir))
 }
 
 // NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
-func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failures.Failure) {
+func NewActivePythonInstaller(installDir string, downloader Downloader) (Installer, *failures.Failure) {
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
 		return nil, FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
@@ -33,7 +42,8 @@ func NewActivePythonInstaller(installDir string) (*ActivePythonInstaller, *failu
 	}
 
 	return &ActivePythonInstaller{
-		installDir: installDir,
+		installDir:        installDir,
+		runtimeDownloader: downloader,
 	}, nil
 }
 
@@ -42,10 +52,28 @@ func (installer *ActivePythonInstaller) InstallDir() string {
 	return installer.installDir
 }
 
-// Install will unpack the installer archive, locate the install script, and then use the installer
+// Install will download the installer archive and invoke InstallFromArchive
+func (installer *ActivePythonInstaller) Install() *failures.Failure {
+	if installer.onDownload != nil {
+		installer.onDownload()
+	}
+	archivePath, failure := installer.runtimeDownloader.Download()
+	if failure != nil {
+		return failure
+	}
+	archivePath = path.Join(installer.InstallDir(), archivePath)
+
+	return installer.InstallFromArchive(archivePath)
+}
+
+// InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
-func (installer *ActivePythonInstaller) Install(archivePath string) *failures.Failure {
+func (installer *ActivePythonInstaller) InstallFromArchive(archivePath string) *failures.Failure {
+	if installer.onInstall != nil {
+		installer.onInstall()
+	}
+
 	runtimeName := apyRuntimeName(archivePath)
 
 	if failure := installer.unpackRuntime(runtimeName, archivePath); failure != nil {
@@ -74,6 +102,12 @@ func (installer *ActivePythonInstaller) Install(archivePath string) *failures.Fa
 	}
 	return nil
 }
+
+// OnDownload registers a function to be called when a download occurs
+func (installer *ActivePythonInstaller) OnDownload(f func()) { installer.onDownload = f }
+
+// OnInstall registers a function to be called when an install occurs
+func (installer *ActivePythonInstaller) OnInstall(f func()) { installer.onInstall = f }
 
 // unpackRuntime will extract the `RuntimeName/INSTALLDIR` directory from the runtime archive
 // to the configured installation dir. It will then move all files from install-dir/INSTALLDIR to

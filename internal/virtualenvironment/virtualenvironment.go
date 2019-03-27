@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment/python"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	funk "github.com/thoas/go-funk"
@@ -126,7 +127,7 @@ func (v *VirtualEnvironment) activateLanguage(lang *project.Language) (VirtualEn
 
 	switch strings.ToLower(lang.Name()) {
 	case "python", "python3":
-		rtInstaller, failure := python.NewInstaller(langCacheDir)
+		rtInstaller, failure := runtime.InitActivePythonInstaller(langCacheDir)
 		if failure != nil {
 			return nil, failure
 		}
