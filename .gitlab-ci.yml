@@ -1,0 +1,29 @@
+image: golang:1.10
+
+variables:
+  REPO_NAME: github.com/ActiveState/cli
+
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+  - go get -u github.com/gobuffalo/packr/packr
+  - packr
+  - go run scripts/constants-generator/main.go -- internal/constants/generated.go
+
+stages:
+  - test
+  - build
+
+format:
+  stage: test
+  script:
+    - go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+
+compile:
+  stage: build
+  script:
+    - go build -o ./build/state -ldflags="-s -w" ./state
+  artifacts:
+    paths:
+      - ./build/state
