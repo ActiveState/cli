@@ -98,18 +98,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 		input["V"+strconv.Itoa(k)] = v
 	}
 
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		logging.Debug("Could not get caller for logging message")
-	}
-
-	if strings.HasSuffix(file, "failures.go") {
-		_, file, line, ok = runtime.Caller(2)
-		if !ok {
-			logging.Debug("Could not get caller for logging message")
-		}
-	}
-
+	file, line := trace()
 	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
 	return &Failure{locale.T(message, input), f, file, line, nil}
 }
@@ -155,6 +144,9 @@ func (e *Failure) Log() {
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 func (e *Failure) Handle(description string) {
+	file, line := trace()
+	logging.Debug("Handling failure, File: %s, Line: %d", file, line)
+
 	if description != "" {
 		logging.Warning(description)
 
@@ -243,4 +235,24 @@ func Recover() {
 	if r := recover(); r != nil {
 		logging.Warning("Recovered from panic: %v", r)
 	}
+}
+
+// trace returns the calling file and line
+func trace() (string, int) {
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		logging.Debug("Could not get caller for logging message")
+	}
+
+	c := 1
+	for strings.HasSuffix(file, "failures.go") {
+		c++
+		_, file, line, ok = runtime.Caller(c)
+		if !ok {
+			logging.Debug("Could not get caller for logging message")
+			break
+		}
+	}
+
+	return file, line
 }

@@ -37,8 +37,8 @@ func register() {
 	Command.Append(run.Command)
 	Command.Append(scripts.Command)
 
-	Command.Append(variables.NewCommand(secretsapi.DefaultClient).Config())
+	Command.Append(variables.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)
 
-	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.DefaultClient))
+	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.Get()))
 }

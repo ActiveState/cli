@@ -79,7 +79,7 @@ func init() {
 
 // Execute processes the keypair command.
 func Execute(_ *cobra.Command, args []string) {
-	secretsClient := secretsapi.DefaultClient
+	secretsClient := secretsapi.Get()
 	uid, failure := secretsClient.AuthenticatedUserID()
 
 	if failure == nil {

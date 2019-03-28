@@ -15,7 +15,7 @@ import (
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
 func ensureUserKeypair(passphrase string) {
-	keypairRes, failure := keypairs.FetchRaw(secretsapi.DefaultClient)
+	keypairRes, failure := keypairs.FetchRaw(secretsapi.Get())
 	if failure == nil {
 		failure = processExistingKeypairForUser(keypairRes, passphrase)
 	} else if secretsapi.FailKeypairNotFound.Matches(failure.Type) {
@@ -31,7 +31,7 @@ func ensureUserKeypair(passphrase string) {
 
 // generateKeypairForUser attempts to generate and save a Keypair for the currently authenticated user.
 func generateKeypairForUser(passphrase string) *failures.Failure {
-	_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.DefaultClient, passphrase, constants.DefaultRSABitLength)
+	_, failure := keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 	if failure != nil {
 		return failure
 	}
@@ -75,7 +75,7 @@ func processExistingKeypairForUser(keypairRes *secretsModels.Keypair, passphrase
 		if encodedKeypair, failure = keypairs.EncodeKeypair(localKeypair, passphrase); failure != nil {
 			return failure
 		}
-		return keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
+		return keypairs.SaveEncodedKeypair(secretsapi.Get(), encodedKeypair)
 	}
 
 	// failed to validate with local private-key, try using previous passphrase
@@ -97,7 +97,7 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 			// previous passphrase is valid, encrypt private-key with new passphrase and upload
 			encodedKeypair, failure := keypairs.EncodeKeypair(keypair, passphrase)
 			if failure == nil {
-				failure = keypairs.SaveEncodedKeypair(secretsapi.DefaultClient, encodedKeypair)
+				failure = keypairs.SaveEncodedKeypair(secretsapi.Get(), encodedKeypair)
 			}
 		}
 	}
@@ -118,7 +118,7 @@ func promptUserToRegenerateKeypair(passphrase string) *failures.Failure {
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	print.Line(locale.T("auth_generate_new_keypair_message"))
 	if promptConfirm("auth_confirm_generate_new_keypair_prompt") {
-		_, failure = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.DefaultClient, passphrase, constants.DefaultRSABitLength)
+		_, failure = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 		// TODO delete user's secrets
 	} else {
 		failure = keypairs.FailKeypair.New("auth_err_unrecoverable_keypair")
