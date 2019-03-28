@@ -60,19 +60,21 @@ func TestExitError(t *testing.T) {
 	}
 
 	err := cmd1.Execute()
-	require.True(t, errExpected == err, "Returns our error")
+	require.True(t, errExpected == err, fmt.Sprintf("%v should be equal to %v", errExpected, err))
 }
 
 func TestExitCode(t *testing.T) {
+	exit := exiter.New()
+
 	var cmd1 = Command{
 		Name: "foo",
 		Run: func(cmd *cobra.Command, args []string) {
 			failures.Handle(errors.New("test"), "Some failure")
 		},
-		Exiter: exiter.Exit,
+		Exiter: exit.Exit,
 	}
 
-	code := exiter.WaitForExit(func() {
+	code := exit.WaitForExit(func() {
 		cmd1.Execute()
 		require.FailNow(t, "This should never be reached as exit would have been called")
 	})
@@ -80,15 +82,17 @@ func TestExitCode(t *testing.T) {
 }
 
 func TestExitCodeZero(t *testing.T) {
+	exit := exiter.New()
+
 	var cmd1 = Command{
 		Name: "foo",
 		Run: func(cmd *cobra.Command, args []string) {
 			failures.FailDeveloper.New("Test failure that shouldn't trip up our exit mechanic")
 		},
-		Exiter: exiter.Exit,
+		Exiter: exit.Exit,
 	}
 
-	code := exiter.WaitForExit(func() {
+	code := exit.WaitForExit(func() {
 		cmd1.Execute()
 	})
 	require.Equal(t, -1, code, "Doesn't trigger an exit")
