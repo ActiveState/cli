@@ -72,7 +72,8 @@ var Command = &commands.Command{
 
 func main() {
 	logging.Debug("main")
-	if flag.Lookup("test.v") == nil && updater.TimedCheck() {
+	// Don't auto-update if we're 'state update'ing
+	if flag.Lookup("test.v") == nil && os.Args[1] != "update" && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
