@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -82,7 +84,19 @@ func (c *Command) GetCobraCmd() *cobra.Command {
 // Execute the command
 func (c *Command) Execute() error {
 	c.Register()
-	return c.cobraCmd.Execute()
+	err := c.cobraCmd.Execute()
+
+	fail := failures.Handled()
+	if err != nil {
+		logging.Error("Error occurred while executing command: %v", err)
+	} else if fail != nil {
+		logging.Error("Failure occurred while executing command: %v", fail)
+	}
+	if err != nil || fail != nil {
+		c.Exiter(1)
+	}
+
+	return err
 }
 
 // FlagByName returns the relevant Flag, bubbling up to the parent commands to check for persistent flags
@@ -185,7 +199,13 @@ func (c *Command) Register() {
 		return
 	}
 
-	c.Exiter = os.Exit
+	if c.Exiter == nil {
+		if flag.Lookup("test.v") == nil {
+			c.Exiter = os.Exit
+		} else {
+			c.Exiter = func(code int) {}
+		}
+	}
 
 	c.cobraCmd = &cobra.Command{
 		Use:                c.Name,
