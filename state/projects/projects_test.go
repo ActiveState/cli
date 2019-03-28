@@ -85,9 +85,6 @@ func TestClientError(t *testing.T) {
 	httpmock.Register("GET", "/organizations")
 	_, fail = fetchProjects()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without mock")
-
-	err := Command.Execute()
-	assert.NoError(t, err, "Command still executes without error")
 }
 
 func TestAuthError(t *testing.T) {
@@ -105,6 +102,5 @@ func TestAuthError(t *testing.T) {
 	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
 	err := Command.Execute()
-	assert.NoError(t, err, "Command still executes without error")
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	assert.Error(t, err, "Failure occurred")
 }

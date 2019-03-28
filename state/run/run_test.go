@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -94,11 +96,11 @@ scripts:
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{""})
 	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
+	assert.Error(t, err)
 
 	handled := failures.Handled()
 	require.NotNil(t, handled, "expected a failure")
-	assert.Equal(t, failures.FailUserInput, handled.(*failures.Failure).Type, "No failure occurred")
+	assert.Equal(t, failures.FailUserInput, handled.(*failures.Failure).Type, "Use input failure occurred")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
@@ -138,14 +140,12 @@ scripts:
 	project.Persist()
 
 	Command.Register()
-	exitCode := 0
-	Command.Exiter = func(code int) {
-		exitCode = code
-	}
+	Command.Exiter = exiter.Exit
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"run"})
-	err = Command.Execute()
+	exitCode := exiter.WaitForExit(func() { Command.Execute() })
+
 	assert.Equal(t, 127, exitCode, "Execution caused exit")
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }

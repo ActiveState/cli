@@ -87,8 +87,7 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SaveFails() {
 		osutil.WrapStdin(func() { execErr = cmd.Execute() }, "abc123")
 	})
 
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "expected failure")
+	suite.Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailSave), "should be a FailSave failure")

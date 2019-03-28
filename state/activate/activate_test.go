@@ -176,7 +176,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 
 func (suite *ActivateTestSuite) executeWithInput(namespace string, input ...interface{}) *failures.Failure {
 	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
 	return fail
 }
 

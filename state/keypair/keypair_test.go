@@ -43,8 +43,7 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgs_AuthFailure() {
 		execErr = cmd.Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "failure occurred")
+	suite.Error(execErr, "failure occurred")
 
 	suite.Contains(outStr, "You are not authenticated")
 }
@@ -77,8 +76,7 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgsDump_KeypairNotFound() {
 
 	cmd.GetCobraCmd().SetArgs([]string{})
 	execErr := cmd.Execute()
-	suite.Require().NoError(execErr)
-	suite.Require().Error(failures.Handled(), "expected failure")
+	suite.Require().Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "should be a FailNotFound failure")

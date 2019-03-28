@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -47,7 +49,7 @@ scripts:
 	return project
 }
 
-func captureExecCommand(t *testing.T, cmdName string, cmdArgs []string) string {
+func captureExecCommand(t *testing.T, cmdName string, cmdArgs []string) (int, string) {
 	Args.Name = "" // reset
 	failures.ResetHandled()
 
@@ -61,25 +63,31 @@ func captureExecCommand(t *testing.T, cmdName string, cmdArgs []string) string {
 
 	Cc.SetArgs(cmdArgs)
 
-	var execErr error
-	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = Command.Execute()
+	var outStr string
+	Command.Exiter = exiter.Exit
+	exitCode := exiter.WaitForExit(func() {
+		var outErr error
+		outStr, outErr = osutil.CaptureStdout(func() {
+			err := Command.Execute()
+			require.NoError(t, err, "error executing command")
+		})
+		require.NoError(t, outErr, "error capturing stdout")
 	})
-	require.NoError(t, execErr, "error executing command")
-	require.NoError(t, outErr, "error capturing stdout")
-	return outStr
+	return exitCode, outStr
 }
 
 func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []string, expectedStdout string) {
-	outStr := captureExecCommand(t, cmdName, cmdArgs)
+	exitCode, outStr := captureExecCommand(t, cmdName, cmdArgs)
 
+	require.Equal(t, -1, exitCode, "Exits normally")
 	require.Nil(t, failures.Handled(), "unexpected failure occurred")
 	assert.Contains(t, outStr, expectedStdout)
 }
 
 func assertExecCommandFails(t *testing.T, cmdName string, cmdArgs []string, failureType *failures.FailureType) {
-	captureExecCommand(t, cmdName, cmdArgs)
+	exitCode, _ := captureExecCommand(t, cmdName, cmdArgs)
 
+	require.Equal(t, 1, exitCode, "Exits with code 1")
 	handled := failures.Handled()
 	require.NotNil(t, handled, "expected a failure")
 	assert.Equal(t, failureType, handled.(*failures.Failure).Type, "No failure occurred")
