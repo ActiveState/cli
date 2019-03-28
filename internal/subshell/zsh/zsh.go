@@ -1,6 +1,7 @@
 package zsh
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -71,10 +72,34 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
-	fail := fileutils.CopyFile(v.rcFile.Name(), filepath.Join(path, ".zshrc"))
+
+	activeZsrcPath := filepath.Join(path, ".zshrc")
+	fail := fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
 	if fail != nil {
 		return fail
 	}
+
+	var USERZDOTDIR string
+	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
+	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
+	// commands.
+	if os.Getenv("ZDOTDIR") != "" {
+		USERZDOTDIR = os.Getenv("ZDOTDIR")
+	} else {
+		USERZDOTDIR = os.Getenv("HOME")
+	}
+	data := fileutils.ReadFileUnsafe(activeZsrcPath)
+	data = append([]byte(fmt.Sprintf("export _ZDOTDIR=$ZDOTDIR\nexport ZDOTDIR=%s\n", USERZDOTDIR)), data...)
+	f, err := os.OpenFile(activeZsrcPath, os.O_WRONLY, 0666)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	_, err = f.Write(data)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	fmt.Println(activeZsrcPath)
+	os.Setenv("ZDOTDIR", path)
 
 	shellArgs := []string{}
 	cmd := exec.Command(v.Binary(), shellArgs...)
