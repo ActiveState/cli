@@ -259,6 +259,46 @@ func ReadFileUnsafe(src string) []byte {
 	return b
 }
 
+// WriteFile data to a file, supports overwrite, append, or prepend
+// flags:
+//   append: 0,
+//   overwrite: 1,
+//   prepend: 2,
+func WriteFile(filepath string, content string, flag int) *failures.Failure {
+	switch flag {
+	case
+		0, 1, 2:
+
+	default:
+		fail := failures.FailInput.New(fmt.Sprintf("Unknown flag for fileutils.WriteFile: %d", flag))
+		return fail
+	}
+
+	data := []byte(content)
+	b, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
+	if flag == 2 {
+		data = append(data, b...)
+	} else if flag == 0 {
+		data = append(b, data...)
+	}
+
+	f, err := os.OpenFile(filepath, os.O_WRONLY, 0600)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
+}
+
 // FindFileInPath will find a file by the given file-name in the directory provided or in
 // one of the parent directories of that path by walking up the tree. If the file is found,
 // the path to that file is returned, otherwise an failure is returned.

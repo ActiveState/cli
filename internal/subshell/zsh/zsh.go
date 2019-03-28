@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sync"
 
@@ -79,26 +80,22 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 		return fail
 	}
 
-	var USERZDOTDIR string
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
 	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
 	// commands.
-	if os.Getenv("ZDOTDIR") != "" {
-		USERZDOTDIR = os.Getenv("ZDOTDIR")
-	} else {
-		USERZDOTDIR = os.Getenv("HOME")
+	USERZDOTDIR := os.Getenv("ZDOTDIR")
+	if USERZDOTDIR == "" {
+		u, err := user.Current()
+		if err != nil {
+			return err
+		}
+		USERZDOTDIR = u.HomeDir
 	}
-	data := fileutils.ReadFileUnsafe(activeZsrcPath)
-	data = append([]byte(fmt.Sprintf("export _ZDOTDIR=$ZDOTDIR\nexport ZDOTDIR=%s\n", USERZDOTDIR)), data...)
-	f, err := os.OpenFile(activeZsrcPath, os.O_WRONLY, 0666)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
+
+	fail = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", USERZDOTDIR), 2)
+	if fail != nil {
+		return fail
 	}
-	_, err = f.Write(data)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	fmt.Println(activeZsrcPath)
 	os.Setenv("ZDOTDIR", path)
 
 	shellArgs := []string{}
