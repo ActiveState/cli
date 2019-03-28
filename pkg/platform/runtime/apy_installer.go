@@ -25,7 +25,7 @@ type ActivePythonInstaller struct {
 // InitActivePythonInstaller creates a new ActivePythonInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
 func InitActivePythonInstaller(installDir string) (Installer, *failures.Failure) {
-	return NewActivePythonInstaller(installDir, InitRuntimeDownload(installDir))
+	return NewActivePythonInstaller(installDir, InitRuntimeDownload("Python", installDir))
 }
 
 // NewActivePythonInstaller creates a new ActivePythonInstaller after verifying the provided install-dir
