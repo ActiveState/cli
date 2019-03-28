@@ -83,6 +83,8 @@ func (c *Command) GetCobraCmd() *cobra.Command {
 
 // Execute the command
 func (c *Command) Execute() error {
+	failures.ResetHandled()
+
 	c.Register()
 	err := c.cobraCmd.Execute()
 
@@ -91,8 +93,9 @@ func (c *Command) Execute() error {
 		logging.Error("Error occurred while executing command: %v", err)
 	} else if fail != nil {
 		logging.Error("Failure occurred while executing command: %v", fail)
+		err = fail
 	}
-	if err != nil || fail != nil {
+	if err != nil {
 		c.Exiter(1)
 	}
 
