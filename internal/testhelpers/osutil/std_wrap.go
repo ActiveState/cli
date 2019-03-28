@@ -86,12 +86,14 @@ func WrapStdinWithDelay(delay time.Duration, fnToExec func(), inputLines ...inte
 
 	if delay > 0 {
 		// need to run this asynchornously so that the fnToExec can be processed
-		go writeLinesAndClosePipe(inWriter, inputLines, func() { time.Sleep(delay) })
+		go func() {
+			time.Sleep(500 * time.Millisecond) // Give fnToExec some time to start
+			writeLinesAndClosePipe(inWriter, inputLines, func() { time.Sleep(delay) })
+		}()
 	} else {
 		writeLinesAndClosePipe(inWriter, inputLines, nil)
 	}
 
-	time.Sleep(delay)
 	fnToExec() // execute the provided function
 }
 
