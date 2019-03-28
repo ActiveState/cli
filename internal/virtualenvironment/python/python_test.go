@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/installer/mock"
-	"github.com/ActiveState/cli/internal/virtualenvironment/python"
-
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/virtualenvironment/python"
+	"github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 )
