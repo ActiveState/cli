@@ -60,15 +60,17 @@ func (r *HeadchefRequesterMock) simulateCompleteBuild() {
 	artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
 	if !r.option(NoArtifacts) {
 		filename := "archive.tar.gz"
+		ingredientVersionID := "00010001-0001-0001-0001-000100010001"
 		if r.option(InvalidArtifact) {
-			filename = "archive.zip"
+			ingredientVersionID = "00020002-0002-0002-0002-000200020002"
 		}
 		u := strfmt.URI("http://test.tld/" + filename)
 		if r.option(InvalidURL) {
 			u = strfmt.URI("htps;/not-a-url/" + filename)
 		}
 		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
-			URI: &u,
+			URI:                 &u,
+			IngredientVersionID: strfmt.UUID(ingredientVersionID),
 		})
 	}
 	r.buildCompleted(headchef_models.BuildCompleted{

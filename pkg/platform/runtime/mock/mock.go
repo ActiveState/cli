@@ -47,6 +47,7 @@ func (m *Mock) MockFullRuntime() {
 	m.apiMock.MockGetProject()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
+	m.invMock.MockIngredient()
 
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)

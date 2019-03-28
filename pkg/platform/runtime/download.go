@@ -3,7 +3,6 @@ package runtime
 import (
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
@@ -15,9 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-const InstallerExtension = ".tar.gz"
-
-const InstallerTestsSubstr = "-tests."
+type Artifact = headchef_models.BuildCompletedArtifactsItems0
 
 var (
 	FailNoCommit           = failures.Type("runtime.fail.nocommit")
@@ -26,6 +23,7 @@ var (
 	FailNoValidArtifact    = failures.Type("runtime.fail.novalidartifact")
 	FailBuild              = failures.Type("runtime.fail.build")
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
+	FailNoRecipe           = failures.Type("runtime.fail.norecipe")
 )
 
 // InitRequester is the requester used for downloaded, exported for testing purposes
@@ -43,20 +41,27 @@ type RuntimeDownload struct {
 	project           *project.Project
 	targetDir         string
 	headchefRequester headchef.InitRequester
+	effectiveRecipe   *model.Recipe
+	languageName      string
 }
 
 // InitRuntimeDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitRuntimeDownload(targetDir string) *RuntimeDownload {
-	return &RuntimeDownload{project.Get(), targetDir, InitRequester}
+func InitRuntimeDownload(languageName string, targetDir string) *RuntimeDownload {
+	return NewRuntimeDownload(project.Get(), languageName, targetDir, InitRequester)
 }
 
 // NewRuntimeDownload creates a new RuntimeDownload using all custom args
-func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) *RuntimeDownload {
-	return &RuntimeDownload{project, targetDir, headchefRequester}
+func NewRuntimeDownload(project *project.Project, languageName string, targetDir string, headchefRequester headchef.InitRequester) *RuntimeDownload {
+	return &RuntimeDownload{
+		project:           project,
+		targetDir:         targetDir,
+		headchefRequester: headchefRequester,
+		languageName:      languageName,
+	}
 }
 
-// fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
-func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
+// FetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
+func (r *RuntimeDownload) FetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
 	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
@@ -70,13 +75,13 @@ func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *f
 	}
 
 	// Get the effective recipe from the list of recipes, this is the first recipe that matches our current platform
-	effectiveRecipe, fail := model.EffectiveRecipe(recipes)
+	r.effectiveRecipe, fail = model.EffectiveRecipe(recipes)
 	if fail != nil {
 		return nil, fail
 	}
 
 	// Turn it into a build recipe (same data, differently typed)
-	buildRecipe, fail := model.RecipeToBuildRecipe(effectiveRecipe)
+	buildRecipe, fail := model.RecipeToBuildRecipe(r.effectiveRecipe)
 	if fail != nil {
 		return nil, fail
 	}
@@ -91,9 +96,9 @@ func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *f
 	return buildRequest, nil
 }
 
-// fetchArtifact will retrieve the artifact information from the head-chef (ie language installer)
-func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
-	buildRequest, fail := r.fetchBuildRequest()
+// FetchArtifact will retrieve the artifact information from the head-chef (ie language installer)
+func (r *RuntimeDownload) FetchArtifact() (*url.URL, *failures.Failure) {
+	buildRequest, fail := r.FetchBuildRequest()
 	if fail != nil {
 		return nil, fail
 	}
@@ -110,10 +115,15 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 			return
 		}
 
-		var artifact *headchef_models.BuildCompletedArtifactsItems0
+		var artifact *Artifact
 		for _, artf := range response.Artifacts {
-			filename := filepath.Base(artf.URI.String())
-			if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
+			var isLanguageArtifact bool
+			isLanguageArtifact, fail = r.IsLanguageArtifact(artf)
+			if fail != nil {
+				return
+			}
+
+			if isLanguageArtifact {
 				artifact = artf
 				break
 			}
@@ -160,9 +170,28 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 	return artifactURL, fail
 }
 
+// IsLanguageArtifact checks whether the given artifact is the language artifact we're interested in
+func (r *RuntimeDownload) IsLanguageArtifact(artifact *Artifact) (bool, *failures.Failure) {
+	if r.effectiveRecipe == nil {
+		return false, FailNoRecipe.New(locale.T("err_no_recipe"))
+	}
+
+	ingredient, fail := model.FetchIngredientFromRequirements(r.effectiveRecipe.ResolvedRequirements, artifact.IngredientVersionID)
+	if fail != nil {
+		return false, fail
+	}
+
+	// Namespace matching has been disabled because the ingredients api currently does not return a namespace, see https://www.pivotaltracker.com/story/show/164962629
+	if ingredient.Name != nil && *ingredient.Name == r.languageName /* && model.NamespaceMatch(ingredient.Namespace, model.NamespaceLanguage)*/ {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // Download is the main function used to kick off the runtime download
 func (r *RuntimeDownload) Download() (filename string, fail *failures.Failure) {
-	artifactURL, fail := r.fetchArtifact()
+	artifactURL, fail := r.FetchArtifact()
 	if fail != nil {
 		return "", fail
 	}

@@ -711,3 +711,7 @@ downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
   other: Installing required artifacts
+err_ingredient_not_found:
+  other: Could not find the ingredient for a requested artifact
+err_no_recipe:
+  other: No recipe exists

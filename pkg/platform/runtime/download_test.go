@@ -49,7 +49,7 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoOptions))
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.NoOptions))
 	filename, fail := r.Download()
 
 	suite.Require().NoError(fail.ToError())
@@ -59,38 +59,51 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoArtifacts))
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.NoArtifacts))
 	_, fail := r.Download()
 
 	suite.Equal(runtime.FailNoArtifacts.Name, fail.Type.Name)
 }
 
-func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidArtifact() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidArtifact))
+func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoIngredient() {
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.InvalidArtifact))
 	_, fail := r.Download()
 
-	suite.Equal(runtime.FailNoValidArtifact.Name, fail.Type.Name)
+	suite.Equal(model.FailIngredientNotFound.Name, fail.Type.Name)
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidURL))
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.InvalidURL))
 	_, fail := r.Download()
 
 	suite.Equal(model.FailSignS3URL.Name, fail.Type.Name)
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.BuildFailure))
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.BuildFailure))
 	_, fail := r.Download()
 
 	suite.Equal(runtime.FailBuild.Name, fail.Type.Name)
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
-	r := runtime.NewRuntimeDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.RegularFailure))
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.RegularFailure))
 	_, fail := r.Download()
 
 	suite.Equal(failures.FailDeveloper.Name, fail.Type.Name)
+}
+
+func (suite *RuntimeDLTestSuite) TestIsLanguageArtifact() {
+	r := runtime.NewRuntimeDownload(suite.project, "Python", suite.dir, suite.hcMock.Requester(hcMock.RegularFailure))
+
+	_, fail := r.FetchBuildRequest()
+	suite.Require().NoError(fail.ToError())
+
+	result, fail := r.IsLanguageArtifact(&runtime.Artifact{
+		IngredientVersionID: "00010001-0001-0001-0001-000100010001",
+	})
+	suite.Require().NoError(fail.ToError())
+	suite.True(result, "Is a language artifact")
 }
 
 func TestRuntimeDLSuite(t *testing.T) {
