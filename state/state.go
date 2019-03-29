@@ -73,7 +73,15 @@ var Command = &commands.Command{
 func main() {
 	logging.Debug("main")
 	// Don't auto-update if we're 'state update'ing
-	if flag.Lookup("test.v") == nil && os.Args[1] != "update" && updater.TimedCheck() {
+	// Otherwise autoupdate
+	manualUpdate := false
+	for _, arg := range os.Args {
+		if arg == "update" {
+			manualUpdate = true
+			break
+		}
+	}
+	if flag.Lookup("test.v") == nil && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
