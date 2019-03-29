@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -259,18 +260,23 @@ func ReadFileUnsafe(src string) []byte {
 	return b
 }
 
+const (
+	// Append content to end of file
+	Append = 0
+	// Overwrite file with contents
+	Overwrite = 1
+	// Prepend - add content start of file
+	Prepend = 2
+)
+
 // WriteFile data to a file, supports overwrite, append, or prepend
-// flags:
-//   append: 0,
-//   overwrite: 1,
-//   prepend: 2,
-func WriteFile(filepath string, content string, flag int) *failures.Failure {
+func WriteFile(filepath string, content string, flag int) error {
 	switch flag {
 	case
-		0, 1, 2:
+		Append, Overwrite, Prepend:
 
 	default:
-		fail := failures.FailInput.New(fmt.Sprintf("Unknown flag for fileutils.WriteFile: %d", flag))
+		fail := failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
 		return fail
 	}
 
@@ -280,9 +286,9 @@ func WriteFile(filepath string, content string, flag int) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 
-	if flag == 2 {
+	if flag == Prepend {
 		data = append(data, b...)
-	} else if flag == 0 {
+	} else if flag == Append {
 		data = append(b, data...)
 	}
 
@@ -293,10 +299,7 @@ func WriteFile(filepath string, content string, flag int) *failures.Failure {
 	defer f.Close()
 
 	_, err = f.Write(data)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	return nil
+	return err
 }
 
 // FindFileInPath will find a file by the given file-name in the directory provided or in

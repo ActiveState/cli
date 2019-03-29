@@ -3,12 +3,14 @@ package zsh
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -83,18 +85,19 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
 	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
 	// commands.
-	USERZDOTDIR := os.Getenv("ZDOTDIR")
-	if USERZDOTDIR == "" {
+	userzdotdir := os.Getenv("ZDOTDIR")
+	if userzdotdir == "" {
 		u, err := user.Current()
 		if err != nil {
-			return err
+			log.Println(locale.T("subshell_zsh_no_home_dir"))
+		} else {
+			userzdotdir = u.HomeDir
 		}
-		USERZDOTDIR = u.HomeDir
 	}
 
-	fail = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", USERZDOTDIR), 2)
-	if fail != nil {
-		return fail
+	err = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir), fileutils.Prepend)
+	if err != nil {
+		return err
 	}
 	os.Setenv("ZDOTDIR", path)
 
