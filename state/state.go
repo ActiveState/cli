@@ -73,7 +73,6 @@ var Command = &commands.Command{
 func main() {
 	logging.Debug("main")
 	// Don't auto-update if we're 'state update'ing
-	// Otherwise autoupdate
 	manualUpdate := false
 	for _, arg := range os.Args {
 		if arg == "update" {
