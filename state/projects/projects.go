@@ -45,7 +45,11 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 			return nil, err
 		}
 		for _, project := range orgProjects {
-			projectsList = append(projectsList, projectWithOrg{project.Name, *project.Description, org.Name})
+			desc := ""
+			if project.Description != nil {
+				desc = *project.Description
+			}
+			projectsList = append(projectsList, projectWithOrg{project.Name, desc, org.Name})
 		}
 	}
 	return projectsList, nil
