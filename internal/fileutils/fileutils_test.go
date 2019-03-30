@@ -158,3 +158,62 @@ func TestEmptyDir_HasSubDir(t *testing.T) {
 	require.Nil(t, failure)
 	assert.False(t, isEmpty)
 }
+
+func TestWriteFile(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-dir-write-file")
+	require.NoError(t, err)
+	path := path.Join(tmpdir, "file.txt")
+	{
+		fail := WriteFile(path, "", -1)
+		assert.NotNil(t, fail, "Reject bad flag")
+		assert.False(t, FileExists(path), "No file should be created.")
+	}
+
+	{
+		// Append to empty file
+		err = WriteFile(path, "a", AppendToFile)
+		exp := []byte("a")
+		act := ReadFileUnsafe(path)
+		assert.Equal(t, exp, act, "File should have content")
+		assert.Nil(t, err, "Should be able to write to empty file.")
+		// Prepend to empty file
+		err = os.Remove(path)
+		assert.Nil(t, err, "Must remove file.")
+		err = WriteFile(path, "a", PrependToFile)
+		assert.Equal(t, []byte("a"), ReadFileUnsafe(path), "File should have content")
+		assert.Nil(t, err, "Should be able to write to empty file.")
+		// Overwrite empty file
+		err = os.Remove(path)
+		assert.Nil(t, err, "Must remove file.")
+		err = WriteFile(path, "a", OverwriteFile)
+		assert.Equal(t, []byte("a"), ReadFileUnsafe(path), "File should have content")
+		assert.Nil(t, err, "Should be able to write to empty file.")
+	}
+	// Append
+	{
+		err := os.Remove(path)
+		err = WriteFile(path, "a", OverwriteFile)
+		assert.Nil(t, err, "Should be able to write to empty file.")
+		err = WriteFile(path, "b", AppendToFile)
+		assert.Nil(t, err, "Should be able to append to file.")
+		assert.Equal(t, []byte("ab"), ReadFileUnsafe(path), "Should be equal")
+	}
+	// Prepend
+	{
+		err := os.Remove(path)
+		err = WriteFile(path, "b", OverwriteFile)
+		assert.Nil(t, err, "Should be able to write to empty file.")
+		err = WriteFile(path, "a", PrependToFile)
+		assert.Nil(t, err, "Should be able to prepend to file.")
+		assert.Equal(t, []byte("ab"), ReadFileUnsafe(path), "Should be equal")
+	}
+	// Overwrite
+	{
+		err := os.Remove(path)
+		err = WriteFile(path, "cba", OverwriteFile)
+		assert.Nil(t, err, "Should be able to write to empty file.")
+		err = WriteFile(path, "abc", OverwriteFile)
+		assert.Nil(t, err, "Should be able to overwrite file.")
+		assert.Equal(t, []byte("abc"), ReadFileUnsafe(path), "Should have overwritten file")
+	}
+}

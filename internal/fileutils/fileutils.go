@@ -261,23 +261,29 @@ func ReadFileUnsafe(src string) []byte {
 }
 
 const (
-	// Append content to end of file
-	Append = 0
-	// Overwrite file with contents
-	Overwrite = 1
-	// Prepend - add content start of file
-	Prepend = 2
+	// AppendToFile content to end of file
+	AppendToFile = iota
+	// OverwriteFile file with contents
+	OverwriteFile
+	// PrependToFile - add content start of file
+	PrependToFile
 )
 
 // WriteFile data to a file, supports overwrite, append, or prepend
-func WriteFile(filepath string, content string, flag int) error {
+func WriteFile(filepath string, content string, flag int) *failures.Failure {
 	switch flag {
 	case
-		Append, Overwrite, Prepend:
+		AppendToFile, OverwriteFile, PrependToFile:
 
 	default:
-		fail := failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
-		return fail
+		return failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
+	}
+
+	if !FileExists(filepath) {
+		_, err := os.Create(filepath)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
 	}
 
 	data := []byte(content)
@@ -286,9 +292,9 @@ func WriteFile(filepath string, content string, flag int) error {
 		return failures.FailIO.Wrap(err)
 	}
 
-	if flag == Prepend {
+	if flag == PrependToFile {
 		data = append(data, b...)
-	} else if flag == Append {
+	} else if flag == AppendToFile {
 		data = append(b, data...)
 	}
 
@@ -299,7 +305,10 @@ func WriteFile(filepath string, content string, flag int) error {
 	defer f.Close()
 
 	_, err = f.Write(data)
-	return err
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
 }
 
 // FindFileInPath will find a file by the given file-name in the directory provided or in

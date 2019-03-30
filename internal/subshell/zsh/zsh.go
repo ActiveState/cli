@@ -89,15 +89,15 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	if userzdotdir == "" {
 		u, err := user.Current()
 		if err != nil {
-			log.Println(locale.T("subshell_zsh_no_home_dir"))
+			log.Println(locale.T("Warning: Could not load home directory for current user"))
 		} else {
 			userzdotdir = u.HomeDir
 		}
 	}
 
-	err = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir), fileutils.Prepend)
-	if err != nil {
-		return err
+	fail = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir), fileutils.PrependToFile)
+	if fail != nil {
+		return fail
 	}
 	os.Setenv("ZDOTDIR", path)
 
