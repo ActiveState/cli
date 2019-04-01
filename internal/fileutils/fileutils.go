@@ -260,9 +260,39 @@ func ReadFileUnsafe(src string) []byte {
 	return b
 }
 
+// TouchFile file creates a file and ensures any parent directories
+// are also created.
+func TouchFile(filePath string) *failures.Failure {
+	// Ensure the parent exists
+	if !FileExists(filePath) {
+		err := os.MkdirAll(filepath.Dir(filePath), 0700)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+		_, err = os.Create(filePath)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+	}
+
+	return nil
+}
+
+// ReadFile reads the content of a file
+func ReadFile(filePath string) ([]byte, *failures.Failure) {
+	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+	return b, nil
+}
+
+// WriteOptions used to specify write actions for WriteFile
+type WriteOptions uint8
+
 const (
 	// AppendToFile content to end of file
-	AppendToFile = iota
+	AppendToFile WriteOptions = iota
 	// OverwriteFile file with contents
 	OverwriteFile
 	// PrependToFile - add content start of file
@@ -270,7 +300,7 @@ const (
 )
 
 // WriteFile data to a file, supports overwrite, append, or prepend
-func WriteFile(filepath string, content string, flag int) *failures.Failure {
+func WriteFile(filePath string, content string, flag WriteOptions) *failures.Failure {
 	switch flag {
 	case
 		AppendToFile, OverwriteFile, PrependToFile:
@@ -279,17 +309,16 @@ func WriteFile(filepath string, content string, flag int) *failures.Failure {
 		return failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
 	}
 
-	if !FileExists(filepath) {
-		_, err := os.Create(filepath)
-		if err != nil {
-			return failures.FailIO.Wrap(err)
-		}
+	data := []byte(content)
+
+	fail := TouchFile(filePath)
+	if fail != nil {
+		return fail
 	}
 
-	data := []byte(content)
-	b, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
+	b, fail := ReadFile(filePath)
+	if fail != nil {
+		return fail
 	}
 
 	if flag == PrependToFile {
@@ -298,7 +327,7 @@ func WriteFile(filepath string, content string, flag int) *failures.Failure {
 		data = append(b, data...)
 	}
 
-	f, err := os.OpenFile(filepath, os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filePath, os.O_WRONLY, 0600)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
