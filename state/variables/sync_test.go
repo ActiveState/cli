@@ -77,8 +77,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "failure occurred")
+	suite.Error(execErr, "failure occurred")
 
 	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
@@ -182,7 +181,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_NoLocalPrivateKeyFound() {
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
+	suite.Require().Error(execErr)
 	suite.Contains(outStr, locale.T("keypair_err_require_auth"))
 }
 
@@ -205,7 +204,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToDecryptSecret() {
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
+	suite.Require().Error(execErr)
 	suite.Contains(outStr, locale.T("keypairs_err_base64_decoding"))
 }
 
@@ -228,7 +227,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToEncryptNewSecret()
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
+	suite.Require().Error(execErr)
 	suite.Contains(outStr, locale.T("keypairs_err_pem_encoding"))
 }
 
@@ -250,7 +249,7 @@ func (suite *SecretsSyncCommandTestSuite) TestFailure_SavingSharedSecrets() {
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
+	suite.Require().Error(execErr)
 	suite.Contains(outStr, locale.T("variables_err_save"))
 }
 

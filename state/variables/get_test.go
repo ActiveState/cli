@@ -76,8 +76,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
 	execErr := cmd.Config().Execute()
-	suite.Require().NoError(execErr)
-	suite.Require().Error(failures.Handled(), "expected a failure")
+	suite.Require().Error(execErr, "expected a failure")
 
 	failure := failures.Handled().(*failures.Failure)
 	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)

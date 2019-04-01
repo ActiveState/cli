@@ -2,6 +2,7 @@ package keypairs
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -137,6 +138,7 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 	})
 
 	if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
+		logging.Error("Saving keypair failed with error: %v", err)
 		return secretsapi.FailKeypairSave.New("keypair_err_save")
 	}
 

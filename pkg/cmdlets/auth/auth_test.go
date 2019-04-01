@@ -66,15 +66,14 @@ func TestExecuteNoArgs(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
 		// prompted for username and password only
 		// 10ms delay between writes to stdin
 		"baduser",
 		"badpass",
 	)
 
-	assert.NoError(t, execErr, "Executed without error")
-	assert.Error(t, failures.Handled(), "No failure occurred")
+	assert.Error(t, execErr, "No failure occurred")
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 
@@ -107,7 +106,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -117,7 +116,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	secretsapiMock.Register("GET", "/keypair")
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password)
 
@@ -131,7 +130,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -149,7 +148,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password)
 
@@ -167,7 +166,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	var secondRequest bool
@@ -195,7 +194,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
 		// prompted for username and password
 		user.Username,
 		user.Password,
@@ -220,7 +219,7 @@ func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -244,7 +243,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password,
 		user.Password, // confirmation
@@ -329,7 +328,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
@@ -348,7 +347,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	var execErr error
 	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
 	// input for the specific field
-	osutil.WrapStdinWithDelay(100*time.Millisecond,
+	osutil.WrapStdinWithDelay(300*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "\x04")
 
@@ -357,7 +356,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(100*time.Millisecond,
+	osutil.WrapStdinWithDelay(300*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "foo")
 
@@ -372,7 +371,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 	defer failures.ResetHandled()
 
@@ -400,7 +399,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	var execErr error
 	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
 	// input for the specific field
-	osutil.WrapStdinWithDelay(100*time.Millisecond,
+	osutil.WrapStdinWithDelay(300*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "\x04")
 
@@ -409,7 +408,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(100*time.Millisecond,
+	osutil.WrapStdinWithDelay(300*time.Millisecond,
 		func() { execErr = Command.Execute() },
 		user.Username, user.Password, "foo")
 
@@ -442,7 +441,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
@@ -452,7 +451,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() {
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() {
 		authlet.RequireAuthentication("")
 	}, "", user.Username, user.Password)
 
@@ -471,7 +470,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() {
+	osutil.WrapStdinWithDelay(300*time.Millisecond, func() {
 		fail = authlet.RequireAuthentication("")
 	}, "", user.Username, user.Password)
 
@@ -485,7 +484,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -499,7 +498,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 		return 204, "empty"
 	})
 
-	osutil.WrapStdinWithDelay(50*time.Millisecond, func() {
+	osutil.WrapStdinWithDelay(200*time.Millisecond, func() {
 		authlet.RequireAuthentication("")
 	}, terminal.KeyArrowDown, "", user.Username, user.Password, user.Password, user.Name, user.Email)
 
@@ -512,7 +511,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")

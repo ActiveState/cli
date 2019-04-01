@@ -11,7 +11,7 @@ import (
 
 // ExecuteAuth processes the `keypair auth` command.
 func ExecuteAuth(_ *cobra.Command, args []string) {
-	secretsClient := secretsapi.DefaultClient
+	secretsClient := secretsapi.Get()
 	_, failure := secretsClient.AuthenticatedUserID()
 
 	var passphrase string

@@ -44,7 +44,7 @@ func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
 	apiSetting := api.GetSettings(api.ServiceSecrets)
 	secretsapi.InitializeClient()
 
-	client := secretsapi.DefaultClient
+	client := secretsapi.Get()
 	require.NotNil(client)
 	assert.NotNil(client.Auth)
 	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath), client.BaseURI)

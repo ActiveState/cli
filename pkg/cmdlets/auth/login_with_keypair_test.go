@@ -191,13 +191,15 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(500*time.Millisecond, func() { execErr = Command.Execute() },
 		// login
-		"testuser", "newpassword",
+		"testuser",
+		"newpassword",
 		// passphrase mismatch, prompt for old passphrase
 		"wrongpassword",
 		// user wants to generate a new keypair
-		"Yes")
+		"Y", "Y", // Got to repeat the Y because WrapStdin SUCKS
+	)
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -232,9 +234,8 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 			"No")
 	})
 
-	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(execOutErr, "Captured stdout with error")
-	suite.Require().Error(failures.Handled(), "Expected Failure")
+	suite.Require().Error(execErr, "Expected Failure")
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	suite.Contains(execOut, locale.T("auth_unresolved_keypair_issue_message"))

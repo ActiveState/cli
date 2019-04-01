@@ -63,6 +63,9 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 
+	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
+	secretMock.Register("GET", "/keypair")
+
 	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
@@ -74,11 +77,41 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
+func TestExecuteAuthenticatedByPrompts(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	monoMock := httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	monoMock.Register("POST", "/login")
+	monoMock.Register("GET", "/apikeys")
+	monoMock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	monoMock.Register("POST", "/apikeys")
+	monoMock.Register("GET", "/renew")
+
+	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
+	secretMock.Register("GET", "/keypair")
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{})
+
+	var execErr error
+	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+		user.Username,
+		user.Password,
+	)
+
+	assert.NoError(t, execErr, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	secretsapiMock := httpmock.Activate(secretsapi.DefaultClient.BaseURI)
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -102,7 +135,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
+	osutil.WrapStdinWithDelay(200*time.Millisecond, func() { execErr = Command.Execute() },
 		user.Username,
 		user.Password,
 		user.Password, // confirmation

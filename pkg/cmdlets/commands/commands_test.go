@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/stretchr/testify/require"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
@@ -42,6 +47,55 @@ func TestRunCommand(t *testing.T) {
 	cmd1.Execute()
 
 	assert.True(t, ran)
+}
+
+func TestExitError(t *testing.T) {
+	errExpected := errors.New("test")
+
+	var cmd1 = Command{
+		Name: "foo",
+		Run: func(cmd *cobra.Command, args []string) {
+			failures.Handle(errExpected, "Some failure")
+		},
+	}
+
+	err := cmd1.Execute()
+	require.True(t, errExpected == err, fmt.Sprintf("%v should be equal to %v", errExpected, err))
+}
+
+func TestExitCode(t *testing.T) {
+	exit := exiter.New()
+
+	var cmd1 = Command{
+		Name: "foo",
+		Run: func(cmd *cobra.Command, args []string) {
+			failures.Handle(errors.New("test"), "Some failure")
+		},
+		Exiter: exit.Exit,
+	}
+
+	code := exit.WaitForExit(func() {
+		cmd1.Execute()
+		require.FailNow(t, "This should never be reached as exit would have been called")
+	})
+	require.Equal(t, 1, code, "Exits with code 1")
+}
+
+func TestExitCodeZero(t *testing.T) {
+	exit := exiter.New()
+
+	var cmd1 = Command{
+		Name: "foo",
+		Run: func(cmd *cobra.Command, args []string) {
+			failures.FailDeveloper.New("Test failure that shouldn't trip up our exit mechanic")
+		},
+		Exiter: exit.Exit,
+	}
+
+	code := exit.WaitForExit(func() {
+		cmd1.Execute()
+	})
+	require.Equal(t, -1, code, "Doesn't trigger an exit")
 }
 
 func TestAppend(t *testing.T) {
