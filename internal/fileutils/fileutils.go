@@ -276,17 +276,18 @@ func ReadFileUnsafe(src string) []byte {
 // are also created.
 func TouchFile(filePath string) *failures.Failure {
 	// Ensure the parent exists
-	if !FileExists(filePath) {
-		err := os.MkdirAll(filepath.Dir(filePath), 0700)
-		if err != nil {
-			return failures.FailIO.Wrap(err)
-		}
-		_, err = os.Create(filePath)
-		if err != nil {
-			return failures.FailIO.Wrap(err)
-		}
+	if FileExists(filePath) {
+		return nil
 	}
-
+	fail := MkdirUnlessExists(filepath.Dir(filePath))
+	if fail != nil {
+		return fail
+	}
+	f, err := os.Create(filePath)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer f.Close()
 	return nil
 }
 
