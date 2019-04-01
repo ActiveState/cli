@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -24,7 +25,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 var (
@@ -34,6 +34,12 @@ var (
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
+
+var prompter prompt.Prompter
+
+func init() {
+	prompter = prompt.New()
+}
 
 // Command holds our main command definition
 var Command = &commands.Command{
@@ -237,14 +243,11 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 		return "", failures.FailRuntime.Wrap(err)
 	}
 
-	directory := filepath.Join(wd, namespace)
-	err = survey.AskOne(&survey.Input{
-		Message: locale.Tr("activate_namespace_location", namespace),
-		Default: directory,
-	}, &directory, nil)
-	if err != nil {
-		return "", failures.FailUserInput.Wrap(err)
+	directory, fail := prompter.Input(locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace))
+	if fail != nil {
+		return "", fail
 	}
+	logging.Debug("Using: %s", directory)
 
 	if fileutils.DirExists(directory) {
 		return "", failTargetDirExists.New(locale.Tr("err_namespace_dir_exists"))
@@ -259,14 +262,11 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 		return nil, nil
 	}
 
-	var path string
-	var noneStr = locale.T("activate_select_optout")
-	err := survey.AskOne(&survey.Select{
-		Message: locale.T("activate_namespace_existing"),
-		Options: append(projectPaths, noneStr),
-	}, &path, nil)
-	if err != nil {
-		return nil, failures.FailUserInput.Wrap(err)
+	noneStr := locale.T("activate_select_optout")
+	choices := append(projectPaths, noneStr)
+	path, fail := prompter.Select(locale.T("activate_namespace_existing"), choices, "")
+	if fail != nil {
+		return nil, fail
 	}
 	if path != "" && path != noneStr {
 		return &path, nil
