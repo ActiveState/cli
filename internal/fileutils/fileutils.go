@@ -21,6 +21,18 @@ import (
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
+// WriteOptions used to specify write actions for WriteFile
+type WriteOptions uint8
+
+const (
+	// AppendToFile content to end of file
+	AppendToFile WriteOptions = iota
+	// OverwriteFile file with contents
+	OverwriteFile
+	// PrependToFile - add content start of file
+	PrependToFile
+)
+
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
 func ReplaceAll(filename, find, replace string) error {
@@ -286,18 +298,6 @@ func ReadFile(filePath string) ([]byte, *failures.Failure) {
 	}
 	return b, nil
 }
-
-// WriteOptions used to specify write actions for WriteFile
-type WriteOptions uint8
-
-const (
-	// AppendToFile content to end of file
-	AppendToFile WriteOptions = iota
-	// OverwriteFile file with contents
-	OverwriteFile
-	// PrependToFile - add content start of file
-	PrependToFile
-)
 
 // WriteFile data to a file, supports overwrite, append, or prepend
 func WriteFile(filePath string, content string, flag WriteOptions) *failures.Failure {
