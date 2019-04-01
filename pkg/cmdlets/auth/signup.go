@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -66,12 +66,12 @@ func promptForSignup(input *signupInput) error {
 			{
 				Name:     "username",
 				Prompt:   &survey.Input{Message: locale.T("username_prompt_signup")},
-				Validate: survey.ComposeValidators(surveyor.ValidateRequired, UsernameValidator),
+				Validate: survey.ComposeValidators(prompt.ValidateRequired, UsernameValidator),
 			},
 			{
 				Name:     "password",
 				Prompt:   &survey.Password{Message: locale.T("password_prompt_signup")},
-				Validate: surveyor.ValidateRequired,
+				Validate: prompt.ValidateRequired,
 			},
 		}...)
 	}
@@ -94,12 +94,12 @@ func promptForSignup(input *signupInput) error {
 		{
 			Name:     "name",
 			Prompt:   &survey.Input{Message: locale.T("name_prompt")},
-			Validate: surveyor.ValidateRequired,
+			Validate: prompt.ValidateRequired,
 		},
 		{
 			Name:     "email",
 			Prompt:   &survey.Input{Message: locale.T("email_prompt")},
-			Validate: surveyor.ValidateRequired,
+			Validate: prompt.ValidateRequired,
 		},
 	}...)
 

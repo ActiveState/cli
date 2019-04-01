@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -21,6 +21,8 @@ import (
 // overwritten in tests
 var OpenURI = open.Run
 
+var prompter prompt.Prompter
+
 var (
 	// FailLoginPrompt indicates a failure during the login prompt
 	FailLoginPrompt = failures.Type("auth.fail.loginprompt", failures.FailUserInput)
@@ -31,6 +33,10 @@ var (
 	// FailBrowserOpen indicates a failure to open the users browser
 	FailBrowserOpen = failures.Type("auth.failure.browseropen")
 )
+
+func init() {
+	prompter = prompt.New()
+}
 
 // Authenticate will prompt the user for authentication
 func Authenticate() {
@@ -57,12 +63,11 @@ func RequireAuthentication(message string) *failures.Failure {
 
 	print.Info(message)
 
-	var choice string
-	prompt := &survey.Select{
-		Message: locale.T("prompt_login_or_signup"),
-		Options: []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")},
+	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
+	choice, fail := prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
+	if fail != nil {
+		return fail
 	}
-	survey.AskOne(prompt, &choice, nil)
 
 	switch choice {
 	case locale.T("prompt_login_action"):
@@ -91,12 +96,12 @@ func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
 		{
 			Name:     "username",
 			Prompt:   &survey.Input{Message: locale.T("username_prompt")},
-			Validate: surveyor.ValidateRequired,
+			Validate: prompt.ValidateRequired,
 		},
 		{
 			Name:     "password",
 			Prompt:   &survey.Password{Message: locale.T("password_prompt")},
-			Validate: surveyor.ValidateRequired,
+			Validate: prompt.ValidateRequired,
 		},
 	}
 
@@ -134,7 +139,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 				{
 					Name:     "totp",
 					Prompt:   &survey.Input{Message: locale.T("totp_prompt")},
-					Validate: surveyor.ValidateRequired,
+					Validate: prompt.ValidateRequired,
 				},
 			}
 			survey.Ask(qs, credentials)
