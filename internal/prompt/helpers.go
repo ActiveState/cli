@@ -25,7 +25,7 @@ func ValidateRequired(val interface{}) error {
 	value := reflect.ValueOf(val)
 
 	// if the value passed in is the zero value of the appropriate type
-	if isZero(value) && value.Kind() != reflect.Bool {
+	if isZero(value) && value.Kind() != reflect.Bool && value.Kind() != reflect.Int {
 		return errors.New(locale.T("err_value_required"))
 	}
 	return nil
