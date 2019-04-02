@@ -85,7 +85,7 @@ func (suite *ActivateTestSuite) TestExecute() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func (suite *ActivateTestSuite) xTestExecuteWithNamespace() {
+func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.rMock.MockFullRuntime()
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
@@ -138,12 +138,12 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
 }
 
-func (suite *ActivateTestSuite) xTestActivateFromNamespaceInvalidNamespace() {
+func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 	fail := activateFromNamespace("foo")
 	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
 }
 
-func (suite *ActivateTestSuite) xTestActivateFromNamespaceNoProject() {
+func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockGetProject404()
 
