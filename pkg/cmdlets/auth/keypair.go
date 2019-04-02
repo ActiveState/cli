@@ -117,7 +117,11 @@ func promptUserToRegenerateKeypair(passphrase string) *failures.Failure {
 	var failure *failures.Failure
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	print.Line(locale.T("auth_generate_new_keypair_message"))
-	if promptConfirm("auth_confirm_generate_new_keypair_prompt") {
+	resp, fail := prompt.Confirm(locale.T("auth_confirm_generate_new_keypair_prompt"))
+	if fail != nil {
+		return fail
+	}
+	if resp {
 		_, failure = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 		// TODO delete user's secrets
 	} else {

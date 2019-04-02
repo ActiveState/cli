@@ -9,14 +9,21 @@ import (
 type Prompter interface {
 	Input(message string, response string) (string, *failures.Failure)
 	Select(message string, choices []string, response string) (string, *failures.Failure)
+	Confirm(message string) (bool, *failures.Failure)
 }
 
 // Prompt is our main promptig struct
 type Prompt struct{}
 
+var prompter Prompter
+
 // New creates a new prompter
 func New() Prompter {
 	return &Prompt{}
+}
+
+func init() {
+	prompter = New()
 }
 
 // Input prompts the user for input
@@ -42,4 +49,43 @@ func (p *Prompt) Select(message string, choices []string, response string) (stri
 		return "", failures.FailUserInput.Wrap(err)
 	}
 	return response, nil
+}
+
+// Confirm prompts user for yes or no response.
+func (p *Prompt) Confirm(message string) (bool, *failures.Failure) {
+	var resp bool
+	err := survey.AskOne(&survey.Confirm{
+		Message: message,
+	}, &resp, nil)
+	if err != nil {
+		return false, failures.FailUserInput.Wrap(err)
+	}
+	return resp, nil
+}
+
+// Input calls generic prompter Input
+func Input(message string, response string) (string, *failures.Failure) {
+	resp, fail := prompter.Input(message, response)
+	if fail != nil {
+		return "", fail
+	}
+	return resp, nil
+}
+
+// Select calls generic prompter Select
+func Select(message string, choices []string, response string) (string, *failures.Failure) {
+	resp, fail := prompter.Select(message, choices, response)
+	if fail != nil {
+		return "", fail
+	}
+	return resp, nil
+}
+
+// Confirm calls generic prompter Confirm
+func Confirm(message string) (bool, *failures.Failure) {
+	resp, fail := prompter.Confirm(message)
+	if fail != nil {
+		return false, fail
+	}
+	return resp, nil
 }
