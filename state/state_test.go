@@ -101,7 +101,7 @@ func TestExpired(t *testing.T) {
 	defer mock.Close()
 	mock.MockExpired()
 
-	out, err := osutil.CaptureStdout(main)
+	out, err := osutil.CaptureStderr(main)
 	require.NoError(t, err)
 	require.Contains(t, out, locale.Tr("err_deprecation", "")[0:50])
 }
