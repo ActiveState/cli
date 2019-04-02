@@ -35,7 +35,7 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 	methodType := reflect.ValueOf(m).MethodByName(methodName).Type()
 	anyArgs := []interface{}{}
 	for i := 0; i < methodType.NumIn(); i++ {
-		anyArgs = append(anyArgs, tmock.MatchedBy(MatchAny))
+		anyArgs = append(anyArgs, tmock.Anything)
 	}
 	return m.On(methodName, anyArgs...)
 }
@@ -45,8 +45,4 @@ func failure(arg interface{}) *failures.Failure {
 		return nil
 	}
 	return arg.(*failures.Failure)
-}
-
-func MatchAny(a interface{}) bool {
-	return true
 }
