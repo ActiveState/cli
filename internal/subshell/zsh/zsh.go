@@ -1,12 +1,16 @@
 package zsh
 
 import (
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -71,7 +75,27 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	if err != nil {
 		return err
 	}
-	fail := fileutils.CopyFile(v.rcFile.Name(), filepath.Join(path, ".zshrc"))
+
+	activeZsrcPath := filepath.Join(path, ".zshrc")
+	fail := fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+	if fail != nil {
+		return fail
+	}
+
+	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
+	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
+	// commands.
+	userzdotdir := os.Getenv("ZDOTDIR")
+	if userzdotdir == "" {
+		u, err := user.Current()
+		if err != nil {
+			log.Println(locale.T("Warning: Could not load home directory for current user"))
+		} else {
+			userzdotdir = u.HomeDir
+		}
+	}
+
+	fail = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir), fileutils.PrependToFile)
 	if fail != nil {
 		return fail
 	}

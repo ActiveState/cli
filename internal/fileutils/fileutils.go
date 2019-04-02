@@ -14,11 +14,24 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
+
+// WriteOptions used to specify write actions for WriteFile
+type WriteOptions uint8
+
+const (
+	// AppendToFile content to end of file
+	AppendToFile WriteOptions = iota
+	// OverwriteFile file with contents
+	OverwriteFile
+	// PrependToFile - add content start of file
+	PrependToFile
+)
 
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
@@ -257,6 +270,75 @@ func ReadFileUnsafe(src string) []byte {
 		log.Fatalf("Cannot read file: %s, error: %s", src, err.Error())
 	}
 	return b
+}
+
+// TouchFile file creates a file and ensures any parent directories
+// are also created.
+func TouchFile(filePath string) *failures.Failure {
+	// Ensure the parent exists
+	if FileExists(filePath) {
+		return nil
+	}
+	fail := MkdirUnlessExists(filepath.Dir(filePath))
+	if fail != nil {
+		return fail
+	}
+	f, err := os.Create(filePath)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer f.Close()
+	return nil
+}
+
+// ReadFile reads the content of a file
+func ReadFile(filePath string) ([]byte, *failures.Failure) {
+	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+	return b, nil
+}
+
+// WriteFile data to a file, supports overwrite, append, or prepend
+func WriteFile(filePath string, content string, flag WriteOptions) *failures.Failure {
+	switch flag {
+	case
+		AppendToFile, OverwriteFile, PrependToFile:
+
+	default:
+		return failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
+	}
+
+	data := []byte(content)
+
+	fail := TouchFile(filePath)
+	if fail != nil {
+		return fail
+	}
+
+	b, fail := ReadFile(filePath)
+	if fail != nil {
+		return fail
+	}
+
+	if flag == PrependToFile {
+		data = append(data, b...)
+	} else if flag == AppendToFile {
+		data = append(b, data...)
+	}
+
+	f, err := os.OpenFile(filePath, os.O_WRONLY, 0600)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
 }
 
 // FindFileInPath will find a file by the given file-name in the directory provided or in
