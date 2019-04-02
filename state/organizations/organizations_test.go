@@ -62,8 +62,7 @@ func TestClientError(t *testing.T) {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)
-	require.NoError(t, execErr)
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	assert.Error(t, execErr, "Failure occurred")
 
 	// Should not be able to fetch organizations without mock
 	assert.Contains(t, outStr, "no responder found")
@@ -84,8 +83,7 @@ func TestAuthError(t *testing.T) {
 		execErr = Command.Execute()
 	})
 	require.NoError(t, outErr)
-	require.NoError(t, execErr)
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	assert.Error(t, execErr, "Failure occurred")
 
 	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
 }

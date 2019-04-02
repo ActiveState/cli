@@ -40,9 +40,9 @@ func (suite *KeypairAuthTestSuite) TestExecute_APIAuthFailure() {
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
-	suite.Require().NoError(cmd.Execute())
+	execErr := cmd.Execute()
 
-	suite.Require().Error(failures.Handled(), "expected failure")
+	suite.Require().Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)
@@ -56,9 +56,9 @@ func (suite *KeypairAuthTestSuite) TestExecute_NoKeypairFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
-	suite.Require().NoError(cmd.Execute())
+	execErr := cmd.Execute()
 
-	suite.Require().Error(failures.Handled(), "expected failure")
+	suite.Require().Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)
@@ -74,9 +74,8 @@ func (suite *KeypairAuthTestSuite) TestExecute_InvalidPassphrase() {
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
 	var execErr error
 	osutil.WrapStdin(func() { execErr = cmd.Execute() }, "no-such-passphrase") // foo is actual password
-	suite.Require().NoError(execErr)
 
-	suite.Require().Error(failures.Handled(), "expected failure")
+	suite.Require().Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)

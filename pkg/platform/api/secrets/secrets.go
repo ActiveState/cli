@@ -98,6 +98,11 @@ func InitializeClient() *Client {
 	return DefaultClient
 }
 
+// Get is an alias for InitializeClient used to persist our Get() pattern used throughout the codebase
+func Get() *Client {
+	return InitializeClient()
+}
+
 // AuthenticatedUserID will check with the Secrets Service to ensure the current Bearer token
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.

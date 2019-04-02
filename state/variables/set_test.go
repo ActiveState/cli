@@ -96,8 +96,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_UndefinedVar() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"set", "NEWVAR", "/new/path"})
 	execErr := cmd.Config().Execute()
-	suite.Require().NoError(execErr, "error executing command")
-	suite.Require().Error(failures.Handled(), "expected error executing command")
+	suite.Require().Error(execErr, "expected error executing command")
 	suite.Equal(failures.FailCmd, failures.Handled().(*failures.Failure).Type)
 }
 
@@ -105,8 +104,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_DefinedLocalVar_Success() {
 	cmd := variables.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"set", "PYTHONPATH", "/new/path"})
 	execErr := cmd.Config().Execute()
-	suite.Require().NoError(execErr, "error executing command")
-	suite.Require().Nil(failures.Handled(), "unexpected failure executing command")
+	suite.Require().Nil(execErr, "unexpected failure executing command")
 
 	projectfile.Reset()
 	prj, failure := project.GetSafe()
@@ -129,8 +127,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_ForSecret_FetchOrg_NotAuthentic
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
-	suite.Require().Error(failures.Handled(), "expected failure")
+	suite.Require().Error(execErr, "expected failure")
 
 	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }

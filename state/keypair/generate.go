@@ -11,7 +11,7 @@ import (
 
 // ExecuteGenerate processes the `keypair generate` sub-command.
 func ExecuteGenerate(_ *cobra.Command, args []string) {
-	secretsClient := secretsapi.DefaultClient
+	secretsClient := secretsapi.Get()
 	var passphrase string
 	var failure *failures.Failure
 	var encodedKeypair *keypairs.EncodedKeypair

@@ -87,8 +87,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "failure occurred")
+	suite.Error(execErr, "failure occurred")
 
 	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
@@ -109,8 +108,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound(
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
-	suite.Require().NoError(execErr)
-	suite.Error(failures.Handled(), "failure occurred")
+	suite.Error(execErr, "failure occurred")
 
 	suite.Contains(outStr, locale.T("err_api_project_not_found"))
 }

@@ -13,7 +13,6 @@ class TestAuth(helpers.IntegrationTest):
         self.spawn("auth signup")
         self.expect("username:")
         self.send(self.username)
-        self.send("\r\n")
         self.expect("password:")
         self.send(self.password)
         self.expect("again:")

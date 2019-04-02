@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/deprecation"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -72,7 +74,9 @@ var Command = &commands.Command{
 
 func main() {
 	logging.Debug("main")
-	if flag.Lookup("test.v") == nil && updater.TimedCheck() {
+	// Don't auto-update if we're 'state update'ing
+	manualUpdate := funk.Contains(os.Args, "update")
+	if flag.Lookup("test.v") == nil && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
