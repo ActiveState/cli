@@ -108,9 +108,7 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
+	suite.rMock.MockFullRuntime()
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
