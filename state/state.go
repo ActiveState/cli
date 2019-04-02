@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
-	_ "github.com/ActiveState/cli/internal/surveyor" // Sets up survey defaults
+	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	_ "github.com/ActiveState/state-required/require"

@@ -5,27 +5,28 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const ProjectNamespace = "string/string"
 
 type ActivateTestSuite struct {
 	suite.Suite
-	authMock *authMock.Mock
-	apiMock  *apiMock.Mock
-	dir      string
+	authMock   *authMock.Mock
+	apiMock    *apiMock.Mock
+	rMock      *rMock.Mock
+	promptMock *promptMock.Mock
+	dir        string
 }
 
 func (suite *ActivateTestSuite) SetupSuite() {
@@ -39,6 +40,9 @@ func (suite *ActivateTestSuite) SetupSuite() {
 func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
 	suite.apiMock = apiMock.Init()
+	suite.rMock = rMock.Init()
+	suite.promptMock = promptMock.Init()
+	prompter = suite.promptMock
 
 	var err error
 
@@ -51,18 +55,29 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	// For some reason the working directory looks different once you cd into it (on mac), so ensure we use the right version
 	suite.dir, err = os.Getwd()
 	suite.Require().NoError(err)
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{})
+
+	Args.Namespace = ""
+
+	failures.ResetHandled()
 }
 
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.authMock.Close()
 	suite.apiMock.Close()
+	suite.rMock.Close()
+	suite.promptMock.Close()
 	err := os.RemoveAll(suite.dir)
 	suite.Require().NoError(err)
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
+	suite.rMock.MockFullRuntime()
+
 	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
-	suite.Nil(err, "unable to chdir to testdata dir")
+	suite.Require().NoError(err, "unable to chdir to testdata dir")
 
 	Command.Execute()
 
@@ -71,30 +86,20 @@ func (suite *ActivateTestSuite) TestExecute() {
 }
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
+	suite.rMock.MockFullRuntime()
+
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})
-
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { Command.Execute() }, "")
+	err := Command.Execute()
+	suite.Require().NoError(err)
 
 	suite.Equal(true, true, "Execute didn't panic")
 	suite.NoError(failures.Handled(), "No failure occurred")
 
-	suite.FileExists(filepath.Join(suite.dir, ProjectNamespace, constants.ConfigFileName))
-}
-
-func (suite *ActivateTestSuite) TestActivateFromNamespace() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
-
-	fail := suite.executeWithInput(ProjectNamespace, "")
-	suite.Require().NoError(fail.ToError())
-
-	configFile := filepath.Join(suite.dir, ProjectNamespace, constants.ConfigFileName)
+	configFile := filepath.Join(targetDir, constants.ConfigFileName)
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
@@ -102,63 +107,33 @@ func (suite *ActivateTestSuite) TestActivateFromNamespace() {
 	suite.Equal("Python", pjfile.Languages[0].Name)
 }
 
-func (suite *ActivateTestSuite) TestActivateFromNamespaceCustomDir() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
-
-	targetDir, err := ioutil.TempDir(suite.dir, "CustomDir")
-	suite.Require().NoError(err)
-	suite.Require().NoError(os.Remove(targetDir))
-
-	fail := suite.executeWithInput(ProjectNamespace, targetDir)
-	suite.Require().NoError(fail.ToError())
-	suite.FileExists(filepath.Join(targetDir, constants.ConfigFileName))
-}
-
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
+	suite.rMock.MockFullRuntime()
+
+	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
+	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
 
 	// Set up first checkout
-	implicitDir := filepath.Join(suite.dir, ProjectNamespace)
-	fail := suite.executeWithInput(ProjectNamespace, "")
-	suite.Require().NoError(fail.ToError())
-	suite.FileExists(filepath.Join(implicitDir, constants.ConfigFileName))
-	savePathForNamespace(ProjectNamespace, implicitDir)
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+
+	suite.FileExists(filepath.Join(targetDirOrig, constants.ConfigFileName))
+	savePathForNamespace(ProjectNamespace, targetDirOrig)
 
 	// Now set up the second
-	targetDir, err := ioutil.TempDir(suite.dir, "DontUseExisting")
+	targetDirNew, err := ioutil.TempDir(suite.dir, "DontUseExisting")
 	suite.Require().NoError(err)
-	suite.Require().NoError(os.Remove(targetDir))
-	fail = suite.executeWithInput(ProjectNamespace, terminal.KeyArrowDown, "", targetDir)
-	suite.Require().NoError(fail.ToError())
-	suite.FileExists(filepath.Join(targetDir, constants.ConfigFileName))
-}
+	suite.Require().NoError(os.Remove(targetDirNew))
 
-func (suite *ActivateTestSuite) TestActivateFromNamespaceUseExisting() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpointPython()
+	suite.promptMock.OnMethod("Select").Once().Return("", nil)
+	suite.promptMock.OnMethod("Input").Once().Return(targetDirNew, nil)
 
-	// Set up first checkout
-	implicitDir := filepath.Join(suite.dir, ProjectNamespace)
-	fail := suite.executeWithInput(ProjectNamespace, "")
-	suite.Require().NoError(fail.ToError())
-	suite.FileExists(filepath.Join(implicitDir, constants.ConfigFileName))
-	savePathForNamespace(ProjectNamespace, implicitDir)
-
-	os.Chdir(suite.dir)
-
-	fail = suite.executeWithInput(ProjectNamespace, "")
-	suite.Require().NoError(fail.ToError())
-
-	wd, err := os.Getwd()
+	err = Command.Execute()
 	suite.Require().NoError(err)
-	wd, err = filepath.Abs(wd)
-	suite.Require().NoError(err)
-	suite.Equal(implicitDir, wd)
+
+	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
@@ -172,12 +147,6 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 
 	fail := activateFromNamespace(ProjectNamespace)
 	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
-}
-
-func (suite *ActivateTestSuite) executeWithInput(namespace string, input ...interface{}) *failures.Failure {
-	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { fail = activateFromNamespace(namespace) }, input...)
-	return fail
 }
 
 func TestActivateSuite(t *testing.T) {

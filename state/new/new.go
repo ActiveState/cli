@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
@@ -86,8 +86,8 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// If project name was not given, ask for it.
 	if Args.Name == "" {
-		prompt := &survey.Input{Message: locale.T("state_new_prompt_name")}
-		if err := survey.AskOne(prompt, &Args.Name, surveyor.ValidateRequired); err != nil {
+		prompter := &survey.Input{Message: locale.T("state_new_prompt_name")}
+		if err := survey.AskOne(prompter, &Args.Name, prompt.ValidateRequired); err != nil {
 			print.Error(locale.T("error_state_new_aborted"))
 			return
 		}

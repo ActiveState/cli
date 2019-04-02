@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/surveyor"
+	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -106,8 +106,8 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 
 func promptForPreviousPassphrase() (string, *failures.Failure) {
 	var passphrase string
-	var prompt = &survey.Password{Message: locale.T("previous_password_prompt")}
-	if err := survey.AskOne(prompt, &passphrase, surveyor.ValidateRequired); err != nil {
+	var prompter = &survey.Password{Message: locale.T("previous_password_prompt")}
+	if err := survey.AskOne(prompter, &passphrase, prompt.ValidateRequired); err != nil {
 		return "", failures.FailUserInput.New("auth_err_password_prompt")
 	}
 	return passphrase, nil
