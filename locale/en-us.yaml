@@ -338,7 +338,7 @@ info_state_run_activating_state:
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 info_state_run_running:
-  other: Running script {{.Script}}
+  other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:

@@ -76,7 +76,7 @@ scripts:
 	})
 	require.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	assert.Equal(t, "Running script echo $ACTIVESTATE_PROJECT", strings.TrimSpace(out), "ACTIVESTATE_PROJECT is empty")
+	assert.Contains(t, out, "Running user-defined script: run")
 }
 
 func TestRunMissingCommandName(t *testing.T) {
