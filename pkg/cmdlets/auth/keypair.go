@@ -6,10 +6,8 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
@@ -105,9 +103,8 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 }
 
 func promptForPreviousPassphrase() (string, *failures.Failure) {
-	var passphrase string
-	var prompter = &survey.Password{Message: locale.T("previous_password_prompt")}
-	if err := survey.AskOne(prompter, &passphrase, prompt.ValidateRequired); err != nil {
+	passphrase, fail := prompter.InputPassword(locale.T("previous_password_prompt"))
+	if fail != nil {
 		return "", failures.FailUserInput.New("auth_err_password_prompt")
 	}
 	return passphrase, nil
@@ -117,11 +114,11 @@ func promptUserToRegenerateKeypair(passphrase string) *failures.Failure {
 	var failure *failures.Failure
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	print.Line(locale.T("auth_generate_new_keypair_message"))
-	resp, fail := prompt.Confirm(locale.T("auth_confirm_generate_new_keypair_prompt"))
+	yes, fail := prompter.Confirm(locale.T("auth_confirm_generate_new_keypair_prompt"), false)
 	if fail != nil {
 		return fail
 	}
-	if resp {
+	if yes {
 		_, failure = keypairs.GenerateAndSaveEncodedKeypair(secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 		// TODO delete user's secrets
 	} else {

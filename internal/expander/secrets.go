@@ -13,7 +13,6 @@ import (
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // FailExpandNoProjectDefined is used when error arises from an expander function being called without a project
@@ -276,10 +275,9 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 }
 
 func promptForValue(variable *projectfile.Variable) (string, *failures.Failure) {
-	var value string
 	// TODO: remove scope prop from locale.Tr
-	var prompt = &survey.Password{Message: locale.Tr("secret_value_prompt", "SCOPE", variable.Name)}
-	if err := survey.AskOne(prompt, &value, nil); err != nil {
+	value, fail := prompter.InputPassword(locale.Tr("secret_value_prompt", "SCOPE", variable.Name))
+	if fail != nil {
 		return "", FailInputSecretValue.New("variables_err_value_prompt")
 	}
 	return value, nil

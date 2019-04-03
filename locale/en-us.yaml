@@ -713,3 +713,5 @@ installing_artifacts:
   other: Installing required artifacts
 fileutils_unknown_flag:
   other: "Unknown flag for fileutils.WriteFile: {{.V0}}"
+err_auth_fail_totp:
+  other: Failed to received TOTP input

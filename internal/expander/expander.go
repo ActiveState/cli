@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/prompt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
@@ -45,6 +47,12 @@ func Failure() *failures.Failure {
 // Expand will detect the active project and invoke ExpandFromProject with the given string
 func Expand(s string) string {
 	return ExpandFromProject(s, projectfile.Get())
+}
+
+var prompter prompt.Prompter
+
+func init() {
+	prompter = prompt.New()
 }
 
 // ExpandFromProject searches for $category.name-style variables in the given

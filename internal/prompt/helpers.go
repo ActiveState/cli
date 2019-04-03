@@ -31,6 +31,11 @@ func ValidateRequired(val interface{}) error {
 	return nil
 }
 
+// NoValidate allows empty responses
+func NoValidate(val interface{}) error {
+	return nil
+}
+
 // isZero returns true if the passed value is the zero object
 func isZero(v reflect.Value) bool {
 	switch v.Kind() {

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -21,7 +22,6 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Command is the new command's definition.
@@ -75,6 +75,12 @@ var Args struct {
 	Name string
 }
 
+var prompter prompt.Prompter
+
+func init() {
+	prompter = prompt.New()
+}
+
 // Execute the new command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
@@ -86,8 +92,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// If project name was not given, ask for it.
 	if Args.Name == "" {
-		prompter := &survey.Input{Message: locale.T("state_new_prompt_name")}
-		if err := survey.AskOne(prompter, &Args.Name, prompt.ValidateRequired); err != nil {
+		var fail *failures.Failure
+		Args.Name, fail = prompter.Input(locale.T("state_new_prompt_name"), "", prompt.ValidateRequired)
+		if fail != nil {
 			print.Error(locale.T("error_state_new_aborted"))
 			return
 		}
@@ -112,11 +119,10 @@ func Execute(cmd *cobra.Command, args []string) {
 			owners = append(owners, org.Name)
 		}
 		if len(owners) > 1 {
-			prompt := &survey.Select{
-				Message: locale.T("state_new_prompt_owner"),
-				Options: owners,
-			}
-			if err = survey.AskOne(prompt, &Flags.Owner, nil); err != nil {
+			var fail *failures.Failure
+			Flags.Owner, fail = prompter.Select(locale.T("state_new_prompt_owner"), owners, Flags.Owner)
+
+			if fail != nil {
 				print.Error(locale.T("error_state_new_aborted"))
 				return
 			}
@@ -167,15 +173,16 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// If version argument was not given, ask for it.
 	// Otherwise, validate its format.
+	var validateVersion = func(val interface{}) error {
+		if !regexp.MustCompile("^\\d+(\\.\\d+)*$").MatchString(val.(string)) {
+			return errors.New(locale.T("error_state_new_prompt_version"))
+		}
+		return nil
+	}
 	if Flags.Version == "" {
-		prompt := &survey.Input{Message: locale.T("state_new_prompt_version")}
-		err := survey.AskOne(prompt, &Flags.Version, func(val interface{}) error {
-			if !regexp.MustCompile("^\\d+(\\.\\d+)*$").MatchString(val.(string)) {
-				return errors.New(locale.T("error_state_new_prompt_version"))
-			}
-			return nil
-		})
-		if err != nil {
+		var fail *failures.Failure
+		Flags.Version, fail = prompter.Input(locale.T("state_new_prompt_version"), "", validateVersion)
+		if fail != nil {
 			print.Error(locale.T("error_state_new_aborted"))
 			return
 		}
