@@ -11,7 +11,7 @@ import (
 func tokenAuth() {
 	auth := authentication.Get()
 	fail := auth.AuthenticateWithModel(&mono_models.Credentials{
-		Token: Args.Token,
+		Token: Flags.Token,
 	})
 
 	if fail != nil {

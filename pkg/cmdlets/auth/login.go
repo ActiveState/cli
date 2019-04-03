@@ -40,7 +40,12 @@ func init() {
 
 // Authenticate will prompt the user for authentication
 func Authenticate() {
-	credentials := &mono_models.Credentials{}
+	AuthenticateWithInput("", "")
+}
+
+// AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
+func AuthenticateWithInput(username string, password string) {
+	credentials := &mono_models.Credentials{Username: username, Password: password}
 	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
@@ -92,22 +97,29 @@ func RequireAuthentication(message string) *failures.Failure {
 }
 
 func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
-	var qs = []*survey.Question{
-		{
+	var qs = []*survey.Question{}
+
+	if credentials.Username == "" {
+		qs = append(qs, &survey.Question{
 			Name:     "username",
 			Prompt:   &survey.Input{Message: locale.T("username_prompt")},
 			Validate: prompt.ValidateRequired,
-		},
-		{
+		})
+	}
+
+	if credentials.Password == "" {
+		qs = append(qs, &survey.Question{
 			Name:     "password",
 			Prompt:   &survey.Password{Message: locale.T("password_prompt")},
 			Validate: prompt.ValidateRequired,
-		},
+		})
 	}
 
-	err := survey.Ask(qs, credentials)
-	if err != nil {
-		return FailLoginPrompt.Wrap(err)
+	if len(qs) > 0 {
+		err := survey.Ask(qs, credentials)
+		if err != nil {
+			return FailLoginPrompt.Wrap(err)
+		}
 	}
 	return nil
 }
