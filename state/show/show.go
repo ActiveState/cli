@@ -65,13 +65,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	print.BoldInline("%s: ", locale.T("print_state_show_name"))
-	print.Formatted("%s\n", project.Name)
+	print.Line("%s", project.Name)
 
 	print.BoldInline("%s: ", locale.T("print_state_show_organization"))
-	print.Formatted("%s\n", project.Owner)
+	print.Line("%s", project.Owner)
 
 	//print.Bold("%s: \n", locale.T("print_state_show_url"))
-	//print.Formatted("%s\n", "")
+	//print.Line("%s", "")
 
 	if len(project.Platforms) > 0 {
 		print.Bold("%s:", locale.T("print_state_show_platforms"))
@@ -80,7 +80,7 @@ func Execute(cmd *cobra.Command, args []string) {
 			if !constraints.PlatformMatches(platform) {
 				constrained = " "
 			}
-			print.Formatted(" %s%s %s %s (%s)\n", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
+			print.Line(" %s%s %s %s (%s)", constrained, platform.Os, platform.Version, platform.Architecture, platform.Name)
 		}
 	}
 
@@ -89,7 +89,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		for _, event := range project.Events {
 			if !constraints.IsConstrained(event.Constraints) {
 				value := expander.ExpandFromProject(event.Value, project)
-				print.Formatted("  %s: %s\n", event.Name, value)
+				print.Line("  %s: %s", event.Name, value)
 			}
 		}
 	}
@@ -99,7 +99,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		for _, script := range project.Scripts {
 			if !constraints.IsConstrained(script.Constraints) {
 				value := expander.ExpandFromProject(script.Value, project)
-				print.Formatted("  %s: %s\n", script.Name, value)
+				print.Line("  %s: %s", script.Name, value)
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_languages"))
 		for _, language := range project.Languages {
 			if !constraints.IsConstrained(language.Constraints) {
-				print.Formatted("  %s %s (%d %s)\n", language.Name, language.Version, len(language.Packages), locale.T("print_state_show_packages"))
+				print.Line("  %s %s (%d %s)", language.Name, language.Version, len(language.Packages), locale.T("print_state_show_packages"))
 			}
 		}
 	}
@@ -117,7 +117,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		print.Bold("%s:", locale.T("print_state_show_env_vars"))
 		for _, variable := range project.Variables {
 			if !constraints.IsConstrained(variable.Constraints) {
-				print.Formatted(" - %s\n", variable.Name)
+				print.Line(" - %s", variable.Name)
 			}
 		}
 	}

@@ -25,7 +25,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	pj := project.Get()
 
 	print.Info(T("events_listing"))
-	print.Line()
+	print.Line("")
 
 	rows := [][]interface{}{}
 	for _, event := range pj.Events() {
