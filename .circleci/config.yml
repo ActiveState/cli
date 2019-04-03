@@ -23,7 +23,7 @@ defaults:
           $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
           /tmp/cc-test-reporter after-build --coverage-input-type gocov --exit-code $?
-          ~/.local/bin/state auth $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
+          ~/.local/bin/state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run:
         name: Build the CLI
@@ -77,7 +77,7 @@ jobs:
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
-          command: ~/.local/bin/state auth $PLATFORM_API_TOKEN
+          command: ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
       - <<: *runIntegrationTests
@@ -108,7 +108,7 @@ jobs:
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
-          command: state auth $PLATFORM_API_TOKEN
+          command: state auth --token $PLATFORM_API_TOKEN
       - run:
           name: Run unit tests
           command: |
