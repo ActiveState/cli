@@ -59,7 +59,7 @@ func TimedCheck() bool {
 	}
 
 	// Determine whether or not an update check has been performed today.
-	updateCheckMarker := filepath.Join(config.GetDataDir(), "update-check")
+	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
 	marker, err := os.Stat(updateCheckMarker)
 	if err != nil {
 		// Marker does not exist. Create it.

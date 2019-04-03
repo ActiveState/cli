@@ -59,7 +59,7 @@ type VirtualEnvironment struct {
 }
 
 func init() {
-	cacheDir = config.GetCacheDir()
+	cacheDir = config.CachePath()
 }
 
 // Get returns a persisted version of VirtualEnvironment{}

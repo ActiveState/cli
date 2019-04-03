@@ -26,7 +26,7 @@ func (l *fileHandler) SetVerbose(v bool) {
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	datadir := config.GetDataDir()
+	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, "log.txt")
 
 	if l.verbose {

@@ -169,62 +169,76 @@ func getTempDir(t *testing.T, appendStr string) string {
 	return tmpdir
 }
 
-func TestWriteFile_BadArg(t *testing.T) {
+func TestAmendFile_BadArg(t *testing.T) {
 	path := path.Join(getTempDir(t, "bad-args"), "file.txt")
 
 	// Due to the type def we don't need to test - ints
 	// fails as an overflow before you can even run your code.
-	fail := WriteFile(path, "", 3)
+	fail := AmendFile(path, []byte(""), 99)
 	assert.Error(t, fail.ToError(), "Reject bad flag")
 	assert.False(t, FileExists(path), "No file should be created.")
 }
 
-func TestTouchFile_Append(t *testing.T) {
+func TestAppend(t *testing.T) {
 	path := path.Join(getTempDir(t, "append-file"), "file.txt")
 
+	fail := WriteFile(path, []byte("a"))
+	require.NoError(t, fail.ToError())
+
 	// Append
-	fail := WriteFile(path, "a", OverwriteFile)
+	fail = AmendFile(path, []byte("a"), AmendByAppend)
 	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
-	fail = WriteFile(path, "b", AppendToFile)
+
+	fail = AppendToFile(path, []byte("b"))
 	assert.NoError(t, fail.ToError(), "Should be able to append to file.")
-	assert.Equal(t, []byte("ab"), ReadFileUnsafe(path), "Should be equal")
+
+	assert.Equal(t, []byte("aab"), ReadFileUnsafe(path))
 }
 
-func TestTouchFile_Prepend(t *testing.T) {
+func TestWriteFile_Prepend(t *testing.T) {
 	path := path.Join(getTempDir(t, "prepend-file"), "file.txt")
 
+	fail := WriteFile(path, []byte("a"))
+	require.NoError(t, fail.ToError())
+
 	// Prepend
-	fail := WriteFile(path, "b", OverwriteFile)
+	fail = AmendFile(path, []byte("b"), AmendByPrepend)
 	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
-	fail = WriteFile(path, "a", PrependToFile)
+
+	fail = PrependToFile(path, []byte("a"))
 	assert.NoError(t, fail.ToError(), "Should be able to prepend to file.")
-	assert.Equal(t, []byte("ab"), ReadFileUnsafe(path), "Should be equal")
+
+	assert.Equal(t, []byte("aba"), ReadFileUnsafe(path))
 }
 
-func TestTouchFile_OverWrite(t *testing.T) {
+func TestWriteFile_OverWrite(t *testing.T) {
 	path := path.Join(getTempDir(t, "overwrite-file"), "file.txt")
 
 	// Overwrite
-	fail := WriteFile(path, "cba", OverwriteFile)
+	fail := WriteFile(path, []byte("cba"))
 	assert.NoError(t, fail.ToError(), "Should be able to write to empty file.")
-	fail = WriteFile(path, "abc", OverwriteFile)
+
+	fail = WriteFile(path, []byte("abc"))
 	assert.NoError(t, fail.ToError(), "Should be able to overwrite file.")
+
 	assert.Equal(t, []byte("abc"), ReadFileUnsafe(path), "Should have overwritten file")
 }
 
-func TestTouchFile(t *testing.T) {
+func TestTouch(t *testing.T) {
 	dir := getTempDir(t, "touch-file")
 	noParentPath := path.Join(dir, "randocalrizian", "file.txt")
 	path := path.Join(dir, "file.txt")
 
 	{
-		fail := TouchFile(path)
-		assert.NoError(t, fail.ToError(), "File created without fail")
+		file, fail := Touch(path)
+		require.NoError(t, fail.ToError(), "File created without fail")
+		file.Close()
 	}
 
 	{
-		fail := TouchFile(noParentPath)
-		assert.NoError(t, fail.ToError(), "File with missing parent created without fail")
+		file, fail := Touch(noParentPath)
+		require.NoError(t, fail.ToError(), "File with missing parent created without fail")
+		file.Close()
 	}
 }
 
@@ -234,13 +248,12 @@ func TestReadFile(t *testing.T) {
 	_, fail := ReadFile(path)
 	assert.Error(t, fail.ToError(), "File doesn't exist, fail.")
 
-	content := "pizza time"
-	fail = WriteFile(path, content, OverwriteFile)
+	content := []byte("pizza time")
+	fail = WriteFile(path, content)
 	assert.NoError(t, fail.ToError(), "File write without fail")
 
-	fail = nil
 	var b []byte
 	b, fail = ReadFile(path)
 	assert.NoError(t, fail.ToError(), "File doesn't exist, fail.")
-	assert.Equal(t, content, string(b), "Content should be the same")
+	assert.Equal(t, content, b, "Content should be the same")
 }
