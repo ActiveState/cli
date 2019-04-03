@@ -1,139 +1,129 @@
-package config
+package config_test
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
-	C "github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/print"
-	"github.com/shibukawa/configdir"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	funk "github.com/thoas/go-funk"
+	"github.com/stretchr/testify/suite"
 )
 
-func init() {
-	defer shutdown()
+type InstanceMock struct {
+	config.Instance
 }
 
-func setup(t *testing.T) {
-	configDirs = configdir.New(configNamespace, "cli")
-	configDirs.LocalPath, _ = filepath.Abs(".")
-	configDir = configDirs.QueryFolders(configdir.Global)[0]
+func (i *InstanceMock) Name() string {
+	return "cli-"
+}
+
+type ConfigTestSuite struct {
+	suite.Suite
+	config *config.Instance
+}
+
+func (suite *ConfigTestSuite) SetupTest() {
+}
+
+func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
+	dir, err := ioutil.TempDir("", "cli-config-test")
+	suite.Require().NoError(err)
 
 	viper.Reset()
-
-	configPath := filepath.Join(configDir.Path, C.InternalConfigFileName)
-
-	if _, err := os.Stat(configPath); err == nil {
-		err := os.Remove(configPath)
-		if err != nil {
-			panic(err.Error())
-		}
-	}
+	suite.config = config.New(dir)
 }
 
-func shutdown() {
-	os.RemoveAll(configDir.Path)
-	if cacheDir != nil {
-		os.RemoveAll(cacheDir.Path)
-	}
+func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 }
 
-func TestInit(t *testing.T) {
-	setup(t)
-
-	assert := assert.New(t)
-
-	assert.Equal(false, configDir.Exists(C.InternalConfigFileName), "Config dir should not exist")
-
-	ensureConfigExists()
-
-	assert.Equal(true, configDir.Exists(C.InternalConfigFileName), "Config dir should exist")
+func (suite *ConfigTestSuite) TestConfig() {
+	suite.NotEmpty(config.ConfigPath())
+	suite.NotEmpty(config.CachePath())
 }
 
-func TestInitCorrupt(t *testing.T) {
-	setup(t)
+func (suite *ConfigTestSuite) TestFilesExist() {
+	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
+	suite.DirExists(filepath.Join(suite.config.CachePath()))
+}
 
-	assert := assert.New(t)
+func (suite *ConfigTestSuite) TestCorruption() {
+	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+	fail := fileutils.WriteFile(path, []byte("&"))
+	suite.Require().NoError(fail.ToError())
 
-	file, _ := configDir.Create(C.InternalConfigFileName)
-	file.Close()
+	exiter := exiter.New()
+	suite.config.Exit = exiter.Exit
+	viper.Reset()
 
-	data := []byte("&")
-	path := filepath.Join(configDir.Path, C.InternalConfigFileName)
-	err := ioutil.WriteFile(path, data, 0644)
+	exitCode := exiter.WaitForExit(func() {
+		suite.config.ReadInConfig()
+	})
 
-	if err != nil {
-		t.Fatal(err)
+	suite.Equal(1, exitCode, "Config should fail to parse")
+}
+
+// testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
+// interprets the HOME env var at init time, so we cannot spoof it any other way besides when running the got test command
+// and we don't want tests that require special knowledge of how to invoke them
+func (suite *ConfigTestSuite) testNoHomeRunner() {
+	pkgPath := reflect.TypeOf(*suite.config).PkgPath()
+	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
+	fmt.Printf("Executing: go %s", strings.Join(args, " "))
+
+	runCmd := exec.Command("go", args...)
+	runCmd.Env = []string{
+		"PATH=" + os.Getenv("PATH"),
+		"GOROOT=" + os.Getenv("GOROOT"),
+		"GOPATH=" + os.Getenv("GOPATH"),
+		"TESTNOHOME=TRUE",
 	}
 
-	exitCode := 0
-	exit = func(code int) {
-		exitCode = 1
+	var out bytes.Buffer
+	runCmd.Stdout = &out
+	runCmd.Stderr = &out
+
+	err := runCmd.Run()
+	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
+}
+
+func (suite *ConfigTestSuite) TestNoHome() {
+	if os.Getenv("TESTNOHOME") == "" {
+		// configfile reads our home dir at init, so we need to get creative
+		suite.testNoHomeRunner()
+		return
 	}
 
 	viper.Reset()
-	readInConfig()
+	suite.config = config.New("")
 
-	assert.Equal(1, exitCode, "Config should fail to parse")
+	suite.Contains(suite.config.ConfigPath(), os.TempDir())
+
+	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
+	suite.DirExists(filepath.Join(suite.config.CachePath()))
 }
 
-func TestSave(t *testing.T) {
-	setup(t)
-
-	assert := assert.New(t)
-	path := filepath.Join(configDir.Path, C.InternalConfigFileName)
-
-	if !configDir.Exists(C.InternalConfigFileName) {
-		file, _ := configDir.Create(C.InternalConfigFileName)
-		file.Close()
-	}
-
-	// Prepare viper, which is a library that automates configuration
-	// management between files, env vars and the CLI
-	viper.SetConfigName(configName)
-	viper.SetConfigType(configType)
-	viper.AddConfigPath(configDir.Path)
-
-	print.Line(configDir.Path)
-
-	if err := viper.ReadInConfig(); err != nil {
-		t.Fatal(err)
-	}
+func (suite *ConfigTestSuite) TestSave() {
+	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
 	viper.Set("Foo", "bar")
-
-	Save()
+	config.Save()
 
 	dat, err := ioutil.ReadFile(path)
+	suite.Require().NoError(err)
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Equal(true, funk.Contains(string(dat), "foo: bar"), "Config should contain our newly added field")
+	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
 }
 
-func TestEnsureCacheDir(t *testing.T) {
-	shutdown()
-	defer shutdown()
-
-	assert.False(t, dirExists(GetCacheDir()), "'%s' should not exist", GetCacheDir())
-	ensureCacheExists()
-	assert.True(t, dirExists(GetCacheDir()), "'%s' should now exist", GetCacheDir())
-}
-
-// dirExists just implement fileutils.DirExists. We can't use the one from fileutils since an import cycle
-// is created when doing so.
-func dirExists(path string) bool {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-
-	mode := fi.Mode()
-	return mode.IsDir()
+func TestConfigTestSuite(t *testing.T) {
+	suite.Run(t, new(ConfigTestSuite))
 }

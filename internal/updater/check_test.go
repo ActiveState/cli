@@ -33,7 +33,7 @@ func setup(t *testing.T, withVersion bool) {
 func TestTimedCheck(t *testing.T) {
 	setup(t, false)
 
-	updateCheckMarker := filepath.Join(config.GetDataDir(), "update-check")
+	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
 	os.Remove(updateCheckMarker) // remove if exists
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
@@ -60,7 +60,7 @@ func TestTimedCheck(t *testing.T) {
 func TestTimedCheckLockedVersion(t *testing.T) {
 	setup(t, true)
 
-	updateCheckMarker := filepath.Join(config.GetDataDir(), "update-check")
+	updateCheckMarker := filepath.Join(config.ConfigPath(), "update-check")
 	os.Remove(updateCheckMarker) // remove if exists
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
