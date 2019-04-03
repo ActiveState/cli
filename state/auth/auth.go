@@ -17,11 +17,24 @@ var Command = &commands.Command{
 	Description: "auth_description",
 	Run:         Execute,
 
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "arg_state_auth_token",
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "token",
 			Description: "arg_state_auth_token_description",
-			Variable:    &Args.Token,
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Token,
+		},
+		&commands.Flag{
+			Name:        "username",
+			Description: "arg_state_auth_username_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Username,
+		},
+		&commands.Flag{
+			Name:        "password",
+			Description: "arg_state_auth_password_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Password,
 		},
 	},
 }
@@ -40,9 +53,11 @@ var LogoutCommand = &commands.Command{
 	Run:         ExecuteLogout,
 }
 
-// Args hold the arg values passed through the command line
-var Args struct {
-	Token string
+// Flags hold the arg values passed through the command line
+var Flags struct {
+	Token    string
+	Username string
+	Password string
 }
 
 func init() {
@@ -64,8 +79,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if Args.Token == "" {
-		authlet.Authenticate()
+	if Flags.Token == "" {
+		authlet.AuthenticateWithInput(Flags.Username, Flags.Password)
 	} else {
 		tokenAuth()
 	}

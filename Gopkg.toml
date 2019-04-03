@@ -15,3 +15,7 @@ ignored = ["github.com/dave/jennifer"]
 [[constraint]]
   name = "github.com/ActiveState/archiver"
   version = "3.1.1"
+
+[[constraint]]
+  name = "github.com/ActiveState/go-colortext"
+  branch = "master"
