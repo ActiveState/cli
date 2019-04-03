@@ -81,7 +81,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	print.Info(locale.T("info_state_run_running", map[string]string{"Script": scriptBlock}))
+	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	code, err := subs.Run(scriptBlock, scriptArgs...)
 	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
