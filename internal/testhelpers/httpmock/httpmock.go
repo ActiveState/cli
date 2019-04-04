@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	parent "gopkg.in/jarcoal/httpmock.v1"
+	parent "github.com/jarcoal/httpmock"
 )
 
 // HTTPMock encapsulate the functionality for mocking requests to a specific base-url.

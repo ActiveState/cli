@@ -80,11 +80,18 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	args := []string{"test", pkgPath, "-run", "TestConfigTestSuite", "-testify.m", "TestNoHome"}
 	fmt.Printf("Executing: go %s", strings.Join(args, " "))
 
+	goCache := os.Getenv("GOCACHE")
+	if goCache == "" {
+		var err error
+		goCache, err = ioutil.TempDir("", "go-cache")
+		suite.Require().NoError(err)
+	}
+
 	runCmd := exec.Command("go", args...)
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
-		"GOROOT=" + os.Getenv("GOROOT"),
 		"GOPATH=" + os.Getenv("GOPATH"),
+		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",
 	}
 

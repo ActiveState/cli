@@ -1,14 +1,15 @@
 package inventory
 
 import (
-	"flag"
 	"net/http"
+	"os"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 // persist contains the active API Client connection
@@ -26,7 +27,7 @@ func New(apiSetting api.Settings) *inventory_operations.Client {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
-	if flag.Lookup("test.v") != nil {
+	if funk.Contains(os.Args, "-v") {
 		transportRuntime.SetDebug(true)
 	}
 
