@@ -61,11 +61,10 @@ jobs:
       TEST_RESULTS: /tmp/test-results
       GOBIN: /go/bin
       GOPATH: /go
-      GOROOT: /usr/local/go
       SHELL: bash
     docker:
       - image: circleci/golang:1.10
-    working_directory: /go/src/github.com/ActiveState/cli
+    working_directory: /tmp/cli
     steps:
       - checkout
       - run:
@@ -89,11 +88,10 @@ jobs:
       TEST_RESULTS: /tmp/test-results
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
-      GOROOT: /private/tmp/go
       SHELL: bash
     macos:
       xcode: 9.2.0
-    working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli
+    working_directory: /private/tmp/cli
     steps:
       - checkout
       - run:
