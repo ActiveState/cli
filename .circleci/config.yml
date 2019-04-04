@@ -61,9 +61,10 @@ jobs:
       TEST_RESULTS: /tmp/test-results
       GOBIN: /go/bin
       GOPATH: /go
+      GOROOT: /usr/local/go
       SHELL: bash
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12
     working_directory: /tmp/cli
     steps:
       - checkout
@@ -88,6 +89,7 @@ jobs:
       TEST_RESULTS: /tmp/test-results
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
+      GOROOT: /private/tmp/go
       SHELL: bash
     macos:
       xcode: 9.2.0
@@ -98,11 +100,8 @@ jobs:
           name: Install Dependencies
           command: |
             cd /private/tmp
-            curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
+            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
-
-            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
-            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
