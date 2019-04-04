@@ -1,71 +1,120 @@
 package print
 
 import (
+	"flag"
 	"fmt"
+	"io"
+	"os"
 
-	"github.com/fatih/color"
-	"github.com/mattn/go-colorable"
+	"github.com/ActiveState/go-colortext"
 )
 
-// Stderr will send most print calls to stderr rather than stdout during its execution.
-// This is a temporary function meant to avoid scope creep, stderr should be handled properly - https://www.pivotaltracker.com/story/show/164437345
-func Stderr(call func()) {
-	output := color.Output
-	color.Output = colorable.NewColorableStderr()
-	defer func() { color.Output = output }()
-	call()
+// Printer holds our main printing logic
+type Printer struct {
+	output io.Writer
+	plain  bool
 }
 
-// Line aliases to fmt.Println
-func Line(a ...interface{}) (n int, err error) {
-	return fmt.Println(a...)
+// New creates a new Printer struct
+func New(output io.Writer, plain bool) *Printer {
+	return &Printer{output, plain}
 }
 
-// Formatted aliases to fmt.printf, also invokes Println
-func Formatted(format string, a ...interface{}) (n int, err error) {
-	r, err := fmt.Printf(format, a...)
+// Stderr returns a new printer that uses stderr
+func Stderr() *Printer {
+	return New(os.Stderr, flag.Lookup("test.v") != nil)
+}
 
-	if err != nil {
-		fmt.Println()
-	}
+// Stdout returns a new printer that uses stdout, you can probably just use the methods exposed on this package instead
+func Stdout() *Printer {
+	return New(os.Stdout, flag.Lookup("test.v") != nil)
+}
 
-	return r, err
+// Line prints a formatted message and ends with a line break
+func (p *Printer) Line(format string, a ...interface{}) {
+	p.fprintfln(format, a...)
 }
 
 // Error prints the given string as an error message
+func (p *Printer) Error(format string, a ...interface{}) {
+	if p.plain == false {
+		ct.Foreground(p.output, ct.Red, false)
+		defer ct.Reset(p.output)
+	}
+	p.fprintfln(format, a...)
+}
+
+// Warning prints the given string as a warning message
+func (p *Printer) Warning(format string, a ...interface{}) {
+	if p.plain == false {
+		ct.Foreground(p.output, ct.Yellow, false)
+		defer ct.Reset(p.output)
+	}
+	p.fprintfln(format, a...)
+}
+
+// Info prints the given string as an info message
+func (p *Printer) Info(format string, a ...interface{}) {
+	if p.plain == false {
+		ct.Foreground(p.output, ct.Blue, false)
+		defer ct.Reset(p.output)
+	}
+	p.fprintfln(format, a...)
+}
+
+// Bold prints the given string as bolded message
+func (p *Printer) Bold(format string, a ...interface{}) {
+	if p.plain == false {
+		ct.ChangeStyle(p.output, ct.Bold)
+		defer ct.Reset(p.output)
+	}
+	p.fprintfln(format, a...)
+}
+
+// BoldInline prints the given string as bolded message in line
+func (p *Printer) BoldInline(format string, a ...interface{}) {
+	if p.plain == false {
+		ct.ChangeStyle(p.output, ct.Bold)
+		defer ct.Reset(p.output)
+	}
+	fmt.Fprintf(p.output, format, a...)
+}
+
+func (p *Printer) fprintfln(format string, a ...interface{}) {
+	if len(a) == 0 {
+		fmt.Fprintln(p.output, format)
+	} else {
+		fmt.Fprintf(p.output, format, a...)
+		fmt.Fprintln(p.output)
+	}
+}
+
+// Line prints a formatted message and ends with a line break
+func Line(format string, a ...interface{}) {
+	Stdout().Line(format, a...)
+}
+
+// Error prints the given string as an error message, error messages are always printed to stderr unless you use your own Printer
 func Error(format string, a ...interface{}) {
-	color.Red(format, a...)
+	Stderr().Error(format, a...)
 }
 
 // Warning prints the given string as a warning message
 func Warning(format string, a ...interface{}) {
-	color.Yellow(format, a...)
+	Stdout().Warning(format, a...)
 }
 
 // Info prints the given string as an info message
 func Info(format string, a ...interface{}) {
-	c := color.New(color.Bold, color.FgBlue)
-	if len(a) == 0 {
-		c.Println(format)
-	} else {
-		c.Printf(format, a...)
-		c.Println()
-	}
+	Stdout().Info(format, a...)
 }
 
 // Bold prints the given string as bolded message
 func Bold(format string, a ...interface{}) {
-	c := color.New(color.Bold)
-	if len(a) == 0 {
-		c.Println(format)
-	} else {
-		c.Printf(format, a...)
-		c.Println()
-	}
+	Stdout().Bold(format, a...)
 }
 
 // BoldInline prints the given string as bolded message in line
 func BoldInline(format string, a ...interface{}) {
-	c := color.New(color.Bold)
-	c.Printf(format, a...)
+	Stdout().BoldInline(format, a...)
 }

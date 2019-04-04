@@ -95,7 +95,7 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 		}
 	}
 
-	fail = fileutils.WriteFile(activeZsrcPath, fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir), fileutils.PrependToFile)
+	fail = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
 	if fail != nil {
 		return fail
 	}

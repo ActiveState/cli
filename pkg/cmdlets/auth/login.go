@@ -37,7 +37,12 @@ func init() {
 
 // Authenticate will prompt the user for authentication
 func Authenticate() {
-	credentials := &mono_models.Credentials{}
+	AuthenticateWithInput("", "")
+}
+
+// AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
+func AuthenticateWithInput(username string, password string) {
+	credentials := &mono_models.Credentials{Username: username, Password: password}
 	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))
 		return
@@ -89,14 +94,20 @@ func RequireAuthentication(message string) *failures.Failure {
 }
 
 func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
-	username, fail := prompter.Input(locale.T("username_prompt"), "", prompt.ValidateRequired)
-	var password string
-	password, fail = prompter.InputPassword(locale.T("password_prompt"))
-	if fail != nil {
-		return FailLoginPrompt.Wrap(fail.ToError())
+	var fail *failures.Failure
+	if credentials.Username == "" {
+		credentials.Username, fail = prompter.Input(locale.T("username_prompt"), "", prompt.ValidateRequired)
+		if fail != nil {
+			return FailLoginPrompt.Wrap(fail.ToError())
+		}
 	}
-	credentials.Username = username
-	credentials.Password = password
+
+	if credentials.Password == "" {
+		credentials.Password, fail = prompter.InputPassword(locale.T("password_prompt"))
+		if fail != nil {
+			return FailLoginPrompt.Wrap(fail.ToError())
+		}
+	}
 	return nil
 }
 

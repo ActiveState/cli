@@ -173,10 +173,12 @@ panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
   other: Authenticate against the ActiveState platform
-arg_state_auth_token:
-  other: TOKEN
 arg_state_auth_token_description:
   other: The API Token generated via your control panel
+arg_state_auth_username_description:
+  other: The username to authenticate with, will be prompted for otherwise
+arg_state_auth_password_description:
+  other: The password to authenticate with, will be prompted for otherwise
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -336,7 +338,7 @@ info_state_run_activating_state:
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 info_state_run_running:
-  other: Running script {{.Script}}
+  other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
 error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:

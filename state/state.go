@@ -99,9 +99,7 @@ func main() {
 	register()
 
 	if branchName != constants.StableBranch {
-		print.Stderr(func() {
-			print.Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
-		})
+		print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 	}
 
 	// This actually runs the command

@@ -42,7 +42,9 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-	authCmd.Args.Token = ""
+	authCmd.Flags.Token = ""
+	authCmd.Flags.Username = ""
+	authCmd.Flags.Password = ""
 
 	authlet.OpenURI = func(uri string) error { return nil }
 }
@@ -282,7 +284,7 @@ func TestExecuteToken(t *testing.T) {
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{token})
+	Cc.SetArgs([]string{"--token", token})
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")

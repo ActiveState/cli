@@ -11,6 +11,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:02ae6d4f82f6cb35eb7c3951616391a3b473f7511311af368253229df96f9ad4"
+  name = "github.com/ActiveState/go-colortext"
+  packages = ["."]
+  pruneopts = ""
+  revision = "9cd201a66eb0d8132c9c02c339596293c7ecf1ea"
+
+[[projects]]
+  branch = "master"
   digest = "1:22b3ebaeb7d3121a3ef09b11aedcf0790f959cc6da203682ceab0d512bf28fb3"
   name = "github.com/ActiveState/go-ogle-analytics"
   packages = ["."]
@@ -336,6 +344,14 @@
   packages = ["."]
   pruneopts = ""
   revision = "0b12d6b5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:66988b7d7dc117dcdc8bd7a063d486e407a2ab82a6262a81a0727d6693bfbc51"
+  name = "github.com/kami-zh/go-capturer"
+  packages = ["."]
+  pruneopts = ""
+  revision = "e492ea43421da7381e5200a2e22753bfc31347c2"
 
 [[projects]]
   branch = "master"
@@ -749,6 +765,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/ActiveState/archiver",
+    "github.com/ActiveState/go-colortext",
     "github.com/ActiveState/go-ogle-analytics",
     "github.com/ActiveState/state-required/require",
     "github.com/ActiveState/sysinfo",
@@ -770,6 +787,7 @@
     "github.com/google/uuid",
     "github.com/gorilla/websocket",
     "github.com/hashicorp/go-version",
+    "github.com/kami-zh/go-capturer",
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mitchellh/go-ps",
@@ -792,7 +810,6 @@
     "github.com/thoas/go-funk",
     "github.com/vbauerster/mpb",
     "github.com/vbauerster/mpb/decor",
-    "golang.org/x/net/context",
     "gopkg.in/AlecAivazis/survey.v1",
     "gopkg.in/AlecAivazis/survey.v1/core",
     "gopkg.in/AlecAivazis/survey.v1/terminal",

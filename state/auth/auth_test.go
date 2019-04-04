@@ -37,7 +37,9 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-	Args.Token = ""
+	Flags.Token = ""
+	Flags.Username = ""
+	Flags.Password = ""
 }
 
 func setupUser() *mono_models.UserEditable {
@@ -107,6 +109,30 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
+func TestExecuteAuthenticatedByFlags(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	monoMock := httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	monoMock.Register("POST", "/login")
+	monoMock.Register("GET", "/apikeys")
+	monoMock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	monoMock.Register("POST", "/apikeys")
+	monoMock.Register("GET", "/renew")
+
+	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
+	secretMock.Register("GET", "/keypair")
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--username", user.Username, "--password", user.Password})
+	err := Command.Execute()
+
+	assert.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 
@@ -174,7 +200,7 @@ func TestExecuteToken(t *testing.T) {
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{token})
+	Cc.SetArgs([]string{"--token", token})
 
 	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")

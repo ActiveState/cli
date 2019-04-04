@@ -87,7 +87,7 @@ func DeleteWithDefaults() *failures.Failure {
 }
 
 func localKeyFilename(keyName string) string {
-	return filepath.Join(config.GetDataDir(), keyName+".key")
+	return filepath.Join(config.ConfigPath(), keyName+".key")
 }
 
 func validateKeyFile(keyFilename string) *failures.Failure {

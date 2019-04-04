@@ -21,16 +21,22 @@ import (
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
-// WriteOptions used to specify write actions for WriteFile
-type WriteOptions uint8
+// FileMode is the mode used for created files
+const FileMode = 0644
+
+// DirMode is the mode used for created dirs
+const DirMode = os.ModePerm
+
+// AmendOptions used to specify write actions for WriteFile
+type AmendOptions uint8
 
 const (
-	// AppendToFile content to end of file
-	AppendToFile WriteOptions = iota
-	// OverwriteFile file with contents
-	OverwriteFile
-	// PrependToFile - add content start of file
-	PrependToFile
+	// AmendByAppend content to end of file
+	AmendByAppend AmendOptions = iota
+	// WriteOverwrite file with contents
+	WriteOverwrite
+	// AmendByPrepend - add content start of file
+	AmendByPrepend
 )
 
 // ReplaceAll replaces all instances of search text with replacement text in a
@@ -96,7 +102,7 @@ func ReplaceAll(filename, find, replace string) error {
 
 	// make the target file temporarily writable
 	stat, _ := os.Stat(filename)
-	if err := os.Chmod(filename, os.ModePerm); err != nil {
+	if err := os.Chmod(filename, DirMode); err != nil {
 		return err
 	}
 	defer func() {
@@ -213,7 +219,7 @@ func Mkdir(path string, subpath ...string) *failures.Failure {
 		path = filepath.Join(path, subpathStr)
 	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, os.ModePerm)
+		err = os.MkdirAll(path, DirMode)
 		if err != nil {
 			return failures.FailIO.Wrap(err)
 		}
@@ -272,25 +278,6 @@ func ReadFileUnsafe(src string) []byte {
 	return b
 }
 
-// TouchFile file creates a file and ensures any parent directories
-// are also created.
-func TouchFile(filePath string) *failures.Failure {
-	// Ensure the parent exists
-	if FileExists(filePath) {
-		return nil
-	}
-	fail := MkdirUnlessExists(filepath.Dir(filePath))
-	if fail != nil {
-		return fail
-	}
-	f, err := os.Create(filePath)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	defer f.Close()
-	return nil
-}
-
 // ReadFile reads the content of a file
 func ReadFile(filePath string) ([]byte, *failures.Failure) {
 	b, err := ioutil.ReadFile(filePath)
@@ -300,35 +287,66 @@ func ReadFile(filePath string) ([]byte, *failures.Failure) {
 	return b, nil
 }
 
-// WriteFile data to a file, supports overwrite, append, or prepend
-func WriteFile(filePath string, content string, flag WriteOptions) *failures.Failure {
+// WriteFile writes data to a file, if it exists it is overwritten, if it doesn't exist it is created and data is written
+func WriteFile(filePath string, data []byte) *failures.Failure {
+	fail := MkdirUnlessExists(filepath.Dir(filePath))
+	if fail != nil {
+		return fail
+	}
+
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, FileMode)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
+}
+
+// AppendToFile appends the data to the file (if it exists) with the given data, if the file doesn't exist
+// it is created and the data is written
+func AppendToFile(filepath string, data []byte) *failures.Failure {
+	return AmendFile(filepath, data, AmendByAppend)
+}
+
+// PrependToFile prepends the data to the file (if it exists) with the given data, if the file doesn't exist
+// it is created and the data is written
+func PrependToFile(filepath string, data []byte) *failures.Failure {
+	return AmendFile(filepath, data, AmendByPrepend)
+}
+
+// AmendFile amends data to a file, supports append, or prepend
+func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failure {
 	switch flag {
 	case
-		AppendToFile, OverwriteFile, PrependToFile:
+		AmendByAppend, AmendByPrepend:
 
 	default:
 		return failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
 	}
 
-	data := []byte(content)
-
-	fail := TouchFile(filePath)
+	file, fail := Touch(filePath)
 	if fail != nil {
 		return fail
 	}
+	file.Close()
 
 	b, fail := ReadFile(filePath)
 	if fail != nil {
 		return fail
 	}
 
-	if flag == PrependToFile {
+	if flag == AmendByPrepend {
 		data = append(data, b...)
-	} else if flag == AppendToFile {
+	} else if flag == AmendByAppend {
 		data = append(b, data...)
 	}
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filePath, os.O_WRONLY, FileMode)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
@@ -368,8 +386,12 @@ func walkPathAndFindFile(dir, filename string) string {
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
 // the file with 0644 perms if it does not exist. A File handle will be returned if no issues
 // arise. You will need to Close() the file.
-func Touch(filepath string) (*os.File, *failures.Failure) {
-	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0644)
+func Touch(path string) (*os.File, *failures.Failure) {
+	fail := MkdirUnlessExists(filepath.Dir(path))
+	if fail != nil {
+		return nil, fail
+	}
+	file, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, FileMode)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}

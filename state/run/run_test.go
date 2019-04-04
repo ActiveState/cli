@@ -76,7 +76,7 @@ scripts:
 	})
 	require.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	assert.Equal(t, "Running script echo $ACTIVESTATE_PROJECT", strings.TrimSpace(out), "ACTIVESTATE_PROJECT is empty")
+	assert.Contains(t, out, "Running user-defined script: run")
 }
 
 func TestRunMissingCommandName(t *testing.T) {
@@ -158,7 +158,7 @@ func TestRunActivatedCommand(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
-	datadir := config.GetDataDir()
+	datadir := config.ConfigPath()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
 	os.RemoveAll(filepath.Join(datadir, "packages"))
 	os.RemoveAll(filepath.Join(datadir, "languages"))
