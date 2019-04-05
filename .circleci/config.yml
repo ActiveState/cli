@@ -19,15 +19,17 @@ defaults:
       run:
         name: Run unit tests
         command: |
+          export GOFLAGS=-mod=vendor
           /tmp/cc-test-reporter before-build
-          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
+          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          /tmp/cc-test-reporter after-build --coverage-input-type gocov --exit-code $?
+          /tmp/cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
           ~/.local/bin/state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run:
         name: Build the CLI
         command: |
+          export GOFLAGS=-mod=vendor
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
@@ -64,8 +66,8 @@ jobs:
       GOROOT: /usr/local/go
       SHELL: bash
     docker:
-      - image: circleci/golang:1.10
-    working_directory: /go/src/github.com/ActiveState/cli
+      - image: circleci/golang:1.12
+    working_directory: /tmp/cli
     steps:
       - checkout
       - run:
@@ -93,18 +95,15 @@ jobs:
       SHELL: bash
     macos:
       xcode: 9.2.0
-    working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli
+    working_directory: /private/tmp/cli
     steps:
       - checkout
       - run:
           name: Install Dependencies
           command: |
             cd /private/tmp
-            curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
+            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
-
-            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
-            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
@@ -112,6 +111,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
+            export GOFLAGS=-mod=vendor
             state run test
       - <<: *buildCli
       - <<: *deployBits
