@@ -201,7 +201,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// passphrase mismatch, prompt for old passphrase
 	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
 	// user wants to generate a new keypair
-	pmock.OnMethod("Confirm").Twice().Return(true, nil)
+	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")

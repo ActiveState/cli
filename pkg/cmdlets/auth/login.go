@@ -122,12 +122,12 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			params.SetUsername(credentials.Username)
 			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
-				resp, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+				yesRegister, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 				if fail != nil {
 					failures.Handle(fail, locale.T("err_auth_failed"))
 					return
 				}
-				if resp {
+				if yesRegister {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
@@ -135,16 +135,15 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			}
 			return
 		case *apiAuth.PostLoginRetryWith:
-			totp, fail := Prompter.Input(locale.T("totp_prompt"), "", prompt.NoValidation)
+			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "", prompt.NoValidation)
 			if fail != nil {
 				failures.Handle(fail, locale.T("err_auth_fail_totp"))
 				return
 			}
-			if totp == "" {
+			if credentials.Totp == "" {
 				print.Line(locale.T("login_cancelled"))
 				return
 			}
-			credentials.Totp = totp
 			AuthenticateWithCredentials(credentials)
 			return
 		default:

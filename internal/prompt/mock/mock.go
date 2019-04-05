@@ -3,20 +3,23 @@ package mock
 import (
 	"reflect"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/prompt"
 
-	"github.com/ActiveState/cli/internal/failures"
 	tmock "github.com/stretchr/testify/mock"
 )
 
+// Mock the struct to mock the Prompt struct
 type Mock struct {
 	tmock.Mock
 }
 
+// Init an object
 func Init() *Mock {
 	return &Mock{}
 }
 
+// Close it
 func (m *Mock) Close() {
 }
 
@@ -26,8 +29,8 @@ func (m *Mock) Input(message, defaultResponse string, flags ...prompt.Flag) (str
 	return args.String(0), failure(args.Get(1))
 }
 
-// Select prompts the user to select one entry from multiple choices
-func (m *Mock) InputAndValidate(message, defaultResponse string, validator func(val interface{}) error) (response string, fail *failures.Failure) {
+// InputAndValidate prompts the user for input witha  customer validator and validation flags
+func (m *Mock) InputAndValidate(message, defaultResponse string, validator func(val interface{}) error, flags ...prompt.Flag) (response string, fail *failures.Failure) {
 	args := m.Called(message, defaultResponse, validator)
 	return args.String(0), failure(args.Get(1))
 }

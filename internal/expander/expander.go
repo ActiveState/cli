@@ -4,12 +4,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/prompt"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -49,6 +48,7 @@ func Expand(s string) string {
 	return ExpandFromProject(s, projectfile.Get())
 }
 
+// Prompter holds the instantiated prompter interface
 var Prompter prompt.Prompter
 
 func init() {
