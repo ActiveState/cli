@@ -383,9 +383,8 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 		return 204, "empty"
 	})
 
-	// These two Twice calls handle the next two cmd.Executes
-	pmock.OnMethod("Input").Twice().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 	execErr := Command.Execute()
 
@@ -394,6 +393,8 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 	execErr = Command.Execute()
 
