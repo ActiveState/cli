@@ -19,6 +19,7 @@ defaults:
       run:
         name: Run unit tests
         command: |
+          export GOFLAGS=-mod=vendor
           /tmp/cc-test-reporter before-build
           $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -vE "(secrets-)?api/(client|model)` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
@@ -28,6 +29,7 @@ defaults:
       run:
         name: Build the CLI
         command: |
+          export GOFLAGS=-mod=vendor
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
@@ -63,7 +65,6 @@ jobs:
       GOPATH: /go
       GOROOT: /usr/local/go
       SHELL: bash
-      GOFLAGS: -mod=vendor
     docker:
       - image: circleci/golang:1.12
     working_directory: /tmp/cli
@@ -92,7 +93,6 @@ jobs:
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
       SHELL: bash
-      GOFLAGS: -mod=vendor
     macos:
       xcode: 9.2.0
     working_directory: /private/tmp/cli
@@ -111,6 +111,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
+            export GOFLAGS=-mod=vendor
             state run test
       - <<: *buildCli
       - <<: *deployBits
