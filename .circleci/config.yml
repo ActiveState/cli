@@ -20,7 +20,7 @@ defaults:
         name: Run unit tests
         command: |
           /tmp/cc-test-reporter before-build
-          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
+          $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -vE "(secrets-)?api/(client|model)` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
           /tmp/cc-test-reporter after-build --coverage-input-type gocov --exit-code $?
           ~/.local/bin/state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
@@ -63,6 +63,7 @@ jobs:
       GOPATH: /go
       GOROOT: /usr/local/go
       SHELL: bash
+      GOFLAGS: -mod=vendor
     docker:
       - image: circleci/golang:1.12
     working_directory: /tmp/cli
@@ -91,6 +92,7 @@ jobs:
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
       SHELL: bash
+      GOFLAGS: -mod=vendor
     macos:
       xcode: 9.2.0
     working_directory: /private/tmp/cli
