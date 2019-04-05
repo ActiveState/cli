@@ -135,7 +135,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			}
 			return
 		case *apiAuth.PostLoginRetryWith:
-			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "", prompt.NoValidation)
+			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
 			if fail != nil {
 				failures.Handle(fail, locale.T("err_auth_fail_totp"))
 				return
