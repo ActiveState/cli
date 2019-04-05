@@ -93,7 +93,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	// If project name was not given, ask for it.
 	if Args.Name == "" {
 		var fail *failures.Failure
-		Args.Name, fail = prompter.Input(locale.T("state_new_prompt_name"), "", prompt.ValidateRequired)
+		Args.Name, fail = prompter.Input(locale.T("state_new_prompt_name"), "", prompt.InputRequired)
 		if fail != nil {
 			print.Error(locale.T("error_state_new_aborted"))
 			return
@@ -181,7 +181,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 	if Flags.Version == "" {
 		var fail *failures.Failure
-		Flags.Version, fail = prompter.Input(locale.T("state_new_prompt_version"), "", validateVersion)
+		Flags.Version, fail = prompter.InputAndValidate(locale.T("state_new_prompt_version"), "", validateVersion)
 		if fail != nil {
 			print.Error(locale.T("error_state_new_aborted"))
 			return

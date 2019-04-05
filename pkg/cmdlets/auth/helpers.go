@@ -6,10 +6,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-var prompter prompt.Prompter
+var Prompter prompt.Prompter
 
 func init() {
-	prompter = prompt.New()
+	Prompter = prompt.New()
 }
 
 // Logout will clear any stored credentials

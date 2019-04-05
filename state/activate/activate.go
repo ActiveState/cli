@@ -243,7 +243,7 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 		return "", failures.FailRuntime.Wrap(err)
 	}
 
-	directory, fail := prompter.Input(locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.NoValidate)
+	directory, fail := prompter.Input(locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace), prompt.NoValidation)
 	if fail != nil {
 		return "", fail
 	}

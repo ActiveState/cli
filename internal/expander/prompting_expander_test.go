@@ -8,9 +8,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/expander"
+	expand "github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -22,6 +24,8 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
+
+var pmock = promptMock.Init()
 
 type VarPromptingExpanderTestSuite struct {
 	suite.Suite
@@ -37,6 +41,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	locale.Set("en-US")
 	failures.ResetHandled()
 
+	expand.Prompter = pmock
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
@@ -78,10 +83,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 
 	var expandedValue string
 	var failure *failures.Failure
-	osutil.WrapStdin(func() {
-		expanderFn := suite.prepareWorkingExpander()
-		expandedValue, failure = expanderFn(secretName, suite.projectFile)
-	}, expectedValue)
+	pmock.OnMethod("InputPassword").Once().Return(expandedValue, nil)
+	expanderFn := suite.prepareWorkingExpander()
+	expandedValue, failure = expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)
@@ -99,10 +103,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	var expandedValue string
 	var failure *failures.Failure
-	osutil.WrapStdin(func() {
-		expanderFn := suite.prepareWorkingExpander()
-		expandedValue, failure = expanderFn(secretName, suite.projectFile)
-	}, expectedValue)
+	pmock.OnMethod("InputPassword").Once().Return(expectedValue, nil)
+	expanderFn := suite.prepareWorkingExpander()
+	expandedValue, failure = expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(failure)

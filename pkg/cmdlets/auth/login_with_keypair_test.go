@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/stretchr/testify/suite"
@@ -41,6 +41,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
+	authlet.Prompter = pmock
 
 	Command.GetCobraCmd().SetArgs([]string{})
 }
@@ -61,9 +62,9 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.secretsapiMock.Register("GET", "/keypair")
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-		// login
-		"testuser", "foo")
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -90,9 +91,9 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-		// login
-		"testuser", "bar")
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("bar", nil)
+	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -120,11 +121,12 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-		// login
-		"testuser", "bar",
-		// passphrase mismatch, prompt for old passphrase
-		"foo")
+	// login
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("bar", nil)
+	// passphrase mismatch, prompt for old passphrase
+	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -154,11 +156,13 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-		// login
-		"testuser", "bar",
-		// passphrase mismatch, prompt for old passphrase
-		"foo")
+
+	// login
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("bar", nil)
+	// passphrase mismatch, prompt for old passphrase
+	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -191,15 +195,14 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(500*time.Millisecond, func() { execErr = Command.Execute() },
-		// login
-		"testuser",
-		"newpassword",
-		// passphrase mismatch, prompt for old passphrase
-		"wrongpassword",
-		// user wants to generate a new keypair
-		"Y", "Y", // Got to repeat the Y because WrapStdin SUCKS
-	)
+	// login
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("newpassword", nil)
+	// passphrase mismatch, prompt for old passphrase
+	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	// user wants to generate a new keypair
+	pmock.OnMethod("Confirm").Twice().Return(true, nil)
+	execErr = Command.Execute()
 
 	suite.Require().NoError(execErr, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
@@ -224,14 +227,16 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.secretsapiMock.Register("GET", "/keypair")
 
 	var execErr error
+	// login
+	pmock.OnMethod("Input").Once().Return("testuser", nil)
+	pmock.OnMethod("InputPassword").Once().Return("newpassword", nil)
+	// passphrase mismatch, prompt for old passphrase
+	pmock.OnMethod("InputPassword").Once().Return("stillwrong", nil)
+	// user wants to generate a new keypair
+	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	execOut, execOutErr := osutil.CaptureStdout(func() {
-		osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-			// login
-			"testuser", "newpassword",
-			// passphrase mismatch, prompt for old passphrase
-			"wrongpassword",
-			// user wants to generate a new keypair
-			"No")
+		execErr = Command.Execute()
+
 	})
 
 	suite.Require().NoError(execOutErr, "Captured stdout with error")

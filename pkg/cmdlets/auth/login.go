@@ -31,10 +31,6 @@ var (
 	FailBrowserOpen = failures.Type("auth.failure.browseropen")
 )
 
-func init() {
-	prompter = prompt.New()
-}
-
 // Authenticate will prompt the user for authentication
 func Authenticate() {
 	AuthenticateWithInput("", "")
@@ -66,7 +62,7 @@ func RequireAuthentication(message string) *failures.Failure {
 	print.Info(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, fail := prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
+	choice, fail := Prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
 	if fail != nil {
 		return fail
 	}
@@ -96,14 +92,14 @@ func RequireAuthentication(message string) *failures.Failure {
 func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
 	var fail *failures.Failure
 	if credentials.Username == "" {
-		credentials.Username, fail = prompter.Input(locale.T("username_prompt"), "", prompt.ValidateRequired)
+		credentials.Username, fail = Prompter.Input(locale.T("username_prompt"), "", prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
 	}
 
 	if credentials.Password == "" {
-		credentials.Password, fail = prompter.InputPassword(locale.T("password_prompt"))
+		credentials.Password, fail = Prompter.InputPassword(locale.T("password_prompt"))
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
@@ -126,7 +122,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			params.SetUsername(credentials.Username)
 			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
-				resp, fail := prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+				resp, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 				if fail != nil {
 					failures.Handle(fail, locale.T("err_auth_failed"))
 					return
@@ -139,7 +135,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			}
 			return
 		case *apiAuth.PostLoginRetryWith:
-			totp, fail := prompter.Input(locale.T("totp_prompt"), "", prompt.NoValidate)
+			totp, fail := Prompter.Input(locale.T("totp_prompt"), "", prompt.NoValidation)
 			if fail != nil {
 				failures.Handle(fail, locale.T("err_auth_fail_totp"))
 				return

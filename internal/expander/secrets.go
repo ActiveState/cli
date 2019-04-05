@@ -276,7 +276,7 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 
 func promptForValue(variable *projectfile.Variable) (string, *failures.Failure) {
 	// TODO: remove scope prop from locale.Tr
-	value, fail := prompter.InputPassword(locale.Tr("secret_value_prompt", "SCOPE", variable.Name))
+	value, fail := Prompter.InputPassword(locale.Tr("secret_value_prompt", "SCOPE", variable.Name))
 	if fail != nil {
 		return "", FailInputSecretValue.New("variables_err_value_prompt")
 	}

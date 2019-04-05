@@ -5,14 +5,18 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/keypair"
+	keyp "github.com/ActiveState/cli/state/keypair"
 	"github.com/stretchr/testify/suite"
 )
+
+var pmock = promptMock.Init()
 
 type KeypairAuthTestSuite struct {
 	suite.Suite
@@ -26,7 +30,7 @@ func (suite *KeypairAuthTestSuite) BeforeTest(suiteName, testName string) {
 	secretsClient := secretsapi_test.InitializeTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
-
+	keyp.Prompter = pmock
 	httpmock.Activate(secretsClient.BaseURI)
 }
 
@@ -73,7 +77,8 @@ func (suite *KeypairAuthTestSuite) TestExecute_InvalidPassphrase() {
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
 	var execErr error
-	osutil.WrapStdin(func() { execErr = cmd.Execute() }, "no-such-passphrase") // foo is actual password
+	pmock.OnMethod("InputPassword").Once().Return("badpass", nil)
+	execErr = cmd.Execute()
 
 	suite.Require().Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
@@ -90,7 +95,8 @@ func (suite *KeypairAuthTestSuite) TestExecute_Success() {
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
 	var execErr error
-	osutil.WrapStdin(func() { execErr = cmd.Execute() }, "foo")
+	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	execErr = cmd.Execute()
 	suite.Require().NoError(execErr)
 
 	suite.Require().NoError(failures.Handled())

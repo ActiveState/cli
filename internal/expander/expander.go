@@ -49,10 +49,10 @@ func Expand(s string) string {
 	return ExpandFromProject(s, projectfile.Get())
 }
 
-var prompter prompt.Prompter
+var Prompter prompt.Prompter
 
 func init() {
-	prompter = prompt.New()
+	Prompter = prompt.New()
 }
 
 // ExpandFromProject searches for $category.name-style variables in the given

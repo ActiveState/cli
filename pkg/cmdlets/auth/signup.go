@@ -61,11 +61,11 @@ func promptForSignup(input *signupInput) error {
 	if input.Username != "" {
 		print.Line(locale.T("confirm_password_account_creation"))
 	} else {
-		input.Username, fail = prompter.Input(locale.T("username_prompt_signup"), "", prompt.ValidateRequired)
+		input.Username, fail = Prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
 		if fail != nil {
 			return fail.ToError()
 		}
-		input.Password, fail = prompter.Input(locale.T("password_prompt_signup"), "", prompt.ValidateRequired)
+		input.Password, fail = Prompter.InputPassword(locale.T("password_prompt_signup"))
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -80,7 +80,7 @@ func promptForSignup(input *signupInput) error {
 		return nil
 	}
 
-	input.Password2, fail = prompter.InputPassword(locale.T("password_prompt_confirm"))
+	input.Password2, fail = Prompter.InputPassword(locale.T("password_prompt_confirm"))
 	if fail != nil {
 		return fail.ToError()
 	}
@@ -89,12 +89,12 @@ func promptForSignup(input *signupInput) error {
 		return err
 	}
 
-	input.Name, fail = prompter.Input(locale.T("name_prompt"), "", prompt.ValidateRequired)
+	input.Name, fail = Prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail.ToError()
 	}
 
-	input.Email, fail = prompter.Input(locale.T("email_prompt"), "", prompt.ValidateRequired)
+	input.Email, fail = Prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
 	if fail != nil {
 		return fail.ToError()
 	}

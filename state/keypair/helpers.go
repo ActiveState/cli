@@ -6,15 +6,15 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 )
 
-var prompter prompt.Prompter
+var Prompter prompt.Prompter
 
 func init() {
-	prompter = prompt.New()
+	Prompter = prompt.New()
 }
 
 func promptForPassphrase() (string, *failures.Failure) {
 	var passphrase string
-	passphrase, fail := prompter.InputPassword(locale.T("passphrase_prompt"))
+	passphrase, fail := Prompter.InputPassword(locale.T("passphrase_prompt"))
 	if fail != nil {
 		return "", FailInputPassphrase.New("keypair_err_passphrase_prompt")
 	}

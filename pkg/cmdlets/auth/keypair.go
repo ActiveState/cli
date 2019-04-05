@@ -103,7 +103,7 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 }
 
 func promptForPreviousPassphrase() (string, *failures.Failure) {
-	passphrase, fail := prompter.InputPassword(locale.T("previous_password_prompt"))
+	passphrase, fail := Prompter.InputPassword(locale.T("previous_password_prompt"))
 	if fail != nil {
 		return "", failures.FailUserInput.New("auth_err_password_prompt")
 	}
@@ -114,7 +114,7 @@ func promptUserToRegenerateKeypair(passphrase string) *failures.Failure {
 	var failure *failures.Failure
 	// previous passphrase is invalid, inform user and ask if they want to generate a new keypair
 	print.Line(locale.T("auth_generate_new_keypair_message"))
-	yes, fail := prompter.Confirm(locale.T("auth_confirm_generate_new_keypair_prompt"), false)
+	yes, fail := Prompter.Confirm(locale.T("auth_confirm_generate_new_keypair_prompt"), false)
 	if fail != nil {
 		return fail
 	}
