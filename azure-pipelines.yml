@@ -27,5 +27,6 @@ steps:
 - script: |
     export GOFLAGS=-mod=vendor
     go version
+    go run scripts/constants-generator/main.go -- internal/constants/generated.go
     go build -o ./build/state -ldflags="-s -w" ./state
   displayName: 'Get dependencies, then build'
