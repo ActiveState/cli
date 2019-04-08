@@ -27,5 +27,5 @@ steps:
 - script: |
     export GOFLAGS=-mod=vendor
     go version
-    go build -v .
+    go build -o ./build/state -ldflags="-s -w" ./state
   displayName: 'Get dependencies, then build'
