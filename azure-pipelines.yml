@@ -3,30 +3,32 @@
 # Add steps that test, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
-trigger:
-- master
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    mac:
+      imageName: 'macos-10.13'
+    windows:
+      imageName: 'vs2017-win2016'
 
 pool:
-  vmImage: 'Ubuntu-16.04'
+  vmImage: $(imageName)
+
+trigger:
+- master
 
 variables:
   GOBIN:  '$(GOPATH)/bin' # Go binaries path
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '/tmp/gopath' # Go workspace path
+  condition: eq(variables['Agent.OS'], 'Linux')
 
 steps:
-- script: |
-    mkdir -p '$(GOBIN)'
-    mkdir -p '$(GOPATH)/pkg'
-    shopt -s extglob
-    shopt -s dotglob
-    echo '##vso[task.prependpath]$(GOBIN)'
-    echo '##vso[task.prependpath]$(GOROOT)/bin'
-  displayName: 'Set up the Go workspace'
 
 - script: |
     export GOFLAGS=-mod=vendor
     go version
     go run scripts/constants-generator/main.go -- internal/constants/generated.go
     go build -o ./build/state -ldflags="-s -w" ./state
-  displayName: 'Get dependencies, then build'
+  displayName: 'Build'
