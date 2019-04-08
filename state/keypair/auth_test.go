@@ -16,11 +16,9 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var pmock = promptMock.Init()
-
 type KeypairAuthTestSuite struct {
 	suite.Suite
-
+	pmock         *promptMock.Mock
 	secretsClient *secretsapi.Client
 }
 
@@ -30,7 +28,8 @@ func (suite *KeypairAuthTestSuite) BeforeTest(suiteName, testName string) {
 	secretsClient := secretsapi_test.InitializeTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
-	keyp.Prompter = pmock
+	suite.pmock = promptMock.Init()
+	keyp.Prompter = suite.pmock
 	httpmock.Activate(secretsClient.BaseURI)
 }
 
@@ -77,7 +76,7 @@ func (suite *KeypairAuthTestSuite) TestExecute_InvalidPassphrase() {
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
 	var execErr error
-	pmock.OnMethod("InputPassword").Once().Return("badpass", nil)
+	suite.pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 	execErr = cmd.Execute()
 
 	suite.Require().Error(execErr, "expected failure")
@@ -95,7 +94,7 @@ func (suite *KeypairAuthTestSuite) TestExecute_Success() {
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
 	var execErr error
-	pmock.OnMethod("InputPassword").Once().Return("foo", nil)
+	suite.pmock.OnMethod("InputSecret").Once().Return("foo", nil)
 	execErr = cmd.Execute()
 	suite.Require().NoError(execErr)
 

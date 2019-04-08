@@ -247,8 +247,9 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 
 	value, fail := e.FetchSecret(variable)
 	if fail != nil && fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-		if value, fail = promptForValue(variable); fail != nil {
-			return "", fail
+		// TODO: remove scope prop from locale.Tr
+		if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", "SCOPE", variable.Name)); fail != nil {
+			return "", FailInputSecretValue.New("variables_err_value_prompt")
 		}
 
 		project, fail := e.Project()
@@ -271,14 +272,5 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 		}
 	}
 
-	return value, nil
-}
-
-func promptForValue(variable *projectfile.Variable) (string, *failures.Failure) {
-	// TODO: remove scope prop from locale.Tr
-	value, fail := Prompter.InputPassword(locale.Tr("secret_value_prompt", "SCOPE", variable.Name))
-	if fail != nil {
-		return "", FailInputSecretValue.New("variables_err_value_prompt")
-	}
 	return value, nil
 }

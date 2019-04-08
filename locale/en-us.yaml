@@ -718,4 +718,4 @@ fileutils_unknown_flag:
 err_auth_fail_totp:
   other: Failed to received TOTP input
 fail_prompt_bad_flag:
-  other:  "Unknown flag for prompt.Prompter: {{.V0}}"
+  other:  "Could not validate input."

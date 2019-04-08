@@ -24,13 +24,13 @@ func (m *Mock) Close() {
 }
 
 // Input prompts the user for input
-func (m *Mock) Input(message, defaultResponse string, flags ...prompt.Flag) (string, *failures.Failure) {
+func (m *Mock) Input(message, defaultResponse string, flags ...prompt.ValidatorFlag) (string, *failures.Failure) {
 	args := m.Called(message, defaultResponse, flags)
 	return args.String(0), failure(args.Get(1))
 }
 
 // InputAndValidate prompts the user for input witha  customer validator and validation flags
-func (m *Mock) InputAndValidate(message, defaultResponse string, validator func(val interface{}) error, flags ...prompt.Flag) (response string, fail *failures.Failure) {
+func (m *Mock) InputAndValidate(message, defaultResponse string, validator prompt.ValidatorFunc, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
 	args := m.Called(message, defaultResponse, validator)
 	return args.String(0), failure(args.Get(1))
 }
@@ -47,9 +47,9 @@ func (m *Mock) Confirm(message string, defaultChoice bool) (bool, *failures.Fail
 	return args.Bool(0), failure(args.Get(1))
 }
 
-// InputPassword prompts the user for input and obfuscates the text in stdout.
+// InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (m *Mock) InputPassword(message string) (response string, fail *failures.Failure) {
+func (m *Mock) InputSecret(message string, flags ...prompt.ValidatorFlag) (response string, fail *failures.Failure) {
 	args := m.Called(message)
 	return args.String(0), failure(args.Get(1))
 }

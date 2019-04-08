@@ -30,7 +30,6 @@ import (
 )
 
 var Command = authCmd.Command
-var pmock = promptMock.Init()
 
 func setup(t *testing.T) {
 	failures.ResetHandled()
@@ -46,7 +45,6 @@ func setup(t *testing.T) {
 	authCmd.Flags.Token = ""
 	authCmd.Flags.Username = ""
 	authCmd.Flags.Password = ""
-	authlet.Prompter = pmock
 	authlet.OpenURI = func(uri string) error { return nil }
 }
 
@@ -62,14 +60,15 @@ func setupUser() *mono_models.UserEditable {
 
 func TestExecuteNoArgs(t *testing.T) {
 	setup(t)
-
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	pmock.OnMethod("Input").Once().Return("baduse", nil)
-	pmock.OnMethod("InputPassword").Once().Return("badpass", nil)
+	pmock.OnMethod("Input").Once().Return("baduser", nil)
+	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 	execErr := Command.Execute()
 
 	assert.Error(t, execErr, "No failure occurred")
@@ -103,6 +102,8 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -115,7 +116,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	secretsapiMock.Register("GET", "/keypair")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
@@ -126,6 +127,8 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -146,7 +149,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	})
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
@@ -161,6 +164,8 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -191,7 +196,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	})
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Twice().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
@@ -208,6 +213,8 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -234,7 +241,7 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Twice().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	execErr := Command.Execute()
@@ -314,6 +321,8 @@ func TestExecuteLogout(t *testing.T) {
 func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -333,7 +342,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	secretsapiMock.Register("GET", "/keypair")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 	execErr := Command.Execute()
 
@@ -343,7 +352,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	failures.ResetHandled()
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 	execErr = Command.Execute()
 
@@ -356,6 +365,8 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -384,7 +395,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	})
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 	execErr := Command.Execute()
 
@@ -394,7 +405,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	failures.ResetHandled()
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 	execErr = Command.Execute()
 
@@ -425,6 +436,8 @@ func TestUsernameValidator(t *testing.T) {
 func TestRequireAuthenticationLogin(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -439,7 +452,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	authlet.RequireAuthentication("")
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -449,6 +462,8 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 func TestRequireAuthenticationLoginFail(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -459,7 +474,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	var fail *failures.Failure
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	fail = authlet.RequireAuthentication("")
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -470,6 +485,8 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 func TestRequireAuthenticationSignup(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -488,7 +505,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Twice().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	authlet.RequireAuthentication("")
@@ -500,6 +517,8 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -520,7 +539,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	authlet.RequireAuthentication("")
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")

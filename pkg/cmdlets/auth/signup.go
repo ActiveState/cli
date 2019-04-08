@@ -65,7 +65,7 @@ func promptForSignup(input *signupInput) error {
 		if fail != nil {
 			return fail.ToError()
 		}
-		input.Password, fail = Prompter.InputPassword(locale.T("password_prompt_signup"))
+		input.Password, fail = Prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -80,7 +80,7 @@ func promptForSignup(input *signupInput) error {
 		return nil
 	}
 
-	input.Password2, fail = Prompter.InputPassword(locale.T("password_prompt_confirm"))
+	input.Password2, fail = Prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
 	if fail != nil {
 		return fail.ToError()
 	}

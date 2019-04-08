@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -20,7 +21,7 @@ import (
 
 type KeypairGenerateTestSuite struct {
 	suite.Suite
-
+	promptMock    *promptMock.Mock
 	secretsClient *secretsapi.Client
 }
 
@@ -34,7 +35,8 @@ func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
 	secretsClient := secretsapi_test.InitializeTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
-	keyp.Prompter = pmock
+	suite.promptMock = promptMock.Init()
+	keyp.Prompter = suite.promptMock
 	httpmock.Activate(secretsClient.BaseURI)
 }
 
@@ -55,7 +57,7 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SavesNewKeypair() {
 	})
 
 	var execErr error
-	pmock.OnMethod("InputPassword").Once().Return("abc123", nil)
+	suite.promptMock.OnMethod("InputSecret").Once().Return("abc123", nil)
 	outStr, _ := osutil.CaptureStdout(func() {
 		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
 		execErr = cmd.Execute()
@@ -84,7 +86,7 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SaveFails() {
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
 	var execErr error
-	pmock.OnMethod("InputPassword").Once().Return("abc123", nil)
+	suite.promptMock.OnMethod("InputSecret").Once().Return("abc123", nil)
 	osutil.CaptureStdout(func() {
 		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
 		execErr = cmd.Execute()
@@ -100,7 +102,7 @@ func (suite *KeypairGenerateTestSuite) TestExecute_DryRun() {
 	cmd := keypair.Command
 
 	var execErr error
-	pmock.OnMethod("InputPassword").Once().Return("abc123", nil)
+	suite.promptMock.OnMethod("InputSecret").Once().Return("abc123", nil)
 	outStr, _ := osutil.CaptureStdout(func() {
 		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512", "--dry-run"})
 		execErr = cmd.Execute()

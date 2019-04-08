@@ -103,7 +103,7 @@ func recoverKeypairFromPreviousPassphrase(keypairRes *secretsModels.Keypair, pas
 }
 
 func promptForPreviousPassphrase() (string, *failures.Failure) {
-	passphrase, fail := Prompter.InputPassword(locale.T("previous_password_prompt"))
+	passphrase, fail := Prompter.InputSecret(locale.T("previous_password_prompt"))
 	if fail != nil {
 		return "", failures.FailUserInput.New("auth_err_password_prompt")
 	}

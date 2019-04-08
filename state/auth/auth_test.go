@@ -27,8 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var pmock = promptMock.Init()
-
 func setup(t *testing.T) {
 	failures.ResetHandled()
 	authentication.Logout()
@@ -37,7 +35,7 @@ func setup(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
-	authlet.Prompter = pmock
+
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
 	Flags.Token = ""
@@ -85,6 +83,8 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	monoMock := httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -103,7 +103,7 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Once().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	execErr = Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
@@ -137,6 +137,8 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 }
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -164,7 +166,7 @@ func TestExecuteSignup(t *testing.T) {
 
 	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputPassword").Twice().Return(user.Password, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	execErr = Command.Execute()

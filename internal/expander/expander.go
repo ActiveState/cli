@@ -48,7 +48,7 @@ func Expand(s string) string {
 	return ExpandFromProject(s, projectfile.Get())
 }
 
-// Prompter holds the instantiated prompter interface
+// Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
 var Prompter prompt.Prompter
 
 func init() {

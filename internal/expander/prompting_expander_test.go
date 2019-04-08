@@ -25,13 +25,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var pmock = promptMock.Init()
-
 type VarPromptingExpanderTestSuite struct {
 	suite.Suite
 
-	projectFile *projectfile.Project
-
+	projectFile   *projectfile.Project
+	promptMock    *promptMock.Mock
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
@@ -41,7 +39,8 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	locale.Set("en-US")
 	failures.ResetHandled()
 
-	expand.Prompter = pmock
+	suite.promptMock = promptMock.Init()
+	expand.Prompter = suite.promptMock
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
@@ -81,11 +80,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 		return 400, "something-happened"
 	})
 
-	var expandedValue string
-	var failure *failures.Failure
-	pmock.OnMethod("InputPassword").Once().Return(expandedValue, nil)
+	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure = expanderFn(secretName, suite.projectFile)
+	expandedValue, failure := expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)
@@ -101,11 +98,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 		return 204, "empty-response"
 	})
 
-	var expandedValue string
-	var failure *failures.Failure
-	pmock.OnMethod("InputPassword").Once().Return(expectedValue, nil)
+	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure = expanderFn(secretName, suite.projectFile)
+	expandedValue, failure := expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(failure)

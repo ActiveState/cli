@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+// Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
 var Prompter prompt.Prompter
 
 func init() {

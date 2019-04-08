@@ -99,7 +99,7 @@ func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
 	}
 
 	if credentials.Password == "" {
-		credentials.Password, fail = Prompter.InputPassword(locale.T("password_prompt"))
+		credentials.Password, fail = Prompter.InputSecret(locale.T("password_prompt"), prompt.InputRequired)
 		if fail != nil {
 			return FailLoginPrompt.Wrap(fail.ToError())
 		}
@@ -122,12 +122,12 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			params.SetUsername(credentials.Username)
 			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
-				yesRegister, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+				yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 				if fail != nil {
 					failures.Handle(fail, locale.T("err_auth_failed"))
 					return
 				}
-				if yesRegister {
+				if yesSignup {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
