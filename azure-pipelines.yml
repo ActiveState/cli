@@ -3,32 +3,24 @@
 # Add steps that test, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
-strategy:
-  matrix:
-    linux:
-      imageName: 'ubuntu-16.04'
-    mac:
-      imageName: 'macos-10.13'
-    windows:
-      imageName: 'vs2017-win2016'
-
-pool:
-  vmImage: $(imageName)
-
 trigger:
-- master
+  - master
 
-variables:
-  GOBIN:  '$(GOPATH)/bin' # Go binaries path
-  GOROOT: '/usr/local/go1.11' # Go installation path
-  GOPATH: '/tmp/gopath' # Go workspace path
-  condition: eq(variables['Agent.OS'], 'Linux')
+resources:
+  containers:
+  - container: linux
+    image: golang:1.12.1
 
-steps:
+jobs:
 
-- script: |
-    export GOFLAGS=-mod=vendor
-    go version
-    go run scripts/constants-generator/main.go -- internal/constants/generated.go
-    go build -o ./build/state -ldflags="-s -w" ./state
-  displayName: 'Build'
+  - job: build_linux
+    pool:
+      vmImage: 'ubuntu-16.04'
+    container: linux
+    steps:
+      - script: |
+          export GOFLAGS=-mod=vendor
+          go version
+          go run scripts/constants-generator/main.go -- internal/constants/generated.go
+          go build -o ./build/state -ldflags="-s -w" ./state
+        displayName: 'Build'
