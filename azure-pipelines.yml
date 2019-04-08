@@ -13,16 +13,13 @@ variables:
   GOBIN:  '$(GOPATH)/bin' # Go binaries path
   GOROOT: '/usr/local/go1.11' # Go installation path
   GOPATH: '/tmp/gopath' # Go workspace path
-  projectPath: '$(system.defaultWorkingDirectory)/$(build.repository.name)' # Path to the module's code
 
 steps:
 - script: |
     mkdir -p '$(GOBIN)'
     mkdir -p '$(GOPATH)/pkg'
-    mkdir -p '$(projectPath)'
     shopt -s extglob
     shopt -s dotglob
-    mv !(gopath) '$(projectPath)'
     echo '##vso[task.prependpath]$(GOBIN)'
     echo '##vso[task.prependpath]$(GOROOT)/bin'
   displayName: 'Set up the Go workspace'
@@ -31,5 +28,4 @@ steps:
     export GOFLAGS=-mod=vendor
     go version
     go build -v .
-  workingDirectory: '$(projectPath)'
   displayName: 'Get dependencies, then build'
