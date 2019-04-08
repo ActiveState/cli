@@ -28,6 +28,7 @@ steps:
   displayName: 'Set up the Go workspace'
 
 - script: |
+    export GOFLAGS=-mod=vendor
     go version
     go build -v .
   workingDirectory: '$(projectPath)'
