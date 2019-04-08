@@ -326,7 +326,7 @@ func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failur
 		AmendByAppend, AmendByPrepend:
 
 	default:
-		return failures.FailInput.New(locale.Tr("fileutils_unknown_flag", string(flag)))
+		return failures.FailInput.New(locale.Tr("fileutils_err_ammend_file"), filePath)
 	}
 
 	file, fail := Touch(filePath)

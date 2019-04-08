@@ -43,13 +43,9 @@ const (
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
 func (p *Prompt) Input(message, defaultResponse string, flags ...ValidatorFlag) (response string, fail *failures.Failure) {
-	validators, fail := processValidators(flags)
-	if fail != nil {
-		return "", fail
-	}
-
-	response, fail = p.InputAndValidate(message, defaultResponse, wrapValidators(validators))
-	return
+	return p.InputAndValidate(message, defaultResponse, func(val interface{}) error {
+		return nil
+	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
@@ -70,7 +66,7 @@ func (p *Prompt) InputAndValidate(message, defaultResponse string, validator Val
 		return "", failures.FailUserInput.Wrap(err)
 	}
 
-	return
+	return response, nil
 }
 
 // Select prompts the user to select one entry from multiple choices
@@ -126,7 +122,7 @@ func wrapValidators(validators []ValidatorFunc) (validator ValidatorFunc) {
 		}
 		return nil
 	}
-	return
+	return validator
 }
 
 // This function seems like overkill right now but the assumption is we'll have more than one built in validator
@@ -136,8 +132,8 @@ func processValidators(flags []ValidatorFlag) (validators []ValidatorFunc, fail 
 		case InputRequired:
 			validators = append(validators, inputRequired)
 		default:
-			fail = FailPromptUnknownValidator.New(locale.Tr("fail_prompt_bad_flag", string(flag)))
+			fail = FailPromptUnknownValidator.New(locale.T("fail_prompt_bad_flag"))
 		}
 	}
-	return
+	return validators, fail
 }
