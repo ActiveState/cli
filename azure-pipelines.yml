@@ -29,11 +29,12 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
-          echo '##vso[task.prependpath]$(HOME)/.local/bin'
         displayName: Prepare Environment
       - script: |
           export GOFLAGS=-mod=vendor
           /tmp/cc-test-reporter before-build
+          echo '##vso[task.prependpath]$(HOME)/.local/bin'
+
           state run preprocess
 
           # Run tests and convert output to junit format
@@ -47,6 +48,8 @@ jobs:
         displayName: Unit Tests
       - script: |
           export GOFLAGS=-mod=vendor
+          echo '##vso[task.prependpath]$(HOME)/.local/bin'
+
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
