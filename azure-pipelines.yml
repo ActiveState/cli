@@ -38,7 +38,8 @@ jobs:
 
           echo "JUNIT OUTPUT:"
           pwd
-          ls -ahl
+          echo $(System.DefaultWorkingDirectory)
+          ls -ahl $(System.DefaultWorkingDirectory)
           echo "JUNIT OUTPUT END"
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
