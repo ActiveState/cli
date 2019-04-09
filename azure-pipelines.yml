@@ -42,6 +42,10 @@ jobs:
       - script: |
           /tmp/cc-test-reporter before-build
 
+          echo $PATH
+          echo $GOBIN
+          ls -ahl $GOBIN
+
           ./state_exe run preprocess
 
           # Run tests and convert output to junit format
