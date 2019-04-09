@@ -22,8 +22,8 @@ jobs:
         fetchDepth: 1
       - script: |
           # Install go utilities
-          go get github.com/jstemmer/go-junit-report
-          go get -u github.com/gobuffalo/packr/packr
+          go install ./vendor/github.com/gobuffalo/packr
+          go install ./vendor/github.com/jstemmer/go-junit-report
 
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
