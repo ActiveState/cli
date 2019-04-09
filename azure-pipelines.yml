@@ -27,6 +27,10 @@ jobs:
           go install ./vendor/github.com/gobuffalo/packr
           go install ./vendor/github.com/jstemmer/go-junit-report
 
+          echo $PATH
+          ls -ahl $HOME
+          whoami
+
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
           chmod +x /tmp/cc-test-reporter
