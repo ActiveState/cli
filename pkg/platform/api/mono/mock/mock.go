@@ -26,7 +26,7 @@ func (m *Mock) Close() {
 }
 
 func (m *Mock) MockSignS3URI() {
-	m.httpmock.Register("GET", "/s3/sign/http:%2F%2Ftest.tld%2Farchive.tar.gz")
+	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Farchive.tar.gz", 200, "s3/sign/archive.tar.gz")
 }
 
 func (m *Mock) MockVcsGetCheckpoint() {
