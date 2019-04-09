@@ -36,7 +36,8 @@ jobs:
           go-junit-report < go-test.out > go-test-report.xml
 
           echo "JUNIT OUTPUT:"
-          cat go-test-report.xml
+          pwd
+          ls -ahl
           echo "JUNIT OUTPUT END"
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
