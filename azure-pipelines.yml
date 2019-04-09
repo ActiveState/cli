@@ -31,13 +31,13 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
-          chmod +x $HOME/.local/bin/state
-          echo '##vso[task.prependpath]$(HOME)/.local/bin'
+          echo "##vso[task.prependpath]$(HOME)/.local/bin"
         displayName: Prepare Environment
       - script: |
           /tmp/cc-test-reporter before-build
           echo $PATH
           ls -ahl $HOME/.local/bin
+          which state
 
           state run preprocess
 
