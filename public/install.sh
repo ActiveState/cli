@@ -9,6 +9,8 @@ install.sh [flags]
 Flags:
  -b <branch>      Specify an alternative branch to install from (eg. master)
  -n               Don't prompt for anything, just install and override any existing executables
+ -t               Target directory
+ -f               Filename to use
  -h               Shows usage information (what you're currently reading)
 EOF
 `
@@ -19,6 +21,8 @@ STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable
 STATEEXE="state"
 # ID of the $PATH entry in the user's ~/.profile for the executable.
 STATEID="ActiveStateCLI"
+# Optional target directory
+TARGET=""
 
 TERM="${TERM:=xterm}"
 
@@ -52,10 +56,16 @@ userinput () {
 }
 
 # Process command line arguments.
-while getopts "nb:?h" opt; do
+while getopts "nb:t:f:?h" opt; do
   case $opt in
   b)
     STATEURL=`echo $STATEURL | sed -e "s/unstable/$OPTARG/;"`
+    ;;
+  t)
+    TARGET=$OPTARG
+    ;;
+  f)
+    STATEEXE=$OPTARG
     ;;
   n)
     NOPROMPT=true
@@ -157,7 +167,9 @@ fi
 # Check for existing installation. Otherwise, make the installation default to
 # /usr/local/bin if the user has write permission, or to a local bin.
 installdir="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ ! -z "$installdir" ]; then
+if [ ! -z "$TARGET" ]; then
+  installdir=$TARGET
+elif [ ! -z "$installdir" ]; then
   warn "Previous installation detected at $installdir"
 else
   if [ -w "/usr/local/bin" ]; then
@@ -166,6 +178,7 @@ else
     installdir="$HOME/.local/bin"
   fi
 fi
+
 
 # Prompt the user for a directory to install to.
 while "true"; do

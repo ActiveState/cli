@@ -30,16 +30,12 @@ jobs:
           chmod +x /tmp/cc-test-reporter
 
           # Install state tool
-          ./public/install.sh -n -b master
-          ##vso[task.prependpath]$(HOME)/.local/bin
+          ./public/install.sh -n -b master -t . -f state_exe
         displayName: Prepare Environment
       - script: |
           /tmp/cc-test-reporter before-build
-          echo $PATH
-          ls -ahl $HOME/.local/bin
-          which state
 
-          state run preprocess
+          ./state_exe run preprocess
 
           # Run tests and convert output to junit format
           go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
@@ -48,7 +44,7 @@ jobs:
           /tmp/cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
           # Tests appear to be breaking the authentication, so re-authenticate
-          ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
+          ./state_exe auth --token $PLATFORM_API_TOKEN
         env:
           GOFLAGS: -mod=vendor
         displayName: Unit Tests
@@ -56,11 +52,11 @@ jobs:
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+            APIENV=prod BRANCH_OVERRIDE=unstable ./state_exe run build-external
           fi
 
           echo "Building for internal use"
-          APIENV=prod state run build
+          APIENV=prod ./state_exe run build
         env:
           GOFLAGS: -mod=vendor
         displayName: 'Build'
