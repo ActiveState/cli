@@ -29,11 +29,12 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
+          echo '##vso[task.prependpath]$(HOME)/.local/bin'
         displayName: Prepare Environment
       - script: |
-          export GOFLAGS=-mod=vendor
           /tmp/cc-test-reporter before-build
-          echo '##vso[task.prependpath]$(HOME)/.local/bin'
+          echo $PATH
+          ls $HOME/.local/bin
 
           state run preprocess
 
@@ -45,11 +46,10 @@ jobs:
 
           # Tests appear to be breaking the authentication, so re-authenticate
           ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
+        env:
+          GOFLAGS: -mod=vendor
         displayName: Unit Tests
       - script: |
-          export GOFLAGS=-mod=vendor
-          echo '##vso[task.prependpath]$(HOME)/.local/bin'
-
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
@@ -58,6 +58,8 @@ jobs:
 
           echo "Building for internal use"
           APIENV=prod state run build
+        env:
+          GOFLAGS: -mod=vendor
         displayName: 'Build'
       - task: PublishTestResults@2
         inputs:
