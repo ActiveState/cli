@@ -19,6 +19,7 @@ jobs:
     container: linux
     variables:
       SHELL: bash
+      GOFLAGS: -mod=vendor
     steps:
       - checkout: self
         fetchDepth: 1
@@ -27,9 +28,9 @@ jobs:
           go install ./vendor/github.com/gobuffalo/packr
           go install ./vendor/github.com/jstemmer/go-junit-report
 
-          echo $PATH
-          ls -ahl $HOME
-          whoami
+          # Update PATH
+          echo '##vso[task.prependpath]$(GOBIN)'
+          echo '##vso[task.prependpath]$(GOROOT)/bin'
 
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
@@ -51,8 +52,6 @@ jobs:
 
           # Tests appear to be breaking the authentication, so re-authenticate
           ./state_exe auth --token $PLATFORM_API_TOKEN
-        env:
-          GOFLAGS: -mod=vendor
         displayName: Unit Tests
       - script: |
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -63,8 +62,6 @@ jobs:
 
           echo "Building for internal use"
           APIENV=prod ./state_exe run build
-        env:
-          GOFLAGS: -mod=vendor
         displayName: 'Build'
       - task: PublishTestResults@2
         inputs:
