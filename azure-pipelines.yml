@@ -19,8 +19,45 @@ jobs:
     container: linux
     steps:
       - script: |
-          export GOFLAGS=-mod=vendor
-          go version
+          # Install go utilities
+          go get github.com/jstemmer/go-junit-report
+          go get -u github.com/gobuffalo/packr/packr
           go run scripts/constants-generator/main.go -- internal/constants/generated.go
-          go build -o ./build/state -ldflags="-s -w" ./state
+
+          # Install cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
+          chmod +x /tmp/cc-test-reporter
+
+          # Install state tool
+          ./public/install.sh -n -b master
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
+        displayName: Prepare Environment
+      - script: |
+          export GOFLAGS=-mod=vendor
+          /tmp/cc-test-reporter before-build
+
+          # Run tests and convert output to junit format
+          go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
+          go-junit-report < go-test.out > go-test-report.xml
+
+          /tmp/cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
+
+          # Tests appear to be breaking the authentication, so re-authenticate
+          ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
+        displayName: Unit Tests
+      - script: |
+          export GOFLAGS=-mod=vendor
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$BRANCH" == "master" ]]; then
+            echo "Building for external use"
+            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+          fi
+
+          echo "Building for internal use"
+          APIENV=prod state run build
         displayName: 'Build'
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: go-test-report.xml
+          failTaskOnFailedTests: true
