@@ -91,6 +91,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
 		"GOPATH=" + os.Getenv("GOPATH"),
+		"GOFLAGS=" + os.Getenv("GOFLAGS"),
 		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",
 	}
