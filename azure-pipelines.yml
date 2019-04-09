@@ -44,10 +44,8 @@ jobs:
       - script: |
           /tmp/cc-test-reporter before-build
 
-          echo $PATH
-          echo $GOPATH
-          ls -ahl $GOROOT/bin
-          ls -ahl $GOPATH/..
+          ls -ahl $GOPATH/../bin
+          printenv
 
           ./state_exe run preprocess
 
