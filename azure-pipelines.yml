@@ -32,7 +32,7 @@ jobs:
 
           # Update PATH
           ##vso[task.prependpath]$(GOROOT)/bin
-          ##vso[task.prependpath]$(GOPATH)/../bin
+          ##vso[task.prependpath]$(GOPATH)/bin
 
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
@@ -44,7 +44,7 @@ jobs:
       - script: |
           /tmp/cc-test-reporter before-build
 
-          ls -ahl $GOPATH/../bin
+          ls -ahl $GOPATH/bin
           printenv
 
           ./state_exe run preprocess
