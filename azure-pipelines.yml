@@ -31,7 +31,7 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
-          echo "##vso[task.prependpath]$(HOME)/.local/bin"
+          ##vso[task.prependpath]$(HOME)/.local/bin
         displayName: Prepare Environment
       - script: |
           /tmp/cc-test-reporter before-build
