@@ -27,8 +27,6 @@ jobs:
       - checkout: self
         fetchDepth: 1
       - script: |
-          printenv
-          
           cc-test-reporter before-build
 
           state run preprocess
@@ -36,6 +34,10 @@ jobs:
           # Run tests and convert output to junit format
           go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
           go-junit-report < go-test.out > go-test-report.xml
+
+          echo "JUNIT OUTPUT:"
+          cat go-test-report.xml
+          echo "JUNIT OUTPUT END"
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
