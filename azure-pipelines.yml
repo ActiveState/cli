@@ -22,7 +22,6 @@ jobs:
           # Install go utilities
           go get github.com/jstemmer/go-junit-report
           go get -u github.com/gobuffalo/packr/packr
-          go run scripts/constants-generator/main.go -- internal/constants/generated.go
 
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
@@ -30,7 +29,7 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
-          echo "export PATH=$HOME/.local/bin:$PATH" >> $BASH_ENV
+          echo '##vso[task.prependpath]$(HOME)/.local/bin'
         displayName: Prepare Environment
       - script: |
           export GOFLAGS=-mod=vendor
