@@ -127,8 +127,6 @@ github.com/jarcoal/httpmock
 github.com/jmespath/go-jmespath
 # github.com/joho/godotenv v1.3.0
 github.com/joho/godotenv
-# github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024
-github.com/jstemmer/go-junit-report/parser
 # github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 github.com/kami-zh/go-capturer
 # github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1

@@ -39,7 +39,6 @@ require (
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
 	github.com/jarcoal/httpmock v1.0.1
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
-	github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/kr/binarydist v0.0.0-20160721043806-3035450ff8b9 // indirect
