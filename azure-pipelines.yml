@@ -19,7 +19,7 @@ jobs:
     container: linux
     variables:
       SHELL: bash
-      GOFLAGS: -mod=vendor
+      CI: azure
     steps:
       - checkout: self
         fetchDepth: 1
