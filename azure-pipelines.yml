@@ -60,6 +60,5 @@ jobs:
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: JUnit
-          testResultsFiles: go-test-report.xml
-          searchFolder: $(System.DefaultWorkingDirectory)
+          testResultsFiles: $(System.DefaultWorkingDirectory)/go-test-report.xml
           failTaskOnFailedTests: true
