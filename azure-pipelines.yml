@@ -18,6 +18,8 @@ jobs:
       vmImage: 'ubuntu-16.04'
     container: linux
     steps:
+      - checkout: self
+        fetchDepth: 1
       - script: |
           # Install go utilities
           go get github.com/jstemmer/go-junit-report
@@ -29,12 +31,13 @@ jobs:
 
           # Install state tool
           ./public/install.sh -n -b master
+          chmod +x $HOME/.local/bin/state
           echo '##vso[task.prependpath]$(HOME)/.local/bin'
         displayName: Prepare Environment
       - script: |
           /tmp/cc-test-reporter before-build
           echo $PATH
-          ls $HOME/.local/bin
+          ls -ahl $HOME/.local/bin
 
           state run preprocess
 
