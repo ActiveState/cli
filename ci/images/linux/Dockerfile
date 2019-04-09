@@ -6,7 +6,7 @@ RUN apt-get update
 RUN apt-get -y install python3 python3-pip
 
 RUN go get -u github.com/gobuffalo/packr/packr
-RUN go get github.com/jstemmer/go-junit-report
+RUN go get github.com/tebeka/go2xunit
 
 RUN curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /usr/bin/cc-test-reporter
 RUN chmod +x /usr/bin/cc-test-reporter

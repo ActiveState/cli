@@ -33,14 +33,7 @@ jobs:
 
           # Run tests and convert output to junit format
           #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
-          go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
-          go-junit-report < go-test.out > go-test-report.xml
-
-          echo "JUNIT OUTPUT:"
-          pwd
-          echo $(System.DefaultWorkingDirectory)
-          ls -ahl $(System.DefaultWorkingDirectory)
-          echo "JUNIT OUTPUT END"
+          go test -v -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | go2xunit -output tests.xml
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
@@ -59,6 +52,6 @@ jobs:
         displayName: 'Build'
       - task: PublishTestResults@2
         inputs:
-          testResultsFormat: JUnit
-          testResultsFiles: $(System.DefaultWorkingDirectory)/go-test-report.xml
+          testResultsFormat: XUnit
+          testResultsFiles: tests.xml
           failTaskOnFailedTests: true
