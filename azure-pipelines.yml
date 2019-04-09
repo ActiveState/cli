@@ -26,13 +26,6 @@ jobs:
       - script: |
           cc-test-reporter before-build
 
-          ls -ahl $GOPATH/bin
-          printenv
-          echo "packr:"
-          which packr
-          echo "end"
-          packr
-
           state run preprocess
 
           # Run tests and convert output to junit format
