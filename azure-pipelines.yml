@@ -9,7 +9,7 @@ trigger:
 resources:
   containers:
   - container: linux
-    image: golang:1.12.1
+    image: activestate/cli-build-ci-linux:latest
 
 jobs:
 
@@ -24,27 +24,7 @@ jobs:
       - checkout: self
         fetchDepth: 1
       - script: |
-          cd $(System.DefaultWorkingDirectory)
-
-          export GOBIN=$GOPATH/bin
-
-          # Install go utilities
-          go get ./vendor/github.com/gobuffalo/packr@v1.24.1
-          go get github.com/jstemmer/go-junit-report/parser@af01ea7f8024089b458d804d5cdf190f962a9a0c
-
-          # Update PATH
-          ##vso[task.prependpath]$(GOROOT)/bin
-          ##vso[task.prependpath]$(GOPATH)/bin
-
-          # Install cc-test-reporter
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
-          chmod +x /tmp/cc-test-reporter
-
-          # Install state tool
-          ./public/install.sh -n -b master -t . -f state_exe
-        displayName: Prepare Environment
-      - script: |
-          /tmp/cc-test-reporter before-build
+          cc-test-reporter before-build
 
           ls -ahl $GOPATH/bin
           printenv
@@ -53,26 +33,26 @@ jobs:
           echo "end"
           packr
 
-          ./state_exe run preprocess
+          state run preprocess
 
           # Run tests and convert output to junit format
           go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
           go-junit-report < go-test.out > go-test-report.xml
 
-          /tmp/cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
+          cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
           # Tests appear to be breaking the authentication, so re-authenticate
-          ./state_exe auth --token $PLATFORM_API_TOKEN
+          state auth --token $PLATFORM_API_TOKEN
         displayName: Unit Tests
       - script: |
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            APIENV=prod BRANCH_OVERRIDE=unstable ./state_exe run build-external
+            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
           fi
 
           echo "Building for internal use"
-          APIENV=prod ./state_exe run build
+          APIENV=prod state run build
         displayName: 'Build'
       - task: PublishTestResults@2
         inputs:

@@ -30,6 +30,13 @@ scripts: &scripts
       go build -tags external -o ./build/state ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/state
+  - name: build-ci-docker
+    value: |
+      cd ci/images/linux
+      docker build -t activestate/cli-build-ci-linux:latest .
+  - name: push-ci-docker
+    value: |
+      docker push activestate/cli-build-ci-linux:latest
   - name: install
     value: |
       $scripts.preprocess
