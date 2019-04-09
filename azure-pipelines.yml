@@ -24,13 +24,15 @@ jobs:
       - checkout: self
         fetchDepth: 1
       - script: |
+          cd $(System.DefaultWorkingDirectory)
+
           # Install go utilities
           go install ./vendor/github.com/gobuffalo/packr
           go install ./vendor/github.com/jstemmer/go-junit-report
 
           # Update PATH
-          echo '##vso[task.prependpath]$(GOBIN)'
-          echo '##vso[task.prependpath]$(GOROOT)/bin'
+          ##vso[task.prependpath]$(GOROOT)/bin
+          ##vso[task.prependpath]$(GOPATH)/../bin
 
           # Install cc-test-reporter
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
@@ -43,8 +45,9 @@ jobs:
           /tmp/cc-test-reporter before-build
 
           echo $PATH
-          echo $GOBIN
-          ls -ahl $GOBIN
+          echo $GOPATH
+          ls -ahl $GOROOT/bin
+          ls -ahl $GOPATH/..
 
           ./state_exe run preprocess
 
