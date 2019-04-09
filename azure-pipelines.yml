@@ -26,6 +26,8 @@ jobs:
       - script: |
           cd $(System.DefaultWorkingDirectory)
 
+          export GOBIN=$GOPATH/bin
+
           # Install go utilities
           go install ./vendor/github.com/gobuffalo/packr
           go install ./vendor/github.com/jstemmer/go-junit-report
@@ -46,6 +48,7 @@ jobs:
 
           ls -ahl $GOPATH/bin
           printenv
+          which packr
 
           ./state_exe run preprocess
 
