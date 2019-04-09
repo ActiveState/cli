@@ -42,14 +42,15 @@ const (
 )
 
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
-func (p *Prompt) Input(message, defaultResponse string, flags ...ValidatorFlag) (response string, fail *failures.Failure) {
+func (p *Prompt) Input(message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
 	return p.InputAndValidate(message, defaultResponse, func(val interface{}) error {
 		return nil
 	}, flags...)
 }
 
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
-func (p *Prompt) InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (response string, fail *failures.Failure) {
+func (p *Prompt) InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
+	var response string
 	flagValidators, fail := processValidators(flags)
 	if fail != nil {
 		return "", fail
@@ -70,7 +71,8 @@ func (p *Prompt) InputAndValidate(message, defaultResponse string, validator Val
 }
 
 // Select prompts the user to select one entry from multiple choices
-func (p *Prompt) Select(message string, choices []string, defaultChoice string) (response string, fail *failures.Failure) {
+func (p *Prompt) Select(message string, choices []string, defaultChoice string) (string, *failures.Failure) {
+	var response string
 	err := survey.AskOne(&survey.Select{
 		Message: formatMessage(message),
 		Options: choices,
@@ -97,7 +99,8 @@ func (p *Prompt) Confirm(message string, defaultChoice bool) (bool, *failures.Fa
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
 // Will fail if empty.
-func (p *Prompt) InputSecret(message string, flags ...ValidatorFlag) (response string, fail *failures.Failure) {
+func (p *Prompt) InputSecret(message string, flags ...ValidatorFlag) (string, *failures.Failure) {
+	var response string
 	validators, fail := processValidators(flags)
 	if fail != nil {
 		return "", fail
@@ -113,8 +116,8 @@ func (p *Prompt) InputSecret(message string, flags ...ValidatorFlag) (response s
 }
 
 // wrapValidators wraps a list of validators in a wrapper function that can be run by the survey package functions
-func wrapValidators(validators []ValidatorFunc) (validator ValidatorFunc) {
-	validator = func(val interface{}) error {
+func wrapValidators(validators []ValidatorFunc) ValidatorFunc {
+	validator := func(val interface{}) error {
 		for _, v := range validators {
 			if error := v(val); error != nil {
 				return error
@@ -126,7 +129,9 @@ func wrapValidators(validators []ValidatorFunc) (validator ValidatorFunc) {
 }
 
 // This function seems like overkill right now but the assumption is we'll have more than one built in validator
-func processValidators(flags []ValidatorFlag) (validators []ValidatorFunc, fail *failures.Failure) {
+func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, *failures.Failure) {
+	var validators []ValidatorFunc
+	var fail *failures.Failure
 	for flag := range flags {
 		switch ValidatorFlag(flag) {
 		case InputRequired:

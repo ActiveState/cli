@@ -714,8 +714,8 @@ downloading_artifacts:
 installing_artifacts:
   other: Installing required artifacts
 fileutils_err_ammend_file:
-  other: "Could not edit file: '{{.V0}}'.  Please contact support if this problem persists"
+  other: "Could not edit file: '{{.V0}}'"
 err_auth_fail_totp:
-  other: Failed to received Authentication Token input.  Please contact support if this problem persists
+  other: Failed to receive Authentication Token input
 fail_prompt_bad_flag:
-  other: Failed to procress user input.  Please contact support if this problem persists
+  other: Could not validate input due to an unexpected flag, please contact support if this problem persists
