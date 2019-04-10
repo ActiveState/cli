@@ -3,7 +3,10 @@ steps:
     fetchDepth: 1
   - script: |
       echo $PATH
-      ./public/install.sh -b master -n -t /usr/bin
+      echo "Build.BinariesDirectory: $(Build.BinariesDirectory)"
+      echo "Agent.ToolsDirectory: $(Agent.ToolsDirectory)"
+      echo "Agent.HomeDirectory: $(Agent.HomeDirectory)"
+      ./public/install.sh -b master -n -t $(Build.BinariesDirectory)
     displayName: Install State Tool
   - script: cc-test-reporter before-build
     condition: eq(variables['Agent.OS'],'Linux')
