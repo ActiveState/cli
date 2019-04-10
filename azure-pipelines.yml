@@ -3,56 +3,14 @@
 # Add steps that test, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
-templates:
-  unittest: &unittest
-    script: |
-      cc-test-reporter before-build
-
-      state run preprocess
-
-      # Run tests and convert output to junit format
-      #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
-      go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
-      go-junit-report < go-test.out > go-test-report.xml
-
-      cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
-
-      # Tests appear to be breaking the authentication, so re-authenticate
-      state auth --token $PLATFORM_API_TOKEN
-    displayName: Unit Tests
-  build: &build
-    script: |
-      BRANCH=$(git rev-parse --abbrev-ref HEAD)
-      if [[ "$BRANCH" == "master" ]]; then
-        echo "Building for external use"
-        APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
-      fi
-
-      echo "Building for internal use"
-      APIENV=prod state run build
-    displayName: 'Build'
-  integrationtest: &integrationtest
-    script: |
-      cd test/integration
-      pip3 install -r requirements.txt
-      cd ../../
-      build/state run integration-tests
-    displayName: Integration Tests
-
 trigger:
   - master
-
-resources:
-  containers:
-  - container: linux
-    image: activestate/cli-build-ci-linux:latest
 
 jobs:
 
   - job: build_linux
     pool:
-      vmImage: 'ubuntu-16.04'
-    container: linux
+      vmImage: activestate/cli-build-ci-linux:latest
     variables:
       - group: Secrets
       - name: SHELL
@@ -62,9 +20,37 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
-      - <<: *unittest
-      - <<: *build
-      - <<: *integrationtest
+      - script: |
+          cc-test-reporter before-build
+
+          state run preprocess
+
+          # Run tests and convert output to junit format
+          #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
+          go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
+          go-junit-report < go-test.out > go-test-report.xml
+
+          cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
+
+          # Tests appear to be breaking the authentication, so re-authenticate
+          state auth --token $PLATFORM_API_TOKEN
+        displayName: Unit Tests
+      - script: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$BRANCH" == "master" ]]; then
+            echo "Building for external use"
+            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+          fi
+
+          echo "Building for internal use"
+          APIENV=prod state run build
+        displayName: 'Build'
+      - script: |
+          cd test/integration
+          pip3 install -r requirements.txt
+          cd ../../
+          build/state run integration-tests
+        displayName: Integration Tests
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: JUnit
