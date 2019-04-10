@@ -13,8 +13,7 @@ steps:
       state run preprocess
 
       # Run tests and convert output to junit format
-      #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
-      go test -v -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
+      go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
       go-junit-report < go-test.out > go-test-report.xml
 
       # Tests appear to be breaking the authentication, so re-authenticate

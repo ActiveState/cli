@@ -154,8 +154,6 @@ func getRcFile(v SubShell) (*os.File, error) {
 		return nil, err
 	}
 
-	fmt.Printf("RC FILE: \n\n%s\n\n", out.String())
-
 	tmpFile.WriteString(out.String())
 	tmpFile.Close()
 
