@@ -45,6 +45,7 @@ jobs:
       - script: |
           go get -v github.com/gobuffalo/packr/packr
           go get -v github.com/jstemmer/go-junit-report
-          echo '##vso[task.prependpath]$GOPATH/bin'
+          ls $GOPATH/bin
+          echo '##vso[task.prependpath]/Users/vsts/go/bin'
         displayName: Prepare Environment
       - template: steps.yml
