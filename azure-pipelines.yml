@@ -34,7 +34,7 @@ jobs:
           # Run tests and convert output to junit format
           #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
           go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
-          go-junit-report < go-test.out > /__w/1/go-test-report.xml
+          go-junit-report < go-test.out > go-test-report.xml
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
@@ -51,8 +51,14 @@ jobs:
           echo "Building for internal use"
           APIENV=prod state run build
         displayName: 'Build'
+      - script: |
+          cd test/integration
+          pip3 install -r requirements.txt
+          cd ../../
+          build/state run integration-tests
+        displayName: Integration Tests
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: JUnit
-          testResultsFiles: /home/vsts/work/1/go-test-report.xml
+          testResultsFiles: go-test-report.xml
           failTaskOnFailedTests: true
