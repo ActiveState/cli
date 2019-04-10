@@ -57,12 +57,22 @@ func TestRunNoProjectInheritance(t *testing.T) {
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
-	contents := strings.TrimSpace(`
+	var contents string
+	if runtime.GOOS != "windows" {
+		contents = strings.TrimSpace(`
 scripts:
   - name: run
     value: echo $ACTIVESTATE_PROJECT
     standalone: true
-  `)
+`)
+	} else {
+		contents = strings.TrimSpace(`
+scripts:
+  - name: run
+    value: echo %ACTIVESTATE_PROJECT%
+    standalone: true
+`)
+	}
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
@@ -146,7 +156,11 @@ scripts:
 	Cc.SetArgs([]string{"run"})
 	exitCode := exiter.WaitForExit(func() { Command.Execute() })
 
-	assert.Equal(t, 127, exitCode, "Execution caused exit")
+	if runtime.GOOS != "windows" {
+		assert.Equal(t, 127, exitCode, "Execution caused exit")
+	} else {
+		assert.Equal(t, 1, exitCode, "Execution caused exit")
+	}
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
