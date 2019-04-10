@@ -14,7 +14,7 @@ resources:
 
 jobs:
 
-  - job: build_linux
+  - job: linux
     pool:
       vmImage: ubuntu-16.04
     container: linux
@@ -27,7 +27,7 @@ jobs:
     steps:
       - template: steps.yml
 
-  - job: build_macos
+  - job: macos
     pool:
       vmImage: macos-10.13
     variables:
