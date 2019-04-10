@@ -10,6 +10,8 @@ resources:
   containers:
   - container: linux
     image: activestate/cli-build-ci-linux:latest
+    volumes:
+      - /opt/vsts/shared
 
 jobs:
 
@@ -33,7 +35,7 @@ jobs:
 
           # Run tests and convert output to junit format
           #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
-          go test -v -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | go2xunit -output /tmp/tests.xml
+          go test -v -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | go2xunit -output /opt/vsts/shared/tests.xml
 
           cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
 
@@ -53,5 +55,5 @@ jobs:
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: XUnit
-          testResultsFiles: /tmp/tests.xml
+          testResultsFiles: /opt/vsts/shared/tests.xml
           failTaskOnFailedTests: true
