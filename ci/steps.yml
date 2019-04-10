@@ -24,10 +24,6 @@ steps:
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - script: |
-      pwd
-      ls -ahl
-      cat go-test-report.xml
-  - script: |
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
       if [[ "$BRANCH" == "master" ]]; then
         echo "Building for external use"
