@@ -13,10 +13,10 @@ strategy:
       containerImage: activestate/cli-build-ci-linux:latest
     mac:
       imageName: macos-10.13
-      containerImage: ""
+      containerImage: macos-10.13
     windows:
       imageName: vs2017-win2016
-      containerImage: ""
+      containerImage: vs2017-win2016
 
 pool:
   vmImage: $(imageName)
