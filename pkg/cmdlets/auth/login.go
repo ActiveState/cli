@@ -14,14 +14,11 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/skratchdot/open-golang/open"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
 var OpenURI = open.Run
-
-var prompter prompt.Prompter
 
 var (
 	// FailLoginPrompt indicates a failure during the login prompt
@@ -33,10 +30,6 @@ var (
 	// FailBrowserOpen indicates a failure to open the users browser
 	FailBrowserOpen = failures.Type("auth.failure.browseropen")
 )
-
-func init() {
-	prompter = prompt.New()
-}
 
 // Authenticate will prompt the user for authentication
 func Authenticate() {
@@ -69,7 +62,7 @@ func RequireAuthentication(message string) *failures.Failure {
 	print.Info(message)
 
 	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
-	choice, fail := prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
+	choice, fail := Prompter.Select(locale.T("prompt_login_or_signup"), choices, "")
 	if fail != nil {
 		return fail
 	}
@@ -97,28 +90,18 @@ func RequireAuthentication(message string) *failures.Failure {
 }
 
 func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
-	var qs = []*survey.Question{}
-
+	var fail *failures.Failure
 	if credentials.Username == "" {
-		qs = append(qs, &survey.Question{
-			Name:     "username",
-			Prompt:   &survey.Input{Message: locale.T("username_prompt")},
-			Validate: prompt.ValidateRequired,
-		})
+		credentials.Username, fail = Prompter.Input(locale.T("username_prompt"), "", prompt.InputRequired)
+		if fail != nil {
+			return FailLoginPrompt.Wrap(fail.ToError())
+		}
 	}
 
 	if credentials.Password == "" {
-		qs = append(qs, &survey.Question{
-			Name:     "password",
-			Prompt:   &survey.Password{Message: locale.T("password_prompt")},
-			Validate: prompt.ValidateRequired,
-		})
-	}
-
-	if len(qs) > 0 {
-		err := survey.Ask(qs, credentials)
-		if err != nil {
-			return FailLoginPrompt.Wrap(err)
+		credentials.Password, fail = Prompter.InputSecret(locale.T("password_prompt"), prompt.InputRequired)
+		if fail != nil {
+			return FailLoginPrompt.Wrap(fail.ToError())
 		}
 	}
 	return nil
@@ -139,7 +122,12 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			params.SetUsername(credentials.Username)
 			_, err := mono.Get().Users.UniqueUsername(params)
 			if err == nil {
-				if promptConfirm("prompt_login_to_signup") {
+				yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+				if fail != nil {
+					failures.Handle(fail, locale.T("err_auth_failed"))
+					return
+				}
+				if yesSignup {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
@@ -147,14 +135,11 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			}
 			return
 		case *apiAuth.PostLoginRetryWith:
-			var qs = []*survey.Question{
-				{
-					Name:     "totp",
-					Prompt:   &survey.Input{Message: locale.T("totp_prompt")},
-					Validate: prompt.ValidateRequired,
-				},
+			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
+			if fail != nil {
+				failures.Handle(fail, locale.T("err_auth_fail_totp"))
+				return
 			}
-			survey.Ask(qs, credentials)
 			if credentials.Totp == "" {
 				print.Line(locale.T("login_cancelled"))
 				return

@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 type signupInput struct {
@@ -57,23 +56,19 @@ func signupFromLogin(username string, password string) {
 }
 
 func promptForSignup(input *signupInput) error {
-	qs := []*survey.Question{}
+	var fail *failures.Failure
 
 	if input.Username != "" {
 		print.Line(locale.T("confirm_password_account_creation"))
 	} else {
-		qs = append(qs, []*survey.Question{
-			{
-				Name:     "username",
-				Prompt:   &survey.Input{Message: locale.T("username_prompt_signup")},
-				Validate: survey.ComposeValidators(prompt.ValidateRequired, UsernameValidator),
-			},
-			{
-				Name:     "password",
-				Prompt:   &survey.Password{Message: locale.T("password_prompt_signup")},
-				Validate: prompt.ValidateRequired,
-			},
-		}...)
+		input.Username, fail = Prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
+		if fail != nil {
+			return fail.ToError()
+		}
+		input.Password, fail = Prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
+		if fail != nil {
+			return fail.ToError()
+		}
 	}
 
 	// Must define password validator here as it has to reference the input
@@ -85,27 +80,23 @@ func promptForSignup(input *signupInput) error {
 		return nil
 	}
 
-	qs = append(qs, []*survey.Question{
-		{
-			Name:     "password2",
-			Prompt:   &survey.Password{Message: locale.T("password_prompt_confirm")},
-			Validate: passwordValidator,
-		},
-		{
-			Name:     "name",
-			Prompt:   &survey.Input{Message: locale.T("name_prompt")},
-			Validate: prompt.ValidateRequired,
-		},
-		{
-			Name:     "email",
-			Prompt:   &survey.Input{Message: locale.T("email_prompt")},
-			Validate: prompt.ValidateRequired,
-		},
-	}...)
-
-	err := survey.Ask(qs, input)
+	input.Password2, fail = Prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
+	if fail != nil {
+		return fail.ToError()
+	}
+	err := passwordValidator(input.Password2)
 	if err != nil {
 		return err
+	}
+
+	input.Name, fail = Prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
+	if fail != nil {
+		return fail.ToError()
+	}
+
+	input.Email, fail = Prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
+	if fail != nil {
+		return fail.ToError()
 	}
 	return nil
 }

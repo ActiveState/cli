@@ -5,9 +5,17 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/spf13/cobra"
 )
+
+// Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
+var Prompter prompt.Prompter
+
+func init() {
+	Prompter = prompt.New()
+}
 
 // ExecuteGenerate processes the `keypair generate` sub-command.
 func ExecuteGenerate(_ *cobra.Command, args []string) {
@@ -27,7 +35,7 @@ func ExecuteGenerate(_ *cobra.Command, args []string) {
 	}
 
 	if failure == nil && !Flags.SkipPassphrase {
-		passphrase, failure = promptForPassphrase()
+		passphrase, failure = Prompter.InputSecret(locale.T("passphrase_prompt"), prompt.InputRequired)
 	}
 
 	if failure == nil {

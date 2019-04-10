@@ -19,8 +19,8 @@ func init() {
 	core.ErrorTemplate = locale.Tt("survey_error_template")
 }
 
-// ValidateRequired does not allow an empty value
-func ValidateRequired(val interface{}) error {
+// inputRequired does not allow an empty value
+func inputRequired(val interface{}) error {
 	// the reflect value of the result
 	value := reflect.ValueOf(val)
 

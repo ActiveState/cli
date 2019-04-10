@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/spf13/cobra"
@@ -23,7 +24,7 @@ func ExecuteAuth(_ *cobra.Command, args []string) {
 	}
 
 	if failure == nil {
-		passphrase, failure = promptForPassphrase()
+		passphrase, failure = Prompter.InputSecret(locale.T("passphrase_prompt"), prompt.InputRequired)
 	}
 
 	if failure == nil {

@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateRequired(t *testing.T) {
-	assert.Error(t, ValidateRequired(""), "Throws error because value is empty")
-	assert.NoError(t, ValidateRequired("foo"), "Doesn't throw an error cause value 'foo' is not empty")
-	assert.NoError(t, ValidateRequired(0), "Doesn't throw an error cause value is '0' not empty")
-	assert.NoError(t, ValidateRequired(false), "Doesn't throw an error cause value 'false' is not empty")
+func TestInputRequired(t *testing.T) {
+	assert.Error(t, inputRequired(""), "Throws error because value is empty")
+	assert.NoError(t, inputRequired("foo"), "Doesn't throw an error cause value 'foo' is not empty")
+	assert.NoError(t, inputRequired(0), "Doesn't throw an error cause value is '0' not empty")
+	assert.NoError(t, inputRequired(false), "Doesn't throw an error cause value 'false' is not empty")
 }
 
 func TestFormatMessageByCols(t *testing.T) {

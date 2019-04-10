@@ -713,5 +713,9 @@ downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
   other: Installing required artifacts
-fileutils_unknown_flag:
-  other: "Unknown flag for fileutils.WriteFile: {{.V0}}"
+fileutils_err_ammend_file:
+  other: "Could not edit file: '{{.V0}}'"
+err_auth_fail_totp:
+  other: Failed to receive Authentication Token input
+fail_prompt_bad_flag:
+  other: Could not validate input due to an unexpected flag, please contact support if this problem persists

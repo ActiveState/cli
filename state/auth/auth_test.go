@@ -7,15 +7,16 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -82,6 +83,8 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	monoMock := httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -99,10 +102,9 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	Cc.SetArgs([]string{})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(100*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password,
-	)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	execErr = Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -135,6 +137,8 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 }
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -161,13 +165,11 @@ func TestExecuteSignup(t *testing.T) {
 	Cc.SetArgs([]string{"signup"})
 
 	var execErr error
-	osutil.WrapStdinWithDelay(200*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password,
-		user.Password, // confirmation
-		user.Name,
-		user.Email,
-	)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return(user.Name, nil)
+	pmock.OnMethod("Input").Once().Return(user.Email, nil)
+	execErr = Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")

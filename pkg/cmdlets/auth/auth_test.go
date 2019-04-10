@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -26,7 +27,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var Command = authCmd.Command
@@ -45,7 +45,6 @@ func setup(t *testing.T) {
 	authCmd.Flags.Token = ""
 	authCmd.Flags.Username = ""
 	authCmd.Flags.Password = ""
-
 	authlet.OpenURI = func(uri string) error { return nil }
 }
 
@@ -61,19 +60,16 @@ func setupUser() *mono_models.UserEditable {
 
 func TestExecuteNoArgs(t *testing.T) {
 	setup(t)
-
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	var execErr error
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
-		// prompted for username and password only
-		// 10ms delay between writes to stdin
-		"baduser",
-		"badpass",
-	)
+	pmock.OnMethod("Input").Once().Return("baduser", nil)
+	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
+	execErr := Command.Execute()
 
 	assert.Error(t, execErr, "No failure occurred")
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
@@ -106,6 +102,8 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -117,10 +115,9 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	secretsapiMock.Register("GET", "/keypair")
 
-	var execErr error
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -130,6 +127,8 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -149,10 +148,9 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 		return 204, "empty"
 	})
 
-	var execErr error
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -166,6 +164,8 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -195,18 +195,12 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 		return 204, "empty"
 	})
 
-	var execErr error
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
-		// prompted for username and password
-		user.Username,
-		user.Password,
-		// prompted to signup instead
-		"yes",
-		// enter new user details
-		user.Password, // confirmation
-		user.Name,
-		user.Email,
-	)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Confirm").Once().Return(true, nil)
+	pmock.OnMethod("Input").Once().Return(user.Email, nil)
+	pmock.OnMethod("Input").Once().Return(user.Name, nil)
+	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -219,6 +213,8 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -244,14 +240,11 @@ func TestExecuteSignup(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"signup"})
 
-	var execErr error
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() { execErr = Command.Execute() },
-		user.Username,
-		user.Password,
-		user.Password, // confirmation
-		user.Name,
-		user.Email,
-	)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return(user.Name, nil)
+	pmock.OnMethod("Input").Once().Return(user.Email, nil)
+	execErr := Command.Execute()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -328,6 +321,8 @@ func TestExecuteLogout(t *testing.T) {
 func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -346,21 +341,20 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("POST", "/apikeys")
 	secretsapiMock.Register("GET", "/keypair")
 
-	var execErr error
-	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
-	// input for the specific field
-	osutil.WrapStdinWithDelay(300*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "\x04")
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("", nil)
+	execErr := Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(300*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "foo")
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("foo", nil)
+	execErr = Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -371,6 +365,8 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -398,21 +394,20 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 		return 204, "empty"
 	})
 
-	var execErr error
-	// \x04 is the equivalent of a ctrl+d, which tells the survey prompter to stop expecting
-	// input for the specific field
-	osutil.WrapStdinWithDelay(300*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "\x04")
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("", nil)
+	execErr := Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	failures.ResetHandled()
 
-	osutil.WrapStdinWithDelay(300*time.Millisecond,
-		func() { execErr = Command.Execute() },
-		user.Username, user.Password, "foo")
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("foo", nil)
+	execErr = Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -441,6 +436,8 @@ func TestUsernameValidator(t *testing.T) {
 func TestRequireAuthenticationLogin(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -453,9 +450,10 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() {
-		authlet.RequireAuthentication("")
-	}, "", user.Username, user.Password)
+	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	authlet.RequireAuthentication("")
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -464,6 +462,8 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 func TestRequireAuthenticationLoginFail(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -472,9 +472,10 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var fail *failures.Failure
-	osutil.WrapStdinWithDelay(300*time.Millisecond, func() {
-		fail = authlet.RequireAuthentication("")
-	}, "", user.Username, user.Password)
+	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
+	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	fail = authlet.RequireAuthentication("")
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	require.Error(t, fail.ToError(), "Failure occurred")
@@ -484,6 +485,8 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 func TestRequireAuthenticationSignup(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -500,9 +503,12 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 		return 204, "empty"
 	})
 
-	osutil.WrapStdinWithDelay(200*time.Millisecond, func() {
-		authlet.RequireAuthentication("")
-	}, terminal.KeyArrowDown, "", user.Username, user.Password, user.Password, user.Name, user.Email)
+	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_action"), nil)
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return(user.Name, nil)
+	pmock.OnMethod("Input").Once().Return(user.Email, nil)
+	authlet.RequireAuthentication("")
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -511,6 +517,8 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	setup(t)
 	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
@@ -529,9 +537,10 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 		return nil
 	}
 
-	osutil.WrapStdinWithDelay(50*time.Millisecond, func() {
-		authlet.RequireAuthentication("")
-	}, terminal.KeyArrowDown, terminal.KeyArrowDown, "", user.Username, user.Password)
+	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
+	pmock.OnMethod("Input").Once().Return("Iammeanttofail", nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	authlet.RequireAuthentication("")
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")

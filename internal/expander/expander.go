@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -45,6 +46,13 @@ func Failure() *failures.Failure {
 // Expand will detect the active project and invoke ExpandFromProject with the given string
 func Expand(s string) string {
 	return ExpandFromProject(s, projectfile.Get())
+}
+
+// Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
+var Prompter prompt.Prompter
+
+func init() {
+	Prompter = prompt.New()
 }
 
 // ExpandFromProject searches for $category.name-style variables in the given
