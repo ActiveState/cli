@@ -10,6 +10,7 @@ steps:
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Prepare Code Climate
   - script: |
+      set -e
       state run preprocess
 
       # Run tests and convert output to junit format
@@ -19,12 +20,12 @@ steps:
 
       # Tests appear to be breaking the authentication, so re-authenticate
       state auth --token $PLATFORM_API_TOKEN
-    failOnStderr: true
     displayName: Unit Tests
   - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - script: |
+      set -e
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
       if [[ "$BRANCH" == "master" ]]; then
         echo "Building for external use"
@@ -33,14 +34,13 @@ steps:
 
       echo "Building for internal use"
       APIENV=prod state run build
-    failOnStderr: true
     displayName: 'Build'
   - script: |
+      set -e
       cd test/integration
       pip3 install -r requirements.txt
       cd ../../
       build/state run integration-tests
-    failOnStderr: true
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
   - task: PublishTestResults@2

@@ -42,9 +42,9 @@ jobs:
         value: /Users/vsts/go
     steps:
       - script: |
+          set -e
           go get -v github.com/gobuffalo/packr/packr
           go get -v github.com/jstemmer/go-junit-report
           echo '##vso[task.prependpath]/Users/vsts/go/bin'
-        failOnStderr: true
         displayName: Prepare Environment
       - template: steps.yml
