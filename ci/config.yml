@@ -21,7 +21,7 @@ jobs:
     variables:
       - group: Secrets
       - name: SHELL
-        value: bash
+        value: /bin/bash
       - name: CI
         value: azure
     steps:
@@ -33,7 +33,7 @@ jobs:
     variables:
       - group: Secrets
       - name: SHELL
-        value: bash
+        value: /bin/bash
       - name: CI
         value: azure
       - name: GOFLAGS
