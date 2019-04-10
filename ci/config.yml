@@ -39,4 +39,8 @@ jobs:
       - name: GOFLAGS
         value: -mod=vendor
     steps:
+      - script: |
+          go get github.com/gobuffalo/packr/packr
+          go get github.com/jstemmer/go-junit-report
+        displayName: Prepare Environment
       - template: steps.yml
