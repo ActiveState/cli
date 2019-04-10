@@ -48,7 +48,6 @@ class TestActivate(helpers.IntegrationTest):
         self.expect("Downloading", timeout=120)
         self.expect("Installing", timeout=120)
         self.wait_ready(timeout=120)
-        self.send("printenv")
         self.send("python2 -c 'import sys; print(sys.copyright)'")
         self.expect("ActiveState Software Inc.")
         self.send_quit()
