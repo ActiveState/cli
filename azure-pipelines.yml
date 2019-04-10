@@ -10,8 +10,6 @@ resources:
   containers:
   - container: linux
     image: activestate/cli-build-ci-linux:latest
-    volumes:
-      - /opt/vsts/shared
 
 jobs:
 
