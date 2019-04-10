@@ -1,9 +1,10 @@
 steps:
   - checkout: self
     fetchDepth: 1
+  - script: cc-test-reporter before-build
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Prepare Code Climate
   - script: |
-      cc-test-reporter before-build
-
       state run preprocess
 
       # Run tests and convert output to junit format
@@ -11,11 +12,13 @@ steps:
       go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
       go-junit-report < go-test.out > go-test-report.xml
 
-      cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
-
       # Tests appear to be breaking the authentication, so re-authenticate
       state auth --token $PLATFORM_API_TOKEN
     displayName: Unit Tests
+  - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Report to Code Climate
+  - script: cat go-test-report.xml
   - script: |
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
       if [[ "$BRANCH" == "master" ]]; then

@@ -26,3 +26,15 @@ jobs:
         value: azure
     steps:
       - template: steps.yml
+
+  - job: build_macos
+    pool:
+      vmImage: macos-10.13
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: bash
+      - name: CI
+        value: azure
+    steps:
+      - template: steps.yml
