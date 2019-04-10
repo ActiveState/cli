@@ -40,6 +40,16 @@ jobs:
         value: -mod=vendor
     steps:
       - script: |
+          echo "HEY AZURE, DO YOUR EFFING JOB"
+
+
+
+
+          echo "YOU WANT BLANK SPACE OR SOMETHING?"
+
+
+
+
           go get github.com/gobuffalo/packr/packr
           go get github.com/jstemmer/go-junit-report
         displayName: Prepare Environment
