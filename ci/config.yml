@@ -1,0 +1,28 @@
+# Go
+# Build your Go project.
+# Add steps that test, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+
+
+trigger:
+  - master
+
+resources:
+  containers:
+  - container: linux
+    image: activestate/cli-build-ci-linux:latest
+
+jobs:
+
+  - job: build_linux
+    pool:
+      vmImage: ubuntu-16.04
+    container: linux
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: bash
+      - name: CI
+        value: azure
+    steps:
+      - template: steps.yml
