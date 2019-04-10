@@ -41,6 +41,8 @@ jobs:
         value: -mod=vendor
     steps:
       - script: |
+          unset GOFLAGS
+          printenv
           go get -v github.com/gobuffalo/packr/packr
           go get -v github.com/jstemmer/go-junit-report
         displayName: Prepare Environment
