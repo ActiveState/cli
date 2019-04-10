@@ -39,11 +39,12 @@ jobs:
         value: azure
       - name: GOFLAGS
         value: -mod=vendor
+      - name: GOPATH
+        value: /Users/vsts/go
     steps:
       - script: |
-          unset GOFLAGS
-          printenv
           go get -v github.com/gobuffalo/packr/packr
           go get -v github.com/jstemmer/go-junit-report
+          echo '##vso[task.prependpath]$GOPATH/bin'
         displayName: Prepare Environment
       - template: steps.yml
