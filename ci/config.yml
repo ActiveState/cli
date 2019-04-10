@@ -15,7 +15,6 @@ resources:
 jobs:
 
   - job: build_linux
-    condition: false
     pool:
       vmImage: ubuntu-16.04
     container: linux
@@ -45,7 +44,7 @@ jobs:
       - script: |
           go get -v github.com/gobuffalo/packr/packr
           go get -v github.com/jstemmer/go-junit-report
-          ls $GOPATH/bin
           echo '##vso[task.prependpath]/Users/vsts/go/bin'
+        failOnStderr: true
         displayName: Prepare Environment
       - template: steps.yml
