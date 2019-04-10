@@ -36,5 +36,7 @@ jobs:
         value: bash
       - name: CI
         value: azure
+      - name: GOFLAGS
+        value: -mod=vendor
     steps:
       - template: steps.yml
