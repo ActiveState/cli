@@ -1,11 +1,12 @@
 import time
 import helpers
+import uuid
 
 class TestAuth(helpers.IntegrationTest):
 
     def __init__(self, *args, **kwargs):
         super(TestAuth, self).__init__(*args, **kwargs)
-        self.username = "user-%d" % time.time()
+        self.username = "user-%s" % uuid.uuid4().hex
         self.password = self.username
         self.email = "%s@test.tld" % self.username
 
