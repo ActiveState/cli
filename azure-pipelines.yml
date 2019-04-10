@@ -6,53 +6,66 @@
 trigger:
   - master
 
-jobs:
+strategy:
+  matrix:
+    linux:
+      imageName: ubuntu-16.04
+      containerImage: activestate/cli-build-ci-linux:latest
+    mac:
+      imageName: macos-10.13
+      containerImage: ""
+    windows:
+      imageName: vs2017-win2016
+      containerImage: ""
 
-  - job: build_linux
-    pool:
-      vmImage: activestate/cli-build-ci-linux:latest
-    variables:
-      - group: Secrets
-      - name: SHELL
-        value: bash
-      - name: CI
-        value: azure
-    steps:
-      - checkout: self
-        fetchDepth: 1
-      - script: |
-          cc-test-reporter before-build
+pool:
+  vmImage: $(imageName)
 
-          state run preprocess
+container: $[ variables['containerImage'] ]
 
-          # Run tests and convert output to junit format
-          #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
-          go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
-          go-junit-report < go-test.out > go-test-report.xml
+variables:
+  - group: Secrets
+  - name: SHELL
+    value: bash
+  - name: CI
+    value: azure
 
-          cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
+steps:
+  - checkout: self
+    fetchDepth: 1
+  - script: |
+      cc-test-reporter before-build
 
-          # Tests appear to be breaking the authentication, so re-authenticate
-          state auth --token $PLATFORM_API_TOKEN
-        displayName: Unit Tests
-      - script: |
-          BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          if [[ "$BRANCH" == "master" ]]; then
-            echo "Building for external use"
-            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
-          fi
+      state run preprocess
 
-          echo "Building for internal use"
-          APIENV=prod state run build
-        displayName: 'Build'
-      - script: |
-          cd test/integration
-          pip3 install -r requirements.txt
-          cd ../../
-          build/state run integration-tests
-        displayName: Integration Tests
-      - task: PublishTestResults@2
-        inputs:
-          testResultsFormat: JUnit
-          testResultsFiles: go-test-report.xml
-          failTaskOnFailedTests: true
+      # Run tests and convert output to junit format
+      #go test -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
+      go test -covermode=atomic -coverprofile=c.out github.com/ActiveState/cli/internal/virtualenvironment | tee go-test.out
+      go-junit-report < go-test.out > go-test-report.xml
+
+      cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/ --exit-code $?
+
+      # Tests appear to be breaking the authentication, so re-authenticate
+      state auth --token $PLATFORM_API_TOKEN
+    displayName: Unit Tests
+  - script: |
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      if [[ "$BRANCH" == "master" ]]; then
+        echo "Building for external use"
+        APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+      fi
+
+      echo "Building for internal use"
+      APIENV=prod state run build
+    displayName: 'Build'
+  - script: |
+      cd test/integration
+      pip3 install -r requirements.txt
+      cd ../../
+      build/state run integration-tests
+    displayName: Integration Tests
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: go-test-report.xml
+      failTaskOnFailedTests: true
