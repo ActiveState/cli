@@ -36,8 +36,6 @@ jobs:
         value: /bin/bash
       - name: CI
         value: azure
-      - name: GOFLAGS
-        value: -mod=vendor
       - name: GOPATH
         value: /Users/vsts/go
     steps:

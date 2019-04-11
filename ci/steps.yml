@@ -11,6 +11,7 @@ steps:
     displayName: Prepare Code Climate
   - script: |
       set -e
+      export GOFLAGS=-mod=vendor
       state run preprocess
 
       # Run tests and convert output to junit format
@@ -25,6 +26,8 @@ steps:
     displayName: Report to Code Climate
   - script: |
       set -e
+      export GOFLAGS=-mod=vendor
+      
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
       if [[ "$BRANCH" == "master" ]]; then
         echo "Building for external use"
