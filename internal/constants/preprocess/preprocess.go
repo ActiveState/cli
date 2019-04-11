@@ -39,6 +39,9 @@ func branchName() (string, string) {
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
 		return branch, "origin/" + branch
 	}
+	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
+		return branch, "origin/" + branch
+	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch, branch
 }
