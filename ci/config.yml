@@ -24,7 +24,6 @@ jobs:
         value: /usr/local/go1.12.1
     steps:
       - script: |
-          printenv
           echo '##vso[task.prependpath]/home/vsts/go/bin'
           echo '##vso[task.prependpath]/home/vsts/bin'
 
@@ -39,7 +38,6 @@ jobs:
       - template: steps.yml
 
   - job: macos
-    condition: false
     pool:
       vmImage: macos-10.13
     variables:
