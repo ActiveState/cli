@@ -21,14 +21,13 @@ jobs:
       - name: GOBIN
         value: /home/vsts/go/bin
       - name: GOROOT
-        value: /usr/local/go1.11'
+        value: /usr/local/go1.12.1
     steps:
       - script: |
           printenv
           echo '##vso[task.prependpath]/home/vsts/go/bin'
           echo '##vso[task.prependpath]/home/vsts/bin'
 
-          ls -ahl /usr/local | grep go
           mkdir -p /home/vsts/go/bin
           mkdir -p /home/vsts/bin
 
