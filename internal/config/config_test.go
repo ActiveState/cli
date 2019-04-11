@@ -91,6 +91,8 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
 		"GOPATH=" + os.Getenv("GOPATH"),
+		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
+		"SystemRoot=" + os.Getenv("SystemRoot"),   // Ref: https://bugs.python.org/msg248951
 		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",
 	}
@@ -98,7 +100,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	var out bytes.Buffer
 	runCmd.Stdout = &out
 	runCmd.Stderr = &out
-
+	suite.config.Exit(0) // Release the current config, the subprocess will make a new one and Windows fails if we don't release.
 	err := runCmd.Run()
 	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
 }
