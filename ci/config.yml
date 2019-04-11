@@ -4,12 +4,6 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
 
-trigger:
-  - master
-
-pr:
-  - '*'
-
 resources:
   containers:
   - container: linux
