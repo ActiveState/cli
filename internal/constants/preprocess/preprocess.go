@@ -18,28 +18,29 @@ import (
 var Constants = map[string]func() string{}
 
 func init() {
-	branchName := branchName()
-	buildNumber := buildNumber(branchName)
+	branchName, branchNameFull := branchName()
+	buildNumber := buildNumber(branchNameFull)
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
-	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchName) }
+	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, buildNumber) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["APIEnv"] = func() string { return strings.TrimSpace(os.Getenv("APIENV")) }
 	Constants["UserAgent"] = func() string {
-		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), branchName, Constants["APIEnv"]())
+		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), branchNameFull, Constants["APIEnv"]())
 	}
 }
 
-func branchName() string {
+func branchName() (string, string) {
 	if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
-		return branch
+		return branch, branch
 	}
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
-		return branch
+		return branch, "origin/" + branch
 	}
-	return getCmdOutput("git rev-parse --abbrev-ref HEAD")
+	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
+	return branch, branch
 }
 
 func buildNumber(branchName string) string {
