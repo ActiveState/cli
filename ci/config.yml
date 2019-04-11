@@ -5,24 +5,31 @@
 
 pr: none
 
-resources:
-  containers:
-  - container: linux
-    image: activestate/cli-build-ci-linux:latest
-
 jobs:
 
   - job: linux
     pool:
       vmImage: ubuntu-16.04
-    container: linux
     variables:
       - group: Secrets
       - name: SHELL
         value: /bin/bash
       - name: CI
         value: azure
+      - name: GOPATH
+        value: /home/vsts_azpcontainer/go
+      - name: GOBIN
+        value: /home/vsts_azpcontainer/go/bin
+      - name: GOROOT
+        value: /usr/local/go1.11'
     steps:
+      - script: |
+          echo '##vso[task.prependpath]/home/vsts_azpcontainer/go/bin'
+          echo '##vso[task.prependpath]/home/vsts_azpcontainer/bin'
+
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /home/vsts_azpcontainer/bin/cc-test-reporter
+          chmod +x /home/vsts_azpcontainer/bin/cc-test-reporter
+        displayName: Prepare Agent
       - template: steps.yml
 
   - job: macos
@@ -38,10 +45,6 @@ jobs:
         value: /Users/vsts/go
     steps:
       - script: |
-          set -e
-          cd ..
-          go get -v github.com/gobuffalo/packr/packr
-          go get -v github.com/jstemmer/go-junit-report
           echo '##vso[task.prependpath]/Users/vsts/go/bin'
-        displayName: Prepare Environment
+        displayName: Prepare Agent
       - template: steps.yml
