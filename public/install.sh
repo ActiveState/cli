@@ -179,7 +179,6 @@ else
   fi
 fi
 
-
 # Prompt the user for a directory to install to.
 while "true"; do
   userprompt "Please enter the installation directory [$installdir]: "
