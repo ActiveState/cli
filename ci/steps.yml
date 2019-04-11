@@ -47,3 +47,8 @@ steps:
       testResultsFormat: JUnit
       testResultsFiles: '*-tests.xml'
       failTaskOnFailedTests: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: public
+      parallel: true
+      parallelCount: 8
