@@ -28,6 +28,7 @@ jobs:
           echo '##vso[task.prependpath]/home/vsts/go/bin'
           echo '##vso[task.prependpath]/home/vsts/bin'
 
+          ls -ahl /usr/local | grep go
           mkdir -p /home/vsts/go/bin
           mkdir -p /home/vsts/bin
 
