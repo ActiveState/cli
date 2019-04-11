@@ -131,7 +131,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirNew, nil)
 
 	err = Command.Execute()
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
 }
