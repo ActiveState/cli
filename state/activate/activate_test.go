@@ -131,7 +131,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirNew, nil)
 
 	err = Command.Execute()
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
 }
@@ -146,7 +146,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.apiMock.MockGetProject404()
 
 	fail := activateFromNamespace(ProjectNamespace)
-	suite.NotEqual(api.FailProjectNotFound.Name, fail.Type.Name)
+	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
 }
 
 func TestActivateSuite(t *testing.T) {
