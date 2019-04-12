@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,7 +18,7 @@ var Constants = map[string]func() string{}
 
 func init() {
 	branchName, branchNameFull := branchName()
-	buildNumber := buildNumber(branchNameFull)
+	buildNumber := buildNumber()
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
@@ -34,6 +33,9 @@ func init() {
 
 func branchName() (string, string) {
 	if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
+		if strings.Contains(branch, "/") {
+			return strings.Split(branch, "/")[1], branch
+		}
 		return branch, branch
 	}
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
@@ -46,9 +48,9 @@ func branchName() (string, string) {
 	return branch, branch
 }
 
-func buildNumber(branchName string) string {
-	out := getCmdOutput("git rev-list --abbrev-commit " + branchName)
-	return strconv.Itoa(len(strings.Split(out, "\n")))
+func buildNumber() string {
+	out := getCmdOutput("git rev-list --all --count")
+	return strings.TrimSpace(out)
 }
 
 func getCmdOutput(cmdString string) string {

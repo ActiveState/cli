@@ -36,7 +36,7 @@ steps:
       
       if [[ "$BUILD_SOURCEBRANCHNAME" == "master" ]]; then
         echo "Building for external use"
-        APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+        APIENV=prod BRANCH_OVERRIDE=origin/unstable state run build-external
       fi
 
       echo "Building for internal use"
