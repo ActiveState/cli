@@ -3,7 +3,6 @@ package runtime
 import (
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -61,7 +60,7 @@ func (installer *ActivePythonInstaller) Install() *failures.Failure {
 	if failure != nil {
 		return failure
 	}
-	archivePath = path.Join(installer.InstallDir(), archivePath)
+	archivePath = filepath.Join(installer.InstallDir(), archivePath)
 
 	return installer.InstallFromArchive(archivePath)
 }
@@ -117,8 +116,8 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 		return failure
 	}
 
-	tmpRuntimeDir := path.Join(installer.installDir, runtimeName)
-	tmpInstallDir := path.Join(tmpRuntimeDir, constants.ActivePythonInstallDir)
+	tmpRuntimeDir := filepath.Join(installer.installDir, runtimeName)
+	tmpInstallDir := filepath.Join(tmpRuntimeDir, constants.ActivePythonInstallDir)
 	err := archiver.DefaultTarGz.Unarchive(archivePath,
 		installer.installDir)
 	if err != nil {
@@ -127,7 +126,7 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 
 	if !fileutils.DirExists(tmpInstallDir) {
 		return FailRuntimeInvalid.New("installer_err_runtime_missing_install_dir", archivePath,
-			path.Join(runtimeName, constants.ActivePythonInstallDir))
+			filepath.Join(runtimeName, constants.ActivePythonInstallDir))
 	}
 
 	if failure := fileutils.MoveAllFiles(tmpInstallDir, installer.installDir); failure != nil {
@@ -145,8 +144,8 @@ func (installer *ActivePythonInstaller) unpackRuntime(runtimeName, archivePath s
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
 func (installer *ActivePythonInstaller) locatePythonExecutable(archivePath string) (string, *failures.Failure) {
-	python2 := path.Join(installer.InstallDir(), "bin", constants.ActivePython2Executable)
-	python3 := path.Join(installer.InstallDir(), "bin", constants.ActivePython3Executable)
+	python2 := filepath.Join(installer.InstallDir(), "bin", constants.ActivePython2Executable)
+	python3 := filepath.Join(installer.InstallDir(), "bin", constants.ActivePython3Executable)
 
 	var executable string
 	var executablePath string
