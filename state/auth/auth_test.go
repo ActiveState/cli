@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -240,5 +241,10 @@ func TestExecuteLogout(t *testing.T) {
 
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	require.Nil(t, pkstat)
-	assert.Regexp(t, "no such file or directory", err.Error())
+	if runtime.GOOS != "windows" {
+		assert.Regexp(t, "no such file or directory", err.Error())
+	} else {
+		assert.Regexp(t, "The system cannot find the file specified", err.Error())
+
+	}
 }
