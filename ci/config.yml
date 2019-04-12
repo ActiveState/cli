@@ -1,4 +1,5 @@
-pr: master
+pr: 
+ - master
 
 jobs:
 
