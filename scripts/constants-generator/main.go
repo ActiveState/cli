@@ -30,6 +30,7 @@ func run(args []string) {
 	f.HeaderComment("This script is automatically ran by `make build`, so you shouldn't have to run this manually.")
 
 	for k, v := range preprocess.Constants {
+		fmt.Printf("Adding Constant: %s, Value: %s\n", k, v())
 		f.Const().Id(k).Op("=").Lit(v())
 	}
 

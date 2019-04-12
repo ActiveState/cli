@@ -16,7 +16,6 @@ require (
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/bndr/gotabulate v1.1.2
 	github.com/dave/jennifer v0.18.0
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
@@ -32,19 +31,17 @@ require (
 	github.com/go-openapi/strfmt v0.0.0-20180407011102-481808443b00
 	github.com/go-openapi/swag v0.0.0-20180405201759-811b1089cde9
 	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
-	github.com/gobuffalo/packr v1.10.7
+	github.com/gobuffalo/packr v1.24.1
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.1
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/kr/binarydist v0.0.0-20160721043806-3035450ff8b9 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/magiconair/properties v1.7.4 // indirect
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
@@ -59,7 +56,7 @@ require (
 	github.com/pelletier/go-toml v1.1.0 // indirect
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
-	github.com/pkg/errors v0.8.0
+	github.com/pkg/errors v0.8.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rs/xid v0.0.0-20170604230408-02dd45c33376
 	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
@@ -69,20 +66,19 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/afero v1.0.2 // indirect
 	github.com/spf13/cast v1.1.0 // indirect
-	github.com/spf13/cobra v0.0.1
+	github.com/spf13/cobra v0.0.3
 	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
-	github.com/spf13/pflag v1.0.0
+	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
-	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20190403144856-b630fd6fe46b // indirect
-	golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e // indirect
+	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
+	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
 	gopkg.in/ini.v1 v1.42.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect

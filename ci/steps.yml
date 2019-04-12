@@ -1,0 +1,63 @@
+steps:
+  - script: printenv
+    displayName: Environment Info
+  - script: |
+      set -e
+      cd .. # Avoid go mod complications
+      go get -v github.com/gobuffalo/packr/packr
+      go get -v github.com/jstemmer/go-junit-report
+    displayName: Prepare Environment
+  - script: |
+      mkdir $(System.DefaultWorkingDirectory)/bin
+      ./public/install.sh -b master -n -t $(System.DefaultWorkingDirectory)/bin
+      echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
+    displayName: Install State Tool
+  - script: cc-test-reporter before-build
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Prepare Code Climate
+  - script: |
+      set -e
+      export GOFLAGS=-mod=vendor
+      state run preprocess
+
+      # Run tests and convert output to junit format
+      go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
+      go-junit-report < go-test.out > $(Agent.OS)-tests.xml
+
+      # Tests appear to be breaking the authentication, so re-authenticate
+      state auth --token $PLATFORM_API_TOKEN
+    displayName: Unit Tests
+  - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Report to Code Climate
+  - script: |
+      set -e
+      export GOFLAGS=-mod=vendor
+      
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      if [[ "$BRANCH" == "master" ]]; then
+        echo "Building for external use"
+        APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+      fi
+
+      echo "Building for internal use"
+      APIENV=prod state run build
+    displayName: 'Build'
+  - script: |
+      set -e
+      cd test/integration
+      pip3 install -r requirements.txt
+      cd ../../
+      build/state run integration-tests
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Integration Tests
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: '*-tests.xml'
+      failTaskOnFailedTests: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: public
+      parallel: true
+      parallelCount: 8

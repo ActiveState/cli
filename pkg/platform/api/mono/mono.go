@@ -1,14 +1,11 @@
 package mono
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 // persist contains the active API Client connection
@@ -29,9 +26,7 @@ func Init(apiSetting api.Settings, auth *runtime.ClientAuthInfoWriter) *mono_cli
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
-	if funk.Contains(os.Args, "-v") {
-		transportRuntime.SetDebug(true)
-	}
+	//transportRuntime.SetDebug(true)
 
 	if auth != nil {
 		transportRuntime.DefaultAuthentication = *auth

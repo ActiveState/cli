@@ -92,8 +92,14 @@ github.com/go-openapi/strfmt
 github.com/go-openapi/swag
 # github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 github.com/go-openapi/validate
-# github.com/gobuffalo/packr v1.10.7
+# github.com/gobuffalo/envy v1.6.15
+github.com/gobuffalo/envy
+# github.com/gobuffalo/packd v0.0.0-20190315124812-a385830c7fc0
+github.com/gobuffalo/packd
+# github.com/gobuffalo/packr v1.24.1
 github.com/gobuffalo/packr
+# github.com/gobuffalo/syncx v0.0.0-20190224160051-33c29581e754
+github.com/gobuffalo/syncx
 # github.com/golang/snappy v0.0.1
 github.com/golang/snappy
 # github.com/google/uuid v1.1.0
@@ -119,6 +125,8 @@ github.com/inconshreveable/mousetrap
 github.com/jarcoal/httpmock
 # github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
 github.com/jmespath/go-jmespath
+# github.com/joho/godotenv v1.3.0
+github.com/joho/godotenv
 # github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 github.com/kami-zh/go-capturer
 # github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
@@ -157,12 +165,16 @@ github.com/phayes/permbits
 # github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
-# github.com/pkg/errors v0.8.0
+# github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 github.com/posener/wstest
+# github.com/rogpeppe/go-internal v1.3.0
+github.com/rogpeppe/go-internal/modfile
+github.com/rogpeppe/go-internal/module
+github.com/rogpeppe/go-internal/semver
 # github.com/rs/xid v0.0.0-20170604230408-02dd45c33376
 github.com/rs/xid
 # github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d
@@ -178,15 +190,15 @@ github.com/spf13/afero
 github.com/spf13/afero/mem
 # github.com/spf13/cast v1.1.0
 github.com/spf13/cast
-# github.com/spf13/cobra v0.0.1
+# github.com/spf13/cobra v0.0.3
 github.com/spf13/cobra
 # github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec
 github.com/spf13/jwalterweatherman
-# github.com/spf13/pflag v1.0.0
+# github.com/spf13/pflag v1.0.3
 github.com/spf13/pflag
 # github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
 github.com/spf13/viper
-# github.com/stretchr/objx v0.1.1
+# github.com/stretchr/objx v0.2.0
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/mock
@@ -206,11 +218,11 @@ github.com/vbauerster/mpb/decor
 github.com/vbauerster/mpb/cwriter
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
-# golang.org/x/net v0.0.0-20190403144856-b630fd6fe46b
+# golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
-# golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e
+# golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
 golang.org/x/sys/unix

@@ -12,11 +12,16 @@ variables:
   - name: CLI_PKGS
     value: ./state
 scripts: &scripts
-  - name: preprocess
-    value: |
-      packr
+  - name: vendor
+    value: | 
       go mod tidy
       go mod vendor
+  - name: preprocess
+    value: |
+      if [ -z "$CI" ]; then
+        $scripts.vendor
+      fi
+      packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
     value: |
