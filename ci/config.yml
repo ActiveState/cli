@@ -57,8 +57,6 @@ jobs:
       vmImage: vs2017-win2016
     variables:
       - group: Secrets
-      - name: SHELL
-        value: bash.exe
       - name: CI
         value: azure
       - name: GOPATH
