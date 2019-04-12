@@ -58,7 +58,7 @@ jobs:
     variables:
       - group: Secrets
       - name: SHELL
-        value: bash.exe
+        value: /c/Program\ Files/Git/bin/bash.exe
       - name: CI
         value: azure
       - name: GOPATH
