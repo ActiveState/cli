@@ -34,8 +34,7 @@ steps:
       set -e
       export GOFLAGS=-mod=vendor
       
-      BRANCH=$(git rev-parse --abbrev-ref HEAD)
-      if [[ "$BRANCH" == "master" ]]; then
+      if [[ "$BUILD_SOURCEBRANCHNAME" == "master" ]]; then
         echo "Building for external use"
         APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
       fi
