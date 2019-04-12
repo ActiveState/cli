@@ -64,10 +64,7 @@ jobs:
       - name: GOPATH
         value: /c/Users/VssAdministrator/go
     steps:
-      - task: Bash@3
-        inputs:
-          targetType: inline
-          script: |
-            echo '##vso[task.prependpath]/c/Users/VssAdministrator/go/bin'
+      - bash: |
+          echo '##vso[task.prependpath]/c/Users/VssAdministrator/go/bin'
         displayName: Prepare Agent
       - template: steps.yml
