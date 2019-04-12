@@ -62,9 +62,11 @@ jobs:
       - name: CI
         value: azure
       - name: GOPATH
-        value: /Users/vsts/go
+        value: /c/Users/VssAdministrator/go
     steps:
-      - script: |
-          echo '##vso[task.prependpath]/Users/vsts/go/bin'
+      - task: Bash@3
+        inputs:
+          script: |
+            echo '##vso[task.prependpath]/c/Users/VssAdministrator/go/bin'
         displayName: Prepare Agent
       - template: steps.yml
