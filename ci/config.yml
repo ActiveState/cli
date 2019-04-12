@@ -1,4 +1,5 @@
-pr: none
+trigger:
+ - master
 
 jobs:
 
