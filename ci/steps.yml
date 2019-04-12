@@ -3,9 +3,7 @@ steps:
     displayName: Environment Info
   - bash: |
       set -e
-      cd .. # Avoid go mod complications
-      go get -v github.com/gobuffalo/packr/packr
-      go get -v github.com/jstemmer/go-junit-report
+      echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/$(Agent.OS)/bin'
     displayName: Prepare Environment
   - bash: |
       set -e
