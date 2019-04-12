@@ -4,6 +4,7 @@ trigger:
 jobs:
 
   - job: linux
+    condition: false
     pool:
       vmImage: ubuntu-16.04
     variables:
@@ -34,12 +35,30 @@ jobs:
       - template: steps.yml
 
   - job: macos
+    condition: false
     pool:
       vmImage: macos-10.13
     variables:
       - group: Secrets
       - name: SHELL
         value: /bin/bash
+      - name: CI
+        value: azure
+      - name: GOPATH
+        value: /Users/vsts/go
+    steps:
+      - script: |
+          echo '##vso[task.prependpath]/Users/vsts/go/bin'
+        displayName: Prepare Agent
+      - template: steps.yml
+
+  - job: windows
+    pool:
+      vmImage: vs2017-win2016
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: bash.exe
       - name: CI
         value: azure
       - name: GOPATH
