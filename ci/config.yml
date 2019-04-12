@@ -57,6 +57,8 @@ jobs:
       vmImage: vs2017-win2016
     variables:
       - group: Secrets
+      - name: SHELL
+        value: bash.exe
       - name: CI
         value: azure
       - name: GOPATH
@@ -64,6 +66,7 @@ jobs:
     steps:
       - task: Bash@3
         inputs:
+          targetType: inline
           script: |
             echo '##vso[task.prependpath]/c/Users/VssAdministrator/go/bin'
         displayName: Prepare Agent

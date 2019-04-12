@@ -5,6 +5,7 @@ steps:
     displayName: Environment Info
   - task: Bash@3
     inputs:
+      targetType: inline
       script: |
         set -e
         cd .. # Avoid go mod complications
@@ -13,6 +14,7 @@ steps:
     displayName: Prepare Environment
   - task: Bash@3
     inputs:
+      targetType: inline
       script: |
         mkdir $(System.DefaultWorkingDirectory)/bin
         ./public/install.sh -b master -n -t $(System.DefaultWorkingDirectory)/bin
@@ -25,6 +27,7 @@ steps:
     displayName: Prepare Code Climate
   - task: Bash@3
     inputs:
+      targetType: inline
       script: |
         set -e
         export GOFLAGS=-mod=vendor
@@ -44,6 +47,7 @@ steps:
     displayName: Report to Code Climate
   - task: Bash@3
     inputs:
+      targetType: inline
       script: |
         set -e
         export GOFLAGS=-mod=vendor
@@ -58,6 +62,7 @@ steps:
     displayName: 'Build'
   - task: Bash@3
     inputs:
+      targetType: inline
       script: |
         set -e
         cd test/integration
