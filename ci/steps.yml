@@ -8,7 +8,8 @@ steps:
       go get -v github.com/jstemmer/go-junit-report
     displayName: Prepare Environment
   - bash: |
-      mkdir $(System.DefaultWorkingDirectory)/bin
+      set -e
+      mkdir -p $(System.DefaultWorkingDirectory)/bin
       ./public/install.sh -b master -n -t $(System.DefaultWorkingDirectory)/bin
       echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
     displayName: Install State Tool
