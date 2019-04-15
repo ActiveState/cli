@@ -3,6 +3,7 @@ package keypairs_test
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -34,9 +35,16 @@ func (suite *KeypairLocalLoadTestSuite) assertTooPermissive(fileMode os.FileMode
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
-	octalPerms := []os.FileMode{0640, 0650, 0660, 0670, 0604, 0605, 0606, 0607, 0700, 0500}
-	for _, perm := range octalPerms {
-		suite.assertTooPermissive(perm)
+	// For now Windows just checks to see if the file exists
+	if runtime.GOOS != "windows" {
+		octalPerms := []os.FileMode{0640, 0650, 0660, 0670, 0604, 0605, 0606, 0607, 0700, 0500}
+		for _, perm := range octalPerms {
+			suite.assertTooPermissive(perm)
+		}
+	} else {
+		kp, failure := keypairs.Load("IDONOTEXIST.key")
+		suite.Nil(kp)
+		suite.Require().NotNil(failure)
 	}
 }
 

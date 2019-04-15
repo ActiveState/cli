@@ -1,6 +1,7 @@
 package keypairs_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,7 +27,11 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 
 	fileInfo, err := osutil.StatConfigFile("custom-name.key")
 	suite.Require().Nil(fileInfo)
-	suite.Regexp("no such file or directory", err.Error())
+	if runtime.GOOS != "windows" {
+		suite.Regexp("no such file or directory", err.Error())
+	} else {
+		suite.Regexp("The system cannot find the file specified", err.Error())
+	}
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
@@ -37,7 +42,11 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 
 	fileInfo, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	suite.Require().Nil(fileInfo)
-	suite.Regexp("no such file or directory", err.Error())
+	if runtime.GOOS != "windows" {
+		suite.Regexp("no such file or directory", err.Error())
+	} else {
+		suite.Regexp("The system cannot find the file specified", err.Error())
+	}
 }
 
 func Test_KeypairLocalDelete_TestSuite(t *testing.T) {
