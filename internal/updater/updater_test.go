@@ -35,28 +35,30 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 }
 
 func TestUpdaterNoError(t *testing.T) {
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
+	if runtime.GOOS != "windows" {
+		httpmock.Activate(constants.APIUpdateURL)
+		defer httpmock.DeActivate()
 
-	updatemocks.MockUpdater(t, os.Args[0], "1.3")
+		updatemocks.MockUpdater(t, os.Args[0], "1.3")
 
-	updater := createUpdater()
+		updater := createUpdater()
 
-	err := updater.Run()
-	require.NoError(t, err, "Should run update")
+		err := updater.Run()
+		require.NoError(t, err, "Should run update")
 
-	dir, err := ioutil.TempDir("", "state-test-updater")
-	require.NoError(t, err)
-	target := filepath.Join(dir, "target")
-	if fileutils.FileExists(target) {
+		dir, err := ioutil.TempDir("", "state-test-updater")
+		require.NoError(t, err)
+		target := filepath.Join(dir, "target")
+		if fileutils.FileExists(target) {
+			os.Remove(target)
+		}
+
+		err = updater.Download(target)
+		require.NoError(t, err)
+		assert.FileExists(t, target, "Downloads to target path")
+
 		os.Remove(target)
 	}
-
-	err = updater.Download(target)
-	require.NoError(t, err)
-	assert.FileExists(t, target, "Downloads to target path")
-
-	os.Remove(target)
 }
 
 func TestUpdaterInfoDesiredVersion(t *testing.T) {

@@ -1,6 +1,7 @@
 package locale
 
 import (
+	"regexp"
 	"testing"
 
 	_ "github.com/ActiveState/cli/internal/config"
@@ -18,7 +19,7 @@ func TestInitAndT(t *testing.T) {
 
 func TestGetLocalePath(t *testing.T) {
 	path := getLocalePath()
-	assert.Contains(t, path, "/locale/", "Should detect locale path")
+	assert.Regexp(t, regexp.MustCompile(`[/locale/|\\locale\\]`), path, "Should detect locale path")
 }
 
 func TestGetLocaleFlag(t *testing.T) {
