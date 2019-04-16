@@ -1,4 +1,4 @@
-// +build Windows
+// +build windows
 
 package keypairs
 
