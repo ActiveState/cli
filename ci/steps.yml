@@ -11,6 +11,7 @@ steps:
       mkdir $(System.DefaultWorkingDirectory)/bin
       ./public/install.sh -b master -n -t $(System.DefaultWorkingDirectory)/bin
       echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
+      state auth --token $(PLATFORM_API_TOKEN)
     displayName: Install State Tool
   - script: cc-test-reporter before-build
     condition: eq(variables['Agent.OS'],'Linux')
