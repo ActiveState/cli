@@ -7,6 +7,7 @@ jobs:
     pool:
       vmImage: ubuntu-16.04
     variables:
+      - group: Secrets
       - name: SHELL
         value: /bin/bash
       - name: CI
@@ -36,6 +37,7 @@ jobs:
     pool:
       vmImage: macos-10.13
     variables:
+      - group: Secrets
       - name: SHELL
         value: /bin/bash
       - name: CI
