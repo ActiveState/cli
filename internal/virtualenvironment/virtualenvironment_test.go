@@ -36,6 +36,8 @@ func setup(t *testing.T) {
 
 	rtMock = rtmock.Init()
 	rtMock.MockFullRuntime()
+
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
 }
 
 func teardown() {
