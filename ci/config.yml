@@ -20,9 +20,6 @@ jobs:
         value: /usr/local/go1.12.1
     steps:
       - script: |
-          echo "TOKEN:"
-          echo $(PLATFORM_API_TOKEN)
-
           echo '##vso[task.prependpath]/home/vsts/go/bin'
           echo '##vso[task.prependpath]/home/vsts/bin'
 
