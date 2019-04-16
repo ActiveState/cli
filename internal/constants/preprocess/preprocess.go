@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -18,23 +17,40 @@ import (
 var Constants = map[string]func() string{}
 
 func init() {
-	Constants["BranchName"] = func() string {
-		if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
-			return branch
-		}
-		return getCmdOutput("git rev-parse --abbrev-ref HEAD")
-	}
-	Constants["BuildNumber"] = func() string {
-		out := getCmdOutput("git rev-list --abbrev-commit HEAD")
-		return strconv.Itoa(len(strings.Split(out, "\n")))
-	}
-	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify HEAD") }
-	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, Constants["BuildNumber"]()) }
+	branchName, branchNameFull := branchName()
+	buildNumber := buildNumber()
+
+	Constants["BranchName"] = func() string { return branchName }
+	Constants["BuildNumber"] = func() string { return buildNumber }
+	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
+	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, buildNumber) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["APIEnv"] = func() string { return strings.TrimSpace(os.Getenv("APIENV")) }
 	Constants["UserAgent"] = func() string {
-		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), Constants["BranchName"](), Constants["APIEnv"]())
+		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), branchName, Constants["APIEnv"]())
 	}
+}
+
+func branchName() (string, string) {
+	if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
+		if strings.Contains(branch, "/") {
+			return strings.Split(branch, "/")[1], branch
+		}
+		return branch, branch
+	}
+	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
+		return branch, "origin/" + branch
+	}
+	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
+		return branch, "origin/" + branch
+	}
+	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
+	return branch, branch
+}
+
+func buildNumber() string {
+	out := getCmdOutput("git rev-list --all --count")
+	return strings.TrimSpace(out)
 }
 
 func getCmdOutput(cmdString string) string {
