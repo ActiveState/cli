@@ -1,0 +1,51 @@
+trigger:
+ - master
+
+jobs:
+
+  - job: linux
+    pool:
+      vmImage: ubuntu-16.04
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: /bin/bash
+      - name: CI
+        value: azure
+      - name: GOPATH
+        value: /home/vsts/go
+      - name: GOBIN
+        value: /home/vsts/go/bin
+      - name: GOROOT
+        value: /usr/local/go1.12.1
+    steps:
+      - script: |
+          echo '##vso[task.prependpath]/home/vsts/go/bin'
+          echo '##vso[task.prependpath]/home/vsts/bin'
+
+          mkdir -p /home/vsts/go/bin
+          mkdir -p /home/vsts/bin
+
+          sudo apt-get install -y python3-setuptools
+
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /home/vsts/bin/cc-test-reporter
+          chmod +x /home/vsts/bin/cc-test-reporter
+        displayName: Prepare Agent
+      - template: steps.yml
+
+  - job: macos
+    pool:
+      vmImage: macos-10.13
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: /bin/bash
+      - name: CI
+        value: azure
+      - name: GOPATH
+        value: /Users/vsts/go
+    steps:
+      - script: |
+          echo '##vso[task.prependpath]/Users/vsts/go/bin'
+        displayName: Prepare Agent
+      - template: steps.yml
