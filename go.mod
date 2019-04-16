@@ -75,8 +75,10 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
-	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
+	golang.org/x/crypto v0.0.0-20190411191339-88737f569e3a // indirect
+	golang.org/x/net v0.0.0-20190415214537-1da14a5a36f2 // indirect
+	golang.org/x/sys v0.0.0-20190416152802-12500544f89f // indirect
+	golang.org/x/tools v0.0.0-20190416194154-76038274be7a // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
 	gopkg.in/ini.v1 v1.42.0 // indirect

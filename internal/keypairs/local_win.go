@@ -1,3 +1,5 @@
+// +build Windows
+
 package keypairs
 
 import (

@@ -1,3 +1,5 @@
+// +build linux
+
 package fileutils
 
 import "os"
