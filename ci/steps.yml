@@ -25,7 +25,7 @@ steps:
       go-junit-report < go-test.out > $(Agent.OS)-tests.xml
 
       # Tests appear to be breaking the authentication, so re-authenticate
-      state auth --token $PLATFORM_API_TOKEN
+      state auth --token $(PLATFORM_API_TOKEN)
     displayName: Unit Tests
   - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     condition: eq(variables['Agent.OS'],'Linux')
