@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	parent "github.com/jarcoal/httpmock"
 )
 
@@ -43,7 +42,6 @@ func Activate(prefix string) *HTTPMock {
 // DeActivate the httpmock
 func DeActivate() {
 	defer parent.DeactivateAndReset()
-	print.Line("RESET")
 	defaultMock = nil
 	httpMocks = map[string]*HTTPMock{}
 }
