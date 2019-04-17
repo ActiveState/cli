@@ -29,9 +29,6 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	fileInfo := suite.statConfigDirFile("save-testing.key")
 	if runtime.GOOS != "windows" {
 		suite.Equal(os.FileMode(0600), fileInfo.Mode())
-	} else {
-		// Windows doesn't care about your filemode preferences
-		suite.Equal(os.FileMode(0666), fileInfo.Mode())
 	}
 }
 
@@ -49,9 +46,6 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
 	if runtime.GOOS != "windows" {
 		suite.Equal(os.FileMode(0600), fileInfo.Mode())
-	} else {
-		// Windows doesn't care about your filemode preferences
-		suite.Equal(os.FileMode(0666), fileInfo.Mode())
 	}
 }
 
