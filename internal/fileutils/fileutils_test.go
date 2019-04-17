@@ -257,3 +257,7 @@ func TestReadFile(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "File doesn't exist, fail.")
 	assert.Equal(t, content, b, "Content should be the same")
 }
+
+func TestExecutable(t *testing.T) {
+	assert.True(t, IsExecutable(os.Args[0]), "Can detect that file is executable")
+}
