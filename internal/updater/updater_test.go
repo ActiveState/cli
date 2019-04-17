@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -15,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -32,33 +28,6 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 
 	err := updater.Run()
 	assert.Error(t, err, "Should fail because there is no update")
-}
-
-func TestUpdaterNoError(t *testing.T) {
-	if runtime.GOOS != "windows" {
-		httpmock.Activate(constants.APIUpdateURL)
-		defer httpmock.DeActivate()
-
-		updatemocks.MockUpdater(t, os.Args[0], "1.3")
-
-		updater := createUpdater()
-
-		err := updater.Run()
-		require.NoError(t, err, "Should run update")
-
-		dir, err := ioutil.TempDir("", "state-test-updater")
-		require.NoError(t, err)
-		target := filepath.Join(dir, "target")
-		if fileutils.FileExists(target) {
-			os.Remove(target)
-		}
-
-		err = updater.Download(target)
-		require.NoError(t, err)
-		assert.FileExists(t, target, "Downloads to target path")
-
-		os.Remove(target)
-	}
 }
 
 func TestUpdaterInfoDesiredVersion(t *testing.T) {
