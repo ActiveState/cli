@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"fmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -155,7 +156,10 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
 
 	os.Chdir(suite.origDir)
-	suite.Require().NoError(os.RemoveAll(targetDirNew)) // clean up after
+	err = os.RemoveAll(targetDirNew) // clean up after
+	if err != nil {
+		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", targetDirNew, err)
+	}
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
