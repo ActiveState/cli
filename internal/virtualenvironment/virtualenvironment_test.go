@@ -36,6 +36,8 @@ func setup(t *testing.T) {
 
 	rtMock = rtmock.Init()
 	rtMock.MockFullRuntime()
+
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
 }
 
 func teardown() {
@@ -98,24 +100,6 @@ func TestActivate(t *testing.T) {
 	} else {
 		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 	}
-}
-
-func TestActivateRuntimeEnvironment(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	project := &projectfile.Project{}
-	dat := strings.TrimSpace(`
-name: string
-owner: string
-languages:
-    - name: Python3`)
-	yaml.Unmarshal([]byte(dat), &project)
-	project.Persist()
-
-	venv := Init()
-	fail := venv.Activate()
-	require.NoError(t, fail.ToError(), "Should activate")
 }
 
 func TestUpdateRuntimeEnv(t *testing.T) {

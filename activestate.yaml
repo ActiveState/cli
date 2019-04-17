@@ -77,7 +77,8 @@ scripts: &scripts
     value: python3 scripts/locale-generator.py
   - name: test
     value: |
-      ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "(secrets-)?api/(client|model)"`
+      ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "api/.*?(client|model)"`
+    standalone: true
   - name: integration-tests
     standalone: true
     value: |

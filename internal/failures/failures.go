@@ -12,13 +12,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/rs/xid"
+	"github.com/google/uuid"
 )
 
 var (
+	guid = uuid.New()
 	// FailUser identifies a failure as a user facing failure, this doesn't use the Type method as the Type method does
 	// not support setting the user bool. This should be the ONLY failure type that does this.
-	FailUser = &FailureType{xid.New().String(), "failures.fail.user", true, []*FailureType{}}
+	FailUser = &FailureType{guid.String(), "failures.fail.user", true, []*FailureType{}}
 
 	// failLegacy identifies a failure as a legacy failure, this is for internal use only
 	failLegacy = Type("failures.fail.legacy")
@@ -182,7 +183,7 @@ func Type(name string, parents ...*FailureType) *FailureType {
 		}
 	}
 
-	guid := xid.New()
+	guid := uuid.New()
 	return &FailureType{guid.String(), name, user, parents}
 }
 

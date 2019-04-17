@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -27,6 +29,7 @@ type ActivateTestSuite struct {
 	rMock      *rMock.Mock
 	promptMock *promptMock.Mock
 	dir        string
+	origDir    string
 }
 
 func (suite *ActivateTestSuite) SetupSuite() {
@@ -46,6 +49,8 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 	var err error
 
+	suite.origDir, err = os.Getwd()
+	suite.Require().NoError(err)
 	suite.dir, err = ioutil.TempDir("", "activate-test")
 	suite.Require().NoError(err)
 
@@ -65,12 +70,16 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
+	os.Chdir(suite.origDir)
+
 	suite.authMock.Close()
 	suite.apiMock.Close()
 	suite.rMock.Close()
 	suite.promptMock.Close()
 	err := os.RemoveAll(suite.dir)
-	suite.Require().NoError(err)
+	if err != nil {
+		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
+	}
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
@@ -85,8 +94,13 @@ func (suite *ActivateTestSuite) TestExecute() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
+func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
+
+	if !withLang {
+		suite.apiMock.MockGetProjectNoLanguage()
+		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+	}
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
@@ -103,12 +117,18 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().NotEmpty(pjfile.Languages)
-	suite.Equal("Python", pjfile.Languages[0].Name)
+
+	return pjfile
+}
+
+func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
+	suite.testExecuteWithNamespace(false)
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoLanguage()
+	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
@@ -123,7 +143,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	savePathForNamespace(ProjectNamespace, targetDirOrig)
 
 	// Now set up the second
-	targetDirNew, err := ioutil.TempDir(suite.dir, "DontUseExisting")
+	targetDirNew, err := ioutil.TempDir("", "DontUseExisting")
 	suite.Require().NoError(err)
 	suite.Require().NoError(os.Remove(targetDirNew))
 
@@ -134,6 +154,12 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.Require().NoError(err)
 
 	suite.FileExists(filepath.Join(targetDirNew, constants.ConfigFileName))
+
+	os.Chdir(suite.origDir)
+	err = os.RemoveAll(targetDirNew) // clean up after
+	if err != nil {
+		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", targetDirNew, err)
+	}
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {

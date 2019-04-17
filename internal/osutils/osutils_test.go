@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,11 +18,18 @@ import (
 
 func TestCmdExitCode(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "TestCmdExitCode")
-	assert.NoError(t, err)
-
-	tmpfile.WriteString("#!/usr/bin/env bash\n")
-	tmpfile.WriteString("exit 255")
-	tmpfile.Close()
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, err)
+		tmpfile.WriteString("#!/usr/bin/env bash\n")
+		tmpfile.WriteString("exit 255")
+		tmpfile.Close()
+	} else {
+		tmpfile.WriteString("echo off\n")
+		tmpfile.WriteString("exit 255")
+		tmpfile.Close()
+		err = os.Rename(tmpfile.Name(), tmpfile.Name()+".bat")
+		assert.NoError(t, err)
+	}
 	os.Chmod(tmpfile.Name(), 0755)
 
 	cmd := exec.Command(tmpfile.Name())
