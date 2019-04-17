@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/pflag"
 	funk "github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,11 +48,18 @@ func TestMainFnVerbose(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--verbose"})
 
-	out, err := osutil.CaptureStderr(main)
+	Flags.Verbose = true
+	defer func() {
+		Flags.Verbose = false
+	}()
+	onVerboseFlag()
+	out, err := osutil.CaptureStderr(func() {
+		logging.Debug("AM I VERBOSE?")
+	})
 	require.NoError(t, err)
 
 	assert.Equal(true, true, "main didn't panic")
-	assert.Contains(out, "[DEBUG ")
+	assert.Contains(out, "AM I VERBOSE?")
 }
 
 func TestMainError(t *testing.T) {
