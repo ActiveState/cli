@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,6 +40,7 @@ func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
 
 	viper.Reset()
 	suite.config = config.New(dir)
+	suite.config.Exit = exiter.Exit
 }
 
 func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
@@ -101,7 +101,7 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	var out bytes.Buffer
 	runCmd.Stdout = &out
 	runCmd.Stderr = &out
-	suite.config.Exit(0) // Release the current config, the subprocess will make a new one and Windows fails if we don't release.
+
 	err := runCmd.Run()
 	suite.Require().NoError(err, "Should run without error, but returned: \n### START ###\n %s\n### END ###", out.String())
 }
