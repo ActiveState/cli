@@ -315,7 +315,7 @@ func TestExecuteLogout(t *testing.T) {
 
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	require.Nil(t, pkstat)
-	// Unux | Windows
+	// Unix | Windows
 	assert.Regexp(t, "[no such file or directory|The system cannot find the file specified]", err.Error())
 }
 
