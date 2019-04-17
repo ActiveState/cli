@@ -29,11 +29,11 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Remove(tmpfile.Name())
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(`echo %ACTIVESTATE_PROJECT%`)
+		_, err := subs.Run(`echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--`)
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "C:\\Users\\cgcho\\Projects\\ActiveState\\cli\\test>echo  \r\nECHO is on.",
+	assert.Contains(t, out, "--EMPTY--  --EMPTY--",
 		strings.TrimSpace(out),
 		"Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
 
