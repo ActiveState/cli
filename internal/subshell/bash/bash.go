@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"strings"
 )
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -107,12 +108,20 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 		return 1, err
 	}
 
-	tmpfile.WriteString("#!/usr/bin/env bash\n")
-	tmpfile.WriteString(script)
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
+	_, err = tmpfile.WriteString("#!/usr/bin/env bash\n" + script)
+	if err != nil {
+		return 1, err
+	}
+	err = tmpfile.Close()
+	if err != nil {
+		return 1, err
+	}
+	err = os.Chmod(tmpfile.Name(), 0755)
+	if err != nil {
+		return 1, err
+	}
 
-	runCmd := exec.Command(tmpfile.Name(), args...)
+	runCmd := exec.Command("bash", "-c", strings.Replace(tmpfile.Name(), `\`, `\\`, -1))
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = v.env
 
