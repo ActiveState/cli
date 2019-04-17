@@ -3,11 +3,16 @@
 package subshell
 
 import (
+	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActivateZsh(t *testing.T) {
