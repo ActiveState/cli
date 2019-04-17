@@ -93,10 +93,13 @@ func (suite *ActivateTestSuite) TestExecute() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func (suite *ActivateTestSuite) testExecuteWithNamespace() *projectfile.Project {
+func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetProjectNoLanguage()
-	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+
+	if !withLang {
+		suite.apiMock.MockGetProjectNoLanguage()
+		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+	}
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
@@ -118,7 +121,7 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace() *projectfile.Project 
 }
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
-	suite.testExecuteWithNamespace()
+	suite.testExecuteWithNamespace(false)
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
