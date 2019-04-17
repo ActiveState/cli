@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"fmt"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -75,7 +76,9 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.rMock.Close()
 	suite.promptMock.Close()
 	err := os.RemoveAll(suite.dir)
-	suite.Require().NoError(err)
+	if err != nil {
+		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
+	}
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
