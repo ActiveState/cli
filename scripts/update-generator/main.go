@@ -1,14 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,8 +13,9 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
-
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/pkg/errors"
 )
 
@@ -42,71 +40,69 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-type gzReader struct {
-	z, r io.ReadCloser
-}
-
-func (g *gzReader) Read(p []byte) (int, error) {
-	return g.z.Read(p)
-}
-
-func (g *gzReader) Close() error {
-	g.z.Close()
-	return g.r.Close()
-}
-
-func newGzReader(r io.ReadCloser) io.ReadCloser {
-	var err error
-	g := new(gzReader)
-	g.r = r
-	g.z, err = gzip.NewReader(r)
-	if err != nil {
-		panic(err)
-	}
-	return g
-}
-
 func createUpdate(path string, platform string) {
 	t := time.Now().Format("2006-01-02_15-04-05")
-	archive := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
+	archiveName := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
 
 	os.MkdirAll(filepath.Join(genDir, branch, version), 0755)
-	os.MkdirAll(filepath.Join(genDir, branch, version, archive), 0755)
+	os.MkdirAll(filepath.Join(genDir, branch, version, archiveName), 0755)
 
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	f, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(f)
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing to gzip writer"))
-	}
-	err = w.Close() // You must close this first to flush the bytes to the buffer.
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored closing gzip writter"))
-	}
-	gzPath := filepath.Join(genDir, branch, version, platform+".gz")
-	err = ioutil.WriteFile(gzPath, buf.Bytes(), 0755)
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing gzipped buffer to file"))
+	// Prepare the archiver
+	var ext, binExt string
+	var archive archiver.Archiver
+	if runtime.GOOS == "windows" {
+		archive = archiver.NewZip()
+		ext = ".zip"
+		binExt = ".exe"
+	} else {
+		archive = archiver.NewTarGz()
+		ext = ".tar.gz"
 	}
 
-	// Store archived version
-	gzArchivePath := filepath.Join(genDir, branch, version, archive, platform+".gz")
-	fmt.Printf("Creating %s\n", gzArchivePath)
-	err = ioutil.WriteFile(gzArchivePath, buf.Bytes(), 0755)
+	// Copy to a temp path so we can use a custom filename
+	tempDir, err := ioutil.TempDir("", "cli-update-generator")
 	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing gzipped buffer to file"))
+		panic(errors.Wrap(err, "Could not create temp dir"))
+	}
+	tempPath := filepath.Join(tempDir, platform+binExt)
+	fail := fileutils.CopyFile(path, tempPath)
+	if fail != nil {
+		panic(errors.Wrap(fail.ToError(), "Copy failed"))
 	}
 
-	c := current{Version: version, Sha256: generateSha256(gzPath)}
+	targetDir := filepath.Join(genDir, branch, version)
+	targetPath := filepath.Join(targetDir, platform+ext)
+	targetArchivePath := filepath.Join(targetDir, archiveName, platform+ext)
+
+	// Remove target files if it already exists
+	if fileutils.FileExists(targetPath) {
+		err = os.Remove(targetPath)
+		if err != nil {
+			panic(errors.Wrap(err, "Could not remove target path"))
+		}
+	}
+	if fileutils.FileExists(targetArchivePath) {
+		err = os.Remove(targetArchivePath)
+		if err != nil {
+			panic(errors.Wrap(err, "Could not remove target archive path"))
+		}
+	}
+
+	// Create main archive
+	fmt.Printf("Creating %s\n", targetPath)
+	err = archive.Archive([]string{tempPath}, targetPath)
+	if err != nil {
+		panic(errors.Wrap(err, "Archiving failed"))
+	}
+
+	// Create historical archive
+	fmt.Printf("Creating %s\n", targetArchivePath)
+	fail = fileutils.CopyFile(targetPath, targetArchivePath)
+	if fail != nil {
+		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+	}
+
+	c := current{Version: version, Sha256: generateSha256(targetPath)}
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
