@@ -27,6 +27,6 @@ languages:
 
 	venv := Init()
 	fail := venv.Activate()
-	assert.Error(t, fail.ToError(), "Should not activate because Python3 is not supported on Windows yet")
+	assert.Error(t, fail.ToError(), "Should not activate because Python3 is not supported on Mac and Windows yet")
 	assert.Equal(t, model.FailNoEffectiveRecipe.Name, fail.Type.Name, "Should fail on unsupported language")
 }
