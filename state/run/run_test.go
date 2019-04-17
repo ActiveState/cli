@@ -156,11 +156,7 @@ scripts:
 	Cc.SetArgs([]string{"run"})
 	exitCode := exiter.WaitForExit(func() { Command.Execute() })
 
-	if runtime.GOOS != "windows" {
-		assert.Equal(t, 127, exitCode, "Execution caused exit")
-	} else {
-		assert.Equal(t, 1, exitCode, "Execution caused exit")
-	}
+	assert.NotEqual(t, 0, exitCode, "Execution caused exit")
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
