@@ -253,6 +253,8 @@ organizations_err:
   other: Unable to list member organizations
 organization_name:
   other: Organization Name
+organization_no_orgs:
+  other: You are not a member of any organizations
 project_name:
   other: Project Name
 project_description:
