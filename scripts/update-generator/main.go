@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/phayes/permbits"
 	"github.com/pkg/errors"
 )
 
@@ -59,6 +60,14 @@ func createUpdate(path string, platform string) {
 	fail := fileutils.CopyFile(path, tempPath)
 	if fail != nil {
 		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+	}
+
+	// Permissions may be lost due to the file copy, so ensure it's still executable
+	permissions, _ := permbits.Stat(tempPath)
+	permissions.SetUserExecute(true)
+	err = permbits.Chmod(tempPath, permissions)
+	if err != nil {
+		panic(errors.Wrap(fail.ToError(), "Could not make file executable"))
 	}
 
 	targetDir := filepath.Join(genDir, branch, version)
