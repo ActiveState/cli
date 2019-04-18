@@ -53,6 +53,10 @@ func (m *Mock) MockGetProject() {
 	m.httpmock.Register("GET", "/organizations/string/projects/string")
 }
 
+func (m *Mock) MockGetProjectNoLanguage() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-language")
+}
+
 func (m *Mock) MockGetProjectDiffCommit() {
 	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
 }

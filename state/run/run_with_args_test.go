@@ -41,7 +41,7 @@ scripts:
   - name: %s
     standalone: true
     value: |
-    echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)
+      echo "ARGS|%%1|%%2|%%3|%%4|"`, cmdName)
 	}
 	err = yaml.Unmarshal([]byte(contents), project)
 

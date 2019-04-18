@@ -58,7 +58,6 @@ require (
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
-	github.com/rs/xid v0.0.0-20170604230408-02dd45c33376
 	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
 	github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
@@ -76,8 +75,8 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3 // indirect
-	golang.org/x/sys v0.0.0-20190405154228-4b34438f7a67 // indirect
+	golang.org/x/net v0.0.0-20190415214537-1da14a5a36f2 // indirect
+	golang.org/x/sys v0.0.0-20190416152802-12500544f89f // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
 	gopkg.in/ini.v1 v1.42.0 // indirect

@@ -157,10 +157,10 @@ func (p *Project) Save() *failures.Failure {
 	}
 
 	f, err := os.Create(p.Path())
-	defer f.Close()
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
+	defer f.Close()
 
 	_, err = f.Write([]byte(dat))
 	if err != nil {

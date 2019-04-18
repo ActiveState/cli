@@ -2,6 +2,7 @@ package keypairs_test
 
 import (
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,7 +27,9 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile("save-testing.key")
-	suite.Equal(os.FileMode(0600), fileInfo.Mode())
+	if runtime.GOOS != "windows" {
+		suite.Equal(os.FileMode(0600), fileInfo.Mode())
+	}
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
@@ -41,7 +44,9 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
-	suite.Equal(os.FileMode(0600), fileInfo.Mode())
+	if runtime.GOOS != "windows" {
+		suite.Equal(os.FileMode(0600), fileInfo.Mode())
+	}
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {

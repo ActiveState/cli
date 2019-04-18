@@ -27,6 +27,7 @@ class IntegrationTest(unittest.TestCase):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
         self.clear_config()
+        self.child = None
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
@@ -104,6 +105,9 @@ class IntegrationTest(unittest.TestCase):
             self.child.close()
 
     def is_running(self):
+        if not self.child:
+            return False
+
         try:
             status = psutil.Process(self.pid()).status()
         except psutil.NoSuchProcess:

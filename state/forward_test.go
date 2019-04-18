@@ -4,21 +4,19 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
-
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testdataDir(t *testing.T) string {
@@ -37,15 +35,37 @@ func setupCwd(t *testing.T, withVersion bool) {
 	projectfile.Reset()
 }
 
+func TestForwardNotUsed(t *testing.T) {
+	httpmock.Activate(constants.APIUpdateURL)
+	defer httpmock.DeActivate()
+
+	setupCwd(t, false)
+	testdatadir := testdataDir(t)
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.Version)
+
+	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
+	exit = exiter.Exit
+	exitCode := exiter.WaitForExit(func() {
+		forwardAndExit(args)
+	})
+	assert.Equal(t, -1, exitCode, "exit was not called")
+}
+
 func TestForwardAndExit(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 	exit = exiter.Exit
 
 	setupCwd(t, true)
+	ext := ".sh"
+	if runtime.GOOS == "windows" {
+		ext = ".bat"
+		forceFileExt = ".bat"
+		defer func() { forceFileExt = "" }()
+	}
 
 	testdatadir := testdataDir(t)
-	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), "1.2.3-123")
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state"+ext), "1.2.3-123")
 
 	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
 	exitCode := exiter.WaitForExit(func() {
@@ -64,20 +84,4 @@ func TestForwardAndExit(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Contains(t, out, fmt.Sprintf("OUTPUT--%s--OUTPUT", strings.Join(args[1:], " ")), "state.sh mock should print our args")
-}
-
-func TestForwardNotUsed(t *testing.T) {
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
-
-	setupCwd(t, false)
-	testdatadir := testdataDir(t)
-	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.Version)
-
-	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
-	exit = exiter.Exit
-	exitCode := exiter.WaitForExit(func() {
-		forwardAndExit(args)
-	})
-	assert.Equal(t, -1, exitCode, "exit was not called")
 }

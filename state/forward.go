@@ -20,6 +20,9 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+// forceFileExt is used in tests, do not use it for anything else
+var forceFileExt string
+
 // forwardAndExit will forward the call to the appropriate state tool version if necessary
 func forwardAndExit(args []string) {
 	version, fail := projectfile.ParseVersion()
@@ -54,7 +57,9 @@ func shouldForward(version string) bool {
 
 func forwardBin(version string) string {
 	filename := fmt.Sprintf("%s-%s", constants.CommandName, version)
-	if runtime.GOOS == "windows" {
+	if forceFileExt != "" {
+		filename += forceFileExt
+	} else if runtime.GOOS == "windows" {
 		filename += ".exe"
 	}
 	datadir := config.ConfigPath()
