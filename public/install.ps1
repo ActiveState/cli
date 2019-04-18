@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2018 ActiveState Software Inc. All rights reserved.
+# Copyright 2019 ActiveState Software Inc. All rights reserved.
 <#
 .DESCRIPTION
 Install the ActiveState state.exe tool.  Must be run as admin OR install state tool to
@@ -28,10 +28,34 @@ param (
     ,[switch]$h
 )
 
-if ( -Not (isAdmin)) {
-    Write-Warning "You must run this script in a terminal with Administrator permissions"
-    exit 1
+# Helpers
+function isInRegistry(){
+    $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
+    $inReg = $False
+    for ($i = 0; $i -lt $regpaths.Count; $i++) {
+        if ($regpaths[$i] -eq $INSTALLDIR) {
+            $inReg = $True
+        }
+    }
+    $inReg
 }
+function isOnPath(){
+    $envpaths = $env:Path.Split(';')
+    $inEnv = $False
+    for ($i = 0; $i -lt $envpaths.Count; $i++) {
+        if ($envpaths[$i] -eq $INSTALLDIR) {
+            $inEnv = $True
+        }
+    }
+    $inEnv
+}
+
+function isAdmin
+{
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 
 $USAGE="install.ps1 [flags]`n`r`n`rFlags:`n`r -b <branch>      Specify an alternative branch to install from (eg. master)`n`r -n               Don't prompt for anything, just install and override any existing executables`n`r -t               Target directory`n`r -f               Filename to use`n`r -h               Shows usage information (what you're currently reading)`n`rEOF`n`r"
 $STATE="state.exe"
@@ -126,9 +150,14 @@ Move-Item (Join-Path $tmpParentPath $stateexe) $installPathExe
 # Add to path
 $newPath = "$env:Path;$INSTALLDIR"
 if( -Not (isInRegistry) ){
-    Write-Host "Adding $INSTALLDIR to registry"
-    # This only sets it in the regsitry and it will NOT be accessible in the current session
-    Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+    
+    if ( -Not (isAdmin)) {
+        Write-Warning "We tried to add the install directory to your Registry PATH but this session does not have Administrator privileges.  Please run this script in a terminal with Administrator permissions to permanently add the state tool to your path."
+    } else {
+        Write-Host "Adding $INSTALLDIR to registry"
+        # This only sets it in the regsitry and it will NOT be accessible in the current session
+        Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+    }
 } else {
     Write-Host "Install dir is already in registry"
 }
@@ -138,31 +167,4 @@ if( -Not (isOnPath) ){
     $Env:Path = $newPath
 } else {
     Write-Host "Install dir is already on your PATH"
-}
-
-# Helpers
-function isInRegistry(){
-    $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
-    $inReg
-    for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $INSTALLDIR) {
-            $inReg = $True
-        }
-    }
-    $inReg
-}
-function isOnPath(){
-    $envpaths = $env:Path.Split(';')
-    for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $INSTALLDIR) {
-            $inEnv = $True
-        }
-    }
-    $inEnv
-}
-
-function isAdmin
-{
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
