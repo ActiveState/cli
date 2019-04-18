@@ -45,17 +45,17 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
-func BashifyPath(path string) (string, *failures.Failure) {
-	if path[0:1] == "/" {
+func BashifyPath(absolutePath string) (string, *failures.Failure) {
+	if absolutePath[0:1] == "/" {
 		// Already the format we want
-		return path, nil
+		return absolutePath, nil
 	}
 
-	if path[1:2] != ":" {
+	if absolutePath[1:2] != ":" {
 		// Check for windows style paths
-		return "", failures.FailInput.New(fmt.Sprintf("Unrecognized path format: %s", path))
+		return "", failures.FailInput.New(fmt.Sprintf("Unrecognized absolute path format: %s", absolutePath))
 	}
 
-	path = strings.ToLower(path[0:1]) + path[2:]
-	return "/" + strings.Replace(path, `\`, `/`, -1), nil
+	absolutePath = strings.ToLower(absolutePath[0:1]) + absolutePath[2:]
+	return "/" + strings.Replace(absolutePath, `\`, `/`, -1), nil
 }
