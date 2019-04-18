@@ -48,16 +48,7 @@ func createUpdate(path string, platform string) {
 	os.MkdirAll(filepath.Join(genDir, branch, version, archiveName), 0755)
 
 	// Prepare the archiver
-	var ext, binExt string
-	var archive archiver.Archiver
-	if runtime.GOOS == "windows" {
-		archive = archiver.NewZip()
-		ext = ".zip"
-		binExt = ".exe"
-	} else {
-		archive = archiver.NewTarGz()
-		ext = ".tar.gz"
-	}
+	archive, ext, extFallback, binExt := archiveMeta()
 
 	// Copy to a temp path so we can use a custom filename
 	tempDir, err := ioutil.TempDir("", "cli-update-generator")
@@ -74,19 +65,13 @@ func createUpdate(path string, platform string) {
 	targetPath := filepath.Join(targetDir, platform+ext)
 	targetArchivePath := filepath.Join(targetDir, archiveName, platform+ext)
 
-	// Remove target files if it already exists
-	if fileutils.FileExists(targetPath) {
-		err = os.Remove(targetPath)
-		if err != nil {
-			panic(errors.Wrap(err, "Could not remove target path"))
-		}
-	}
-	if fileutils.FileExists(targetArchivePath) {
-		err = os.Remove(targetArchivePath)
-		if err != nil {
-			panic(errors.Wrap(err, "Could not remove target archive path"))
-		}
-	}
+	// We used to generate tar.gz's with just the .gz extension, so we need to facilitate this pattern for a little while
+	// longer so these versions get updated to an updater that uses .tar.gz
+	targetPathFallback := filepath.Join(targetDir, platform+extFallback)
+	targetArchivePathFallback := filepath.Join(targetDir, archiveName, platform+extFallback)
+
+	// Remove target files if they already exists
+	remove(targetPath, targetArchivePath, targetPathFallback, targetArchivePathFallback)
 
 	// Create main archive
 	fmt.Printf("Creating %s\n", targetPath)
@@ -95,11 +80,11 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrap(err, "Archiving failed"))
 	}
 
-	// Create historical archive
-	fmt.Printf("Creating %s\n", targetArchivePath)
-	fail = fileutils.CopyFile(targetPath, targetArchivePath)
-	if fail != nil {
-		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+	// Make copies to archive / fallback paths
+	copy(targetPath, targetArchivePath)
+	if extFallback != ext {
+		copy(targetPath, targetPathFallback)
+		copy(targetPath, targetArchivePathFallback)
 	}
 
 	c := current{Version: version, Sha256: generateSha256(targetPath)}
@@ -120,6 +105,31 @@ func createUpdate(path string, platform string) {
 	err = ioutil.WriteFile(jsonPath, b, 0755)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func archiveMeta() (archiveMethod archiver.Archiver, ext string, fallbackExt string, binExt string) {
+	if runtime.GOOS == "windows" {
+		return archiver.NewZip(), ".zip", "", ".exe"
+	}
+	return archiver.NewTarGz(), ".tar.gz", ".gz", ""
+}
+
+func copy(path, target string) {
+	fail := fileutils.CopyFile(path, target)
+	if fail != nil {
+		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+	}
+}
+
+func remove(paths ...string) {
+	for _, path := range paths {
+		if fileutils.FileExists(path) {
+			err := os.Remove(path)
+			if err != nil {
+				panic(errors.Wrap(err, "Could not remove path: "+path))
+			}
+		}
 	}
 }
 
@@ -144,6 +154,7 @@ func init() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 }
+
 func run() {
 	goos := os.Getenv("GOOS")
 	goarch := os.Getenv("GOARCH")
