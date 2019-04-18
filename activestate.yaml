@@ -1,6 +1,7 @@
 name: cli
 owner: ActiveState
 namespace: github.com/ActiveState/cli
+version: 0.2.2-1260
 variables:
   - name: ENV
     value: |
