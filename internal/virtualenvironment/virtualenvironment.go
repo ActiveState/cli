@@ -81,7 +81,7 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return FailAlreadyActive.New("err_already_active",v.project.Name())
+		return FailAlreadyActive.New("err_already_active", v.project.Owner()+"/"+v.project.Name())
 	}
 
 	// expand project vars to environment vars
