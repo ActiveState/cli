@@ -69,6 +69,9 @@ type SubShell interface {
 
 	// SetEnv sets the environment up for the given subshell
 	SetEnv(env []string)
+
+	// Quote will quote the given string, escaping any characters that need escaping
+	Quote(value string) string
 }
 
 // Activate the virtual environment
