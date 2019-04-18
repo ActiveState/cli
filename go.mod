@@ -8,6 +8,7 @@ require (
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
 	github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e
+	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -16,6 +17,7 @@ require (
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/bndr/gotabulate v1.1.2
 	github.com/dave/jennifer v0.18.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
@@ -57,6 +59,7 @@ require (
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
 	github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e
