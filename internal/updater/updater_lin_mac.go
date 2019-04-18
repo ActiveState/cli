@@ -31,6 +31,7 @@ func (u *Updater) fetchFileFromTar(file []byte) ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	filer := tar.NewReader(bytes.NewReader(file))
+	filer.Next()
 
 	if _, err := io.Copy(buf, filer); err != nil {
 		logging.Error(err.Error())
