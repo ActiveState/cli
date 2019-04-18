@@ -27,6 +27,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	rows := [][]interface{}{}
+	if len(orgs) == 0 {
+		print.Bold(locale.T("organization_no_orgs"))
+		return
+	}
 	for _, org := range orgs {
 		rows = append(rows, []interface{}{org.Name})
 	}
