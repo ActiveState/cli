@@ -65,6 +65,6 @@ func MockUpdater(t *testing.T, filename string, version string) {
 	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
 
-	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, ext))
+	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s%s", version, runtime.GOOS, runtime.GOARCH, ext))
 	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, fileBytes)
 }

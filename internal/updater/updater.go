@@ -267,7 +267,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.%s",
+	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s%s",
 		argCmdName, branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)

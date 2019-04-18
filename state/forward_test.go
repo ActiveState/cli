@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
@@ -45,4 +49,39 @@ func TestForwardNotUsed(t *testing.T) {
 		forwardAndExit(args)
 	})
 	assert.Equal(t, -1, exitCode, "exit was not called")
+}
+
+func TestForwardAndExit(t *testing.T) {
+	httpmock.Activate(constants.APIUpdateURL)
+	defer httpmock.DeActivate()
+	exit = exiter.Exit
+
+	setupCwd(t, true)
+	ext := ".sh"
+	if runtime.GOOS == "windows" {
+		ext = ".bat"
+		forceFileExt = ".bat"
+		defer func() { forceFileExt = "" }()
+	}
+
+	testdatadir := testdataDir(t)
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state"+ext), "1.2.3-123")
+
+	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
+	exitCode := exiter.WaitForExit(func() {
+		forwardAndExit(args)
+	})
+	require.Equal(t, 0, exitCode, "exits with code 0")
+
+	// Invoking the individual methods so we can capture stdout properly
+	binary := forwardBin("1.2.3-123")
+	out, err := osutil.CaptureStdout(func() {
+		exitCode = exiter.WaitForExit(func() {
+			execForwardAndExit(binary, args)
+		})
+	})
+	require.Equal(t, 0, exitCode, "exits with code 0")
+	require.NoError(t, err)
+
+	assert.Contains(t, out, fmt.Sprintf("OUTPUT--%s--OUTPUT", strings.Join(args[1:], " ")), "state.sh mock should print our args")
 }
