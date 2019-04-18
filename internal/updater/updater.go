@@ -2,11 +2,9 @@ package updater
 
 import (
 	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -14,15 +12,13 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/kardianos/osext"
-	update "gopkg.in/inconshreveable/go-update.v0"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/kardianos/osext"
+	update "gopkg.in/inconshreveable/go-update.v0"
 )
 
 var (
@@ -239,12 +235,12 @@ func (u *Updater) fetchInfo() error {
 }
 
 func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
-	gz, err := u.fetchArchive()
+	archive, err := u.fetchArchive()
 	if err != nil {
 		return nil, err
 	}
 
-	archive, err := ioutil.ReadAll(bytes.NewReader(gz))
+	archive, err = ioutil.ReadAll(bytes.NewReader(archive))
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +250,7 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 		return nil, failures.FailVerify.New(locale.T("update_hash_mismatch"))
 	}
 
-	bin, err := u.fetchBin(gz)
+	bin, err := u.fetchBin(archive)
 	if err != nil {
 		logging.Error(err.Error())
 		return nil, err
@@ -267,8 +263,12 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
 	var branchName = constants.BranchName
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.gz",
-		argCmdName, branchName, argInfoVersion, argPlatform)
+	var ext = ".tar.gz"
+	if runtime.GOOS == "windows" {
+		ext = ".zip"
+	}
+	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s.%s",
+		argCmdName, branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
 
@@ -279,22 +279,6 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	}
 
 	return r, nil
-}
-
-func (u *Updater) fetchBin(gz []byte) ([]byte, error) {
-	buf := new(bytes.Buffer)
-
-	gzr, err := gzip.NewReader(bytes.NewReader(gz))
-	if err != nil {
-		logging.Error(err.Error())
-		return nil, err
-	}
-	if _, err = io.Copy(buf, gzr); err != nil {
-		logging.Error(err.Error())
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
 }
 
 func (u *Updater) fetch(url string) ([]byte, error) {

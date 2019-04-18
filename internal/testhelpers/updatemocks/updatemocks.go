@@ -2,15 +2,14 @@ package updatemocks
 
 import (
 	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 )
@@ -29,21 +28,36 @@ func CreateRequestPath(append string) string {
 
 // MockUpdater fully mocks an update, so that you could run the update logic and it doesn't fail
 func MockUpdater(t *testing.T, filename string, version string) {
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.Name = constants.CommandName
+	var archive archiver.Archiver
+	var ext string
 
-	f, err := ioutil.ReadFile(filename)
-	require.NoError(t, err)
-	_, err = zw.Write(f)
-	require.NoError(t, err)
-	require.NoError(t, zw.Close())
+	if runtime.GOOS == "windows" {
+		archive = archiver.NewZip()
+		ext = ".zip"
+	} else {
+		archive = archiver.NewTarGz()
+		ext = ".tar.gz"
+	}
 
-	cb := &ClosingBuffer{bytes.NewBuffer(buf.Bytes())}
-	h := sha256.New()
-	_, err = h.Write(cb.Bytes())
-	require.NoError(t, err)
-	hash := h.Sum(nil)
+	tempDir, err := ioutil.TempDir("", "cli-update-mock")
+	if err != nil {
+		t.Fatal(fmt.Sprintf("Error creating temp dir: %v", err))
+	}
+	tempFile := filepath.Join(tempDir, "archive"+ext)
+
+	err = archive.Archive([]string{filename}, tempFile)
+	if err != nil {
+		t.Fatal(fmt.Sprintf("Error creating temp dir: %v", err))
+	}
+
+	fileBytes, err := ioutil.ReadFile(tempFile)
+	if err != nil {
+		t.Fatal(fmt.Sprintf("Error reading file: %v", err))
+	}
+
+	hasher := sha256.New()
+	hasher.Write(fileBytes)
+	hash := hasher.Sum(nil)
 
 	requestPath := CreateRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
@@ -51,6 +65,6 @@ func MockUpdater(t *testing.T, filename string, version string) {
 	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256": "%x"}`, version, hash))
 
-	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.gz", version, runtime.GOOS, runtime.GOARCH))
-	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, buf.Bytes())
+	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.%s", version, runtime.GOOS, runtime.GOARCH, ext))
+	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, fileBytes)
 }
