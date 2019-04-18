@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -43,19 +41,6 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 		logging.Error("Executing command returned error: %v", err)
 	}
 	return CmdExitCode(cmd), cmd, err
-}
-
-// ShellEscapeAndQuote will escape and quote the given strings
-func ShellEscapeAndQuote(strs ...string) []string {
-	result := []string{}
-	for _, str := range strs {
-		str = strconv.Quote(str)
-		if runtime.GOOS == "windows" && os.Getenv("SHELL") == "" {
-			str = strings.Replace(str, "\\\\", "\\", -1)
-		}
-		result = append(result, str)
-	}
-	return result
 }
 
 // BashifyPath takes a windows style path and turns it into a bash style path
