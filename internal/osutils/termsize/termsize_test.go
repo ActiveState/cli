@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/osutils/termsize"
-
 	"github.com/stretchr/testify/suite"
 )
 
