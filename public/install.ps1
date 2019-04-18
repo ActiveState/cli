@@ -137,7 +137,7 @@ if( -Not (isOnPath) ){
     # This only sets it in the current session
     $Env:Path = $newPath
 } else {
-    Write-Host "Install dir is already in terminal PATH"
+    Write-Host "Install dir is already on your PATH"
 }
 
 # Helpers
