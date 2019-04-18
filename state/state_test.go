@@ -18,6 +18,7 @@ import (
 )
 
 func TestInit(t *testing.T) {
+	setupCwd(t, false)
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
@@ -32,6 +33,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestMainFn(t *testing.T) {
+	setupCwd(t, false)
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
@@ -43,6 +45,7 @@ func TestMainFn(t *testing.T) {
 }
 
 func TestMainFnVerbose(t *testing.T) {
+	setupCwd(t, false)
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
@@ -63,6 +66,7 @@ func TestMainFnVerbose(t *testing.T) {
 }
 
 func TestMainError(t *testing.T) {
+	setupCwd(t, false)
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
@@ -75,6 +79,7 @@ func TestMainError(t *testing.T) {
 }
 
 func TestExecute(t *testing.T) {
+	setupCwd(t, false)
 	assert := assert.New(t)
 
 	Cc := Command.GetCobraCmd()
@@ -86,6 +91,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestUnstableWarning(t *testing.T) {
+	setupCwd(t, false)
 	defer func() { branchName = constants.BranchName }()
 	branchName = "anything-but-stable"
 	out, err := osutil.CaptureStderr(main)
@@ -95,6 +101,7 @@ func TestUnstableWarning(t *testing.T) {
 }
 
 func TestDeprecated(t *testing.T) {
+	setupCwd(t, false)
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockDeprecated()
@@ -105,6 +112,7 @@ func TestDeprecated(t *testing.T) {
 }
 
 func TestExpired(t *testing.T) {
+	setupCwd(t, false)
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockExpired()

@@ -36,9 +36,14 @@ func TestCreateUpdate(t *testing.T) {
 
 	require.Equal(t, -1, exitCode, "exit was not called")
 
+	_, ext, extFallback, _ := archiveMeta()
+
 	assert.FileExists(t, filepath.Join(dir, constants.BranchName, defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".gz"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+ext), "Should create update bits")
+	if extFallback != ext {
+		assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+extFallback), "Should create update bits")
+	}
 
 	// Test with branch override
 	os.Chdir(environment.GetRootPathUnsafe())
@@ -50,5 +55,8 @@ func TestCreateUpdate(t *testing.T) {
 
 	assert.FileExists(t, filepath.Join(dir, branchName, defaultPlatform+".json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+".gz"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+ext), "Should create update bits")
+	if extFallback != ext {
+		assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+extFallback), "Should create update bits")
+	}
 }
