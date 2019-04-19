@@ -100,7 +100,7 @@ try{
     Write-Error $_.Exception.Message
     exit 1
 }
-$latestChecksum = $versionedJson.Sha256
+$latestChecksum = $versionedJson.Sha256v2
 
 # Download pkg file
 $tmpParentPath = Join-Path $env:TEMP "ActiveState"
