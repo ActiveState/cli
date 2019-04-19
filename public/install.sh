@@ -116,7 +116,7 @@ fi
 
 # Construct system-dependent filenames.
 statejson=$os-$arch.json
-statepkg=$os-$arch.tar.gz
+statepkg=$os-$arch.gz
 stateexe=$os-$arch
 
 info "${PREFIX}Preparing for installation...${SUFFIX}"
@@ -150,7 +150,7 @@ fi
 if [ -f $TMPDIR/$statepkg ]; then
   # Verify checksum.
   info "Verifying checksum..."
-  shasum=`$fetch - $STATEURL$statejson | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  shasum=`$fetch - $STATEURL$statejson | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
   if [ "`$sha256sum -b $TMPDIR/$statepkg | cut -d ' ' -f1`" != "$shasum" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $shasum"
@@ -160,9 +160,7 @@ if [ -f $TMPDIR/$statepkg ]; then
   fi
 
   info "Extracting $statepkg..."
-  pushd $TMPDIR
-  tar -xzf $TMPDIR/$statepkg || exit 1
-  popd
+  gunzip $TMPDIR/$statepkg || exit 1
   chmod +x $TMPDIR/$stateexe
 fi
 
