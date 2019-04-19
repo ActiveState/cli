@@ -35,8 +35,8 @@ var up = update.New()
 
 // Info holds the version and sha info
 type Info struct {
-	Version string
-	Sha256  string
+	Version  string
+	Sha256v2 string
 }
 
 // Updater holds all the information about our update
@@ -228,7 +228,7 @@ func (u *Updater) fetchInfo() error {
 		logging.Error(err.Error())
 		return err
 	}
-	if len(u.info.Sha256) != sha256.Size*2 {
+	if len(u.info.Sha256v2) != sha256.Size*2 {
 		return failures.FailVerify.New("Bad cmd hash in JSON info")
 	}
 	return nil
@@ -245,7 +245,7 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 		return nil, err
 	}
 
-	verified := verifySha(archive, u.info.Sha256)
+	verified := verifySha(archive, u.info.Sha256v2)
 	if !verified {
 		return nil, failures.FailVerify.New(locale.T("update_hash_mismatch"))
 	}
