@@ -6,11 +6,6 @@ trigger:
 
 pr:
   autoCancel: true
-  branches: 
-    include:
-      - revert-module
-    exclude:
-      - master
 
 jobs:
 
