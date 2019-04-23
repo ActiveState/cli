@@ -14,10 +14,10 @@ steps:
       mkdir -p $GOPATH
       mkdir -p $GOBIN
 
-      echo mv $(system.defaultWorkingDirectory)/* $MODPATH
+      echo mv '$(system.defaultWorkingDirectory)/*' $MODPATH
       echo $MODPATH
       ls -ahl $(system.defaultWorkingDirectory)
-      mv $(system.defaultWorkingDirectory)/* $MODPATH
+      mv '$(system.defaultWorkingDirectory)/*' $MODPATH
     displayName: Prepare Environment
   - script: |
       ./public/install.sh -b master -n -t $BINPATH
