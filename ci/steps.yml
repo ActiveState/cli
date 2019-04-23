@@ -18,6 +18,10 @@ steps:
       mv "$(system.defaultWorkingDirectory)/"* $MODPATH
     displayName: Prepare Environment
   - script: |
+      pwd
+      echo $(MODPATH)
+      echo $MODPATH
+      ls -ahl
       ./public/install.sh -b master -n -t $BINPATH
     workingDirectory: $(MODPATH)
     displayName: Install State Tool
