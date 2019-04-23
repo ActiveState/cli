@@ -3,18 +3,26 @@ steps:
     displayName: Environment Info
   - script: |
       set -e
-      cd .. # Avoid go mod complications
+      
       go get -v github.com/gobuffalo/packr/packr
       go get -v github.com/jstemmer/go-junit-report
+
+      echo '##vso[task.prependpath]$GOBIN'
+      echo '##vso[task.prependpath]$BINPATH'
+
+      mkdir -p $BINPATH
+      mkdir -p $GOPATH
+      mkdir -p $GOBIN
+
+      mv $(system.defaultWorkingDirectory)/* $MODPATH
     displayName: Prepare Environment
   - script: |
-      mkdir $(System.DefaultWorkingDirectory)/bin
-      ./public/install.sh -b master -n -t $(System.DefaultWorkingDirectory)/bin
-      echo '##vso[task.prependpath]$(System.DefaultWorkingDirectory)/bin'
+      ./public/install.sh -b master -n -t $BINPATH
     displayName: Install State Tool
   - script: cc-test-reporter before-build
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
+    workingDirectory: $(MODPATH)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Prepare Code Climate
   - script: |
@@ -30,10 +38,12 @@ steps:
       state auth --token $PLATFORM_API_TOKEN
     env:
       PLATFORM_API_TOKEN: $(PLATFORM_API_TOKEN)
+    workingDirectory: $(MODPATH)
     displayName: Unit Tests
   - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
+    workingDirectory: $(MODPATH)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - script: |
@@ -47,6 +57,7 @@ steps:
 
       echo "Building for internal use"
       APIENV=prod state run build
+    workingDirectory: $(MODPATH)
     displayName: 'Build'
   - script: |
       set -e
@@ -54,15 +65,17 @@ steps:
       pip3 install -r requirements.txt
       cd ../../
       build/state run integration-tests
+    workingDirectory: $(MODPATH)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
   - task: PublishTestResults@2
     inputs:
+      searchFolder: $(MODPATH)
       testResultsFormat: JUnit
       testResultsFiles: '*-tests.xml'
       failTaskOnFailedTests: true
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: public
+      pathtoPublish: $(MODPATH)/public
       parallel: true
       parallelCount: 8

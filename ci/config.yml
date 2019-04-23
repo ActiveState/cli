@@ -18,21 +18,17 @@ jobs:
         value: /home/vsts/go/bin
       - name: GOROOT
         value: /usr/local/go1.12.1
+      - name: BINPATH
+        value: /home/vsts/bin
+      - name: MODPATH
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
     steps:
       - script: |
-          echo '##vso[task.prependpath]/home/vsts/go/bin'
-          echo '##vso[task.prependpath]/home/vsts/bin'
-
-          mkdir -p /home/vsts/go/bin
-          mkdir -p /home/vsts/bin
-
           sudo apt-get install -y python3-setuptools
-
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /home/vsts/bin/cc-test-reporter
-          chmod +x /home/vsts/bin/cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > $BINPATH/cc-test-reporter
+          chmod +x $BINPATH/cc-test-reporter
         displayName: Prepare Agent
       - template: steps.yml
-
   - job: macos
     pool:
       vmImage: macos-10.13
@@ -44,8 +40,11 @@ jobs:
         value: azure
       - name: GOPATH
         value: /Users/vsts/go
+      - name: GOBIN
+        value: /Users/vsts/go/bin
+      - name: BINPATH
+        value: /Users/vsts/bin
+      - name: MODPATH
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
     steps:
-      - script: |
-          echo '##vso[task.prependpath]/Users/vsts/go/bin'
-        displayName: Prepare Agent
       - template: steps.yml
