@@ -1,5 +1,13 @@
 trigger:
- - master
+  batch: true
+  branches:
+    - master
+
+pr:
+  autoCancel: true
+  branches: 
+    exclude:
+      - master
 
 jobs:
 
@@ -25,6 +33,7 @@ jobs:
     steps:
       - script: |
           sudo apt-get install -y python3-setuptools
+          mkdir -p $BINPATH
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > $BINPATH/cc-test-reporter
           chmod +x $BINPATH/cc-test-reporter
         displayName: Prepare Agent
