@@ -13,10 +13,8 @@ steps:
       mkdir -p $BINPATH
       mkdir -p $GOPATH
       mkdir -p $GOBIN
+      mkdir -p $MODPATH
 
-      echo mv '$(system.defaultWorkingDirectory)/*' $MODPATH
-      echo $MODPATH
-      ls -ahl $(system.defaultWorkingDirectory)
       mv '$(system.defaultWorkingDirectory)/*' $MODPATH
     displayName: Prepare Environment
   - script: |
