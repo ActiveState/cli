@@ -19,6 +19,7 @@ steps:
     displayName: Prepare Environment
   - script: |
       ./public/install.sh -b master -n -t $BINPATH
+    workingDirectory: $(MODPATH)
     displayName: Install State Tool
   - script: cc-test-reporter before-build
     env: 
