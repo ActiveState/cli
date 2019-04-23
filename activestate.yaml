@@ -107,3 +107,4 @@ events: &events
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
       fi
 hooks: *events # temporary alias for backwards compatibility
+
