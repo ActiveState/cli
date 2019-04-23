@@ -12,22 +12,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
-	"github.com/gobuffalo/packd"
 )
 
 var (
-	// ErrResOutsideBox gets returned in case of the requested resources being outside the box
 	ErrResOutsideBox = errors.New("Can't find a resource outside the box")
 )
-
-var _ packd.Box = Box{}
-var _ packd.HTTPBox = Box{}
-var _ packd.Lister = Box{}
-var _ packd.Addable = Box{}
-var _ packd.Walkable = Box{}
-var _ packd.Finder = Box{}
-var _ packd.LegacyBox = Box{}
 
 // NewBox returns a Box that can be used to
 // retrieve files from either disk or the embedded
@@ -62,50 +51,35 @@ type Box struct {
 	directories map[string]bool
 }
 
-// AddString converts t to a byteslice and delegates to AddBytes to add to b.data
-func (b Box) AddString(path string, t string) error {
+func (b Box) AddString(path string, t string) {
 	b.AddBytes(path, []byte(t))
-	return nil
 }
 
-// AddBytes sets t in b.data by the given path
-func (b Box) AddBytes(path string, t []byte) error {
+func (b Box) AddBytes(path string, t []byte) {
 	b.data[path] = t
-	return nil
 }
 
-// Deprecated: Use FindString instead.
+// String of the file asked for or an empty string.
 func (b Box) String(name string) string {
-	bb, _ := b.FindString(name)
-	return bb
+	return string(b.Bytes(name))
 }
 
-// Deprecated: Use FindString instead.
-func (b Box) MustString(name string) (string, error) {
-	return b.FindString(name)
-}
-
-// Deprecated: Use Find instead.
-func (b Box) Bytes(name string) []byte {
-	bb, _ := b.Find(name)
-	return bb
-}
-
-// Deprecated: Use Find instead.
-func (b Box) MustBytes(name string) ([]byte, error) {
-	return b.Find(name)
-}
-
-// FindString returns either the string of the requested
+// MustString returns either the string of the requested
 // file or an error if it can not be found.
-func (b Box) FindString(name string) (string, error) {
-	bb, err := b.Find(name)
+func (b Box) MustString(name string) (string, error) {
+	bb, err := b.MustBytes(name)
 	return string(bb), err
 }
 
-// Find returns either the byte slice of the requested
+// Bytes of the file asked for or an empty byte slice.
+func (b Box) Bytes(name string) []byte {
+	bb, _ := b.MustBytes(name)
+	return bb
+}
+
+// MustBytes returns either the byte slice of the requested
 // file or an error if it can not be found.
-func (b Box) Find(name string) ([]byte, error) {
+func (b Box) MustBytes(name string) ([]byte, error) {
 	f, err := b.find(name)
 	if err == nil {
 		bb := &bytes.Buffer{}
@@ -138,9 +112,8 @@ func (b Box) decompress(bb []byte) []byte {
 
 func (b Box) find(name string) (File, error) {
 	if bb, ok := b.data[name]; ok {
-		return packd.NewFile(name, bytes.NewReader(bb))
+		return newVirtualFile(name, bb), nil
 	}
-
 	if b.directories == nil {
 		b.indexDirectories()
 	}
@@ -153,18 +126,19 @@ func (b Box) find(name string) (File, error) {
 	// Absolute name is considered as relative to the box root
 	cleanName = strings.TrimPrefix(cleanName, "/")
 
+	// Try to get the resource from the box
 	if _, ok := data[b.Path]; ok {
 		if bb, ok := data[b.Path][cleanName]; ok {
 			bb = b.decompress(bb)
-			return packd.NewFile(cleanName, bytes.NewReader(bb))
-		}
-		if _, ok := b.directories[cleanName]; ok {
-			return packd.NewDir(cleanName)
+			return newVirtualFile(cleanName, bb), nil
 		}
 		if filepath.Ext(cleanName) != "" {
 			// The Handler created by http.FileSystem checks for those errors and
 			// returns http.StatusNotFound instead of http.StatusInternalServerError.
 			return nil, os.ErrNotExist
+		}
+		if _, ok := b.directories[cleanName]; ok {
+			return newVirtualDir(cleanName), nil
 		}
 		return nil, os.ErrNotExist
 	}
@@ -173,6 +147,46 @@ func (b Box) find(name string) (File, error) {
 	cleanName = filepath.FromSlash(cleanName)
 	p := filepath.Join(b.callingDir, b.Path, cleanName)
 	return fileFor(p, cleanName)
+}
+
+type WalkFunc func(string, File) error
+
+func (b Box) Walk(wf WalkFunc) error {
+	if data[b.Path] == nil {
+		base, err := filepath.EvalSymlinks(filepath.Join(b.callingDir, b.Path))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		return filepath.Walk(base, func(path string, info os.FileInfo, err error) error {
+			cleanName, err := filepath.Rel(base, path)
+			if err != nil {
+				cleanName = strings.TrimPrefix(path, base)
+			}
+			cleanName = filepath.ToSlash(filepath.Clean(cleanName))
+			cleanName = strings.TrimPrefix(cleanName, "/")
+			cleanName = filepath.FromSlash(cleanName)
+			if info == nil || info.IsDir() {
+				return nil
+			}
+
+			file, err := fileFor(path, cleanName)
+			if err != nil {
+				return err
+			}
+			return wf(cleanName, file)
+		})
+	}
+	for n := range data[b.Path] {
+		f, err := b.find(n)
+		if err != nil {
+			return err
+		}
+		err = wf(n, f)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Open returns a File using the http.File interface
@@ -218,10 +232,10 @@ func fileFor(p string, name string) (File, error) {
 		return nil, err
 	}
 	if fi.IsDir() {
-		return packd.NewDir(p)
+		return newVirtualDir(p), nil
 	}
 	if bb, err := ioutil.ReadFile(p); err == nil {
-		return packd.NewFile(name, bytes.NewReader(bb))
+		return newVirtualFile(name, bb), nil
 	}
 	return nil, os.ErrNotExist
 }
