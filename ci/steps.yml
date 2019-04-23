@@ -3,9 +3,6 @@ steps:
     displayName: Environment Info
   - script: |
       set -e
-      
-      go get -v github.com/gobuffalo/packr/packr
-      go get -v github.com/jstemmer/go-junit-report
 
       echo '##vso[task.prependpath]$GOBIN'
       echo '##vso[task.prependpath]$BINPATH'
@@ -15,7 +12,10 @@ steps:
       mkdir -p $GOBIN
       mkdir -p $MODPATH
 
-      mv '$(system.defaultWorkingDirectory)/*' $MODPATH
+      go get -v github.com/gobuffalo/packr/packr
+      go get -v github.com/jstemmer/go-junit-report
+
+      mv "$(system.defaultWorkingDirectory)/"* $MODPATH
     displayName: Prepare Environment
   - script: |
       ./public/install.sh -b master -n -t $BINPATH
