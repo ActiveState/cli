@@ -6,9 +6,6 @@ trigger:
 
 pr:
   autoCancel: true
-  branches: 
-    exclude:
-      - master
 
 jobs:
 
