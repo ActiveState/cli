@@ -199,7 +199,9 @@ func Get() (SubShell, error) {
 		return nil, err
 	}
 
+	logging.Debug("Using binary: %s", binary)
 	subs.SetBinary(binary)
+	logging.Debug("Using RC File: %s", rcFile)
 	subs.SetRcFile(rcFile)
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {
