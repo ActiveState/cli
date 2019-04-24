@@ -4,19 +4,17 @@ steps:
   - bash: |
       set -e
 
-      echo '##vso[task.prependpath]$(GOBIN)'
-      echo '##vso[task.prependpath]$(BINPATH)'
-
       mkdir -p $BINPATH
       mkdir -p $GOPATH
       mkdir -p $GOBIN
       mkdir -p $MODPATH
 
-      go get -v github.com/gobuffalo/packr/packr
-      go get -v github.com/jstemmer/go-junit-report
-
       shopt -s dotglob nullglob
       mv "$(system.defaultWorkingDirectory)/"* $MODPATH
+
+      echo '##vso[task.prependpath]$(GOBIN)'
+      echo '##vso[task.prependpath]$(BINPATH)'
+      echo '##vso[task.prependpath]$(MODPATH)/$(Agent.OS)/bin'
     displayName: Prepare Environment
   - script: |
       ./public/install.sh -b master -n -t $BINPATH
