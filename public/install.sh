@@ -78,7 +78,7 @@ Darwin)
   OS="darwin"
   SHA256SUM="shasum -a 256"
   ;;
-MSYS*)
+MINGW*|MSYS*)
   OS="windows"
   DOWNLOADEXT=".zip"
   BINARYEXT=".exe"

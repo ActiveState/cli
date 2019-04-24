@@ -17,8 +17,6 @@ steps:
       echo '##vso[task.prependpath]$(MODPATH)/$(Agent.OS)/bin'
     displayName: Prepare Environment
   - script: |
-      pwd
-      echo "./public/install.sh -b master -n -t $(BINPATH)"
       sh -c "./public/install.sh -b master -n -t $(BINPATH)"
     workingDirectory: $(WORKDIR)
     displayName: Install State Tool
