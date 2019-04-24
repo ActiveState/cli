@@ -55,6 +55,7 @@ func TestBashifyPath(t *testing.T) {
 		return result
 	}
 	assert.Equal(t, "/c/temp", bashify(`C:\temp`))
+	assert.Equal(t, "/c/temp\\ temp", bashify(`C:\temp temp`))
 	assert.Equal(t, "/foo", bashify(`/foo`))
 	_, err := BashifyPath("not a valid path")
 	require.Error(t, err)
