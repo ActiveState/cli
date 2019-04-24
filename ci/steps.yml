@@ -17,7 +17,11 @@ steps:
       echo '##vso[task.prependpath]$(MODPATH)/$(Agent.OS)/bin'
     displayName: Prepare Environment
   - script: |
+      pwd
+      echo ./public/install.sh -b master -n -t $BINPATH
       ./public/install.sh -b master -n -t $BINPATH
+    env: 
+      DEBUG: true
     workingDirectory: $(WORKDIR)
     displayName: Install State Tool
   - script: cc-test-reporter before-build
