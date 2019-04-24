@@ -18,7 +18,7 @@ steps:
     displayName: Prepare Environment
   - script: |
       pwd
-      echo ./public/install.sh -b master -n -t $BINPATH
+      echo "./public/install.sh -b master -n -t $BINPATH"
       ./public/install.sh -b master -n -t $BINPATH
     env: 
       DEBUG: true
