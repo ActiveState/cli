@@ -18,12 +18,12 @@ steps:
     displayName: Prepare Environment
   - script: |
       ./public/install.sh -b master -n -t $BINPATH
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     displayName: Install State Tool
   - script: cc-test-reporter before-build
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Prepare Code Climate
   - bash: |
@@ -39,12 +39,12 @@ steps:
       state auth --token $PLATFORM_API_TOKEN
     env:
       PLATFORM_API_TOKEN: $(PLATFORM_API_TOKEN)
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     displayName: Unit Tests
   - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - bash: |
@@ -58,7 +58,7 @@ steps:
 
       echo "Building for internal use"
       APIENV=prod state run build
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     displayName: 'Build'
   - bash: |
       set -e
@@ -66,17 +66,17 @@ steps:
       pip3 install -r requirements.txt
       cd ../../
       build/state run integration-tests
-    workingDirectory: $(MODPATH)
+    workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
   - task: PublishTestResults@2
     inputs:
-      searchFolder: $(MODPATH)
+      searchFolder: $(WORKDIR)
       testResultsFormat: JUnit
       testResultsFiles: '*-tests.xml'
       failTaskOnFailedTests: true
   - task: PublishBuildArtifacts@1
     inputs:
-      pathtoPublish: $(MODPATH)/public
+      pathtoPublish: $(WORKDIR)/public
       parallel: true
       parallelCount: 8
