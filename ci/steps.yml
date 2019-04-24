@@ -16,6 +16,11 @@ steps:
       echo '##vso[task.prependpath]$(BINPATH)'
       echo '##vso[task.prependpath]$(MODPATH)/$(Agent.OS)/bin'
     displayName: Prepare Environment
+  - bash: |
+      echo $PATH
+      echo $(MODPATH)/$(Agent.OS)/bin
+      ls -ahl $(MODPATH)/$(Agent.OS)/bin
+    displayName: Environment Info 2
   - script: |
       sh -c "./public/install.sh -b master -n -t $(BINPATH)"
     workingDirectory: $(WORKDIR)
