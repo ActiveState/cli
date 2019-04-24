@@ -176,6 +176,12 @@ func Get() (SubShell, error) {
 	name := filepath.Base(binary)
 	name = strings.TrimSuffix(name, filepath.Ext(name))
 
+	if runtime.GOOS == "windows" {
+		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
+		// invalid escape characters for spaces
+		binary = strings.ReplaceAll(binary, `\ `, ` `)
+	}
+
 	var subs SubShell
 	switch name {
 	case "bash":
@@ -201,7 +207,7 @@ func Get() (SubShell, error) {
 
 	logging.Debug("Using binary: %s", binary)
 	subs.SetBinary(binary)
-	logging.Debug("Using RC File: %s", rcFile)
+	logging.Debug("Using RC File: %s", rcFile.Name())
 	subs.SetRcFile(rcFile)
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {
