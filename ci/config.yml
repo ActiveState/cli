@@ -63,8 +63,11 @@ jobs:
         value: azure
       - name: GOPATH
         value: /c/Users/VssAdministrator/go
+      - name: GOBIN
+        value: /c/Users/VssAdministrator/go/bin
+      - name: BINPATH
+        value: /c/Users/VssAdministrator/bin
+      - name: MODPATH
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
     steps:
-      - bash: |
-          echo '##vso[task.prependpath]/c/Users/VssAdministrator/go/bin'
-        displayName: Prepare Agent
       - template: steps.yml
