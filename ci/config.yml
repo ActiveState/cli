@@ -1,8 +1,5 @@
 trigger:
-  batch: true
-
-pr:
-  autoCancel: true
+  - master
 
 jobs:
 
