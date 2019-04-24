@@ -4,13 +4,13 @@ steps:
   - bash: |
       set -e
 
-      mkdir -p $BINPATH
-      mkdir -p $GOPATH
-      mkdir -p $GOBIN
-      mkdir -p $MODPATH
+      mkdir -p $(BINPATH)
+      mkdir -p $(GOPATH)
+      mkdir -p $(GOBIN)
+      mkdir -p $(MODPATH)
 
       shopt -s dotglob nullglob
-      mv "$(system.defaultWorkingDirectory)/"* $MODPATH
+      mv "$(system.defaultWorkingDirectory)/"* $(MODPATH)
 
       echo '##vso[task.prependpath]$(GOBIN)'
       echo '##vso[task.prependpath]$(BINPATH)'
@@ -18,8 +18,8 @@ steps:
     displayName: Prepare Environment
   - script: |
       pwd
-      echo "./public/install.sh -b master -n -t $BINPATH"
-      ./public/install.sh -b master -n -t $BINPATH
+      echo "./public/install.sh -b master -n -t $(BINPATH)"
+      ./public/install.sh -b master -n -t $(BINPATH)
     env: 
       DEBUG: true
     workingDirectory: $(WORKDIR)
@@ -40,9 +40,7 @@ steps:
       go-junit-report < go-test.out > $(Agent.OS)-tests.xml
 
       # Tests appear to be breaking the authentication, so re-authenticate
-      state auth --token $PLATFORM_API_TOKEN
-    env:
-      PLATFORM_API_TOKEN: $(PLATFORM_API_TOKEN)
+      state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
     displayName: Unit Tests
   - script: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
