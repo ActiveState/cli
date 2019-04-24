@@ -135,14 +135,6 @@ func ReplaceAllInDirectory(path string, find, replace string) error {
 	return nil
 }
 
-// IsExecutable determines if the file at the given path has any execute permissions.
-// This function does not care whether the current user can has enough privilege to
-// execute the file.
-func IsExecutable(path string) bool {
-	stat, err := os.Stat(path)
-	return err == nil && (stat.Mode()&(0111) > 0)
-}
-
 // FileExists checks if the given file (not folder) exists
 func FileExists(path string) bool {
 	fi, err := os.Stat(path)
@@ -375,7 +367,7 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 // walkPathAndFindFile finds a file in the provided directory or one of its parent directories.
 // walkPathAndFindFile prefers an absolute directory path.
 func walkPathAndFindFile(dir, filename string) string {
-	if file := path.Join(dir, filename); FileExists(file) {
+	if file := filepath.Join(dir, filename); FileExists(file) {
 		return file
 	} else if parentDir := path.Dir(dir); parentDir != dir {
 		return walkPathAndFindFile(parentDir, filename)

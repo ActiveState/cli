@@ -315,7 +315,8 @@ func TestExecuteLogout(t *testing.T) {
 
 	pkstat, err := osutil.StatConfigFile(constants.KeypairLocalFileName + ".key")
 	require.Nil(t, pkstat)
-	assert.Regexp(t, "no such file or directory", err.Error())
+	// Unix | Windows
+	assert.Regexp(t, "[no such file or directory|The system cannot find the file specified]", err.Error())
 }
 
 func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {

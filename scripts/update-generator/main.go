@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,8 +15,10 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
-
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/phayes/permbits"
 	"github.com/pkg/errors"
 )
 
@@ -28,8 +29,9 @@ var appPath, version, genDir, defaultPlatform, branch string
 var outputDirFlag, platformFlag, branchFlag *string
 
 type current struct {
-	Version string
-	Sha256  string
+	Version  string
+	Sha256   string
+	Sha256v2 string
 }
 
 func generateSha256(path string) string {
@@ -42,37 +44,78 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-type gzReader struct {
-	z, r io.ReadCloser
-}
+func createUpdate(path string, platform string) {
+	t := time.Now().Format("2006-01-02_15-04-05")
+	archiveName := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
 
-func (g *gzReader) Read(p []byte) (int, error) {
-	return g.z.Read(p)
-}
+	os.MkdirAll(filepath.Join(genDir, branch, version), 0755)
+	os.MkdirAll(filepath.Join(genDir, branch, version, archiveName), 0755)
 
-func (g *gzReader) Close() error {
-	g.z.Close()
-	return g.r.Close()
-}
+	// Prepare the archiver
+	archive, ext, binExt := archiveMeta()
 
-func newGzReader(r io.ReadCloser) io.ReadCloser {
-	var err error
-	g := new(gzReader)
-	g.r = r
-	g.z, err = gzip.NewReader(r)
+	// Copy to a temp path so we can use a custom filename
+	tempDir, err := ioutil.TempDir("", "cli-update-generator")
+	if err != nil {
+		panic(errors.Wrap(err, "Could not create temp dir"))
+	}
+	tempPath := filepath.Join(tempDir, platform+binExt)
+	fail := fileutils.CopyFile(path, tempPath)
+	if fail != nil {
+		panic(errors.Wrap(fail.ToError(), "Copy failed"))
+	}
+
+	// Permissions may be lost due to the file copy, so ensure it's still executable
+	permissions, _ := permbits.Stat(tempPath)
+	permissions.SetUserExecute(true)
+	err = permbits.Chmod(tempPath, permissions)
+	if err != nil {
+		panic(errors.Wrap(fail.ToError(), "Could not make file executable"))
+	}
+
+	targetDir := filepath.Join(genDir, branch, version)
+	targetPath := filepath.Join(targetDir, platform+ext)
+	targetArchivePath := filepath.Join(targetDir, archiveName, platform+ext)
+
+	// Remove target files if they already exists
+	remove(targetPath, targetArchivePath)
+
+	// Create main archive
+	fmt.Printf("Creating %s\n", targetPath)
+	err = archive.Archive([]string{tempPath}, targetPath)
+	if err != nil {
+		panic(errors.Wrap(err, "Archiving failed"))
+	}
+
+	// Make copies to archive
+	copy(targetPath, targetArchivePath)
+
+	var fallbackSha256 string
+	if runtime.GOOS != "windows" {
+		// We used to generate tar.gz's with just the .gz extension, so we need to facilitate this pattern for a little while
+		// longer so these versions get updated to an updater that uses .tar.gz
+		targetPathFallback := filepath.Join(targetDir, platform+".gz")
+		createGzip(path, targetPathFallback)
+		fallbackSha256 = generateSha256(targetPathFallback)
+	}
+
+	c := current{Version: version, Sha256: fallbackSha256, Sha256v2: generateSha256(targetPath)}
+	b, err := json.MarshalIndent(c, "", "    ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	jsonPath := filepath.Join(genDir, branch, platform+".json")
+	fmt.Printf("Creating %s\n", jsonPath)
+	err = ioutil.WriteFile(jsonPath, b, 0755)
 	if err != nil {
 		panic(err)
 	}
-	return g
+
+	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
 }
 
-func createUpdate(path string, platform string) {
-	t := time.Now().Format("2006-01-02_15-04-05")
-	archive := t + "--" + constants.BuildNumber + "--" + constants.RevisionHash
-
-	os.MkdirAll(filepath.Join(genDir, branch, version), 0755)
-	os.MkdirAll(filepath.Join(genDir, branch, version, archive), 0755)
-
+func createGzip(path string, target string) {
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
 	f, err := ioutil.ReadFile(path)
@@ -90,40 +133,36 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrapf(err,
 			"Errored closing gzip writter"))
 	}
-	gzPath := filepath.Join(genDir, branch, version, platform+".gz")
-	err = ioutil.WriteFile(gzPath, buf.Bytes(), 0755)
+	err = ioutil.WriteFile(target, buf.Bytes(), 0755)
 	if err != nil {
 		panic(errors.Wrapf(err,
 			"Errored writing gzipped buffer to file"))
 	}
+}
 
-	// Store archived version
-	gzArchivePath := filepath.Join(genDir, branch, version, archive, platform+".gz")
-	fmt.Printf("Creating %s\n", gzArchivePath)
-	err = ioutil.WriteFile(gzArchivePath, buf.Bytes(), 0755)
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing gzipped buffer to file"))
+func archiveMeta() (archiveMethod archiver.Archiver, ext string, binExt string) {
+	if runtime.GOOS == "windows" {
+		return archiver.NewZip(), ".zip", ".exe"
 	}
+	return archiver.NewTarGz(), ".tar.gz", ""
+}
 
-	c := current{Version: version, Sha256: generateSha256(gzPath)}
-	b, err := json.MarshalIndent(c, "", "    ")
-	if err != nil {
-		fmt.Println("error:", err)
+func copy(path, target string) {
+	fmt.Printf("Copying %s to %s\n", path, target)
+	fail := fileutils.CopyFile(path, target)
+	if fail != nil {
+		panic(errors.Wrap(fail.ToError(), "Copy failed"))
 	}
+}
 
-	jsonPath := filepath.Join(genDir, branch, platform+".json")
-	fmt.Printf("Creating %s\n", jsonPath)
-	err = ioutil.WriteFile(jsonPath, b, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	jsonPath = filepath.Join(genDir, branch, version, platform+".json")
-	fmt.Printf("Creating %s\n", jsonPath)
-	err = ioutil.WriteFile(jsonPath, b, 0755)
-	if err != nil {
-		panic(err)
+func remove(paths ...string) {
+	for _, path := range paths {
+		if fileutils.FileExists(path) {
+			err := os.Remove(path)
+			if err != nil {
+				panic(errors.Wrap(err, "Could not remove path: "+path))
+			}
+		}
 	}
 }
 
@@ -148,6 +187,7 @@ func init() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 }
+
 func run() {
 	goos := os.Getenv("GOOS")
 	goarch := os.Getenv("GOARCH")

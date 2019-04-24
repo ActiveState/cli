@@ -4,12 +4,18 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/osutils"
-
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/osutils"
 )
+
+var escaper *osutils.ShellEscape
+
+func init() {
+	escaper = osutils.NewBashEscaper()
+}
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
@@ -60,6 +66,11 @@ func (v *SubShell) SetEnv(env []string) {
 	v.env = env
 }
 
+// Quote - see subshell.Quote
+func (v *SubShell) Quote(value string) string {
+	return escaper.Quote(value)
+}
+
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	v.wg = wg
@@ -107,12 +118,21 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 		return 1, err
 	}
 
-	tmpfile.WriteString("#!/usr/bin/env bash\n")
-	tmpfile.WriteString(script)
+	tmpfile.WriteString("#!/usr/bin/env bash\n" + script)
 	tmpfile.Close()
 	os.Chmod(tmpfile.Name(), 0755)
 
-	runCmd := exec.Command(tmpfile.Name(), args...)
+	filePath, fail := osutils.BashifyPath(tmpfile.Name())
+	if fail != nil {
+		return 1, fail.ToError()
+	}
+
+	quotedArgs := []string{filePath}
+	for _, arg := range args {
+		quotedArgs = append(quotedArgs, v.Quote(arg))
+	}
+
+	runCmd := exec.Command(v.Binary(), "-c", strings.Join(quotedArgs, " "))
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = v.env
 

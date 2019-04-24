@@ -3,7 +3,6 @@
 package logging
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,6 +49,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 }
 
 func init() {
-	handler := &fileHandler{DefaultFormatter, nil, flag.Lookup("test.v") != nil}
+	handler := &fileHandler{DefaultFormatter, nil, os.Getenv("VERBOSE") != ""}
 	SetHandler(handler)
 }

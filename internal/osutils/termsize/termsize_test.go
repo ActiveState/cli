@@ -3,6 +3,7 @@ package termsize_test
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/osutils/termsize"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -11,7 +12,7 @@ type TermsizeTestSuite struct {
 }
 
 func (suite *TermsizeTestSuite) TestTermsize() {
-	// Cannot test this because it is heavily reliant on the invoker of the test.
+	suite.NotPanics(func() { termsize.GetTerminalColumns() }, "No panic should occur")
 }
 
 func TestTermsizeTestSuite(t *testing.T) {

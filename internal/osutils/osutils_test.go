@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,11 +18,18 @@ import (
 
 func TestCmdExitCode(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "TestCmdExitCode")
-	assert.NoError(t, err)
-
-	tmpfile.WriteString("#!/usr/bin/env bash\n")
-	tmpfile.WriteString("exit 255")
-	tmpfile.Close()
+	if runtime.GOOS != "windows" {
+		assert.NoError(t, err)
+		tmpfile.WriteString("#!/usr/bin/env bash\n")
+		tmpfile.WriteString("exit 255")
+		tmpfile.Close()
+	} else {
+		tmpfile.WriteString("echo off\n")
+		tmpfile.WriteString("exit 255")
+		tmpfile.Close()
+		err = os.Rename(tmpfile.Name(), tmpfile.Name()+".bat")
+		assert.NoError(t, err)
+	}
 	os.Chmod(tmpfile.Name(), 0755)
 
 	cmd := exec.Command(tmpfile.Name())
@@ -38,4 +46,18 @@ func TestExecuteAndPipeStd(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")
+}
+
+func TestBashifyPath(t *testing.T) {
+	bashify := func(value string) string {
+		result, fail := BashifyPath(value)
+		require.NoError(t, fail.ToError())
+		return result
+	}
+	assert.Equal(t, "/c/temp", bashify(`C:\temp`))
+	assert.Equal(t, "/foo", bashify(`/foo`))
+	_, err := BashifyPath("not a valid path")
+	require.Error(t, err)
+	_, err = BashifyPath("../relative/path")
+	require.Error(t, err, "Relative paths should not work")
 }

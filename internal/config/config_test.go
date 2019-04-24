@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,6 +40,7 @@ func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
 
 	viper.Reset()
 	suite.config = config.New(dir)
+	suite.config.Exit = exiter.Exit
 }
 
 func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
@@ -91,6 +91,8 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 	runCmd.Env = []string{
 		"PATH=" + os.Getenv("PATH"),
 		"GOPATH=" + os.Getenv("GOPATH"),
+		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
+		"SystemRoot=" + os.Getenv("SystemRoot"),   // Ref: https://bugs.python.org/msg248951
 		"GOFLAGS=" + os.Getenv("GOFLAGS"),
 		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",

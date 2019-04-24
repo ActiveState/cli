@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
@@ -15,8 +15,13 @@ var exit = os.Exit
 func init() {
 	localPath := os.Getenv(C.ConfigEnvVarName)
 	if flag.Lookup("test.v") != nil {
-		localPath, _ = filepath.Abs("./testdata/generated/config")
-		err := os.RemoveAll(localPath)
+		var err error
+		localPath, err = ioutil.TempDir("", "cli-config")
+		if err != nil {
+			print.Error("Could not create temp dir: %v", err)
+			os.Exit(1)
+		}
+		err = os.RemoveAll(localPath)
 		if err != nil {
 			print.Error("Could not remove generated config dir for tests: %v", err)
 			os.Exit(1)
