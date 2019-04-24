@@ -163,7 +163,7 @@ fi
 if [ -f $TMPDIR/$STATEPKG ]; then
   # Verify checksum.
   info "Verifying checksum..."
-  SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256":' | awk '{print $2}' | tr -d '",'`
+  SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
   if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
     error "SHA256 sum did not match:"
     error "Expected: $SUM"

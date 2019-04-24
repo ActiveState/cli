@@ -171,6 +171,8 @@ func Get() (SubShell, error) {
 		binary = os.Getenv("ComSpec")
 	}
 
+	logging.Debug("Detected SHELL: %s", binary)
+
 	name := filepath.Base(binary)
 
 	var subs SubShell
