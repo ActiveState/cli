@@ -19,6 +19,8 @@ steps:
   - script: |
       pwd
       echo "./public/install.sh -b master -n -t $(BINPATH)"
+      ls -ahl
+      ls -ahl ./public
       ./public/install.sh -b master -n -t $(BINPATH)
     env: 
       DEBUG: true
