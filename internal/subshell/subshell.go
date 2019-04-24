@@ -174,6 +174,7 @@ func Get() (SubShell, error) {
 	logging.Debug("Detected SHELL: %s", binary)
 
 	name := filepath.Base(binary)
+	name = strings.TrimSuffix(name, filepath.Ext(name))
 
 	var subs SubShell
 	switch name {
@@ -185,7 +186,7 @@ func Get() (SubShell, error) {
 		subs = &tcsh.SubShell{}
 	case "fish":
 		subs = &fish.SubShell{}
-	case "cmd.exe":
+	case "cmd":
 		subs = &cmd.SubShell{}
 	default:
 		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
