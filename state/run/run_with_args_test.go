@@ -19,7 +19,11 @@ import (
 )
 
 func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *projectfile.Project {
-	os.Setenv("SHELL", "bash")
+	if runtime.GOOS == "windows" {
+		os.Unsetenv("SHELL")
+	} else {
+		os.Setenv("SHELL", "bash")
+	}
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	require.NoError(t, err)

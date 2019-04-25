@@ -59,7 +59,11 @@ func TestRunCommand(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
 
-	os.Setenv("SHELL", "bash")
+	if runtime.GOOS == "windows" {
+		os.Unsetenv("SHELL")
+	} else {
+		os.Setenv("SHELL", "bash")
+	}
 
 	subs, err := Get()
 	assert.NoError(t, err)

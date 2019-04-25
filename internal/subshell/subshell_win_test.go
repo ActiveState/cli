@@ -34,6 +34,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	pfile.Persist()
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
+	os.Unsetenv("SHELL")
 
 	subs, err := Get()
 	assert.NoError(t, err)
@@ -59,7 +60,7 @@ func TestRunCommandError(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
 
-	os.Setenv("SHELL", "bash")
+	os.Unsetenv("SHELL")
 
 	subs, err := Get()
 	assert.NoError(t, err)
