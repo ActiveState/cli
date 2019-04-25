@@ -177,9 +177,7 @@ if [ -f $TMPDIR/$STATEPKG ]; then
     TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
     powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
   else
-    pushd $TMPDIR
-    tar -xzf $TMPDIR/$STATEPKG || exit 1
-    popd
+    tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
   fi
   chmod +x $TMPDIR/$TMPEXE
 fi
