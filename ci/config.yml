@@ -4,7 +4,6 @@ trigger:
 jobs:
 
   - job: linux
-    condition: false
     pool:
       vmImage: ubuntu-16.04
     variables:
@@ -34,7 +33,6 @@ jobs:
         displayName: Prepare Agent
       - template: steps.yml
   - job: macos
-    condition: false
     pool:
       vmImage: macos-10.13
     variables:
