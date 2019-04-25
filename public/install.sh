@@ -28,7 +28,7 @@ TARGET=""
 
 OS="linux"
 SHA256SUM="sha256sum"
-DOWNLOADEXT=".gz"
+DOWNLOADEXT=".tar.gz"
 BINARYEXT=""
 ARCH="amd64"
 
@@ -177,7 +177,9 @@ if [ -f $TMPDIR/$STATEPKG ]; then
     TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
     powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
   else
-    gunzip $TMPDIR/$STATEPKG || exit 1
+    pushd $TMPDIR
+    tar -xzf $TMPDIR/$STATEPKG || exit 1
+    popd
   fi
   chmod +x $TMPDIR/$TMPEXE
 fi
