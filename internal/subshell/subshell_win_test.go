@@ -29,7 +29,7 @@ func TestBashDontEscapeSpace(t *testing.T) {
 
 	// Reproduce bug in which paths are being incorrectly escaped on windows
 	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
-	subs, err = Get()
+	subs, err := Get()
 	require.NoError(t, err)
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 }
