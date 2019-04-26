@@ -25,7 +25,7 @@ jobs:
       - name: WORKDIR
         value: $(GOPATH)/src/github.com/$(build.repository.name)
     steps:
-      - script: |
+      - bash: |
           sudo apt-get install -y python3-setuptools
           mkdir -p $BINPATH
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > $BINPATH/cc-test-reporter
