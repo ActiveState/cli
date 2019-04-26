@@ -75,7 +75,7 @@ class IntegrationTest(unittest.TestCase):
         self.cwd = cwd
         os.chdir(cwd)
 
-    def expect(self, pattern, timeout=2):
+    def expect(self, pattern, timeout=10):
         try:
             idx = self.child.expect(pattern, timeout=timeout)
         except pexpect.EOF:
@@ -85,7 +85,7 @@ class IntegrationTest(unittest.TestCase):
             self.send_quit()
             raise self.expect_failure("Reached timeout", pattern)
 
-    def expect_exact(self, pattern, timeout=2):
+    def expect_exact(self, pattern, timeout=10):
         try:
             idx = self.child.expect_exact(pattern, timeout=timeout)
         except pexpect.EOF:
