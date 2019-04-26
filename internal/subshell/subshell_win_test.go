@@ -22,6 +22,11 @@ func TestBash(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 
+}
+
+func TestBashDontEscapeSpace(t *testing.T) {
+	setup(t)
+
 	// Reproduce bug in which paths are being incorrectly escaped on windows
 	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
 	subs, err = Get()
