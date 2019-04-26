@@ -14,11 +14,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestBash(t *testing.T) {
+	setup(t)
+
+	os.Setenv("SHELL", `C:\Program Files\bash.exe`)
+	subs, err := Get()
+	require.NoError(t, err)
+	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
+
+}
+
+func TestBashDontEscapeSpace(t *testing.T) {
+	setup(t)
+
+	// Reproduce bug in which paths are being incorrectly escaped on windows
+	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
+	subs, err := Get()
+	require.NoError(t, err)
+	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
+}
+
 func TestRunCommandNoProjectEnv(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
+	os.Unsetenv("SHELL")
 
 	subs, err := Get()
 	assert.NoError(t, err)
@@ -44,7 +65,7 @@ func TestRunCommandError(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
 
-	os.Setenv("SHELL", "bash")
+	os.Unsetenv("SHELL")
 
 	subs, err := Get()
 	assert.NoError(t, err)

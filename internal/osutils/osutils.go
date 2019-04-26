@@ -57,5 +57,7 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 	}
 
 	absolutePath = strings.ToLower(absolutePath[0:1]) + absolutePath[2:]
-	return "/" + strings.Replace(absolutePath, `\`, `/`, -1), nil
+	absolutePath = strings.Replace(absolutePath, `\`, `/`, -1)  // backslash to forward slash
+	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
+	return "/" + absolutePath, nil
 }
