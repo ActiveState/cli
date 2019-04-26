@@ -67,14 +67,14 @@ steps:
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: $(WORKDIR)/public
+      parallel: true
+      parallelCount: 8
   - task: PublishTestResults@2
     inputs:
       searchFolder: $(WORKDIR)
       testResultsFormat: JUnit
       testResultsFiles: '*-tests.xml'
       failTaskOnFailedTests: true
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathtoPublish: $(WORKDIR)/public
-      parallel: true
-      parallelCount: 8
