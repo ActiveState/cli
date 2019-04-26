@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 # Copyright 2018 ActiveState Software Inc. All rights reserved.
 #
 # Usage: ./install.sh [-b branch]
