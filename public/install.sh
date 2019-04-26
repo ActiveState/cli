@@ -174,6 +174,7 @@ if [ -f $TMPDIR/$STATEPKG ]; then
 
   info "Extracting $STATEPKG..."
   if [ $OS = "windows" ]; then
+    # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
     TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
     powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
   else
