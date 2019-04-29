@@ -171,7 +171,16 @@ func Get() (SubShell, error) {
 		binary = os.Getenv("ComSpec")
 	}
 
+	logging.Debug("Detected SHELL: %s", binary)
+
 	name := filepath.Base(binary)
+	name = strings.TrimSuffix(name, filepath.Ext(name))
+
+	if runtime.GOOS == "windows" {
+		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
+		// invalid escape characters for spaces
+		binary = strings.ReplaceAll(binary, `\ `, ` `)
+	}
 
 	var subs SubShell
 	switch name {
@@ -183,7 +192,7 @@ func Get() (SubShell, error) {
 		subs = &tcsh.SubShell{}
 	case "fish":
 		subs = &fish.SubShell{}
-	case "cmd.exe":
+	case "cmd":
 		subs = &cmd.SubShell{}
 	default:
 		return nil, failures.FailUser.New(T("error_unsupported_shell", map[string]interface{}{
@@ -196,7 +205,9 @@ func Get() (SubShell, error) {
 		return nil, err
 	}
 
+	logging.Debug("Using binary: %s", binary)
 	subs.SetBinary(binary)
+	logging.Debug("Using RC File: %s", rcFile.Name())
 	subs.SetRcFile(rcFile)
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {

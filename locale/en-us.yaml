@@ -707,8 +707,7 @@ err_os_not_a_directory:
 scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 unstable_version_warning:
-  other: | 
-    You are running an unstable version of the state tool. Expect breaking changes.
+  other: The State Tool is currently in a preview period, we are actively changing and adding features based on developer feedback.
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:

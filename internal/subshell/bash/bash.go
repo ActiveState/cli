@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -131,6 +132,8 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 	for _, arg := range args {
 		quotedArgs = append(quotedArgs, v.Quote(arg))
 	}
+
+	logging.Debug("Running command: %s -c %s", v.Binary(), strings.Join(quotedArgs, " "))
 
 	runCmd := exec.Command(v.Binary(), "-c", strings.Join(quotedArgs, " "))
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr

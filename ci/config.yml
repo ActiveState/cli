@@ -22,8 +22,10 @@ jobs:
         value: /home/vsts/bin
       - name: MODPATH
         value: $(GOPATH)/src/github.com/$(build.repository.name)
+      - name: WORKDIR
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
     steps:
-      - script: |
+      - bash: |
           sudo apt-get install -y python3-setuptools
           mkdir -p $BINPATH
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > $BINPATH/cc-test-reporter
@@ -47,5 +49,29 @@ jobs:
         value: /Users/vsts/bin
       - name: MODPATH
         value: $(GOPATH)/src/github.com/$(build.repository.name)
+      - name: WORKDIR
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
+    steps:
+      - template: steps.yml
+
+  - job: windows
+    pool:
+      vmImage: vs2017-win2016
+    variables:
+      - group: Secrets
+      - name: SHELL
+        value: /c/Program\ Files/Git/bin/bash.exe
+      - name: CI
+        value: azure
+      - name: GOPATH
+        value: /c/Users/VssAdministrator/go
+      - name: GOBIN
+        value: /c/Users/VssAdministrator/go/bin
+      - name: BINPATH
+        value: /c/Users/VssAdministrator/bin
+      - name: MODPATH
+        value: $(GOPATH)/src/github.com/$(build.repository.name)
+      - name: WORKDIR
+        value: C:\Users\VssAdministrator\go\src\github.com\$(build.repository.name)
     steps:
       - template: steps.yml
