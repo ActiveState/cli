@@ -8,3 +8,5 @@ internal/constants/generated.go
 .DS_Store
 __PYCACHE__
 *.log
+.vscode
+*-packr.go
