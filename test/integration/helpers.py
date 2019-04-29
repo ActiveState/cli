@@ -1,13 +1,15 @@
 import os
+import shutil
 import signal
 import tempfile
 import time
 import unittest
+import uuid
 import warnings
 import pexpect
+import requests
 from pexpect.popen_spawn import PopenSpawn
 import psutil
-import shutil
 
 is_windows = os.name == 'nt'
 
@@ -26,12 +28,13 @@ class IntegrationTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
-        self.clear_config()
         self.child = None
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
         warnings.filterwarnings("ignore", category=ResourceWarning)
+        self.clear_config()
+        self.clear_cache()
 
     def tearDown(self):
         time.sleep(0.1) # Required to ensure the child process has had time to quit
@@ -72,7 +75,7 @@ class IntegrationTest(unittest.TestCase):
         self.cwd = cwd
         os.chdir(cwd)
 
-    def expect(self, pattern, timeout=2):
+    def expect(self, pattern, timeout=10):
         try:
             idx = self.child.expect(pattern, timeout=timeout)
         except pexpect.EOF:
@@ -82,7 +85,7 @@ class IntegrationTest(unittest.TestCase):
             self.send_quit()
             raise self.expect_failure("Reached timeout", pattern)
 
-    def expect_exact(self, pattern, timeout=2):
+    def expect_exact(self, pattern, timeout=10):
         try:
             idx = self.child.expect_exact(pattern, timeout=timeout)
         except pexpect.EOF:
