@@ -1,0 +1,17 @@
+ignored = ["github.com/dave/jennifer"]
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/viper"
+  
+[[constraint]]
+  branch = "master"
+  name = "github.com/vbauerster/mpb"
+
+[[constraint]]
+  name = "github.com/ActiveState/archiver"
+  version = "3.1.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ActiveState/go-colortext"

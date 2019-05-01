@@ -59,7 +59,13 @@ func TestRunCommand(t *testing.T) {
 	pfile := &projectfile.Project{}
 	pfile.Persist()
 
-	os.Setenv("SHELL", "bash")
+	if runtime.GOOS == "windows" {
+		// Windows supports bash, but for the purpose of this test we only want to test cmd.exe, so ensure
+		// that we run with cmd.exe even if the test is ran from bash
+		os.Unsetenv("SHELL")
+	} else {
+		os.Setenv("SHELL", "bash")
+	}
 
 	subs, err := Get()
 	assert.NoError(t, err)

@@ -47,3 +47,18 @@ func TestExecuteAndPipeStd(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")
 }
+
+func TestBashifyPath(t *testing.T) {
+	bashify := func(value string) string {
+		result, fail := BashifyPath(value)
+		require.NoError(t, fail.ToError())
+		return result
+	}
+	assert.Equal(t, "/c/temp", bashify(`C:\temp`))
+	assert.Equal(t, "/c/temp\\ temp", bashify(`C:\temp temp`))
+	assert.Equal(t, "/foo", bashify(`/foo`))
+	_, err := BashifyPath("not a valid path")
+	require.Error(t, err)
+	_, err = BashifyPath("../relative/path")
+	require.Error(t, err, "Relative paths should not work")
+}

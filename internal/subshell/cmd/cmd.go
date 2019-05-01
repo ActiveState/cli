@@ -6,12 +6,16 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/osutils"
-
-	"github.com/ActiveState/cli/internal/logging"
-
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
+
+var escaper *osutils.ShellEscape
+
+func init() {
+	escaper = osutils.NewBatchEscaper()
+}
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
@@ -60,6 +64,11 @@ func (v *SubShell) RcFileTemplate() string {
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env []string) {
 	v.env = env
+}
+
+// Quote - see subshell.Quote
+func (v *SubShell) Quote(value string) string {
+	return escaper.Quote(value)
 }
 
 // Activate - see subshell.SubShell

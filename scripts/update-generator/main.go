@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -16,6 +18,7 @@ import (
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/phayes/permbits"
 	"github.com/pkg/errors"
 )
 
@@ -26,8 +29,9 @@ var appPath, version, genDir, defaultPlatform, branch string
 var outputDirFlag, platformFlag, branchFlag *string
 
 type current struct {
-	Version string
-	Sha256  string
+	Version  string
+	Sha256   string
+	Sha256v2 string
 }
 
 func generateSha256(path string) string {
@@ -48,7 +52,7 @@ func createUpdate(path string, platform string) {
 	os.MkdirAll(filepath.Join(genDir, branch, version, archiveName), 0755)
 
 	// Prepare the archiver
-	archive, ext, extFallback, binExt := archiveMeta()
+	archive, ext, binExt := archiveMeta()
 
 	// Copy to a temp path so we can use a custom filename
 	tempDir, err := ioutil.TempDir("", "cli-update-generator")
@@ -61,17 +65,20 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrap(fail.ToError(), "Copy failed"))
 	}
 
+	// Permissions may be lost due to the file copy, so ensure it's still executable
+	permissions, _ := permbits.Stat(tempPath)
+	permissions.SetUserExecute(true)
+	err = permbits.Chmod(tempPath, permissions)
+	if err != nil {
+		panic(errors.Wrap(fail.ToError(), "Could not make file executable"))
+	}
+
 	targetDir := filepath.Join(genDir, branch, version)
 	targetPath := filepath.Join(targetDir, platform+ext)
 	targetArchivePath := filepath.Join(targetDir, archiveName, platform+ext)
 
-	// We used to generate tar.gz's with just the .gz extension, so we need to facilitate this pattern for a little while
-	// longer so these versions get updated to an updater that uses .tar.gz
-	targetPathFallback := filepath.Join(targetDir, platform+extFallback)
-	targetArchivePathFallback := filepath.Join(targetDir, archiveName, platform+extFallback)
-
 	// Remove target files if they already exists
-	remove(targetPath, targetArchivePath, targetPathFallback, targetArchivePathFallback)
+	remove(targetPath, targetArchivePath)
 
 	// Create main archive
 	fmt.Printf("Creating %s\n", targetPath)
@@ -80,14 +87,19 @@ func createUpdate(path string, platform string) {
 		panic(errors.Wrap(err, "Archiving failed"))
 	}
 
-	// Make copies to archive / fallback paths
+	// Make copies to archive
 	copy(targetPath, targetArchivePath)
-	if extFallback != ext {
-		copy(targetPath, targetPathFallback)
-		copy(targetPath, targetArchivePathFallback)
+
+	var fallbackSha256 string
+	if runtime.GOOS != "windows" {
+		// We used to generate tar.gz's with just the .gz extension, so we need to facilitate this pattern for a little while
+		// longer so these versions get updated to an updater that uses .tar.gz
+		targetPathFallback := filepath.Join(targetDir, platform+".gz")
+		createGzip(path, targetPathFallback)
+		fallbackSha256 = generateSha256(targetPathFallback)
 	}
 
-	c := current{Version: version, Sha256: generateSha256(targetPath)}
+	c := current{Version: version, Sha256: fallbackSha256, Sha256v2: generateSha256(targetPath)}
 	b, err := json.MarshalIndent(c, "", "    ")
 	if err != nil {
 		fmt.Println("error:", err)
@@ -100,22 +112,43 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
-	jsonPath = filepath.Join(genDir, branch, version, platform+".json")
-	fmt.Printf("Creating %s\n", jsonPath)
-	err = ioutil.WriteFile(jsonPath, b, 0755)
+	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
+}
+
+func createGzip(path string, target string) {
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
+
+	_, err = w.Write(f)
+	if err != nil {
+		panic(errors.Wrapf(err,
+			"Errored writing to gzip writer"))
+	}
+	err = w.Close() // You must close this first to flush the bytes to the buffer.
+	if err != nil {
+		panic(errors.Wrapf(err,
+			"Errored closing gzip writter"))
+	}
+	err = ioutil.WriteFile(target, buf.Bytes(), 0755)
+	if err != nil {
+		panic(errors.Wrapf(err,
+			"Errored writing gzipped buffer to file"))
+	}
 }
 
-func archiveMeta() (archiveMethod archiver.Archiver, ext string, fallbackExt string, binExt string) {
+func archiveMeta() (archiveMethod archiver.Archiver, ext string, binExt string) {
 	if runtime.GOOS == "windows" {
-		return archiver.NewZip(), ".zip", "", ".exe"
+		return archiver.NewZip(), ".zip", ".exe"
 	}
-	return archiver.NewTarGz(), ".tar.gz", ".gz", ""
+	return archiver.NewTarGz(), ".tar.gz", ""
 }
 
 func copy(path, target string) {
+	fmt.Printf("Copying %s to %s\n", path, target)
 	fail := fileutils.CopyFile(path, target)
 	if fail != nil {
 		panic(errors.Wrap(fail.ToError(), "Copy failed"))

@@ -1,8 +1,12 @@
 package osutils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/failures"
 
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -37,4 +41,23 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 		logging.Error("Executing command returned error: %v", err)
 	}
 	return CmdExitCode(cmd), cmd, err
+}
+
+// BashifyPath takes a windows style path and turns it into a bash style path
+// eg. C:\temp becomes /c/temp
+func BashifyPath(absolutePath string) (string, *failures.Failure) {
+	if absolutePath[0:1] == "/" {
+		// Already the format we want
+		return absolutePath, nil
+	}
+
+	if absolutePath[1:2] != ":" {
+		// Check for windows style paths
+		return "", failures.FailInput.New(fmt.Sprintf("Unrecognized absolute path format: %s", absolutePath))
+	}
+
+	absolutePath = strings.ToLower(absolutePath[0:1]) + absolutePath[2:]
+	absolutePath = strings.Replace(absolutePath, `\`, `/`, -1)  // backslash to forward slash
+	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
+	return "/" + absolutePath, nil
 }
