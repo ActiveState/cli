@@ -16,16 +16,9 @@ variables:
   - name: CLI_PKGS
     value: ./state
 scripts: &scripts
-  - name: vendor
-    value: | 
-      go mod tidy
-      go mod vendor
   - name: preprocess
     value: |
       $variables.ENV
-      if [ -z "$CI" ]; then
-        $scripts.vendor
-      fi
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
