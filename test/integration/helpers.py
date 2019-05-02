@@ -13,9 +13,11 @@ import psutil
 
 is_windows = os.name == 'nt'
 
-spawner = pexpect.spawn
+spawner = None
 if is_windows:
     spawner = PopenSpawn
+else:
+    spawner = pexpect.spawn
 
 dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 try:
