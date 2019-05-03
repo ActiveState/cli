@@ -9,10 +9,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/google/uuid"
 )
 
 var (
@@ -101,7 +103,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 
 	file, line := trace()
 	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
-	return &Failure{locale.T(message, input), f, file, line, nil}
+	return &Failure{locale.T(message, input), f, file, line, stacktrace.Get(), nil}
 }
 
 // Wrap wraps another error
@@ -118,6 +120,7 @@ type Failure struct {
 	Type    *FailureType
 	File    string
 	Line    int
+	Trace   *stacktrace.Stacktrace
 	err     error
 }
 
@@ -145,8 +148,7 @@ func (e *Failure) Log() {
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 func (e *Failure) Handle(description string) {
-	file, line := trace()
-	logging.Debug("Handling failure, File: %s, Line: %d", file, line)
+	logging.Debug("Handling failure, Trace:\n %s", e.Trace.String())
 
 	if description != "" {
 		logging.Warning(description)
