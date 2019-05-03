@@ -72,7 +72,7 @@ class TestUpdates(helpers.IntegrationTest):
                                                   platform+self.get_bin_ext()))
         self.spawn_command(cmd)
         self.expect(self.constants["BuildNumber"])
-        self.wait(code=0)
+        self.wait()
 
 
 if __name__ == '__main__':
