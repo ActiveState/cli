@@ -71,7 +71,7 @@ class IntegrationTest(unittest.TestCase):
         self.config_dir = config_dir
         self.env = os.environ.copy()
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
-        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "True"
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
