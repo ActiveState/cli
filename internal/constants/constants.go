@@ -21,7 +21,7 @@ const InternalConfigNamespace = "activestate"
 // ConfigEnvVarName is the env var used to override the config dir that the state tool uses
 const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 
-// ConfigEnvVarName is the env var used to override the config dir that the state tool uses
+// DisableUpdates is the env var used to disable auto update
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
 // InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
