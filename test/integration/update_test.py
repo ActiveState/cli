@@ -8,7 +8,7 @@ import auth_test
 import helpers
 
 testdir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-projectdir = os.path.abspath(os.path.dirname(os.getenv("ACTIVESTATE_PROJECT")))
+projectdir = os.path.realpath(os.path.join(testdir, "..", ".."))
 
 class TestUpdates(helpers.IntegrationTest):
 
