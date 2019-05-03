@@ -1,23 +1,19 @@
 package virtualenvironment
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
-	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
 )
 
 var rtMock *rtmock.Mock
@@ -28,11 +24,6 @@ func setup(t *testing.T) {
 
 	err = os.Chdir(filepath.Join(root, "internal", "virtualenvironment", "testdata"))
 	assert.NoError(t, err, "unable to chdir to testdata dir")
-
-	cacheDir, err = ioutil.TempDir("", "venv")
-	require.NoError(t, err)
-	err = os.RemoveAll(cacheDir)
-	require.NoError(t, err)
 
 	rtMock = rtmock.Init()
 	rtMock.MockFullRuntime()
@@ -84,11 +75,10 @@ func TestActivate(t *testing.T) {
 	}
 
 	setup(t)
-	project := &projectfile.Project{}
-	dat := strings.TrimSpace(`
-		name: string
-		owner: string`)
-	yaml.Unmarshal([]byte(dat), &project)
+	project := &projectfile.Project{
+		Name:  "string",
+		Owner: "string",
+	}
 	project.Persist()
 
 	venv = Init()
@@ -100,35 +90,6 @@ func TestActivate(t *testing.T) {
 	} else {
 		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
 	}
-}
-
-func TestUpdateRuntimeEnv(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	pjf := &projectfile.Project{}
-	dat := strings.TrimSpace(`
-name: string
-owner: string
-languages:
-    - name: Python3`)
-	yaml.Unmarshal([]byte(dat), &pjf)
-	pjf.Persist()
-	pj := project.Get()
-
-	venv := Init()
-	hash1, fail := venv.getLanguageHash(pj.Languages()[0])
-	require.NoError(t, fail.ToError())
-
-	mock := apiMock.Init()
-	defer mock.Close()
-	mock.MockGetProjectDiffCommit()
-
-	venv = Init()
-	hash2, fail := venv.getLanguageHash(pj.Languages()[0])
-	require.NoError(t, fail.ToError())
-
-	assert.NotEqual(t, hash1, hash2, "Should produce different hashes because the remote commit changed")
 }
 
 func TestActivateFailureUnknownLanguage(t *testing.T) {

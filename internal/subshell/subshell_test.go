@@ -9,9 +9,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
 )
 
 func setup(t *testing.T) {
@@ -56,7 +57,10 @@ func TestActivateFailures(t *testing.T) {
 }
 
 func TestRunCommand(t *testing.T) {
-	pfile := &projectfile.Project{}
+	pfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "String",
+	}
 	pfile.Persist()
 
 	if runtime.GOOS == "windows" {

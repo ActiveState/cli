@@ -7,18 +7,23 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
 )
+
+func init() {
+	mock := rtMock.Init()
+	mock.MockFullRuntime()
+}
 
 func TestRunStandaloneCommand(t *testing.T) {
 	Args.Name = "" // reset
@@ -28,6 +33,8 @@ func TestRunStandaloneCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: echo foo
@@ -35,6 +42,8 @@ scripts:
   `)
 	} else {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: cmd /C echo foo
@@ -60,6 +69,8 @@ func TestRunNoProjectInheritance(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: echo $ACTIVESTATE_PROJECT
@@ -67,6 +78,8 @@ scripts:
 `)
 	} else {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: echo %ACTIVESTATE_PROJECT%
@@ -95,6 +108,8 @@ func TestRunMissingCommandName(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: whatever
@@ -119,6 +134,8 @@ func TestRunUnknownCommandName(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: whatever
@@ -140,6 +157,8 @@ func TestRunUnknownCommand(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: whatever
@@ -179,11 +198,15 @@ func TestRunActivatedCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: cmd /C echo foo`)

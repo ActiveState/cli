@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestActivateRuntimeEnvironment(t *testing.T) {
@@ -27,6 +27,6 @@ languages:
 
 	venv := Init()
 	fail := venv.Activate()
-	assert.Error(t, fail.ToError(), "Should not activate because Python3 is not supported on Mac and Windows yet")
-	assert.Equal(t, model.FailNoEffectiveRecipe.Name, fail.Type.Name, "Should fail on unsupported language")
+	assert.NoError(t, fail.ToError(), "Should activate")
+	assert.Empty(t, venv.artifactPaths, "Should not pull in artifacts because these are only supported on linux")
 }

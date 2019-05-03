@@ -7,9 +7,10 @@ import (
 	"runtime"
 	"strings"
 
+	parent "github.com/jarcoal/httpmock"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	parent "github.com/jarcoal/httpmock"
 )
 
 // HTTPMock encapsulate the functionality for mocking requests to a specific base-url.
@@ -104,7 +105,11 @@ func getResponseFile(method string, code int, responseFile string, responsePath 
 	if code != 200 {
 		responseFile = fmt.Sprintf("%s-%d", responseFile, code)
 	}
-	responseFile = filepath.Join(responsePath, responseFile) + ".json"
+	ext := ".json"
+	if filepath.Ext(responseFile) != "" {
+		ext = ""
+	}
+	responseFile = filepath.Join(responsePath, responseFile) + ext
 
 	return responseFile
 }

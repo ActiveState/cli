@@ -110,8 +110,11 @@ const ActivePython2Executable = "python2"
 // ActivePython3Executable represents the ActivePython executable.
 const ActivePython3Executable = "python3"
 
-// ActivePythonInstallDir represents the directory within a distribution tarball where the distribution exists.
-const ActivePythonInstallDir = "INSTALLDIR"
+// RuntimeInstallDir represents the directory within a distribution archive where the distribution exists.
+const RuntimeInstallDir = "INSTALLDIR"
+
+// RuntimeMetaFile is the json file that holds meta information about our runtime
+const RuntimeMetaFile = "support/metadata.json"
 
 // HeadChefAPIPath is the api path used for the secrets api
 const HeadChefAPIPath = "/sv/head-chef/"

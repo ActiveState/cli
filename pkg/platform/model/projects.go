@@ -9,6 +9,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+var FailNoValidProject = failures.Type("model.fail.novalidproject")
+
 var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
 
 // FetchProjectByName fetches a project for an organization.
@@ -19,6 +21,9 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processProjectErrorResponse(err)
+	}
+	if resOk.Payload.Name == "" || resOk.Payload.OrganizationID.String() == "" {
+		return nil, FailNoValidProject.New("err_invalid_project")
 	}
 	return resOk.Payload, nil
 }

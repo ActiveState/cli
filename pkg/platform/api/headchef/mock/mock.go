@@ -3,10 +3,11 @@ package mock
 import (
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/go-openapi/strfmt"
 )
 
 type RequesterOptions uint8
@@ -59,16 +60,23 @@ func (r *HeadchefRequesterMock) simulateCompleteBuild() {
 	r.buildStarted()
 	artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
 	if !r.option(NoArtifacts) {
-		filename := "archive.tar.gz"
+		ext := ".tar.gz"
 		if r.option(InvalidArtifact) {
-			filename = "archive.zip"
+			ext = ".exe"
 		}
+		filename := "python" + ext
 		u := strfmt.URI("http://test.tld/" + filename)
 		if r.option(InvalidURL) {
 			u = strfmt.URI("htps;/not-a-url/" + filename)
 		}
 		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
 			URI: &u,
+		})
+
+		// Also include a legacy python, which can be used to mock an artifact with no metadata
+		u2 := strfmt.URI("http://test.tld/legacy-python" + ext)
+		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
+			URI: &u2,
 		})
 	}
 	r.buildCompleted(headchef_models.BuildCompleted{

@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/expander"
+	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/expander"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -25,6 +25,8 @@ func loadProject(t *testing.T) *projectfile.Project {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
+name: string
+owner: string
 platforms:
   - name: Linux
     os: linux
@@ -156,8 +158,10 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 func TestExpandProjectPlatform(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-  platforms:
-    - name: Any
+name: string
+owner: string
+platforms:
+  - name: Any
   `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -173,9 +177,11 @@ func TestExpandProjectPlatform(t *testing.T) {
 func TestExpandProjectEmbedded(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-  variables:
-    - name: foo
-      value: bar
+name: string
+owner: string
+variables:
+  - name: foo
+    value: bar
   `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -200,9 +206,11 @@ func TestExpandProjectUppercase(t *testing.T) {
 func TestExpandDashed(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-  variables:
-    - name: foo-bar
-      value: bar
+name: string
+owner: string
+variables:
+  - name: foo-bar
+    value: bar
   `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
