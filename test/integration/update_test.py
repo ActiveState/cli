@@ -2,80 +2,77 @@ import os
 import sys
 import re
 import subprocess
-import tempfile
 
-import auth_test
 import helpers
 
-testdir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-projectdir = os.path.realpath(os.path.join(testdir, "..", ".."))
+test_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+project_dir = os.path.realpath(os.path.join(test_dir, "..", ".."))
+
 
 class TestUpdates(helpers.IntegrationTest):
 
     def __init__(self, *args, **kwargs):
         super(TestUpdates, self).__init__(*args, **kwargs)
         self.constants = {}
-        self.parseConstantsFiles()
+        self.parse_constants_files()
 
-    def getPlatform(self):
-        plat = ""
-        arch = "amd64"
+    def get_platform(self):
         if sys.platform == "win32":
-            plat = "windows"
-        else:
-            plat = sys.platform # linux and darwin are output on those platforms
-        return plat+"-"+arch
+            return "windows" + "-" + "amd64"
+        return sys.platform + "-" + "amd64"
 
-    def parseConstantsFiles(self):
-        constPath = os.path.join(projectdir, "internal", "constants", "generated.go")
-        goConstVarRe = re.compile(
-            "const\s+(?P<name>[\w\d]+)\s+=\s\"(?P<value>.*?)\"")
-        with open(constPath, 'r') as f:
+    def parse_constants_files(self):
+        const_path = os.path.join(
+            project_dir, "internal", "constants", "generated.go")
+        go_const_var_re = re.compile(
+            "const\s+(?P<name>[\w]+)\s+=\s\"(?P<value>.*?)\"")
+        with open(const_path, 'r') as f:
             for line in f:
-                match = goConstVarRe.search(line)
+                match = go_const_var_re.search(line)
                 if match != None:
                     self.constants[match.group("name")] = match.group("value")
 
-    def getArchExt(self):
+    def get_arch_ext(self):
         if sys.platform == "win32":
             return ".zip"
-        else:
-            return ".tar.gz"
+        return ".tar.gz"
 
-    def getBinExt(self):
+    def get_bin_ext(self):
         if sys.platform == "win32":
             return ".exe"
-        else:
-            return ""
+        return ""
 
-    def TestUpdatesWorks(self):
-        unArchiveCmd = ""
-        platform = self.getPlatform()
-        archivePath = os.path.join(projectdir,
-                                   "public",
-                                   "update",
-                                   self.constants["BranchName"],
-                                   self.constants["Version"],
-                                   platform+self.getArchExt())
-        
+    def unarchive_cmd(self, platform):
+        archive_path = os.path.join(project_dir,
+                                    "public",
+                                    "update",
+                                    self.constants["BranchName"],
+                                    self.constants["Version"],
+                                    platform+self.get_arch_ext())
+
         if platform.startswith("windows"):
-            unArchiveCmd = ["powershell.exe",
-                            "-nologo",
-                            "-noprofile",
-                            "-command",
-                            "\"Expand-Archive '{0}' (Get-Location)\"".format(archivePath)]
+            return ["powershell.exe",
+                    "-nologo",
+                    "-noprofile",
+                    "-command",
+                    "\"Expand-Archive -LiteralPath '{0}' -DestinationPath '{1}'\"".format(archive_path, test_dir)]
         else:
-            unArchiveCmd = ["tar",
-                            "-C",
-                            ".",
-                            "-xf",
-                            archivePath]
-            
-        done = subprocess.run(unArchiveCmd)
+            return ["tar",
+                    "-C",
+                    test_dir,
+                    "-xf",
+                    archive_path]
+
+    def test_update_works(self):
+        platform = self.get_platform()
+        done = subprocess.run(self.unarchive_cmd(platform))
         self.assertEqual(0, done.returncode, "Nothing should go wrong")
-        cmd = "{0} --version".format(os.path.join(testdir,platform+self.getBinExt()))
+
+        cmd = "{0} --version".format(os.path.join(test_dir,
+                                                  platform+self.get_bin_ext()))
         self.spawn_command(cmd)
         self.expect(self.constants["BuildNumber"])
+        self.wait(code=0)
 
 
 if __name__ == '__main__':
