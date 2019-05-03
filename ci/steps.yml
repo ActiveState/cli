@@ -47,12 +47,6 @@ steps:
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - bash: |
-      set -e
-      
-      if [[ "$BUILD_SOURCEBRANCHNAME" == "master" ]]; then
-        echo "Building for external use"
-        APIENV=prod BRANCH_OVERRIDE=origin/unstable state run build-external
-      fi
 
       echo "Building for internal use"
       APIENV=prod state run build
