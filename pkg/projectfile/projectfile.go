@@ -6,12 +6,13 @@ import (
 	"regexp"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -217,6 +218,11 @@ func GetSafe() (*Project, *failures.Failure) {
 	if fail != nil {
 		return nil, FailParseProject.New(locale.Tr("err_parse_project", fail.Error()))
 	}
+
+	if project.Name == "" || project.Owner == "" {
+		return nil, FailValidate.New("err_invalid_project_name_owner")
+	}
+
 	project.Persist()
 	return project, nil
 }
@@ -274,6 +280,10 @@ func Reset() {
 // to Get() return this project.
 // Only one project can persist at a time.
 func (p *Project) Persist() {
+	if p.Name == "" || p.Owner == "" {
+		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project_name_owner"))
+		os.Exit(1)
+	}
 	persistentProject = p
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
