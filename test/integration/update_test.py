@@ -25,7 +25,7 @@ class TestUpdates(helpers.IntegrationTest):
         const_path = os.path.join(
             project_dir, "internal", "constants", "generated.go")
         go_const_var_re = re.compile(
-            "const\s+(?P<name>\w+)\s*+=\s*\"(?P<value>.*?)\"")
+            "const\s+(?P<name>\w+)\s*=\s*\"(?P<value>.*?)\"")
         with open(const_path, 'r') as f:
             for line in f:
                 match = go_const_var_re.search(line)
