@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/shibukawa/configdir"
+	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/shibukawa/configdir"
-	"github.com/spf13/viper"
 )
 
 // Instance holds our main config logic
@@ -132,7 +132,7 @@ func (i *Instance) ensureConfigExists() {
 }
 
 func (i *Instance) ensureCacheExists() {
-	i.cacheDir = configdir.New(i.Namespace(), i.AppName()).QueryCacheFolder()
+	i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)
 	}

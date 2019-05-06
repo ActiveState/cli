@@ -58,7 +58,7 @@ class IntegrationTest(unittest.TestCase):
         self.set_config(tempfile.mkdtemp())
 
     def clear_cache(self):
-        cache_dir = os.path.expanduser("~/.cache/activestate/cli")
+        cache_dir = os.path.expanduser("~/.cache/activestate")
         if os.path.isdir(cache_dir):
             shutil.rmtree(cache_dir)
 
