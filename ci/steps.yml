@@ -65,6 +65,8 @@ steps:
       pip3 install -r requirements.txt
       cd ../../
       build/state run integration-tests
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: "false"
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
