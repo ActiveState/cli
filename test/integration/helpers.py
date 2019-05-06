@@ -72,7 +72,7 @@ class IntegrationTest(unittest.TestCase):
         self.cwd = cwd
         os.chdir(cwd)
 
-    def expect(self, pattern, timeout=2):
+    def expect(self, pattern, timeout=10):
         try:
             idx = self.child.expect(pattern, timeout=timeout)
         except pexpect.EOF:
@@ -82,7 +82,7 @@ class IntegrationTest(unittest.TestCase):
             self.send_quit()
             raise self.expect_failure("Reached timeout", pattern)
 
-    def expect_exact(self, pattern, timeout=2):
+    def expect_exact(self, pattern, timeout=10):
         try:
             idx = self.child.expect_exact(pattern, timeout=timeout)
         except pexpect.EOF:
@@ -114,11 +114,11 @@ class IntegrationTest(unittest.TestCase):
             return False
         return status == "running"
 
-    def wait_ready(self, timeout=10):
+    def wait_ready(self, timeout=30):
         self.send("echo wait_ready_$HOME")
         self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
 
-    def wait(self, code=0, timeout=10):
+    def wait(self, code=0, timeout=30):
         try:
             with wait_for_timeout(seconds=timeout):
                 result = self.child.wait()
