@@ -46,8 +46,6 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 // ParseMetaData will parse the given bytes into the MetaData struct
 func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
 	metaData := &MetaData{}
-	contentStr := string(contents)
-	_ = contentStr
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
