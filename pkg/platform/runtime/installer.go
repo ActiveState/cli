@@ -216,8 +216,8 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 		return FailRuntimeInstallation.New("installer_err_installdir_notempty", installDir)
 	}
 
-	if failure := installer.validateArchiveTarGz(archivePath); failure != nil {
-		return failure
+	if fail := installer.validateArchiveTarGz(archivePath); fail != nil {
+		return fail
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())
@@ -234,8 +234,8 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 		return FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDir)
 	}
 
-	if failure := fileutils.MoveAllFiles(tmpInstallDir, installDir); failure != nil {
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, failure.ToError())
+	if fail := fileutils.MoveAllFiles(tmpInstallDir, installDir); fail != nil {
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
 		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
 	}
 
