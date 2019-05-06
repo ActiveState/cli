@@ -166,7 +166,11 @@ func (installer *Installer) InstallFromArchive(archivePath string) *failures.Fai
 	metaData, fail := InitMetaData(installDir)
 	if fail != nil {
 		if fail.Type.Matches(FailMetaDataNotFound) {
-			return installer.installLegacyVersion(archivePath, installDir)
+			if fail = installer.installLegacyVersion(archivePath, installDir); fail != nil {
+				removeInstallDir(installDir)
+				return fail
+			}
+			return nil
 		}
 		removeInstallDir(installDir)
 		return fail
