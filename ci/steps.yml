@@ -67,6 +67,10 @@ steps:
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
+  - bash: rm public/install.sh
+    workingDirectory: $(WORKDIR)
+    condition: eq(variables['Agent.OS'],'Windows_NT')
+    displayName: Don't publish install.sh from windows # Because windows adds line endings we don't want
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: $(WORKDIR)/public

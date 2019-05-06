@@ -16,12 +16,11 @@ class TestActivate(helpers.IntegrationTest):
     def test_activate_python2(self):
         path = os.path.join(dir_path, "testdata")
         self.set_cwd(path)
-        self.clear_cache()
 
         auth = auth_test.TestAuth()
         auth.set_config(self.config_dir)
         auth.set_cwd(path)
-        auth.auth_signup()
+        auth.login_as_persistent_user()
 
         self.spawn("activate ActiveState-CLI/Python2")
         self.expect("Where would you like to checkout")
@@ -37,12 +36,11 @@ class TestActivate(helpers.IntegrationTest):
     def test_activate_python3(self):
         path = os.path.join(dir_path, "testdata")
         self.set_cwd(path)
-        self.clear_cache()
 
         auth = auth_test.TestAuth()
         auth.set_config(self.config_dir)
         auth.set_cwd(path)
-        auth.auth_signup()
+        auth.login_as_persistent_user()
 
         self.spawn("activate ActiveState-CLI/Python3")
         self.expect("Where would you like to checkout")

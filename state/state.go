@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/thoas/go-funk"
 
@@ -76,7 +77,7 @@ func main() {
 	logging.Debug("main")
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
-	if flag.Lookup("test.v") == nil && !manualUpdate && updater.TimedCheck() {
+	if (flag.Lookup("test.v") == nil && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
