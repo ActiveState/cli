@@ -116,7 +116,7 @@ error_unsupported_language:
 error_could_not_activate_venv:
   other: Could not activate the virtual environment
 err_language_not_yet_supported:
-  other: "The Platform responded with an artifact that is not supported by this version of the State Tool. Is your State Tool up to date?"
+  other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
 err_no_projectfile:

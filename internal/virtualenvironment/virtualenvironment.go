@@ -107,7 +107,9 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			continue
 		}
 
-		env[meta.AffectedEnv] = ""
+		if meta.AffectedEnv != "" {
+			env[meta.AffectedEnv] = ""
+		}
 		for _, v := range meta.BinaryLocations {
 			path := v.Path
 			if v.Relative {

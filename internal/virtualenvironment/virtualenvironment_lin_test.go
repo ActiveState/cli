@@ -44,4 +44,9 @@ languages:
 	for _, path := range venv.artifactPaths {
 		assert.Contains(t, venv.GetEnv()["PATH"], path, "Artifact path is added to PATH")
 	}
+
+	env := venv.GetEnv()
+	for k := range env {
+		assert.NotEmpty(t, k, "Does not return any empty env keys")
+	}
 }
