@@ -29,22 +29,21 @@ type Command struct {
 
 // NewCommand creates a new Keypair command.
 func NewCommand(secretsClient *secretsapi.Client) *Command {
-	cmd := &Command{
+	c := Command{
 		secretsClient: secretsClient,
+		config: &commands.Command{
+			Name:        "variables",
+			Aliases:     []string{"vars"},
+			Description: "variables_cmd_description",
+		},
 	}
+	c.config.Run = c.Execute
 
-	cmd.config = &commands.Command{
-		Name:        "variables",
-		Aliases:     []string{"vars"},
-		Description: "variables_cmd_description",
-		Run:         cmd.Execute,
-	}
+	c.config.Append(buildGetCommand(&c))
+	c.config.Append(buildSetCommand(&c))
+	c.config.Append(buildSyncCommand(&c))
 
-	cmd.config.Append(buildGetCommand(cmd))
-	cmd.config.Append(buildSetCommand(cmd))
-	cmd.config.Append(buildSyncCommand(cmd))
-
-	return cmd
+	return &c
 }
 
 // Config returns the underlying commands.Command definition.
