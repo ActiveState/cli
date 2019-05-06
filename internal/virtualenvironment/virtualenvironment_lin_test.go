@@ -31,7 +31,7 @@ func TestActivateRuntimeEnvironment(t *testing.T) {
 
 	os.Unsetenv(constants.DisableRuntime)
 
-	project := &projectfile.Project{}
+	project := projectfile.Project{}
 	dat := strings.TrimSpace(`
 name: string
 owner: string
@@ -62,7 +62,7 @@ func TestSkipActivateRuntimeEnvironment(t *testing.T) {
 	os.Setenv(constants.DisableRuntime, "true")
 	defer os.Unsetenv(constants.DisableRuntime)
 
-	project := &projectfile.Project{}
+	project := projectfile.Project{}
 	dat := strings.TrimSpace(`
 name: string
 owner: string
