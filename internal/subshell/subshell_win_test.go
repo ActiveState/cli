@@ -8,10 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestBash(t *testing.T) {
@@ -35,7 +36,10 @@ func TestBashDontEscapeSpace(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	pfile := &projectfile.Project{}
+	pfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "String",
+	}
 	pfile.Persist()
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
@@ -62,7 +66,10 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	pfile := &projectfile.Project{}
+	pfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "String",
+	}
 	pfile.Persist()
 
 	os.Unsetenv("SHELL")

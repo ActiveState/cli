@@ -13,6 +13,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -120,9 +122,12 @@ func ReplaceAll(filename, find, replace string) error {
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
-func ReplaceAllInDirectory(path string, find, replace string) error {
+func ReplaceAllInDirectory(path string, exclude []string, find, replace string) error {
 	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
+			return nil
+		}
+		if funk.ContainsString(exclude, filepath.Base(path)) {
 			return nil
 		}
 		return ReplaceAll(path, find, replace)

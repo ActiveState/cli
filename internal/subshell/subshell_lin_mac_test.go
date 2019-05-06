@@ -9,10 +9,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestActivateZsh(t *testing.T) {
@@ -34,7 +35,10 @@ func TestActivateZsh(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	pfile := &projectfile.Project{}
+	pfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "String",
+	}
 	pfile.Persist()
 
 	os.Setenv("SHELL", "bash")
@@ -59,7 +63,10 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	pfile := &projectfile.Project{}
+	pfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "String",
+	}
 	pfile.Persist()
 
 	os.Setenv("SHELL", "bash")

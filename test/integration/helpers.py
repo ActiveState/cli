@@ -63,7 +63,7 @@ class IntegrationTest(unittest.TestCase):
         self.set_config(tempfile.mkdtemp())
 
     def clear_cache(self):
-        cache_dir = os.path.expanduser("~/.cache/activestate/cli")
+        cache_dir = os.path.expanduser("~/.cache/activestate")
         if os.path.isdir(cache_dir):
             shutil.rmtree(cache_dir)
 
@@ -120,11 +120,11 @@ class IntegrationTest(unittest.TestCase):
             return False
         return status == "running"
 
-    def wait_ready(self, timeout=10):
+    def wait_ready(self, timeout=30):
         self.send("echo wait_ready_$HOME")
         self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
 
-    def wait(self, code=0, timeout=10):
+    def wait(self, code=0, timeout=30):
         try:
             with wait_for_timeout(seconds=timeout):
                 result = self.child.wait()

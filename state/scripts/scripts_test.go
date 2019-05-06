@@ -16,6 +16,8 @@ import (
 func TestExecute(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
+name: string
+owner: string
 scripts:
   - name: run
     value: whatever

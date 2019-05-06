@@ -15,16 +15,29 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// InstallerExtension is used to identify whether an artifact is one that we should care about
 const InstallerExtension = ".tar.gz"
 
+// InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."
 
 var (
-	FailNoCommit           = failures.Type("runtime.fail.nocommit")
-	FailNoResponse         = failures.Type("runtime.fail.noresponse")
-	FailNoArtifacts        = failures.Type("runtime.fail.noartifacts")
-	FailNoValidArtifact    = failures.Type("runtime.fail.novalidartifact")
-	FailBuild              = failures.Type("runtime.fail.build")
+	// FailNoCommit indicates a failure due to there not being a commit
+	FailNoCommit = failures.Type("runtime.fail.nocommit")
+
+	// FailNoResponse indicates a failure due to a lack of a response from the API
+	FailNoResponse = failures.Type("runtime.fail.noresponse")
+
+	// FailNoArtifacts indicates a failure due to the project not containing any artifacts
+	FailNoArtifacts = failures.Type("runtime.fail.noartifacts")
+
+	// FailNoValidArtifact indicates a failure due to the project not containing any valid artifacts
+	FailNoValidArtifact = failures.Type("runtime.fail.novalidartifact")
+
+	// FailBuild indicates a failure due to the build failing
+	FailBuild = failures.Type("runtime.fail.build")
+
+	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
 
@@ -35,28 +48,31 @@ var InitRequester headchef.InitRequester = headchef.InitRequest
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download() (string, *failures.Failure)
+	Download([]*url.URL) ([]string, *failures.Failure)
+
+	// FetchArtifactURLs will fetch artifact
+	FetchArtifactURLs() ([]*url.URL, *failures.Failure)
 }
 
-// RuntimeDownload is the main struct for tracking a runtime download
-type RuntimeDownload struct {
+// Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
+type Download struct {
 	project           *project.Project
 	targetDir         string
 	headchefRequester headchef.InitRequester
 }
 
-// InitRuntimeDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitRuntimeDownload(targetDir string) Downloader {
-	return &RuntimeDownload{project.Get(), targetDir, InitRequester}
+// InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
+func InitDownload(targetDir string) Downloader {
+	return NewDownload(project.Get(), targetDir, InitRequester)
 }
 
-// NewRuntimeDownload creates a new RuntimeDownload using all custom args
-func NewRuntimeDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) Downloader {
-	return &RuntimeDownload{project, targetDir, headchefRequester}
+// NewDownload creates a new RuntimeDownload using all custom args
+func NewDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) Downloader {
+	return &Download{project, targetDir, headchefRequester}
 }
 
 // fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
-func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
+func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
 	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
@@ -91,8 +107,8 @@ func (r *RuntimeDownload) fetchBuildRequest() (*headchef_models.BuildRequest, *f
 	return buildRequest, nil
 }
 
-// fetchArtifact will retrieve the artifact information from the head-chef (ie language installer)
-func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
+// FetchArtifactURLs will retrieve artifact information from the head-chef (eg language installers)
+func (r *Download) FetchArtifactURLs() ([]*url.URL, *failures.Failure) {
 	buildRequest, fail := r.fetchBuildRequest()
 	if fail != nil {
 		return nil, fail
@@ -100,7 +116,7 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 
 	done := make(chan bool)
 
-	var artifactURL *url.URL
+	var artifactURLs []*url.URL
 
 	request := r.headchefRequester(buildRequest)
 	request.OnBuildCompleted(func(response headchef_models.BuildCompleted) {
@@ -110,23 +126,20 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 			return
 		}
 
-		var artifact *headchef_models.BuildCompletedArtifactsItems0
 		for _, artf := range response.Artifacts {
 			filename := filepath.Base(artf.URI.String())
 			if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
-				artifact = artf
-				break
+				artifactURL, err := url.Parse(artf.URI.String())
+				if err != nil {
+					fail = FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
+					return
+				}
+				artifactURLs = append(artifactURLs, artifactURL)
 			}
 		}
-		if artifact == nil {
-			fail = FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
-			return
-		}
 
-		var err error
-		artifactURL, err = url.Parse(artifact.URI.String())
-		if err != nil {
-			fail = FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
+		if len(artifactURLs) == 0 {
+			fail = FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
 		}
 	})
 
@@ -153,29 +166,31 @@ func (r *RuntimeDownload) fetchArtifact() (*url.URL, *failures.Failure) {
 
 	<-done
 
-	if artifactURL == nil && fail == nil {
+	if len(artifactURLs) == 0 && fail == nil {
 		return nil, FailNoResponse.New(locale.T("err_runtime_download_no_response"))
 	}
 
-	return artifactURL, fail
+	return artifactURLs, fail
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *RuntimeDownload) Download() (filename string, fail *failures.Failure) {
-	artifactURL, fail := r.fetchArtifact()
-	if fail != nil {
-		return "", fail
+func (r *Download) Download(artifactURLs []*url.URL) (filenames []string, fail *failures.Failure) {
+	filenames = []string{}
+	entries := []*download.Entry{}
+
+	for _, URL := range artifactURLs {
+		u, fail := model.SignS3URL(URL)
+		if fail != nil {
+			return filenames, fail
+		}
+
+		entries = append(entries, &download.Entry{
+			Path:     filepath.Join(r.targetDir, filepath.Base(u.Path)),
+			Download: u.String(),
+		})
+		filenames = append(filenames, filepath.Base(u.Path))
 	}
 
-	u, fail := model.SignS3URL(artifactURL)
-	if fail != nil {
-		return "", fail
-	}
-
-	entries := []*download.Entry{&download.Entry{
-		Path:     filepath.Join(r.targetDir, filepath.Base(u.Path)),
-		Download: u.String(),
-	}}
 	downloader := download.New(entries, 1)
-	return filepath.Base(u.Path), downloader.Download()
+	return filenames, downloader.Download()
 }

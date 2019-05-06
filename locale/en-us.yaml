@@ -115,8 +115,8 @@ error_unsupported_language:
   other: "Unsupported language: {{.Language}}"
 error_could_not_activate_venv:
   other: Could not activate the virtual environment
-warning_language_not_yet_supported:
-  other: "Warning: Your project configuration includes {{.V0}}, but this language is not yet supported"
+err_language_not_yet_supported:
+  other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
   other: "Argument missing: {{.Name}}"
 err_no_projectfile:
@@ -619,12 +619,18 @@ err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
 installer_err_installdir_isfile:
   other: Expected installation path '{{.V0}}' to be a directory
+installer_err_installdir_notempty:
+  other: Installation path '{{.V0}}' is not empty
 installer_err_archive_notfound:
   other: Distribution archive '{{.V0}}' does not exist
 installer_err_archive_badext:
   other: Expected runtime archive '{{.V0}}' to have .tar.gz or .tgz extension
 installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named '{{.V1}}'
+installer_err_runtime_missing_meta_file:
+  other: | 
+    The requested runtime does not appear to have a metadata file, this usually means you're trying to use a much older build 
+    that is not supported by this version of the State Tool. It is recommended that you produce a new build.
 installer_err_runtime_no_executable:
   other: Expected runtime installer '{{.V0}}' to include '{{.V1}}' or '{{.V2}}'
 installer_err_runtime_executable_not_exec:
@@ -720,3 +726,7 @@ err_auth_fail_totp:
   other: Failed to receive Authentication Token input
 fail_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
+err_invalid_project_name_owner:
+  other: Your activestate.yaml is missing a name and/or owner field.
+err_persist_invalid_project:
+  other: Trying to persist an invalid project

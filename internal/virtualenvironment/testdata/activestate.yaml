@@ -1,6 +1,5 @@
-name: CodeIntel
-owner: ActiveState
-namespace: github.com/ActiveState/CodeIntel
+name: string
+owner: string
 version: master
 environments: dev,qa,prod
 platforms:
