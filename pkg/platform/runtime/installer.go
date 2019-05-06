@@ -198,7 +198,7 @@ func (installer *Installer) installDir(filename string) (string, *failures.Failu
 }
 
 func (installer *Installer) installLegacyVersion(archivePath string, installDir string) *failures.Failure {
-	if strings.Contains(archivePath, "python") {
+	if strings.Contains(strings.ToLower(archivePath), "python") {
 		return installer.installActivePython(archivePath, installDir)
 	}
 	return failures.FailUser.New(locale.Tr("err_language_not_yet_supported", archivePath))
