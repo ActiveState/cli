@@ -35,6 +35,7 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 
 	cmd.config = &commands.Command{
 		Name:        "variables",
+		Aliases:     []string{"vars"},
 		Description: "variables_cmd_description",
 		Run:         cmd.Execute,
 	}
