@@ -28,6 +28,7 @@ steps:
     displayName: Prepare Code Climate
   - bash: |
       set -e
+      state auth --token $(PLATFORM_API_TOKEN)
       state run preprocess
 
       # Run tests and convert output to junit format

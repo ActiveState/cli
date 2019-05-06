@@ -3,6 +3,7 @@
 package virtualenvironment
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/sysinfo"
@@ -26,6 +28,8 @@ func init() {
 func TestActivateRuntimeEnvironment(t *testing.T) {
 	setup(t)
 	defer teardown()
+
+	os.Unsetenv(constants.DisableRuntime)
 
 	project := &projectfile.Project{}
 	dat := strings.TrimSpace(`
@@ -49,4 +53,25 @@ languages:
 	for k := range env {
 		assert.NotEmpty(t, k, "Does not return any empty env keys")
 	}
+}
+
+func TestSkipActivateRuntimeEnvironment(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	os.Setenv(constants.DisableRuntime, "true")
+
+	project := &projectfile.Project{}
+	dat := strings.TrimSpace(`
+name: string
+owner: string
+languages:
+    - name: Python3`)
+	yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
+
+	venv := Init()
+	fail := venv.Activate()
+	require.NoError(t, fail.ToError(), "Should activate")
+	assert.Empty(t, venv.artifactPaths, "Did not Pull in artifacts")
 }
