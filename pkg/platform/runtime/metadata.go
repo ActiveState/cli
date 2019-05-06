@@ -16,15 +16,25 @@ var (
 
 // MetaData is used to parse the metadata.json file
 type MetaData struct {
-	AffectedEnv     string           `json:"affected_env"`
+
+	// AffectedEnv is an environment variable that we should ensure is not set, as it might conflict with the artifact
+	AffectedEnv string `json:"affected_env"`
+
+	// BinaryLocations are locations that we should add to the PATH
 	BinaryLocations []MetaDataBinary `json:"binaries_in"`
-	RelocationDir   string           `json:"relocation_dir"`
+
+	// RelocationDir is the string that we should replace with the actual install dir of the artifact
+	RelocationDir string `json:"relocation_dir"`
 }
 
 // MetaDataBinary is used to represent a binary path contained within the metadata.json file
 type MetaDataBinary struct {
-	Path        string `json:"path"`
-	Relative    bool
+	Path     string `json:"path"`
+	Relative bool
+
+	// RelativeInt is used to unmarshal the 'relative' boolean, which is given as a 0 or a 1, which Go's
+	// json package doesn't recognize as bools.
+	// Don't use this field, use Relative instead.
 	RelativeInt int `json:"relative"`
 }
 
