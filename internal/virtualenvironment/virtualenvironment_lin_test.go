@@ -60,6 +60,7 @@ func TestSkipActivateRuntimeEnvironment(t *testing.T) {
 	defer teardown()
 
 	os.Setenv(constants.DisableRuntime, "true")
+	defer os.Unsetenv(constants.DisableRuntime)
 
 	project := &projectfile.Project{}
 	dat := strings.TrimSpace(`
