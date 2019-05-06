@@ -13,9 +13,11 @@ import psutil
 
 is_windows = os.name == 'nt'
 
-spawner = pexpect.spawn
+spawner = None
 if is_windows:
     spawner = PopenSpawn
+else:
+    spawner = pexpect.spawn
 
 dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 try:
@@ -69,6 +71,7 @@ class IntegrationTest(unittest.TestCase):
         self.config_dir = config_dir
         self.env = os.environ.copy()
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
