@@ -54,7 +54,7 @@ type Downloader interface {
 	FetchArtifactURLs() ([]*url.URL, *failures.Failure)
 }
 
-// Download is the main struct for tracking a runtime download
+// Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
 	project           *project.Project
 	targetDir         string
