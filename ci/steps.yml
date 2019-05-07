@@ -28,6 +28,7 @@ steps:
     displayName: Prepare Code Climate
   - bash: |
       set -e
+      state auth --token $(PLATFORM_API_TOKEN)
       state run preprocess
 
       # Run tests and convert output to junit format
@@ -63,7 +64,7 @@ steps:
       cd test/integration
       pip3 install -r requirements.txt
       cd ../../
-      build/state run integration-tests
+      ACTIVESTATE_CLI_DISABLE_RUNTIME=false build/state run integration-tests
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Linux')
     displayName: Integration Tests
