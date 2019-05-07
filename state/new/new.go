@@ -138,6 +138,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	fail = createProjectDir()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		exit(1)
 	}
 
 	// If version argument was not given, default to 1.0
@@ -219,6 +220,11 @@ func createPlatformProject() *failures.Failure {
 
 func createProjectDir() *failures.Failure {
 	if _, err := os.Stat(Flags.Path); err == nil {
+		// Directory already exists
+		files, _ := ioutil.ReadDir(Flags.Path)
+		if len(files) == 0 {
+			return nil
+		}
 		return failures.FailIO.New("error_state_new_exists")
 	}
 	if err := os.MkdirAll(Flags.Path, 0755); err != nil {
