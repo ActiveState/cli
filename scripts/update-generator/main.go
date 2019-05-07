@@ -190,7 +190,7 @@ func init() {
 }
 
 func run() {
-	defaultPlatform := fetchPlatform()
+	defaultPlatform = fetchPlatform()
 
 	flag.Parse()
 	if flag.NArg() < 1 && flag.Lookup("test.v") == nil {
