@@ -285,8 +285,6 @@ state_new_prompt_owner:
   other: Please provide an owner for the new project.
 error_state_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
-state_new_prompt_version:
-  other: Please provide a version string for the new project.
 error_state_new_version:
   other: Version string must consist only of numbers and decimals.
 state_new_created:
