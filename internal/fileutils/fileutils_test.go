@@ -11,9 +11,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/environment"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -51,14 +52,15 @@ func TestReplaceAllTextFile(t *testing.T) {
 	assert.NoError(t, err, "Can read attributes of test file")
 	newFileStat, err := os.Stat(tmpfile)
 	assert.NoError(t, err, "Can read attributes of replacement file")
-	assert.True(t, oldFileStat.Size() > newFileStat.Size(), "Replacement file is smaller")
+	assert.True(t, oldFileStat.Size() > newFileStat.Size(), "Replacement file is smaller, actual old: %d, vs new: %d", oldFileStat.Size(), newFileStat.Size())
 
 	// Compare the orig test.go file with the new one.
 	oldBytes, err := ioutil.ReadFile(testfile)
 	assert.NoError(t, err, "Read original text file")
 	newBytes, err := ioutil.ReadFile(tmpfile)
 	assert.NoError(t, err, "Read new text file")
-	assert.Equal(t, bytes.Replace(oldBytes, []byte("%%FIND%%"), []byte("REPL"), -1), newBytes, "Copy succeeded")
+	assert.NotEqual(t, string(oldBytes), string(newBytes), "Copy succeeded")
+	assert.Equal(t, string(bytes.Replace(oldBytes, []byte("%%FIND%%"), []byte("REPL"), -1)), string(newBytes), "Copy succeeded")
 }
 
 func TestReplaceAllExe(t *testing.T) {
@@ -193,6 +195,23 @@ func TestAppend(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Should be able to append to file.")
 
 	assert.Equal(t, []byte("aab"), ReadFileUnsafe(path))
+}
+
+func TestWriteFile(t *testing.T) {
+	file, err := ioutil.TempFile("", "cli-test-writefile-replace")
+	require.NoError(t, err)
+	file.Close()
+
+	// Set file read-only to test if chmodding from WriteFile works
+	os.Chmod(file.Name(), 0444)
+
+	fail := WriteFile(file.Name(), []byte("abc"))
+	require.NoError(t, fail.ToError())
+
+	fail = WriteFile(file.Name(), []byte("def"))
+	require.NoError(t, fail.ToError())
+
+	assert.Equal(t, "def", string(ReadFileUnsafe(file.Name())))
 }
 
 func TestWriteFile_Prepend(t *testing.T) {
