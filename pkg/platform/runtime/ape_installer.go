@@ -11,7 +11,7 @@ import (
 )
 
 // installActivePerl will unpack the installer archive, locate the install script, and then use the installer
-// script to install an ActivePython runtime to the configured runtime dir. Any failures
+// script to install an ActivePerl runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
 func (installer *Installer) installActivePerl(archivePath string, installDir string) *failures.Failure {
 	prefix, fail := installer.extractPerlRelocationPrefix(installDir)
@@ -19,12 +19,8 @@ func (installer *Installer) installActivePerl(archivePath string, installDir str
 		return fail
 	}
 
-	// relocate python
-	if fail = installer.Relocate(prefix, installDir); fail != nil {
-		return fail
-
-	}
-	return nil
+	// relocate perl
+	return installer.Relocate(prefix, installDir)
 }
 
 // extractPerlRelocationPrefix will extract the prefix that needs to be replaced for this installation.

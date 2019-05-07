@@ -26,11 +26,7 @@ func (installer *Installer) installActivePython(archivePath string, installDir s
 	}
 
 	// relocate python
-	if fail = installer.Relocate(prefix, installDir); fail != nil {
-		return fail
-
-	}
-	return nil
+	return installer.Relocate(prefix, installDir)
 }
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
