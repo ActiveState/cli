@@ -15,11 +15,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/phayes/permbits"
+	"github.com/pkg/errors"
+
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/phayes/permbits"
-	"github.com/pkg/errors"
 )
 
 var exit = os.Exit
@@ -189,13 +190,7 @@ func init() {
 }
 
 func run() {
-	goos := os.Getenv("GOOS")
-	goarch := os.Getenv("GOARCH")
-	if goos != "" && goarch != "" {
-		defaultPlatform = goos + "-" + goarch
-	} else {
-		defaultPlatform = runtime.GOOS + "-" + runtime.GOARCH
-	}
+	defaultPlatform = fetchPlatform()
 
 	flag.Parse()
 	if flag.NArg() < 1 && flag.Lookup("test.v") == nil {
@@ -204,32 +199,25 @@ func run() {
 		exit(0)
 	}
 
-	a := flag.Args()
-	_ = a
-
 	if appPath == "" {
 		appPath = flag.Arg(0)
 	}
 
 	if version == "" {
+		version = flag.Arg(1)
 		if flag.Arg(1) == "" {
 			version = constants.Version
-		} else {
-			version = flag.Arg(1)
 		}
 	}
 
+	branch = constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
 		branch = *branchFlag
-	} else {
-		branch = constants.BranchName
 	}
 
-	var platform string
+	platform := defaultPlatform
 	if platformFlag != nil && *platformFlag != "" {
 		platform = *platformFlag
-	} else {
-		platform = defaultPlatform
 	}
 
 	if genDir == "" {
@@ -255,4 +243,13 @@ func run() {
 	}
 
 	createUpdate(appPath, platform)
+}
+
+func fetchPlatform() string {
+	goos := os.Getenv("GOOS")
+	goarch := os.Getenv("GOARCH")
+	if goos != "" && goarch != "" {
+		return goos + "-" + goarch
+	}
+	return runtime.GOOS + "-" + runtime.GOARCH
 }

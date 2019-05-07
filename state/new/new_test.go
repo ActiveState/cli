@@ -6,13 +6,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	exit = exiter.Exit
+}
 
 // Runs "state new test-name -o test-owner -v 1.0" in an empty directory.
 // Verifies that a project was successfully created.
@@ -109,10 +115,11 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "1.0"})
-	err = Command.Execute()
 
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	code := exiter.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, code, "Exited with code 1")
 
 	_, err = os.Stat(filepath.Join(tmpdir, "test-name", constants.ConfigFileName))
 	assert.Error(t, err, "Project was not created in existing sub-directory")
@@ -142,10 +149,11 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-p", tmpdir, "-o", "test-owner", "-v", "1.0"})
-	err = Command.Execute()
 
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	code := exiter.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, code, "Exited with code 1")
 
 	_, err = os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
 	assert.Error(t, err, "Project was not created in existing directory")
@@ -171,12 +179,13 @@ func TestNewWithBadPath(t *testing.T) {
 	invalidPath := "/invalid-path:"
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-p", invalidPath, "-o", "test-owner", "-v", "1.0"})
-	err := Command.Execute()
 
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	code := exiter.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, code, "Exited with code 1")
 
-	_, err = os.Stat(invalidPath)
+	_, err := os.Stat(invalidPath)
 	assert.Error(t, err, "Project was not created")
 }
 
@@ -190,12 +199,13 @@ func TestNewWithBadVersion(t *testing.T) {
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "badVersion"})
-	err := Command.Execute()
 
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	code := exiter.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, code, "Exited with code 1")
 
-	_, err = os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
+	_, err := os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
 	assert.Error(t, err, "Project was not created")
 	os.Chdir(cwd) // restore
 
@@ -254,12 +264,13 @@ func TestNewPlatformProjectExists(t *testing.T) {
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"test-name", "-v", "1.0"})
-	err := Command.Execute()
 
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	code := exiter.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, code, "Exited with code 1")
 
-	_, err = os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
+	_, err := os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
 	assert.Error(t, err, "Platform project exists; project was not created")
 	os.Chdir(cwd) // restore
 

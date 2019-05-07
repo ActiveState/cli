@@ -76,49 +76,22 @@ func ReplaceAll(filename, find, replace string) error {
 
 	// Open a temporary file for the replacement file and then perform the search
 	// and replace.
-	tmpfile, err := ioutil.TempFile("", "activestatecli-fileutils")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmpfile.Name())
+	buffer := bytes.NewBuffer([]byte{})
 
 	for i, chunk := range chunks {
 		// Write chunk up to found bytes.
-		if _, err := tmpfile.Write(chunk); err != nil {
-			tmpfile.Close()
-			os.Remove(tmpfile.Name())
+		if _, err := buffer.Write(chunk); err != nil {
 			return err
 		}
 		if i < len(chunks)-1 {
 			// Write replacement bytes.
-			if _, err := tmpfile.Write(replaceBytes); err != nil {
-				tmpfile.Close()
-				os.Remove(tmpfile.Name())
+			if _, err := buffer.Write(replaceBytes); err != nil {
 				return err
 			}
 		}
 	}
-	if err := tmpfile.Close(); err != nil {
-		return err
-	}
 
-	// make the target file temporarily writable
-	stat, _ := os.Stat(filename)
-	if err := os.Chmod(filename, DirMode); err != nil {
-		return err
-	}
-	defer func() {
-		// put original permissions back on original file
-		os.Chmod(filename, stat.Mode().Perm())
-	}()
-
-	// we copy file contents instead of renaming the temp file in the event the two files
-	// are on different partitions. golang doesn't like to move files across partitions
-	// it would seem.
-	if failure := CopyFile(tmpfile.Name(), filename); failure != nil {
-		return failure.ToError()
-	}
-	return nil
+	return WriteFile(filename, buffer.Bytes()).ToError()
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
@@ -291,7 +264,16 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 		return fail
 	}
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, FileMode)
+	// make the target file temporarily writable
+	if FileExists(filePath) {
+		stat, _ := os.Stat(filePath)
+		if err := os.Chmod(filePath, FileMode); err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+		defer os.Chmod(filePath, stat.Mode().Perm())
+	}
+
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FileMode)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
