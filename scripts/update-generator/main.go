@@ -250,7 +250,6 @@ func fetchPlatform() string {
 	goarch := os.Getenv("GOARCH")
 	if goos != "" && goarch != "" {
 		return goos + "-" + goarch
-	} else {
-		return runtime.GOOS + "-" + runtime.GOARCH
 	}
+	return runtime.GOOS + "-" + runtime.GOARCH
 }

@@ -175,9 +175,8 @@ func promptForOwner() (string, *failures.Failure) {
 	}
 	if len(owners) > 1 {
 		return prompter.Select(locale.T("state_new_prompt_owner"), owners, Flags.Owner)
-	} else {
-		return owners[0], nil // auto-select only option
 	}
+	return owners[0], nil // auto-select only option
 }
 
 func fetchPath() (string, *failures.Failure) {
