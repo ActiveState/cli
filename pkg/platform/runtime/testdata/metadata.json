@@ -1,0 +1,10 @@
+{
+    "binaries_in": [
+        {
+            "relative": 1,
+            "path": "bin"
+        }
+    ],
+    "relocation_dir": "/path/to/replaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaace",
+    "affected_env": "PERL5LIB"
+}

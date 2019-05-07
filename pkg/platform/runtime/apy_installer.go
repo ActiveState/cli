@@ -11,36 +11,22 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-var (
-	// FailRuntimeNotExecutable represents a Failure due to the python file not being executable
-	FailRuntimeNotExecutable = failures.Type("runtime.runtime.notexecutable", FailRuntimeInvalid)
-
-	// FailRuntimeNoExecutable represents a Failure due to there not being an executable
-	FailRuntimeNoExecutable = failures.Type("runtime.runtime.noexecutable", FailRuntimeInvalid)
-
-	// FailRuntimeNoPrefixes represents a Failure due to there not being any prefixes for relocation
-	FailRuntimeNoPrefixes = failures.Type("runtime.runtime.noprefixes", FailRuntimeInvalid)
-)
-
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
 func (installer *Installer) installActivePython(archivePath string, installDir string) *failures.Failure {
 	python, fail := installer.locatePythonExecutable(installDir)
 	if fail != nil {
-		removeInstallDir(installDir)
 		return fail
 	}
 
 	prefix, fail := installer.extractPythonRelocationPrefix(installDir, python)
 	if fail != nil {
-		removeInstallDir(installDir)
 		return fail
 	}
 
 	// relocate python
 	if fail = installer.Relocate(prefix, installDir); fail != nil {
-		removeInstallDir(installDir)
 		return fail
 
 	}
