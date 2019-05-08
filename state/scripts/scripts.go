@@ -36,21 +36,26 @@ func listAllScripts() {
 	prj := project.Get()
 	logging.Debug("listing scripts for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	rows := [][]interface{}{}
-	ss := prj.Scripts()
+	hdrs, rows := scriptsTable(prj.Scripts())
+	t := gotabulate.Create(rows)
+	t.SetHeaders(hdrs)
+	t.SetAlign("left")
+
+	print.Line(t.Render("simple"))
+}
+
+func scriptsTable(ss []*project.Script) (hdrs []string, rows [][]string) {
 	for _, s := range ss {
-		row := []interface{}{
+		row := []string{
 			s.Name(), s.Description(),
 		}
 		rows = append(rows, row)
 	}
 
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{
+	hdrs = []string{
 		locale.T("scripts_col_name"),
 		locale.T("scripts_col_description"),
-	})
-	t.SetAlign("left")
+	}
 
-	print.Line(t.Render("simple"))
+	return hdrs, rows
 }
