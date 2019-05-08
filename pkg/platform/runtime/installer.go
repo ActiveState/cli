@@ -39,7 +39,7 @@ var (
 	// FailRuntimeInstallation represents a Failure to install a runtime.
 	FailRuntimeInstallation = failures.Type("runtime.runtime.installation", failures.FailOS)
 
-	// FailRuntimeNotExecutable represents a Failure due to the python file not being executable
+	// FailRuntimeNotExecutable represents a Failure due to a required file not being executable
 	FailRuntimeNotExecutable = failures.Type("runtime.runtime.notexecutable", FailRuntimeInvalid)
 
 	// FailRuntimeNoExecutable represents a Failure due to there not being an executable
