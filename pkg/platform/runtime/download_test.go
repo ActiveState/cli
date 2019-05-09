@@ -1,4 +1,4 @@
-// +build linux
+// +build !darwin
 
 package runtime_test
 

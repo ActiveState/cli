@@ -5,6 +5,7 @@ package runtime_test
 import (
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -26,7 +27,7 @@ import (
 var FailTest = failures.Type("runtime_test.fail")
 var FailureToDownload = FailTest.New("unable to download")
 
-type InstallerTestSuite struct {
+type InstallerLinuxTestSuite struct {
 	suite.Suite
 
 	dataDir    string
@@ -35,7 +36,7 @@ type InstallerTestSuite struct {
 	rmock      *rmock.Mock
 }
 
-func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "failure obtaining root path")
 
@@ -61,7 +62,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	model.OS = sysinfo.Linux
 }
 
-func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
+func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {
 	suite.rmock.Close()
 	err := os.RemoveAll(suite.installDir)
 	suite.Require().NoError(err, "failure removing working dir")
@@ -73,14 +74,14 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 	}
 }
 
-func (suite *InstallerTestSuite) TestInstall_ArchiveDoesNotExist() {
+func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 	fail := suite.installer.InstallFromArchives([]string{"/no/such/archive.tar.gz"})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
 	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), fail.Error())
 }
 
-func (suite *InstallerTestSuite) TestInstall_ArchiveNotTarGz() {
+func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 	invalidArchive := path.Join(suite.dataDir, "empty.archive")
 
 	file, fail := fileutils.Touch(invalidArchive)
@@ -93,114 +94,78 @@ func (suite *InstallerTestSuite) TestInstall_ArchiveNotTarGz() {
 	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), fail.Error())
 }
 
-func (suite *InstallerTestSuite) TestInstall_BadArchive() {
+func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "badarchive.tar.gz")})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
 	suite.Contains(fail.Error(), "EOF")
 }
 
-func (suite *InstallerTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz() {
+func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz() {
 	archivePath := path.Join(suite.dataDir, "empty.tar.gz")
 	fail := suite.installer.InstallFromArchives([]string{archivePath})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailArchiveNoInstallDir, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() {
+func (suite *InstallerLinuxTestSuite) TestInstall_RuntimeHasNoInstallDir_ForTgz() {
 	archivePath := path.Join(suite.dataDir, "empty.tgz")
 	fail := suite.installer.InstallFromArchives([]string{archivePath})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailArchiveNoInstallDir, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_RuntimeMissingPythonExecutable() {
+func (suite *InstallerLinuxTestSuite) TestInstall_RuntimeMissingPythonExecutable() {
 	archivePath := path.Join(suite.dataDir, "python-missing-python-binary.tar.gz")
 	fail := suite.installer.InstallFromArchives([]string{archivePath})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailRuntimeNoExecutable, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_PythonFoundButNotExecutable() {
+func (suite *InstallerLinuxTestSuite) TestInstall_PythonFoundButNotExecutable() {
 	archivePath := path.Join(suite.dataDir, "python-noexec-python.tar.gz")
 	fail := suite.installer.InstallFromArchives([]string{archivePath})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailRuntimeNotExecutable, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
+func (suite *InstallerLinuxTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "python-fail-prefixes.tar.gz")})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailRuntimeNoPrefixes, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_Python_RelocationSuccessful() {
-	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "python-good-installer.tar.gz")})
+func (suite *InstallerLinuxTestSuite) testRelocation(archive string, executable string) {
+	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, archive)})
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
 
 	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
 
-	// make sure cli-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
-	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "python-good-installer")),
-		"expected INSTALLDIR not to exist in install-dir")
-
-	// assert files in installation get relocated
-	pathToPython3 := path.Join(suite.installer.InstallDirs()[0], "bin", constants.ActivePython3Executable)
-	suite.Require().True(fileutils.FileExists(pathToPython3), "python3 exists")
-	suite.Require().True(
-		fileutils.FileExists(path.Join(suite.installer.InstallDirs()[0], "bin", "python3")),
-		"python hard-link exists")
+	pathToExecutable := filepath.Join(suite.installer.InstallDirs()[0], "bin", executable)
+	suite.Require().True(fileutils.FileExists(pathToExecutable), executable+" exists")
 
 	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
-	suite.Contains(ascriptContents, pathToPython3)
+	suite.Contains(ascriptContents, pathToExecutable)
 }
 
-func (suite *InstallerTestSuite) TestInstall_Perl_RelocationSuccessful() {
-	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "perl-good-installer.tar.gz")})
-	suite.Require().NoError(fail.ToError())
-	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
-
-	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
-
-	// make sure perl-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
-	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "perl-good-installer")),
-		"expected INSTALLDIR not to exist in install-dir")
-
-	// assert files in installation get relocated
-	pathToPerl := path.Join(suite.installer.InstallDirs()[0], "bin", constants.ActivePerlExecutable)
-	suite.Require().True(fileutils.FileExists(pathToPerl), "perl exists")
-	suite.Require().True(
-		fileutils.FileExists(path.Join(suite.installer.InstallDirs()[0], "bin", "perl")),
-		"perl hard-link exists")
-
-	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
-	suite.Contains(ascriptContents, pathToPerl)
+func (suite *InstallerLinuxTestSuite) TestInstall_Python_RelocationSuccessful() {
+	testRelocation("python-good-installer.tar.gz", constants.ActivePython3Executable)
 }
 
-func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
-	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "perl-good-installer-nometa.tar.gz")})
-	suite.Require().NoError(fail.ToError())
-	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
-
-	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
-
-	// make sure perl-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
-	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "perl-good-installer-nometa")),
-		"expected INSTALLDIR not to exist in install-dir")
-
-	// assert files in installation get relocated
-	pathToPerl := path.Join(suite.installer.InstallDirs()[0], "bin", constants.ActivePerlExecutable)
-	suite.Require().True(fileutils.FileExists(pathToPerl), "perl exists")
-	suite.Require().True(
-		fileutils.FileExists(path.Join(suite.installer.InstallDirs()[0], "bin", "perl")),
-		"perl hard-link exists")
-
-	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
-	suite.Contains(ascriptContents, pathToPerl)
+func (suite *InstallerLinuxTestSuite) TestInstall_Python_Legacy_RelocationSuccessful() {
+	testRelocation("python-good-installer-nometa.tar.gz", constants.ActivePython3Executable)
 }
 
-func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
+func (suite *InstallerLinuxTestSuite) TestInstall_Perl_RelocationSuccessful() {
+	testRelocation("perl-good-installer.tar.gz", constants.ActivePerlExecutable)
+}
+
+func (suite *InstallerLinuxTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
+	testRelocation("perl-good-installer-nometa.tar.gz", constants.ActivePerlExecutable)
+}
+
+func (suite *InstallerLinuxTestSuite) TestInstall_EventsCalled() {
 	pjfile := &projectfile.Project{
 		Name:  "string",
 		Owner: "string",
@@ -232,7 +197,7 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	suite.False(onInstallCalled, "OnInstall is not triggered, because we already installed it")
 }
 
-func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
+func (suite *InstallerLinuxTestSuite) TestInstall_LegacyAndNew() {
 	pjfile := &projectfile.Project{
 		Name:  "string",
 		Owner: "string",
@@ -258,6 +223,6 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 	suite.Equal(1, metaCount, "Installed one artifact via metafile")
 }
 
-func Test_InstallerTestSuite(t *testing.T) {
-	suite.Run(t, new(InstallerTestSuite))
+func Test_InstallerLinuxTestSuite(t *testing.T) {
+	suite.Run(t, new(InstallerLinuxTestSuite))
 }

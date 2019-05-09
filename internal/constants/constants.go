@@ -110,15 +110,6 @@ const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
 const ActivePythonDistsDir = "python"
 
-// ActivePython2Executable represents the ActivePython executable.
-const ActivePython2Executable = "python2"
-
-// ActivePython3Executable represents the ActivePython executable.
-const ActivePython3Executable = "python3"
-
-// ActivePerlExecutable represents the ActivePerl executable.
-const ActivePerlExecutable = "perl"
-
 // RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
 const RuntimeInstallDirs = "INSTALLDIR,perl"
 
