@@ -134,7 +134,7 @@ func (suite *InstallerTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 	suite.Equal(runtime.FailRuntimeNoPrefixes, fail.Type)
 }
 
-func (suite *InstallerTestSuite) TestInstall_RelocationSuccessful() {
+func (suite *InstallerTestSuite) TestInstall_Python_RelocationSuccessful() {
 	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "python-good-installer.tar.gz")})
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
@@ -142,7 +142,7 @@ func (suite *InstallerTestSuite) TestInstall_RelocationSuccessful() {
 	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
 
 	// make sure cli-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
-	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "cli-good-installer")),
+	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "python-good-installer")),
 		"expected INSTALLDIR not to exist in install-dir")
 
 	// assert files in installation get relocated
@@ -154,6 +154,50 @@ func (suite *InstallerTestSuite) TestInstall_RelocationSuccessful() {
 
 	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
 	suite.Contains(ascriptContents, pathToPython3)
+}
+
+func (suite *InstallerTestSuite) TestInstall_Perl_RelocationSuccessful() {
+	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "perl-good-installer.tar.gz")})
+	suite.Require().NoError(fail.ToError())
+	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
+
+	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
+
+	// make sure perl-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
+	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "perl-good-installer")),
+		"expected INSTALLDIR not to exist in install-dir")
+
+	// assert files in installation get relocated
+	pathToPerl := path.Join(suite.installer.InstallDirs()[0], "bin", constants.ActivePerlExecutable)
+	suite.Require().True(fileutils.FileExists(pathToPerl), "perl exists")
+	suite.Require().True(
+		fileutils.FileExists(path.Join(suite.installer.InstallDirs()[0], "bin", "perl")),
+		"perl hard-link exists")
+
+	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
+	suite.Contains(ascriptContents, pathToPerl)
+}
+
+func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
+	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "perl-good-installer-nometa.tar.gz")})
+	suite.Require().NoError(fail.ToError())
+	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
+
+	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
+
+	// make sure perl-good-installer and sub-dirs (e.g. INSTALLDIR) gets removed
+	suite.False(fileutils.DirExists(path.Join(suite.installer.InstallDirs()[0], "perl-good-installer-nometa")),
+		"expected INSTALLDIR not to exist in install-dir")
+
+	// assert files in installation get relocated
+	pathToPerl := path.Join(suite.installer.InstallDirs()[0], "bin", constants.ActivePerlExecutable)
+	suite.Require().True(fileutils.FileExists(pathToPerl), "perl exists")
+	suite.Require().True(
+		fileutils.FileExists(path.Join(suite.installer.InstallDirs()[0], "bin", "perl")),
+		"perl hard-link exists")
+
+	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
+	suite.Contains(ascriptContents, pathToPerl)
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {

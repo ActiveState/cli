@@ -38,6 +38,15 @@ var (
 
 	// FailRuntimeInstallation represents a Failure to install a runtime.
 	FailRuntimeInstallation = failures.Type("runtime.runtime.installation", failures.FailOS)
+
+	// FailRuntimeNotExecutable represents a Failure due to a required file not being executable
+	FailRuntimeNotExecutable = failures.Type("runtime.runtime.notexecutable", FailRuntimeInvalid)
+
+	// FailRuntimeNoExecutable represents a Failure due to there not being an executable
+	FailRuntimeNoExecutable = failures.Type("runtime.runtime.noexecutable", FailRuntimeInvalid)
+
+	// FailRuntimeNoPrefixes represents a Failure due to there not being any prefixes for relocation
+	FailRuntimeNoPrefixes = failures.Type("runtime.runtime.noprefixes", FailRuntimeInvalid)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
@@ -205,6 +214,9 @@ func (installer *Installer) installLegacyVersion(archivePath string, installDir 
 	if strings.Contains(strings.ToLower(archivePath), "python") {
 		return installer.installActivePython(archivePath, installDir)
 	}
+	if strings.Contains(strings.ToLower(archivePath), "perl") {
+		return installer.installActivePerl(archivePath, installDir)
+	}
 	return failures.FailUser.New(locale.Tr("err_language_not_yet_supported", archivePath))
 }
 
@@ -229,9 +241,17 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 		return FailArchiveInvalid.Wrap(err)
 	}
 
-	tmpInstallDir := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeInstallDir)
-	if !fileutils.DirExists(tmpInstallDir) {
-		return FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDir)
+	// Detect the install dir
+	tmpInstallDir := ""
+	installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
+	for _, dir := range installDirs {
+		currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
+		if fileutils.DirExists(currentDir) {
+			tmpInstallDir = currentDir
+		}
+	}
+	if tmpInstallDir == "" {
+		return FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
 	}
 
 	if fail := fileutils.MoveAllFiles(tmpInstallDir, installDir); fail != nil {

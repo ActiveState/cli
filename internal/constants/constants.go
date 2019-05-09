@@ -116,8 +116,11 @@ const ActivePython2Executable = "python2"
 // ActivePython3Executable represents the ActivePython executable.
 const ActivePython3Executable = "python3"
 
-// RuntimeInstallDir represents the directory within a distribution archive where the distribution exists.
-const RuntimeInstallDir = "INSTALLDIR"
+// ActivePerlExecutable represents the ActivePerl executable.
+const ActivePerlExecutable = "perl"
+
+// RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
+const RuntimeInstallDirs = "INSTALLDIR,perl"
 
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "support/metadata.json"
