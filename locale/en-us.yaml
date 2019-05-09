@@ -321,6 +321,12 @@ run_description:
   other: Run Your Project Scripts
 scripts_description:
   other: Show project scripts 
+scripts_col_name:
+  other: Name
+scripts_col_description:
+  other: Description
+scripts_err:
+  other: Error managing user's Scripts
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
