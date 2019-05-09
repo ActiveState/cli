@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import subprocess
+import shutil
 
 import helpers
 
@@ -63,17 +64,55 @@ class TestUpdates(helpers.IntegrationTest):
                     "-xf",
                     archive_path]
 
-    def test_update_works(self):
+    def run_unarchive_cmd(self):
         platform = self.get_platform()
         done = subprocess.run(self.unarchive_cmd(platform))
         self.assertEqual(0, done.returncode, "Nothing should go wrong")
 
-        cmd = "{0} --version".format(os.path.join(test_dir,
-                                                  platform+self.get_bin_ext()))
+    def test_update_bits_work(self):
+        self.run_unarchive_cmd()
+        
+        bin = os.path.join(test_dir, platform+self.get_bin_ext())
+        cmd = "{0} --version".format(bin)
         self.spawn_command(cmd)
         self.expect(self.constants["BuildNumber"])
         self.wait()
+        os.remove(bin)
 
+    def get_version_from_output(self, output):
+        version_regex = re.compile(".*(\d\.\d\.\d-\d{4})")
+        match = version_regex.search(str(output))
+        if match:
+            return match.group(1)
+
+    def _assert_version(self, same, bin_path):
+        shutil.copy(self.get_build_path(), test_dir)
+        version = self.get_version_from_output(self.get_output("%s --version" %(bin_path)))
+        if same:
+            self.assertEqual(version, self.constants["Version"], "They should be equal.")
+        else:
+            self.assertNotEqual(version, self.constants["Version"], "They should not be equal.")
+        os.remove(bin_path)
+
+    def test_update_works(self):
+        # get the binary
+        bin_path = os.path.join(test_dir, self.get_binary_name())
+        # Turn enable updates in tests
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "false"
+        # run state --version
+        # check version changed
+        self._assert_version(False, bin_path)
+        #run state update
+        # confirm version changed
+        self.spawn_command("%s update" %(bin_path))
+        self.wait()
+        self._assert_version(False, bin_path)
+        # set versionlock `state update --lock`
+        # run --version
+        # Verions doesn't change
+        self.spawn_command("%s update --lock" %(bin_path))
+        self.wait()
+        self._assert_version(True, bin_path)
 
 if __name__ == '__main__':
     helpers.Run()

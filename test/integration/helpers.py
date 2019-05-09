@@ -10,6 +10,7 @@ import pexpect
 import requests
 from pexpect.popen_spawn import PopenSpawn
 import psutil
+import subprocess
 
 is_windows = os.name == 'nt'
 
@@ -31,6 +32,15 @@ class IntegrationTest(unittest.TestCase):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
         self.child = None
+        # path to the built binary
+
+    def get_binary_name(self):
+        if is_windows:
+            return "state.exe"
+        return "state"
+
+    def get_build_path(self):
+        return os.path.realpath(os.path.join(dir_path, "..", "..", "build", self.get_binary_name()))
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
@@ -52,8 +62,7 @@ class IntegrationTest(unittest.TestCase):
            return self.child.ptyproc.pid
 
     def spawn(self, args):
-        dir_path_top = os.path.join(dir_path, "..", "..")
-        self.spawn_command('%s/build/state %s' % (dir_path_top, args))
+        self.spawn_command('%s %s' % (self.get_bin_path(), args))
 
     def spawn_command(self, cmd):
         self.child = spawner(cmd, env=self.env, timeout=10)
@@ -100,6 +109,10 @@ class IntegrationTest(unittest.TestCase):
 
     def expect_failure(self, message, pattern):
         self.fail("%s while expecting '%s', output:\n---\n%s\n---" % (message, pattern, self.child.logfile_read.logged))
+
+    def get_output(self, cmd):
+        """cmd should be a string of the whole command, as apposed to the usual array of strings"""
+        return subprocess.check_output(cmd)
 
     def send(self, message):
         self.child.sendline(message)
