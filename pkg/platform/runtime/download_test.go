@@ -1,4 +1,4 @@
-// +build linux
+// +build !darwin
 
 package runtime_test
 
@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	rt "runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -45,6 +46,12 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.rtMock.MockFullRuntime()
 
+	pjfile := projectfile.Project{
+		Name:  "string",
+		Owner: "string",
+	}
+	pjfile.Persist()
+
 	cachePath := config.CachePath()
 	if fileutils.DirExists(cachePath) {
 		err := os.RemoveAll(config.CachePath())
@@ -54,7 +61,9 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	// Only linux is supported for now, so force it so we can run this test on mac
 	// If we want to skip this on mac it should be skipped through build tags, in
 	// which case this tweak is meaningless and only a convenience for when testing manually
-	model.OS = sysinfo.Linux
+	if rt.GOOS == "darwin" {
+		model.OS = sysinfo.Linux
+	}
 }
 
 func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
@@ -73,8 +82,8 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 	suite.Require().NoError(fail.ToError())
 
 	suite.Implements((*runtime.Downloader)(nil), r)
-	suite.Contains(filenames, "python.tar.gz")
-	suite.Contains(filenames, "legacy-python.tar.gz")
+	suite.Contains(filenames, "python"+runtime.InstallerExtension)
+	suite.Contains(filenames, "legacy-python"+runtime.InstallerExtension)
 
 	for _, filename := range filenames {
 		suite.FileExists(filepath.Join(suite.dir, filename))

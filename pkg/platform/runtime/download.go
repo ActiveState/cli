@@ -15,9 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// InstallerExtension is used to identify whether an artifact is one that we should care about
-const InstallerExtension = ".tar.gz"
-
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."
 

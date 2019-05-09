@@ -31,6 +31,7 @@ func (installer *Installer) installActivePython(archivePath string, installDir s
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
 func (installer *Installer) locatePythonExecutable(installDir string) (string, *failures.Failure) {
+	binPath := filepath.Join(installDir, "bin")
 	python2 := filepath.Join(installDir, "bin", constants.ActivePython2Executable)
 	python3 := filepath.Join(installDir, "bin", constants.ActivePython3Executable)
 
@@ -43,11 +44,11 @@ func (installer *Installer) locatePythonExecutable(installDir string) (string, *
 		executable = constants.ActivePython2Executable
 		executablePath = python2
 	} else {
-		return "", FailRuntimeNoExecutable.New("installer_err_runtime_no_executable", installDir, constants.ActivePython2Executable, constants.ActivePython3Executable)
+		return "", FailRuntimeNoExecutable.New("installer_err_runtime_no_executable", binPath, constants.ActivePython2Executable, constants.ActivePython3Executable)
 	}
 
 	if !fileutils.IsExecutable(executablePath) {
-		return "", FailRuntimeNotExecutable.New("installer_err_runtime_executable_not_exec", installDir, executable)
+		return "", FailRuntimeNotExecutable.New("installer_err_runtime_executable_not_exec", binPath, executable)
 	}
 	return executablePath, nil
 }

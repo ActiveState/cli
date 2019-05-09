@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -54,10 +53,13 @@ var (
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
 	downloadDir       string
+	cacheDir          string
 	installDirs       []string
 	runtimeDownloader Downloader
 	onDownload        func()
 	onInstall         func()
+	archiver          archiver.Archiver
+	unarchiver        archiver.Unarchiver
 }
 
 // InitInstaller creates a new RuntimeInstaller
@@ -66,15 +68,18 @@ func InitInstaller() (*Installer, *failures.Failure) {
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
-	return NewInstaller(downloadDir, InitDownload(downloadDir))
+	return NewInstaller(downloadDir, config.CachePath(), InitDownload(downloadDir))
 }
 
 // NewInstaller creates a new RuntimeInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
-func NewInstaller(downloadDir string, downloader Downloader) (*Installer, *failures.Failure) {
+func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
 	installer := &Installer{
 		downloadDir:       downloadDir,
+		cacheDir:          cacheDir,
 		runtimeDownloader: downloader,
+		archiver:          Archiver(),
+		unarchiver:        Unarchiver(),
 	}
 
 	return installer, nil
@@ -200,7 +205,7 @@ func (installer *Installer) InstallDirs() []string {
 }
 
 func (installer *Installer) installDir(filename string) (string, *failures.Failure) {
-	installDir := path.Join(config.CachePath(), shortHash(filename))
+	installDir := filepath.Join(installer.cacheDir, shortHash(filename))
 
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
@@ -228,15 +233,18 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 		return FailRuntimeInstallation.New("installer_err_installdir_notempty", installDir)
 	}
 
-	if fail := installer.validateArchiveTarGz(archivePath); fail != nil {
+	if fail := installer.validateArchive(archivePath); fail != nil {
 		return fail
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
-	archiveName = strings.TrimSuffix(archiveName, ".tar") // the above only strips .gz, so account for .tar.gz use-case
 
-	err := archiver.DefaultTarGz.Unarchive(archivePath, tmpRuntimeDir)
+	// the above only strips .gz, so account for .tar.gz use-case
+	// it's fine to run this on windows cause those files won't end in .tar anyway
+	archiveName = strings.TrimSuffix(archiveName, ".tar")
+
+	err := installer.unarchiver.Unarchive(archivePath, tmpRuntimeDir)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
@@ -301,12 +309,12 @@ func (installer *Installer) Relocate(prefix string, installDir string) *failures
 	return nil
 }
 
-// validateArchiveTarGz ensures the given path to archive is an actual file and that its suffix is a well-known
+// validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known
 // suffix for tar+gz files.
-func (installer *Installer) validateArchiveTarGz(archivePath string) *failures.Failure {
+func (installer *Installer) validateArchive(archivePath string) *failures.Failure {
 	if !fileutils.FileExists(archivePath) {
 		return FailArchiveInvalid.New("installer_err_archive_notfound", archivePath)
-	} else if archiver.DefaultTarGz.CheckExt(archivePath) != nil {
+	} else if installer.archiver.CheckExt(archivePath) != nil {
 		return FailArchiveInvalid.New("installer_err_archive_badext", archivePath)
 	}
 	return nil

@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"net/url"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -31,7 +32,12 @@ func (suite *S3TestSuite) TestGetS3() {
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockSignS3URI()
 
-	u, _ := url.Parse("http://test.tld/python.tar.gz")
+	ext := ".tar.gz"
+	if runtime.GOOS == "windows" {
+		ext = ".zip"
+	}
+
+	u, _ := url.Parse("http://test.tld/python" + ext)
 	response, fail := model.SignS3URL(u)
 	suite.Require().NoError(fail.ToError())
 	suite.Equal(u.String(), response.String())

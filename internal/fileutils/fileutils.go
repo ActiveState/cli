@@ -58,6 +58,7 @@ func ReplaceAll(filename, find, replace string) error {
 	if bytes.IndexByte(fileBytes, nullByte) != -1 {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
+			logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > len(replaceBytes) {
 			// Pad replacement with NUL bytes.
@@ -406,6 +407,7 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
+	defer dir.Close()
 
 	fileInfos, err := dir.Readdir(-1)
 	if err != nil {
