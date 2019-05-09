@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"runtime"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -61,8 +62,11 @@ func (r *HeadchefRequesterMock) simulateCompleteBuild() {
 	artifacts := []*headchef_models.BuildCompletedArtifactsItems0{}
 	if !r.option(NoArtifacts) {
 		ext := ".tar.gz"
+		if runtime.GOOS == "windows" {
+			ext = ".zip"
+		}
 		if r.option(InvalidArtifact) {
-			ext = ".exe"
+			ext = ".invalid"
 		}
 		filename := "python" + ext
 		u := strfmt.URI("http://test.tld/" + filename)

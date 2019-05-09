@@ -54,6 +54,6 @@ func (m *Mock) MockFullRuntime() {
 }
 
 func (m *Mock) MockDownload() {
-	m.httpmock.RegisterWithResponse("GET", "python.tar.gz", 200, "python.tar.gz")
-	m.httpmock.RegisterWithResponse("GET", "legacy-python.tar.gz", 200, "legacy-python.tar.gz")
+	m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python"+runtime.InstallerExtension)
+	m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python"+runtime.InstallerExtension)
 }

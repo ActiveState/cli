@@ -1,4 +1,4 @@
-// +build windows
+// +build !darwin
 
 package runtime_test
 
@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type InstallerWindowsTestSuite struct {
+type InstallerTestSuite struct {
 	suite.Suite
 
 	dataDir     string
@@ -31,11 +31,11 @@ type InstallerWindowsTestSuite struct {
 	rmock       *rmock.Mock
 }
 
-func (suite *InstallerWindowsTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "failure obtaining root path")
 
-	suite.dataDir = path.Join(root, "pkg", "platform", "runtime", "testdata", "windows")
+	suite.dataDir = path.Join(root, "pkg", "platform", "runtime", "testdata")
 
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
@@ -58,7 +58,7 @@ func (suite *InstallerWindowsTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NotNil(suite.installer)
 }
 
-func (suite *InstallerWindowsTestSuite) AfterTest(suiteName, testName string) {
+func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 	suite.rmock.Close()
 	if err := os.RemoveAll(suite.cacheDir); err != nil {
 		logging.Warningf("Could not remove cacheDir: %v\n", err)
@@ -68,7 +68,7 @@ func (suite *InstallerWindowsTestSuite) AfterTest(suiteName, testName string) {
 	}
 }
 
-func (suite *InstallerWindowsTestSuite) testRelocation(archive string, executable string) {
+func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
 	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, archive)})
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
@@ -82,30 +82,66 @@ func (suite *InstallerWindowsTestSuite) testRelocation(archive string, executabl
 	suite.Contains(ascriptContents, pathToExecutable)
 }
 
-func (suite *InstallerWindowsTestSuite) TestInstall_Python_RelocationSuccessful() {
-	suite.testRelocation("python-good-installer.zip", constants.ActivePython3Executable)
+func (suite *InstallerTestSuite) TestInstall_Python_RelocationSuccessful() {
+	suite.testRelocation("python-good-installer"+runtime.InstallerExtension, constants.ActivePython3Executable)
 }
 
-func (suite *InstallerWindowsTestSuite) TestInstall_Python_Legacy_RelocationSuccessful() {
-	suite.testRelocation("python-good-installer-nometa.zip", constants.ActivePython3Executable)
+func (suite *InstallerTestSuite) TestInstall_Python_Legacy_RelocationSuccessful() {
+	suite.testRelocation("python-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePython3Executable)
 }
 
-func (suite *InstallerWindowsTestSuite) xTestInstall_Perl_RelocationSuccessful() {
-	suite.testRelocation("perl-good-installer.zip", constants.ActivePerlExecutable)
+func (suite *InstallerTestSuite) TestInstall_Perl_RelocationSuccessful() {
+	suite.testRelocation("perl-good-installer"+runtime.InstallerExtension, constants.ActivePerlExecutable)
 }
 
-func (suite *InstallerWindowsTestSuite) xTestInstall_Perl_Legacy_RelocationSuccessful() {
-	suite.testRelocation("perl-good-installer-nometa.zip", constants.ActivePerlExecutable)
+func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
+	suite.testRelocation("perl-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePerlExecutable)
 }
 
-func (suite *InstallerWindowsTestSuite) xTestInstall_LegacyAndNew() {
+func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	pjfile := &projectfile.Project{
 		Name:  "string",
 		Owner: "string",
 	}
 	pjfile.Persist()
 
-	fail := suite.installer.Install()
+	var fail *failures.Failure
+	suite.installer, fail = runtime.InitInstaller()
+	suite.Require().NoError(fail.ToError())
+
+	onDownloadCalled := false
+	onInstallCalled := false
+
+	suite.installer.OnDownload(func() { onDownloadCalled = true })
+	suite.installer.OnInstall(func() { onInstallCalled = true })
+
+	fail = suite.installer.Install()
+	suite.Require().NoError(fail.ToError())
+
+	suite.True(onDownloadCalled, "OnDownload is triggered")
+	suite.True(onInstallCalled, "OnInstall is triggered")
+
+	onDownloadCalled = false
+	onInstallCalled = false
+	fail = suite.installer.Install()
+	suite.Require().NoError(fail.ToError())
+
+	suite.False(onDownloadCalled, "OnDownload is not triggered, because we already downloaded it")
+	suite.False(onInstallCalled, "OnInstall is not triggered, because we already installed it")
+}
+
+func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
+	pjfile := &projectfile.Project{
+		Name:  "string",
+		Owner: "string",
+	}
+	pjfile.Persist()
+
+	var fail *failures.Failure
+	suite.installer, fail = runtime.InitInstaller()
+	suite.Require().NoError(fail.ToError())
+
+	fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.Require().Len(suite.installer.InstallDirs(), 2)
@@ -120,6 +156,6 @@ func (suite *InstallerWindowsTestSuite) xTestInstall_LegacyAndNew() {
 	suite.Equal(1, metaCount, "Installed one artifact via metafile")
 }
 
-func Test_InstallerWindowsTestSuite(t *testing.T) {
-	suite.Run(t, new(InstallerWindowsTestSuite))
+func Test_InstallerTestSuite(t *testing.T) {
+	suite.Run(t, new(InstallerTestSuite))
 }

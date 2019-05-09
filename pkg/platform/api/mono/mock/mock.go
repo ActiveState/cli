@@ -3,6 +3,7 @@ package mock
 import (
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -26,8 +27,12 @@ func (m *Mock) Close() {
 }
 
 func (m *Mock) MockSignS3URI() {
-	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Fpython.tar.gz", 200, "s3/sign/python.tar.gz.json")
-	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Flegacy-python.tar.gz", 200, "s3/sign/legacy-python.tar.gz.json")
+	ext := ".tar.gz"
+	if runtime.GOOS == "windows" {
+		ext = ".zip"
+	}
+	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Fpython"+ext, 200, "s3/sign/python"+ext+".json")
+	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Flegacy-python"+ext, 200, "s3/sign/legacy-python"+ext+".json")
 }
 
 func (m *Mock) MockVcsGetCheckpoint() {
