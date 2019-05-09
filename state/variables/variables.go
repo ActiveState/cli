@@ -1,9 +1,6 @@
 package variables
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -67,34 +64,40 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	rows := [][]interface{}{}
 	vars := prj.Variables()
 	for _, v := range vars {
-		value := ""
 		encrypted := "-"
 		store := "local"
 		shared := "-"
+
 		valOrNil, failure := v.ValueOrNil()
 		if failure != nil {
 			return failure
-		} else if v.IsSecret() {
-			if valOrNil == nil {
-				value = locale.T("variables_value_secret_undefined")
-			} else {
-				value = locale.T("variables_value_secret")
-			}
+		}
+
+		if v.IsSecret() {
 			encrypted = locale.T("confirmation")
 			if v.IsShared() {
 				shared = string(*v.SharedWith())
 			}
 			store = string(*v.PulledFrom())
-		} else {
-			value = *valOrNil
 		}
-		rows = append(rows, []interface{}{v.Name(), sanitizeValue(value), encrypted, shared, store})
+
+		rows = append(rows,
+			[]interface{}{
+				v.Name(),
+				v.Description(),
+				setOrUnset(valOrNil),
+				encrypted,
+				shared,
+				store,
+			},
+		)
 	}
 
 	t := gotabulate.Create(rows)
 	t.SetHeaders([]string{
 		locale.T("variables_col_name"),
-		locale.T("variables_col_value"),
+		locale.T("variables_col_description"),
+		locale.T("variables_col_setunset"),
 		locale.T("variables_col_encrypted"),
 		locale.T("variables_col_shared"),
 		locale.T("variables_col_store"),
@@ -104,19 +107,11 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	print.Line(t.Render("simple"))
 
 	return nil
-
 }
 
-// sanitizeValue will reduce the string length to 100 characters or the first line of text
-func sanitizeValue(v string) string {
-	v = strings.TrimSpace(v)
-	nlPos := strings.Index(v, "\n")
-
-	if nlPos != -1 && nlPos < 100 {
-		v = fmt.Sprintf("%s [...]", v[0:nlPos])
-	} else if len(v) > 100 {
-		v = fmt.Sprintf("%s [...]", v[0:100])
+func setOrUnset(p *string) string {
+	if p == nil {
+		return "unset"
 	}
-
-	return v
+	return "set"
 }

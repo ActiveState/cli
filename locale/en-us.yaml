@@ -480,8 +480,10 @@ variables_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
 variables_col_name:
   other: Name
-variables_col_value:
-  other: Value
+variables_col_description:
+  other: Description
+variables_col_setunset:
+  other: Set/Unset
 variables_col_encrypted:
   other: Encrypted
 variables_col_shared:
