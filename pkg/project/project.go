@@ -394,6 +394,9 @@ func (script *Script) Source() *projectfile.Project { return script.projectfile 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
+// Description returns script description
+func (script *Script) Description() string { return script.script.Description }
+
 // Value returned with all variables evaluated
 func (script *Script) Value() string {
 	value := expander.ExpandFromProject(script.script.Value, script.projectfile)
