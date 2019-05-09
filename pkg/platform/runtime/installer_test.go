@@ -46,7 +46,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	pjfile.Persist()
 
-	suite.cacheDir, err = ioutil.TempDir("", "cli-installer-test-cache")
+	suite.cacheDir, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 
 	suite.downloadDir, err = ioutil.TempDir("", "cli-installer-test-download")
