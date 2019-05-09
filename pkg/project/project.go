@@ -276,6 +276,9 @@ func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 // Name returns variable name
 func (v *Variable) Name() string { return v.variable.Name }
 
+// Description returns variable description
+func (v *Variable) Description() string { return v.variable.Description }
+
 // IsSecret returns whether this variable is a secret variable or static
 func (v *Variable) IsSecret() bool { return v.variable.Value.StaticValue == nil }
 

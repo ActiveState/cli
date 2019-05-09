@@ -90,6 +90,7 @@ type VariableValue struct {
 // Variable covers the variable structure, which goes under Project
 type Variable struct {
 	Name        string        `yaml:"name"`
+	Description string        `yaml:"description"`
 	ValueRaw    interface{}   `yaml:"value"`
 	Value       VariableValue `yaml:"-"`
 	Constraints Constraint    `yaml:"constraints"`
