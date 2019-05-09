@@ -1,19 +1,18 @@
 package model_test
 
 import (
+	"runtime"
 	"testing"
 
-	"github.com/ActiveState/sysinfo"
-
 	"github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/stretchr/testify/suite"
 
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/sysinfo"
 )
 
 type RecipeTestSuite struct {
@@ -33,7 +32,9 @@ func (suite *RecipeTestSuite) BeforeTest(suiteName, testName string) {
 	suite.invMock.MockOrderRecipes()
 	suite.invMock.MockPlatforms()
 
-	model.OS = sysinfo.Linux // only linux is supported atm
+	if runtime.GOOS == "darwin" {
+		model.OS = sysinfo.Linux // mac is not supported yet, so spoof linux
+	}
 }
 
 func (suite *RecipeTestSuite) AfterTest(suiteName, testName string) {
