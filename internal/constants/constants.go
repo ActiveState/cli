@@ -27,6 +27,12 @@ const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
+const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+
+// AutoUpdateTimeoutEnvVarName is the env var that is used to override the timeout for auto update checks
+const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"
+
 // InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileName = "config.yaml"
 

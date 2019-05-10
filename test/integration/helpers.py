@@ -10,6 +10,8 @@ import pexpect
 import requests
 from pexpect.popen_spawn import PopenSpawn
 import psutil
+import subprocess
+import re
 
 is_windows = os.name == 'nt'
 
@@ -19,11 +21,13 @@ if is_windows:
 else:
     spawner = pexpect.spawn
 
-dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 try:
-    os.remove(os.path.join(dir_path, "integration.log"))
+    os.remove(os.path.join(test_dir, "integration.log"))
 except FileNotFoundError:
     pass
+
+project_dir = os.path.realpath(os.path.join(test_dir, "..", ".."))
 
 class IntegrationTest(unittest.TestCase):
 
@@ -31,6 +35,21 @@ class IntegrationTest(unittest.TestCase):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
         self.child = None
+
+        self.env = os.environ.copy()
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
+        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
+
+        self.test_dir = test_dir
+        self.project_dir = project_dir
+
+    def get_binary_name(self):
+        if is_windows:
+            return "state.exe"
+        return "state"
+
+    def get_build_path(self):
+        return os.path.realpath(os.path.join(test_dir, "..", "..", "build", self.get_binary_name()))
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
@@ -52,12 +71,17 @@ class IntegrationTest(unittest.TestCase):
            return self.child.ptyproc.pid
 
     def spawn(self, args):
-        dir_path_top = os.path.join(dir_path, "..", "..")
-        self.spawn_command('%s/build/state %s' % (dir_path_top, args))
+        if self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] != "true":
+            raise Exception("You're trying to run build/state while updates are enabled. This is not allowed. You should copy build/state somewhere and use spawn_command instead.")
+        self.spawn_command('%s %s' % (self.get_build_path(), args))
 
     def spawn_command(self, cmd):
-        self.child = spawner(cmd, env=self.env, timeout=10)
+        self.child = spawner(cmd, env=self.env, timeout=10, cwd=self.cwd)
         self.child.logfile_read = IntegrationLogger(cmd)
+
+    def spawn_command_blocking(self, cmd):
+        args = pexpect.split_command_line(cmd)
+        return subprocess.check_output(args, env=self.env, cwd=self.cwd, stderr=subprocess.DEVNULL)
 
     def clear_config(self):
         self.set_config(tempfile.mkdtemp())
@@ -69,22 +93,24 @@ class IntegrationTest(unittest.TestCase):
 
     def set_config(self, config_dir):
         self.config_dir = config_dir
-        self.env = os.environ.copy()
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
-        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
         self.cwd = cwd
         os.chdir(cwd)
 
+    def reset_cwd(self):
+        self.cwd = None
+        os.chdir(self.test_dir)
+
     def expect(self, pattern, timeout=10):
         try:
             idx = self.child.expect(pattern, timeout=timeout)
-        except pexpect.EOF:
+        except (pexpect.EOF, pexpect.exceptions.EOF):
             self.send_quit()
             self.expect_failure("Reached EOF", pattern)
-        except pexpect.TIMEOUT:
+        except (pexpect.TIMEOUT, pexpect.exceptions.TIMEOUT):
             self.send_quit()
             raise self.expect_failure("Reached timeout", pattern)
 
@@ -138,12 +164,12 @@ class IntegrationTest(unittest.TestCase):
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
-        raise self.failureException(msg) from None
+        raise self.failureException(msg)
 
 class IntegrationLogger:
 
     def __init__(self, cmd):
-        self.logfile = open(os.path.join(dir_path, "integration.log"), "ab")
+        self.logfile = open(os.path.join(test_dir, "integration.log"), "ab")
         self.logfile.write(("-- Executing '%s' --\n\n" % cmd).encode())
         self.logged = ""
 
@@ -165,6 +191,19 @@ class wait_for_timeout:
         signal.alarm(self.seconds)
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
+
+def get_constants():
+        const_path = os.path.join(
+            project_dir, "internal", "constants", "generated.go")
+        go_const_var_re = re.compile(
+            "const\s+(?P<name>\w+)\s*=\s*\"(?P<value>.*?)\"")
+        constants = {}
+        with open(const_path, 'r') as f:
+            for line in f:
+                match = go_const_var_re.search(line)
+                if match != None:
+                    constants[match.group("name")] = match.group("value")
+        return constants
 
 def Run():
     unittest.main()

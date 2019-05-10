@@ -11,14 +11,15 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/kardianos/osext"
+	update "gopkg.in/inconshreveable/go-update.v0"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/kardianos/osext"
-	update "gopkg.in/inconshreveable/go-update.v0"
 )
 
 var (
@@ -205,13 +206,21 @@ func (u *Updater) update() error {
 	return nil
 }
 
+func (u *Updater) fetchBranch() string {
+	branchName := constants.BranchName
+	if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
+		branchName = overrideBranch
+	}
+	return branchName
+}
+
 // fetchInfo gets the `json` file containing update information
 func (u *Updater) fetchInfo() error {
 	if u.info.Version != "" {
 		// already called fetchInfo
 		return nil
 	}
-	branchName := constants.BranchName
+	branchName := u.fetchBranch()
 	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
 	if u.DesiredVersion != "" {
 		fullURL += u.DesiredVersion + "/"
@@ -262,7 +271,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	var argCmdName = url.QueryEscape(u.CmdName)
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
-	var branchName = constants.BranchName
+	var branchName = u.fetchBranch()
 	var ext = ".tar.gz"
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
