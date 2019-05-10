@@ -35,7 +35,10 @@ class IntegrationTest(unittest.TestCase):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
         self.child = None
+
         self.env = os.environ.copy()
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
+        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
 
         self.test_dir = test_dir
         self.project_dir = project_dir
@@ -68,6 +71,9 @@ class IntegrationTest(unittest.TestCase):
            return self.child.ptyproc.pid
 
     def spawn(self, args):
+        if self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] != "true" {
+            raise Exception("You're trying to run build/state while updates are enabled. This is not allowed. You should copy build/state somewhere and use spawn_command instead.")
+        }
         self.spawn_command('%s %s' % (self.get_build_path(), args))
 
     def spawn_command(self, cmd):
@@ -76,7 +82,7 @@ class IntegrationTest(unittest.TestCase):
 
     def spawn_command_blocking(self, cmd):
         args = pexpect.split_command_line(cmd)
-        return subprocess.check_output(args, env=self.env, stderr=subprocess.DEVNULL)
+        return subprocess.check_output(args, env=self.env, cwd=self.cwd, stderr=subprocess.DEVNULL)
 
     def clear_config(self):
         self.set_config(tempfile.mkdtemp())
@@ -88,10 +94,7 @@ class IntegrationTest(unittest.TestCase):
 
     def set_config(self, config_dir):
         self.config_dir = config_dir
-        self.env = os.environ.copy()
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
-        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
-        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
         #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
