@@ -9,7 +9,7 @@ dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 class TestActivate(helpers.IntegrationTest):
 
     def __init__(self, *args, **kwargs):
-        super(TestUpdates, self).__init__(*args, **kwargs)
+        super(TestActivate, self).__init__(*args, **kwargs)
         self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "false"
 
     def test_activate_python2(self):
