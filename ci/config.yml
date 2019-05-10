@@ -37,7 +37,6 @@ jobs:
         displayName: Prepare Agent
       - template: steps.yml
   - job: macos
-    condition: false
     pool:
       vmImage: macos-10.13
     variables:
@@ -64,7 +63,6 @@ jobs:
       - template: steps.yml
 
   - job: windows
-    condition: false
     pool:
       vmImage: vs2017-win2016
     variables:
