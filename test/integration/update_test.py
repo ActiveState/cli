@@ -64,6 +64,12 @@ class TestUpdates(helpers.IntegrationTest):
         self.expect("Version locked at")
         self.wait()
 
+        print()
+        print(self.spawn_command_blocking("cat %s/internal/constants/generated.go" % self.project_dir))
+        print()
+        print(self.spawn_command_blocking("%s/build/state --version" % self.project_dir))
+        print()
+
         self.assert_version_match(True, temp_bin, "Version number should match because we locked the version")
 
 
