@@ -492,6 +492,10 @@ variables_col_store:
   other: Store
 variables_value_secret_undefined:
   other: <undefined>
+variables_value_set:
+  other: Set
+variables_value_unset:
+  other: Unset
 variables_value_secret:
   other: <encrypted>
 variables_err:

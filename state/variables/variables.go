@@ -162,9 +162,9 @@ func encVal(isSecret bool) string {
 
 func setOrUnset(p *string) string {
 	if p == nil {
-		return "unset"
+		return locale.T("variables_value_unset")
 	}
-	return "set"
+	return locale.T("variables_value_set")
 }
 
 func possibleString(i interface{}) string {
