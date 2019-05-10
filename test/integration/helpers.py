@@ -71,9 +71,8 @@ class IntegrationTest(unittest.TestCase):
            return self.child.ptyproc.pid
 
     def spawn(self, args):
-        if self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] != "true" {
+        if self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] != "true":
             raise Exception("You're trying to run build/state while updates are enabled. This is not allowed. You should copy build/state somewhere and use spawn_command instead.")
-        }
         self.spawn_command('%s %s' % (self.get_build_path(), args))
 
     def spawn_command(self, cmd):
