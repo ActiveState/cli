@@ -90,6 +90,7 @@ class IntegrationTest(unittest.TestCase):
         self.env = os.environ.copy()
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
+        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
         #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):

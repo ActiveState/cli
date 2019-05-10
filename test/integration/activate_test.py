@@ -8,10 +8,9 @@ dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 class TestActivate(helpers.IntegrationTest):
 
-    def test_activate(self):
-        self.spawn("")
-        self.expect("Usage:")
-        self.wait()
+    def __init__(self, *args, **kwargs):
+        super(TestUpdates, self).__init__(*args, **kwargs)
+        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "false"
 
     def test_activate_python2(self):
         path = os.path.join(dir_path, "testdata")
@@ -41,6 +40,8 @@ class TestActivate(helpers.IntegrationTest):
         auth.set_config(self.config_dir)
         auth.set_cwd(path)
         auth.login_as_persistent_user()
+
+        self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "false"
 
         self.spawn("activate ActiveState-CLI/Python3")
         self.expect("Where would you like to checkout")
