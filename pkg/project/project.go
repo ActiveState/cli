@@ -126,7 +126,7 @@ func (p *Project) Owner() string { return p.projectfile.Owner }
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version }
 
-// Branch returns version branch
+// Branch returns branch that we're pinned to (useless unless version is also set)
 func (p *Project) Branch() string { return p.projectfile.Branch }
 
 // Namespace returns project namespace
