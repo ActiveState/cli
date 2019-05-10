@@ -3,116 +3,70 @@ import sys
 import re
 import subprocess
 import shutil
+import uuid
+import tempfile
 
 import helpers
-
-test_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-project_dir = os.path.realpath(os.path.join(test_dir, "..", ".."))
 
 
 class TestUpdates(helpers.IntegrationTest):
 
     def __init__(self, *args, **kwargs):
         super(TestUpdates, self).__init__(*args, **kwargs)
-        self.constants = {}
-        self.parse_constants_files()
+        self.constants = helpers.get_constants()
 
-    def get_platform(self):
-        if sys.platform == "win32":
-            return "windows" + "-" + "amd64"
-        return sys.platform + "-" + "amd64"
+    def setUp(self):
+        self.clear_config() # clear_config will set up env vars, so below we ensure the proper ones are set
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "false" # Allow auto updates
+        self.env["ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"] = "10" # Ensure auto-update has plenty of time to run
+        self.env["ACTIVESTATE_CLI_UPDATE_BRANCH"] = "master" # Our own branch probably doesn't have update bits yet
 
-    def parse_constants_files(self):
-        const_path = os.path.join(
-            project_dir, "internal", "constants", "generated.go")
-        go_const_var_re = re.compile(
-            "const\s+(?P<name>\w+)\s*=\s*\"(?P<value>.*?)\"")
-        with open(const_path, 'r') as f:
-            for line in f:
-                match = go_const_var_re.search(line)
-                if match != None:
-                    self.constants[match.group("name")] = match.group("value")
+        self.temp_path = self.get_temp_path()
+        os.mkdir(self.temp_path)
+        shutil.copy(os.path.join(self.test_dir, "testdata", "activestate.yaml"), self.temp_path)
+        self.set_cwd(self.temp_path)
 
-    def get_arch_ext(self):
-        if sys.platform == "win32":
-            return ".zip"
-        return ".tar.gz"
-
-    def get_bin_ext(self):
-        if sys.platform == "win32":
-            return ".exe"
-        return ""
-
-    def unarchive_cmd(self, platform):
-        archive_path = os.path.join(project_dir,
-                                    "public",
-                                    "update",
-                                    self.constants["BranchName"],
-                                    self.constants["Version"],
-                                    platform+self.get_arch_ext())
-
-        if platform.startswith("windows"):
-            return ["powershell.exe",
-                    "-nologo",
-                    "-noprofile",
-                    "-command",
-                    "\"Expand-Archive -LiteralPath '{0}' -DestinationPath '{1}'\"".format(archive_path, test_dir)]
-        else:
-            return ["tar",
-                    "-C",
-                    test_dir,
-                    "-xf",
-                    archive_path]
-
-    def run_unarchive_cmd(self):
-        platform = self.get_platform()
-        done = subprocess.run(self.unarchive_cmd(platform))
-        self.assertEqual(0, done.returncode, "Nothing should go wrong")
-
-    def test_update_bits_work(self):
-        self.run_unarchive_cmd()
-        
-        bin = os.path.join(test_dir, platform+self.get_bin_ext())
-        cmd = "{0} --version".format(bin)
-        self.spawn_command(cmd)
-        self.expect(self.constants["BuildNumber"])
-        self.wait()
-        os.remove(bin)
-
-    def get_version_from_output(self, output):
+    def get_version(self, temp_bin):
+        output = self.spawn_command_blocking("%s --version" % temp_bin)
         version_regex = re.compile(".*(\d\.\d\.\d-\d{4})")
         match = version_regex.search(str(output))
         if match:
             return match.group(1)
 
-    def _assert_version(self, same, bin_path):
-        shutil.copy(self.get_build_path(), test_dir)
-        version = self.get_version_from_output(self.get_output("%s --version" %(bin_path)))
-        if same:
-            self.assertEqual(version, self.constants["Version"], "They should be equal.")
-        else:
-            self.assertNotEqual(version, self.constants["Version"], "They should not be equal.")
-        os.remove(bin_path)
+    def get_temp_path(self):
+        return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
 
-    def test_update_works(self):
-        # get the binary
-        bin_path = os.path.join(test_dir, self.get_binary_name())
-        # Turn enable updates in tests
-        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "false"
-        # run state --version
-        # check version changed
-        self._assert_version(False, bin_path)
-        #run state update
-        # confirm version changed
-        self.spawn_command("%s update" %(bin_path))
+    def get_temp_bin(self):
+        build_path = build_path = os.path.join(self.test_dir, self.get_build_path())
+        temp_bin = self.get_temp_path()
+        shutil.copy(build_path, temp_bin)
+        return temp_bin
+
+    def assert_version_match(self, same, temp_bin, message):
+        assertFn = self.assertEqual if same else self.assertNotEqual
+        assertFn(self.get_version(temp_bin), self.constants["Version"], message)
+
+    def test_auto_update_works(self):
+        temp_bin = self.get_temp_bin()
+        self.assert_version_match(False, temp_bin, "Version number should not match because auto-update should have occured")
+
+    def test_manual_update_works(self):
+        self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true" # Disable auto update
+        temp_bin = self.get_temp_bin()
+        self.spawn_command("%s update" % temp_bin)
+        self.expect("Update completed")
         self.wait()
-        self._assert_version(False, bin_path)
-        # set versionlock `state update --lock`
-        # run --version
-        # Verions doesn't change
-        self.spawn_command("%s update --lock" %(bin_path))
+
+        self.assert_version_match(False, temp_bin, "Version number should not match because we ran update")
+
+    def test_locked_version_works(self):
+        temp_bin = self.get_temp_bin() 
+        self.spawn_command("%s update --lock" % temp_bin)
+        self.expect("Version locked at")
         self.wait()
-        self._assert_version(True, bin_path)
+
+        self.assert_version_match(True, temp_bin, "Version number should match because we locked the version")
+
 
 if __name__ == '__main__':
     helpers.Run()
