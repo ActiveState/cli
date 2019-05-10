@@ -24,7 +24,7 @@ steps:
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
     workingDirectory: $(WORKDIR)
-    condition: eq(variables['Agent.OS'],'Linux')
+    condition: false # eq(variables['Agent.OS'],'Linux')
     displayName: Prepare Code Climate
   - bash: |
       set -e
@@ -46,7 +46,7 @@ steps:
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
     workingDirectory: $(WORKDIR)
-    condition: eq(variables['Agent.OS'],'Linux')
+    condition: false # eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - bash: |
       set -e
