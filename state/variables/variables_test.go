@@ -23,6 +23,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	orgsPath    = "/organizations"
+	userSecPath = orgsPath + "/00010001-0001-0001-0001-000100010001/user_secrets"
+	orgsASPath  = orgsPath + "/ActiveState"
+	intelPath   = orgsASPath + "/projects/CodeIntel"
+)
+
 type VariablesCommandTestSuite struct {
 	suite.Suite
 
@@ -36,7 +43,8 @@ func (st *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 	projectfile.Reset()
 
-	err := osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	lkp := constants.KeypairLocalFileName + ".key"
+	err := osutil.CopyTestFileToConfigDir("self-private.key", lkp, 0600)
 	st.Require().NoError(err, "issue creating local private key")
 
 	// support test projectfile access
@@ -48,8 +56,9 @@ func (st *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	st.Require().NotNil(secretsClient)
 	st.secretsClient = secretsClient
 
-	st.secretsMock = httpmock.Activate(secretsClient.BaseURI)
-	st.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	activate := httpmock.Activate
+	st.secretsMock = activate(secretsClient.BaseURI)
+	st.platformMock = activate(api.GetServiceURL(api.ServiceMono).String())
 
 	st.authMock = authMock.Init()
 	st.authMock.MockLoggedin()
@@ -79,7 +88,7 @@ func (st *VariablesCommandTestSuite) TestCommandConfig() {
 func (st *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 	cmd := variables.NewCommand(st.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
+	st.platformMock.RegisterWithCode("GET", orgsASPath, 401)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
@@ -95,12 +104,13 @@ func (st *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 func (st *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
 	cmd := variables.NewCommand(st.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	st.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
-		// if we don't do it this way, something with the mock framework breaks
-		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
-	})
-	st.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 404)
+	st.platformMock.RegisterWithCode("GET", orgsASPath, 200)
+	retFn := func(req *http.Request) (int, string) {
+		// odd requirement for mock framework
+		return 200, userSecPath[1:]
+	}
+	st.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
+	st.platformMock.RegisterWithCode("GET", intelPath, 404)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
@@ -116,12 +126,13 @@ func (st *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
 func (st *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := variables.NewCommand(st.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	st.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
-	st.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
-		// if we don't do it this way, something with the mock framework breaks
-		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
-	})
+	st.platformMock.RegisterWithCode("GET", orgsASPath, 200)
+	st.platformMock.RegisterWithCode("GET", intelPath, 200)
+	retFn := func(req *http.Request) (int, string) {
+		// odd requirement for mock framework
+		return 200, userSecPath[1:]
+	}
+	st.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
@@ -132,18 +143,52 @@ func (st *VariablesCommandTestSuite) TestExecute_ListAll() {
 	st.Require().NoError(execErr)
 	st.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
-	st.Regexp(fmt.Sprintf("\\bDEBUG\\s+%v\\s+%s\\s+%s\\s+%s", true, "-", "-", "local"), outStr)
-	st.Regexp(fmt.Sprintf("\\bPYTHONPATH\\s+%s\\s+%s\\s+%s\\s+%s", "%projectDir%/src:%projectDir%/tests", "-", "-", "local"), outStr)
-	st.Regexp(fmt.Sprintf("\\borg-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "organization", "organization"), outStr)
-	st.Regexp(fmt.Sprintf("\\bproj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "organization", "project"), outStr)
-	st.Regexp(fmt.Sprintf("\\buser-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "-", "organization"), outStr)
-	st.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "-", "project"), outStr)
-	st.Regexp(fmt.Sprintf("\\bundefined-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret_undefined"), locale.T("confirmation"), "organization", "organization"), outStr)
+	spf := fmt.Sprintf
+	st.Regexp(spf("\\bDEBUG\\s+%v\\s+%s\\s+%s\\s+%s",
+		true,
+		"-",
+		"-",
+		"local",
+	), outStr)
+	st.Regexp(spf("\\bPYTHONPATH\\s+%s\\s+%s\\s+%s\\s+%s",
+		"%projectDir%/src:%projectDir%/tests",
+		"-",
+		"-",
+		"local",
+	), outStr)
+	st.Regexp(spf("\\borg-secret\\s+%s\\s+%s\\s+%s\\s+%s",
+		locale.T("variables_value_secret"),
+		locale.T("confirmation"),
+		"organization",
+		"organization",
+	), outStr)
+	st.Regexp(spf("\\bproj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
+		locale.T("variables_value_secret"),
+		locale.T("confirmation"),
+		"organization",
+		"project",
+	), outStr)
+	st.Regexp(spf(
+		"\\buser-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
+		locale.T("variables_value_secret"),
+		locale.T("confirmation"),
+		"-",
+		"organization",
+	), outStr)
+	st.Regexp(spf(
+		"\\buser-proj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
+		locale.T("variables_value_secret"),
+		locale.T("confirmation"),
+		"-",
+		"project",
+	), outStr)
+	st.Regexp(spf(
+		"\\bundefined-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
+		locale.T("variables_value_secret_undefined"),
+		locale.T("confirmation"),
+		"organization",
+		"organization",
+	), outStr)
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {
