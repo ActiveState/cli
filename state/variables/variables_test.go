@@ -39,109 +39,109 @@ type VariablesCommandTestSuite struct {
 	authMock      *authMock.Mock
 }
 
-func (st *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 	projectfile.Reset()
 
 	lkp := constants.KeypairLocalFileName + ".key"
 	err := osutil.CopyTestFileToConfigDir("self-private.key", lkp, 0600)
-	st.Require().NoError(err, "issue creating local private key")
+	suite.Require().NoError(err, "issue creating local private key")
 
 	// support test projectfile access
 	root, err := environment.GetRootPath()
-	st.Require().NoError(err, "Should detect root path")
+	suite.Require().NoError(err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "state", "variables", "testdata"))
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
-	st.Require().NotNil(secretsClient)
-	st.secretsClient = secretsClient
+	suite.Require().NotNil(secretsClient)
+	suite.secretsClient = secretsClient
 
 	activate := httpmock.Activate
-	st.secretsMock = activate(secretsClient.BaseURI)
-	st.platformMock = activate(api.GetServiceURL(api.ServiceMono).String())
+	suite.secretsMock = activate(secretsClient.BaseURI)
+	suite.platformMock = activate(api.GetServiceURL(api.ServiceMono).String())
 
-	st.authMock = authMock.Init()
-	st.authMock.MockLoggedin()
+	suite.authMock = authMock.Init()
+	suite.authMock.MockLoggedin()
 }
 
-func (st *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
+func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	httpmock.DeActivate()
-	st.authMock.Close()
+	suite.authMock.Close()
 }
 
-func (st *VariablesCommandTestSuite) TestCommandConfig() {
-	cmd := variables.NewCommand(st.secretsClient)
+func (suite *VariablesCommandTestSuite) TestCommandConfig() {
+	cmd := variables.NewCommand(suite.secretsClient)
 	conf := cmd.Config()
-	st.Equal("variables", conf.Name)
-	st.Equal("variables_cmd_description", conf.Description, "i18n symbol")
+	suite.Equal("variables", conf.Name)
+	suite.Equal("variables_cmd_description", conf.Description, "i18n symbol")
 
 	subCmds := conf.GetCobraCmd().Commands()
-	st.Require().Len(subCmds, 3, "number of subcommands")
-	st.Equal("get", subCmds[0].Name())
-	st.Equal("set", subCmds[1].Name())
-	st.Equal("sync", subCmds[2].Name())
-	st.Len(conf.Flags, 0, "number of command flags supported")
-	st.Len(conf.Arguments, 0, "number of commands args supported")
+	suite.Require().Len(subCmds, 3, "number of subcommands")
+	suite.Equal("get", subCmds[0].Name())
+	suite.Equal("set", subCmds[1].Name())
+	suite.Equal("sync", subCmds[2].Name())
+	suite.Len(conf.Flags, 0, "number of command flags supported")
+	suite.Len(conf.Arguments, 0, "number of commands args supported")
 }
 
-func (st *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
-	cmd := variables.NewCommand(st.secretsClient)
+func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
+	cmd := variables.NewCommand(suite.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", orgsASPath, 401)
+	suite.platformMock.RegisterWithCode("GET", orgsASPath, 401)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{})
 		execErr = cmd.Config().Execute()
 	})
-	st.Require().NoError(outErr)
-	st.Error(execErr, "failure occurred")
+	suite.Require().NoError(outErr)
+	suite.Error(execErr, "failure occurred")
 
-	st.Contains(outStr, locale.T("err_api_not_authenticated"))
+	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
 
-func (st *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
-	cmd := variables.NewCommand(st.secretsClient)
+func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
+	cmd := variables.NewCommand(suite.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", orgsASPath, 200)
+	suite.platformMock.RegisterWithCode("GET", orgsASPath, 200)
 	retFn := func(req *http.Request) (int, string) {
 		// odd requirement for mock framework
 		return 200, userSecPath[1:]
 	}
-	st.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
-	st.platformMock.RegisterWithCode("GET", intelPath, 404)
+	suite.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
+	suite.platformMock.RegisterWithCode("GET", intelPath, 404)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{})
 		execErr = cmd.Config().Execute()
 	})
-	st.Require().NoError(outErr)
-	st.Error(execErr, "failure occurred")
+	suite.Require().NoError(outErr)
+	suite.Error(execErr, "failure occurred")
 
-	st.Contains(outStr, locale.T("err_api_project_not_found"))
+	suite.Contains(outStr, locale.T("err_api_project_not_found"))
 }
 
-func (st *VariablesCommandTestSuite) TestExecute_ListAll() {
-	cmd := variables.NewCommand(st.secretsClient)
+func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
+	cmd := variables.NewCommand(suite.secretsClient)
 
-	st.platformMock.RegisterWithCode("GET", orgsASPath, 200)
-	st.platformMock.RegisterWithCode("GET", intelPath, 200)
+	suite.platformMock.RegisterWithCode("GET", orgsASPath, 200)
+	suite.platformMock.RegisterWithCode("GET", intelPath, 200)
 	retFn := func(req *http.Request) (int, string) {
 		// odd requirement for mock framework
 		return 200, userSecPath[1:]
 	}
-	st.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
+	suite.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{})
 		execErr = cmd.Config().Execute()
 	})
-	st.Require().NoError(outErr)
-	st.Require().NoError(execErr)
-	st.Require().Nil(failures.Handled(), "unexpected failure occurred")
+	suite.Require().NoError(outErr)
+	suite.Require().NoError(execErr)
+	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
 	rowRegexByColVals := func(vals ...interface{}) string {
 		return fmt.Sprintf(
@@ -209,7 +209,7 @@ func (st *VariablesCommandTestSuite) TestExecute_ListAll() {
 	}
 
 	for _, rowRegex := range rowRegexs {
-		st.Regexp(rowRegex, outStr)
+		suite.Regexp(rowRegex, outStr)
 	}
 }
 
