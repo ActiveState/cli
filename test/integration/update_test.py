@@ -37,9 +37,8 @@ class TestUpdates(helpers.IntegrationTest):
         return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
 
     def get_temp_bin(self):
-        build_path = build_path = os.path.join(self.test_dir, self.get_build_path())
         temp_bin = self.get_temp_path()
-        shutil.copy(build_path, temp_bin)
+        shutil.copy(self.get_build_path(), temp_bin)
         return temp_bin
 
     def assert_version_match(self, same, temp_bin, message):
