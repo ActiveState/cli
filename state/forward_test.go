@@ -8,15 +8,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kami-zh/go-capturer"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func testdataDir(t *testing.T) string {
@@ -41,7 +42,7 @@ func TestForwardNotUsed(t *testing.T) {
 
 	setupCwd(t, false)
 	testdatadir := testdataDir(t)
-	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.Version)
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.BranchName, constants.Version)
 
 	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
 	exit = exiter.Exit
@@ -65,23 +66,30 @@ func TestForwardAndExit(t *testing.T) {
 	}
 
 	testdatadir := testdataDir(t)
-	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state"+ext), "1.2.3-123")
+	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state"+ext), "master", "1.2.3-123")
 
+	var exitCode int
 	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
-	exitCode := exiter.WaitForExit(func() {
-		forwardAndExit(args)
+	out := capturer.CaptureStdout(func() {
+		exitCode = exiter.WaitForExit(func() {
+			forwardAndExit(args)
+		})
 	})
-	require.Equal(t, 0, exitCode, "exits with code 0")
+	require.Equal(t, 0, exitCode, "exits with code 0, output was:\n "+out)
 
 	// Invoking the individual methods so we can capture stdout properly
-	binary := forwardBin("1.2.3-123")
-	out, err := osutil.CaptureStdout(func() {
+	versionInfo := &projectfile.VersionInfo{Branch: "master", Version: "1.2.3-123"}
+	binary := forwardBin(versionInfo)
+	assert.Contains(t, binary, versionInfo.Branch, "Binary includes branch name")
+	assert.Contains(t, binary, versionInfo.Version, "Binary includes version ")
+	require.NotEmpty(t, binary, "Binary is set")
+
+	out = capturer.CaptureStdout(func() {
 		exitCode = exiter.WaitForExit(func() {
 			execForwardAndExit(binary, args)
 		})
 	})
-	require.Equal(t, 0, exitCode, "exits with code 0")
-	require.NoError(t, err)
+	require.Equal(t, 0, exitCode, "exits with code 0, output was:\n "+out)
 
 	assert.Contains(t, out, fmt.Sprintf("OUTPUT--%s--OUTPUT", strings.Join(args[1:], " ")), "state.sh mock should print our args")
 }

@@ -7,22 +7,20 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 )
 
 func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
-	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
+	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
 
 	updater := createUpdater()
 
@@ -35,7 +33,7 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 	defer httpmock.DeActivate()
 	httpmock.RegisterWithResponseBody(
 		"GET",
-		updatemocks.CreateRequestPath(fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
+		updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
 		200,
 		`{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 

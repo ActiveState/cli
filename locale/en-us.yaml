@@ -593,6 +593,8 @@ downloading_state_version:
   other: "Downloading state tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:
   other: Could not forward command to the appropriate state tool version
+forward_fail_with_error:
+  other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
 forward_fail_download:
   other: Could not forward command to the appropriate state tool version, download failed
 forward_fail_perm:

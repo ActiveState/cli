@@ -1,7 +1,6 @@
 name: CodeIntel
 owner: ActiveState
 namespace: github.com/ActiveState/CodeIntel
-version: master
 environments: dev,qa,prod
 platforms:
   - name: Linux64Label
