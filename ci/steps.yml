@@ -40,6 +40,7 @@ steps:
       # Tests appear to be breaking the authentication, so re-authenticate
       state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
+    condition: false
     displayName: Unit Tests
   - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
