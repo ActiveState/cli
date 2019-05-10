@@ -1,6 +1,7 @@
 package variables_test
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -141,7 +142,75 @@ func (st *VariablesCommandTestSuite) TestExecute_ListAll() {
 	st.Require().NoError(outErr)
 	st.Require().NoError(execErr)
 	st.Require().Nil(failures.Handled(), "unexpected failure occurred")
-	st.Require().NotEmpty(outStr, "output should not be empty")
+
+	rowRegexByColVals := func(vals ...interface{}) string {
+		return fmt.Sprintf(
+			`\b%s\s+%s\s+%v\s+%s\s+%s\s+%s`,
+			vals...,
+		)
+	}
+	rowRegexs := []string{
+		rowRegexByColVals(
+			"DEBUG",
+			"debug",
+			locale.T("variables_value_set"),
+			"-",
+			"-",
+			"local",
+		),
+		rowRegexByColVals(
+			"PYTHONPATH",
+			"pythonpath",
+			locale.T("variables_value_set"),
+			"-",
+			"-",
+			"local",
+		),
+		rowRegexByColVals(
+			"org-secret",
+			"org secret",
+			locale.T("variables_value_set"),
+			locale.T("confirmation"),
+			"organization",
+			"organization",
+		),
+		rowRegexByColVals(
+			"proj-secret",
+			"proj secret",
+			locale.T("variables_value_set"),
+			locale.T("confirmation"),
+			"organization",
+			"project",
+		),
+		rowRegexByColVals(
+			"user-org-secret",
+			"user org secret",
+			locale.T("variables_value_set"),
+			locale.T("confirmation"),
+			"-",
+			"organization",
+		),
+		rowRegexByColVals(
+			"user-proj-secret",
+			"user proj secret",
+			locale.T("variables_value_set"),
+			locale.T("confirmation"),
+			"-",
+			"project",
+		),
+		rowRegexByColVals(
+			"undefined-org-secret",
+			"undefined org secret",
+			locale.T("variables_value_unset"),
+			locale.T("confirmation"),
+			"organization",
+			"organization",
+		),
+	}
+
+	for _, rowRegex := range rowRegexs {
+		st.Regexp(rowRegex, outStr)
+	}
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {
