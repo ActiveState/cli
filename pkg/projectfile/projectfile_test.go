@@ -159,7 +159,6 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Name, "Name should be set")
 	assert.NotEmpty(t, project.Owner, "Owner should be set")
 	assert.NotEmpty(t, project.Namespace, "Namespace should be set")
-	assert.NotEmpty(t, project.Version, "Version should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
 
@@ -288,26 +287,26 @@ func TestGetActivated(t *testing.T) {
 	Reset()
 }
 
-func TestParseVersion(t *testing.T) {
+func TestParseVersionInfo(t *testing.T) {
 	setCwd(t, "")
-	version, fail := ParseVersion()
+	versionInfo, fail := ParseVersionInfo()
 	require.NoError(t, fail.ToError())
-	assert.Empty(t, version, "No version exists")
+	assert.Nil(t, versionInfo, "No version exists")
 
 	setCwd(t, "withversion")
-	version, fail = ParseVersion()
+	versionInfo, fail = ParseVersionInfo()
 	require.NoError(t, fail.ToError())
-	assert.NotEmpty(t, version, "Version exists")
+	assert.NotNil(t, versionInfo, "Version exists")
 
 	setCwd(t, "withbadversion")
-	version, fail = ParseVersion()
+	versionInfo, fail = ParseVersionInfo()
 	assert.Error(t, fail.ToError())
 	assert.Equal(t, FailInvalidVersion.Name, fail.Type.Name, "Fails with FailInvalidVersion")
 
-	path, err := ioutil.TempDir("", "ParseVersionTest")
+	path, err := ioutil.TempDir("", "ParseVersionInfoTest")
 	require.NoError(t, err)
 	os.Chdir(path)
-	version, fail = ParseVersion()
+	versionInfo, fail = ParseVersionInfo()
 	require.NoError(t, fail.ToError())
-	assert.Empty(t, version, "No version exists, because no project file exists")
+	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
 }

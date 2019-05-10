@@ -3,7 +3,7 @@ package update
 import (
 	"os"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/spf13/cobra"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Command holds our main command definition
@@ -71,7 +71,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	if isForwardCall() {
 		// If this is a forward call (version locking) then we should just update the version in the activestate.yaml
 		// The actual update will happen the next time the state tool is invoked in this project
-		fail := lockVersion(info.Version)
+		fail := lockVersion(constants.BranchName, info.Version)
 		if fail != nil {
 			failures.Handle(fail, locale.T("err_update_failed"))
 			os.Exit(1)
@@ -89,7 +89,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 func ExecuteLock(cmd *cobra.Command, args []string) {
 	print.Info(locale.Tr("locking_version", constants.Version))
-	fail := lockVersion(constants.Version)
+	fail := lockVersion(constants.BranchName, constants.Version)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_lock_failed"))
 		os.Exit(1)
@@ -97,8 +97,9 @@ func ExecuteLock(cmd *cobra.Command, args []string) {
 	print.Info(locale.Tr("version_locked", constants.Version))
 }
 
-func lockVersion(version string) *failures.Failure {
+func lockVersion(branch, version string) *failures.Failure {
 	pj := projectfile.Get()
+	pj.Branch = branch
 	pj.Version = version
 	return pj.Save()
 }

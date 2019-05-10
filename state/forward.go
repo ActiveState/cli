@@ -5,15 +5,14 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
-
 	"github.com/phayes/permbits"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
@@ -25,18 +24,21 @@ var forceFileExt string
 
 // forwardAndExit will forward the call to the appropriate state tool version if necessary
 func forwardAndExit(args []string) {
-	version, fail := projectfile.ParseVersion()
+	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_version_parse"))
 		exit(1)
 	}
-	if !shouldForward(version) {
+	if versionInfo == nil {
+		return
+	}
+	if !shouldForward(versionInfo) {
 		return
 	}
 
-	logging.Debug("Forwarding to version %s, arguments: %v", version, args[1:])
-	binary := forwardBin(version)
-	ensureForwardExists(binary, version)
+	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
+	binary := forwardBin(versionInfo)
+	ensureForwardExists(binary, versionInfo)
 
 	execForwardAndExit(binary, args)
 }
@@ -47,16 +49,17 @@ func execForwardAndExit(binary string, args []string) {
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Error("Forwarding command resulted in error: %v", err)
+		print.Error(locale.Tr("forward_fail_with_error", err.Error()))
 	}
 	exit(code)
 }
 
-func shouldForward(version string) bool {
-	return !(version == "" || version == constants.Version)
+func shouldForward(versionInfo *projectfile.VersionInfo) bool {
+	return versionInfo != nil && (versionInfo.Version != constants.Version || versionInfo.Branch != constants.BranchName)
 }
 
-func forwardBin(version string) string {
-	filename := fmt.Sprintf("%s-%s", constants.CommandName, version)
+func forwardBin(versionInfo *projectfile.VersionInfo) string {
+	filename := fmt.Sprintf("%s-%s-%s", constants.CommandName, versionInfo.Branch, versionInfo.Version)
 	if forceFileExt != "" {
 		filename += forceFileExt
 	} else if runtime.GOOS == "windows" {
@@ -66,7 +69,7 @@ func forwardBin(version string) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary, version string) {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 	if fileutils.FileExists(binary) {
 		return
 	}
@@ -76,7 +79,8 @@ func ensureForwardExists(binary, version string) {
 		APIURL:         constants.APIUpdateURL,
 		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
-		DesiredVersion: version,
+		DesiredBranch:  versionInfo.Branch,
+		DesiredVersion: versionInfo.Version,
 	}
 
 	info, err := up.Info()
@@ -86,7 +90,7 @@ func ensureForwardExists(binary, version string) {
 	}
 
 	if info != nil {
-		print.Line(locale.Tr("downloading_state_version", version))
+		print.Line(locale.Tr("downloading_state_version", info.Version))
 		err = up.Download(binary)
 		if err != nil {
 			failures.Handle(err, locale.T("forward_fail_download"))

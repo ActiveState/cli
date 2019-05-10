@@ -8,19 +8,20 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUpdaterNoError(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
-	updatemocks.MockUpdater(t, os.Args[0], "1.3")
+	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.3")
 
 	updater := createUpdater()
 

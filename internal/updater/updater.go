@@ -47,6 +47,7 @@ type Updater struct {
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
 	Dir            string // Directory to store selfupdate state.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
+	DesiredBranch  string
 	DesiredVersion string
 	info           Info
 	Requester      Requester
@@ -84,8 +85,7 @@ func (u *Updater) CanUpdate() bool {
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
 func PrintUpdateMessage() {
-	versionLock, _ := projectfile.ParseVersion()
-	if versionLock == "" {
+	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo == nil {
 		return
 	}
 
@@ -207,7 +207,10 @@ func (u *Updater) update() error {
 }
 
 func (u *Updater) fetchBranch() string {
-	branchName := constants.BranchName
+	branchName := u.DesiredBranch
+	if branchName == "" {
+		branchName = constants.BranchName
+	}
 	if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
 		branchName = overrideBranch
 	}

@@ -54,8 +54,7 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 // Otherwise, returns `false`.
 // TimedCheck is skipped altogether if the current project has a locked version.
 func TimedCheck() bool {
-	versionLock, _ := projectfile.ParseVersion()
-	if versionLock != "" {
+	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo != nil {
 		return false
 	}
 
