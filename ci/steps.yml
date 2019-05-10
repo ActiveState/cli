@@ -24,7 +24,7 @@ steps:
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
     workingDirectory: $(WORKDIR)
-    condition: false # eq(variables['Agent.OS'],'Linux')
+    condition: eq(variables['Agent.OS'],'Linux')
     displayName: Prepare Code Climate
   - bash: |
       set -e
@@ -40,13 +40,12 @@ steps:
       # Tests appear to be breaking the authentication, so re-authenticate
       state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
-    condition: false
     displayName: Unit Tests
   - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
     workingDirectory: $(WORKDIR)
-    condition: false # eq(variables['Agent.OS'],'Linux')
+    condition: eq(variables['Agent.OS'],'Linux')
     displayName: Report to Code Climate
   - bash: |
       set -e
