@@ -35,6 +35,7 @@ class IntegrationTest(unittest.TestCase):
         super(IntegrationTest, self).__init__(*args, **kwargs)
         self.cwd = None
         self.child = None
+        self.env = os.environ.copy()
 
         self.test_dir = test_dir
         self.project_dir = project_dir
