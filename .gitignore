@@ -10,3 +10,4 @@ __PYCACHE__
 *.log
 .vscode
 *-packr.go
+.env
