@@ -36,8 +36,7 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 	projectfile.Reset()
 
-	lkp := constants.KeypairLocalFileName + ".key"
-	err := osutil.CopyTestFileToConfigDir("self-private.key", lkp, 0600)
+	err := osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 	suite.Require().NoError(err, "issue creating local private key")
 
 	// support test projectfile access
@@ -49,9 +48,8 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 
-	activate := httpmock.Activate
-	suite.secretsMock = activate(secretsClient.BaseURI)
-	suite.platformMock = activate(api.GetServiceURL(api.ServiceMono).String())
+	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
+	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
@@ -98,11 +96,10 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound(
 	cmd := variables.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	retFn := func(req *http.Request) (int, string) {
-		// odd requirement for mock framework
+	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
+		// if we don't do it this way, something with the mock framework breaks
 		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
-	}
-	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", retFn)
+	})
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 404)
 
 	var execErr error
@@ -121,11 +118,10 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
-	retFn := func(req *http.Request) (int, string) {
-		// odd requirement for mock framework
+	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
+		// if we don't do it this way, something with the mock framework breaks
 		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
-	}
-	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", retFn)
+	})
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
@@ -137,62 +133,13 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
 	regexStrFmt := `\b%s\s+%s\s+%v\s+%s\s+%s\s+%s`
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"DEBUG",
-		"debug",
-		locale.T("variables_value_set"),
-		locale.T("contradiction"),
-		"-",
-		"local",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"PYTHONPATH",
-		"pythonpath",
-		locale.T("variables_value_set"),
-		locale.T("contradiction"),
-		"-",
-		"local",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"org-secret",
-		"org secret",
-		locale.T("variables_value_set"),
-		locale.T("confirmation"),
-		"organization",
-		"organization",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"proj-secret",
-		"proj secret",
-		locale.T("variables_value_set"),
-		locale.T("confirmation"),
-		"organization",
-		"project",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"user-org-secret",
-		"user org secret",
-		locale.T("variables_value_set"),
-		locale.T("confirmation"),
-		"-",
-		"organization",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"user-proj-secret",
-		"user proj secret",
-		locale.T("variables_value_set"),
-		locale.T("confirmation"),
-		"-",
-		"project",
-	), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt,
-		"undefined-org-secret",
-		"undefined org secret",
-		locale.T("variables_value_unset"),
-		locale.T("confirmation"),
-		"organization",
-		"organization",
-	), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "DEBUG", "debug", locale.T("variables_value_set"), locale.T("contradiction"), "-", "local"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "PYTHONPATH", "pythonpath", locale.T("variables_value_set"), locale.T("contradiction"), "-", "local"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "org-secret", "org secret", locale.T("variables_value_set"), locale.T("confirmation"), "organization", "organization"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "proj-secret", "proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "organization", "project"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-org-secret", "user org secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "organization"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-proj-secret", "user proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "project"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "undefined-org-secret", "undefined org secret", locale.T("variables_value_unset"), locale.T("confirmation"), "organization", "organization"), outStr)
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {
