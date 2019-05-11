@@ -12,9 +12,8 @@ install.ps1 -b branchToInstall -t C:\dir\on\path
 param (
     [Parameter(Mandatory=$False)][string]$b = "unstable"
     ,[Parameter(Mandatory=$False)]
-        [ValidateScript({Test-Path $_ -PathType 'Container'})]
         [string]
-        $t = (Join-Path $Env:ALLUSERSPROFILE "ActiveState") # C:\ProgramData\ActiveState
+        $t
     ,[Parameter(Mandatory=$False)][switch]$n
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
@@ -23,12 +22,19 @@ param (
         $f = "state.exe"
 )
 
+$global:NOPROMPT = $n
+$global:TARGET = $t
+# C:\Users\cgcho\AppData\Roaming\ActiveState\bin
+$global:DEFAULTDIR = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin")) 
+$global:STATEEXE = $f
+$global:BRANCH = $b
+
 # Helpers
 function isInRegistry(){
     $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
     $inReg = $False
     for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $INSTALLDIR) {
+        if ($regpaths[$i] -eq $global:INSTALLDIR) {
             $inReg = $True
         }
     }
@@ -38,7 +44,7 @@ function isOnPath(){
     $envpaths = $env:Path.Split(';')
     $inEnv = $False
     for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $INSTALLDIR) {
+        if ($envpaths[$i] -eq $global:INSTALLDIR) {
             $inEnv = $True
         }
     }
@@ -66,42 +72,111 @@ function promptYN([string]$msg)
 # If found and it matches TARGET, ask to overwrite, bail if N
 # If found and NOT matches TARGET, ask to change TARGET and ask to overwrite, continue if N
 # Finally checks to make sure TARGET doesn't already have a binary in it.
-function checkForExisting
-{
+function checkForExisting()
+{   
     try {
-        $existing = (Resolve-Path (split-path -Path (get-command $f -ErrorAction 'silentlycontinue').Source -Parent)).Path
+        $global:PREVIOUSINSTALL = (Resolve-Path (split-path -Path (get-command $global:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
     }
     catch {
         # Wasn't found on path but confirm there isn't an existing install in TARGET
-        $target =  Join-Path $t $f
-        if (Test-Path $target -PathType Leaf)
+        $targetFile =  Join-Path $global:TARGET $global:STATEEXE
+        if (Test-Path $targetFile -PathType Leaf)
         {
-            Write-host "Target '$target' contains existing state tool."
-            if( -Not (promptYN "Do you want to continue installation?  Existing binary will be overwritten."))
+            Write-host "Target '$targetFile' contains existing state tool."
+            if( -Not (promptYN "Do you want to continue installation?"))
             {
-                Write-Warning "Choose new installation location.  Abort Installation"
+                Write-Warning "Choose new installation location.  Aborting Installation"
                 exit 0
+            } else 
+            {
+                Write-Warn "Overwriting previous installation"
+                $global:INSTALLDIR = $global:TARGET
+                return
             }
         }
-        return $t
     }
-    
     # Exists on PATH not TARGET
-    Write-Host "Previous install detected: '$existing'" -ForegroundColor Yellow
-    if ( -Not ($existing -eq $t))
+    Write-Host "Previous install detected at '$global:PREVIOUSINSTALL'" -ForegroundColor Yellow
+    if  ($global:TARGET -eq "")
     {
-        Write-Host "Do you want to use the previous install location instead?  This will overwrite the '$f' file there."
-        if (-Not (promptYN "Overwrite?"))
+        $global:INSTALLDIR = $global:PREVIOUSINSTALL
+    }
+    elseif(-Not ($global:PREVIOUSINSTALL -eq $global:TARGET))
+    {
+        Write-Host "Do you want to use the previous install location instead?  This will overwrite the '$global:STATEEXE' file there."
+        if (promptYN "Overwrite?")
         {
-            return $t
-        } 
-    } elseif( -Not (promptYN "Do you wish to overwrite this install?"))
+            $global:INSTALLDIR = $global:PREVIOUSINSTALL
+        } else 
+        {
+            Write-Warning "Installing elsewhere from previous installation"
+            $global:INSTALLDIR = $global:TARGET
+        }
+    } 
+    elseif( -Not (promptYN "Do you wish to overwrite this install?"))
     # Exists on Path AND is in target
     {
         Write-Warning "Abort Installation"
         exit 0
+    } 
+    else 
+    {
+        Write-Warn $("Overwriting previous installation")
     }
-    return  $existing
+}
+
+function hasWritePermission([string] $path)
+{
+    $user = "$env:userdomain\$env:username"
+    $acl = Get-Acl $path
+    return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
+}
+
+function isValidFolder([string] $path)
+{   
+    if(Test-Path $path)
+    {
+        if (-Not (Test-Path $path -PathType 'Container')) 
+        {
+            Write-Warning "'$path' exist but isn't a folder"
+            return $false
+        } elseif ( -Not (hasWritePermission $path))
+        {
+            Write-Warning "You do not have permission to write to '$path'"
+            return $false
+        }
+    #check parent if doesn't exist
+    } elseif ( -Not (hasWritePermission (split-path $path)))
+    {
+        Write-Warning $("You do not have permission to write to '"+(split-path $path)+"'")
+        return $false
+    }
+    return $true
+}
+
+function promptInstallDir()
+{
+    $validPath = $false
+    while ( -Not $validPath )
+    {
+        if (($dir = Read-Host "Please enter the installation directory [$global:INSTALLDIR]") -eq "")
+        {   
+            $validPath = $true
+        } else 
+        {
+            if (isValidFolder $dir)
+            {
+                $global:INSTALLDIR = $dir
+                $validPath = $true
+            } 
+        }
+    }
+}
+
+function setInstallDir()
+{   
+    checkForExisting
+    promptInstallDir
 }
 
 function install()
@@ -111,19 +186,11 @@ function install()
         Write-Host $USAGE
         exit 0
     }
-    $NOPROMPT = $n
-    if ($NOPROMPT)
-    {
-        $INSTALLDIR = $t
-    } else 
-    {
-        $INSTALLDIR = checkForExisting
-    }
-    $STATEFILE = $f
-    $BRANCH = $b
+    
     # State tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
+    Write-Host "Preparing for installation...`n"
     # Check for various existing installs, this might bail out of the install process
     # So i figured I should comment here so it's not such an innocuous line
     
@@ -143,16 +210,14 @@ function install()
     $downloader = new-object System.Net.WebClient
 
     # Get version and checksum
-    $jsonurl = "$STATEURL/$BRANCH/$statejson"
-    Write-Host "Finding latest version...`n"
+    $jsonurl = "$STATEURL/$global:BRANCH/$statejson"
+    Write-Host "Determining latest version...`n"
     try{
         $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
         $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$global:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
-        Write-Warning "Could not install state tool."
-        Write-Warning "Missing branch json or versioned json file."
-        Write-Error $_.Exception.Message
+        Write-Warning "Unable to retrieve the latest version number"
         exit 1
     }
     $latestChecksum = $versionedJson.Sha256v2
@@ -165,8 +230,8 @@ function install()
         Remove-Item $tmpParentPath -Recurse
     }
     New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$BRANCH/$latestVersion/$statepkg"
-    Write-Host "Downloading compressed binary...`n"
+    $zipURL = "$STATEURL/$global:BRANCH/$latestVersion/$statepkg"
+    Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         $downloader.DownloadFile($zipURL, $zipPath)
     } catch [System.Exception] {
@@ -176,57 +241,80 @@ function install()
         exit 1
     }
 
-    # Extract binary from pkg and confirm checksum
-    Write-Host "Extracting binary...`n"
-    Expand-Archive $zipPath $tmpParentPath
+    #Check the sums
+    Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-    Write-Host "Confirming checksums...`n"
     if ($hash -ne $latestChecksum){
         Write-Warning "SHA256 sum did not match:"
         Write-Warning "Expected: $latestChecksum"
         Write-Warning "Received: $hash"
-        Write-Warning "~Aborting installation.~"
+        Write-Warning "Aborting installation."
         exit 1
     }
 
-    # Install binary
-    Write-Host $("Installing state tool in '"+(Join-Path $INSTALLDIR $STATEFILE)+"'") -ForegroundColor Yellow
-    #  If the install dir doesn't exist
-    if( -Not (Test-Path $INSTALLDIR)) {
-        New-Item -Path $INSTALLDIR -ItemType Directory
+    # Extract binary from pkg and confirm checksum
+    Write-Host "Extracting $statepkg...`n"
+    Expand-Archive $zipPath $tmpParentPath
+
+    # Confirm the user wants to use the default install location by prompting for new dir
+    if ( -Not $global:NOPROMPT -And ($global:TARGET -eq ""))
+    {
+        setInstallDir
     } else {
-        Remove-Item (Join-Path $INSTALLDIR $STATEFILE) -Erroraction 'silentlycontinue'
+        if( -Not ($global:TARGET -eq ""))
+        {
+            $global:INSTALLDIR = $global:TARGET
+        }
+        else 
+        {
+            $global:INSTALLDIR = $global:DEFAULTDIR
+        }
     }
-    Move-Item (Join-Path $tmpParentPath $stateexe) (Join-Path $INSTALLDIR $STATEFILE)
+    # Install binary
+    Write-Host "Installing to '$global:INSTALLDIR'..." -ForegroundColor Yellow
+    #  If the install dir doesn't exist
+    if( -Not (Test-Path $global:INSTALLDIR)) {
+        Write-host "NOTE: $global:INSTALLDIR will be created"
+        New-Item -Path $global:INSTALLDIR -ItemType Directory
+    } else {
+        Remove-Item (Join-Path $global:INSTALLDIR $global:STATEEXE) -Erroraction 'silentlycontinue'
+    }
+    Move-Item (Join-Path $tmpParentPath $stateexe) (Join-Path $global:INSTALLDIR $global:STATEEXE)
 
     # Path setup
-    $newPath = "$env:Path;$INSTALLDIR"
+    $newPath = "$global:INSTALLDIR;$env:Path"
+    $manualPathTxt = "manually add '$global:INSTALLDIR' to your `$PATH"
+    $andSystem = "in your system preferences to add $global:STATEEXE to your `$PATH permanently"
     if( -Not (isInRegistry) ){
         if ( -Not (isAdmin)) {
-            Write-Host "We tried to add the install directory to your Registry PATH but this session does not have Administrator privileges.  Please run this script in a terminal with Administrator permissions to permanently add the state tool to your path." -ForegroundColor Yellow
-        } elseif ( -Not $NOPROMPT -And (promptYN $("We want to add '"+(Join-Path $INSTALLDIR $STATEFILE)+"' to your registry.  This means '$STATEFILE' will be on your PATH in shells you open from now on.  May me?"))) {
-            Write-Host "Adding $INSTALLDIR to registry"
+            Write-Host "Please run this installer in a terminal with admin privileges or $manualPathTxt $andSystem" -ForegroundColor Yellow
+        } elseif ( -Not $global:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $global:INSTALLDIR $global:STATEEXE)+"' to be appended to the registry `$PATH?"))) {
+            Write-Host "Adding $global:INSTALLDIR to registry"
             # This only sets it in the regsitry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
         } else {
-            Write-Host "To ensure '$STATEFILE' can be used in shells opened later, please add '$INSTALLDIR' to your system path in your system settings." -ForegroundColor Yellow
+            Write-Host "Please $manualPathTxt $andSystem" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "'$INSTALLDIR' is already in registry" -ForegroundColor Yellow
+        Write-Host "'$global:INSTALLDIR' is already in registry" -ForegroundColor Yellow
     }
     if( -Not (isOnPath)){
-        if(-Not $NOPROMPT -And (promptYN $("We want to add '"+(Join-Path $INSTALLDIR $STATEFILE)+"' to your session PATH.  May me?")))
+        if(-Not $global:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $global:INSTALLDIR $global:STATEEXE)+"' to be append to your session `$PATH?")))
         {
-            Write-Host "Adding $INSTALLDIR to terminal PATH"
+            Write-Host "Updating environment..."
             # This only sets it in the current session
             $Env:Path = $newPath
+            Write-Host "You may now start using the '$global:STATEEXE' program."
         } else 
-        {
-            Write-Host "Update your session PATH to include '$INSTALLDIR' to start using the state tool." -ForegroundColor Yellow
+        {   
+            Write-Host "Please $manualPathTxt to start using start using the $global:STATEEXE" -ForegroundColor Yellow
         }
     } else {
-        Write-Host "'$INSTALLDIR' is already on your PATH" -ForegroundColor Yellow
+        Write-Host "'$global:INSTALLDIR' is already on your PATH" -ForegroundColor Yellow
+        
     }
+
 }
 
 install
+Write-Host "Installation complete."
