@@ -2,6 +2,8 @@ undefined:
   other: undefined
 confirmation:
   other: "Yes"
+contradiction:
+  other: "No"
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:

@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 )
@@ -62,12 +61,7 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	vars, ff := makeVariables(prj.Variables())
-	if ff != nil {
-		return ff
-	}
-
-	hdrs, rows := variablesTable(vars)
+	hdrs, rows := variablesTable(prj.Variables())
 	t := gotabulate.Create(rows)
 	t.SetHeaders(hdrs)
 	t.SetAlign("left")
@@ -76,53 +70,15 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	return nil
 }
 
-// variable represents data derived from a project.Variable value.
-type variable struct {
-	name      string
-	desc      string
-	setunset  string
-	encrypted string
-	shared    string
-	store     string
-}
-
-func makeVariables(vars []*project.Variable) ([]variable, *failures.Failure) {
-	var vs []variable
-
-	for _, vx := range vars {
-		valOrNil, ff := vx.ValueOrNil()
-		if ff != nil {
-			return nil, ff
-		}
-
-		issec := vx.IsSecret()
-		isshr := vx.IsShared()
-		shrWth := possibleString(vx.SharedWith())
-		pldFrm := possibleString(vx.PulledFrom())
-
-		v := variable{
-			name:      vx.Name(),
-			desc:      vx.Description(),
-			setunset:  setOrUnset(valOrNil),
-			encrypted: encVal(issec),
-			shared:    sharedVal(issec, isshr, shrWth),
-			store:     storeLocVal(issec, pldFrm),
-		}
-		vs = append(vs, v)
-	}
-
-	return vs, nil
-}
-
-func variablesTable(vars []variable) (hdrs []string, rows [][]string) {
+func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string) {
 	for _, v := range vars {
 		row := []string{
-			v.name,
-			v.desc,
-			v.setunset,
-			v.encrypted,
-			v.shared,
-			v.store,
+			v.Name(),
+			v.Description(),
+			v.IsSetStatus(),
+			v.IsEncryptedStatus(),
+			emptyToDash(v.SharedWith().String()),
+			v.StoreLocation(),
 		}
 		rows = append(rows, row)
 	}
@@ -139,50 +95,9 @@ func variablesTable(vars []variable) (hdrs []string, rows [][]string) {
 	return hdrs, rows
 }
 
-func sharedVal(isSecret, isShared bool, sharedWith string) string {
-	if isSecret && isShared {
-		return sharedWith
+func emptyToDash(s string) string {
+	if s == "" {
+		return "-"
 	}
-	return "-"
-}
-
-func storeLocVal(isSecret bool, pulledFrom string) string {
-	if !isSecret {
-		return "local"
-	}
-	return pulledFrom
-}
-
-func encVal(isSecret bool) string {
-	if isSecret {
-		return locale.T("confirmation")
-	}
-	return "-"
-}
-
-func setOrUnset(p *string) string {
-	if p == nil {
-		return locale.T("variables_value_unset")
-	}
-	return locale.T("variables_value_set")
-}
-
-func possibleString(i interface{}) string {
-	if i == nil {
-		return ""
-	}
-
-	switch v := i.(type) {
-	case *projectfile.VariableShare:
-		if v != nil {
-			return string(*v)
-		}
-	case *projectfile.VariablePullFrom:
-		if v != nil {
-			return string(*v)
-		}
-	default:
-	}
-
-	return ""
+	return s
 }

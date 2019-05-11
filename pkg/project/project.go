@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -309,6 +310,31 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 		return nil, failure
 	}
 	return &value, nil
+}
+
+// StoreLocation returns a representation of the variable storage location.
+func (v *Variable) StoreLocation() string {
+	if !v.IsSecret() {
+		return "local"
+	}
+	return v.PulledFrom().String()
+}
+
+// IsSetStatus returns a representation of whether the variable is set.
+func (v *Variable) IsSetStatus() string {
+	valornil, failure := v.ValueOrNil()
+	if valornil == nil && failure == nil {
+		return locale.T("variables_value_unset")
+	}
+	return locale.T("variables_value_set")
+}
+
+// IsEncryptedStatus returns a representation of encryption status.
+func (v *Variable) IsEncryptedStatus() string {
+	if v.IsSecret() {
+		return locale.T("confirmation")
+	}
+	return locale.T("contradiction")
 }
 
 // Value returned with all variables evaluated

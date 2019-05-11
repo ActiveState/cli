@@ -148,7 +148,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 		"DEBUG",
 		"debug",
 		locale.T("variables_value_set"),
-		"-",
+		locale.T("contradiction"),
 		"-",
 		"local",
 	), outStr)
@@ -156,7 +156,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 		"PYTHONPATH",
 		"pythonpath",
 		locale.T("variables_value_set"),
-		"-",
+		locale.T("contradiction"),
 		"-",
 		"local",
 	), outStr)

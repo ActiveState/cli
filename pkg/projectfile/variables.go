@@ -55,6 +55,15 @@ func (v VariablePullFrom) Validate() *failures.Failure {
 	}
 }
 
+// String returns a formatted representation of the underlying VariablePullFrom
+// value. If the underlying value is nil, an empty string is returned.
+func (v *VariablePullFrom) String() string {
+	if v == nil {
+		return ""
+	}
+	return string(*v)
+}
+
 // VariableShare records the owner of the variable, this determines who a variable might be shared with
 type VariableShare string
 
@@ -77,6 +86,15 @@ func (v VariableShare) Validate() *failures.Failure {
 	default:
 		return FailValidateVarShare.New(locale.Tr("variables_err_invalid_share", string(v), strings.Join(v.AcceptedValues(), ", ")))
 	}
+}
+
+// String returns a formatted representation of the underlying VariableShare
+// value. If the underlying value is nil, an empty string is returned.
+func (v *VariableShare) String() string {
+	if v == nil {
+		return ""
+	}
+	return string(*v)
 }
 
 // VariableValue holds the value of the variable, since variables can have complex value (eg. they can be secrets), this
