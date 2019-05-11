@@ -61,7 +61,10 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	hdrs, rows := variablesTable(prj.Variables())
+	hdrs, rows, failure := variablesTable(prj.Variables())
+	if failure != nil {
+		return failure
+	}
 	t := gotabulate.Create(rows)
 	t.SetHeaders(hdrs)
 	t.SetAlign("left")
@@ -70,12 +73,17 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	return nil
 }
 
-func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string) {
+func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f *failures.Failure) {
 	for _, v := range vars {
+		isSetStatus, failure := v.IsSetStatus()
+		if failure != nil {
+			return nil, nil, failure
+		}
+
 		row := []string{
 			v.Name(),
 			v.Description(),
-			v.IsSetStatus(),
+			isSetStatus,
 			v.IsEncryptedStatus(),
 			emptyToDash(v.SharedWith().String()),
 			v.StoreLocation(),
@@ -92,7 +100,7 @@ func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string) {
 		locale.T("variables_col_store"),
 	}
 
-	return hdrs, rows
+	return hdrs, rows, nil
 }
 
 func emptyToDash(s string) string {

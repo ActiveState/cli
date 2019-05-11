@@ -321,12 +321,15 @@ func (v *Variable) StoreLocation() string {
 }
 
 // IsSetStatus returns a representation of whether the variable is set.
-func (v *Variable) IsSetStatus() string {
+func (v *Variable) IsSetStatus() (string, *failures.Failure) {
 	valornil, failure := v.ValueOrNil()
-	if valornil == nil && failure == nil {
-		return locale.T("variables_value_unset")
+	if failure != nil {
+		return "", failure
 	}
-	return locale.T("variables_value_set")
+	if valornil == nil {
+		return locale.T("variables_value_unset"), nil
+	}
+	return locale.T("variables_value_set"), nil
 }
 
 // IsEncryptedStatus returns a representation of encryption status.
