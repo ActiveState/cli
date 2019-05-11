@@ -23,13 +23,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	orgsPath    = "/organizations"
-	userSecPath = orgsPath + "/00010001-0001-0001-0001-000100010001/user_secrets"
-	orgsASPath  = orgsPath + "/ActiveState"
-	intelPath   = orgsASPath + "/projects/CodeIntel"
-)
-
 type VariablesCommandTestSuite struct {
 	suite.Suite
 
@@ -88,7 +81,7 @@ func (suite *VariablesCommandTestSuite) TestCommandConfig() {
 func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
-	suite.platformMock.RegisterWithCode("GET", orgsASPath, 401)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
@@ -104,13 +97,13 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
 func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
-	suite.platformMock.RegisterWithCode("GET", orgsASPath, 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	retFn := func(req *http.Request) (int, string) {
 		// odd requirement for mock framework
-		return 200, userSecPath[1:]
+		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
 	}
-	suite.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
-	suite.platformMock.RegisterWithCode("GET", intelPath, 404)
+	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", retFn)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 404)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
@@ -126,13 +119,13 @@ func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound(
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
-	suite.platformMock.RegisterWithCode("GET", orgsASPath, 200)
-	suite.platformMock.RegisterWithCode("GET", intelPath, 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	retFn := func(req *http.Request) (int, string) {
 		// odd requirement for mock framework
-		return 200, userSecPath[1:]
+		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
 	}
-	suite.secretsMock.RegisterWithResponder("GET", userSecPath, retFn)
+	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", retFn)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
