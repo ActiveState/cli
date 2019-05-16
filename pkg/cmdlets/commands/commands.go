@@ -6,12 +6,12 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/spf13/cobra"
 )
 
 // T links to locale.T
@@ -68,6 +68,7 @@ type Command struct {
 	Arguments          []*Argument
 	DisableFlagParsing bool
 	Exiter             func(int)
+	Hidden             bool
 
 	UsageTemplate string
 
@@ -217,6 +218,7 @@ func (c *Command) Register() {
 		Run:                c.runner,
 		Args:               c.argInputValidator,
 		DisableFlagParsing: c.DisableFlagParsing,
+		Hidden:             c.Hidden,
 	}
 
 	for _, flag := range c.Flags {

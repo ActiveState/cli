@@ -738,3 +738,5 @@ err_invalid_project_name_owner:
   other: Your activestate.yaml is missing a name and/or owner field.
 err_persist_invalid_project:
   other: Trying to persist an invalid project
+shim_description:
+  other: Shim a command
