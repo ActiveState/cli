@@ -2,7 +2,6 @@ package executor
 
 import (
 	"bufio"
-	"io"
 	"os"
 	"os/exec"
 
@@ -41,12 +40,15 @@ func (e *Executor) OnStderr(cb func(errput []byte)) {
 }
 
 func (e *Executor) Run() *failures.Failure {
-	ch := make(chan bool)
+	//e.cmd.Stdin = os.Stdin
 
 	var fails []*failures.Failure
 	var keepGoing = true
+	defer func() { keepGoing = false }()
+
+	// stdin
 	go func() {
-		err := CatchStdin(e.cmd, func(input []byte) bool {
+		err := CatchStdin(func(input []byte) bool {
 			if !keepGoing {
 				return false // stop
 			}
@@ -58,36 +60,31 @@ func (e *Executor) Run() *failures.Failure {
 		}
 	}()
 
-	stdoutPipe, err := e.cmd.StdoutPipe()
-	if err != nil {
-		return FailPipe.Wrap(err)
-	}
-	stderrPipe, err := e.cmd.StderrPipe()
-	if err != nil {
-		return FailPipe.Wrap(err)
-	}
+	outWriter := NewStdWriter()
+	outWriter.OnWrite(func(data []byte) {
+		_, err := os.Stdout.Write(data)
+		if err != nil {
+			fails = append(fails, FailPipe.Wrap(err))
+			return
+		}
+		e.onStdout(data)
+	})
+	e.cmd.Stdout = outWriter
+
+	errWriter := NewStdWriter()
+	errWriter.OnWrite(func(data []byte) {
+		_, err := os.Stdout.Write(data)
+		if err != nil {
+			fails = append(fails, FailPipe.Wrap(err))
+			return
+		}
+		e.onStderr(data)
+	})
+	e.cmd.Stderr = errWriter
 
 	if err := e.cmd.Start(); err != nil {
 		return FailCmdStart.Wrap(err)
 	}
-
-	go func() {
-		if err := CatchStd(stdoutPipe, os.Stdout, e.onStdout); err != nil {
-			fails = append(fails, FailCatch.Wrap(err))
-		}
-		ch <- true
-	}()
-	go func() {
-		if err := CatchStd(stderrPipe, os.Stderr, e.onStderr); err != nil {
-			fails = append(fails, FailCatch.Wrap(err))
-		}
-		ch <- true
-	}()
-
-	for x := 0; x < 2; x++ {
-		<-ch
-	}
-	keepGoing = false
 
 	if err := e.cmd.Wait(); err != nil {
 		return FailCmdWait.Wrap(err)
@@ -100,18 +97,12 @@ func (e *Executor) Run() *failures.Failure {
 	return nil
 }
 
-func CatchStdin(cmd *exec.Cmd, callback func(input []byte) bool) error {
-	stdinWriter, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-
+func CatchStdin(callback func(input []byte) bool) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(bufio.ScanBytes)
 
 	for scanner.Scan() {
 		input := scanner.Bytes()
-		stdinWriter.Write(input)
 		if !callback(input) {
 			break
 		}
@@ -124,35 +115,19 @@ func CatchStdin(cmd *exec.Cmd, callback func(input []byte) bool) error {
 	return nil
 }
 
-func CatchStdout(cmd *exec.Cmd, callback func(output []byte)) *failures.Failure {
-	reader, err := cmd.StdoutPipe()
-	if err != nil {
-		return FailPipe.Wrap(err)
-	}
-	return CatchStd(reader, os.Stdout, callback)
+type StdWriter struct {
+	onWrite func(data []byte)
 }
 
-func CatchStderr(cmd *exec.Cmd, callback func(output []byte)) *failures.Failure {
-	reader, err := cmd.StderrPipe()
-	if err != nil {
-		return FailPipe.Wrap(err)
-	}
-	return CatchStd(reader, os.Stderr, callback)
+func NewStdWriter() *StdWriter {
+	return &StdWriter{}
 }
 
-func CatchStd(reader io.ReadCloser, std *os.File, callback func(output []byte)) *failures.Failure {
-	scanner := bufio.NewScanner(reader)
-	scanner.Split(bufio.ScanLines)
+func (w *StdWriter) OnWrite(cb func(data []byte)) {
+	w.onWrite = cb
+}
 
-	for scanner.Scan() {
-		output := scanner.Bytes()
-		std.Write(output)
-		callback(output)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return FailScan.Wrap(err)
-	}
-
-	return nil
+func (w *StdWriter) Write(p []byte) (n int, err error) {
+	w.onWrite(p)
+	return len(p), nil
 }
