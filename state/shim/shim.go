@@ -2,12 +2,14 @@ package shim
 
 import (
 	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
-	"github.com/ActiveState/cli/internal/executor"
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
 
@@ -25,18 +27,11 @@ func init() {
 }
 
 func Execute(cmd *cobra.Command, args []string) {
-	exe := executor.New(args[0], args[1:]...)
-	exe.OnStdin(func(input []byte) {
-		logging.Debug("STDIN: %s", string(input))
-	})
-	exe.OnStdout(func(output []byte) {
-		logging.Debug("STDOUT: %s", string(output))
-	})
-	exe.OnStderr(func(output []byte) {
-		logging.Debug("STDERR: %s", string(output))
-	})
-	fail := exe.Run()
-	if fail != nil {
-		failures.Handle(fail, "Command failed")
-	}
+	print.Info(locale.Tr("shim_disclaimer", filepath.Base(args[0])))
+
+	runCmd := exec.Command(args[0], args[1:]...)
+	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	runCmd.Run()
+
+	Command.Exiter(osutils.CmdExitCode(runCmd))
 }

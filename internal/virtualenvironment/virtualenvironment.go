@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/shimming"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -29,6 +30,8 @@ type VirtualEnvironment struct {
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	artifactPaths       []string
+	env                 map[string]string
+	envPath             []string
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -41,7 +44,11 @@ func Get() *VirtualEnvironment {
 
 // Init creates an instance of VirtualEnvironment{} with default settings
 func Init() *VirtualEnvironment {
-	return &VirtualEnvironment{project: project.Get()}
+	return &VirtualEnvironment{
+		project: project.Get(),
+		env:     map[string]string{},
+		envPath: []string{},
+	}
 }
 
 // Activate the virtual environment
@@ -55,18 +62,26 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 
 	// expand project vars to environment vars
 	for _, variable := range v.project.Variables() {
-		val, failure := variable.Value()
-		if failure != nil {
-			return failure
+		val, fail := variable.Value()
+		if fail != nil {
+			return fail
 		}
-		os.Setenv(variable.Name(), val)
+		if variable.Name() == "PATH" {
+			v.envPath = append(v.envPath, variable.Name())
+		} else {
+			v.env[variable.Name()] = val
+		}
 	}
 
 	if OS == "linux" && strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Only Linux currently supports runtime environments, but we still want to have virtual environments
 		// on other platforms
-		if failure := v.activateRuntime(); failure != nil {
-			return failure
+		if fail := v.activateRuntime(); fail != nil {
+			return fail
+		}
+
+		if fail := v.activateShims(v.BinaryPaths(), shimming.InitCollection()); fail != nil {
+			return fail
 		}
 	}
 
@@ -97,28 +112,65 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	return nil
 }
 
+func (v *VirtualEnvironment) activateShims(binaryPaths []string, collection *shimming.Collection) *failures.Failure {
+	binaryPath, fail := collection.ShimBinaries(binaryPaths)
+	if fail != nil {
+		return fail
+	}
+
+	if binaryPath != "" {
+		v.envPath = append(v.envPath, binaryPath)
+	}
+
+	return nil
+}
+
+func (v *VirtualEnvironment) BinaryPaths() []string {
+	binaryPaths := []string{}
+	for _, artifactPath := range v.artifactPaths {
+		meta, fail := v.metaForArtifact(artifactPath)
+		if fail != nil || meta == nil {
+			logging.Warning("Skipping Artifact binaries '%s', could not retrieve metadata: %v", artifactPath, fail)
+			continue
+		}
+
+		for _, v := range meta.BinaryLocations {
+			path := v.Path
+			if v.Relative {
+				path = filepath.Join(artifactPath, path)
+			}
+			binaryPaths = append(binaryPaths, path)
+		}
+	}
+
+	return binaryPaths
+}
+
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv() map[string]string {
-	env := map[string]string{"PATH": os.Getenv("PATH")}
+	env := v.env
+	env["PATH"] = ""
 
+	for _, path := range v.BinaryPaths() {
+		env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
+	}
 	for _, artifactPath := range v.artifactPaths {
 		meta, fail := v.metaForArtifact(artifactPath)
 		if fail != nil {
-			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
+			logging.Warning("Skipping Artifact affectedenv '%s', could not retrieve metadata: %v", artifactPath, fail)
 			continue
 		}
 
 		if meta.AffectedEnv != "" {
 			env[meta.AffectedEnv] = ""
 		}
-		for _, v := range meta.BinaryLocations {
-			path := v.Path
-			if v.Relative {
-				path = filepath.Join(artifactPath, path)
-			}
-			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
-		}
 	}
+
+	// Prepend PATH values
+	env["PATH"] = strings.Join(v.envPath, string(os.PathListSeparator)) + string(os.PathListSeparator) + env["PATH"]
+
+	// Append the original PATH
+	env["PATH"] = env["PATH"] + string(os.PathListSeparator) + os.Getenv("PATH")
 
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())

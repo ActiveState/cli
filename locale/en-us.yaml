@@ -740,3 +740,7 @@ err_persist_invalid_project:
   other: Trying to persist an invalid project
 shim_description:
   other: Shim a command
+err_file_not_exist:
+  other: "File does not exist: {{.V0}}"
+shim_disclaimer:
+  other: "'{{.V0}}' is being empowered by the state tool"

@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/thoas/go-funk"
+	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/deprecation"
-
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	_ "github.com/ActiveState/state-required/require"
-	"github.com/spf13/cobra"
 )
 
 var exit = os.Exit
@@ -99,7 +98,7 @@ func main() {
 
 	register()
 
-	if branchName != constants.StableBranch {
+	if branchName != constants.StableBranch && !funk.Contains(os.Args, "shim") {
 		print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 	}
 

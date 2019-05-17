@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/shimming"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -119,6 +120,38 @@ func TestActivateFailureAlreadyActive(t *testing.T) {
 	require.NotNil(t, failure, "expected a failure")
 	assert.Equal(t, FailAlreadyActive, failure.Type)
 	assert.Equal(t, locale.Tr("err_already_active", namespace), failure.Error())
+}
+
+func TestActivateShims(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	venv := Init()
+	env := venv.envPath
+
+	collection := shimming.NewCollection()
+	collection.RegisterShim(shimming.NewShim([]string{"binary1"}))
+
+	dir, err := os.Getwd()
+	require.NoError(t, err)
+
+	fail := venv.activateShims([]string{dir}, collection)
+	require.NoError(t, fail.ToError())
+
+	assert.NotEqual(t, env, venv.envPath, "envPath should have changed")
+}
+
+func TestActivateShimsNoResult(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	venv := Init()
+	env := venv.envPath
+
+	fail := venv.activateShims([]string{}, shimming.NewCollection())
+	require.NoError(t, fail.ToError())
+
+	assert.Equal(t, env, venv.envPath, "envPath should not have changed")
 }
 
 func TestEnv(t *testing.T) {

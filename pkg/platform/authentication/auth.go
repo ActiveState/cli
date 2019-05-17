@@ -3,6 +3,11 @@ package authentication
 import (
 	"os"
 
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
+	httptransport "github.com/go-openapi/runtime/client"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,11 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
-	"github.com/spf13/viper"
-
-	httptransport "github.com/go-openapi/runtime/client"
 )
 
 var (
@@ -195,6 +195,8 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() {
+	logging.Debug("Logout called")
+
 	viper.Set("apiToken", "")
 	s.client = nil
 	s.clientAuth = nil

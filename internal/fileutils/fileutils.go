@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/phayes/permbits"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -421,5 +422,21 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 			return failures.FailOS.Wrap(err)
 		}
 	}
+	return nil
+}
+
+// MakeExecutable makes the given file executable
+func MakeExecutable(path string) *failures.Failure {
+	if !FileExists(path) {
+		return failures.FailNotFound.New("err_file_not_exist", path)
+	}
+
+	permissions, _ := permbits.Stat(path)
+	permissions.SetUserExecute(true)
+	err := permbits.Chmod(path, permissions)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
 	return nil
 }
