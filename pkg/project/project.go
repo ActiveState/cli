@@ -315,9 +315,9 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 // StoreLabel returns a representation of the variable storage location.
 func (v *Variable) StoreLabel() string {
 	if !v.IsSecret() {
-		return "local"
+		return locale.T("local")
 	}
-	return v.PulledFrom().String()
+	return locale.T(v.PulledFrom().String())
 }
 
 // IsSetLabel returns a representation of whether the variable is set.

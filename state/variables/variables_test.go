@@ -132,7 +132,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().NoError(execErr)
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
-	regexStrFmt := `\b%s\s+%s\s+%v\s+%s\s+%s\s+%s`
+	regexStrFmt := `\b%s\s+%s\s+%v\s+%s\s+%s\s+%s\s*\n`
 	suite.Regexp(fmt.Sprintf(regexStrFmt, "DEBUG", "debug", locale.T("variables_value_set"), locale.T("contradiction"), "-", "local"), outStr)
 	suite.Regexp(fmt.Sprintf(regexStrFmt, "PYTHONPATH", "pythonpath", locale.T("variables_value_set"), locale.T("contradiction"), "-", "local"), outStr)
 	suite.Regexp(fmt.Sprintf(regexStrFmt, "org-secret", "org secret", locale.T("variables_value_set"), locale.T("confirmation"), "organization", "organization"), outStr)
