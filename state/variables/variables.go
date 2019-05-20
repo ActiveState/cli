@@ -75,7 +75,7 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 
 func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f *failures.Failure) {
 	for _, v := range vars {
-		isSetStatus, failure := v.IsSetStatus()
+		isSetLabel, failure := v.IsSetLabel()
 		if failure != nil {
 			return nil, nil, failure
 		}
@@ -83,10 +83,10 @@ func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f
 		row := []string{
 			v.Name(),
 			v.Description(),
-			isSetStatus,
-			v.IsEncryptedStatus(),
+			isSetLabel,
+			v.IsEncryptedLabel(),
 			emptyToDash(v.SharedWith().String()),
-			v.StoreLocation(),
+			v.StoreLabel(),
 		}
 		rows = append(rows, row)
 	}

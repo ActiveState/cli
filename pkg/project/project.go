@@ -312,16 +312,16 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	return &value, nil
 }
 
-// StoreLocation returns a representation of the variable storage location.
-func (v *Variable) StoreLocation() string {
+// StoreLabel returns a representation of the variable storage location.
+func (v *Variable) StoreLabel() string {
 	if !v.IsSecret() {
 		return "local"
 	}
 	return v.PulledFrom().String()
 }
 
-// IsSetStatus returns a representation of whether the variable is set.
-func (v *Variable) IsSetStatus() (string, *failures.Failure) {
+// IsSetLabel returns a representation of whether the variable is set.
+func (v *Variable) IsSetLabel() (string, *failures.Failure) {
 	valornil, failure := v.ValueOrNil()
 	if failure != nil {
 		return "", failure
@@ -332,8 +332,8 @@ func (v *Variable) IsSetStatus() (string, *failures.Failure) {
 	return locale.T("variables_value_set"), nil
 }
 
-// IsEncryptedStatus returns a representation of encryption status.
-func (v *Variable) IsEncryptedStatus() string {
+// IsEncryptedLabel returns a representation of encryption status.
+func (v *Variable) IsEncryptedLabel() string {
 	if v.IsSecret() {
 		return locale.T("confirmation")
 	}
