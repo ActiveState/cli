@@ -85,7 +85,7 @@ func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f
 			v.Description(),
 			isSetLabel,
 			v.IsEncryptedLabel(),
-			emptyToDash(v.SharedWith().String()),
+			emptyToDash(v.SharedWithLabel()),
 			v.PulledFromLabel(),
 		}
 		rows = append(rows, row)

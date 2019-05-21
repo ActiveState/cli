@@ -312,6 +312,15 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	return &value, nil
 }
 
+// SharedWithLabel wraps v.SharedWith().String() for API consistency and localization.
+func (v *Variable) SharedWithLabel() string {
+	s := v.SharedWith().String()
+	if s == "" {
+		return s
+	}
+	return locale.T(s)
+}
+
 // PulledFromLabel returns a representation of the variable storage location.
 func (v *Variable) PulledFromLabel() string {
 	if !v.IsSecret() {
