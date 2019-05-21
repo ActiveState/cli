@@ -312,8 +312,8 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	return &value, nil
 }
 
-// StoreLabel returns a representation of the variable storage location.
-func (v *Variable) StoreLabel() string {
+// PulledFromLabel returns a representation of the variable storage location.
+func (v *Variable) PulledFromLabel() string {
 	if !v.IsSecret() {
 		return locale.T("local")
 	}
