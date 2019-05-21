@@ -48,6 +48,12 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
 
+// PrivateKeyEnvVarName is the name of the environment variable that specifies the private key file to use for decrypting secrets (overriding user config).
+const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
+
+// APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
+const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
