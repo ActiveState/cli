@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -53,8 +54,7 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 // Otherwise, returns `false`.
 // TimedCheck is skipped altogether if the current project has a locked version.
 func TimedCheck() bool {
-	versionLock, _ := projectfile.ParseVersion()
-	if versionLock != "" {
+	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo != nil {
 		return false
 	}
 
@@ -86,7 +86,14 @@ func TimedCheck() bool {
 		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
 	}
-	info, err := timeout(update.Info, time.Second)
+	seconds := 1
+	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
+		override, err := strconv.Atoi(secondsOverride)
+		if err == nil {
+			seconds = override
+		}
+	}
+	info, err := timeout(update.Info, time.Duration(seconds)*time.Second)
 	if err != nil {
 		if err.Error() != "timeout" {
 			logging.Error("Unable to automatically check for updates: %s", err)

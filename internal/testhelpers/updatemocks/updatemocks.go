@@ -22,12 +22,12 @@ func (cb *ClosingBuffer) Close() (err error) {
 	return
 }
 
-func CreateRequestPath(append string) string {
-	return fmt.Sprintf("%s/%s/%s", constants.CommandName, constants.BranchName, append)
+func CreateRequestPath(branch, append string) string {
+	return fmt.Sprintf("%s/%s/%s", constants.CommandName, branch, append)
 }
 
 // MockUpdater fully mocks an update, so that you could run the update logic and it doesn't fail
-func MockUpdater(t *testing.T, filename string, version string) {
+func MockUpdater(t *testing.T, filename, branch, version string) {
 	var archive archiver.Archiver
 	var ext string
 
@@ -59,12 +59,12 @@ func MockUpdater(t *testing.T, filename string, version string) {
 	hasher.Write(fileBytes)
 	hash := hasher.Sum(nil)
 
-	requestPath := CreateRequestPath(fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))
+	requestPath := CreateRequestPath(branch, fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH))
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256v2": "%x"}`, version, hash))
 
-	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
+	requestPath = CreateRequestPath(branch, fmt.Sprintf("%s/%s-%s.json", version, runtime.GOOS, runtime.GOARCH))
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, fmt.Sprintf(`{"Version": "%s", "Sha256v2": "%x"}`, version, hash))
 
-	requestPath = CreateRequestPath(fmt.Sprintf("%s/%s-%s%s", version, runtime.GOOS, runtime.GOARCH, ext))
+	requestPath = CreateRequestPath(branch, fmt.Sprintf("%s/%s-%s%s", version, runtime.GOOS, runtime.GOARCH, ext))
 	httpmock.RegisterWithResponseBytes("GET", requestPath, 200, fileBytes)
 }

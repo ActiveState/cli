@@ -29,9 +29,10 @@ var (
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
 )
 
-// Version is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
+// VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
-type Version struct {
+type VersionInfo struct {
+	Branch  string `yaml:"branch"`
 	Version string `yaml:"version"`
 }
 
@@ -46,6 +47,7 @@ type Project struct {
 	Name         string      `yaml:"name"`
 	Owner        string      `yaml:"owner"`
 	Namespace    string      `yaml:"namespace,omitempty"`
+	Branch       string      `yaml:"branch,omitempty"`
 	Version      string      `yaml:"version,omitempty"`
 	Environments string      `yaml:"environments,omitempty"`
 	Platforms    []Platform  `yaml:"platforms,omitempty"`
@@ -228,9 +230,9 @@ func GetSafe() (*Project, *failures.Failure) {
 	return project, nil
 }
 
-// ParseVersion parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
+// ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
 // trip over older activestate.yaml's with breaking changes
-func ParseVersion() (string, *failures.Failure) {
+func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 	var projectFilePath string
 	if persistentProject != nil {
 		projectFilePath = persistentProject.Path()
@@ -239,36 +241,36 @@ func ParseVersion() (string, *failures.Failure) {
 		projectFilePath, fail = getProjectFilePath()
 		if fail != nil {
 			// Not being able to find a project file is not a failure for the purposes of this function
-			return "", nil
+			return nil, nil
 		}
 	}
 
 	if projectFilePath == "" {
-		return "", nil
+		return nil, nil
 	}
 
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
-		return "", failures.FailIO.Wrap(err)
+		return nil, failures.FailIO.Wrap(err)
 	}
 
-	versionStruct := Version{}
+	versionStruct := VersionInfo{}
 	err = yaml.Unmarshal([]byte(dat), &versionStruct)
 	if err != nil {
-		return "", FailParseProject.Wrap(err)
+		return nil, FailParseProject.Wrap(err)
 	}
 
 	if versionStruct.Version == "" {
-		return "", nil
+		return nil, nil
 	}
 
 	version := strings.TrimSpace(versionStruct.Version)
 	match, fail := regexp.MatchString("^\\d+\\.\\d+\\.\\d+-\\d+$", version)
 	if fail != nil || !match {
-		return "", FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
 
-	return versionStruct.Version, nil
+	return &versionStruct, nil
 }
 
 // Reset the current state, which unsets the persistent project

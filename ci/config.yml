@@ -26,6 +26,8 @@ jobs:
         value: $(GOPATH)/src/github.com/$(build.repository.name)
       - name: ACTIVESTATE_CLI_DISABLE_RUNTIME
         value: "true"
+      - name: ACTIVESTATE_CLI_DISABLE_UPDATES
+        value: "true"
     steps:
       - bash: |
           sudo apt-get install -y python3-setuptools
@@ -55,6 +57,8 @@ jobs:
         value: $(GOPATH)/src/github.com/$(build.repository.name)
       - name: ACTIVESTATE_CLI_DISABLE_RUNTIME
         value: "true"
+      - name: ACTIVESTATE_CLI_DISABLE_UPDATES
+        value: "true"
     steps:
       - template: steps.yml
 
@@ -78,6 +82,8 @@ jobs:
       - name: WORKDIR
         value: C:\Users\VssAdministrator\go\src\github.com\$(build.repository.name)
       - name: ACTIVESTATE_CLI_DISABLE_RUNTIME
+        value: "true"
+      - name: ACTIVESTATE_CLI_DISABLE_UPDATES
         value: "true"
     steps:
       - template: steps.yml

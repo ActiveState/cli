@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/assert"
 )
 
 func setup(t *testing.T, withVersion bool) {
@@ -41,7 +41,7 @@ func TestTimedCheck(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
 
-	updatemocks.MockUpdater(t, os.Args[0], "1.2.3-123")
+	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
 	update := TimedCheck()
 	assert.True(t, update, "Should want to update")

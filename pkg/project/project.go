@@ -7,15 +7,14 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/expander"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
-
-	"github.com/ActiveState/cli/internal/expander"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -127,6 +126,9 @@ func (p *Project) Owner() string { return p.projectfile.Owner }
 
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version }
+
+// Branch returns branch that we're pinned to (useless unless version is also set)
+func (p *Project) Branch() string { return p.projectfile.Branch }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() string { return p.projectfile.Namespace }
