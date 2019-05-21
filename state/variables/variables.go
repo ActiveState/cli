@@ -61,9 +61,9 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	hdrs, rows, failure := variablesTable(prj.Variables())
-	if failure != nil {
-		return failure
+	hdrs, rows, fail := variablesTable(prj.Variables())
+	if fail != nil {
+		return fail
 	}
 	t := gotabulate.Create(rows)
 	t.SetHeaders(hdrs)
@@ -75,9 +75,9 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 
 func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f *failures.Failure) {
 	for _, v := range vars {
-		isSetLabel, failure := v.IsSetLabel()
-		if failure != nil {
-			return nil, nil, failure
+		isSetLabel, fail := v.IsSetLabel()
+		if fail != nil {
+			return nil, nil, fail
 		}
 
 		row := []string{

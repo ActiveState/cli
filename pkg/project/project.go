@@ -322,9 +322,9 @@ func (v *Variable) PulledFromLabel() string {
 
 // IsSetLabel returns a representation of whether the variable is set.
 func (v *Variable) IsSetLabel() (string, *failures.Failure) {
-	valornil, failure := v.ValueOrNil()
-	if failure != nil {
-		return "", failure
+	valornil, fail := v.ValueOrNil()
+	if fail != nil {
+		return "", fail
 	}
 	if valornil == nil {
 		return locale.T("variables_value_unset"), nil
