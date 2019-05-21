@@ -284,7 +284,7 @@ function install()
     if( -Not (isInRegistry) ){
         if ( -Not (isAdmin)) {
             Write-Host "Please run this installer in a terminal with admin privileges or $manualPathTxt $andSystem" -ForegroundColor Yellow
-        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $script:INSTALLDIR $script:STATEEXE)+"' to be appended to the registry `$PATH?"))) {
+        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $script:INSTALLDIR $script:STATEEXE)+"' to be appended to your PATH?"))) {
             Write-Host "Adding $script:INSTALLDIR to registry"
             # This only sets it in the regsitry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
