@@ -250,9 +250,9 @@ signup_success:
 login_cancelled:
   other: Authentication Cancelled
 local:
-  other: local
+  other: Local
 organization:
-  other: organization
+  other: Organization
 organizations_description:
   other: List member organizations on the ActiveState platform
 organizations_err:
@@ -262,7 +262,7 @@ organization_name:
 organization_no_orgs:
   other: You are not a member of any organizations
 project:
-  other: project
+  other: Project
 project_name:
   other: Project Name
 project_description:
