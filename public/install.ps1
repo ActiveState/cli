@@ -86,7 +86,7 @@ function checkForExisting([string] $path)
         $targetFile =  Join-Path $path $script:STATEEXE
         if (Test-Path $targetFile -PathType Leaf)
         {
-            Write-host "Target '$targetFile' contains existing state tool."
+            Write-host "Previous installation detected at $targetFile"
             if( -Not (promptYN "Do you want to continue installation?"))
             {
                 Write-Warning "Choose new installation location.  Aborting Installation"
