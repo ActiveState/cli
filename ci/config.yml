@@ -16,8 +16,6 @@ jobs:
         value: /home/vsts/go
       - name: GOBIN
         value: /home/vsts/go/bin
-      - name: GOROOT
-        value: /usr/local/go1.12.1
       - name: BINPATH
         value: /home/vsts/bin
       - name: MODPATH
@@ -34,9 +32,12 @@ jobs:
           mkdir -p $BINPATH
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > $BINPATH/cc-test-reporter
           chmod +x $BINPATH/cc-test-reporter
+
+          ls -ahl /usr/local | grep go
         displayName: Prepare Agent
       - template: steps.yml
   - job: macos
+    condition: false
     pool:
       vmImage: macos-10.13
     variables:
@@ -63,6 +64,7 @@ jobs:
       - template: steps.yml
 
   - job: windows
+    condition: false
     pool:
       vmImage: vs2017-win2016
     variables:
