@@ -17,7 +17,7 @@ jobs:
       - name: GOBIN
         value: /home/vsts/go/bin
       - name: GOROOT
-        value: /usr/local/go1.12.1
+        value: /usr/local/go1.12
       - name: BINPATH
         value: /home/vsts/bin
       - name: MODPATH
