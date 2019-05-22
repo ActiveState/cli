@@ -72,16 +72,17 @@ function promptYN([string]$msg)
 # If found and it matches TARGET, ask to overwrite, bail if N
 # If found and NOT matches TARGET, ask to change TARGET and ask to overwrite, continue if N
 # Finally checks to make sure TARGET doesn't already have a binary in it.
-function checkForExisting([string] $path)
+function setTargetDir([string] $path)
 {   
     if ($path -eq "")
     {
         $path = $script:TARGET
     }
-    try {
+
+    if ((get-command $script:STATEEXE -ErrorAction 'silentlycontinue'))
+    {
         $script:PREVIOUSINSTALL = (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
-    }
-    catch {
+    } else {
         # Wasn't found on path but confirm there isn't an existing install in TARGET
         $targetFile =  Join-Path $path $script:STATEEXE
         if (Test-Path $targetFile -PathType Leaf)
@@ -166,8 +167,8 @@ function promptInstallDir()
             $validPath = $true
         } else  {
             if (isValidFolder $dir) {
-                checkForExisting $dir
-s                $validPath = $true
+                setTargetDir $dir
+                $validPath = $true
             } 
         }
     }
@@ -175,7 +176,7 @@ s                $validPath = $true
 
 function setInstallDir()
 {   
-    checkForExisting
+    setTargetDir
     promptInstallDir
 }
 
@@ -259,7 +260,7 @@ function install()
     # Confirm the user wants to use the default install location by prompting for new dir
     if ( -Not $script:NOPROMPT) {
         if($script:TARGET -ne ""){
-            checkForExisting $script:TARGET
+            setTargetDir $script:TARGET
         } else {
             setInstallDir
         }
@@ -279,37 +280,26 @@ function install()
 
     # Path setup
     $newPath = "$script:INSTALLDIR;$env:Path"
-    $manualPathTxt = "manually add '$script:INSTALLDIR' to your PATH"
-    $andSystem = "in your system preferences to add $script:STATEEXE to your `$PATH permanently"
+    $manualPathTxt = "manually add '$script:INSTALLDIR' to your PATH system preferences to add '$script:STATEEXE' to your PATH permanently"
     if( -Not (isInRegistry) ){
         if ( -Not (isAdmin)) {
-            Write-Host "Please run this installer in a terminal with admin privileges or $manualPathTxt $andSystem" -ForegroundColor Yellow
+            Write-Host "Please run this installer in a terminal with admin privileges or $manualPathTxt" -ForegroundColor Yellow
         } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $script:INSTALLDIR $script:STATEEXE)+"' to be appended to your PATH?"))) {
+            Write-Host "Updating environment..."
             Write-Host "Adding $script:INSTALLDIR to registry"
             # This only sets it in the regsitry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-        } else {
-            Write-Host "Please $manualPathTxt $andSystem" -ForegroundColor Yellow
+            if( -Not (isOnPath)) {
+                # This only sets it in the current session
+                $Env:Path = $newPath
+                Write-Host "You may now start using the '$script:STATEEXE' program."
+            }
         }
-    } else {
-        Write-Host "'$script:INSTALLDIR' is already in registry" -ForegroundColor Yellow
-    }
-    if( -Not (isOnPath)){
-        if(-Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $script:INSTALLDIR $script:STATEEXE)+"' to be append to your session `$PATH?")))
-        {
-            Write-Host "Updating environment..."
-            # This only sets it in the current session
-            $Env:Path = $newPath
-            Write-Host "You may now start using the '$script:STATEEXE' program."
-        } else 
-        {   
-            Write-Host "Please $manualPathTxt to start using start using the $script:STATEEXE" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "'$script:INSTALLDIR' is already on your PATH" -ForegroundColor Yellow
-        
     }
 
+    if( -Not (isInRegistry) -And -Not (isOnPath)){
+        Write-Host "Please $manualPathTxt then start a new shell" -ForegroundColor Yellow
+    }
 }
 
 install
