@@ -279,7 +279,7 @@ function install()
 
     # Path setup
     $newPath = "$script:INSTALLDIR;$env:Path"
-    $manualPathTxt = "manually add '$script:INSTALLDIR' to your `$PATH"
+    $manualPathTxt = "manually add '$script:INSTALLDIR' to your PATH"
     $andSystem = "in your system preferences to add $script:STATEEXE to your `$PATH permanently"
     if( -Not (isInRegistry) ){
         if ( -Not (isAdmin)) {
