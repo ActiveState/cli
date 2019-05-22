@@ -144,7 +144,7 @@ function isValidFolder([string] $path)
         if (-Not (Test-Path $path -PathType 'Container')){
             Write-Warning "'$path' exist but isn't a folder"
             return $false
-        #and it's writable
+        # and it's writable
         } elseif ( -Not (hasWritePermission $path)) {
             Write-Warning "You do not have permission to write to '$path'"
             return $false
