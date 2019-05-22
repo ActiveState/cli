@@ -149,7 +149,7 @@ function isValidFolder([string] $path)
             Write-Warning "You do not have permission to write to '$path'"
             return $false
         }
-    #check parent permissions if path doesn't exist
+    # check parent permissions if path doesn't exist
     } elseif ( -Not (hasWritePermission (split-path $path))) {
         Write-Warning $("You do not have permission to write to '"+(split-path $path)+"'")
         return $false
