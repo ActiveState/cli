@@ -55,6 +55,15 @@ func (v VariablePullFrom) Validate() *failures.Failure {
 	}
 }
 
+// String returns a formatted representation of the underlying VariablePullFrom
+// value. If the underlying value is nil, an empty string is returned.
+func (v *VariablePullFrom) String() string {
+	if v == nil {
+		return ""
+	}
+	return string(*v)
+}
+
 // VariableShare records the owner of the variable, this determines who a variable might be shared with
 type VariableShare string
 
@@ -79,6 +88,15 @@ func (v VariableShare) Validate() *failures.Failure {
 	}
 }
 
+// String returns a formatted representation of the underlying VariableShare
+// value. If the underlying value is nil, an empty string is returned.
+func (v *VariableShare) String() string {
+	if v == nil {
+		return ""
+	}
+	return string(*v)
+}
+
 // VariableValue holds the value of the variable, since variables can have complex value (eg. they can be secrets), this
 // needs a more complex type
 type VariableValue struct {
@@ -90,6 +108,7 @@ type VariableValue struct {
 // Variable covers the variable structure, which goes under Project
 type Variable struct {
 	Name        string        `yaml:"name"`
+	Description string        `yaml:"description"`
 	ValueRaw    interface{}   `yaml:"value"`
 	Value       VariableValue `yaml:"-"`
 	Constraints Constraint    `yaml:"constraints"`
