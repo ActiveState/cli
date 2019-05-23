@@ -271,7 +271,7 @@ function install()
         } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $installDir $script:STATEEXE)+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
             Write-Host "Adding $installDir to system and current session PATH"
-            # This only sets it in the regsitry and it will NOT be accessible in the current session
+            # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
             $Env:Path = $newPath
             Write-Host "You may now start using the '$script:STATEEXE' program"
