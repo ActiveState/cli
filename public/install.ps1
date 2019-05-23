@@ -82,11 +82,32 @@ function promptYNQ([string]$msg)
     return $True
 }
 
+function errorOccured($suppress) {
+    $errMsg = $Error[0]
+    $Error.Clear()
+    if($errMsg) {
+        if (-Not $suppress){
+            Write-Warning $errMsg
+        }
+        return $True
+    }
+    return $False
+}
+
 function hasWritePermission([string] $path)
 {
-    $user = "$env:userdomain\$env:username"
-    $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
-    return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
+    # $user = "$env:userdomain\$env:username"
+    # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
+    # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
+    New-Item -Path (Join-Path $path "perms") -ItemType File -ErrorAction 'silentlycontinue'
+    if(errorOccured $True){
+        return $False
+    }
+    Remove-Item -Path (Join-Path $path "perms") -Force  -ErrorAction 'silentlycontinue'
+    if(errorOccured $True){
+        return $False
+    }
+    return $True
 }
 
 function checkPermsRecur([string] $path){
@@ -102,7 +123,7 @@ function checkPermsRecur([string] $path){
         }
         $path = split-path $path
     }
-    Write-Warning "Path not on system '$orig'"
+    Write-Warning "'$orig' is not a valid path"
     return $False
 }
 
@@ -157,7 +178,7 @@ function getInstallDir()
             } else  {
                 Write-Warning "Overwriting previous installation"
             }
-        }
+        } 
         $validPath = $True
     }
     $installDir
@@ -282,7 +303,6 @@ function install()
         # $Env:Path = $newPath
         Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
     }
-    
 }
 
 install
