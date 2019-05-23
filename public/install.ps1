@@ -267,7 +267,7 @@ function install()
     $newPath = "$installDir;$env:Path"
     if( -Not (isInRegistry $installDir) ){
         if ( -Not (isAdmin)) {
-            Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences to add '$script:STATEEXE' to your PATH permanently`n" -ForegroundColor Yellow
+            Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
         } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $installDir $script:STATEEXE)+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
             Write-Host "Adding $installDir to registry and current session PATH"
