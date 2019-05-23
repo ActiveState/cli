@@ -24,27 +24,25 @@ param (
 
 $script:NOPROMPT = $n
 $script:TARGET = $t
-# C:\Users\cgcho\AppData\Roaming\ActiveState\bin
-$script:DEFAULTDIR = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin")) 
 $script:STATEEXE = $f
 $script:BRANCH = $b
 
 # Helpers
-function isInRegistry(){
+function isInRegistry($path){
     $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
     $inReg = $False
     for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $script:INSTALLDIR) {
+        if ($regpaths[$i] -eq $path) {
             $inReg = $True
         }
     }
     $inReg
 }
-function isOnPath(){
+function isOnPath($path){
     $envpaths = $env:Path.Split(';')
     $inEnv = $False
     for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $script:INSTALLDIR) {
+        if ($envpaths[$i] -eq $path) {
             $inEnv = $True
         }
     }
@@ -59,7 +57,7 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y|N]"
+    $response = Read-Host -Prompt $msg" [y/N]"
 
     if ( -Not ($response.ToLower() -eq "y") )
     {
@@ -68,74 +66,44 @@ function promptYN([string]$msg)
     return $true
 }
 
-# Check for an existing install
-# If found and it matches TARGET, ask to overwrite, bail if N
-# If found and NOT matches TARGET, ask to change TARGET and ask to overwrite, continue if N
-# Finally checks to make sure TARGET doesn't already have a binary in it.
-function setTargetDir([string] $path)
-{   
-    if ($path -eq "")
-    {
-        $path = $script:TARGET
-    }
+function promptYNQ([string]$msg)
+{
+    $response = Read-Host -Prompt $msg" [y/N/q]"
 
-    if ((get-command $script:STATEEXE -ErrorAction 'silentlycontinue'))
+    if ($response.ToLower() -eq "q")
     {
-        $script:PREVIOUSINSTALL = (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
-    } else {
-        # Wasn't found on path but confirm there isn't an existing install in TARGET
-        $targetFile =  Join-Path $path $script:STATEEXE
-        if (Test-Path $targetFile -PathType Leaf)
-        {
-            Write-host "Previous installation detected at $targetFile"
-            if( -Not (promptYN "Do you want to continue installation?"))
-            {
-                Write-Warning "Choose new installation location.  Aborting Installation"
-                exit 0
-            } else 
-            {
-                Write-Warn "Overwriting previous installation"
-                $script:INSTALLDIR = $path
-                return
-            }
-        }
+        Write-Host "Aborting Installation" -ForegroundColor Yellow
+        exit(0)
     }
-    # Exists on PATH not TARGET
-    Write-Host "Previous install detected at '$script:PREVIOUSINSTALL'" -ForegroundColor Yellow
-    if  ($path -eq "")
+    if ( -Not ($response.ToLower() -eq "y") )
     {
-        $script:INSTALLDIR = $script:PREVIOUSINSTALL
+        return $false
     }
-    elseif(-Not ($script:PREVIOUSINSTALL -eq $path))
-    {
-        Write-Host "Do you want to use the previous install location instead?  This will overwrite the '$script:STATEEXE' file there."
-        if (promptYN "Overwrite?")
-        {
-            $script:INSTALLDIR = $script:PREVIOUSINSTALL
-        } else 
-        {
-            Write-Warning "Installing elsewhere from previous installation"
-            $script:INSTALLDIR = $path
-        }
-    } 
-    elseif( -Not (promptYN "Do you wish to overwrite this install?"))
-    # Exists on Path AND is in target
-    {
-        Write-Warning "Abort Installation"
-        exit 0
-    } 
-    else 
-    {
-        Write-Warning $("Overwriting previous installation")
-        $script:INSTALLDIR = $path
-    }
+    return $true
 }
 
 function hasWritePermission([string] $path)
 {
     $user = "$env:userdomain\$env:username"
-    $acl = Get-Acl $path
+    $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
     return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
+}
+
+function checkPermsRecur([string] $path){
+    # recurse up to the drive root if we have to
+    while ($path -ne "") {
+        if (Test-Path $path){
+            if (-Not (hasWritePermission $path)){
+                Write-Warning "You do not have permission to write to '$path'.  Run as admin to install here"
+                return $False
+            } else {
+                return $true
+            }
+        }
+        $path = split-path $path
+    }
+    Write-Warning "Path not on system '$orig'"
+    return $false
 }
 
 function isValidFolder([string] $path)
@@ -145,44 +113,66 @@ function isValidFolder([string] $path)
         if (-Not (Test-Path $path -PathType 'Container')){
             Write-Warning "'$path' exist but isn't a folder"
             return $false
-        # and it's writable
-        } elseif ( -Not (hasWritePermission $path)) {
-            Write-Warning "You do not have permission to write to '$path'"
-            return $false
         }
-    # check parent permissions if path doesn't exist
-    } elseif ( -Not (hasWritePermission (split-path $path))) {
-        Write-Warning $("You do not have permission to write to '"+(split-path $path)+"'")
-        return $false
     }
-    return $true
+    return checkPermsRecur $path
 }
 
-function promptInstallDir()
-{
-    $validPath = $false
-    while ( -Not $validPath )
-    {   
-        if (($dir = Read-Host "Please enter the installation directory [$script:INSTALLDIR]") -eq ""){   
-            $validPath = $true
-        } else  {
-            if (isValidFolder $dir) {
-                setTargetDir $dir
-                $validPath = $true
-            } 
-        }
+function getExistingOnPath(){
+    (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
+}
+
+function getDefaultInstallDir() {
+    if ($script:TARGET) {
+         $script:TARGET
+    } elseif (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+        $existing = getExistingOnPath
+        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+        $existing
+    } else {
+        (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
     }
 }
 
-function setInstallDir()
+function getInstallDir()
 {   
-    setTargetDir
-    promptInstallDir
+    $installDir = ""
+    $defaultDir = getDefaultInstallDir
+    $validPath = $false
+    while( -Not $validPath){
+        $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
+        if ($installDir -eq ""){
+            $installDir = $defaultDir
+        }
+        if( -Not (isValidFolder $installDir) ) {
+            continue
+        }
+        $targetFile = Join-Path $installDir $script:STATEEXE
+        if (Test-Path $targetFile -PathType Leaf) {
+            Write-host "Previous installation detected at '$targetFile'"
+            if( -Not (promptYNQ "Do you want to continue installation with this directory?"))
+            {
+                Write-Warning "Choose new installation location"
+                continue
+            } else  {
+                Write-Warning "Overwriting previous installation"
+            }
+        }
+        $validPath = $true
+    }
+    $installDir
 }
 
 function install()
 {
-    $USAGE="install.ps1 [flags]`n`r`n`rFlags:`n`r -b <branch>   Default 'unstable'.  Specify an alternative branch to install from (eg. master)`n`r -n               Don't prompt for anything, just install and override any existing executables`n`r -t               Install target dir`n`r -f               Binary filename to use`n`r -h               Shows usage information (what you're currently reading)`n`rEOF`n`r"
+    $USAGE="install.ps1 [flags]
+    
+    Flags:
+    -b <branch>   Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+    -n               Don't prompt for anything, just install and override any existing executables
+    -t               Install target dir
+    -f               Binary filename to use
+    -h               Shows usage information (what you're currently reading)"
     if ($h) {
         Write-Host $USAGE
         exit 0
@@ -192,8 +182,6 @@ function install()
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
-    # Check for various existing installs, this might bail out of the install process
-    # So i figured I should comment here so it's not such an innocuous line
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
     if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
@@ -202,8 +190,8 @@ function install()
         $stateexe="windows-amd64.exe"
 
     } else {
-        Write-Warning "x86 processors are not supported at this time."
-        Write-Warning "Contact ActiveState Support for assistance."
+        Write-Warning "x86 processors are not supported at this time"
+        Write-Warning "Contact ActiveState Support for assistance"
         Write-Warning "Aborting install"
         exit 1
     }
@@ -219,6 +207,7 @@ function install()
         $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
+        Write-Error $_.Exception.Message
         exit 1
     }
     $latestChecksum = $versionedJson.Sha256v2
@@ -236,7 +225,7 @@ function install()
     try{
         $downloader.DownloadFile($zipURL, $zipPath)
     } catch [System.Exception] {
-        Write-Warning "Could not install state tool."
+        Write-Warning "Could not install state tool"
         Write-Warning "Could not access $zipURL"
         Write-Error $_.Exception.Message
         exit 1
@@ -249,7 +238,7 @@ function install()
         Write-Warning "SHA256 sum did not match:"
         Write-Warning "Expected: $latestChecksum"
         Write-Warning "Received: $hash"
-        Write-Warning "Aborting installation."
+        Write-Warning "Aborting installation"
         exit 1
     }
 
@@ -259,48 +248,43 @@ function install()
 
     # Confirm the user wants to use the default install location by prompting for new dir
     if ( -Not $script:NOPROMPT) {
-        if($script:TARGET -ne ""){
-            setTargetDir $script:TARGET
-        } else {
-            setInstallDir
-        }
+        $installDir = getInstallDir
     } else {
-        $script:INSTALLDIR = $script:DEFAULTDIR
+        $installDir = getDefaultInstallDir
     }
     # Install binary
-    Write-Host "Installing to '$script:INSTALLDIR'..." -ForegroundColor Yellow
+    Write-Host "Installing to '$installDir'..." -ForegroundColor Yellow
     #  If the install dir doesn't exist
-    if( -Not (Test-Path $script:INSTALLDIR)) {
-        Write-host "NOTE: $script:INSTALLDIR will be created"
-        New-Item -Path $script:INSTALLDIR -ItemType Directory
+    if( -Not (Test-Path $installDir)) {
+        Write-host "NOTE: $installDir will be created"
+        New-Item -Path $installDir -ItemType Directory
     } else {
-        Remove-Item (Join-Path $script:INSTALLDIR $script:STATEEXE) -Erroraction 'silentlycontinue'
+        Remove-Item (Join-Path $installDir $script:STATEEXE) -Erroraction 'silentlycontinue'
     }
-    Move-Item (Join-Path $tmpParentPath $stateexe) (Join-Path $script:INSTALLDIR $script:STATEEXE)
+    Move-Item (Join-Path $tmpParentPath $stateexe) (Join-Path $installDir $script:STATEEXE)
 
     # Path setup
-    $newPath = "$script:INSTALLDIR;$env:Path"
-    $manualPathTxt = "manually add '$script:INSTALLDIR' to your PATH system preferences to add '$script:STATEEXE' to your PATH permanently"
-    if( -Not (isInRegistry) ){
+    $newPath = "$installDir;$env:Path"
+    if( -Not (isInRegistry $installDir) ){
         if ( -Not (isAdmin)) {
-            Write-Host "Please run this installer in a terminal with admin privileges or $manualPathTxt" -ForegroundColor Yellow
-        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $script:INSTALLDIR $script:STATEEXE)+"' to be appended to your PATH?"))) {
+            Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences to add '$script:STATEEXE' to your PATH permanently`n" -ForegroundColor Yellow
+        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $installDir $script:STATEEXE)+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
-            Write-Host "Adding $script:INSTALLDIR to registry"
+            Write-Host "Adding $installDir to registry and current session PATH"
             # This only sets it in the regsitry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-            if( -Not (isOnPath)) {
-                # This only sets it in the current session
-                $Env:Path = $newPath
-                Write-Host "You may now start using the '$script:STATEEXE' program."
-            }
+            $Env:Path = $newPath
+            Write-Host "You may now start using the '$script:STATEEXE' program"
         }
     }
-
-    if( -Not (isInRegistry) -And -Not (isOnPath)){
-        Write-Host "Please $manualPathTxt then start a new shell" -ForegroundColor Yellow
+    if( -Not (isOnPath $installDir)) {
+        # This only sets it in the current session
+        # $Env:Path = $newPath
+        Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
     }
+    
 }
 
 install
-Write-Host "Installation complete."
+Write-Host "Installation complete"
+Write-Host "You may now start using the '$script:STATEEXE' program"
