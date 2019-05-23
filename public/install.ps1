@@ -94,7 +94,7 @@ function checkPermsRecur([string] $path){
     while ($path -ne "") {
         if (Test-Path $path){
             if (-Not (hasWritePermission $path)){
-                Write-Warning "You do not have permission to write to '$path'.  Run as admin to install here"
+                Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
                 return $False
             } else {
                 return $true
