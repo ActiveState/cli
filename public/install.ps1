@@ -61,9 +61,9 @@ function promptYN([string]$msg)
 
     if ( -Not ($response.ToLower() -eq "y") )
     {
-        return $false
+        return $False
     }
-    return $true
+    return $True
 }
 
 function promptYNQ([string]$msg)
@@ -77,9 +77,9 @@ function promptYNQ([string]$msg)
     }
     if ( -Not ($response.ToLower() -eq "y") )
     {
-        return $false
+        return $False
     }
-    return $true
+    return $True
 }
 
 function hasWritePermission([string] $path)
@@ -97,13 +97,13 @@ function checkPermsRecur([string] $path){
                 Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
                 return $False
             } else {
-                return $true
+                return $True
             }
         }
         $path = split-path $path
     }
     Write-Warning "Path not on system '$orig'"
-    return $false
+    return $False
 }
 
 function isValidFolder([string] $path)
@@ -112,7 +112,7 @@ function isValidFolder([string] $path)
         #it's a folder
         if (-Not (Test-Path $path -PathType 'Container')){
             Write-Warning "'$path' exists and is not a directory"
-            return $false
+            return $False
         }
     }
     return checkPermsRecur $path
@@ -138,7 +138,7 @@ function getInstallDir()
 {   
     $installDir = ""
     $defaultDir = getDefaultInstallDir
-    $validPath = $false
+    $validPath = $False
     while( -Not $validPath){
         $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
         if ($installDir -eq ""){
@@ -158,7 +158,7 @@ function getInstallDir()
                 Write-Warning "Overwriting previous installation"
             }
         }
-        $validPath = $true
+        $validPath = $True
     }
     $installDir
 }
