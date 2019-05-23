@@ -270,7 +270,7 @@ function install()
             Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
         } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $installDir $script:STATEEXE)+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
-            Write-Host "Adding $installDir to registry and current session PATH"
+            Write-Host "Adding $installDir to system and current session PATH"
             # This only sets it in the regsitry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
             $Env:Path = $newPath
