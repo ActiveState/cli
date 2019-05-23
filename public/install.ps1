@@ -111,7 +111,7 @@ function isValidFolder([string] $path)
     if(Test-Path $path){
         #it's a folder
         if (-Not (Test-Path $path -PathType 'Container')){
-            Write-Warning "'$path' exist but isn't a folder"
+            Write-Warning "'$path' exists and is not a directory"
             return $false
         }
     }
