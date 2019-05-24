@@ -141,7 +141,7 @@ class IntegrationTest(unittest.TestCase):
 
     def send_quit(self):
         if self.is_running():
-            os.kill(self.pid(), signal.SIGQUIT)
+            os.kill(self.pid(), signal.NSIG)
         if not is_windows:
             self.child.close()
 
