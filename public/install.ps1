@@ -25,6 +25,7 @@ param (
 $script:NOPROMPT = $n
 $script:TARGET = $t
 $script:STATEEXE = $f
+$script:STATE = $f.Substring(0, $f.IndexOf("."))
 $script:BRANCH = $b
 
 # Helpers
@@ -307,7 +308,7 @@ function install()
             # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
             $Env:Path = $newPath
-            Write-Host "You may now start using the '$script:STATEEXE' program"
+            Write-Host "You may now start using the '$script:STATE' program"
         }
     }
     if( -Not (isOnPath $installDir)) {
@@ -319,4 +320,4 @@ function install()
 
 install
 Write-Host "Installation complete"
-Write-Host "You may now start using the '$script:STATEEXE' program"
+Write-Host "You may now start using the '$script:STATE' program"
