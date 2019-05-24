@@ -159,28 +159,14 @@ class IntegrationTest(unittest.TestCase):
         self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
 
     def wait(self, code=0, timeout=30):
-        from multiprocessing.pool import ThreadPool
-        pool = ThreadPool(processes=1)
-        import time
-        self.result = None
-        def callback(out):
-            self.result = out
-
         try:
-            async_process = pool.apply_async(self.child.wait, callback=callback)
-            time.sleep(timeout) 
-            print("self.result:"+str(self.result))
-            if self.result is None:
-                raise TimeoutError("Timeout")
-            # with wait_for_timeout(seconds=timeout):
-            #     self.result = self.child.wait()
+            result = wait_for_timeout(seconds=timeout, func=self.child.wait).wait()
         except TimeoutError:
             self.fail("timeout while waiting, output:\n---\n%s\n---" % (self.child.logfile_read.logged))
             return
-
-        self.result = self.result or 0
-        self.assertEqual(code, self.result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
-        return self.result
+        result = result or 0
+        self.assertEqual(code, result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
+        return result
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
@@ -201,16 +187,22 @@ class IntegrationLogger:
         self.logfile.flush()
 
 class wait_for_timeout:
-    def __init__(self, seconds=1, error_message='Timeout'):
+    from multiprocessing.pool import ThreadPool
+    pool = ThreadPool(processes=1)
+    import time
+    def __init__(self, seconds=1, error_message='Timeout', func=lambda:1, args=None):
         self.seconds = seconds
+        self.func = func
+
         self.error_message = error_message
-    def handle_timeout(self):
-        raise TimeoutError(self.error_message)
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
+    def wait(self):
+        def callback(out):
+            self.result = out
+        self.pool.apply_async(self.func, callback=callback)
+        time.sleep(self.seconds)
+        if self.result is None:
+            raise TimeoutError(self.error_message)
+        return self.result
 
 def get_constants():
         const_path = os.path.join(

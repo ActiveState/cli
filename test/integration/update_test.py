@@ -40,7 +40,6 @@ class TestUpdates(helpers.IntegrationTest):
         temp_bin = self.get_temp_bin()
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "false"
         self.assert_version_match(False, temp_bin, "Version number should not match because auto-update should have occurred")
-        self.wait()
 
     def test_manual_update_works(self):
         temp_bin = self.get_temp_bin()
