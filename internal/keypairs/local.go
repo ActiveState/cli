@@ -70,20 +70,19 @@ func Delete(keyName string) *failures.Failure {
 	return nil
 }
 
-// LoadWithDefaults will call Load with the default key name (i.e. constants.KeypairLocalFileName).
+// LoadWithDefaults will call Load with the default or user override key name.
 func LoadWithDefaults() (Keypair, *failures.Failure) {
-	return Load(constants.KeypairLocalFileName)
+	return Load(defaultOrUserKeypairFilename())
 }
 
-// SaveWithDefaults will call Save with the provided keypair and the default key name
-// (i.e. constants.KeypairLocalFileName).
+// SaveWithDefaults will call Save with the provided keypair and the default or user override key name.
 func SaveWithDefaults(kp Keypair) *failures.Failure {
-	return Save(kp, constants.KeypairLocalFileName)
+	return Save(kp, defaultOrUserKeypairFilename())
 }
 
-// DeleteWithDefaults will call Delete with the default key name (i.e. constants.KeypairLocalFileName).
+// DeleteWithDefaults will call Delete with the default or user override key name.
 func DeleteWithDefaults() *failures.Failure {
-	return Delete(constants.KeypairLocalFileName)
+	return Delete(defaultOrUserKeypairFilename())
 }
 
 func localKeyFilename(keyName string) string {
@@ -96,4 +95,11 @@ func loadAndParseKeypair(keyFilename string) (Keypair, *failures.Failure) {
 		return nil, FailLoadUnknown.Wrap(err)
 	}
 	return ParseRSA(string(keyFileBytes))
+}
+
+func defaultOrUserKeypairFilename() string {
+	if f := os.Getenv(constants.PrivateKeyEnvVarName); f != "" {
+		return f
+	}
+	return constants.KeypairLocalFileName
 }
