@@ -44,7 +44,7 @@ class TestUpdates(helpers.IntegrationTest):
                     "-nologo",
                     "-noprofile",
                     "-command",
-                    "\"Expand-Archive -LiteralPath '{0}' -DestinationPath '{1}'\"".format(archive_path, test_dir)]
+                    "Expand-Archive -Path '{0}' -DestinationPath '{1}'".format(archive_path, self.temp_dir)]
         else:
             return ["tar",
                     "-C",
