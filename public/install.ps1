@@ -313,7 +313,7 @@ function install()
     }
     if( -Not (isOnPath $installDir)) {
         # This only sets it in the current session
-        # $Env:Path = $newPath
+        $Env:Path = $newPath
         Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
     }
 }
