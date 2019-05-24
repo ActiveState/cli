@@ -110,7 +110,9 @@ function hasWritePermission([string] $path)
     return $True
 }
 
-function checkPermsRecur([string] $path){
+function checkPermsRecur([string] $path)
+{
+    $orig = $path
     # recurse up to the drive root if we have to
     while ($path -ne "") {
         if (Test-Path $path){
@@ -128,7 +130,11 @@ function checkPermsRecur([string] $path){
 }
 
 function isValidFolder([string] $path)
-{   
+{      
+    if($path[1] -ne ":"){
+        Write-Warning "Must provide an absolute path."
+        return $False
+    }
     if(Test-Path $path){
         #it's a folder
         if (-Not (Test-Path $path -PathType 'Container')){
