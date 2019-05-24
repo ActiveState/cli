@@ -28,6 +28,9 @@ $script:STATEEXE = $f
 $script:STATE = $f.Substring(0, $f.IndexOf("."))
 $script:BRANCH = $b
 
+# Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
+$ErrorActionPreference = "Stop"
+
 # Helpers
 function isInRegistry($path){
     $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
