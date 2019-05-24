@@ -151,16 +151,28 @@ class IntegrationTest(unittest.TestCase):
         self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
 
     def wait(self, code=0, timeout=30):
+        from multiprocessing.pool import ThreadPool
+        pool = ThreadPool(processes=1)
+        import time
+        self.result = None
+        def callback(out):
+            self.result = out
+
         try:
-            with wait_for_timeout(seconds=timeout):
-                result = self.child.wait()
+            async_process = pool.apply_async(self.child.wait, callback=callback)
+            time.sleep(timeout) 
+            print("self.result:"+str(self.result))
+            if self.result is None:
+                raise TimeoutError("Timeout")
+            # with wait_for_timeout(seconds=timeout):
+            #     self.result = self.child.wait()
         except TimeoutError:
             self.fail("timeout while waiting, output:\n---\n%s\n---" % (self.child.logfile_read.logged))
             return
 
-        result = result or 0
-        self.assertEqual(code, result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
-        return result
+        self.result = self.result or 0
+        self.assertEqual(code, self.result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
+        return self.result
 
     def fail(self, msg=None):
         """Fail immediately, with the given message."""
