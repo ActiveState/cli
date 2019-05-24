@@ -50,6 +50,14 @@ class IntegrationTest(unittest.TestCase):
 
     def get_build_path(self):
         return os.path.realpath(os.path.join(test_dir, "..", "..", "build", self.get_binary_name()))
+    
+    def get_temp_path(self):
+        return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+
+    def get_temp_bin(self):
+        temp_bin = self.get_temp_path() + (".exe" if is_windows else "")
+        shutil.copy(self.get_build_path(),  temp_bin)
+        return temp_bin
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
@@ -80,7 +88,7 @@ class IntegrationTest(unittest.TestCase):
         self.child.logfile_read = IntegrationLogger(cmd)
 
     def spawn_command_blocking(self, cmd):
-        args = pexpect.split_command_line(cmd)
+        args = cmd.split(" ") if is_windows else pexpect.split_command_line(cmd)
         return subprocess.check_output(args, env=self.env, cwd=self.cwd, stderr=subprocess.DEVNULL)
 
     def clear_config(self):
