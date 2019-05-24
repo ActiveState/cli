@@ -155,17 +155,16 @@ function getDefaultInstallDir() {
     }
 }
 
-function getInstallDir()
+function promptInstallDir()
 {   
     $installDir = ""
     $defaultDir = getDefaultInstallDir
-    $validPath = $False
-    while( -Not $validPath){
+    while($True){
         $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
         if ($installDir -eq ""){
             $installDir = $defaultDir
         }
-        if( -Not (isValidFolder $installDir) ) {
+        if( -Not (isValidFolder $installDir)) {
             continue
         }
         $targetFile = Join-Path $installDir $script:STATEEXE
@@ -173,13 +172,12 @@ function getInstallDir()
             Write-host "Previous installation detected at '$targetFile'"
             if( -Not (promptYNQ "Do you want to continue installation with this directory?"))
             {
-                Write-Warning "Choose new installation location"
                 continue
             } else  {
                 Write-Warning "Overwriting previous installation"
             }
-        } 
-        $validPath = $True
+        }
+        break
     }
     $installDir
 }
@@ -269,7 +267,7 @@ function install()
 
     # Confirm the user wants to use the default install location by prompting for new dir
     if ( -Not $script:NOPROMPT) {
-        $installDir = getInstallDir
+        $installDir = promptInstallDir
     } else {
         $installDir = getDefaultInstallDir
     }
