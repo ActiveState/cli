@@ -42,6 +42,7 @@ class IntegrationTest(unittest.TestCase):
 
         self.test_dir = test_dir
         self.project_dir = project_dir
+        self.temp_dir = self.get_temp_path()
 
     def get_binary_name(self):
         if is_windows:
