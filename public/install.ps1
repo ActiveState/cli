@@ -99,11 +99,12 @@ function hasWritePermission([string] $path)
     # $user = "$env:userdomain\$env:username"
     # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
-    New-Item -Path (Join-Path $path "perms") -ItemType File -ErrorAction 'silentlycontinue'
+    $thefile = "activestate-perms"
+    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
     if(errorOccured $True){
         return $False
     }
-    Remove-Item -Path (Join-Path $path "perms") -Force  -ErrorAction 'silentlycontinue'
+    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
     if(errorOccured $True){
         return $False
     }
@@ -280,20 +281,27 @@ function install()
     # Install binary
     Write-Host "Installing to '$installDir'..." -ForegroundColor Yellow
     #  If the install dir doesn't exist
+    $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path $installDir)) {
         Write-host "NOTE: $installDir will be created"
-        New-Item -Path $installDir -ItemType Directory
+        New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
-        Remove-Item (Join-Path $installDir $script:STATEEXE) -Erroraction 'silentlycontinue'
+        if(Test-Path $installPath -PathType Leaf) {
+            Remove-Item $installPath -Erroraction 'silentlycontinue'
+            if(errorOccured){
+                Write-Host "Aborting Installation" -ForegroundColor Yellow
+                exit(1)
+            }
+        }
     }
-    Move-Item (Join-Path $tmpParentPath $stateexe) (Join-Path $installDir $script:STATEEXE)
+    Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Path setup
     $newPath = "$installDir;$env:Path"
     if( -Not (isInRegistry $installDir) ){
         if ( -Not (isAdmin)) {
             Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
-        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+(Join-Path $installDir $script:STATEEXE)+"' to be appended to your PATH?"))) {
+        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
             Write-Host "Adding $installDir to system and current session PATH"
             # This only sets it in the registry and it will NOT be accessible in the current session
