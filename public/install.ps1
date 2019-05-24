@@ -231,7 +231,7 @@ function install()
         exit 1
     }
 
-    #Check the sums
+    # Check the sums
     Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
     if ($hash -ne $latestChecksum){
