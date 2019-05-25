@@ -98,6 +98,21 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	suite.NotNil(kp)
 }
 
+func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaultsAndUserOverride() {
+	keyName := "my_voice_is_my_passport"
+	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
+	defer osutil.RemoveConfigFile(keyName + ".key")
+
+	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
+	suite.Require().NoError(keyFile.Close())
+
+	defer setenvWithCleanup(constants.PrivateKeyEnvVarName, keyName)()
+
+	kp, fail := keypairs.LoadWithDefaults()
+	suite.Require().Nil(fail)
+	suite.NotNil(kp)
+}
+
 func (suite *KeypairLocalLoadTestSuite) createConfigDirFile(keyFile string, fileMode os.FileMode) *os.File {
 	file, err := osutil.CreateConfigFile(keyFile, fileMode)
 	suite.Require().NoError(err)
@@ -108,6 +123,11 @@ func (suite *KeypairLocalLoadTestSuite) readTestFile(fileName string) string {
 	contents, err := osutil.ReadTestFile(fileName)
 	suite.Require().NoError(err)
 	return string(contents)
+}
+
+func setenvWithCleanup(key, value string) (cleanup func()) {
+	os.Setenv(key, value)
+	return func() { os.Unsetenv(key) }
 }
 
 func Test_KeypairLocalLoad_TestSuite(t *testing.T) {

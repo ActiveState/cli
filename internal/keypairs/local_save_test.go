@@ -49,6 +49,26 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	}
 }
 
+func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaultsAndUserOverride_Success() {
+	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(fail)
+
+	keyName := "my_voice_is_my_passport"
+	defer setenvWithCleanup(constants.PrivateKeyEnvVarName, keyName)()
+
+	fail = keypairs.SaveWithDefaults(kp)
+	suite.Require().Nil(fail)
+
+	kp2, fail := keypairs.Load(keyName)
+	suite.Require().Nil(fail)
+	suite.Equal(kp, kp2)
+
+	fileInfo := suite.statConfigDirFile(keyName + ".key")
+	if runtime.GOOS != "windows" {
+		suite.Equal(os.FileMode(0600), fileInfo.Mode())
+	}
+}
+
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
 	keyFileStat, err := osutil.StatConfigFile(keyFile)
 	suite.Require().NoError(err)
