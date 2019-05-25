@@ -123,16 +123,16 @@ func (s *Auth) Authenticate() *failures.Failure {
 	}
 
 	apiToken := viper.GetString("apiToken")
-	if apiToken != "" {
-		fail := s.AuthenticateWithToken(apiToken)
-		if fail != nil {
-			return fail
-		}
-	} else {
+	envAPIToken := os.Getenv(constants.APIKeyEnvVarName)
+	if envAPIToken != "" {
+		apiToken = envAPIToken
+	}
+
+	if apiToken == "" {
 		return FailNoCredentials.New(locale.T("err_no_credentials"))
 	}
 
-	return nil
+	return s.AuthenticateWithToken(apiToken)
 }
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
