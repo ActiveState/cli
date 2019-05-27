@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"os"
 	"testing"
 
 	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -57,6 +58,12 @@ func TestAuth(t *testing.T) {
 	auth = New()
 	fail = auth.AuthenticateWithUser(credentials.Username, credentials.Password, "")
 	assert.NoError(t, fail.ToError(), "Can Authenticate Again")
+
+	Logout()
+	defer setenvWithCleanup(constants.APIKeyEnvVarName, "testSuccess")()
+	auth = New()
+	fail = auth.Authenticate()
+	assert.NoError(t, fail.ToError(), "Authentication by user-define token failed")
 }
 
 func TestPersist(t *testing.T) {
@@ -105,4 +112,9 @@ func TestClientFailure(t *testing.T) {
 	}
 	auth.Client()
 	assert.Equal(t, 1, exitCode, "Should exit")
+}
+
+func setenvWithCleanup(key, value string) (cleanup func()) {
+	os.Setenv(key, value)
+	return func() { os.Unsetenv(key) }
 }
