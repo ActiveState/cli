@@ -154,8 +154,15 @@ func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsMod
 		secretRequiresUser := userSecret.IsUser != nil && *userSecret.IsUser
 		secretRequiresProject := secretProjectID != ""
 
-		if strings.EqualFold(*userSecret.Name, variable.Name) && (!variableRequiresProject || secretProjectID == projectID) &&
-			variableRequiresUser == secretRequiresUser && variableRequiresProject == secretRequiresProject {
+		nameMatches := strings.EqualFold(*userSecret.Name, variable.Name)
+		projectMatches := (!variableRequiresProject || secretProjectID == projectID)
+
+		// shareMatches and pullfromMatches show a detachment from the data due to the secrets-svc api needing a refactor
+		// to match the new data structure. Story: https://www.pivotaltracker.com/story/show/166272717
+		shareMatches := variableRequiresUser == secretRequiresUser
+		pullfromMatches := variableRequiresProject == secretRequiresProject
+
+		if nameMatches && projectMatches && shareMatches && pullfromMatches {
 			return userSecret, nil
 		}
 	}
