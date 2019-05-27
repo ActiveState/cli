@@ -3,11 +3,10 @@ package expander
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/secrets"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/secrets"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -117,7 +116,7 @@ func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *f
 		return "", nil
 	}
 
-	userSecret, fail := e.FindSecretWithHighestPriority(variable)
+	userSecret, fail := e.FindSecret(variable)
 	if fail != nil {
 		return "", fail
 	}
@@ -134,18 +133,8 @@ func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *f
 	return e.cachedSecrets[variable.Name], nil
 }
 
-// FindSecretWithHighestPriority will find the most appropriately scoped secret from the provided collection given
-// the provided SecretSpec. This function would like to find a secret with the following priority:
-//
-// 0. name match, case-insensitive (obvious given)
-// 1. secret is user+project-scoped and project matches current project
-// 2. secret is user-scoped
-// 3. secret is project-scoped and spec does not require user-scope only
-// 4. secret is org-scoped and spec does not require user and/or project-scope only
-//
-// Thus, if secrets are found matching priority 1 and 3, the priority 1 secret is returned. If no secret
-// is found, nil is returned.
-func (e *SecretExpander) FindSecretWithHighestPriority(variable *projectfile.Variable) (*secretsModels.UserSecret, *failures.Failure) {
+// FindSecret will find the secret appropriate for the current project
+func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsModels.UserSecret, *failures.Failure) {
 	secrets, fail := e.Secrets()
 	if fail != nil {
 		return nil, fail
@@ -156,46 +145,22 @@ func (e *SecretExpander) FindSecretWithHighestPriority(variable *projectfile.Var
 		return nil, fail
 	}
 
-	projectIDStr := project.ProjectID.String()
+	projectID := project.ProjectID.String()
+	variableRequiresUser := variable.Value.Share == nil
+	variableRequiresProject := variable.Value.PullFrom == nil || *variable.Value.PullFrom == projectfile.VariablePullFromProject
 
-	var selectedSecret *secretsModels.UserSecret
 	for _, userSecret := range secrets {
-		secretProjectIDStr := userSecret.ProjectID.String()
-		secretRequiresUser := *userSecret.IsUser
-		secretRequiresProject := secretProjectIDStr != ""
+		secretProjectID := userSecret.ProjectID.String()
+		secretRequiresUser := userSecret.IsUser != nil && *userSecret.IsUser
+		secretRequiresProject := secretProjectID != ""
 
-		if !strings.EqualFold(*userSecret.Name, variable.Name) {
-			continue
-		} else if secretRequiresUser && secretProjectIDStr == projectIDStr {
-			// priority 1 match
+		if strings.EqualFold(*userSecret.Name, variable.Name) && (!variableRequiresProject || secretProjectID == projectID) &&
+			variableRequiresUser == secretRequiresUser && variableRequiresProject == secretRequiresProject {
 			return userSecret, nil
-		} else if variable.Value.Share == nil && !secretRequiresUser {
-			// user scoped secret required (priority 2 failure)
-			continue
-		} else if secretRequiresProject && secretProjectIDStr != projectIDStr {
-			// this is a project secret but project id's don't match (priority 3 failure)
-			continue
-		} else if variable.Value.PullFrom != nil && *variable.Value.PullFrom == projectfile.VariablePullFromProject && !secretRequiresUser && !secretRequiresProject {
-			// org scoped secret when project or user scope required (priority 4 failure)
-			continue
-		}
-
-		if selectedSecret == nil {
-			// basic requirements met and nothing else selected yet
-			selectedSecret = userSecret
-			continue
-		} else if secretRequiresUser && !*selectedSecret.IsUser {
-			// priority 2 match
-			selectedSecret = userSecret
-			continue
-		} else if secretProjectIDStr == projectIDStr {
-			// priority 3 match
-			selectedSecret = userSecret
-			continue
 		}
 	}
 
-	return selectedSecret, nil
+	return nil, nil
 }
 
 // SecretFunc defines what our expander functions will be returning
@@ -216,7 +181,7 @@ func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *pro
 		return knownValue, nil
 	}
 
-	userSecret, fail := e.FindSecretWithHighestPriority(variable)
+	userSecret, fail := e.FindSecret(variable)
 	if fail != nil {
 		return "", fail
 	}
