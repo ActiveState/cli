@@ -53,17 +53,17 @@ func TestAuth(t *testing.T) {
 
 	Reset()
 	auth = New()
-	assert.NotNil(t, auth.Authenticated(), "Authentication is still persisted for this session")
+	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 
 	auth = New()
 	fail = auth.AuthenticateWithUser(credentials.Username, credentials.Password, "")
-	assert.NoError(t, fail.ToError(), "Can Authenticate Again")
+	assert.NoError(t, fail.ToError(), "Authentication should work again")
 
 	Logout()
 	defer setenvWithCleanup(constants.APIKeyEnvVarName, "testSuccess")()
 	auth = New()
 	fail = auth.Authenticate()
-	assert.NoError(t, fail.ToError(), "Authentication by user-define token failed")
+	assert.NoError(t, fail.ToError(), "Authentication by user-defined token should not error")
 }
 
 func TestPersist(t *testing.T) {
