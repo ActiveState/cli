@@ -58,12 +58,22 @@ func TestAuth(t *testing.T) {
 	auth = New()
 	fail = auth.AuthenticateWithUser(credentials.Username, credentials.Password, "")
 	assert.NoError(t, fail.ToError(), "Authentication should work again")
+}
 
-	Logout()
-	defer setenvWithCleanup(constants.APIKeyEnvVarName, "testSuccess")()
-	auth = New()
-	fail = auth.Authenticate()
+func TestAuthAPIKeyOverride(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+
+	os.Setenv(constants.APIKeyEnvVarName, "testSuccess")
+	defer os.Unsetenv(constants.APIKeyEnvVarName)
+	auth := New()
+	fail := auth.Authenticate()
 	assert.NoError(t, fail.ToError(), "Authentication by user-defined token should not error")
+	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 }
 
 func TestPersist(t *testing.T) {
@@ -112,9 +122,4 @@ func TestClientFailure(t *testing.T) {
 	}
 	auth.Client()
 	assert.Equal(t, 1, exitCode, "Should exit")
-}
-
-func setenvWithCleanup(key, value string) (cleanup func()) {
-	os.Setenv(key, value)
-	return func() { os.Unsetenv(key) }
 }
