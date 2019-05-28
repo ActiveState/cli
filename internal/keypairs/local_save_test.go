@@ -54,7 +54,8 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaultsAndUserOverride_Succ
 	suite.Require().Nil(fail)
 
 	keyName := "my_voice_is_my_passport"
-	defer setenvWithCleanup(constants.PrivateKeyEnvVarName, keyName)()
+	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	fail = keypairs.SaveWithDefaults(kp)
 	suite.Require().Nil(fail)

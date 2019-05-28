@@ -1,6 +1,7 @@
 package keypairs_test
 
 import (
+	"os"
 	"runtime"
 	"testing"
 
@@ -53,7 +54,8 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaultsWithUserOverride_Succe
 	keyName := "my_voice_is_my_passport"
 	osutil.CopyTestFileToConfigDir("test-keypair.key", keyName+".key", 0600)
 
-	defer setenvWithCleanup(constants.PrivateKeyEnvVarName, keyName)()
+	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	failure := keypairs.DeleteWithDefaults()
 	suite.Require().Nil(failure)
