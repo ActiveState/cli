@@ -57,15 +57,15 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaultsWithUserOverride_Succe
 	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	failure := keypairs.DeleteWithDefaults()
-	suite.Require().Nil(failure)
+	fail := keypairs.DeleteWithDefaults()
+	suite.Require().NoError(fail.ToError())
 
 	fileInfo, err := osutil.StatConfigFile(keyName + ".key")
 	suite.Require().Nil(fileInfo)
 	if runtime.GOOS != "windows" {
-		suite.Regexp("no such file or directory", err.Error())
+		suite.Contains(err.Error(), "no such file or directory")
 	} else {
-		suite.Regexp("The system cannot find the file specified", err.Error())
+		suite.Contains(err.Error(), "The system cannot find the file specified")
 	}
 }
 

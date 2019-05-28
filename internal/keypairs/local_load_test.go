@@ -110,7 +110,7 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaultsAndUserOverrid
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	kp, fail := keypairs.LoadWithDefaults()
-	suite.Require().Nil(fail)
+	suite.Require().NoError(fail.ToError())
 	suite.NotNil(kp)
 }
 

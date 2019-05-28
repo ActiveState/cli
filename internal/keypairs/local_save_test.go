@@ -51,17 +51,17 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaultsAndUserOverride_Success() {
 	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(fail)
+	suite.Require().NoError(fail.ToError())
 
 	keyName := "my_voice_is_my_passport"
 	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	fail = keypairs.SaveWithDefaults(kp)
-	suite.Require().Nil(fail)
+	suite.Require().NoError(fail.ToError())
 
 	kp2, fail := keypairs.Load(keyName)
-	suite.Require().Nil(fail)
+	suite.Require().NoError(fail.ToError())
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile(keyName + ".key")
