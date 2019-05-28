@@ -62,9 +62,9 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		os.Setenv(variable.Name(), val)
 	}
 
-	if OS == "linux" && strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
-		// Only Linux currently supports runtime environments, but we still want to have virtual environments
-		// on other platforms
+	if OS != "darwin" && strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
+		// Only Linux and Windows currently support runtime environments, but we still want to have virtual environments
+		// on mac
 		if failure := v.activateRuntime(); failure != nil {
 			return failure
 		}
