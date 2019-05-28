@@ -219,7 +219,7 @@ func GetSafe() (*Project, *failures.Failure) {
 	}
 	project, fail := Parse(projectFilePath)
 	if fail != nil {
-		return nil, FailParseProject.New(locale.Tr("err_parse_project", fail.Error()))
+		return nil, fail
 	}
 
 	if project.Name == "" || project.Owner == "" {

@@ -15,6 +15,9 @@ variables:
     value: -ldflags="-s -w"
   - name: CLI_PKGS
     value: ./state
+  - name: test
+    value:
+      pullfrom: organization
 scripts: &scripts
   - name: preprocess
     value: |

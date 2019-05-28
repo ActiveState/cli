@@ -41,7 +41,7 @@ variables:
     value: '%projectDir%/src:%projectDir%/tests'
   - name: org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
 events:
   - name: FIRST_INSTALL

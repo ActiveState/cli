@@ -31,10 +31,10 @@ variables:
       platform: OSX
   - name: undefined-secret
     value: 
-      pullfrom: organization
+      store: organization
   - name: defined-secret-org
     value: 
-      pullfrom: organization
+      store: organization
 events:
   - name: bar
     value: bar $platform.name

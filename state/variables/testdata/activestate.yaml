@@ -42,21 +42,21 @@ variables:
     value: '%projectDir%/src:%projectDir%/tests'
   - name: org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-org-secret
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret
     value:
-      pullfrom: project
+      store: project
   - name: undefined-org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
 hooks:
   - name: FIRST_INSTALL
