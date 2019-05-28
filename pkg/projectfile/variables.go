@@ -60,7 +60,7 @@ func (v VariableStore) Validate() *failures.Failure {
 
 // String returns a formatted representation of the underlying VariablePullFrom
 // value. If the underlying value is nil, an empty string is returned.
-func (v *VariablePullFrom) String() string {
+func (v *VariableStore) String() string {
 	if v == nil {
 		return ""
 	}

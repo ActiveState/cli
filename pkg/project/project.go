@@ -328,7 +328,7 @@ func (v *Variable) PulledFromLabel() string {
 	if !v.IsSecret() {
 		return locale.T("local")
 	}
-	return locale.T(v.PulledFrom().String())
+	return locale.T(v.Store().String())
 }
 
 // IsSetLabel returns a representation of whether the variable is set.
