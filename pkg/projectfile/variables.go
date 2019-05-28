@@ -16,7 +16,7 @@ var (
 	FailParseVar = failures.Type("projectfile.fail.parsevar")
 
 	// FailValidateVarStore describes a failure due to an invalid value for the store field
-	FailValidateVarStore = failures.Type("projectfile.fail.varpull", FailValidate)
+	FailValidateVarStore = failures.Type("projectfile.fail.store", FailValidate)
 
 	// FailValidateVarShare describes a failure due to an invalid value for the share field
 	FailValidateVarShare = failures.Type("projectfile.fail.varshare", FailValidate)

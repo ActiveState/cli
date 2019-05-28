@@ -287,8 +287,8 @@ func (v *Variable) IsShared() bool { return v.variable.Value.Share != nil }
 // SharedWith returns who this variable is shared with
 func (v *Variable) SharedWith() *projectfile.VariableShare { return v.variable.Value.Share }
 
-// PulledFrom returns where this variable was pulled from
-func (v *Variable) PulledFrom() *projectfile.VariableStore { return v.variable.Value.Store }
+// Store returns where this variable was pulled from
+func (v *Variable) Store() *projectfile.VariableStore { return v.variable.Value.Store }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
@@ -335,7 +335,7 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 	}
 
 	var project *mono_models.Project
-	if projectfile.VariableStoreProject == *v.PulledFrom() {
+	if projectfile.VariableStoreProject == *v.Store() {
 		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
 		if failure != nil {
 			return failure
