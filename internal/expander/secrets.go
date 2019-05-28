@@ -147,7 +147,7 @@ func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsMod
 
 	projectID := project.ProjectID.String()
 	variableRequiresUser := variable.Value.Share == nil
-	variableRequiresProject := variable.Value.PullFrom == nil || *variable.Value.PullFrom == projectfile.VariablePullFromProject
+	variableRequiresProject := variable.Value.Store == nil || *variable.Value.Store == projectfile.VariableStoreProject
 
 	for _, userSecret := range secrets {
 		secretProjectID := userSecret.ProjectID.String()
@@ -157,12 +157,12 @@ func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsMod
 		nameMatches := strings.EqualFold(*userSecret.Name, variable.Name)
 		projectMatches := (!variableRequiresProject || secretProjectID == projectID)
 
-		// shareMatches and pullfromMatches show a detachment from the data due to the secrets-svc api needing a refactor
+		// shareMatches and storeMatches show a detachment from the data due to the secrets-svc api needing a refactor
 		// to match the new data structure. Story: https://www.pivotaltracker.com/story/show/166272717
 		shareMatches := variableRequiresUser == secretRequiresUser
-		pullfromMatches := variableRequiresProject == secretRequiresProject
+		storeMatches := variableRequiresProject == secretRequiresProject
 
-		if nameMatches && projectMatches && shareMatches && pullfromMatches {
+		if nameMatches && projectMatches && shareMatches && storeMatches {
 			return userSecret, nil
 		}
 	}
@@ -233,7 +233,7 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 			return "", fail
 		}
 
-		if variable.Value.PullFrom != nil && *variable.Value.PullFrom == projectfile.VariablePullFromProject {
+		if variable.Value.Store != nil && *variable.Value.Store == projectfile.VariableStoreProject {
 			fail = secrets.Save(e.secretsClient, keypair, org, project, variable.Value.Share == nil, variable.Name, value)
 		} else {
 			fail = secrets.Save(e.secretsClient, keypair, org, nil, variable.Value.Share == nil, variable.Name, value)
