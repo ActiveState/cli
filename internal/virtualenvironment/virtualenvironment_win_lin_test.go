@@ -1,9 +1,10 @@
-// +build linux
+// +build !darwin
 
 package virtualenvironment
 
 import (
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -21,8 +22,10 @@ func init() {
 	// Only linux is supported for now, so force it so we can run this test on mac
 	// If we want to skip this on mac it should be skipped through build tags, in
 	// which case this tweak is meaningless and only a convenience for when testing manually
-	model.OS = sysinfo.Linux
-	OS = "linux"
+	if runtime.GOOS == "darwin" {
+		model.OS = sysinfo.Linux
+		OS = "linux"
+	}
 }
 
 func TestActivateRuntimeEnvironment(t *testing.T) {
