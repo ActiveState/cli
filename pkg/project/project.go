@@ -323,8 +323,8 @@ func (v *Variable) SharedWithLabel() string {
 	return locale.T(s)
 }
 
-// PulledFromLabel returns a representation of the variable storage location.
-func (v *Variable) PulledFromLabel() string {
+// StoreLabel returns a representation of the variable storage location.
+func (v *Variable) StoreLabel() string {
 	if !v.IsSecret() {
 		return locale.T("local")
 	}
