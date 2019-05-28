@@ -2,6 +2,8 @@ undefined:
   other: undefined
 confirmation:
   other: "Yes"
+contradiction:
+  other: "No"
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
@@ -245,6 +247,10 @@ signup_success:
   other: Your account has been registered and a confirmation email has been sent to {{.Email}}, your account will have limited permissions until you confirm it.
 login_cancelled:
   other: Authentication Cancelled
+local:
+  other: Local
+organization:
+  other: Organization
 organizations_description:
   other: List member organizations on the ActiveState platform
 organizations_err:
@@ -253,6 +259,8 @@ organization_name:
   other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
+project:
+  other: Project
 project_name:
   other: Project Name
 project_description:
@@ -478,8 +486,10 @@ variables_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
 variables_col_name:
   other: Name
-variables_col_value:
-  other: Value
+variables_col_description:
+  other: Description
+variables_col_setunset:
+  other: Set/Unset
 variables_col_encrypted:
   other: Encrypted
 variables_col_shared:
@@ -488,6 +498,10 @@ variables_col_store:
   other: Store
 variables_value_secret_undefined:
   other: <undefined>
+variables_value_set:
+  other: Set
+variables_value_unset:
+  other: Unset
 variables_value_secret:
   other: <encrypted>
 variables_err:

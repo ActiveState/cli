@@ -1,9 +1,6 @@
 package variables
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 
@@ -65,59 +62,51 @@ func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	rows := [][]interface{}{}
-	vars := prj.Variables()
-	for _, v := range vars {
-		value := ""
-		encrypted := "-"
-		store := "local"
-		shared := "-"
-		valOrNil, failure := v.ValueOrNil()
-		if failure != nil {
-			return failure
-		} else if v.IsSecret() {
-			if valOrNil == nil {
-				value = locale.T("variables_value_secret_undefined")
-			} else {
-				value = locale.T("variables_value_secret")
-			}
-			encrypted = locale.T("confirmation")
-			if v.IsShared() {
-				shared = string(*v.SharedWith())
-			}
-			store = string(*v.Store())
-		} else {
-			value = *valOrNil
-		}
-		rows = append(rows, []interface{}{v.Name(), sanitizeValue(value), encrypted, shared, store})
+	hdrs, rows, fail := variablesTable(prj.Variables())
+	if fail != nil {
+		return fail
 	}
-
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{
-		locale.T("variables_col_name"),
-		locale.T("variables_col_value"),
-		locale.T("variables_col_encrypted"),
-		locale.T("variables_col_shared"),
-		locale.T("variables_col_store"),
-	})
+	t.SetHeaders(hdrs)
 	t.SetAlign("left")
 
 	print.Line(t.Render("simple"))
-
 	return nil
-
 }
 
-// sanitizeValue will reduce the string length to 100 characters or the first line of text
-func sanitizeValue(v string) string {
-	v = strings.TrimSpace(v)
-	nlPos := strings.Index(v, "\n")
+func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f *failures.Failure) {
+	for _, v := range vars {
+		isSetLabel, fail := v.IsSetLabel()
+		if fail != nil {
+			return nil, nil, fail
+		}
 
-	if nlPos != -1 && nlPos < 100 {
-		v = fmt.Sprintf("%s [...]", v[0:nlPos])
-	} else if len(v) > 100 {
-		v = fmt.Sprintf("%s [...]", v[0:100])
+		row := []string{
+			v.Name(),
+			v.Description(),
+			isSetLabel,
+			v.IsEncryptedLabel(),
+			emptyToDash(v.SharedWithLabel()),
+			v.PulledFromLabel(),
+		}
+		rows = append(rows, row)
 	}
 
-	return v
+	hdrs = []string{
+		locale.T("variables_col_name"),
+		locale.T("variables_col_description"),
+		locale.T("variables_col_setunset"),
+		locale.T("variables_col_encrypted"),
+		locale.T("variables_col_shared"),
+		locale.T("variables_col_store"),
+	}
+
+	return hdrs, rows, nil
+}
+
+func emptyToDash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
 }
