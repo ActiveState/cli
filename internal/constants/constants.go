@@ -66,6 +66,9 @@ const DefaultNamespaceDomain = "github.com"
 // AnalyticsTrackingID is our Google Analytics tracking ID
 const AnalyticsTrackingID = "UA-118120158-1"
 
+// APITokenNamePrefix is the name we give our api token
+const APITokenNamePrefix = "activestate-platform-cli"
+
 // KeypairLocalFileName is the name of the file (sans extension) that will hold the user's unencrypted
 // private key in their config dir.
 const KeypairLocalFileName = "private"

@@ -9,6 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -24,9 +28,6 @@ import (
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authCmd "github.com/ActiveState/cli/state/auth"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var Command = authCmd.Command
@@ -84,7 +85,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 

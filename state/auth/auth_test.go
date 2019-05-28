@@ -9,7 +9,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -17,15 +19,13 @@ import (
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -63,7 +63,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 

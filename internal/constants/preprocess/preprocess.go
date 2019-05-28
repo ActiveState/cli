@@ -29,7 +29,7 @@ func init() {
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), branchName, Constants["APIEnv"]())
 	}
-	Constants["APITokenName"] = func() string { return fmt.Sprintf("activestate-platform-cli-%s", branchName) }
+	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
 }
 
 func branchName() (string, string) {
