@@ -45,15 +45,6 @@ func (suite *KeypairLocalLoadTestSuite) TestDelete_Override() {
 	suite.Contains(fail.Message, locale.T("keypairs_err_override_with_delete"))
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
-	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	fail := keypairs.DeleteWithDefaults()
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
-	suite.Contains(fail.Message, locale.T("keypairs_err_override_with_delete"))
-}
-
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	osutil.CopyTestFileToConfigDir("test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
