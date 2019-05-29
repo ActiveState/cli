@@ -40,7 +40,7 @@ func (suite *KeypairLocalLoadTestSuite) TestDelete_Override() {
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	fail := keypairs.Delete("nonce")
-	suite.Require().Error(fail.ToError(), "Delete should error when key override is set")
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
@@ -48,7 +48,7 @@ func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	fail := keypairs.DeleteWithDefaults()
-	suite.Require().NoError(fail.ToError(), "DeleteWithDefaults should not error when key override is set")
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {

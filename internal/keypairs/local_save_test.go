@@ -40,7 +40,7 @@ func (suite *KeypairLocalLoadTestSuite) TestSave_Override() {
 	suite.Require().Nil(failure)
 
 	fail := keypairs.Save(kp, "nonce")
-	suite.Require().Error(fail.ToError(), "Save should error when key override is set")
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
@@ -51,7 +51,7 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 	suite.Require().Nil(failure)
 
 	fail := keypairs.SaveWithDefaults(kp)
-	suite.Require().NoError(fail.ToError(), "Save with default should not error when key override is set")
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {

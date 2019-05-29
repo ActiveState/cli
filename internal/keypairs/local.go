@@ -43,10 +43,6 @@ var (
 // user's file system; specifically from the config dir. It is assumed that this
 // keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, *failures.Failure) {
-	if hasKeyOverride() {
-		return nil, FailHasOverride.New("cannot load key by file")
-	}
-
 	var kp Keypair
 	keyFilename := localKeyFilename(keyName)
 	failure := validateKeyFile(keyFilename)
@@ -97,20 +93,12 @@ func LoadWithDefaults() (Keypair, *failures.Failure) {
 // SaveWithDefaults will call Save with the provided keypair and the default key name
 // (i.e. constants.KeypairLocalFileName), and will fail siltently if key override is set.
 func SaveWithDefaults(kp Keypair) *failures.Failure {
-	if hasKeyOverride() {
-		return nil
-	}
-
 	return Save(kp, constants.KeypairLocalFileName)
 }
 
 // DeleteWithDefaults will call Delete with the default key name (i.e. constants.KeypairLocalFileName),
 // and will fail silently if key override is set.
 func DeleteWithDefaults() *failures.Failure {
-	if hasKeyOverride() {
-		return nil
-	}
-
 	return Delete(constants.KeypairLocalFileName)
 }
 
