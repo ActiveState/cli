@@ -95,7 +95,7 @@ func LoadWithDefaults() (Keypair, *failures.Failure) {
 }
 
 // SaveWithDefaults will call Save with the provided keypair and the default key name
-// (i.e. constants.KeypairLocalFileName).
+// (i.e. constants.KeypairLocalFileName), and will fail siltently if key override is set.
 func SaveWithDefaults(kp Keypair) *failures.Failure {
 	if hasKeyOverride() {
 		return nil
@@ -104,7 +104,8 @@ func SaveWithDefaults(kp Keypair) *failures.Failure {
 	return Save(kp, constants.KeypairLocalFileName)
 }
 
-// DeleteWithDefaults will call Delete with the default key name (i.e. constants.KeypairLocalFileName).
+// DeleteWithDefaults will call Delete with the default key name (i.e. constants.KeypairLocalFileName),
+// and will fail silently if key override is set.
 func DeleteWithDefaults() *failures.Failure {
 	if hasKeyOverride() {
 		return nil
