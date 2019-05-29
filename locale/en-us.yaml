@@ -565,6 +565,10 @@ keypairs_err_load_requires_mode:
   other: "Keypair `{{.V0}}` file is too permissive, expects no more than `{{.V1}}` permissions"
 keypairs_err_base64_decoding:
   other: Message is not base-64 encoded
+keypairs_err_override_with_save:
+  other: "cannot save key to file while key override is set"
+keypairs_err_override_with_delete:
+  other: "cannot delete key file while key override is set"
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:

@@ -56,7 +56,7 @@ func Load(keyName string) (Keypair, *failures.Failure) {
 // the value of `keyName` and suffixed with `.key`.
 func Save(kp Keypair, keyName string) *failures.Failure {
 	if hasKeyOverride() {
-		return FailHasOverride.New("cannot save key to file")
+		return FailHasOverride.New("keypairs_err_override_with_save")
 	}
 
 	err := ioutil.WriteFile(localKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
@@ -70,7 +70,7 @@ func Save(kp Keypair, keyName string) *failures.Failure {
 // filename (sans suffix) must be provided.
 func Delete(keyName string) *failures.Failure {
 	if hasKeyOverride() {
-		return FailHasOverride.New("cannot delete key file")
+		return FailHasOverride.New("keypairs_err_override_with_delete")
 	}
 
 	filename := localKeyFilename(keyName)

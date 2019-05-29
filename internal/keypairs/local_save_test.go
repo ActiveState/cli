@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,6 +42,7 @@ func (suite *KeypairLocalLoadTestSuite) TestSave_Override() {
 
 	fail := keypairs.Save(kp, "nonce")
 	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
+	suite.Contains(fail.Message, locale.T("keypairs_err_override_with_save"))
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
@@ -52,6 +54,7 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 
 	fail := keypairs.SaveWithDefaults(kp)
 	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
+	suite.Contains(fail.Message, locale.T("keypairs_err_override_with_save"))
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
