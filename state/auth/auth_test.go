@@ -92,7 +92,7 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	monoMock.Register("POST", "/login")
 	monoMock.Register("GET", "/apikeys")
-	monoMock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	monoMock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	monoMock.Register("POST", "/apikeys")
 	monoMock.Register("GET", "/renew")
 
