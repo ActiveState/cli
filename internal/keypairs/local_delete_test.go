@@ -35,14 +35,6 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 	}
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestDelete_Override() {
-	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	fail := keypairs.Delete("nonce")
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
-}
-
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	osutil.CopyTestFileToConfigDir("test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
@@ -56,6 +48,15 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	} else {
 		suite.Regexp("The system cannot find the file specified", err.Error())
 	}
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	fail := keypairs.DeleteWithDefaults()
+	suite.Require().NotNil(fail)
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func Test_KeypairLocalDelete_TestSuite(t *testing.T) {

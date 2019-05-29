@@ -32,17 +32,6 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	}
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestSave_Override() {
-	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().Nil(failure)
-
-	fail := keypairs.Save(kp, "nonce")
-	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
-}
-
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(failure)
@@ -58,6 +47,18 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	if runtime.GOOS != "windows" {
 		suite.Equal(os.FileMode(0600), fileInfo.Mode())
 	}
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(fail)
+
+	fail = keypairs.SaveWithDefaults(kp)
+	suite.Require().NotNil(fail)
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {

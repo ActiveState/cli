@@ -41,14 +41,8 @@ var (
 
 // Load will attempt to load a Keypair using private and public-key files from
 // the user's file system; specifically from the config dir. It is assumed that
-// this keypair file has no passphrase, even if it is encrypted. If the key
-// override is set (constants.PrivateKeyEnvVarName), that value will be parsed
-// directly.
+// this keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, *failures.Failure) {
-	if key := os.Getenv(constants.PrivateKeyEnvVarName); key != "" {
-		return ParseRSA(key)
-	}
-
 	keyFilename := localKeyFilename(keyName)
 	if fail := validateKeyFile(keyFilename); fail != nil {
 		return nil, fail
@@ -58,13 +52,7 @@ func Load(keyName string) (Keypair, *failures.Failure) {
 
 // Save will save the unencrypted and encoded private key to a local config
 // file. The filename will be the value of `keyName` and suffixed with `.key`.
-// The operation will fail when the key override is set
-// (constants.PrivateKeyEnvVarName).
 func Save(kp Keypair, keyName string) *failures.Failure {
-	if hasKeyOverride() {
-		return FailHasOverride.New("keypairs_err_override_with_save")
-	}
-
 	err := ioutil.WriteFile(localKeyFilename(keyName), []byte(kp.EncodePrivateKey()), 0600)
 	if err != nil {
 		return FailSaveFile.Wrap(err)
@@ -73,14 +61,8 @@ func Save(kp Keypair, keyName string) *failures.Failure {
 }
 
 // Delete will delete an unencrypted and encoded private key from the local
-// config directory. The base filename (sans suffix) must be provided. The
-// operation will fail when the key override is set
-// (constants.PrivateKeyEnvVarName).
+// config directory. The base filename (sans suffix) must be provided.
 func Delete(keyName string) *failures.Failure {
-	if hasKeyOverride() {
-		return FailHasOverride.New("keypairs_err_override_with_delete")
-	}
-
 	filename := localKeyFilename(keyName)
 	if fileutils.FileExists(filename) {
 		if err := os.Remove(filename); err != nil {
@@ -91,20 +73,35 @@ func Delete(keyName string) *failures.Failure {
 }
 
 // LoadWithDefaults will call Load with the default key name (i.e.
-// constants.KeypairLocalFileName).
+// constants.KeypairLocalFileName). If the key override is set
+// (constants.PrivateKeyEnvVarName), that value will be parsed directly.
 func LoadWithDefaults() (Keypair, *failures.Failure) {
+	if key := os.Getenv(constants.PrivateKeyEnvVarName); key != "" {
+		return ParseRSA(key)
+	}
+
 	return Load(constants.KeypairLocalFileName)
 }
 
 // SaveWithDefaults will call Save with the provided keypair and the default
-// key name (i.e. constants.KeypairLocalFileName).
+// key name (i.e. constants.KeypairLocalFileName). The operation will fail when
+// the key override is set (constants.PrivateKeyEnvVarName).
 func SaveWithDefaults(kp Keypair) *failures.Failure {
+	if hasKeyOverride() {
+		return FailHasOverride.New("keypairs_err_override_with_save")
+	}
+
 	return Save(kp, constants.KeypairLocalFileName)
 }
 
 // DeleteWithDefaults will call Delete with the default key name (i.e.
-// constants.KeypairLocalFileName).
+// constants.KeypairLocalFileName). The operation will fail when the key
+// override is set (constants.PrivateKeyEnvVarName).
 func DeleteWithDefaults() *failures.Failure {
+	if hasKeyOverride() {
+		return FailHasOverride.New("keypairs_err_override_with_delete")
+	}
+
 	return Delete(constants.KeypairLocalFileName)
 }
 
