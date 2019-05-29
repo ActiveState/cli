@@ -3,8 +3,9 @@ package variables_test
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func loadSecretsProject() (*projectfile.Project, error) {
@@ -15,50 +16,50 @@ owner: SecretOrg
 variables:
   - name: undefined-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret
     value:
-      pullfrom: project
+      store: project
   - name: org-secret-with-proj-value
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret-with-user-value
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret-with-user-proj-value
     value:
-      pullfrom: organization
+      store: organization
   - name: proj-secret-only-org-available
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret-only-proj-available
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret-only-user-available
     value:
-      pullfrom: project
+      store: project
   - name: bad-base64-encoded-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: invalid-encryption-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
 scripts:
   - name: echo-org-secret

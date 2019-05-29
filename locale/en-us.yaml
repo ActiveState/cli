@@ -123,8 +123,6 @@ error_missing_arg:
   other: "Argument missing: {{.Name}}"
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
-err_parse_project:
-  other: "Could not parse project file. For more info refer to the error log"
 err_invalid_input:
   other: Invalid input received
 events_empty:
@@ -528,12 +526,12 @@ variables_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
 variable_err_undefined:
   other: "Variable `{{.V0}}` not defined in project"
-variables_err_invalid_pullfrom:
-  other: "Invalid pullfrom used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
+variables_err_invalid_store:
+  other: "Invalid 'store' property used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
 variables_err_invalid_share:
   other: "Invalid share level used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
-variables_err_value_with_pull:
-  other: "Variable should not have a local value defined in the activestate.yaml if it's setting the share or pullfrom fields: {{.V0}}"
+variables_err_value_with_store:
+  other: "Variable should not have a local value defined in the activestate.yaml if it's setting the 'share' or 'store' fields: {{.V0}}"
 variables_err_invalid_value:
   other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
 variables_err_value_empty:
@@ -752,3 +750,5 @@ err_invalid_project_name_owner:
   other: Your activestate.yaml is missing a name and/or owner field.
 err_persist_invalid_project:
   other: Trying to persist an invalid project
+variable_deprecation_warning:
+  other: "DEPRECATION WARNING: Variable '{{.V0}}' is using a deprecated field 'pullfrom'. Please rename this field to 'store'."

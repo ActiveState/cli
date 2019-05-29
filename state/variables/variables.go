@@ -1,6 +1,9 @@
 package variables
 
 import (
+	"github.com/bndr/gotabulate"
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -8,8 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/bndr/gotabulate"
-	"github.com/spf13/cobra"
 )
 
 // Command represents the secrets command and its dependencies.
@@ -86,7 +87,7 @@ func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f
 			isSetLabel,
 			v.IsEncryptedLabel(),
 			emptyToDash(v.SharedWithLabel()),
-			v.PulledFromLabel(),
+			v.StoreLabel(),
 		}
 		rows = append(rows, row)
 	}
