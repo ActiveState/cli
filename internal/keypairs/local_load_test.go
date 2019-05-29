@@ -44,17 +44,6 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
 	}
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestLoad_Override() {
-	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().NoError(fail.ToError())
-
-	os.Setenv(constants.PrivateKeyEnvVarName, kp.EncodePrivateKey())
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	_, fail = keypairs.Load("nonce")
-	suite.Require().Error(fail.ToError(), "Load should error when key override is set")
-}
-
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyName := "test-rsa-parse-err"
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
@@ -114,7 +103,7 @@ func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefault_Override() {
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	kp, fail := keypairs.LoadWithDefaults()
-	suite.Require().Error(fail.ToError(), "LoadWithDefaults should error with nonce input")
+	suite.Truef(fail.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", fail)
 	suite.Nil(kp)
 
 	kprsa, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
