@@ -44,6 +44,17 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_PermsTooPermissive() {
 	}
 }
 
+func (suite *KeypairLocalLoadTestSuite) TestLoad_Override() {
+	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(fail.ToError())
+
+	os.Setenv(constants.PrivateKeyEnvVarName, kp.EncodePrivateKey())
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	_, fail = keypairs.Load("nonce")
+	suite.Require().Error(fail.ToError(), "Load should error when key override is set")
+}
+
 func (suite *KeypairLocalLoadTestSuite) TestFileFound_KeypairParseError() {
 	keyName := "test-rsa-parse-err"
 	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
@@ -98,18 +109,20 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	suite.NotNil(kp)
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaultsAndUserOverride() {
-	keyName := "my_voice_is_my_passport"
-	keyFile := suite.createConfigDirFile(keyName+".key", 0600)
-	defer osutil.RemoveConfigFile(keyName + ".key")
-
-	keyFile.WriteString(suite.readTestFile("test-keypair.key"))
-	suite.Require().NoError(keyFile.Close())
-
-	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
+func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefault_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "nonce")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
 	kp, fail := keypairs.LoadWithDefaults()
+	suite.Require().Error(fail.ToError(), "LoadWithDefaults should error with nonce input")
+	suite.Nil(kp)
+
+	kprsa, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(fail.ToError())
+
+	os.Setenv(constants.PrivateKeyEnvVarName, kprsa.EncodePrivateKey())
+
+	kp, fail = keypairs.LoadWithDefaults()
 	suite.Require().NoError(fail.ToError())
 	suite.NotNil(kp)
 }

@@ -35,6 +35,22 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 	}
 }
 
+func (suite *KeypairLocalLoadTestSuite) TestDelete_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	fail := keypairs.Delete("nonce")
+	suite.Require().Error(fail.ToError(), "Delete should error when key override is set")
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	fail := keypairs.DeleteWithDefaults()
+	suite.Require().NoError(fail.ToError(), "DeleteWithDefaults should not error when key override is set")
+}
+
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	osutil.CopyTestFileToConfigDir("test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
@@ -47,25 +63,6 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 		suite.Regexp("no such file or directory", err.Error())
 	} else {
 		suite.Regexp("The system cannot find the file specified", err.Error())
-	}
-}
-
-func (suite *KeypairLocalDeleteTestSuite) TestWithDefaultsWithUserOverride_Success() {
-	keyName := "my_voice_is_my_passport"
-	osutil.CopyTestFileToConfigDir("test-keypair.key", keyName+".key", 0600)
-
-	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	fail := keypairs.DeleteWithDefaults()
-	suite.Require().NoError(fail.ToError())
-
-	fileInfo, err := osutil.StatConfigFile(keyName + ".key")
-	suite.Require().Nil(fileInfo)
-	if runtime.GOOS != "windows" {
-		suite.Contains(err.Error(), "no such file or directory")
-	} else {
-		suite.Contains(err.Error(), "The system cannot find the file specified")
 	}
 }
 

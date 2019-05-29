@@ -32,6 +32,28 @@ func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
 	}
 }
 
+func (suite *KeypairLocalLoadTestSuite) TestSave_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(failure)
+
+	fail := keypairs.Save(kp, "nonce")
+	suite.Require().Error(fail.ToError(), "Save should error when key override is set")
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(failure)
+
+	fail := keypairs.SaveWithDefaults(kp)
+	suite.Require().NoError(fail.ToError(), "Save with default should not error when key override is set")
+}
+
 func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	kp, failure := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
 	suite.Require().Nil(failure)
@@ -44,27 +66,6 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	suite.Equal(kp, kp2)
 
 	fileInfo := suite.statConfigDirFile(constants.KeypairLocalFileName + ".key")
-	if runtime.GOOS != "windows" {
-		suite.Equal(os.FileMode(0600), fileInfo.Mode())
-	}
-}
-
-func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaultsAndUserOverride_Success() {
-	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
-	suite.Require().NoError(fail.ToError())
-
-	keyName := "my_voice_is_my_passport"
-	os.Setenv(constants.PrivateKeyEnvVarName, keyName)
-	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
-
-	fail = keypairs.SaveWithDefaults(kp)
-	suite.Require().NoError(fail.ToError())
-
-	kp2, fail := keypairs.Load(keyName)
-	suite.Require().NoError(fail.ToError())
-	suite.Equal(kp, kp2)
-
-	fileInfo := suite.statConfigDirFile(keyName + ".key")
 	if runtime.GOOS != "windows" {
 		suite.Equal(os.FileMode(0600), fileInfo.Mode())
 	}
