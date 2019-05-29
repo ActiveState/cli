@@ -149,7 +149,7 @@ func TestExecuteSignup(t *testing.T) {
 	httpmock.Register("POST", "/users")
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.RegisterWithResposne("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
