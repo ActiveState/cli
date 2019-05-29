@@ -110,7 +110,7 @@ func TestAuthInvalidToken(t *testing.T) {
 	viper.Set("apiToken", "testFailure")
 	auth := New()
 	fail := auth.Authenticate()
-	assert.Error(t, fail.ToError(), "Should not have authenticated")
+	assert.Truef(t, fail.Type.Matches(FailNoCredentials), "unexpected failure type: %v", fail)
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
 }
 

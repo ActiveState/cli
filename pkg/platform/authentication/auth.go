@@ -91,10 +91,10 @@ func Init() *Auth {
 func New() *Auth {
 	auth := &Auth{}
 
-	apiToken := viper.GetString("apiToken")
-	if apiToken != "" {
+	if availableAPIToken() != "" {
 		auth.Authenticate()
 	}
+
 	return auth
 }
 
@@ -122,14 +122,9 @@ func (s *Auth) Authenticate() *failures.Failure {
 		return nil
 	}
 
-	apiToken := viper.GetString("apiToken")
-	envAPIToken := os.Getenv(constants.APIKeyEnvVarName)
-	if envAPIToken != "" {
-		apiToken = envAPIToken
-	}
-
+	apiToken := availableAPIToken()
 	if apiToken == "" {
-		return FailNoCredentials.New(locale.T("err_no_credentials"))
+		return FailNoCredentials.New("err_no_credentials")
 	}
 
 	return s.AuthenticateWithToken(apiToken)
@@ -249,4 +244,11 @@ func (s *Auth) CreateToken() *failures.Failure {
 	viper.Set("apiToken", token)
 
 	return nil
+}
+
+func availableAPIToken() string {
+	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+		return tkn
+	}
+	return viper.GetString("apiToken")
 }
