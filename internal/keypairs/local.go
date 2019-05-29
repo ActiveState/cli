@@ -43,13 +43,15 @@ var (
 // user's file system; specifically from the config dir. It is assumed that this
 // keypair file has no passphrase, even if it is encrypted.
 func Load(keyName string) (Keypair, *failures.Failure) {
-	var kp Keypair
-	keyFilename := localKeyFilename(keyName)
-	failure := validateKeyFile(keyFilename)
-	if failure == nil {
-		kp, failure = loadAndParseKeypair(keyFilename)
+	if key := os.Getenv(constants.PrivateKeyEnvVarName); key != "" {
+		return ParseRSA(key)
 	}
-	return kp, failure
+
+	keyFilename := localKeyFilename(keyName)
+	if fail := validateKeyFile(keyFilename); fail != nil {
+		return nil, fail
+	}
+	return loadAndParseKeypair(keyFilename)
 }
 
 // Save will save the unencrypted and encoded private key to a local config file. The filename will be
@@ -84,9 +86,6 @@ func Delete(keyName string) *failures.Failure {
 
 // LoadWithDefaults will call Load with the default or user override key name.
 func LoadWithDefaults() (Keypair, *failures.Failure) {
-	if key := os.Getenv(constants.PrivateKeyEnvVarName); key != "" {
-		return ParseRSA(key)
-	}
 	return Load(constants.KeypairLocalFileName)
 }
 

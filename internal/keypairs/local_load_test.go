@@ -98,11 +98,11 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 	suite.NotNil(kp)
 }
 
-func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefault_Override() {
+func (suite *KeypairLocalLoadTestSuite) TestLoad_Override() {
 	os.Setenv(constants.PrivateKeyEnvVarName, "nonce")
 	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
 
-	kp, fail := keypairs.LoadWithDefaults()
+	kp, fail := keypairs.Load("nofile")
 	suite.Truef(fail.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", fail)
 	suite.Nil(kp)
 
@@ -111,7 +111,7 @@ func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefault_Override() {
 
 	os.Setenv(constants.PrivateKeyEnvVarName, kprsa.EncodePrivateKey())
 
-	kp, fail = keypairs.LoadWithDefaults()
+	kp, fail = keypairs.Load("nofile")
 	suite.Require().NoError(fail.ToError())
 	suite.NotNil(kp)
 }
