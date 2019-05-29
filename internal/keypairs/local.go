@@ -127,6 +127,5 @@ func loadAndParseKeypair(keyFilename string) (Keypair, *failures.Failure) {
 }
 
 func hasKeyOverride() bool {
-	v := os.Getenv(constants.PrivateKeyEnvVarName)
-	return v != ""
+	return os.Getenv(constants.PrivateKeyEnvVarName) != ""
 }
