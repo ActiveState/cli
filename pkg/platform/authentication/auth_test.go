@@ -3,15 +3,14 @@ package authentication
 import (
 	"testing"
 
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+
 	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-
 	"github.com/ActiveState/cli/pkg/platform/api"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 )
 
 func setup(t *testing.T) {
@@ -37,7 +36,7 @@ func TestAuth(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 
 	credentials := &mono_models.Credentials{
 		Username: user.Username,

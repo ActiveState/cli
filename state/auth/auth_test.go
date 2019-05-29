@@ -121,7 +121,7 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 
 	monoMock.Register("POST", "/login")
 	monoMock.Register("GET", "/apikeys")
-	monoMock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	monoMock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	monoMock.Register("POST", "/apikeys")
 	monoMock.Register("GET", "/renew")
 
@@ -149,7 +149,7 @@ func TestExecuteSignup(t *testing.T) {
 	httpmock.Register("POST", "/users")
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResposne("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
@@ -190,7 +190,7 @@ func TestExecuteToken(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
