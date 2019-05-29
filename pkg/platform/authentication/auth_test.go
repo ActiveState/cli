@@ -13,6 +13,7 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setup(t *testing.T) {
@@ -110,6 +111,7 @@ func TestAuthInvalidToken(t *testing.T) {
 	viper.Set("apiToken", "testFailure")
 	auth := New()
 	fail := auth.Authenticate()
+	require.NotNil(t, fail)
 	assert.Truef(t, fail.Type.Matches(FailNoCredentials), "unexpected failure type: %v", fail)
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
 }
