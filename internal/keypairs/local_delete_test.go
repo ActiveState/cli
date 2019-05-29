@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,7 +41,6 @@ func (suite *KeypairLocalLoadTestSuite) TestDelete_Override() {
 
 	fail := keypairs.Delete("nonce")
 	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
-	suite.Contains(fail.Message, locale.T("keypairs_err_override_with_delete"))
 }
 
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
