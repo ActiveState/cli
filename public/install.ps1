@@ -332,17 +332,10 @@ function install()
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
             $Env:Path = $newPath
             notify_settingchange
-            Write-Host "You may now start using the '$script:STATE' program"
         }
-    }
-    if( -Not (isOnPath $installDir)) {
-        # This only sets it in the current session
-        $Env:Path = $newPath
-        Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
     }
     return $installDir
 }
 
 install
 Write-Host "Installation complete"
-Write-Host "You may now start using the '$script:STATE' program"
