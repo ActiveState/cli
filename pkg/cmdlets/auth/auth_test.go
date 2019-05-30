@@ -9,6 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -24,9 +28,6 @@ import (
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authCmd "github.com/ActiveState/cli/state/auth"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var Command = authCmd.Command
@@ -84,7 +85,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 
@@ -111,7 +112,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	secretsapiMock.Register("GET", "/keypair")
 
@@ -136,7 +137,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
@@ -183,7 +184,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	httpmock.Register("POST", "/users")
 
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
@@ -224,7 +225,7 @@ func TestExecuteSignup(t *testing.T) {
 	httpmock.Register("POST", "/users")
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
@@ -264,7 +265,7 @@ func TestExecuteToken(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
@@ -338,7 +339,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 		return 200, "login"
 	})
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	secretsapiMock.Register("GET", "/keypair")
 
@@ -383,7 +384,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 		return 200, "login"
 	})
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	var bodyKeypair *secretsModels.KeypairChange
@@ -446,7 +447,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
@@ -497,7 +498,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	httpmock.Register("POST", "/users")
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 
 	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
@@ -527,7 +528,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")

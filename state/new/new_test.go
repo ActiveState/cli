@@ -162,33 +162,6 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -p /invalid-path: -o test-owner -v 1.0".
-// Verifies that a project was NOT created in the invalid path.
-func TestNewWithBadPath(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
-
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
-
-	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
-
-	invalidPath := "/invalid-path:"
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-p", invalidPath, "-o", "test-owner", "-v", "1.0"})
-
-	code := exiter.WaitForExit(func() {
-		Command.Execute()
-	})
-	assert.Equal(t, 1, code, "Exited with code 1")
-
-	_, err := os.Stat(invalidPath)
-	assert.Error(t, err, "Project was not created")
-}
-
 // Runs "state new test-name -o test-owner -v badVersion".
 // Verifies that a project was NOT created due to a bad version number.
 func TestNewWithBadVersion(t *testing.T) {

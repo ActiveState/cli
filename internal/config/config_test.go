@@ -11,11 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 )
 
 type InstanceMock struct {
@@ -49,6 +51,11 @@ func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 func (suite *ConfigTestSuite) TestConfig() {
 	suite.NotEmpty(config.ConfigPath())
 	suite.NotEmpty(config.CachePath())
+}
+
+func (suite *ConfigTestSuite) TestIncludesBranch() {
+	cfg := config.New("")
+	suite.Contains(cfg.ConfigPath(), constants.BranchName)
 }
 
 func (suite *ConfigTestSuite) TestFilesExist() {

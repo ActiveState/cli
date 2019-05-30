@@ -132,18 +132,14 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().NoError(execErr)
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
-	suite.Regexp(fmt.Sprintf("\\bDEBUG\\s+%v\\s+%s\\s+%s\\s+%s", true, "-", "-", "local"), outStr)
-	suite.Regexp(fmt.Sprintf("\\bPYTHONPATH\\s+%s\\s+%s\\s+%s\\s+%s", "%projectDir%/src:%projectDir%/tests", "-", "-", "local"), outStr)
-	suite.Regexp(fmt.Sprintf("\\borg-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "organization", "organization"), outStr)
-	suite.Regexp(fmt.Sprintf("\\bproj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "organization", "project"), outStr)
-	suite.Regexp(fmt.Sprintf("\\buser-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "-", "organization"), outStr)
-	suite.Regexp(fmt.Sprintf("\\buser-proj-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret"), locale.T("confirmation"), "-", "project"), outStr)
-	suite.Regexp(fmt.Sprintf("\\bundefined-org-secret\\s+%s\\s+%s\\s+%s\\s+%s",
-		locale.T("variables_value_secret_undefined"), locale.T("confirmation"), "organization", "organization"), outStr)
+	regexStrFmt := `\b%s\s+%s\s+%v\s+%s\s+%s\s+%s\s*\n`
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "DEBUG", "debug", locale.T("variables_value_set"), locale.T("contradiction"), "-", "Local"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "PYTHONPATH", "pythonpath", locale.T("variables_value_set"), locale.T("contradiction"), "-", "Local"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "org-secret", "org secret", locale.T("variables_value_set"), locale.T("confirmation"), "Organization", "Organization"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "proj-secret", "proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "Organization", "Project"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-org-secret", "user org secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "Organization"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-proj-secret", "user proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "Project"), outStr)
+	suite.Regexp(fmt.Sprintf(regexStrFmt, "undefined-org-secret", "undefined org secret", locale.T("variables_value_unset"), locale.T("confirmation"), "Organization", "Organization"), outStr)
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {

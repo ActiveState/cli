@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -18,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/variables"
-	"github.com/stretchr/testify/suite"
 )
 
 type SecretsGetCommandTestSuite struct {
@@ -146,21 +147,6 @@ func (suite *SecretsGetCommandTestSuite) TestUserProjectSecret() {
 	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
 }
 
-func (suite *SecretsGetCommandTestSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
-	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("org-secret-with-proj-value", "proj-value")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
-	// NOTE the user_secrets response has project and user scoped secrets with same name
-	suite.assertExpansionSuccess("proj-secret-with-user-value", "user-value")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-proj-value")
-}
-
 func (suite *SecretsGetCommandTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionSuccess("proj-secret-only-org-available", "")
@@ -169,11 +155,6 @@ func (suite *SecretsGetCommandTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOr
 func (suite *SecretsGetCommandTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
 	// NOTE the user_secrets response has project scoped secret with same name
 	suite.assertExpansionSuccess("user-secret-only-proj-available", "")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-proj-secret-only-user-available", "user-value")
 }
 
 func Test_SecretsGetCommand_TestSuite(t *testing.T) {

@@ -38,7 +38,7 @@ func TestAuth(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 
 	credentials := &mono_models.Credentials{
 		Username: user.Username,

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -278,6 +279,9 @@ func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 // Name returns variable name
 func (v *Variable) Name() string { return v.variable.Name }
 
+// Description returns variable description
+func (v *Variable) Description() string { return v.variable.Description }
+
 // IsSecret returns whether this variable is a secret variable or static
 func (v *Variable) IsSecret() bool { return v.variable.Value.StaticValue == nil }
 
@@ -287,8 +291,8 @@ func (v *Variable) IsShared() bool { return v.variable.Value.Share != nil }
 // SharedWith returns who this variable is shared with
 func (v *Variable) SharedWith() *projectfile.VariableShare { return v.variable.Value.Share }
 
-// PulledFrom returns where this variable was pulled from
-func (v *Variable) PulledFrom() *projectfile.VariablePullFrom { return v.variable.Value.PullFrom }
+// Store returns where this variable was pulled from
+func (v *Variable) Store() *projectfile.VariableStore { return v.variable.Value.Store }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
@@ -308,6 +312,43 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 		return nil, failure
 	}
 	return &value, nil
+}
+
+// SharedWithLabel wraps v.SharedWith().String() for API consistency and localization.
+func (v *Variable) SharedWithLabel() string {
+	s := v.SharedWith().String()
+	if s == "" {
+		return s
+	}
+	return locale.T(s)
+}
+
+// StoreLabel returns a representation of the variable storage location.
+func (v *Variable) StoreLabel() string {
+	if !v.IsSecret() {
+		return locale.T("local")
+	}
+	return locale.T(v.Store().String())
+}
+
+// IsSetLabel returns a representation of whether the variable is set.
+func (v *Variable) IsSetLabel() (string, *failures.Failure) {
+	valornil, fail := v.ValueOrNil()
+	if fail != nil {
+		return "", fail
+	}
+	if valornil == nil {
+		return locale.T("variables_value_unset"), nil
+	}
+	return locale.T("variables_value_set"), nil
+}
+
+// IsEncryptedLabel returns a representation of encryption status.
+func (v *Variable) IsEncryptedLabel() string {
+	if v.IsSecret() {
+		return locale.T("confirmation")
+	}
+	return locale.T("contradiction")
 }
 
 // Value returned with all variables evaluated
@@ -335,7 +376,7 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 	}
 
 	var project *mono_models.Project
-	if projectfile.VariablePullFromProject == *v.PulledFrom() {
+	if projectfile.VariableStoreProject == *v.Store() {
 		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
 		if failure != nil {
 			return failure

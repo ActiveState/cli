@@ -8,42 +8,45 @@ User profile folder.
 .EXAMPLE
 install.ps1 -b branchToInstall -t C:\dir\on\path
 #>
+
 param (
-    [Parameter(
-        Mandatory=$False,
-        HelpMessage="Branch build to install.")
-    ][string]$b = "unstable"
-    ,[Parameter(
-        Mandatory=$False,
-        HelpMessage="No prompt")
-    ][boolean]$n = $false
-    ,[Parameter(
-        Mandatory=$False,
-        HelpMessage="Install target dir")
-    ][string]$t = (Join-Path $Env:ALLUSERSPROFILE "ActiveState") # C:\ProgramData\ActiveState
-    ,[Parameter(
-        Mandatory=$False,
-        HelpMessage="Binary name def")
-    ][string]$f = "state"
-    ,[switch]$h
+    [Parameter(Mandatory=$False)][string]$b = "unstable"
+    ,[Parameter(Mandatory=$False)]
+        [string]
+        $t
+    ,[Parameter(Mandatory=$False)][switch]$n
+    ,[Parameter(Mandatory=$False)][switch]$h
+    ,[Parameter(Mandatory=$False)]
+        [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
+        [string]
+        $f = "state.exe"
 )
 
+$script:NOPROMPT = $n
+$script:TARGET = $t
+$script:STATEEXE = $f
+$script:STATE = $f.Substring(0, $f.IndexOf("."))
+$script:BRANCH = $b
+
+# Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
+$ErrorActionPreference = "Stop"
+
 # Helpers
-function isInRegistry(){
+function isInRegistry($path){
     $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
     $inReg = $False
     for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $INSTALLDIR) {
+        if ($regpaths[$i] -eq $path) {
             $inReg = $True
         }
     }
     $inReg
 }
-function isOnPath(){
+function isOnPath($path){
     $envpaths = $env:Path.Split(';')
     $inEnv = $False
     for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $INSTALLDIR) {
+        if ($envpaths[$i] -eq $path) {
             $inEnv = $True
         }
     }
@@ -56,115 +59,268 @@ function isAdmin
     $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function promptYN([string]$msg)
+{
+    $response = Read-Host -Prompt $msg" [y/N]"
 
-$USAGE="install.ps1 [flags]`n`r`n`rFlags:`n`r -b <branch>      Specify an alternative branch to install from (eg. master)`n`r -n               Don't prompt for anything, just install and override any existing executables`n`r -t               Target directory`n`r -f               Filename to use`n`r -h               Shows usage information (what you're currently reading)`n`rEOF`n`r"
-$STATE="state.exe"
-$INSTALLDIR=$t
-# State tool binary base dir
-$STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
-
-if ($h.IsPresent) {
-    Write-Output $USAGE
-}
-
-if ($f.IsPresent) {
-    # This should attempt to clean up the filename eg.
-    #  appending .exe if it's missing, fail if it's some other ext.
-    $STATE = $f
-}
-
-# $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
-    $statejson="windows-amd64.json"
-    $statepkg="windows-amd64.zip"
-    $stateexe="windows-amd64.exe"
-
-} else {
-    Write-Warning "x86 processors are not supported at this time."
-    Write-Warning "Contact ActiveState Support for assistance."
-    Write-Warning "Aborting install"
-    exit 1
-}
-
-$downloader = new-object System.Net.WebClient
-
-# Get version and checksum
-$jsonurl = "$STATEURL/$b/$statejson"
-try{
-    $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
-    $latestVersion = $branchJson.Version
-    $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$b/$latestVersion/$statejson")
-} catch [System.Exception] {
-    Write-Warning "Could not install state tool."
-    Write-Warning "Missing branch json or versioned json file."
-    Write-Error $_.Exception.Message
-    exit 1
-}
-$latestChecksum = $versionedJson.Sha256v2
-
-# Download pkg file
-$tmpParentPath = Join-Path $env:TEMP "ActiveState"
-$zipPath = Join-Path $tmpParentPath $statepkg
-# Clean it up to start but leave it behind when done 
-if(Test-Path $tmpParentPath){
-    Remove-Item $tmpParentPath -Recurse
-}
-New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-$zipURL = "$STATEURL/$b/$latestVersion/$statepkg"
-try{
-    $downloader.DownloadFile($zipURL, $zipPath)
-} catch [System.Exception] {
-    Write-Warning "Could not install state tool."
-    Write-Warning "Could not access $zipURL"
-    Write-Error $_.Exception.Message
-    exit 1
-}
-
-# Extract binary from pkg and confirm checksum
-Write-Host "Extracting binary..."
-Expand-Archive $zipPath $tmpParentPath
-$hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-if ($hash -ne $latestChecksum){
-    Write-Warning "SHA256 sum did not match:"
-    Write-Warning "Expected: $latestChecksum"
-    Write-Warning "Received: $hash"
-    Write-Warning "~Aborting installation.~"
-    exit 1
-}
-
-### Check for existing Binary
-### Prompt user where to install, with default location
-
-# Install binary
-#  If the install dir doesn't exist
-$installPathExe = Join-Path $INSTALLDIR $STATE
-Write-Host "Install state tool in $installPathExe"
-if( -Not (Test-Path $INSTALLDIR)) {
-    New-Item -Path $INSTALLDIR -ItemType Directory
-} else {
-    Remove-Item $installPathExe
-}
-Move-Item (Join-Path $tmpParentPath $stateexe) $installPathExe
-### Prompt user to Add to path
-
-# Add to path
-$newPath = "$env:Path;$INSTALLDIR"
-if( -Not (isInRegistry) ){
-    
-    if ( -Not (isAdmin)) {
-        Write-Warning "We tried to add the install directory to your Registry PATH but this session does not have Administrator privileges.  Please run this script in a terminal with Administrator permissions to permanently add the state tool to your path."
-    } else {
-        Write-Host "Adding $INSTALLDIR to registry"
-        # This only sets it in the regsitry and it will NOT be accessible in the current session
-        Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+    if ( -Not ($response.ToLower() -eq "y") )
+    {
+        return $False
     }
-} else {
-    Write-Host "Install dir is already in registry"
+    return $True
 }
-if( -Not (isOnPath) ){
-    Write-Host "Adding $INSTALLDIR to terminal PATH"
-    # This only sets it in the current session
-    $Env:Path = $newPath
-} else {
-    Write-Host "Install dir is already on your PATH"
+
+function promptYNQ([string]$msg)
+{
+    $response = Read-Host -Prompt $msg" [y/N/q]"
+
+    if ($response.ToLower() -eq "q")
+    {
+        Write-Host "Aborting Installation" -ForegroundColor Yellow
+        exit(0)
+    }
+    if ( -Not ($response.ToLower() -eq "y") )
+    {
+        return $False
+    }
+    return $True
 }
+
+function errorOccured($suppress) {
+    $errMsg = $Error[0]
+    $Error.Clear()
+    if($errMsg) {
+        if (-Not $suppress){
+            Write-Warning $errMsg
+        }
+        return $True
+    }
+    return $False
+}
+
+function hasWritePermission([string] $path)
+{
+    # $user = "$env:userdomain\$env:username"
+    # $acl = Get-Acl $path -ErrorAction 'silentlycontinue'
+    # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
+    $thefile = "activestate-perms"
+    New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
+    if(errorOccured $True){
+        return $False
+    }
+    Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
+    if(errorOccured $True){
+        return $False
+    }
+    return $True
+}
+
+function checkPermsRecur([string] $path)
+{
+    $orig = $path
+    # recurse up to the drive root if we have to
+    while ($path -ne "") {
+        if (Test-Path $path){
+            if (-Not (hasWritePermission $path)){
+                Write-Warning "You do not have permission to write to '$path'.  Are you running as admin?"
+                return $False
+            } else {
+                return $True
+            }
+        }
+        $path = split-path $path
+    }
+    Write-Warning "'$orig' is not a valid path"
+    return $False
+}
+
+function isValidFolder([string] $path)
+{      
+    if($path[1] -ne ":"){
+        Write-Warning "Must provide an absolute path."
+        return $False
+    }
+    if(Test-Path $path){
+        #it's a folder
+        if (-Not (Test-Path $path -PathType 'Container')){
+            Write-Warning "'$path' exists and is not a directory"
+            return $False
+        }
+    }
+    return checkPermsRecur $path
+}
+
+function getExistingOnPath(){
+    (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
+}
+
+function getDefaultInstallDir() {
+    if ($script:TARGET) {
+         $script:TARGET
+    } elseif (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+        $existing = getExistingOnPath
+        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+        $existing
+    } else {
+        (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
+    }
+}
+
+function promptInstallDir()
+{   
+    $installDir = ""
+    $defaultDir = getDefaultInstallDir
+    while($True){
+        $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
+        if ($installDir -eq ""){
+            $installDir = $defaultDir
+        }
+        if( -Not (isValidFolder $installDir)) {
+            continue
+        }
+        $targetFile = Join-Path $installDir $script:STATEEXE
+        if (Test-Path $targetFile -PathType Leaf) {
+            Write-host "Previous installation detected at '$targetFile'"
+            if( -Not (promptYNQ "Do you want to continue installation with this directory?"))
+            {
+                continue
+            } else  {
+                Write-Warning "Overwriting previous installation"
+            }
+        }
+        break
+    }
+    $installDir
+}
+
+function install()
+{
+    $USAGE="install.ps1 [flags]
+    
+    Flags:
+    -b <branch>   Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+    -n               Don't prompt for anything, just install and override any existing executables
+    -t               Install target dir
+    -f               Binary filename to use
+    -h               Shows usage information (what you're currently reading)"
+    if ($h) {
+        Write-Host $USAGE
+        exit 0
+    }
+    
+    # State tool binary base dir
+    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
+    
+    Write-Host "Preparing for installation...`n"
+    
+    # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
+    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+        $statejson="windows-amd64.json"
+        $statepkg="windows-amd64.zip"
+        $stateexe="windows-amd64.exe"
+
+    } else {
+        Write-Warning "x86 processors are not supported at this time"
+        Write-Warning "Contact ActiveState Support for assistance"
+        Write-Warning "Aborting install"
+        exit 1
+    }
+
+    $downloader = new-object System.Net.WebClient
+
+    # Get version and checksum
+    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
+    Write-Host "Determining latest version...`n"
+    try{
+        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $latestVersion = $branchJson.Version
+        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+    } catch [System.Exception] {
+        Write-Warning "Unable to retrieve the latest version number"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+    $latestChecksum = $versionedJson.Sha256v2
+
+    # Download pkg file
+    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
+    $zipPath = Join-Path $tmpParentPath $statepkg
+    # Clean it up to start but leave it behind when done 
+    if(Test-Path $tmpParentPath){
+        Remove-Item $tmpParentPath -Recurse
+    }
+    New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
+    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
+    Write-Host "Fetching the latest version: $latestVersion...`n"
+    try{
+        $downloader.DownloadFile($zipURL, $zipPath)
+    } catch [System.Exception] {
+        Write-Warning "Could not install state tool"
+        Write-Warning "Could not access $zipURL"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+
+    # Check the sums
+    Write-Host "Verifying checksums...`n"
+    $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+    if ($hash -ne $latestChecksum){
+        Write-Warning "SHA256 sum did not match:"
+        Write-Warning "Expected: $latestChecksum"
+        Write-Warning "Received: $hash"
+        Write-Warning "Aborting installation"
+        exit 1
+    }
+
+    # Extract binary from pkg and confirm checksum
+    Write-Host "Extracting $statepkg...`n"
+    Expand-Archive $zipPath $tmpParentPath
+
+    # Confirm the user wants to use the default install location by prompting for new dir
+    if ( -Not $script:NOPROMPT) {
+        $installDir = promptInstallDir
+    } else {
+        $installDir = getDefaultInstallDir
+    }
+    # Install binary
+    Write-Host "Installing to '$installDir'..." -ForegroundColor Yellow
+    #  If the install dir doesn't exist
+    $installPath = Join-Path $installDir $script:STATEEXE
+    if( -Not (Test-Path $installDir)) {
+        Write-host "NOTE: $installDir will be created"
+        New-Item -Path $installDir -ItemType Directory | Out-Null
+    } else {
+        if(Test-Path $installPath -PathType Leaf) {
+            Remove-Item $installPath -Erroraction 'silentlycontinue'
+            if(errorOccured){
+                Write-Host "Aborting Installation" -ForegroundColor Yellow
+                exit(1)
+            }
+        }
+    }
+    Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
+
+    # Path setup
+    $newPath = "$installDir;$env:Path"
+    if( -Not (isInRegistry $installDir) ){
+        if ( -Not (isAdmin)) {
+            Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
+            Write-Host "Updating environment..."
+            Write-Host "Adding $installDir to system and current session PATH"
+            # This only sets it in the registry and it will NOT be accessible in the current session
+            Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
+            $Env:Path = $newPath
+            Write-Host "You may now start using the '$script:STATE' program"
+        }
+    }
+    if( -Not (isOnPath $installDir)) {
+        # This only sets it in the current session
+        $Env:Path = $newPath
+        Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
+    }
+}
+
+install
+Write-Host "Installation complete"
+Write-Host "You may now start using the '$script:STATE' program"

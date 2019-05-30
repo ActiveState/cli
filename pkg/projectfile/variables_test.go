@@ -29,7 +29,7 @@ func TestVariableStruct_ComplexValue(t *testing.T) {
 	dat := strings.TrimSpace(`
 name: valueForName
 value: 
-    pullfrom: organization
+    store: organization
     share: organization
 `)
 
@@ -40,8 +40,8 @@ value:
 
 	assert.Equal(t, "valueForName", variable.Name, "Name should be set")
 	assert.Nil(t, variable.Value.StaticValue, "Static Value should not be set")
-	assert.NotNil(t, variable.Value.PullFrom, "PullFrom should be set")
-	assert.Equal(t, "organization", string(*variable.Value.PullFrom), "PullFrom should be set")
+	assert.NotNil(t, variable.Value.Store, "Store should be set")
+	assert.Equal(t, "organization", string(*variable.Value.Store), "Store should be set")
 	assert.NotNil(t, variable.Value.Share, "Share should be set")
 	assert.Equal(t, "organization", string(*variable.Value.Share), "Share should be set")
 }
@@ -61,19 +61,19 @@ value:
 	assert.True(t, fail.Type.Matches(FailParseVar), "Returns a FailParseVar failure")
 }
 
-func TestVariableStruct_ValidationFailPullFrom(t *testing.T) {
+func TestVariableStruct_ValidationFailStore(t *testing.T) {
 	variable := Variable{}
 	dat := strings.TrimSpace(`
 name: valueForName
 value: 
-    pullfrom: notaValidValue
+    store: notaValidValue
 `)
 
 	err := yaml.Unmarshal([]byte(dat), &variable)
 	assert.Nil(t, err, "Should not throw an error")
 	fail := variable.Parse()
 	assert.Error(t, fail.ToError(), "Should fail")
-	assert.True(t, fail.Type.Matches(FailValidateVarPullFrom), "Returns a FailValidateVarPullFrom failure")
+	assert.True(t, fail.Type.Matches(FailValidateVarStore), "Returns a FailValidateVarStore failure")
 }
 
 func TestVariableStruct_ValidationFailShare(t *testing.T) {

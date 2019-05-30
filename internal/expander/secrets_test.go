@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/stretchr/testify/suite"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/expander"
@@ -16,9 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type SecretsExpanderTestSuite struct {
@@ -39,49 +39,49 @@ owner: SecretOrg
 variables:
   - name: undefined-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret
     value:
-      pullfrom: project
+      store: project
   - name: org-secret-with-proj-value
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret-with-user-value
     value:
-      pullfrom: project
+      store: project
   - name: user-secret-with-user-proj-value
     value:
-      pullfrom: organization
+      store: organization
   - name: proj-secret-only-org-available
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret-only-proj-available
     value:
-      pullfrom: project
+      store: project
   - name: user-proj-secret-only-user-available
     value:
-      pullfrom: project
+      store: project
   - name: bad-base64-encoded-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: invalid-encryption-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
 `)
 
@@ -130,8 +130,8 @@ func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() expander.Func {
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
-	suite.True(failure.Type.Matches(expectedFailureType), "unexpected failure type")
+	value, fail := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+	suite.Equal(expectedFailureType.Name, fail.Type.Name, "unexpected failure type")
 	suite.Zero(value)
 }
 
@@ -211,19 +211,13 @@ func (suite *SecretsExpanderTestSuite) TestUserProjectSecret() {
 	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
 }
 
-func (suite *SecretsExpanderTestSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
+func (suite *SecretsExpanderTestSuite) TestOrgSecret_DisregardOverrides() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("org-secret-with-proj-value", "proj-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
+	suite.assertExpansionSuccess("org-secret-with-proj-value", "org-value")
 	// NOTE the user_secrets response has project and user scoped secrets with same name
-	suite.assertExpansionSuccess("proj-secret-with-user-value", "user-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
+	suite.assertExpansionFailure("proj-secret-with-user-value", secretsapi.FailUserSecretNotFound)
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-proj-value")
+	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-value")
 }
 
 func (suite *SecretsExpanderTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
@@ -234,11 +228,6 @@ func (suite *SecretsExpanderTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgA
 func (suite *SecretsExpanderTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertExpansionFailure("user-secret-only-proj-available", secretsapi.FailUserSecretNotFound)
-}
-
-func (suite *SecretsExpanderTestSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-proj-secret-only-user-available", "user-value")
 }
 
 func Test_SecretsExpander_TestSuite(t *testing.T) {

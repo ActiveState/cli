@@ -4,7 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/stretchr/testify/suite"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -14,10 +15,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type ValueOrNilTestSuite struct {
@@ -122,21 +122,6 @@ func (suite *ValueOrNilTestSuite) TestUserProjectSecret() {
 	suite.assertExpansion("user-proj-secret", "user-proj-value")
 }
 
-func (suite *ValueOrNilTestSuite) TestOrgSecret_PrefersProjectScopeIfAvailable() {
-	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansion("org-secret-with-proj-value", "proj-value")
-}
-
-func (suite *ValueOrNilTestSuite) TestProjSecret_PrefersUserScopeIfAvailable() {
-	// NOTE the user_secrets response has project and user scoped secrets with same name
-	suite.assertExpansion("proj-secret-with-user-value", "user-value")
-}
-
-func (suite *ValueOrNilTestSuite) TestUserSecret_PrefersUserProjScopeIfAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansion("user-secret-with-user-proj-value", "user-proj-value")
-}
-
 func (suite *ValueOrNilTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
 	// NOTE the user_secrets response has user and user-project scoped secrets with same name
 	suite.assertNilExpansion("proj-secret-only-org-available")
@@ -147,11 +132,6 @@ func (suite *ValueOrNilTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvail
 	suite.assertNilExpansion("user-secret-only-proj-available")
 }
 
-func (suite *ValueOrNilTestSuite) TestUserProjSecret_AllowsUserIfUserProjectNotAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansion("user-proj-secret-only-user-available", "user-value")
-}
-
 func (suite *ValueOrNilTestSuite) loadSecretsProject() (*projectfile.Project, error) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -160,50 +140,50 @@ owner: SecretOrg
 variables:
   - name: undefined-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: org-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret
     value:
-      pullfrom: project
+      store: project
   - name: org-secret-with-proj-value
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: proj-secret-with-user-value
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret-with-user-proj-value
     value:
-      pullfrom: organization
+      store: organization
   - name: proj-secret-only-org-available
     value:
-      pullfrom: project
+      store: project
       share: organization
   - name: user-secret-only-proj-available
     value:
-      pullfrom: organization
+      store: organization
   - name: user-proj-secret-only-user-available
     value:
-      pullfrom: project
+      store: project
   - name: bad-base64-encoded-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
   - name: invalid-encryption-secret
     value:
-      pullfrom: organization
+      store: organization
       share: organization
 scripts:
   - name: echo-org-secret
