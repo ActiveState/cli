@@ -22,13 +22,21 @@ class TestActivate(helpers.IntegrationTest):
         self.spawn("activate ActiveState-CLI/Python2")
         self.expect("Where would you like to checkout")
         self.send(tempfile.TemporaryDirectory().name)
-        self.expect("Downloading", timeout=120)
-        self.expect("Installing", timeout=120)
-        self.wait_ready(timeout=120)
-        self.send("python2 -c 'import sys; print(sys.copyright)'")
-        self.expect("ActiveState Software Inc.")
+        if os.name == 'nt':
+            # No py2 project on the platform yet
+            self.expect("Activating Virtual Environment")
+        else:
+            self.expect("Downloading", timeout=120)
+            self.expect("Installing", timeout=120)
+            self.wait_ready(timeout=120)
+            self.send("python2 -c \"import sys; print(sys.copyright\"")
+            self.expect("ActiveState Software Inc.")
         self.send_quit()
-        self.wait()
+        if os.name == 'nt':
+            # Windows returns nonzero on successful murdering of a process
+            self.wait(code=1)
+        else:
+            self.wait()
 
     def test_activate_python3(self):
         path = os.path.join(dir_path, "testdata")
@@ -47,10 +55,14 @@ class TestActivate(helpers.IntegrationTest):
         self.expect("Downloading", timeout=120)
         self.expect("Installing", timeout=120)
         self.wait_ready(timeout=120)
-        self.send("python3 -c 'import sys; print(sys.copyright)'")
+        self.send("python3 -c \"import sys; print(sys.copyright)\"")
         self.expect("ActiveState Software Inc.")
         self.send_quit()
-        self.wait()
+        if os.name == 'nt':
+            # Windows returns nonzero on successful murdering of a process
+            self.wait(code=1)
+        else:
+            self.wait()
 
 if __name__ == '__main__':
     helpers.Run()

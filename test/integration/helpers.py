@@ -97,6 +97,8 @@ class IntegrationTest(unittest.TestCase):
 
     def clear_cache(self):
         cache_dir = os.path.expanduser("~/.cache/activestate")
+        if is_windows:
+            cache_dir = os.path.join(os.getenv("LOCALAPPDATA"),"activestate")
         if os.path.isdir(cache_dir):
             shutil.rmtree(cache_dir)
 
@@ -141,7 +143,10 @@ class IntegrationTest(unittest.TestCase):
 
     def send_quit(self):
         if self.is_running():
-            os.kill(self.pid(), signal.NSIG)
+            if is_windows:
+                self.child.proc.terminate()
+            else:
+                os.kill(self.pid(), signal.NSIG)
         if not is_windows:
             self.child.close()
 
@@ -156,8 +161,9 @@ class IntegrationTest(unittest.TestCase):
         return status == "running"
 
     def wait_ready(self, timeout=30):
-        self.send("echo wait_ready_$HOME")
-        self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
+        msg = "echo wait_ready_"+os.path.expanduser("~")
+        self.send(msg)
+        self.expect_exact(msg, timeout=timeout)
 
     def wait(self, code=0, timeout=30):
         try:
