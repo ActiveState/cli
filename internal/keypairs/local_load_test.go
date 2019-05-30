@@ -6,10 +6,11 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairLocalLoadTestSuite struct {
