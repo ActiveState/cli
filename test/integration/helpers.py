@@ -200,6 +200,7 @@ class wait_for_timeout:
     def __init__(self, seconds=1, error_message='Timeout', func=lambda:1, args=None):
         self.seconds = seconds
         self.func = func
+        self.result = None
 
         self.error_message = error_message
     def wait(self):
