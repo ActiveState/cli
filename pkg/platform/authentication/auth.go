@@ -3,6 +3,11 @@ package authentication
 import (
 	"os"
 
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,11 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
-	"github.com/spf13/viper"
-
-	httptransport "github.com/go-openapi/runtime/client"
 )
 
 var (

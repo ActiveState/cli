@@ -4,16 +4,15 @@ import (
 	"os"
 	"testing"
 
-	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-
-	"github.com/ActiveState/cli/pkg/platform/api"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 func setup(t *testing.T) {
