@@ -325,16 +325,20 @@ function install()
     if( -Not (isInRegistry $installDir) ){
         if ( -Not (isAdmin)) {
             Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+            Write-Host "Add the State Tool to your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
         } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment..."
-            Write-Host "Adding $installDir to system and current session PATH"
+            Write-Host "Adding $installDir to system PATH"
             # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-            $Env:Path = $newPath
             notify_settingchange
+            $msg="To start using the State tool please open a new command prompt with no admin rights.
+Please close the current command shell unless you need to perform further task as an 
+administrator.  It is not recommended to run commands as an administrator that do not 
+require it.`n"
+            Write-Host $msg
         }
     }
-    return $installDir
 }
 
 install
