@@ -322,7 +322,6 @@ function install()
 
     # Path setup
     $newPath = "$installDir;$env:Path"
-    $addToSystem = $False
     if( -Not (isInRegistry $installDir) -And (isAdmin)){
         if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment...`n"
@@ -330,7 +329,6 @@ function install()
             # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
             notify_settingchange
-            $addToSystem = $True
             $msg="To start using the State tool please open a new command prompt with no admin rights.  Please close the current command shell unless you need to perform further task as an administrator.  It is not recommended to run commands as an administrator that do not require it.`n"
             Write-Host $msg
         } else {
