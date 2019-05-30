@@ -34,8 +34,6 @@ $ErrorActionPreference = "Stop"
 # Helpers
 
 function notify_settingchange(){
-    Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath -Force
-
     $HWND_BROADCAST = [IntPtr] 0xffff;
     $WM_SETTINGCHANGE = 0x1a;
     $result = [UIntPtr]::Zero
