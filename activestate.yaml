@@ -3,6 +3,7 @@ owner: ActiveState
 namespace: github.com/ActiveState/cli
 variables:
   - name: ENV
+    description: The environment settings used throughout our project
     value: |
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
@@ -12,72 +13,87 @@ variables:
         BUILD_NAME="state.exe"
       fi
   - name: CLI_BUILDFLAGS
+    description: The buildflags passed to `go build` commands
     value: -ldflags="-s -w"
   - name: CLI_PKGS
+    description: The files we're building
     value: ./state
 scripts: &scripts
   - name: preprocess
+    description: Generates assets required by the project that aren't just specific to the build
     value: |
       $variables.ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
+    description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
       go build -o ./build/$BUILD_NAME ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: build-external
+    description: Builds the project for external use (limiting its feature-set). Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
       go build -tags external -o ./build/$BUILD_NAME ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: install
+    description: Installs the current HEAD version into GOBIN
     value: |
       $scripts.preprocess
       go install ${variables.CLI_BUILDFLAGS} ${variables.CLI_PKGS}
   - name: deploy-updates
+    description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
   - name: generate-api-client
+    description: Generates the mono-api client files
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/mono
       swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yml -A mono -a mono_operations -m mono_models -c mono_client
       popd
   - name: generate-secrets-client
+    description: Generates the secrets-api client files
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/secrets
       swagger generate client -f ${WD}/../TheHomeRepot/service/secrets/api/swagger.yaml -A secrets -a secrets_operations -m secrets_models -c secrets_client
       popd
   - name: generate-headchef-client
+    description: Generates the headchef-api client files
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/headchef
       swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-inventory-client
+    description: Generates the inventory-api client files
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/inventory
       swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/inventory-api/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
+    description: Generates all api clients
     value: |
       $scripts.generate-api-client
       $scripts.generate-secrets-client
       $scripts.generate-headchef-client
       $scripts.generate-inventory-client
   - name: generate-locale
+    description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
   - name: test
+    description: Runs unit tests (not integration tests)
     value: |
       ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "api/.*?(client|model)"`
     standalone: true
   - name: integration-tests
+    description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
     standalone: true
     value: |
       $variables.ENV
@@ -87,10 +103,12 @@ scripts: &scripts
       fi
       python3 -m unittest discover -s test/integration -p '*_test.py'
   - name: clean
+    description: Cleans out the build dir.
     value: |
       go clean
       rm -Rf build
   - name: run
+    description: Builds the state tool and runs it with `--help`
     value: |
       $scripts.build
       build/state --help

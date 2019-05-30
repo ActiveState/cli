@@ -123,12 +123,12 @@
   version = "v1.13.8"
 
 [[projects]]
-  digest = "1:725a2e20301471eae5aedbbb34aa34b34694ad45fc086332242d511a87f80fed"
+  branch = "master"
+  digest = "1:23c6faa775472f64721d11c02c1434aebb370c1f512ec1a2252ba975335419b3"
   name = "github.com/bndr/gotabulate"
   packages = ["."]
   pruneopts = ""
-  revision = "94ff52dbe671866d4f5cd3463ecdad8ec550e578"
-  version = "v1.1.2"
+  revision = "bc555436bfd5d4e93a2dd35b462ce37e067afdda"
 
 [[projects]]
   digest = "1:d5fbd8e25d6393e73620f090bfaf541259fc66b76bcb2517d6297547558e213c"
@@ -431,6 +431,14 @@
   pruneopts = ""
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
+
+[[projects]]
+  digest = "1:84c28d9899cc4e00c38042d345cea8819275a5a62403a58530cac67022894776"
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  pruneopts = ""
+  revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
+  version = "v0.0.4"
 
 [[projects]]
   branch = "master"

@@ -432,15 +432,15 @@ print_state_show_url:
 print_state_show_platforms:
   other: Platforms
 print_state_show_events:
-  other: Events that will run
+  other: Events
 print_state_show_scripts:
   other: Scripts
 print_state_show_languages:
   other: Languages
 print_state_show_packages:
-  other: packages
-print_state_show_env_vars:
-  other: Environment variables
+  other: Packages
+print_state_show_variables:
+  other: Variables
 print_state_show_secrets:
   other: Secret specifications
 err_cannot_obtain_dist:
