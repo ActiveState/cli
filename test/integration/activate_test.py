@@ -31,6 +31,7 @@ class TestActivate(helpers.IntegrationTest):
             self.wait_ready(timeout=120)
             self.send("python2 -c \"import sys; print(sys.copyright)\"")
             self.expect("ActiveState Software Inc.")
+        self.send_quit()
         if os.name == 'nt':
             # Windows returns nonzero on successful murdering of a process
             self.wait(code=1)
@@ -56,6 +57,7 @@ class TestActivate(helpers.IntegrationTest):
         self.wait_ready(timeout=120)
         self.send("python3 -c \"import sys; print(sys.copyright)\"")
         self.expect("ActiveState Software Inc.")
+        self.send_quit()
         if os.name == 'nt':
             # Windows returns nonzero on successful murdering of a process
             self.wait(code=1)

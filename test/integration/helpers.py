@@ -11,6 +11,7 @@ import requests
 from pexpect.popen_spawn import PopenSpawn
 import psutil
 import subprocess
+import signal
 import re
 
 is_windows = os.name == 'nt'
@@ -167,7 +168,11 @@ class IntegrationTest(unittest.TestCase):
 
     def wait(self, code=0, timeout=30):
         try:
-            result = wait_for_timeout(seconds=timeout, func=self.child.wait).wait()
+            if is_windows:
+                result = _win_wait_for_timeout(seconds=timeout, func=self.child.wait).wait()
+            else:
+                with _unix_wait_for_timeout(seconds=timeout):
+                    result = self.child.wait()
         except TimeoutError:
             self.fail("timeout while waiting, output:\n---\n%s\n---" % (self.child.logfile_read.logged))
             return
@@ -193,7 +198,7 @@ class IntegrationLogger:
     def flush(self):
         self.logfile.flush()
 
-class wait_for_timeout:
+class _win_wait_for_timeout:
     from multiprocessing.pool import ThreadPool
     pool = ThreadPool(processes=1)
     import time
@@ -201,8 +206,8 @@ class wait_for_timeout:
         self.seconds = seconds
         self.func = func
         self.result = None
-
         self.error_message = error_message
+
     def wait(self):
         def callback(out):
             self.result = out
@@ -211,6 +216,19 @@ class wait_for_timeout:
         if self.result is None:
             raise TimeoutError(self.error_message)
         return self.result
+
+class _unix_wait_for_timeout:
+    def __init__(self, seconds=1, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+
+    def handle_timeout(self):
+        raise TimeoutError(self.error_message)
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
 
 def get_constants():
         const_path = os.path.join(
