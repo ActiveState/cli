@@ -273,26 +273,22 @@ flag_state_new_path_description:
   other: Path to create a new project in.
 flag_state_new_owner_description:
   other: Owner of the project being created.
-flag_state_new_version_description:
-  other: Version of the project being created.
 arg_state_new_name_description:
   other: Name of the new project.
 error_state_new_no_auth:
   other: Please authenticate by running "state auth" before creating a new project.
 state_new_prompt_name:
-  other: Please provide a name for the new project.
-error_state_new_abort:
+  other: "Please provide a name for the new project:"
+error_state_new_aborted:
   other: "Unable to create new project: aborted."
 error_state_new_exists:
   other: "Unable to create new project: path exists."
 error_state_new_mkdir:
   other: Unable to create new project directory.
 state_new_prompt_owner:
-  other: Please provide an owner for the new project.
+  other: "Please provide an owner for the new project:"
 error_state_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
-error_state_new_version:
-  other: Version string must consist only of numbers and decimals.
 state_new_created:
   other: Created new project in {{.Dir}}
 error_state_new_project_add:

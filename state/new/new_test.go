@@ -20,7 +20,7 @@ func init() {
 	exit = exiter.Exit
 }
 
-// Runs "state new test-name -o test-owner -v 1.0" in an empty directory.
+// Runs "state new test-name -o test-owner" in an empty directory.
 // Verifies that a project was successfully created.
 func TestNewInEmptyDir(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "cli-new-test")
@@ -41,7 +41,7 @@ func TestNewInEmptyDir(t *testing.T) {
 	assert.NoError(t, err, "Switched to tempdir")
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name", "-o", "test-owner"})
 	err = Command.Execute()
 
 	assert.NoError(t, err, "Executed without error")
@@ -56,11 +56,11 @@ func TestNewInEmptyDir(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -o test-owner -v 1.0" in a non-empty directory of
+// Runs "state new test-name -o test-owner" in a non-empty directory of
 // just files.
 // Verifies that a project was successfully created in a sub-directory.
 func TestNewInNonEmptyDir(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -77,7 +77,7 @@ func TestNewInNonEmptyDir(t *testing.T) {
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name", "-o", "test-owner"})
 	err = Command.Execute()
 
 	assert.NoError(t, err, "Executed without error")
@@ -90,12 +90,12 @@ func TestNewInNonEmptyDir(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -o test-owner -v 1.0" in a non-empty directory of
+// Runs "state new test-name -o test-owner" in a non-empty directory of
 // files and folders.
 // Verifies that a project was NOT created in a sub-directory due to a name
 // conflict.
 func TestNewInNonEmptyDirFail(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -114,7 +114,7 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name", "-o", "test-owner"})
 
 	code := exiter.WaitForExit(func() {
 		Command.Execute()
@@ -128,10 +128,10 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -p tmpdir -o test-owner -v 1.0".
+// Runs "state new test-name -p tmpdir -o test-owner".
 // Verifies that a project was successfully created in tmpdir.
 func TestNewWithPathToExistingDir(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -148,7 +148,7 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-p", tmpdir, "-o", "test-owner", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name", "-p", tmpdir, "-o", "test-owner"})
 
 	code := exiter.WaitForExit(func() {
 		Command.Execute()
@@ -162,34 +162,11 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -o test-owner -v badVersion".
-// Verifies that a project was NOT created due to a bad version number.
-func TestNewWithBadVersion(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
-	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
-	cwd, _ := os.Getwd()
-
-	os.Chdir(tmpdir)
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-o", "test-owner", "-v", "badVersion"})
-
-	code := exiter.WaitForExit(func() {
-		Command.Execute()
-	})
-	assert.Equal(t, 1, code, "Exited with code 1")
-
-	_, err := os.Stat(filepath.Join(tmpdir, constants.ConfigFileName))
-	assert.Error(t, err, "Project was not created")
-	os.Chdir(cwd) // restore
-
-	os.RemoveAll(tmpdir)
-}
-
-// Runs "state new test-name -v 1.0" in an empty directory.
+// Runs "state new test-name" in an empty directory.
 // Verifies that a project was successfully created with an owner fetched from
 // the Platform.
 func TestNewWithNoOwner(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
@@ -204,7 +181,7 @@ func TestNewWithNoOwner(t *testing.T) {
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name"})
 	err := Command.Execute()
 
 	assert.NoError(t, err, "Executed without error")
@@ -217,11 +194,11 @@ func TestNewWithNoOwner(t *testing.T) {
 	os.RemoveAll(tmpdir)
 }
 
-// Runs "state new test-name -v 1.0" in an empty directory, but test-name
+// Runs "state new test-name" in an empty directory, but test-name
 // happens to already exist on the Platform.
 // Verifies that a project was NOT created due to a name conflict.
 func TestNewPlatformProjectExists(t *testing.T) {
-	Flags.Path, Flags.Owner, Flags.Version, Args.Name = "", "", "", "" // reset
+	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
@@ -236,7 +213,7 @@ func TestNewPlatformProjectExists(t *testing.T) {
 
 	os.Chdir(tmpdir)
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"test-name", "-v", "1.0"})
+	Cc.SetArgs([]string{"test-name"})
 
 	code := exiter.WaitForExit(func() {
 		Command.Execute()
