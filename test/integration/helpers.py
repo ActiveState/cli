@@ -43,12 +43,16 @@ class IntegrationTest(unittest.TestCase):
 
         self.test_dir = test_dir
         self.project_dir = project_dir
-        self.temp_dir = self.get_temp_path()
+        self.temp_dir = self.get_temp_dir()
 
     def get_binary_name(self):
         if is_windows:
             return "state.exe"
         return "state"
+    def get_temp_dir(self):
+        dir = self.get_temp_path()
+        os.mkdir(dir)
+        return dir
 
     def get_build_path(self):
         return os.path.realpath(os.path.join(test_dir, "..", "..", "build", self.get_binary_name()))
