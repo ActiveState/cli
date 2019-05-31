@@ -144,44 +144,48 @@ else
   exit 1
 fi
 
-if [ ! -f $TMPDIR/$STATEPKG -a ! -f $TMPDIR/$TMPEXE ]; then
-  info "Determining latest version..."
-  # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
-  VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-  rm $TMPDIR/$STATEJSON
-  if [ -z "$VERSION" ]; then
-    error "Unable to retrieve the latest version number"
-    exit 1
-  fi
-  info "Fetching the latest version: $VERSION..."
-  # Fetch it.
-  $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
+if [ -f $TMPDIR/$STATEPKG ]; then
+  rm $TMPDIR/$STATEPKG
 fi
+
+if [ -f $TMPDIR/$TMPEXE ]; then
+  rm $TMPDIR/$TMPEXE
+fi
+
+info "Determining latest version..."
+# Determine the latest version to fetch.
+$FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
+VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
+rm $TMPDIR/$STATEJSON
+if [ -z "$VERSION" ]; then
+  error "Unable to retrieve the latest version number"
+  exit 1
+fi
+info "Fetching the latest version: $VERSION..."
+# Fetch it.
+$FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
 
 # Extract the State binary after verifying its checksum.
-if [ -f $TMPDIR/$STATEPKG ]; then
-  # Verify checksum.
-  info "Verifying checksum..."
-  SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
-  if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
-    error "SHA256 sum did not match:"
-    error "Expected: $SUM"
-    error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
-    error "Aborting installation."
-    exit 1
-  fi
-
-  info "Extracting $STATEPKG..."
-  if [ $OS = "windows" ]; then
-    # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
-    TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-    powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
-  else
-    tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
-  fi
-  chmod +x $TMPDIR/$TMPEXE
+# Verify checksum.
+info "Verifying checksum..."
+SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
+  error "SHA256 sum did not match:"
+  error "Expected: $SUM"
+  error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
+  error "Aborting installation."
+  exit 1
 fi
+
+info "Extracting $STATEPKG..."
+if [ $OS = "windows" ]; then
+  # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
+  TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
+  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
+else
+  tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
+fi
+chmod +x $TMPDIR/$TMPEXE
 
 # Check for existing installation. Otherwise, make the installation default to
 # /usr/local/bin if the user has write permission, or to a local bin.
