@@ -164,7 +164,11 @@ class IntegrationTest(unittest.TestCase):
         return status == "running"
 
     def wait_ready(self, timeout=30):
-        msg = "echo wait_ready_"+os.path.expanduser("~")
+        msg = "echo wait_ready_$HOME"
+        expect = "wait_ready_"+os.path.expanduser("~")
+        if is_windows:
+            msg = "echo wait_ready_%USERPROFILE%"
+            expect = "wait_ready_"+os.getenv("USERPROFILE")
         self.send(msg)
         self.expect_exact(msg, timeout=timeout)
 
