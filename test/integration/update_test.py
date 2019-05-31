@@ -55,6 +55,7 @@ class TestUpdates(helpers.IntegrationTest):
         self.spawn_command("%s update --lock" % temp_bin)
         self.expect("Version locked at")
         self.wait()
+        self.assert_version_match(True, temp_bin, "Version number should match because we locked the version")
 
 if __name__ == '__main__':
     helpers.Run()
