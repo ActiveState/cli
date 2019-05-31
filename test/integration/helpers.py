@@ -90,7 +90,9 @@ class IntegrationTest(unittest.TestCase):
         self.child.logfile_read = IntegrationLogger(cmd)
 
     def spawn_command_blocking(self, cmd):
-        args = cmd.split(" ") if is_windows else pexpect.split_command_line(cmd)
+        if is_windows:
+            cmd = cmd.replace("\\","/")
+        args = pexpect.split_command_line(cmd)
         return subprocess.check_output(args, env=self.env, cwd=self.cwd, stderr=subprocess.DEVNULL)
 
     def clear_config(self):
