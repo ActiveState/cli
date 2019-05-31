@@ -33,7 +33,7 @@ $ErrorActionPreference = "Stop"
 
 # Helpers
 
-function notify_settingchange(){
+function notifySettingChange(){
     $HWND_BROADCAST = [IntPtr] 0xffff;
     $WM_SETTINGCHANGE = 0x1a;
     $result = [UIntPtr]::Zero
@@ -329,7 +329,7 @@ function install()
             Write-Host "Adding $installDir to system PATH`n"
             # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-            notify_settingchange
+            notifySettingChange
             $msg="To start using the State tool please open a new command prompt with no admin rights.  Please close the current command shell unless you need to perform further task as an administrator.  It is not recommended to run commands as an administrator that do not require it.`n"
             Write-Host $msg
         } else {
