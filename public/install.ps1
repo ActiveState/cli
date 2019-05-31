@@ -339,7 +339,8 @@ function install()
     if ( -Not (isAdmin)){
         Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
     }
-    Write-Host "Add the State Tool to your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
+    Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
+    Write-Host "It's recommended that you close this command prompt and start a new one without admin privileges.'`n" -ForegroundColor Yellow
 }
 
 install
