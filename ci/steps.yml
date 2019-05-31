@@ -66,8 +66,16 @@ steps:
       cd ../../
       state run integration-tests
     workingDirectory: $(WORKDIR)
-    condition: eq(variables['Agent.OS'],'Linux')
-    displayName: Integration Tests
+    condition: eq(variables['Agent.OS'], 'Linux')
+    displayName: Unix Integration Tests
+  - script: |
+      set -e
+      cd test/integration
+      pip3 install -r requirements.txt
+      python3 -m unittest discover -p"*_test.p"
+    workingDirectory: $(WORKDIR)
+    condition: eq(variables['Agent.OS'], 'Windows_NT')
+    displayName: Windows Integration Tests
   - bash: rm public/install.sh
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Windows_NT')
