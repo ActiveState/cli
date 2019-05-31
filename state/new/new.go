@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/spf13/cobra"
 
@@ -47,13 +46,6 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Owner,
 		},
-		&commands.Flag{
-			Name:        "version",
-			Shorthand:   "v",
-			Description: "flag_state_new_version_description",
-			Type:        commands.TypeString,
-			StringVar:   &Flags.Version,
-		},
 	},
 
 	Arguments: []*commands.Argument{
@@ -67,9 +59,8 @@ var Command = &commands.Command{
 
 // Flags hold the flag values passed through the command line.
 var Flags struct {
-	Path    string
-	Owner   string
-	Version string
+	Path  string
+	Owner string
 }
 
 // Args hold the arg values passed through the command line.
@@ -141,21 +132,10 @@ func Execute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	// If version argument was not given, default to 1.0
-	if Flags.Version == "" {
-		Flags.Version = "1.0"
-	}
-
-	if !validateVersion(Flags.Version) {
-		print.Error(locale.T("error_state_new_version"))
-		exit(1)
-	}
-
 	// Create the project locally on disk.
 	project := projectfile.Project{
-		Name:    Args.Name,
-		Owner:   Flags.Owner,
-		Version: Flags.Version,
+		Name:  Args.Name,
+		Owner: Flags.Owner,
 	}
 	project.SetPath(filepath.Join(Flags.Path, constants.ConfigFileName))
 	project.Save()
@@ -198,13 +178,6 @@ func fetchPath() (string, *failures.Failure) {
 	}
 
 	return path, nil
-}
-
-func validateVersion(val string) bool {
-	if !regexp.MustCompile(`^\d+(\.\d+)*$`).MatchString(val) {
-		return false
-	}
-	return true
 }
 
 func createPlatformProject() *failures.Failure {
