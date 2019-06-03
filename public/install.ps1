@@ -114,9 +114,13 @@ function errorOccured($suppress) {
         if (-Not $suppress){
             Write-Warning $errMsg
         }
-        return $True
+        $True
+        $errMsg.ToString()
+        return
     }
-    return $False
+    $False
+    ""
+    return
 }
 
 function hasWritePermission([string] $path)
@@ -126,11 +130,12 @@ function hasWritePermission([string] $path)
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    $occurance = errorOccured $False
+    if( $occurance[0] -And -Not ($occurance[1].contains("already exists"))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    if(errorOccured $False){
         return $False
     }
     return $True
@@ -313,7 +318,8 @@ function install()
     } else {
         if(Test-Path $installPath -PathType Leaf) {
             Remove-Item $installPath -Erroraction 'silentlycontinue'
-            if(errorOccured){
+            $occurance = errorOccured $False
+            if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
                 exit(1)
             }
