@@ -43,25 +43,23 @@ class IntegrationTest(unittest.TestCase):
 
         self.test_dir = test_dir
         self.project_dir = project_dir
-        self.temp_dir = self.get_temp_dir()
+        self.temp_dir = self.get_temp_path()
 
     def get_binary_name(self):
         if is_windows:
             return "state.exe"
         return "state"
-    def get_temp_dir(self):
-        dir = self.get_temp_path()
-        os.mkdir(dir)
-        return dir
-
+    
     def get_build_path(self):
         return os.path.realpath(os.path.join(test_dir, "..", "..", "build", self.get_binary_name()))
     
     def get_temp_path(self):
-        return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        dir = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        os.mkdir(dir)
+        return dir
 
     def get_temp_bin(self):
-        temp_bin = self.get_temp_path() + (".exe" if is_windows else "")
+        temp_bin = os.path.join(self.get_temp_path(), self.get_binary_name())
         shutil.copy(self.get_build_path(),  temp_bin)
         return temp_bin
 

@@ -20,10 +20,8 @@ class TestUpdates(helpers.IntegrationTest):
         self.env["ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"] = "10" # Ensure auto-update has plenty of time to run
         self.env["ACTIVESTATE_CLI_UPDATE_BRANCH"] = "master" # Our own branch probably doesn't have update bits yet
 
-        self.temp_path = self.get_temp_path()
-        os.mkdir(self.temp_path)
-        shutil.copy(os.path.join(self.test_dir, "testdata", "activestate.yaml"), self.temp_path)
-        self.set_cwd(self.temp_path)
+        shutil.copy(os.path.join(self.test_dir, "testdata", "activestate.yaml"), self.temp_dir)
+        self.set_cwd(self.temp_dir)
 
     def get_version(self, temp_bin):
         output = self.spawn_command_blocking("%s --version" % temp_bin)
