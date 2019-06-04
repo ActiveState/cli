@@ -23,10 +23,10 @@ param (
 )
 
 $script:NOPROMPT = $n
-$script:TARGET = $t
-$script:STATEEXE = $f
+$script:TARGET = ($t).Trim()
+$script:STATEEXE = ($f).Trim()
 $script:STATE = $f.Substring(0, $f.IndexOf("."))
-$script:BRANCH = $b
+$script:BRANCH = ($b).Trim()
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
@@ -193,7 +193,7 @@ function promptInstallDir()
     $installDir = ""
     $defaultDir = getDefaultInstallDir
     while($True){
-        $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
+        $installDir = (Read-Host "Please enter the installation directory [$defaultDir]").Trim()
         if ($installDir -eq ""){
             $installDir = $defaultDir
         }
