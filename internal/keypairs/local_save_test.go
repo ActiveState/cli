@@ -5,10 +5,11 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairLocalSaveTestSuite struct {
@@ -47,6 +48,18 @@ func (suite *KeypairLocalSaveTestSuite) TestSaveWithDefaults_Success() {
 	if runtime.GOOS != "windows" {
 		suite.Equal(os.FileMode(0600), fileInfo.Mode())
 	}
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	kp, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().Nil(fail)
+
+	fail = keypairs.SaveWithDefaults(kp)
+	suite.Require().NotNil(fail)
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {

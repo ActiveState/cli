@@ -1,17 +1,18 @@
 package authentication
 
 import (
+	"os"
 	"testing"
 
-	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 )
 
 func setup(t *testing.T) {
@@ -37,7 +38,7 @@ func TestAuth(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("POST", "/apikeys")
 	httpmock.Register("GET", "/apikeys")
-	httpmock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 
 	credentials := &mono_models.Credentials{
 		Username: user.Username,
@@ -52,11 +53,27 @@ func TestAuth(t *testing.T) {
 
 	Reset()
 	auth = New()
-	assert.NotNil(t, auth.Authenticated(), "Authentication is still persisted for this session")
+	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 
 	auth = New()
 	fail = auth.AuthenticateWithUser(credentials.Username, credentials.Password, "")
-	assert.NoError(t, fail.ToError(), "Can Authenticate Again")
+	assert.NoError(t, fail.ToError(), "Authentication should work again")
+}
+
+func TestAuthAPIKeyOverride(t *testing.T) {
+	setup(t)
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+
+	os.Setenv(constants.APIKeyEnvVarName, "testSuccess")
+	defer os.Unsetenv(constants.APIKeyEnvVarName)
+	auth := New()
+	fail := auth.Authenticate()
+	assert.NoError(t, fail.ToError(), "Authentication by user-defined token should not error")
+	assert.True(t, auth.Authenticated(), "Authentication should still be valid")
 }
 
 func TestPersist(t *testing.T) {
@@ -93,7 +110,8 @@ func TestAuthInvalidToken(t *testing.T) {
 	viper.Set("apiToken", "testFailure")
 	auth := New()
 	fail := auth.Authenticate()
-	assert.Error(t, fail.ToError(), "Should not have authenticated")
+	require.NotNil(t, fail)
+	assert.Truef(t, fail.Type.Matches(FailNoCredentials), "unexpected failure type: %v", fail)
 	assert.Empty(t, viper.GetString("apiToken"), "", "apiToken should have cleared")
 }
 

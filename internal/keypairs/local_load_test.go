@@ -6,10 +6,11 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairLocalLoadTestSuite struct {
@@ -95,6 +96,24 @@ func (suite *KeypairLocalLoadTestSuite) TestFileFound_WithDefaults() {
 
 	kp, failure := keypairs.LoadWithDefaults()
 	suite.Require().Nil(failure)
+	suite.NotNil(kp)
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestLoadWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "nonce")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	kp, fail := keypairs.LoadWithDefaults()
+	suite.Truef(fail.Type.Matches(keypairs.FailKeypairParse), "unexpected failure type: %v", fail)
+	suite.Nil(kp)
+
+	kprsa, fail := keypairs.GenerateRSA(keypairs.MinimumRSABitLength)
+	suite.Require().NoError(fail.ToError())
+
+	os.Setenv(constants.PrivateKeyEnvVarName, kprsa.EncodePrivateKey())
+
+	kp, fail = keypairs.LoadWithDefaults()
+	suite.Require().NoError(fail.ToError())
 	suite.NotNil(kp)
 }
 

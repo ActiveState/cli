@@ -17,5 +17,9 @@ ignored = ["github.com/dave/jennifer"]
   name = "github.com/ActiveState/go-colortext"
 
 [[constraint]]
-  branch = "fix-windows-tests"
+  branch = "release-1.4.2"
   name = "github.com/ActiveState/survey"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/bndr/gotabulate"

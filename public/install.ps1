@@ -32,6 +32,27 @@ $script:BRANCH = $b
 $ErrorActionPreference = "Stop"
 
 # Helpers
+
+function notifySettingChange(){
+    $HWND_BROADCAST = [IntPtr] 0xffff;
+    $WM_SETTINGCHANGE = 0x1a;
+    $result = [UIntPtr]::Zero
+
+    if (-not ("Win32.NativeMethods" -as [Type]))
+    {
+        # import sendmessagetimeout from win32
+        Add-Type -Namespace Win32 -Name NativeMethods -MemberDefinition @"
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
+        uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
+"@
+    }
+    # notify all windows of environment block change
+    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result);
+
+}
+
 function isInRegistry($path){
     $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
     $inReg = $False
@@ -61,7 +82,7 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]"
+    $response = Read-Host -Prompt $msg" [y/N]`n"
 
     if ( -Not ($response.ToLower() -eq "y") )
     {
@@ -72,7 +93,7 @@ function promptYN([string]$msg)
 
 function promptYNQ([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N/q]"
+    $response = Read-Host -Prompt $msg" [y/N/q]`n"
 
     if ($response.ToLower() -eq "q")
     {
@@ -283,11 +304,11 @@ function install()
         $installDir = getDefaultInstallDir
     }
     # Install binary
-    Write-Host "Installing to '$installDir'..." -ForegroundColor Yellow
+    Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path $installDir)) {
-        Write-host "NOTE: $installDir will be created"
+        Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
         if(Test-Path $installPath -PathType Leaf) {
@@ -302,25 +323,26 @@ function install()
 
     # Path setup
     $newPath = "$installDir;$env:Path"
-    if( -Not (isInRegistry $installDir) ){
-        if ( -Not (isAdmin)) {
-            Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
-        } elseif ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
-            Write-Host "Updating environment..."
-            Write-Host "Adding $installDir to system and current session PATH"
+    if( -Not (isInRegistry $installDir) -And (isAdmin)){
+        if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
+            Write-Host "Updating environment...`n"
+            Write-Host "Adding $installDir to system PATH`n"
             # This only sets it in the registry and it will NOT be accessible in the current session
             Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-            $Env:Path = $newPath
-            Write-Host "You may now start using the '$script:STATE' program"
+            notifySettingChange
+            $msg="To start using the State tool please open a new command prompt with no admin rights.  Please close the current command shell unless you need to perform further task as an administrator.  It is not recommended to run commands as an administrator that do not require it.`n"
+            Write-Host $msg
+        } else {
+            Write-Host "Manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
         }
+    } 
+    if ( -Not (isAdmin)){
+        Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+    } else {
+        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
-    if( -Not (isOnPath $installDir)) {
-        # This only sets it in the current session
-        $Env:Path = $newPath
-        Write-Host "'$installDir' appended to PATH for current session`n" -ForegroundColor Yellow
-    }
+    Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
 }
 
 install
 Write-Host "Installation complete"
-Write-Host "You may now start using the '$script:STATE' program"

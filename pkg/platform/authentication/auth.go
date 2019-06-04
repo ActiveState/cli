@@ -3,6 +3,11 @@ package authentication
 import (
 	"os"
 
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,11 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
-	"github.com/spf13/viper"
-
-	httptransport "github.com/go-openapi/runtime/client"
 )
 
 var (
@@ -91,10 +91,10 @@ func Init() *Auth {
 func New() *Auth {
 	auth := &Auth{}
 
-	apiToken := viper.GetString("apiToken")
-	if apiToken != "" {
+	if availableAPIToken() != "" {
 		auth.Authenticate()
 	}
+
 	return auth
 }
 
@@ -122,17 +122,12 @@ func (s *Auth) Authenticate() *failures.Failure {
 		return nil
 	}
 
-	apiToken := viper.GetString("apiToken")
-	if apiToken != "" {
-		fail := s.AuthenticateWithToken(apiToken)
-		if fail != nil {
-			return fail
-		}
-	} else {
-		return FailNoCredentials.New(locale.T("err_no_credentials"))
+	apiToken := availableAPIToken()
+	if apiToken == "" {
+		return FailNoCredentials.New("err_no_credentials")
 	}
 
-	return nil
+	return s.AuthenticateWithToken(apiToken)
 }
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
@@ -249,4 +244,11 @@ func (s *Auth) CreateToken() *failures.Failure {
 	viper.Set("apiToken", token)
 
 	return nil
+}
+
+func availableAPIToken() string {
+	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+		return tkn
+	}
+	return viper.GetString("apiToken")
 }

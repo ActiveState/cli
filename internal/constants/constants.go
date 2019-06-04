@@ -48,6 +48,12 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
 
+// PrivateKeyEnvVarName is the name of the environment variable that specifies the private key file to use for decrypting secrets (overriding user config).
+const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
+
+// APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
+const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 
@@ -66,8 +72,8 @@ const DefaultNamespaceDomain = "github.com"
 // AnalyticsTrackingID is our Google Analytics tracking ID
 const AnalyticsTrackingID = "UA-118120158-1"
 
-// APITokenName is the name we give our api token
-const APITokenName = "activestate-platform-cli"
+// APITokenNamePrefix is the name we give our api token
+const APITokenNamePrefix = "activestate-platform-cli"
 
 // KeypairLocalFileName is the name of the file (sans extension) that will hold the user's unencrypted
 // private key in their config dir.

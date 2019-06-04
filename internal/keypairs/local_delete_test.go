@@ -1,13 +1,15 @@
 package keypairs_test
 
 import (
+	"os"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairLocalDeleteTestSuite struct {
@@ -47,6 +49,15 @@ func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	} else {
 		suite.Regexp("The system cannot find the file specified", err.Error())
 	}
+}
+
+func (suite *KeypairLocalLoadTestSuite) TestDeleteWithDefaults_Override() {
+	os.Setenv(constants.PrivateKeyEnvVarName, "some val")
+	defer os.Unsetenv(constants.PrivateKeyEnvVarName)
+
+	fail := keypairs.DeleteWithDefaults()
+	suite.Require().NotNil(fail)
+	suite.Truef(fail.Type.Matches(keypairs.FailHasOverride), "unexpected failure type: %v", fail)
 }
 
 func Test_KeypairLocalDelete_TestSuite(t *testing.T) {

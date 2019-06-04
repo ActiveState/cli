@@ -8,10 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -22,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	"github.com/stretchr/testify/suite"
 )
 
 type LoginWithKeypairTestSuite struct {
@@ -56,7 +56,7 @@ func (suite *LoginWithKeypairTestSuite) AfterTest(suiteName, testName string) {
 func (suite *LoginWithKeypairTestSuite) mockSuccessfulLogin() {
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/apikeys")
-	suite.platformMock.Register("DELETE", "/apikeys/"+constants.APITokenName)
+	suite.platformMock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	suite.platformMock.Register("POST", "/apikeys")
 }
 

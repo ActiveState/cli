@@ -167,8 +167,15 @@ func getRcFile(v SubShell) (*os.File, error) {
 func Get() (SubShell, error) {
 	var T = locale.T
 	binary := os.Getenv("SHELL")
-	if binary == "" && runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
+	if binary == "" {
+		if runtime.GOOS == "windows" {
+			binary = os.Getenv("ComSpec")
+			if binary == "" {
+				binary = "cmd.exe"
+			}
+		} else {
+			binary = "bash"
+		}
 	}
 
 	logging.Debug("Detected SHELL: %s", binary)
