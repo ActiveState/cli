@@ -32,7 +32,6 @@ $script:BRANCH = $b
 $ErrorActionPreference = "Stop"
 
 # Helpers
-
 function notifySettingChange(){
     $HWND_BROADCAST = [IntPtr] 0xffff;
     $WM_SETTINGCHANGE = 0x1a;
@@ -114,13 +113,9 @@ function errorOccured($suppress) {
         if (-Not $suppress){
             Write-Warning $errMsg
         }
-        $True
-        $errMsg.ToString()
-        return
+        return $True, $errMsg.ToString()
     }
-    $False
-    ""
-    return
+    return $False, ""
 }
 
 function hasWritePermission([string] $path)
@@ -130,12 +125,12 @@ function hasWritePermission([string] $path)
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    $occurance = errorOccured $False
+    $occurance = errorOccured $True
     if( $occurance[0] -And -Not ($occurance[1].contains("already exists"))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if(errorOccured $False){
+    if((errorOccured $False)[0]){
         return $False
     }
     return $True
