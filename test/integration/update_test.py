@@ -20,10 +20,8 @@ class TestUpdates(helpers.IntegrationTest):
         self.env["ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"] = "10" # Ensure auto-update has plenty of time to run
         self.env["ACTIVESTATE_CLI_UPDATE_BRANCH"] = "master" # Our own branch probably doesn't have update bits yet
 
-        self.temp_path = self.get_temp_path()
-        os.mkdir(self.temp_path)
-        shutil.copy(os.path.join(self.test_dir, "testdata", "activestate.yaml"), self.temp_path)
-        self.set_cwd(self.temp_path)
+        shutil.copy(os.path.join(self.test_dir, "testdata", "activestate.yaml"), self.temp_dir)
+        self.set_cwd(self.temp_dir)
 
     def get_version(self, temp_bin):
         output = self.spawn_command_blocking("%s --version" % temp_bin)
@@ -32,14 +30,6 @@ class TestUpdates(helpers.IntegrationTest):
         if match:
             return match.group(1)
 
-    def get_temp_path(self):
-        return os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
-
-    def get_temp_bin(self):
-        temp_bin = self.get_temp_path()
-        shutil.copy(self.get_build_path(), temp_bin)
-        return temp_bin
-
     def assert_version_match(self, same, temp_bin, message):
         assertFn = self.assertEqual if same else self.assertNotEqual
         assertFn(self.get_version(temp_bin), self.constants["Version"], message)
@@ -47,7 +37,7 @@ class TestUpdates(helpers.IntegrationTest):
     def test_auto_update_works(self):
         temp_bin = self.get_temp_bin()
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "false"
-        self.assert_version_match(False, temp_bin, "Version number should not match because auto-update should have occured")
+        self.assert_version_match(False, temp_bin, "Version number should not match because auto-update should have occurred")
 
     def test_manual_update_works(self):
         temp_bin = self.get_temp_bin()
@@ -63,9 +53,7 @@ class TestUpdates(helpers.IntegrationTest):
         self.spawn_command("%s update --lock" % temp_bin)
         self.expect("Version locked at")
         self.wait()
-
         self.assert_version_match(True, temp_bin, "Version number should match because we locked the version")
-
 
 if __name__ == '__main__':
     helpers.Run()

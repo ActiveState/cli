@@ -6,10 +6,6 @@ import shutil
 
 import helpers
 
-test_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-project_dir = os.path.realpath(os.path.join(test_dir, "..", ".."))
-
-
 class TestUpdates(helpers.IntegrationTest):
 
     def __init__(self, *args, **kwargs):
@@ -32,7 +28,7 @@ class TestUpdates(helpers.IntegrationTest):
         return ""
 
     def unarchive_cmd(self, platform):
-        archive_path = os.path.join(project_dir,
+        archive_path = os.path.join(self.project_dir,
                                     "public",
                                     "update",
                                     self.constants["BranchName"],
@@ -44,11 +40,11 @@ class TestUpdates(helpers.IntegrationTest):
                     "-nologo",
                     "-noprofile",
                     "-command",
-                    "\"Expand-Archive -LiteralPath '{0}' -DestinationPath '{1}'\"".format(archive_path, test_dir)]
+                    "Expand-Archive -Path '{0}' -DestinationPath '{1}'".format(archive_path, self.temp_dir)]
         else:
             return ["tar",
                     "-C",
-                    test_dir,
+                    self.temp_dir,
                     "-xf",
                     archive_path]
 
@@ -61,7 +57,7 @@ class TestUpdates(helpers.IntegrationTest):
         self.run_unarchive_cmd()
         platform = self.get_platform()
         
-        bin = os.path.join(test_dir, platform+self.get_bin_ext())
+        bin = os.path.join(self.temp_dir, platform+self.get_bin_ext())
         cmd = "{0} --version".format(bin)
         self.spawn_command(cmd)
         self.expect(self.constants["BuildNumber"])

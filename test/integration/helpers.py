@@ -11,6 +11,7 @@ import requests
 from pexpect.popen_spawn import PopenSpawn
 import psutil
 import subprocess
+import signal
 import re
 
 is_windows = os.name == 'nt'
@@ -42,14 +43,25 @@ class IntegrationTest(unittest.TestCase):
 
         self.test_dir = test_dir
         self.project_dir = project_dir
+        self.temp_dir = self.get_temp_path()
 
     def get_binary_name(self):
         if is_windows:
             return "state.exe"
         return "state"
-
+    
     def get_build_path(self):
         return os.path.realpath(os.path.join(test_dir, "..", "..", "build", self.get_binary_name()))
+    
+    def get_temp_path(self):
+        dir = os.path.join(tempfile.gettempdir(), uuid.uuid4().hex)
+        os.mkdir(dir)
+        return dir
+
+    def get_temp_bin(self):
+        temp_bin = os.path.join(self.get_temp_path(), self.get_binary_name())
+        shutil.copy(self.get_build_path(),  temp_bin)
+        return temp_bin
 
     def setUp(self):
         # Disable resource warnings because pexpect doesn't seem to clean up its threads properly and that's not our problem
@@ -80,6 +92,8 @@ class IntegrationTest(unittest.TestCase):
         self.child.logfile_read = IntegrationLogger(cmd)
 
     def spawn_command_blocking(self, cmd):
+        if is_windows:
+            cmd = cmd.replace("\\","/")
         args = pexpect.split_command_line(cmd)
         return subprocess.check_output(args, env=self.env, cwd=self.cwd, stderr=subprocess.DEVNULL)
 
@@ -88,6 +102,8 @@ class IntegrationTest(unittest.TestCase):
 
     def clear_cache(self):
         cache_dir = os.path.expanduser("~/.cache/activestate")
+        if is_windows:
+            cache_dir = os.path.join(os.getenv("LOCALAPPDATA"),"activestate")
         if os.path.isdir(cache_dir):
             shutil.rmtree(cache_dir)
 
@@ -132,7 +148,10 @@ class IntegrationTest(unittest.TestCase):
 
     def send_quit(self):
         if self.is_running():
-            os.kill(self.pid(), signal.SIGQUIT)
+            if is_windows:
+                self.child.proc.terminate()
+            else:
+                os.kill(self.pid(), signal.NSIG)
         if not is_windows:
             self.child.close()
 
@@ -147,17 +166,24 @@ class IntegrationTest(unittest.TestCase):
         return status == "running"
 
     def wait_ready(self, timeout=30):
-        self.send("echo wait_ready_$HOME")
-        self.expect_exact("wait_ready_%s" % os.path.expanduser("~"), timeout=timeout)
+        msg = "echo wait_ready_$HOME"
+        expect = "wait_ready_"+os.path.expanduser("~")
+        if is_windows:
+            msg = "echo wait_ready_%USERPROFILE%"
+            expect = "wait_ready_"+os.getenv("USERPROFILE")
+        self.send(msg)
+        self.expect_exact(msg, timeout=timeout)
 
     def wait(self, code=0, timeout=30):
         try:
-            with wait_for_timeout(seconds=timeout):
-                result = self.child.wait()
+            if is_windows:
+                result = _win_wait_for_timeout(seconds=timeout, func=self.child.wait).wait()
+            else:
+                with _unix_wait_for_timeout(seconds=timeout):
+                    result = self.child.wait()
         except TimeoutError:
             self.fail("timeout while waiting, output:\n---\n%s\n---" % (self.child.logfile_read.logged))
             return
-
         result = result or 0
         self.assertEqual(code, result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
         return result
@@ -180,10 +206,30 @@ class IntegrationLogger:
     def flush(self):
         self.logfile.flush()
 
-class wait_for_timeout:
+class _win_wait_for_timeout:
+    from multiprocessing.pool import ThreadPool
+    pool = ThreadPool(processes=1)
+    import time
+    def __init__(self, seconds=1, error_message='Timeout', func=lambda:1, args=None):
+        self.seconds = seconds
+        self.func = func
+        self.result = None
+        self.error_message = error_message
+
+    def wait(self):
+        def callback(out):
+            self.result = out
+        self.pool.apply_async(self.func, callback=callback)
+        time.sleep(self.seconds)
+        if self.result is None:
+            raise TimeoutError(self.error_message)
+        return self.result
+
+class _unix_wait_for_timeout:
     def __init__(self, seconds=1, error_message='Timeout'):
         self.seconds = seconds
         self.error_message = error_message
+
     def handle_timeout(self):
         raise TimeoutError(self.error_message)
     def __enter__(self):
