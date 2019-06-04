@@ -32,7 +32,6 @@ $script:BRANCH = $b
 $ErrorActionPreference = "Stop"
 
 # Helpers
-
 function notifySettingChange(){
     $HWND_BROADCAST = [IntPtr] 0xffff;
     $WM_SETTINGCHANGE = 0x1a;
@@ -114,9 +113,9 @@ function errorOccured($suppress) {
         if (-Not $suppress){
             Write-Warning $errMsg
         }
-        return $True
+        return $True, $errMsg
     }
-    return $False
+    return $False, ""
 }
 
 function hasWritePermission([string] $path)
@@ -126,11 +125,13 @@ function hasWritePermission([string] $path)
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    $occurance = errorOccured $True
+    #  If an error occurred and it's NOT and IOExpction error where the file already exists
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    if((errorOccured $True)[0]){
         return $False
     }
     return $True
@@ -313,7 +314,8 @@ function install()
     } else {
         if(Test-Path $installPath -PathType Leaf) {
             Remove-Item $installPath -Erroraction 'silentlycontinue'
-            if(errorOccured){
+            $occurance = errorOccured $False
+            if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
                 exit(1)
             }
