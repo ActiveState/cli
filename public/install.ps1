@@ -113,7 +113,7 @@ function errorOccured($suppress) {
         if (-Not $suppress){
             Write-Warning $errMsg
         }
-        return $True, $errMsg.ToString()
+        return $True, $errMsg
     }
     return $False, ""
 }
@@ -126,11 +126,12 @@ function hasWritePermission([string] $path)
     $thefile = "activestate-perms"
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
     $occurance = errorOccured $True
-    if( $occurance[0] -And -Not ($occurance[1].contains("already exists"))){
+    #  If an error occurred and it's NOT and IOExpction error where the file already exists
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if((errorOccured $False)[0]){
+    if((errorOccured $True)[0]){
         return $False
     }
     return $True
