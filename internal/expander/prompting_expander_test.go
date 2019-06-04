@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/expander"
 	expand "github.com/ActiveState/cli/internal/expander"
@@ -21,8 +24,6 @@ import (
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
 )
 
 type VarPromptingExpanderTestSuite struct {
@@ -89,7 +90,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 	suite.Zero(expandedValue)
 }
 
-func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName, expectedValue string, expectedIsProject, expectedIsUser bool) {
+func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName, expectedValue string) {
 	var userChanges []*secretsModels.UserSecretChange
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
@@ -110,13 +111,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	change := userChanges[0]
 	suite.Equal(secretName, *change.Name)
-	suite.Equal(expectedIsUser, *change.IsUser)
+	suite.Equal(false, *change.IsUser)
 
-	if expectedIsProject {
-		suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020003"), change.ProjectID)
-	} else {
-		suite.Zero(change.ProjectID)
-	}
+	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020003"), change.ProjectID)
 
 	kp, _ := keypairs.LoadWithDefaults()
 	decryptedBytes, failure := kp.DecodeAndDecrypt(*change.Value)
@@ -124,20 +121,8 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 	suite.Equal(expectedValue, string(decryptedBytes))
 }
 
-func (suite *VarPromptingExpanderTestSuite) TestSavesOrgLevelSecret() {
-	suite.assertExpansionSaveSuccess("org-secret", "amazing", false, false)
-}
-
-func (suite *VarPromptingExpanderTestSuite) TestSavesProjLevelSecret() {
-	suite.assertExpansionSaveSuccess("proj-secret", "more amazing", true, false)
-}
-
-func (suite *VarPromptingExpanderTestSuite) TestSavesUserLevelSecret() {
-	suite.assertExpansionSaveSuccess("user-secret", "user amazing", false, true)
-}
-
-func (suite *VarPromptingExpanderTestSuite) TestSavesUserProjLevelSecret() {
-	suite.assertExpansionSaveSuccess("user-proj-secret", "so amazing", true, true)
+func (suite *VarPromptingExpanderTestSuite) TestSavesSecret() {
+	suite.assertExpansionSaveSuccess("proj-secret", "more amazing")
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {

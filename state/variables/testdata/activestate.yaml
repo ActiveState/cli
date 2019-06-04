@@ -31,41 +31,6 @@ languages:
         version: "2.*"
         build:
           override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
-variables:
-  - name: DEBUG
-    description: "debug"
-    value: true
-  - name: PYTHONPATH
-    description: "pythonpath"
-    value: '%projectDir%/src:%projectDir%/tests'
-    constraints:
-        environment: dev,qa
-  - name: PYTHONPATH
-    description: "pythonpath"
-    value: '%projectDir%/src:%projectDir%/tests'
-  - name: org-secret
-    description: "org secret"
-    value:
-      store: organization
-      share: organization
-  - name: proj-secret
-    description: "proj secret"
-    value:
-      store: project
-      share: organization
-  - name: user-org-secret
-    description: "user org secret"
-    value:
-      store: organization
-  - name: user-proj-secret
-    description: "user proj secret"
-    value:
-      store: project
-  - name: undefined-org-secret
-    description: "undefined org secret"
-    value:
-      store: organization
-      share: organization
 hooks:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

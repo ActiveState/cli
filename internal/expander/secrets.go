@@ -106,8 +106,8 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 }
 
 // FetchSecret retrieves the secret associated with a variable
-func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *failures.Failure) {
-	if knownValue, exists := e.cachedSecrets[variable.Name]; exists {
+func (e *SecretExpander) FetchSecret(name string) (string, *failures.Failure) {
+	if knownValue, exists := e.cachedSecrets[name]; exists {
 		return knownValue, nil
 	}
 
@@ -116,12 +116,12 @@ func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *f
 		return "", nil
 	}
 
-	userSecret, fail := e.FindSecret(variable)
+	userSecret, fail := e.FindSecret(name)
 	if fail != nil {
 		return "", fail
 	}
 	if userSecret == nil {
-		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", variable.Name)
+		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
 	}
 
 	decrBytes, fail := keypair.DecodeAndDecrypt(*userSecret.Value)
@@ -129,12 +129,12 @@ func (e *SecretExpander) FetchSecret(variable *projectfile.Variable) (string, *f
 		return "", fail
 	}
 
-	e.cachedSecrets[variable.Name] = string(decrBytes)
-	return e.cachedSecrets[variable.Name], nil
+	e.cachedSecrets[name] = string(decrBytes)
+	return e.cachedSecrets[name], nil
 }
 
 // FindSecret will find the secret appropriate for the current project
-func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsModels.UserSecret, *failures.Failure) {
+func (e *SecretExpander) FindSecret(name string) (*secretsModels.UserSecret, *failures.Failure) {
 	secrets, fail := e.Secrets()
 	if fail != nil {
 		return nil, fail
@@ -146,15 +146,15 @@ func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsMod
 	}
 
 	projectID := project.ProjectID.String()
-	variableRequiresUser := variable.Value.Share == nil
-	variableRequiresProject := variable.Value.Store == nil || *variable.Value.Store == projectfile.VariableStoreProject
+	variableRequiresUser := false
+	variableRequiresProject := true
 
 	for _, userSecret := range secrets {
 		secretProjectID := userSecret.ProjectID.String()
 		secretRequiresUser := userSecret.IsUser != nil && *userSecret.IsUser
 		secretRequiresProject := secretProjectID != ""
 
-		nameMatches := strings.EqualFold(*userSecret.Name, variable.Name)
+		nameMatches := strings.EqualFold(*userSecret.Name, name)
 		projectMatches := (!variableRequiresProject || secretProjectID == projectID)
 
 		// shareMatches and storeMatches show a detachment from the data due to the secrets-svc api needing a refactor
@@ -171,10 +171,10 @@ func (e *SecretExpander) FindSecret(variable *projectfile.Variable) (*secretsMod
 }
 
 // SecretFunc defines what our expander functions will be returning
-type SecretFunc func(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure)
+type SecretFunc func(name string, projectFile *projectfile.Project) (string, *failures.Failure)
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile
 	}
@@ -184,16 +184,16 @@ func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *pro
 		return "", fail
 	}
 
-	if knownValue, exists := e.cachedSecrets[variable.Name]; exists {
+	if knownValue, exists := e.cachedSecrets[name]; exists {
 		return knownValue, nil
 	}
 
-	userSecret, fail := e.FindSecret(variable)
+	userSecret, fail := e.FindSecret(name)
 	if fail != nil {
 		return "", fail
 	}
 	if userSecret == nil {
-		return "", secretsapi.FailUserSecretNotFound.New("variables_expand_err_not_found", variable.Name)
+		return "", secretsapi.FailUserSecretNotFound.New("variables_expand_err_not_found", name)
 	}
 
 	decrBytes, fail := keypair.DecodeAndDecrypt(*userSecret.Value)
@@ -202,12 +202,12 @@ func (e *SecretExpander) Expand(variable *projectfile.Variable, projectFile *pro
 	}
 
 	secretValue := string(decrBytes)
-	e.cachedSecrets[variable.Name] = secretValue
+	e.cachedSecrets[name] = secretValue
 	return secretValue, nil
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) ExpandWithPrompt(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
 	if e.projectFile == nil {
 		e.projectFile = projectFile
 	}
@@ -217,10 +217,9 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 		return "", fail
 	}
 
-	value, fail := e.FetchSecret(variable)
+	value, fail := e.FetchSecret(name)
 	if fail != nil && fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-		// TODO: remove scope prop from locale.Tr
-		if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", "SCOPE", variable.Name)); fail != nil {
+		if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
 			return "", FailInputSecretValue.New("variables_err_value_prompt")
 		}
 
@@ -233,11 +232,7 @@ func (e *SecretExpander) ExpandWithPrompt(variable *projectfile.Variable, projec
 			return "", fail
 		}
 
-		if variable.Value.Store != nil && *variable.Value.Store == projectfile.VariableStoreProject {
-			fail = secrets.Save(e.secretsClient, keypair, org, project, variable.Value.Share == nil, variable.Name, value)
-		} else {
-			fail = secrets.Save(e.secretsClient, keypair, org, nil, variable.Value.Share == nil, variable.Name, value)
-		}
+		fail = secrets.Save(e.secretsClient, keypair, org, project, false, name, value)
 
 		if fail != nil {
 			return "", fail

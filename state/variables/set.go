@@ -1,11 +1,12 @@
 package variables
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 func buildSetCommand(cmd *Command) *commands.Command {
@@ -33,17 +34,11 @@ func buildSetCommand(cmd *Command) *commands.Command {
 
 // ExecuteSet processes the `secrets set` command.
 func (cmd *Command) ExecuteSet(_ *cobra.Command, args []string) {
-	currentProject := project.Get()
-	var failure *failures.Failure
+	prj := project.Get()
+	variable := prj.InitVariable(cmd.Args.Name)
 
-	variable := currentProject.VariableByName(cmd.Args.Name)
-	if variable == nil {
-		failure = failures.FailCmd.New(locale.Tr("variable_err_undefined", cmd.Args.Name))
-	} else {
-		failure = variable.Save(cmd.Args.Value)
-	}
-
-	if failure != nil {
-		failures.Handle(failure, locale.T("variables_err"))
+	fail := variable.Save(cmd.Args.Value)
+	if fail != nil {
+		failures.Handle(fail, locale.T("variables_err"))
 	}
 }

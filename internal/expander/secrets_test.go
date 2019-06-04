@@ -36,53 +36,6 @@ func loadSecretsProject() (*projectfile.Project, error) {
 	contents := strings.TrimSpace(`
 name: SecretProject
 owner: SecretOrg
-variables:
-  - name: undefined-secret
-    value:
-      store: organization
-      share: organization
-  - name: org-secret
-    value:
-      store: organization
-      share: organization
-  - name: proj-secret
-    value:
-      store: project
-      share: organization
-  - name: user-secret
-    value:
-      store: organization
-  - name: user-proj-secret
-    value:
-      store: project
-  - name: org-secret-with-proj-value
-    value:
-      store: organization
-      share: organization
-  - name: proj-secret-with-user-value
-    value:
-      store: project
-  - name: user-secret-with-user-proj-value
-    value:
-      store: organization
-  - name: proj-secret-only-org-available
-    value:
-      store: project
-      share: organization
-  - name: user-secret-only-proj-available
-    value:
-      store: project
-  - name: user-proj-secret-only-user-available
-    value:
-      store: project
-  - name: bad-base64-encoded-secret
-    value:
-      store: organization
-      share: organization
-  - name: invalid-encryption-secret
-    value:
-      store: organization
-      share: organization
 `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -148,37 +101,6 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderTestSuite) TestSecretSpecNotDefinedInProject() {
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-	// secret is in the database, but not defined in the project
-	expanderFn := expander.NewVarExpander(suite.secretsClient)
-	value, failure := expanderFn("foo", suite.projectFile)
-	suite.True(failure.Type.Matches(expander.FailVarNotFound))
-	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestOrgNotFound() {
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 404)
-
-	expanderFn := expander.NewVarExpander(suite.secretsClient)
-	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.True(failure.Type.Matches(api.FailOrganizationNotFound))
-	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestProjectNotFound() {
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 404)
-
-	expanderFn := expander.NewVarExpander(suite.secretsClient)
-	value, failure := expanderFn("undefined-secret", suite.projectFile)
-	suite.True(failure.Type.Matches(api.FailProjectNotFound))
-	suite.Zero(value)
-}
-
 func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
 	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
 }
@@ -192,42 +114,9 @@ func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
 	suite.assertExpansionFailure("undefined-secret", secretsapi.FailUserSecretNotFound)
 }
 
-func (suite *SecretsExpanderTestSuite) TestOrgSecret() {
-	suite.assertExpansionSuccess("org-secret", "amazing")
-}
-
 func (suite *SecretsExpanderTestSuite) TestProjectSecret() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
 	suite.assertExpansionSuccess("proj-secret", "proj-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestUserSecret() {
-	// NOTE the user_secrets response has org, project, and user scoped secrets with same name
-	suite.assertExpansionSuccess("user-secret", "user-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestUserProjectSecret() {
-	// NOTE the user_secrets response has org, project, user, and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestOrgSecret_DisregardOverrides() {
-	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("org-secret-with-proj-value", "org-value")
-	// NOTE the user_secrets response has project and user scoped secrets with same name
-	suite.assertExpansionFailure("proj-secret-with-user-value", secretsapi.FailUserSecretNotFound)
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-secret-with-user-proj-value", "user-value")
-}
-
-func (suite *SecretsExpanderTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("proj-secret-only-org-available", secretsapi.FailUserSecretNotFound)
-}
-
-func (suite *SecretsExpanderTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionFailure("user-secret-only-proj-available", secretsapi.FailUserSecretNotFound)
 }
 
 func Test_SecretsExpander_TestSuite(t *testing.T) {

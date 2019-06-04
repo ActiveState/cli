@@ -1,10 +1,12 @@
 name: cli
 owner: ActiveState
 namespace: github.com/ActiveState/cli
-variables:
-  - name: ENV
+scripts: 
+  - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
+      CLI_BUILDFLAGS=-ldflags="-s -w"
+      CLI_PKGS=./state
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
@@ -12,17 +14,10 @@ variables:
       if [ ! -z "$COMSPEC" ]; then
         BUILD_NAME="state.exe"
       fi
-  - name: CLI_BUILDFLAGS
-    description: The buildflags passed to `go build` commands
-    value: -ldflags="-s -w"
-  - name: CLI_PKGS
-    description: The files we're building
-    value: ./state
-scripts: &scripts
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
-      $variables.ENV
+      $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
@@ -96,7 +91,7 @@ scripts: &scripts
     description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
     standalone: true
     value: |
-      $variables.ENV
+      $scripts.SET_ENV
       if [ ! -f "build/$BUILD_NAME" ]; then
         echo "build/$BUILD_NAME does not exist, you need to run 'state run build' first"
         exit 1
@@ -112,11 +107,10 @@ scripts: &scripts
     value: |
       $scripts.build
       build/state --help
-commands: *scripts # temporary alias for backwards compatibility
-events: &events
+events: 
   - name: ACTIVATE
     value: |
-      $variables.ENV
+      $scripts.SET_ENV
       $scripts.preprocess
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
@@ -127,4 +121,3 @@ events: &events
         echo "swagger was not found on your PATH, installing .."
         go get -u github.com/go-swagger/go-swagger/cmd/swagger
       fi
-hooks: *events # temporary alias for backwards compatibility

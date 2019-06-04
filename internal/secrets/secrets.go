@@ -9,6 +9,7 @@ import (
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Save will add a new secret for this user or update an existing one.
@@ -105,4 +106,36 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 		return nil, failure
 	}
 	return kp, nil
+}
+
+// UserSecrets fetches the secrets for the current user relevant to the given project
+func UserSecrets(secretsClient *secretsapi.Client, prj *projectfile.Project) ([]*secretsModels.UserSecret, *failures.Failure) {
+	result := []*secretsModels.UserSecret{}
+
+	pjm, fail := model.FetchProjectByName(prj.Owner, prj.Name)
+	if fail != nil {
+		return result, fail
+	}
+
+	org, fail := model.FetchOrgByURLName(prj.Owner)
+	if fail != nil {
+		return result, fail
+	}
+
+	secrets, fail := secretsapi.FetchAll(secretsClient, org)
+	if fail != nil {
+		return result, fail
+	}
+
+	for _, secret := range secrets {
+		if secret.ProjectID != pjm.ProjectID {
+			continue // We only want secrets belonging to our project
+		}
+		if secret.IsUser != nil && *secret.IsUser {
+			continue // Not supported currently
+		}
+		result = append(result, secret)
+	}
+
+	return result, nil
 }

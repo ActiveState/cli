@@ -1,26 +1,25 @@
 package variables_test
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/variables"
-	"github.com/stretchr/testify/suite"
 )
 
 type VariablesCommandTestSuite struct {
@@ -76,43 +75,6 @@ func (suite *VariablesCommandTestSuite) TestCommandConfig() {
 	suite.Len(conf.Arguments, 0, "number of commands args supported")
 }
 
-func (suite *VariablesCommandTestSuite) TestExecute_FetchOrgNotAuthenticated() {
-	cmd := variables.NewCommand(suite.secretsClient)
-
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Error(execErr, "failure occurred")
-
-	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
-}
-
-func (suite *VariablesCommandTestSuite) TestExecute_FetchProject_NoProjectFound() {
-	cmd := variables.NewCommand(suite.secretsClient)
-
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
-		// if we don't do it this way, something with the mock framework breaks
-		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
-	})
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 404)
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Error(execErr, "failure occurred")
-
-	suite.Contains(outStr, locale.T("err_api_project_not_found"))
-}
-
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := variables.NewCommand(suite.secretsClient)
 
@@ -132,14 +94,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().NoError(execErr)
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
-	regexStrFmt := `\b%s\s+%s\s+%v\s+%s\s+%s\s+%s\s*\n`
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "DEBUG", "debug", locale.T("variables_value_set"), locale.T("contradiction"), "-", "Local"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "PYTHONPATH", "pythonpath", locale.T("variables_value_set"), locale.T("contradiction"), "-", "Local"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "org-secret", "org secret", locale.T("variables_value_set"), locale.T("confirmation"), "Organization", "Organization"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "proj-secret", "proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "Organization", "Project"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-org-secret", "user org secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "Organization"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "user-proj-secret", "user proj secret", locale.T("variables_value_set"), locale.T("confirmation"), "-", "Project"), outStr)
-	suite.Regexp(fmt.Sprintf(regexStrFmt, "undefined-org-secret", "undefined org secret", locale.T("variables_value_unset"), locale.T("confirmation"), "Organization", "Organization"), outStr)
+	suite.Equal("- proj-secret", strings.TrimSpace(outStr))
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {

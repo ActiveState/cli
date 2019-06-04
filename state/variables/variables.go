@@ -1,16 +1,16 @@
 package variables
 
 import (
-	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Command represents the secrets command and its dependencies.
@@ -51,62 +51,24 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	failure := listAllVariables(cmd.secretsClient)
+	failure := cmd.listAllVariables()
 	if failure != nil {
 		failures.Handle(failure, locale.T("variables_err"))
 	}
 }
 
 // listAllVariables prints a list of all of the variables defined for this project.
-func listAllVariables(secretsClient *secretsapi.Client) *failures.Failure {
-	prj := project.Get()
-	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
+func (cmd *Command) listAllVariables() *failures.Failure {
+	prj := projectfile.Get()
+	logging.Debug("listing variables for org=%s, project=%s", prj.Owner, prj.Name)
 
-	hdrs, rows, fail := variablesTable(prj.Variables())
+	secrets, fail := secrets.UserSecrets(cmd.secretsClient, projectfile.Get())
 	if fail != nil {
 		return fail
 	}
-	t := gotabulate.Create(rows)
-	t.SetHeaders(hdrs)
-	t.SetAlign("left")
 
-	print.Line(t.Render("simple"))
+	for _, secret := range secrets {
+		print.Line(" - %s", *secret.Name)
+	}
 	return nil
-}
-
-func variablesTable(vars []*project.Variable) (hdrs []string, rows [][]string, f *failures.Failure) {
-	for _, v := range vars {
-		isSetLabel, fail := v.IsSetLabel()
-		if fail != nil {
-			return nil, nil, fail
-		}
-
-		row := []string{
-			v.Name(),
-			v.Description(),
-			isSetLabel,
-			v.IsEncryptedLabel(),
-			emptyToDash(v.SharedWithLabel()),
-			v.StoreLabel(),
-		}
-		rows = append(rows, row)
-	}
-
-	hdrs = []string{
-		locale.T("variables_col_name"),
-		locale.T("variables_col_description"),
-		locale.T("variables_col_setunset"),
-		locale.T("variables_col_encrypted"),
-		locale.T("variables_col_shared"),
-		locale.T("variables_col_store"),
-	}
-
-	return hdrs, rows, nil
-}
-
-func emptyToDash(s string) string {
-	if s == "" {
-		return "-"
-	}
-	return s
 }

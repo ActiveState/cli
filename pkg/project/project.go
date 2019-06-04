@@ -273,6 +273,24 @@ type Variable struct {
 	projectfile *projectfile.Project
 }
 
+// InitVariable creates a new variable with the given name and all default settings
+func (p *Project) InitVariable(name string) *Variable {
+	store := projectfile.VariableStoreProject
+	share := projectfile.VariableShareOrg
+	return p.NewVariable(&projectfile.Variable{
+		Name: name,
+		Value: projectfile.VariableValue{
+			Store: &store,
+			Share: &share,
+		},
+	})
+}
+
+// NewVariable creates a new variable struct
+func (p *Project) NewVariable(v *projectfile.Variable) *Variable {
+	return &Variable{v, p.Source()}
+}
+
 // Source returns the source projectfile
 func (v *Variable) Source() *projectfile.Project { return v.projectfile }
 
@@ -303,7 +321,7 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	}
 
 	secretsExpander := expander.NewSecretExpander(secretsapi.GetClient())
-	value, failure := secretsExpander.Expand(v.variable, v.projectfile)
+	value, failure := secretsExpander.Expand(v.variable.Name, v.projectfile)
 	if failure != nil {
 		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil
