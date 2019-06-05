@@ -748,8 +748,8 @@ err_auth_fail_totp:
   other: Failed to receive Authentication Token input
 fail_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
-err_invalid_project_name_owner:
-  other: Your activestate.yaml is missing a name and/or owner field.
+err_invalid_project:
+  other: Your activestate.yaml is missing the project field.
 err_persist_invalid_project:
   other: Trying to persist an invalid project
 variable_deprecation_warning:

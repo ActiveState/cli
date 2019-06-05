@@ -38,14 +38,12 @@ type VersionInfo struct {
 
 // ProjectSimple reflects a bare basic project structure
 type ProjectSimple struct {
-	Name  string `yaml:"name"`
-	Owner string `yaml:"owner"`
+	Project string `yaml:"project"`
 }
 
 // Project covers the top level project structure of our yaml
 type Project struct {
-	Name         string      `yaml:"name"`
-	Owner        string      `yaml:"owner"`
+	Project      string      `yaml:"project"`
 	Namespace    string      `yaml:"namespace,omitempty"`
 	Branch       string      `yaml:"branch,omitempty"`
 	Version      string      `yaml:"version,omitempty"`
@@ -222,8 +220,8 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	if project.Name == "" || project.Owner == "" {
-		return nil, FailValidate.New("err_invalid_project_name_owner")
+	if project.Project == "" {
+		return nil, FailValidate.New("err_invalid_project")
 	}
 
 	project.Persist()
@@ -283,8 +281,8 @@ func Reset() {
 // to Get() return this project.
 // Only one project can persist at a time.
 func (p *Project) Persist() {
-	if p.Name == "" || p.Owner == "" {
-		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project_name_owner"))
+	if p.Project == "" {
+		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project"))
 		os.Exit(1)
 	}
 	persistentProject = p

@@ -29,8 +29,7 @@ func setCwd(t *testing.T, subdir string) {
 func TestProjectStruct(t *testing.T) {
 	project := Project{}
 	dat := strings.TrimSpace(`
-name: valueForName
-owner: valueForOwner
+project: valueForProject
 namespace: valueForNamespace
 version: valueForVersion
 environments: valueForEnvironments`)
@@ -38,8 +37,7 @@ environments: valueForEnvironments`)
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", project.Name, "Name should be set")
-	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
+	assert.Equal(t, "valueForProject", project.Project, "Project should be set")
 	assert.Equal(t, "valueForNamespace", project.Namespace, "Namespace should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
@@ -153,12 +151,10 @@ func TestParse(t *testing.T) {
 	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
 	assert.NotNil(t, err, "Should throw an error")
 
-	project, err = Parse(filepath.Join(rootpath, "test", "activestate.yaml"))
+	project, err = Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.NotEmpty(t, project.Name, "Name should be set")
-	assert.NotEmpty(t, project.Owner, "Owner should be set")
-	assert.NotEmpty(t, project.Namespace, "Namespace should be set")
+	assert.NotEmpty(t, project.Project, "Project should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
 
@@ -203,7 +199,7 @@ func TestSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(rootpath, "test", "activestate.yaml")
+	path := filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml")
 	project, failure := Parse(path)
 	assert.Nil(t, failure, "unexpected failure parsing our yaml file")
 
@@ -233,11 +229,11 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	configPath, failure := getProjectFilePath()
 	require.Nil(t, failure)
-	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
+	expectedPath := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 
 	os.Setenv(constants.ProjectEnvVarName, "/some/path")
@@ -254,7 +250,7 @@ func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := os.Getwd()
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config := Get()
 	assert.NotNil(t, config, "Config should be set")
@@ -268,17 +264,17 @@ func TestGet(t *testing.T) {
 func TestGetActivated(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	cwd, _ := os.Getwd()
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config1 := Get()
-	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
+	assert.Equal(t, filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
 	os.Chdir(root)
 	config2, fail := GetSafe()
 	assert.NoError(t, fail.ToError(), "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
 
-	expected := filepath.Join(root, "test", constants.ConfigFileName)
+	expected := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	actual := os.Getenv(constants.ProjectEnvVarName)
 	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
 
