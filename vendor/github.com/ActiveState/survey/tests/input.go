@@ -9,16 +9,20 @@ var val = ""
 
 var table = []TestUtil.TestTableEntry{
 	{
-		"no default", &survey.Input{Message: "Hello world"}, &val,
+		"no default", &survey.Input{Message: "Hello world"}, &val, nil,
 	},
 	{
-		"default", &survey.Input{Message: "Hello world", Default: "default"}, &val,
+		"default", &survey.Input{Message: "Hello world", Default: "default"}, &val, nil,
 	},
 	{
-		"no help, send '?'", &survey.Input{Message: "Hello world"}, &val,
+		"no help, send '?'", &survey.Input{Message: "Hello world"}, &val, nil,
 	},
 	{
-		"input text in random location", &survey.Input{Message: "Hello"}, &val,
+		"Home, End Button test in random location", &survey.Input{Message: "Hello world"}, &val, nil,
+	}, {
+		"Delete and forward delete test at random location (test if screen overflows)", &survey.Input{Message: "Hello world"}, &val, nil,
+	}, {
+		"Moving around lines with left & right arrow keys", &survey.Input{Message: "Hello world"}, &val, nil,
 	},
 }
 
