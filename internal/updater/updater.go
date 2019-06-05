@@ -99,9 +99,10 @@ func PrintUpdateMessage() {
 	info, err := up.Info()
 	if err != nil {
 		logging.Error("Could not check for updates: %v", err)
+		return
 	}
 
-	if info.Version != constants.Version {
+	if info != nil && info.Version != constants.Version {
 		print.Warning(locale.Tr("update_available", constants.Version, info.Version))
 	}
 }
