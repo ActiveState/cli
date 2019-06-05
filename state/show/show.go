@@ -76,7 +76,6 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	printPlatforms(project)
 	printLanguages(project)
-	printVariables(project)
 	printScripts(project)
 	printEvents(project)
 }
@@ -145,22 +144,6 @@ func printLanguages(project *projectfile.Project) {
 	}
 
 	print.BoldInline("%s:", locale.T("print_state_show_languages"))
-	printTable(rows)
-}
-
-func printVariables(project *projectfile.Project) {
-	if len(project.Variables) == 0 {
-		return
-	}
-
-	rows := [][]interface{}{}
-	for _, variable := range project.Variables {
-		if !constraints.IsConstrained(variable.Constraints) {
-			rows = append(rows, []interface{}{variable.Name, variable.Description})
-		}
-	}
-
-	print.BoldInline("%s:", locale.T("print_state_show_variables"))
 	printTable(rows)
 }
 

@@ -162,23 +162,8 @@ type VarExpander struct {
 
 // Expand is the main expander function
 func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
-	var variable *projectfile.Variable
-	for _, varcheck := range projectFile.Variables {
-		if varcheck.Name == name && !constraints.IsConstrained(varcheck.Constraints) {
-			variable = varcheck
-			break
-		}
-	}
-
-	if variable == nil {
-		return "", FailVarNotFound.New("variables_expand_err_undefined", name)
-	}
-
-	if variable.Value.StaticValue != nil {
-		return *variable.Value.StaticValue, nil
-	}
-
-	return e.secretsExpander(variable, projectFile)
+	// Alias straight to secretsExpander as static variable won't be supported for the time being
+	return e.secretsExpander(name, projectFile)
 }
 
 // NewVarExpander creates an Expander which can retrieve and decrypt stored user secrets.

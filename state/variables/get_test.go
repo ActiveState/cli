@@ -3,6 +3,7 @@ package variables_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -96,7 +97,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName strin
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(failures.Handled(), "unexpected failure")
 
-	suite.Equal(expectedExpansionValue, outStr)
+	suite.Equal(expectedExpansionValue, strings.TrimSpace(outStr))
 }
 
 func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
@@ -124,37 +125,13 @@ func (suite *SecretsGetCommandTestSuite) TestDecryptionFailed() {
 }
 
 func (suite *SecretsGetCommandTestSuite) TestSecretHasNoValue() {
-	// secret is defined in the project, but not in the database
+	// secret is not defined (has no value)
 	suite.assertExpansionSuccess("undefined-secret", "")
 }
 
-func (suite *SecretsGetCommandTestSuite) TestOrgSecret() {
-	suite.assertExpansionSuccess("org-secret", "amazing")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestProjectSecret() {
+func (suite *SecretsGetCommandTestSuite) TestSecretWithValue() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("proj-secret", "proj-value")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestUserSecret() {
-	// NOTE the user_secrets response has org, project, and user scoped secrets with same name
-	suite.assertExpansionSuccess("user-secret", "user-value")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestUserProjectSecret() {
-	// NOTE the user_secrets response has org, project, user, and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestProjectSecret_FindsNoSecretIfOnlyOrgAvailable() {
-	// NOTE the user_secrets response has user and user-project scoped secrets with same name
-	suite.assertExpansionSuccess("proj-secret-only-org-available", "")
-}
-
-func (suite *SecretsGetCommandTestSuite) TestUserSecret_FindsNoSecretIfOnlyProjectAvailable() {
-	// NOTE the user_secrets response has project scoped secret with same name
-	suite.assertExpansionSuccess("user-secret-only-proj-available", "")
+	suite.assertExpansionSuccess("secret-name", "proj-value")
 }
 
 func Test_SecretsGetCommand_TestSuite(t *testing.T) {

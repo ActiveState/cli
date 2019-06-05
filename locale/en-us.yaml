@@ -198,7 +198,7 @@ auth_err_unrecoverable_keypair:
 previous_password_prompt:
   other: "Enter your previous password:"
 secret_value_prompt:
-  other: "Enter {{.V0}} scoped value for variable '{{.V1}}'':"
+  other: "Enter value for variable '{{.V0}}':"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -435,8 +435,6 @@ print_state_show_languages:
   other: Languages
 print_state_show_packages:
   other: Packages
-print_state_show_variables:
-  other: Variables
 print_state_show_secrets:
   other: Secret specifications
 err_cannot_obtain_dist:

@@ -34,21 +34,6 @@ platforms:
     os: windows
   - name: macOS
     os: macos
-variables:
-  - name: foo
-    value: bar
-  - name: foo-dashed
-    value: bar
-  - name: bar
-    value: baz
-    constraints:
-      platform: Linux
-  - name: bar
-    value: quux
-    constraints:
-    platform: Windows
-  - name: UPPERCASE
-    value: foo
 events:
   - name: pre
     value: echo 'Hello $variables.foo!'
@@ -82,28 +67,6 @@ func TestExpandProjectPlatformOs(t *testing.T) {
 		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
 	} else {
 		assert.Equal(t, "macos", expanded, "Expanded platform variable")
-	}
-}
-
-func TestExpandProjectEvent(t *testing.T) {
-	project := loadProject(t)
-
-	expanded := expander.ExpandFromProject("$events.pre", project)
-	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
-	assert.Equal(t, "echo 'Hello bar!'", expanded, "Expanded simple variable")
-}
-
-func TestExpandProjectEventWithConstraints(t *testing.T) {
-	project := loadProject(t)
-
-	if runtime.GOOS == "linux" {
-		expanded := expander.ExpandFromProject("$events.post", project)
-		assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
-		assert.Equal(t, "echo 'Hello baz!'", expanded, "Expanded platform-specific variable")
-	} else if runtime.GOOS == "windows" {
-		expanded := expander.ExpandFromProject("$events.post", project)
-		assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
-		assert.Equal(t, "echo 'Hello quux!'", expanded, "Expanded platform-specific variable")
 	}
 }
 
@@ -174,41 +137,12 @@ platforms:
 	}
 }
 
-func TestExpandProjectEmbedded(t *testing.T) {
-	project := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-name: string
-owner: string
-variables:
-  - name: foo
-    value: bar
-  `)
-
-	err := yaml.Unmarshal([]byte(contents), project)
-	assert.Nil(t, err, "Unmarshalled YAML")
-	fail := project.Parse()
-	assert.NoError(t, fail.ToError())
-	project.Persist()
-
-	expanded := expander.ExpandFromProject("$variables.foo is in $variables.foo is in $variables.foo", project)
-	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
-	assert.Equal(t, "bar is in bar is in bar", expanded)
-}
-
-func TestExpandProjectUppercase(t *testing.T) {
-	project := loadProject(t)
-
-	expanded := expander.ExpandFromProject("${variables.UPPERCASE}bar", project)
-	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
-	assert.Equal(t, "foobar", expanded)
-}
-
 func TestExpandDashed(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 name: string
 owner: string
-variables:
+scripts:
   - name: foo-bar
     value: bar
   `)
@@ -219,7 +153,7 @@ variables:
 	assert.NoError(t, fail.ToError())
 	project.Persist()
 
-	expanded := expander.ExpandFromProject("- $variables.foo-bar -", project)
+	expanded := expander.ExpandFromProject("- $scripts.foo-bar -", project)
 	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
 }
