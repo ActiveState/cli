@@ -17,7 +17,7 @@ ignored = ["github.com/dave/jennifer"]
   name = "github.com/ActiveState/go-colortext"
 
 [[constraint]]
-  branch = "release-1.4.2"
+  branch = "alt/v1.8.5"
   name = "github.com/ActiveState/survey"
 
 [[constraint]]
