@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Command represents the secrets command and its dependencies.
@@ -59,10 +59,12 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 // listAllVariables prints a list of all of the variables defined for this project.
 func (cmd *Command) listAllVariables() *failures.Failure {
-	prj := projectfile.Get()
-	logging.Debug("listing variables for org=%s, project=%s", prj.Owner, prj.Name)
+	prj := project.GetSafe()
+	owner := prj.Owner()
+	projectName := prj.Name()
+	logging.Debug("listing variables for org=%s, project=%s", owner, projectName)
 
-	secrets, fail := secrets.UserSecrets(cmd.secretsClient, projectfile.Get())
+	secrets, fail := secrets.UserSecrets(cmd.secretsClient, owner, projectName)
 	if fail != nil {
 		return fail
 	}

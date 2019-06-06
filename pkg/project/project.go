@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
@@ -105,8 +106,30 @@ func (p *Project) ScriptByName(name string) *Script {
 	return nil
 }
 
+func (p *Project) URL() string {
+	return p.projectfile.Project
+}
+
+func (p *Project) parseProjectURL() []string {
+	url := p.URL()
+	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
+	return strings.Split(path, "/")
+}
+
 // Name returns project name
-func (p *Project) Name() string { return p.projectfile.Name }
+func (p *Project) Name() string {
+	return p.parseProjectURL()[1]
+}
+
+// Owner returns project owner
+func (p *Project) Owner() string {
+	return p.parseProjectURL()[0]
+}
+
+// CommitID returns project commitID
+func (p *Project) CommitID() string {
+	return p.parseProjectURL()[2]
+}
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
 func (p *Project) NormalizedName() string {
@@ -120,9 +143,6 @@ func (p *Project) NormalizedName() string {
 
 	return strings.ToLower(rx.ReplaceAllString(p.Name(), ""))
 }
-
-// Owner returns project owner
-func (p *Project) Owner() string { return p.projectfile.Owner }
 
 // Version returns project version
 func (p *Project) Version() string { return p.projectfile.Version }
@@ -160,6 +180,7 @@ func GetSafe() (*Project, *failures.Failure) {
 type Platform struct {
 	platform    *projectfile.Platform
 	projectfile *projectfile.Project
+	project     *Project
 }
 
 // Source returns the source projectfile
@@ -170,31 +191,31 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all variables evaluated
 func (p *Platform) Os() string {
-	value := expander.ExpandFromProject(p.platform.Os, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Os, p.Project)
 	return value
 }
 
 // Version returned with all variables evaluated
 func (p *Platform) Version() string {
-	value := expander.ExpandFromProject(p.platform.Version, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Version, p.Project)
 	return value
 }
 
 // Architecture with all variables evaluated
 func (p *Platform) Architecture() string {
-	value := expander.ExpandFromProject(p.platform.Architecture, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Architecture, p.Project)
 	return value
 }
 
 // Libc returned are constrained and all variables evaluated
 func (p *Platform) Libc() string {
-	value := expander.ExpandFromProject(p.platform.Libc, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Libc, p.Project)
 	return value
 }
 
 // Compiler returned are constrained and all variables evaluated
 func (p *Platform) Compiler() string {
-	value := expander.ExpandFromProject(p.platform.Compiler, p.projectfile)
+	value := expander.ExpandFromProject(p.platform.Compiler, p.Project)
 	return value
 }
 
@@ -271,6 +292,7 @@ func (p *Package) Build() *Build {
 type Variable struct {
 	variable    *projectfile.Variable
 	projectfile *projectfile.Project
+	project     *Project
 }
 
 // InitVariable creates a new variable with the given name and all default settings
@@ -316,7 +338,7 @@ func (v *Variable) Store() *projectfile.VariableStore { return v.variable.Value.
 func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	variable := v.variable
 	if variable.Value.StaticValue != nil {
-		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
+		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.project.Owner, v.project.Name)
 		return &value, nil
 	}
 

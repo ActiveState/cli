@@ -44,7 +44,9 @@ func (suite *ProjectTestSuite) TestGetSafe() {
 func (suite *ProjectTestSuite) TestProject() {
 	prj, fail := project.GetSafe()
 	suite.Nil(fail, "Run without failure")
-	suite.Equal("project", prj.Name(), "Values should match")
+	suite.Equal("https://platform.activestate.com/ActiveState/Project/d7ebc72", prj.URL(), "Values should match")
+	suite.Equal("Project", prj.Name(), "Values should match")
+	suite.Equal("d7ebc72", prj.CommitID(), "Values should match")
 	suite.Equal("ActiveState", prj.Owner(), "Values should match")
 	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
 	suite.Equal("something", prj.Environments(), "Values should match")

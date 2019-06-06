@@ -9,8 +9,12 @@ import (
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+type AccessScopeProvider interface {
+	Name() string
+	Owner() string
+}
 
 // Save will add a new secret for this user or update an existing one.
 func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
@@ -109,15 +113,15 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 }
 
 // UserSecrets fetches the secrets for the current user relevant to the given project
-func UserSecrets(secretsClient *secretsapi.Client, prj *projectfile.Project) ([]*secretsModels.UserSecret, *failures.Failure) {
+func UserSecrets(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
 	result := []*secretsModels.UserSecret{}
 
-	pjm, fail := model.FetchProjectByName(prj.Owner, prj.Name)
+	pjm, fail := model.FetchProjectByName(owner, projectName)
 	if fail != nil {
 		return result, fail
 	}
 
-	org, fail := model.FetchOrgByURLName(prj.Owner)
+	org, fail := model.FetchOrgByURLName(owner)
 	if fail != nil {
 		return result, fail
 	}
