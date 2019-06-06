@@ -2,24 +2,12 @@ package survey
 
 import (
 	"errors"
-	"io"
-	"os"
 
 	"github.com/ActiveState/survey/core"
-	"github.com/ActiveState/survey/terminal"
 )
 
 // PageSize is the default maximum number of items to show in select/multiselect prompts
 var PageSize = 7
-
-// DefaultAskOptions is the default options on ask, using the OS stdio.
-var DefaultAskOptions = AskOptions{
-	Stdio: terminal.Stdio{
-		In:  os.Stdin,
-		Out: os.Stdout,
-		Err: os.Stderr,
-	},
-}
 
 // Validator is a function passed to a Question after a user has provided a response.
 // If the function returns an error, then the user will be prompted again for another
@@ -49,34 +37,6 @@ type Prompt interface {
 	Error(error) error
 }
 
-// PromptAgainer Interface for Prompts that support prompting again after invalid input
-type PromptAgainer interface {
-	PromptAgain(invalid interface{}, err error) (interface{}, error)
-}
-
-// AskOpt allows setting optional ask options.
-type AskOpt func(options *AskOptions) error
-
-// AskOptions provides additional options on ask.
-type AskOptions struct {
-	Stdio terminal.Stdio
-}
-
-// WithStdio specifies the standard input, output and error files survey
-// interacts with. By default, these are os.Stdin, os.Stdout, and os.Stderr.
-func WithStdio(in terminal.FileReader, out terminal.FileWriter, err io.Writer) AskOpt {
-	return func(options *AskOptions) error {
-		options.Stdio.In = in
-		options.Stdio.Out = out
-		options.Stdio.Err = err
-		return nil
-	}
-}
-
-type wantsStdio interface {
-	WithStdio(terminal.Stdio)
-}
-
 /*
 AskOne performs the prompt for a single prompt and asks for validation if required.
 Response types should be something that can be casted from the response type designated
@@ -90,8 +50,8 @@ in the documentation. For example:
 	survey.AskOne(prompt, &name, nil)
 
 */
-func AskOne(p Prompt, response interface{}, v Validator, opts ...AskOpt) error {
-	err := Ask([]*Question{{Prompt: p, Validate: v}}, response, opts...)
+func AskOne(p Prompt, response interface{}, v Validator) error {
+	err := Ask([]*Question{{Prompt: p, Validate: v}}, response)
 	if err != nil {
 		return err
 	}
@@ -122,14 +82,7 @@ matching name. For example:
 
 	err := survey.Ask(qs, &answers)
 */
-func Ask(qs []*Question, response interface{}, opts ...AskOpt) error {
-
-	options := DefaultAskOptions
-	for _, opt := range opts {
-		if err := opt(&options); err != nil {
-			return err
-		}
-	}
+func Ask(qs []*Question, response interface{}) error {
 
 	// if we weren't passed a place to record the answers
 	if response == nil {
@@ -139,11 +92,6 @@ func Ask(qs []*Question, response interface{}, opts ...AskOpt) error {
 
 	// go over every question
 	for _, q := range qs {
-		// If Prompt implements controllable stdio, pass in specified stdio.
-		if p, ok := q.Prompt.(wantsStdio); ok {
-			p.WithStdio(options.Stdio)
-		}
-
 		// grab the user input and save it
 		ans, err := q.Prompt.Prompt()
 		// if there was a problem
@@ -162,11 +110,7 @@ func Ask(qs []*Question, response interface{}, opts ...AskOpt) error {
 				}
 
 				// ask for more input
-				if promptAgainer, ok := q.Prompt.(PromptAgainer); ok {
-					ans, err = promptAgainer.PromptAgain(ans, invalid)
-				} else {
-					ans, err = q.Prompt.Prompt()
-				}
+				ans, err = q.Prompt.Prompt()
 				// if there was a problem
 				if err != nil {
 					return err
@@ -200,7 +144,6 @@ func Ask(qs []*Question, response interface{}, opts ...AskOpt) error {
 		}
 
 	}
-
 	// return the response
 	return nil
 }

@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"sync"
 	"text/template"
 
 	"github.com/mgutz/ansi"
@@ -19,7 +18,7 @@ var (
 	ErrorIcon = "X"
 
 	// HelpIcon will be shown before more detailed question help
-	HelpIcon = "?"
+	HelpIcon = "????"
 	// QuestionIcon will be shown before a question Message
 	QuestionIcon = "?"
 
@@ -81,28 +80,19 @@ var TemplateFuncs = map[string]interface{}{
 	},
 }
 
-var (
-	memoizedGetTemplate = map[string]*template.Template{}
-
-	memoMutex = &sync.RWMutex{}
-)
+var memoizedGetTemplate = map[string]*template.Template{}
 
 func getTemplate(tmpl string) (*template.Template, error) {
-	memoMutex.RLock()
 	if t, ok := memoizedGetTemplate[tmpl]; ok {
-		memoMutex.RUnlock()
 		return t, nil
 	}
-	memoMutex.RUnlock()
 
 	t, err := template.New("prompt").Funcs(TemplateFuncs).Parse(tmpl)
 	if err != nil {
 		return nil, err
 	}
 
-	memoMutex.Lock()
 	memoizedGetTemplate[tmpl] = t
-	memoMutex.Unlock()
 	return t, nil
 }
 

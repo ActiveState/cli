@@ -1,7 +1,7 @@
 package survey
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
@@ -39,12 +39,12 @@ func (p *Password) Prompt() (line interface{}, err error) {
 		PasswordQuestionTemplate,
 		PasswordTemplateData{Password: *p},
 	)
-	fmt.Fprint(terminal.NewAnsiStdout(p.Stdio().Out), out)
+	terminal.Print(out)
 	if err != nil {
 		return "", err
 	}
 
-	rr := p.NewRuneReader()
+	rr := terminal.NewRuneReader(os.Stdin)
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
 
@@ -53,8 +53,6 @@ func (p *Password) Prompt() (line interface{}, err error) {
 		line, err := rr.ReadLine('*')
 		return string(line), err
 	}
-
-	cursor := p.NewCursor()
 
 	// process answers looking for help prompt answer
 	for {
@@ -65,7 +63,7 @@ func (p *Password) Prompt() (line interface{}, err error) {
 
 		if string(line) == string(core.HelpInputRune) {
 			// terminal will echo the \n so we need to jump back up one row
-			cursor.PreviousLine(1)
+			terminal.CursorPreviousLine(1)
 
 			err = p.Render(
 				PasswordQuestionTemplate,
