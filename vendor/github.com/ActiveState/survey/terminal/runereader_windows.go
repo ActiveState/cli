@@ -2,8 +2,8 @@ package terminal
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
+	"os"
 	"syscall"
 	"unsafe"
 )
@@ -20,13 +20,10 @@ const (
 
 	// key codes for arrow keys
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
-	VK_DELETE = 0x2E
-	VK_END    = 0x23
-	VK_HOME   = 0x24
-	VK_LEFT   = 0x25
-	VK_UP     = 0x26
-	VK_RIGHT  = 0x27
-	VK_DOWN   = 0x28
+	VK_LEFT  = 0x25
+	VK_UP    = 0x26
+	VK_RIGHT = 0x27
+	VK_DOWN  = 0x28
 
 	RIGHT_CTRL_PRESSED = 0x0004
 	LEFT_CTRL_PRESSED  = 0x0008
@@ -56,18 +53,14 @@ type runeReaderState struct {
 	buf  *bufio.Reader
 }
 
-func newRuneReaderState(input FileReader) runeReaderState {
+func newRuneReaderState(input *os.File) runeReaderState {
 	return runeReaderState{
 		buf: bufio.NewReader(input),
 	}
 }
 
-func (rr *RuneReader) Buffer() *bytes.Buffer {
-	return nil
-}
-
 func (rr *RuneReader) SetTermMode() error {
-	r, _, err := getConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(unsafe.Pointer(&rr.state.term)))
+	r, _, err := getConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(unsafe.Pointer(&rr.state.term)))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -75,7 +68,7 @@ func (rr *RuneReader) SetTermMode() error {
 
 	newState := rr.state.term
 	newState &^= ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT
-	r, _, err = setConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(newState))
+	r, _, err = setConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(newState))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -84,7 +77,7 @@ func (rr *RuneReader) SetTermMode() error {
 }
 
 func (rr *RuneReader) RestoreTermMode() error {
-	r, _, err := setConsoleMode.Call(uintptr(rr.stdio.In.Fd()), uintptr(rr.state.term))
+	r, _, err := setConsoleMode.Call(uintptr(rr.Input.Fd()), uintptr(rr.state.term))
 	// windows return 0 on error
 	if r == 0 {
 		return err
@@ -97,13 +90,8 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 	if err != nil {
 		return r, size, err
 	}
-
 	// parse ^[ sequences to look for arrow keys
 	if r == '\033' {
-		if rr.state.buf.Buffered() == 0 {
-			// no more characters so must be `Esc` key
-			return KeyEscape, 1, nil
-		}
 		r, size, err = rr.state.buf.ReadRune()
 		if err != nil {
 			return r, size, err
@@ -124,18 +112,6 @@ func (rr *RuneReader) ReadRune() (rune, int, error) {
 			return KeyArrowUp, 1, nil
 		case 'B':
 			return KeyArrowDown, 1, nil
-		case 'H': // Home button
-			return SpecialKeyHome, 1, nil
-		case 'F': // End button
-			return SpecialKeyEnd, 1, nil
-		case '3': // Delete Button
-			// discard the following '~' key from buffer
-			rr.state.buf.Discard(1)
-			return SpecialKeyDelete, 1, nil
-		default:
-			// discard the following '~' key from buffer
-			rr.state.buf.Discard(1)
-			return IgnoreKey, 1, nil
 		}
 		return r, size, fmt.Errorf("Unknown Escape Sequence: %q", []rune{'\033', '[', r})
 	}

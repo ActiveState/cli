@@ -7,8 +7,6 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/kballard/go-shellquote"
-
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
 )
@@ -31,7 +29,6 @@ type Editor struct {
 	Message       string
 	Default       string
 	Help          string
-	Editor        string
 	HideDefault   bool
 	AppendDefault bool
 }
@@ -73,20 +70,7 @@ func init() {
 	}
 }
 
-func (e *Editor) PromptAgain(invalid interface{}, err error) (interface{}, error) {
-	initialValue := invalid.(string)
-	return e.prompt(initialValue)
-}
-
 func (e *Editor) Prompt() (interface{}, error) {
-	initialValue := ""
-	if e.Default != "" && e.AppendDefault {
-		initialValue = e.Default
-	}
-	return e.prompt(initialValue)
-}
-
-func (e *Editor) prompt(initialValue string) (interface{}, error) {
 	// render the template
 	err := e.Render(
 		EditorQuestionTemplate,
@@ -97,13 +81,12 @@ func (e *Editor) prompt(initialValue string) (interface{}, error) {
 	}
 
 	// start reading runes from the standard in
-	rr := e.NewRuneReader()
+	rr := terminal.NewRuneReader(os.Stdin)
 	rr.SetTermMode()
 	defer rr.RestoreTermMode()
 
-	cursor := e.NewCursor()
-	cursor.Hide()
-	defer cursor.Show()
+	terminal.CursorHide()
+	defer terminal.CursorShow()
 
 	for {
 		r, _, err := rr.ReadRune()
@@ -148,9 +131,11 @@ func (e *Editor) prompt(initialValue string) (interface{}, error) {
 		return "", err
 	}
 
-	// write initial value
-	if _, err := f.WriteString(initialValue); err != nil {
-		return "", err
+	// write default value
+	if e.Default != "" && e.AppendDefault {
+		if _, err := f.WriteString(e.Default); err != nil {
+			return "", err
+		}
 	}
 
 	// close the fd to prevent the editor unable to save file
@@ -158,25 +143,12 @@ func (e *Editor) prompt(initialValue string) (interface{}, error) {
 		return "", err
 	}
 
-	// check is input editor exist
-	if e.Editor != "" {
-		editor = e.Editor
-	}
-
-	stdio := e.Stdio()
-
-	args, err := shellquote.Split(editor)
-	if err != nil {
-		return "", err
-	}
-	args = append(args, f.Name())
-
 	// open the editor
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = stdio.In
-	cmd.Stdout = stdio.Out
-	cmd.Stderr = stdio.Err
-	cursor.Show()
+	cmd := exec.Command(editor, f.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	terminal.CursorShow()
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}

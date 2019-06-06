@@ -1,39 +1,18 @@
 package core
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/survey/terminal"
 )
 
 type Renderer struct {
-	stdio          terminal.Stdio
 	lineCount      int
 	errorLineCount int
 }
 
 var ErrorTemplate = `{{color "red"}}{{ ErrorIcon }} Sorry, your reply was invalid: {{.Error}}{{color "reset"}}
 `
-
-func (r *Renderer) WithStdio(stdio terminal.Stdio) {
-	r.stdio = stdio
-}
-
-func (r *Renderer) Stdio() terminal.Stdio {
-	return r.stdio
-}
-
-func (r *Renderer) NewRuneReader() *terminal.RuneReader {
-	return terminal.NewRuneReader(r.stdio)
-}
-
-func (r *Renderer) NewCursor() *terminal.Cursor {
-	return &terminal.Cursor{
-		In:  r.stdio.In,
-		Out: r.stdio.Out,
-	}
-}
 
 func (r *Renderer) Error(invalid error) error {
 	// since errors are printed on top we need to reset the prompt
@@ -49,19 +28,18 @@ func (r *Renderer) Error(invalid error) error {
 	r.errorLineCount = strings.Count(out, "\n")
 
 	// send the message to the user
-	fmt.Fprint(terminal.NewAnsiStdout(r.stdio.Out), out)
+	terminal.Print(out)
 	return nil
 }
 
 func (r *Renderer) resetPrompt(lines int) {
 	// clean out current line in case tmpl didnt end in newline
-	cursor := r.NewCursor()
-	cursor.HorizontalAbsolute(0)
-	terminal.EraseLine(r.stdio.Out, terminal.ERASE_LINE_ALL)
+	terminal.CursorHorizontalAbsolute(0)
+	terminal.EraseLine(terminal.ERASE_LINE_ALL)
 	// clean up what we left behind last time
 	for i := 0; i < lines; i++ {
-		cursor.PreviousLine(1)
-		terminal.EraseLine(r.stdio.Out, terminal.ERASE_LINE_ALL)
+		terminal.CursorPreviousLine(1)
+		terminal.EraseLine(terminal.ERASE_LINE_ALL)
 	}
 }
 
@@ -77,7 +55,7 @@ func (r *Renderer) Render(tmpl string, data interface{}) error {
 	r.lineCount = strings.Count(out, "\n")
 
 	// print the summary
-	fmt.Fprint(terminal.NewAnsiStdout(r.stdio.Out), out)
+	terminal.Print(out)
 
 	// nothing went wrong
 	return nil

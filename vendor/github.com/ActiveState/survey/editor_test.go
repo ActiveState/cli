@@ -7,9 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"testing"
-	"time"
 
-	expect "github.com/Netflix/go-expect"
 	"github.com/stretchr/testify/assert"
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
@@ -77,13 +75,13 @@ func TestEditorRender(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		r, w, err := os.Pipe()
-		assert.Nil(t, err, test.title)
+	outputBuffer := bytes.NewBufferString("")
+	terminal.Stdout = outputBuffer
 
-		test.prompt.WithStdio(terminal.Stdio{Out: w})
+	for _, test := range tests {
+		outputBuffer.Reset()
 		test.data.Editor = test.prompt
-		err = test.prompt.Render(
+		err := test.prompt.Render(
 			EditorQuestionTemplate,
 			test.data,
 		)

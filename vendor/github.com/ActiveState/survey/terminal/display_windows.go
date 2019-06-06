@@ -1,12 +1,13 @@
 package terminal
 
 import (
+	"os"
 	"syscall"
 	"unsafe"
 )
 
-func EraseLine(out FileWriter, mode EraseLineMode) {
-	handle := syscall.Handle(out.Fd())
+func EraseLine(mode EraseLineMode) {
+	handle := syscall.Handle(os.Stdout.Fd())
 
 	var csbi consoleScreenBufferInfo
 	procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))

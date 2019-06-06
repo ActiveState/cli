@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	expect "github.com/Netflix/go-expect"
 	"github.com/stretchr/testify/assert"
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
@@ -70,102 +69,17 @@ func TestInputRender(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		r, w, err := os.Pipe()
-		assert.Nil(t, err, test.title)
+	outputBuffer := bytes.NewBufferString("")
+	terminal.Stdout = outputBuffer
 
-		test.prompt.WithStdio(terminal.Stdio{Out: w})
+	for _, test := range tests {
+		outputBuffer.Reset()
 		test.data.Input = test.prompt
-		err = test.prompt.Render(
+		err := test.prompt.Render(
 			InputQuestionTemplate,
 			test.data,
 		)
 		assert.Nil(t, err, test.title)
-
-		w.Close()
-		var buf bytes.Buffer
-		io.Copy(&buf, r)
-
-		assert.Contains(t, buf.String(), test.expected, test.title)
-	}
-}
-
-func TestInputPrompt(t *testing.T) {
-	tests := []PromptTest{
-		{
-			"Test Input prompt interaction",
-			&Input{
-				Message: "What is your name?",
-			},
-			func(c *expect.Console) {
-				c.ExpectString("What is your name?")
-				c.SendLine("Larry Bird")
-				c.ExpectEOF()
-			},
-			"Larry Bird",
-		},
-		{
-			"Test Input prompt interaction with default",
-			&Input{
-				Message: "What is your name?",
-				Default: "Johnny Appleseed",
-			},
-			func(c *expect.Console) {
-				c.ExpectString("What is your name?")
-				c.SendLine("")
-				c.ExpectEOF()
-			},
-			"Johnny Appleseed",
-		},
-		{
-			"Test Input prompt interaction overriding default",
-			&Input{
-				Message: "What is your name?",
-				Default: "Johnny Appleseed",
-			},
-			func(c *expect.Console) {
-				c.ExpectString("What is your name?")
-				c.SendLine("Larry Bird")
-				c.ExpectEOF()
-			},
-			"Larry Bird",
-		},
-		{
-			"Test Input prompt interaction and prompt for help",
-			&Input{
-				Message: "What is your name?",
-				Help:    "It might be Satoshi Nakamoto",
-			},
-			func(c *expect.Console) {
-				c.ExpectString("What is your name?")
-				c.SendLine("?")
-				c.ExpectString("It might be Satoshi Nakamoto")
-				c.SendLine("Satoshi Nakamoto")
-				c.ExpectEOF()
-			},
-			"Satoshi Nakamoto",
-		},
-		{
-			// https://en.wikipedia.org/wiki/ANSI_escape_code
-			// Device Status Report - Reports the cursor position (CPR) to the
-			// application as (as though typed at the keyboard) ESC[n;mR, where n is the
-			// row and m is the column.
-			"Test Input prompt with R matching DSR",
-			&Input{
-				Message: "What is your name?",
-			},
-			func(c *expect.Console) {
-				c.ExpectString("What is your name?")
-				c.SendLine("R")
-				c.ExpectEOF()
-			},
-			"R",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			RunPromptTest(t, test)
-		})
+		assert.Equal(t, test.expected, outputBuffer.String(), test.title)
 	}
 }
