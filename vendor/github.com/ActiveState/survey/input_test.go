@@ -2,9 +2,6 @@ package survey
 
 import (
 	"bytes"
-	"fmt"
-	"io"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,43 +26,45 @@ func TestInputRender(t *testing.T) {
 			"Test Input question output without default",
 			Input{Message: "What is your favorite month:"},
 			InputTemplateData{},
-			fmt.Sprintf("%s What is your favorite month: ", core.QuestionIcon),
+			"? What is your favorite month: ",
 		},
 		{
 			"Test Input question output with default",
 			Input{Message: "What is your favorite month:", Default: "April"},
 			InputTemplateData{},
-			fmt.Sprintf("%s What is your favorite month: (April) ", core.QuestionIcon),
+			"? What is your favorite month: (April) ",
 		},
 		{
 			"Test Input answer output",
 			Input{Message: "What is your favorite month:"},
 			InputTemplateData{Answer: "October", ShowAnswer: true},
-			fmt.Sprintf("%s What is your favorite month: October\n", core.QuestionIcon),
+			"? What is your favorite month: October\n",
 		},
 		{
 			"Test Input question output without default but with help hidden",
 			Input{Message: "What is your favorite month:", Help: "This is helpful"},
 			InputTemplateData{},
-			fmt.Sprintf("%s What is your favorite month: [%s for help] ", core.QuestionIcon, string(core.HelpInputRune)),
+			"? What is your favorite month: [? for help] ",
 		},
 		{
 			"Test Input question output with default and with help hidden",
 			Input{Message: "What is your favorite month:", Default: "April", Help: "This is helpful"},
 			InputTemplateData{},
-			fmt.Sprintf("%s What is your favorite month: [%s for help] (April) ", core.QuestionIcon, string(core.HelpInputRune)),
+			"? What is your favorite month: [? for help] (April) ",
 		},
 		{
 			"Test Input question output without default but with help shown",
 			Input{Message: "What is your favorite month:", Help: "This is helpful"},
 			InputTemplateData{ShowHelp: true},
-			fmt.Sprintf("%s This is helpful\n%s What is your favorite month: ", core.HelpIcon, core.QuestionIcon),
+			`ⓘ This is helpful
+? What is your favorite month: `,
 		},
 		{
 			"Test Input question output with default and with help shown",
 			Input{Message: "What is your favorite month:", Default: "April", Help: "This is helpful"},
 			InputTemplateData{ShowHelp: true},
-			fmt.Sprintf("%s This is helpful\n%s What is your favorite month: (April) ", core.HelpIcon, core.QuestionIcon),
+			`ⓘ This is helpful
+? What is your favorite month: (April) `,
 		},
 	}
 

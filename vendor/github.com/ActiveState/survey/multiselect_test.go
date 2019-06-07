@@ -2,13 +2,11 @@ package survey
 
 import (
 	"bytes"
-	"fmt"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -41,16 +39,12 @@ func TestMultiSelectRender(t *testing.T) {
 				PageEntries:   prompt.Options,
 				Checked:       map[string]bool{"bar": true, "buz": true},
 			},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s Pick your words:  [Use arrows to move, type to filter]", core.QuestionIcon),
-					fmt.Sprintf("  %s  foo", core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  bar", core.MarkedOptionIcon),
-					fmt.Sprintf("%s %s  baz", core.SelectFocusIcon, core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  buz\n", core.MarkedOptionIcon),
-				},
-				"\n",
-			),
+			`? Pick your words:
+  ◯  foo
+  ◉  bar
+❯ ◯  baz
+  ◉  buz
+`,
 		},
 		{
 			"Test MultiSelect answer output",
@@ -59,7 +53,7 @@ func TestMultiSelectRender(t *testing.T) {
 				Answer:     "foo, buz",
 				ShowAnswer: true,
 			},
-			fmt.Sprintf("%s Pick your words: foo, buz\n", core.QuestionIcon),
+			"? Pick your words: foo, buz\n",
 		},
 		{
 			"Test MultiSelect question output with help hidden",
@@ -69,16 +63,12 @@ func TestMultiSelectRender(t *testing.T) {
 				PageEntries:   prompt.Options,
 				Checked:       map[string]bool{"bar": true, "buz": true},
 			},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s Pick your words:  [Use arrows to move, type to filter, %s for more help]", core.QuestionIcon, string(core.HelpInputRune)),
-					fmt.Sprintf("  %s  foo", core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  bar", core.MarkedOptionIcon),
-					fmt.Sprintf("%s %s  baz", core.SelectFocusIcon, core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  buz\n", core.MarkedOptionIcon),
-				},
-				"\n",
-			),
+			`? Pick your words: [? for help]
+  ◯  foo
+  ◉  bar
+❯ ◯  baz
+  ◉  buz
+`,
 		},
 		{
 			"Test MultiSelect question output with help shown",
@@ -89,17 +79,13 @@ func TestMultiSelectRender(t *testing.T) {
 				Checked:       map[string]bool{"bar": true, "buz": true},
 				ShowHelp:      true,
 			},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s This is helpful", core.HelpIcon),
-					fmt.Sprintf("%s Pick your words:  [Use arrows to move, type to filter]", core.QuestionIcon),
-					fmt.Sprintf("  %s  foo", core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  bar", core.MarkedOptionIcon),
-					fmt.Sprintf("%s %s  baz", core.SelectFocusIcon, core.UnmarkedOptionIcon),
-					fmt.Sprintf("  %s  buz\n", core.MarkedOptionIcon),
-				},
-				"\n",
-			),
+			`ⓘ This is helpful
+? Pick your words:
+  ◯  foo
+  ◉  bar
+❯ ◯  baz
+  ◉  buz
+`,
 		},
 	}
 
