@@ -2,13 +2,11 @@ package survey
 
 import (
 	"bytes"
-	"fmt"
-	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/ActiveState/survey/core"
 	"github.com/ActiveState/survey/terminal"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -37,53 +35,41 @@ func TestSelectRender(t *testing.T) {
 			"Test Select question output",
 			prompt,
 			SelectTemplateData{SelectedIndex: 2, PageEntries: prompt.Options},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s Pick your word:  [Use arrows to move, type to filter]", core.QuestionIcon),
-					"  foo",
-					"  bar",
-					fmt.Sprintf("%s baz", core.SelectFocusIcon),
-					"  buz\n",
-				},
-				"\n",
-			),
+			`? Pick your word:
+  foo
+  bar
+❯ baz
+  buz
+`,
 		},
 		{
 			"Test Select answer output",
 			prompt,
 			SelectTemplateData{Answer: "buz", ShowAnswer: true, PageEntries: prompt.Options},
-			fmt.Sprintf("%s Pick your word: buz\n", core.QuestionIcon),
+			"? Pick your word: buz\n",
 		},
 		{
 			"Test Select question output with help hidden",
 			helpfulPrompt,
 			SelectTemplateData{SelectedIndex: 2, PageEntries: prompt.Options},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s Pick your word:  [Use arrows to move, type to filter, %s for more help]", core.QuestionIcon, string(core.HelpInputRune)),
-					"  foo",
-					"  bar",
-					fmt.Sprintf("%s baz", core.SelectFocusIcon),
-					"  buz\n",
-				},
-				"\n",
-			),
+			`? Pick your word: [? for help]
+  foo
+  bar
+❯ baz
+  buz
+`,
 		},
 		{
 			"Test Select question output with help shown",
 			helpfulPrompt,
 			SelectTemplateData{SelectedIndex: 2, ShowHelp: true, PageEntries: prompt.Options},
-			strings.Join(
-				[]string{
-					fmt.Sprintf("%s This is helpful", core.HelpIcon),
-					fmt.Sprintf("%s Pick your word:  [Use arrows to move, type to filter]", core.QuestionIcon),
-					"  foo",
-					"  bar",
-					fmt.Sprintf("%s baz", core.SelectFocusIcon),
-					"  buz\n",
-				},
-				"\n",
-			),
+			`ⓘ This is helpful
+? Pick your word:
+  foo
+  bar
+❯ baz
+  buz
+`,
 		},
 	}
 

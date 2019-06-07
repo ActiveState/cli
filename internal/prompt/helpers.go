@@ -16,6 +16,9 @@ func init() {
 	core.ErrorIcon = ""
 	core.HelpIcon = ""
 	core.QuestionIcon = ""
+	core.SelectFocusIcon = ">"
+	core.MarkedOptionIcon = "[x]"
+	core.UnmarkedOptionIcon = "[ ]"
 	core.ErrorTemplate = locale.Tt("survey_error_template")
 }
 

@@ -1,7 +1,6 @@
 package survey
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,19 +24,20 @@ func TestPasswordRender(t *testing.T) {
 			"Test Password question output",
 			Password{Message: "Tell me your secret:"},
 			PasswordTemplateData{},
-			fmt.Sprintf("%s Tell me your secret: ", core.QuestionIcon),
+			"? Tell me your secret: ",
 		},
 		{
 			"Test Password question output with help hidden",
 			Password{Message: "Tell me your secret:", Help: "This is helpful"},
 			PasswordTemplateData{},
-			fmt.Sprintf("%s Tell me your secret: [%s for help] ", core.QuestionIcon, string(core.HelpInputRune)),
+			"? Tell me your secret: [? for help] ",
 		},
 		{
 			"Test Password question output with help shown",
 			Password{Message: "Tell me your secret:", Help: "This is helpful"},
 			PasswordTemplateData{ShowHelp: true},
-			fmt.Sprintf("%s This is helpful\n%s Tell me your secret: ", core.HelpIcon, core.QuestionIcon),
+			`ⓘ This is helpful
+? Tell me your secret: `,
 		},
 	}
 
