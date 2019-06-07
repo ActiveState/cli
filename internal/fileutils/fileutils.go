@@ -41,6 +41,13 @@ const (
 
 type includeFunc func(path string, contents []byte) (include bool)
 
+type replaceAllJob struct {
+	filename string
+	find     string
+	replace  string
+	include  includeFunc
+}
+
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
 func ReplaceAll(filename, find string, replace string, include includeFunc) error {
@@ -55,7 +62,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	logging.Debug("Replacing %s with %s in %s", find, replace, filename)
+	//logging.Debug("Replacing %s with %s in %s", find, replace, filename)
 
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
@@ -63,19 +70,19 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	if IsBinary(fileBytes) {
-		logging.Debug("Assuming file '%s' is a binary file", filename)
+		//logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
-			logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
+			//logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > len(replaceBytes) {
 			// Pad replacement with NUL bytes.
-			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
-		logging.Debug("Assuming file '%s' is a text file", filename)
+		//logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	chunks := bytes.Split(fileBytes, findBytes)
@@ -104,17 +111,37 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	return WriteFile(filename, buffer.Bytes()).ToError()
 }
 
+func replaceAllWorker(jobs <-chan replaceAllJob, errors chan<- bool) {
+	for job := range jobs {
+		err := ReplaceAll(job.filename, job.find, job.replace, job.include)
+		if err != nil {
+			logging.Debug("Error during ReplaceAll: %v", err)
+			errors <- true
+		}
+	}
+}
+
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
 func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
+	jobs := make(chan replaceAllJob)
+	errors := make(chan bool)
+
+	for i := 0; i <= 10; i++ {
+		go replaceAllWorker(jobs, errors)
+	}
+
+	filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
 		}
-		return ReplaceAll(path, find, replace, include)
+		jobs <- replaceAllJob{path, find, replace, include}
+		return nil
 	})
+	close(jobs)
+	close(errors)
 
-	if err != nil {
-		return err
+	if <-errors {
+		return failures.FailIO.New("err_replaceall_check_log")
 	}
 
 	return nil
