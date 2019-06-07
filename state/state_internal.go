@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
+	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/run"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/show"
@@ -36,6 +37,7 @@ func register() {
 	Command.Append(show.Command)
 	Command.Append(run.Command)
 	Command.Append(scripts.Command)
+	Command.Append(pull.Command)
 
 	Command.Append(variables.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)
