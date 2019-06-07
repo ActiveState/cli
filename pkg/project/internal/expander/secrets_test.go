@@ -8,7 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/expander"
+	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"

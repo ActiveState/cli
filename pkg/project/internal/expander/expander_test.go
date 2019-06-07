@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/expander"
+	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"

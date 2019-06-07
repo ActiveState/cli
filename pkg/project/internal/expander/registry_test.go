@@ -3,7 +3,7 @@ package expander_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/expander"
+	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"

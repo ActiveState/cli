@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,11 +15,17 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
+
+// RegisteVariableExpander Register a variables expander
+func RegisteVariableExpander() {
+	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.Get()))
+}
 
 // Build covers the build structure
 type Build map[string]string

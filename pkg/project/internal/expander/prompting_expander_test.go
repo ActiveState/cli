@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/expander"
-	expand "github.com/ActiveState/cli/internal/expander"
+	"github.com/ActiveState/cli/pkg/project/internal/expander"
+	expand "github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
