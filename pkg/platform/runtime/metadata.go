@@ -106,8 +106,12 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		logging.Debug("Detected Python artifact, ensuring backwards compatibility")
 
 		// RelocationTargetBinaries
-		if m.RelocationTargetBinaries == "" && runtime.GOOS == "linux" {
-			m.RelocationTargetBinaries = "lib"
+		if m.RelocationTargetBinaries == "" {
+			if runtime.GOOS == "windows" {
+				m.RelocationTargetBinaries = "DLLs"
+			} else {
+				m.RelocationTargetBinaries = "lib"
+			}
 		}
 		// RelocationDir
 		if m.RelocationDir == "" {

@@ -102,7 +102,7 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
 
 	for _, artifactPath := range v.artifactPaths {
-		meta, fail := v.metaForArtifact(artifactPath)
+		meta, fail := runtime.InitMetaData(artifactPath)
 		if fail != nil {
 			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
 			continue
@@ -118,16 +118,17 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			}
 			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
 		}
+
+		// Add DLL dir to PATH on Windows
+		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
+			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
+		}
 	}
 
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 
 	return env
-}
-
-func (v *VirtualEnvironment) metaForArtifact(artifactPath string) (*runtime.MetaData, *failures.Failure) {
-	return runtime.InitMetaData(artifactPath)
 }
 
 // WorkingDirectory returns the working directory to use for the current environment

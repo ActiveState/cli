@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -227,7 +228,9 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 	// it's fine to run this on windows cause those files won't end in .tar anyway
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
+	logging.Debug("Unarchiving %s", archivePath)
 	err := installer.unarchiver.Unarchive(archivePath, tmpRuntimeDir)
+	logging.Debug("Done")
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
@@ -289,7 +292,7 @@ func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
 	}
 
 	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
-	binariesSeparate := metaData.RelocationTargetBinaries != ""
+	binariesSeparate := runtime.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
 
 	// Replace plain text files
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
@@ -312,6 +315,8 @@ func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
 			return FailRuntimeInstallation.Wrap(err)
 		}
 	}
+
+	logging.Debug("Done")
 
 	return nil
 }

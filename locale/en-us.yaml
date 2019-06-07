@@ -751,3 +751,5 @@ err_persist_invalid_project:
   other: Trying to persist an invalid project
 variable_deprecation_warning:
   other: "DEPRECATION WARNING: Variable '{{.V0}}' is using a deprecated field 'pullfrom'. Please rename this field to 'store'."
+err_replaceall_check_log:
+  other: "Error occurred while replacing file contents, please check the error log or contact support."
