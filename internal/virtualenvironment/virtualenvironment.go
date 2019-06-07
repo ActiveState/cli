@@ -127,25 +127,7 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 }
 
 func (v *VirtualEnvironment) metaForArtifact(artifactPath string) (*runtime.MetaData, *failures.Failure) {
-	meta, fail := runtime.InitMetaData(artifactPath)
-	if fail == nil {
-		return meta, nil
-	}
-
-	if !fail.Type.Matches(runtime.FailMetaDataNotFound) {
-		return meta, fail
-	}
-
-	// If no meta file can be found we instead assume a bin directory. This is to facilitate legacy builds
-	logging.Debug("Artifact '%s' has no metadata file, assuming it has a bin directory: %v", artifactPath, fail)
-	return &runtime.MetaData{
-		BinaryLocations: []runtime.MetaDataBinary{
-			runtime.MetaDataBinary{
-				Path:     "bin",
-				Relative: true,
-			},
-		},
-	}, nil
+	return runtime.InitMetaData(artifactPath)
 }
 
 // WorkingDirectory returns the working directory to use for the current environment

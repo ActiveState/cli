@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -101,6 +100,7 @@ func (installer *Installer) Install() *failures.Failure {
 
 	if len(downloadURLs) == 0 {
 		// Already installed, no need to download or install
+		logging.Debug("Nothing to download")
 		return nil
 	}
 
@@ -179,18 +179,11 @@ func (installer *Installer) InstallFromArchive(archivePath string) *failures.Fai
 
 	metaData, fail := InitMetaData(installDir)
 	if fail != nil {
-		if fail.Type.Matches(FailMetaDataNotFound) {
-			if fail = installer.installLegacyVersion(archivePath, installDir); fail != nil {
-				removeInstallDir(installDir)
-				return fail
-			}
-			return nil
-		}
 		removeInstallDir(installDir)
 		return fail
 	}
 
-	if fail = installer.Relocate(metaData.RelocationDir, installDir); fail != nil {
+	if fail = installer.Relocate(metaData); fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
@@ -213,16 +206,6 @@ func (installer *Installer) installDir(filename string) (string, *failures.Failu
 	}
 
 	return installDir, nil
-}
-
-func (installer *Installer) installLegacyVersion(archivePath string, installDir string) *failures.Failure {
-	if strings.Contains(strings.ToLower(archivePath), "python") {
-		return installer.installActivePython(archivePath, installDir)
-	}
-	if strings.Contains(strings.ToLower(archivePath), "perl") {
-		return installer.installActivePerl(archivePath, installDir)
-	}
-	return failures.FailUser.New(locale.Tr("err_language_not_yet_supported", archivePath))
 }
 
 func (installer *Installer) unpackArchive(archivePath string, installDir string) *failures.Failure {
@@ -298,14 +281,38 @@ func (installer *Installer) OnInstall(f func()) {
 
 // Relocate will look through all of the files in this installation and replace any
 // character sequence in those files containing the given prefix.
-func (installer *Installer) Relocate(prefix string, installDir string) *failures.Failure {
-	if len(prefix) > 0 && prefix != installDir {
-		logging.Debug("relocating '%s' to '%s'", prefix, installDir)
-		err := fileutils.ReplaceAllInDirectory(installDir, []string{filepath.Base(constants.RuntimeMetaFile)}, prefix, installDir)
+func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
+	prefix := metaData.RelocationDir
+
+	if len(prefix) == 0 || prefix == metaData.Path {
+		return nil
+	}
+
+	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
+	binariesSeparate := metaData.RelocationTargetBinaries != ""
+
+	// Replace plain text files
+	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
+		// Check if we want to include this
+		func(p string, contents []byte) bool {
+			return !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents))
+		})
+	if err != nil {
+		return FailRuntimeInstallation.Wrap(err)
+	}
+
+	if binariesSeparate {
+		replacement := filepath.Join(metaData.Path, metaData.RelocationTargetBinaries)
+		// Replace binary files
+		err = fileutils.ReplaceAllInDirectory(metaData.Path, prefix, replacement,
+			// Binaries only
+			func(p string, contents []byte) bool { return fileutils.IsBinary(contents) })
+
 		if err != nil {
 			return FailRuntimeInstallation.Wrap(err)
 		}
 	}
+
 	return nil
 }
 
