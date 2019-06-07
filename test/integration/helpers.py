@@ -132,7 +132,7 @@ class IntegrationTest(unittest.TestCase):
 
     def expect_exact(self, pattern, timeout=10):
         try:
-            idx = self.child.expect_exact(pattern, timeout=timeout)
+            self.child.expect_exact(pattern, timeout=timeout)
         except pexpect.EOF:
             self.send_quit()
             self.expect_failure("Reached EOF", pattern)
@@ -172,7 +172,7 @@ class IntegrationTest(unittest.TestCase):
             msg = "echo wait_ready_%USERPROFILE%"
             expect = "wait_ready_"+os.getenv("USERPROFILE")
         self.send(msg)
-        self.expect_exact(msg, timeout=timeout)
+        self.expect_exact(expect, timeout=timeout)
 
     def wait(self, code=0, timeout=30):
         try:

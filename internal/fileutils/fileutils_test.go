@@ -44,7 +44,7 @@ func TestReplaceAllTextFile(t *testing.T) {
 	defer os.RemoveAll(filepath.Dir(tmpfile))
 
 	// Perform the replacement.
-	err = ReplaceAll(tmpfile, "%%FIND%%", "REPL")
+	err = ReplaceAll(tmpfile, "%%FIND%%", "REPL", func(string, []byte) bool { return true })
 	assert.NoError(t, err, "Replacement worked")
 
 	// Verify the file size changed for text files.
@@ -108,9 +108,9 @@ func TestReplaceAllExe(t *testing.T) {
 	assert.True(t, len(oldOutput) > 0, "Stdout read")
 
 	// Perform binary replace.
-	err = ReplaceAll(exe, "%%FIND%%", "REPLTOOLONG")
+	err = ReplaceAll(exe, "%%FIND%%", "REPLTOOLONG", func(string, []byte) bool { return true })
 	assert.Error(t, err, "Replacement text was too long")
-	err = ReplaceAll(exe, "%%FIND%%", "REPL")
+	err = ReplaceAll(exe, "%%FIND%%", "REPL", func(string, []byte) bool { return true })
 	assert.NoError(t, err, "Replacement worked")
 
 	// Verify the file size is identical for binary files.
