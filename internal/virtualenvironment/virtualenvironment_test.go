@@ -1,6 +1,7 @@
 package virtualenvironment
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -75,11 +76,11 @@ func TestActivate(t *testing.T) {
 	}
 
 	setup(t)
-	project := &projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
-	project.Persist()
+	pjfile.Persist()
 
 	venv = Init()
 	fail = venv.Activate()

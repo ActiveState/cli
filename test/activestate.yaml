@@ -1,5 +1,4 @@
-name: CodeIntel
-owner: ActiveState
+project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
 namespace: github.com/ActiveState/CodeIntel
 environments: dev,qa,prod
 platforms:

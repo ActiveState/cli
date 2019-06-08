@@ -59,7 +59,10 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 // listAllVariables prints a list of all of the variables defined for this project.
 func (cmd *Command) listAllVariables() *failures.Failure {
-	prj := project.GetSafe()
+	prj, err := project.GetSafe()
+	if err != nil {
+		return failures.FailDeveloper.Wrap(err)
+	}
 	owner := prj.Owner()
 	projectName := prj.Name()
 	logging.Debug("listing variables for org=%s, project=%s", owner, projectName)

@@ -1,5 +1,4 @@
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
 version: master
 environments: dev,qa,prod
 platforms:

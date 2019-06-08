@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -95,7 +96,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project := projectfile.Get()
+	project := project.Get()
 	print.Info(locale.T("info_activating_state", project))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -107,7 +108,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.Path()))
+	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.Source().Path()))
 
 	_, err := subshell.Activate(&wg)
 	if err != nil {
@@ -216,10 +217,9 @@ func createProject(org, project string, languages []string, directory string) *f
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, org, project)
 	pj := projectfile.Project{
-		Name:      project,
-		Owner:     org,
+		Project:   projectURL,
 		Languages: []projectfile.Language{},
 	}
 

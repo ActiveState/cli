@@ -2,6 +2,7 @@ package new
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -151,10 +152,10 @@ func Execute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, Flags.Owner, Args.Name)
 	// Create the project locally on disk.
 	project := projectfile.Project{
-		Name:    Args.Name,
-		Owner:   Flags.Owner,
+		Project: projectURL,
 		Version: Flags.Version,
 	}
 	project.SetPath(filepath.Join(Flags.Path, constants.ConfigFileName))

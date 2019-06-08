@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -57,11 +58,11 @@ func TestActivateFailures(t *testing.T) {
 }
 
 func TestRunCommand(t *testing.T) {
-	pfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "String",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
-	pfile.Persist()
+	pjfile.Persist()
 
 	if runtime.GOOS == "windows" {
 		// Windows supports bash, but for the purpose of this test we only want to test cmd.exe, so ensure

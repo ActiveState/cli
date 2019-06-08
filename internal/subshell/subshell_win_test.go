@@ -3,6 +3,7 @@
 package subshell
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -36,11 +38,11 @@ func TestBashDontEscapeSpace(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	pfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "String",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
-	pfile.Persist()
+	pjfile.Persist()
 	os.Setenv("ComSpec", "C:\\WINDOWS\\system32\\cmd.exe")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
@@ -66,11 +68,11 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	pfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "String",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
-	pfile.Persist()
+	pjfile.Persist()
 
 	os.Unsetenv("SHELL")
 

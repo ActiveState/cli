@@ -3,6 +3,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
@@ -34,7 +36,8 @@ type RuntimeDLTestSuite struct {
 }
 
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
-	pj := &projectfile.Project{Name: "string", Owner: "string"}
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pj := &projectfile.Project{Project: projectURL}
 	suite.project = project.New(pj)
 
 	var err error
@@ -47,8 +50,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rtMock.MockFullRuntime()
 
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 

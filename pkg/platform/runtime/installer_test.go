@@ -3,6 +3,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -40,9 +41,9 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
 
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
@@ -99,9 +100,9 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	pjfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
@@ -131,9 +132,9 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	pjfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
