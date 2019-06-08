@@ -15,7 +15,6 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -24,7 +23,7 @@ var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.Fail
 
 // RegisteVariableExpander Register a variables expander
 func RegisteVariableExpander() {
-	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.Get()))
+	RegisterExpander("variables", NewVarPromptingExpander(secretsapi.Get()))
 }
 
 // Build covers the build structure
@@ -111,6 +110,7 @@ func (p *Project) ScriptByName(name string) *Script {
 	return nil
 }
 
+// URL returns the Project field of the project file
 func (p *Project) URL() string {
 	return p.projectfile.Project
 }
@@ -121,19 +121,19 @@ func (p *Project) parseProjectURL() []string {
 	return strings.Split(path, "/")
 }
 
-// Name returns project name
-func (p *Project) Name() string {
+// Owner returns project owner
+func (p *Project) Owner() string {
 	return p.parseProjectURL()[1]
 }
 
-// Owner returns project owner
-func (p *Project) Owner() string {
-	return p.parseProjectURL()[0]
+// Name returns project name
+func (p *Project) Name() string {
+	return p.parseProjectURL()[2]
 }
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	return p.parseProjectURL()[2]
+	return p.parseProjectURL()[3]
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
@@ -185,7 +185,6 @@ func GetSafe() (*Project, *failures.Failure) {
 type Platform struct {
 	platform    *projectfile.Platform
 	projectfile *projectfile.Project
-	project     *Project
 }
 
 // Source returns the source projectfile
@@ -196,31 +195,31 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all variables evaluated
 func (p *Platform) Os() string {
-	value := expander.ExpandFromProject(p.platform.Os, p.Project)
+	value := Expand(p.platform.Os)
 	return value
 }
 
 // Version returned with all variables evaluated
 func (p *Platform) Version() string {
-	value := expander.ExpandFromProject(p.platform.Version, p.Project)
+	value := Expand(p.platform.Version)
 	return value
 }
 
 // Architecture with all variables evaluated
 func (p *Platform) Architecture() string {
-	value := expander.ExpandFromProject(p.platform.Architecture, p.Project)
+	value := Expand(p.platform.Architecture)
 	return value
 }
 
 // Libc returned are constrained and all variables evaluated
 func (p *Platform) Libc() string {
-	value := expander.ExpandFromProject(p.platform.Libc, p.Project)
+	value := Expand(p.platform.Libc)
 	return value
 }
 
 // Compiler returned are constrained and all variables evaluated
 func (p *Platform) Compiler() string {
-	value := expander.ExpandFromProject(p.platform.Compiler, p.Project)
+	value := Expand(p.platform.Compiler)
 	return value
 }
 
@@ -248,7 +247,7 @@ func (l *Language) ID() string {
 func (l *Language) Build() *Build {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal := expander.ExpandFromProject(val, l.projectfile)
+		newVal := Expand(val)
 		build[key] = newVal
 	}
 	return &build
@@ -287,7 +286,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() *Build {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal := expander.ExpandFromProject(val, p.projectfile)
+		newVal := Expand(val)
 		build[key] = newVal
 	}
 	return &build
@@ -297,7 +296,6 @@ func (p *Package) Build() *Build {
 type Variable struct {
 	variable    *projectfile.Variable
 	projectfile *projectfile.Project
-	project     *Project
 }
 
 // InitVariable creates a new variable with the given name and all default settings
@@ -343,11 +341,11 @@ func (v *Variable) Store() *projectfile.VariableStore { return v.variable.Value.
 func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	variable := v.variable
 	if variable.Value.StaticValue != nil {
-		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.project.Owner, v.project.Name)
+		value := Expand(*variable.Value.StaticValue)
 		return &value, nil
 	}
 
-	secretsExpander := expander.NewSecretExpander(secretsapi.GetClient())
+	secretsExpander := NewSecretExpander(secretsapi.GetClient())
 	value, failure := secretsExpander.Expand(v.variable.Name, v.projectfile)
 	if failure != nil {
 		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
@@ -415,14 +413,15 @@ func (v *Variable) Save(value string) *failures.Failure {
 }
 
 func (v *Variable) saveSecretValue(value string) *failures.Failure {
-	org, failure := model.FetchOrgByURLName(v.projectfile.Owner)
+	project := &Project{v.projectfile}
+	org, failure := model.FetchOrgByURLName(project.Owner())
 	if failure != nil {
 		return failure
 	}
 
-	var project *mono_models.Project
+	var remoteProject *mono_models.Project
 	if projectfile.VariableStoreProject == *v.Store() {
-		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
+		remoteProject, failure = model.FetchProjectByName(org.Urlname, project.Name())
 		if failure != nil {
 			return failure
 		}
@@ -434,11 +433,11 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 	}
 
 	isShareable := v.IsShared() && projectfile.VariableShareOrg == *v.SharedWith()
-	failure = secrets.Save(secretsapi.GetClient(), kp, org, project, !isShareable, v.Name(), value)
+	failure = secrets.Save(secretsapi.GetClient(), kp, org, remoteProject, !isShareable, v.Name(), value)
 	if failure != nil {
 		return failure
 	} else if isShareable {
-		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, project, v.Name(), value)
+		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, v.Name(), value)
 	}
 
 	return nil
@@ -466,7 +465,7 @@ func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all variables evaluated
 func (e *Event) Value() string {
-	value := expander.ExpandFromProject(e.event.Value, e.projectfile)
+	value := Expand(e.event.Value)
 	return value
 }
 
@@ -487,7 +486,7 @@ func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all variables evaluated
 func (script *Script) Value() string {
-	value := expander.ExpandFromProject(script.script.Value, script.projectfile)
+	value := Expand(script.script.Value)
 	return value
 }
 

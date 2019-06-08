@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"strings"

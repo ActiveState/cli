@@ -1,4 +1,4 @@
-package expander_test
+package project
 
 import (
 	"strings"
@@ -8,7 +8,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -34,8 +33,7 @@ type SecretsExpanderTestSuite struct {
 func loadSecretsProject() (*projectfile.Project, error) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: SecretProject
-owner: SecretOrg
+project: "https://https://platform.activestate.com/SecretOrg/SecretProject/string"
 `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -72,14 +70,14 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() expander.Func {
+func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() Func {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return expander.NewVarExpander(suite.secretsClient)
+	return NewVarExpander(suite.secretsClient)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
@@ -95,7 +93,7 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := expander.NewVarExpander(suite.secretsClient)
+	expanderFn := NewVarExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.projectFile)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
 	suite.Zero(value)

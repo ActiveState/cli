@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"strings"
@@ -15,10 +15,10 @@ import (
 )
 
 // FailExpandNoProjectDefined is used when error arises from an expander function being called without a project
-var FailExpandNoProjectDefined = failures.Type("expander.fail.secrets.expand.noproject")
+var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.noproject")
 
 // FailInputSecretValue is used when error arises from user providing a secret value.
-var FailInputSecretValue = failures.Type("expander.fail.secrets.input.value", failures.FailUserInput)
+var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
 
 // SecretExpander takes care of expanding variables that we know to be secrets
 type SecretExpander struct {
@@ -58,12 +58,13 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 
 // Organization acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Failure) {
-	if e.projectFile == nil {
+	var project Project
+	if project := New(e.projectFile); project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
 	if e.organization == nil {
-		e.organization, fail = model.FetchOrgByURLName(e.projectFile.Owner)
+		e.organization, fail = model.FetchOrgByURLName(project.Owner())
 		if fail != nil {
 			return nil, fail
 		}
@@ -74,12 +75,13 @@ func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Fa
 
 // Project acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
-	if e.projectFile == nil {
+	var project Project
+	if project := New(e.projectFile); project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
 	if e.project == nil {
-		e.project, fail = model.FetchProjectByName(e.projectFile.Owner, e.projectFile.Name)
+		e.project, fail = model.FetchProjectByName(project.Owner(), project.Name())
 		if fail != nil {
 			return nil, fail
 		}

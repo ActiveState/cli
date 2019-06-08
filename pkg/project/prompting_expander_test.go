@@ -1,4 +1,4 @@
-package expander_test
+package project
 
 import (
 	"encoding/json"
@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/project/internal/expander"
-	expand "github.com/ActiveState/cli/pkg/project/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,6 +28,7 @@ type VarPromptingExpanderTestSuite struct {
 	suite.Suite
 
 	projectFile   *projectfile.Project
+	project       *Project
 	promptMock    *promptMock.Mock
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
@@ -41,11 +40,12 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	failures.ResetHandled()
 
 	suite.promptMock = promptMock.Init()
-	expand.Prompter = suite.promptMock
+	Prompter = suite.promptMock
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
 	suite.projectFile = projectFile
+	suite.project = New(projectFile)
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
@@ -64,7 +64,7 @@ func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Func {
+func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() Func {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
@@ -73,7 +73,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Fu
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return expander.NewVarPromptingExpander(suite.secretsClient)
+	return NewVarPromptingExpander(suite.secretsClient)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
@@ -83,7 +83,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure := expanderFn(secretName, suite.projectFile)
+	expandedValue, failure := expanderFn(secretName, suite.project)
 
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)

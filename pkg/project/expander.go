@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"regexp"
@@ -15,25 +15,25 @@ import (
 
 var (
 	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = failures.Type("expander.fail.expandvariable", failures.FailUser)
+	FailExpandVariable = failures.Type("project.fail.expandvariable", failures.FailUser)
 
 	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = failures.Type("expander.fail.expandvariable.badcategory", FailExpandVariable)
+	FailExpandVariableBadCategory = failures.Type("project.fail.expandvariable.badcategory", FailExpandVariable)
 
 	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = failures.Type("expander.fail.expandvariable.badName", FailExpandVariable)
+	FailExpandVariableBadName = failures.Type("project.fail.expandvariable.badName", FailExpandVariable)
 
 	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = failures.Type("expander.fail.expandvariable.recursion", FailExpandVariable)
+	FailExpandVariableRecursion = failures.Type("project.fail.expandvariable.recursion", FailExpandVariable)
 
 	// FailExpanderBadName is used when an Expanders name is invalid.
-	FailExpanderBadName = failures.Type("expander.fail.expander.badName", failures.FailVerify)
+	FailExpanderBadName = failures.Type("project.fail.expander.badName", failures.FailVerify)
 
 	// FailExpanderNoFunc is used when no handler func is found for an Expander.
-	FailExpanderNoFunc = failures.Type("expander.fail.expander.noFunc", failures.FailVerify)
+	FailExpanderNoFunc = failures.Type("project.fail.expander.noFunc", failures.FailVerify)
 
 	// FailVarNotFound is used when no handler func is found for an Expander.
-	FailVarNotFound = failures.Type("expander.fail.vars.notfound", FailExpandVariable)
+	FailVarNotFound = failures.Type("project.fail.vars.notfound", FailExpandVariable)
 )
 
 var lastFailure *failures.Failure
@@ -101,11 +101,12 @@ func limitExpandFromProject(depth int, s string, p *projectfile.Project) string 
 // Func defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type Func func(name string, project *projectfile.Project) (string, *failures.Failure)
+type Func func(name string, project *Project) (string, *failures.Failure)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
-	for _, platform := range project.Platforms {
+func PlatformExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
+	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
 			continue
 		}
