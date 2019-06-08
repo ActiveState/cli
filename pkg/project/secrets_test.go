@@ -24,6 +24,7 @@ type SecretsExpanderTestSuite struct {
 	suite.Suite
 
 	projectFile *projectfile.Project
+	project     *Project
 
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
@@ -33,7 +34,7 @@ type SecretsExpanderTestSuite struct {
 func loadSecretsProject() (*projectfile.Project, error) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://https://platform.activestate.com/SecretOrg/SecretProject/string"
+project: "https://platform.activestate.com/SecretOrg/SecretProject/string"
 `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -52,6 +53,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
 	suite.projectFile = projectFile
+	suite.project = New(projectFile)
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
@@ -81,20 +83,20 @@ func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() Func {
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, fail := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+	value, fail := suite.prepareWorkingExpander()(secretName, suite.project)
 	suite.Equal(expectedFailureType.Name, fail.Type.Name, "unexpected failure type")
 	suite.Zero(value)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
-	value, failure := suite.prepareWorkingExpander()(secretName, suite.projectFile)
+	value, failure := suite.prepareWorkingExpander()(secretName, suite.project)
 	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(failure)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	expanderFn := NewVarExpander(suite.secretsClient)
-	value, failure := expanderFn("undefined-secret", suite.projectFile)
+	value, failure := expanderFn("undefined-secret", suite.project)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
 	suite.Zero(value)
 }

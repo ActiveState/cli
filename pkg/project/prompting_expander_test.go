@@ -101,7 +101,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, failure := expanderFn(secretName, suite.projectFile)
+	expandedValue, failure := expanderFn(secretName, suite.project)
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(failure)

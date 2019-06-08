@@ -346,7 +346,7 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	}
 
 	secretsExpander := NewSecretExpander(secretsapi.GetClient())
-	value, failure := secretsExpander.Expand(v.variable.Name, v.projectfile)
+	value, failure := secretsExpander.Expand(v.variable.Name, New(v.projectfile))
 	if failure != nil {
 		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil

@@ -19,7 +19,7 @@ func init() {
 	RegisterExpander("variables", NewVarPromptingExpander(secretsClient))
 }
 
-func loadProject(t *testing.T) *projectfile.Project {
+func loadProject(t *testing.T) *Project {
 	projectfile.Reset()
 
 	project := &projectfile.Project{}
@@ -52,7 +52,7 @@ scripts:
 
 	project.Persist()
 
-	return project
+	return New(project)
 }
 
 func TestExpandProjectPlatformOs(t *testing.T) {
@@ -117,16 +117,17 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 
 // Tests all possible $platform.[name] variable expansions.
 func TestExpandProjectPlatform(t *testing.T) {
-	project := &projectfile.Project{}
+	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://https://platform.activestate.com/string/string/string"
 platforms:
   - name: Any
   `)
 
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	project.Persist()
+	projectFile.Persist()
+	project := New(projectFile)
 
 	for _, name := range []string{"name", "os", "version", "architecture", "libc", "compiler"} {
 		ExpandFromProject(fmt.Sprintf("$platform.%s", name), project)
@@ -135,7 +136,7 @@ platforms:
 }
 
 func TestExpandDashed(t *testing.T) {
-	project := &projectfile.Project{}
+	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://https://platform.activestate.com/string/string/string"
 scripts:
@@ -143,11 +144,12 @@ scripts:
     value: bar
   `)
 
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	fail := project.Parse()
+	fail := projectFile.Parse()
 	assert.NoError(t, fail.ToError())
-	project.Persist()
+	projectFile.Persist()
+	project := New(projectFile)
 
 	expanded := ExpandFromProject("- $scripts.foo-bar -", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")

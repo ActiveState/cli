@@ -45,7 +45,7 @@ func Failure() *failures.Failure {
 
 // Expand will detect the active project and invoke ExpandFromProject with the given string
 func Expand(s string) string {
-	return ExpandFromProject(s, projectfile.Get())
+	return ExpandFromProject(s, New(projectfile.Get()))
 }
 
 // Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
@@ -58,12 +58,12 @@ func init() {
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
-func ExpandFromProject(s string, p *projectfile.Project) string {
+func ExpandFromProject(s string, p *Project) string {
 	return limitExpandFromProject(0, s, p)
 }
 
 // limitExpandFromProject limits the depth of an expansion to avoid infinite expansion of a value.
-func limitExpandFromProject(depth int, s string, p *projectfile.Project) string {
+func limitExpandFromProject(depth int, s string, p *Project) string {
 	lastFailure = nil
 	if depth > constants.ExpanderMaxDepth {
 		lastFailure = FailExpandVariableRecursion.New("error_expand_variable_infinite_recursion", s)
@@ -132,9 +132,10 @@ func PlatformExpander(name string, project *Project) (string, *failures.Failure)
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func EventExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, event := range project.Events {
+	for _, event := range projectFile.Events {
 		if event.Name == name && !constraints.IsConstrained(event.Constraints) {
 			value = event.Value
 			break
@@ -144,9 +145,10 @@ func EventExpander(name string, project *projectfile.Project) (string, *failures
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func ScriptExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, script := range project.Scripts {
+	for _, script := range projectFile.Scripts {
 		if script.Name == name && !constraints.IsConstrained(script.Constraints) {
 			value = script.Value
 			break
@@ -162,9 +164,9 @@ type VarExpander struct {
 }
 
 // Expand is the main expander function
-func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *VarExpander) Expand(name string, project *Project) (string, *failures.Failure) {
 	// Alias straight to secretsExpander as static variable won't be supported for the time being
-	return e.secretsExpander(name, projectFile)
+	return e.secretsExpander(name, project)
 }
 
 // NewVarExpander creates an Expander which can retrieve and decrypt stored user secrets.
