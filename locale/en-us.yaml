@@ -528,6 +528,10 @@ variables_err_value_with_store:
   other: "Variable should not have a local value defined in the activestate.yaml if it's setting the 'share' or 'store' fields: {{.V0}}"
 variables_err_invalid_value:
   other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
+pull_is_updated:
+  other: Updated to latest
+pull_not_updated:
+  other: Update not needed
 variables_err_value_empty:
   other: "Variable has no value defined: {{.V0}}"
 keypair_cmd_description:
@@ -726,6 +730,10 @@ err_browser_open:
   other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
+err_pull_get_latest_commit_id:
+  other: Cannot get latest commit id from project
+err_pull_update_commit_id:
+  other: Cannot update commit id in project file
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 scripts_no_scripts:

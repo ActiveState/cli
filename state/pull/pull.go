@@ -22,7 +22,6 @@ var Command = &commands.Command{
 
 // Execute the pull command.
 func Execute(cmd *cobra.Command, args []string) {
-	break // to fail at build - add l10n first!
 	logging.Debug("Execute")
 
 	cid, fail := defaultCommitID(project.Get())
