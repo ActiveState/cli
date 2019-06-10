@@ -20,7 +20,9 @@ import (
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
-var FailProjectCorrupted = failures.Type("project.fail.corrupted", failures.FailUser)
+
+// FailProjectCorupted identifies a failure to load a projectfile into a project
+var FailProjectCorupted = failures.Type("project.fail.corrupted", failures.FailUser)
 
 // RegisteVariableExpander Register a variables expander
 func RegisteVariableExpander() {
@@ -140,13 +142,14 @@ func (p *Project) URL() string {
 func (p *Project) parseProjectURL() (map[string]string, *failures.Failure) {
 	url := p.URL()
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-
-	re := regexp.MustCompile(`\/(.*)\/(.*)\?commitID=(.*)`)
-	match := re.FindStringSubmatch(path)
-	if len(match) != 4 {
-		return nil, FailProjectCorrupted.New(locale.T("err_corrupt_project_field"))
+	match := projectfile.ProjectURLRe.FindStringSubmatch(path)
+	if len(match) < 3 {
+		return nil, FailProjectCorrupted.New(locale.Tr("err_corrupt_project_field"))
 	}
-	parts := map[string]string{"owner": match[1], "project": match[2], "commitID": match[3]}
+	parts := map[string]string{"owner": match[1], "project": match[2], "commitID": ""}
+	if len(match) == 4 {
+		parts["commitID"] = match[3]
+	}
 	return parts, nil
 }
 

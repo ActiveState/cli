@@ -27,6 +27,9 @@ var (
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
+
+	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
+	ProjectURLRe = regexp.MustCompile(`\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`)
 )
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
@@ -168,9 +171,8 @@ func (p *Project) Save() *failures.Failure {
 
 	url := p.Project
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-	re := regexp.MustCompile(`\/(.*)\/(.*)\?commitID=(.*)`)
-	match := re.FindStringSubmatch(path)
-	if len(match) != 4 {
+	match := ProjectURLRe.FindStringSubmatch(path)
+	if len(match) < 3 {
 		return FailParseProject.New(locale.T("err_bad_project_url"))
 	}
 
