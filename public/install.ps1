@@ -23,16 +23,15 @@ param (
 )
 
 $script:NOPROMPT = $n
-$script:TARGET = $t
-$script:STATEEXE = $f
+$script:TARGET = ($t).Trim()
+$script:STATEEXE = ($f).Trim()
 $script:STATE = $f.Substring(0, $f.IndexOf("."))
-$script:BRANCH = $b
+$script:BRANCH = ($b).Trim()
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
 
 # Helpers
-
 function notifySettingChange(){
     $HWND_BROADCAST = [IntPtr] 0xffff;
     $WM_SETTINGCHANGE = 0x1a;
@@ -114,9 +113,9 @@ function errorOccured($suppress) {
         if (-Not $suppress){
             Write-Warning $errMsg
         }
-        return $True
+        return $True, $errMsg
     }
-    return $False
+    return $False, ""
 }
 
 function hasWritePermission([string] $path)
@@ -126,11 +125,13 @@ function hasWritePermission([string] $path)
     # return (($acl.Access | Select-Object -ExpandProperty IdentityReference) -contains $user)
     $thefile = "activestate-perms"
     New-Item -Path (Join-Path $path $thefile) -ItemType File -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    $occurance = errorOccured $True
+    #  If an error occurred and it's NOT and IOExpction error where the file already exists
+    if( $occurance[0] -And -Not ($occurance[1].exception.GetType().fullname -eq "System.IO.IOException" -And (Test-Path $path))){
         return $False
     }
     Remove-Item -Path (Join-Path $path $thefile) -Force  -ErrorAction 'silentlycontinue'
-    if(errorOccured $True){
+    if((errorOccured $True)[0]){
         return $False
     }
     return $True
@@ -192,7 +193,7 @@ function promptInstallDir()
     $installDir = ""
     $defaultDir = getDefaultInstallDir
     while($True){
-        $installDir = Read-Host "Please enter the installation directory [$defaultDir]"
+        $installDir = (Read-Host "Please enter the installation directory [$defaultDir]").Trim()
         if ($installDir -eq ""){
             $installDir = $defaultDir
         }
@@ -313,7 +314,8 @@ function install()
     } else {
         if(Test-Path $installPath -PathType Leaf) {
             Remove-Item $installPath -Erroraction 'silentlycontinue'
-            if(errorOccured){
+            $occurance = errorOccured $False
+            if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
                 exit(1)
             }
@@ -338,9 +340,10 @@ function install()
     } 
     if ( -Not (isAdmin)){
         Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+    } else {
+        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
     Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
-    Write-Host "It's recommended that you close this command prompt and start a new one without admin privileges.'`n" -ForegroundColor Yellow
 }
 
 install

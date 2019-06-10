@@ -29,7 +29,7 @@ languages:
         version: "2.*"
         build:
           override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
-variables:
+constants:
   - name: DEBUG
     value: true
   - name: PYTHONPATH
@@ -38,6 +38,7 @@ variables:
         environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
+variables:
   - name: org-secret
     value:
       store: organization

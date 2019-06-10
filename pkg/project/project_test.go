@@ -6,10 +6,11 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
@@ -237,16 +238,15 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 	}
 }
 
-func (suite *ProjectTestSuite) TestVariables() {
+func (suite *ProjectTestSuite) TestConstants() {
 	prj, fail := project.GetSafe()
 	suite.Nil(fail, "Run without failure")
-	variables := prj.Variables()
+	constants := prj.Constants()
 
-	variable := variables[0]
+	constant := constants[0]
 
-	name := variable.Name()
-	value, failure := variable.Value()
-	suite.Require().Nil(failure)
+	name := constant.Name()
+	value := constant.Value()
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")

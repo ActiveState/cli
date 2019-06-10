@@ -37,6 +37,11 @@ events:
     value: echo 'Hello $variables.foo!'
   - name: post
     value: echo 'Hello $variables.bar!'
+constants:
+  - name: constant
+    value: value
+  - name: recursive
+    value: recursive $constants.constant
 scripts:
   - name: test
     value: make test
@@ -74,6 +79,18 @@ func TestExpandProjectScript(t *testing.T) {
 	expanded := ExpandFromProject("$ $scripts.test", project)
 	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ make test", expanded, "Expanded simple script")
+}
+
+func TestExpandProjectConstant(t *testing.T) {
+	project := loadProject(t)
+
+	expanded := expander.ExpandFromProject("$ $constants.constant", project)
+	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	assert.Equal(t, "$ value", expanded, "Expanded simple constant")
+
+	expanded = expander.ExpandFromProject("$ $constants.recursive", project)
+	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	assert.Equal(t, "$ recursive value", expanded, "Expanded recursive constant")
 }
 
 func TestExpandProjectAlternateSyntax(t *testing.T) {

@@ -102,7 +102,7 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
 
 	for _, artifactPath := range v.artifactPaths {
-		meta, fail := v.metaForArtifact(artifactPath)
+		meta, fail := runtime.InitMetaData(artifactPath)
 		if fail != nil {
 			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
 			continue
@@ -118,34 +118,17 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			}
 			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
 		}
+
+		// Add DLL dir to PATH on Windows
+		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
+			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
+		}
 	}
 
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 
 	return env
-}
-
-func (v *VirtualEnvironment) metaForArtifact(artifactPath string) (*runtime.MetaData, *failures.Failure) {
-	meta, fail := runtime.InitMetaData(artifactPath)
-	if fail == nil {
-		return meta, nil
-	}
-
-	if !fail.Type.Matches(runtime.FailMetaDataNotFound) {
-		return meta, fail
-	}
-
-	// If no meta file can be found we instead assume a bin directory. This is to facilitate legacy builds
-	logging.Debug("Artifact '%s' has no metadata file, assuming it has a bin directory: %v", artifactPath, fail)
-	return &runtime.MetaData{
-		BinaryLocations: []runtime.MetaDataBinary{
-			runtime.MetaDataBinary{
-				Path:     "bin",
-				Relative: true,
-			},
-		},
-	}, nil
 }
 
 // WorkingDirectory returns the working directory to use for the current environment

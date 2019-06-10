@@ -273,26 +273,22 @@ flag_state_new_path_description:
   other: Path to create a new project in.
 flag_state_new_owner_description:
   other: Owner of the project being created.
-flag_state_new_version_description:
-  other: Version of the project being created.
 arg_state_new_name_description:
   other: Name of the new project.
 error_state_new_no_auth:
   other: Please authenticate by running "state auth" before creating a new project.
 state_new_prompt_name:
-  other: Please provide a name for the new project.
-error_state_new_abort:
+  other: "Please provide a name for the new project:"
+error_state_new_aborted:
   other: "Unable to create new project: aborted."
 error_state_new_exists:
   other: "Unable to create new project: path exists."
 error_state_new_mkdir:
   other: Unable to create new project directory.
 state_new_prompt_owner:
-  other: Please provide an owner for the new project.
+  other: "Please provide an owner for the new project:"
 error_state_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
-error_state_new_version:
-  other: Version string must consist only of numbers and decimals.
 state_new_created:
   other: Created new project in {{.Dir}}
 error_state_new_project_add:
@@ -647,10 +643,11 @@ installer_err_archive_badext:
   other: Expected runtime archive '{{.V0}}' to have .tar.gz or .tgz extension
 installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named one of '{{.V1}}'
-installer_err_runtime_missing_meta_file:
+installer_err_runtime_missing_meta:
   other: | 
-    The requested runtime does not appear to have a metadata file, this usually means you're trying to use a much older build 
-    that is not supported by this version of the State Tool. It is recommended that you produce a new build.
+    The requested runtime does not appear to have a metadata file and the metadata could not be inferred, this usually 
+    means you're trying to use a much older build that is not supported by this version of the State Tool. It is 
+    recommended that you produce a new build.
 installer_err_runtime_no_executable:
   other: Expected runtime installer '{{.V0}}' to include '{{.V1}}' or '{{.V2}}'
 installer_err_runtime_no_file:
@@ -754,3 +751,5 @@ err_persist_invalid_project:
   other: Trying to persist an invalid project
 variable_deprecation_warning:
   other: "DEPRECATION WARNING: Variable '{{.V0}}' is using a deprecated field 'pullfrom'. Please rename this field to 'store'."
+err_replaceall_check_log:
+  other: "Error occurred while replacing file contents, please check the error log or contact support."

@@ -106,8 +106,13 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	}
 	pjfile.Persist()
 
+	downloadDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+	cacheDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+
 	var fail *failures.Failure
-	suite.installer, fail = runtime.InitInstaller()
+	suite.installer, fail = runtime.NewInstaller(downloadDir, cacheDir, runtime.InitDownload(downloadDir))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -154,7 +159,7 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 		}
 	}
 
-	suite.Equal(1, metaCount, "Installed one artifact via metafile")
+	suite.Equal(2, metaCount, "Both new and legacy got installed via metafile")
 }
 
 func Test_InstallerTestSuite(t *testing.T) {

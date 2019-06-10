@@ -50,6 +50,7 @@ type Project struct {
 	Environments string      `yaml:"environments,omitempty"`
 	Platforms    []Platform  `yaml:"platforms,omitempty"`
 	Languages    []Language  `yaml:"languages,omitempty"`
+	Constants    []*Constant `yaml:"constants,omitempty"`
 	Variables    []*Variable `yaml:"variables,omitempty"`
 	Events       []Event     `yaml:"events,omitempty"`
 	Scripts      []Script    `yaml:"scripts,omitempty"`
@@ -77,6 +78,13 @@ type Language struct {
 	Constraints Constraint `yaml:"constraints,omitempty"`
 	Build       Build      `yaml:"build,omitempty"`
 	Packages    []Package  `yaml:"packages,omitempty"`
+}
+
+// Constant covers the constant structure, which goes under Project
+type Constant struct {
+	Name        string     `yaml:"name"`
+	Value       string     `yaml:"value"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
 }
 
 // Constraint covers the constraint structure, which can go under almost any other struct

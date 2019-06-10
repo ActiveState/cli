@@ -57,6 +57,27 @@ func (p *Project) Languages() []*Language {
 	return languages
 }
 
+// Constants returns a reference to projectfile.Constants
+func (p *Project) Constants() []*Constant {
+	constants := []*Constant{}
+	for i, constant := range p.projectfile.Constants {
+		if !constraints.IsConstrained(constant.Constraints) {
+			constants = append(constants, &Constant{p.projectfile.Constants[i], p.projectfile})
+		}
+	}
+	return constants
+}
+
+// ConstantByName returns a constant matching the given name (if any)
+func (p *Project) ConstantByName(name string) *Constant {
+	for _, constant := range p.Constants() {
+		if constant.Name() == name {
+			return constant
+		}
+	}
+	return nil
+}
+
 // Variables returns a reference to projectfile.Variables
 func (p *Project) Variables() []*Variable {
 	variables := []*Variable{}
@@ -290,6 +311,20 @@ func (p *Package) Build() *Build {
 		build[key] = newVal
 	}
 	return &build
+}
+
+// Constant covers the constant structure
+type Constant struct {
+	constant    *projectfile.Constant
+	projectfile *projectfile.Project
+}
+
+// Name returns constant name
+func (c *Constant) Name() string { return c.constant.Name }
+
+// Value returns constant name
+func (c *Constant) Value() string {
+	return expander.ExpandFromProject(c.constant.Value, c.projectfile)
 }
 
 // Variable covers the variable structure

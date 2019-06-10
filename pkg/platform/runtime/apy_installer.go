@@ -14,23 +14,23 @@ import (
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
 // script to install an ActivePython runtime to the configured runtime dir. Any failures
 // during this process will result in a failed installation and the install-dir being removed.
-func (installer *Installer) installActivePython(archivePath string, installDir string) *failures.Failure {
-	python, fail := installer.locatePythonExecutable(installDir)
+func (m *MetaData) pythonRelocationDir() (string, *failures.Failure) {
+	python, fail := locatePythonExecutable(m.Path)
 	if fail != nil {
-		return fail
+		return "", fail
 	}
 
-	prefix, fail := installer.extractPythonRelocationPrefix(installDir, python)
+	prefix, fail := extractPythonRelocationPrefix(m.Path, python)
 	if fail != nil {
-		return fail
+		return "", fail
 	}
 
 	// relocate python
-	return installer.Relocate(prefix, installDir)
+	return prefix, nil
 }
 
 // locatePythonExecutable will locate the path to the python binary in the runtime dir.
-func (installer *Installer) locatePythonExecutable(installDir string) (string, *failures.Failure) {
+func locatePythonExecutable(installDir string) (string, *failures.Failure) {
 	binPath := filepath.Join(installDir, "bin")
 	python2 := filepath.Join(installDir, "bin", constants.ActivePython2Executable)
 	python3 := filepath.Join(installDir, "bin", constants.ActivePython3Executable)
@@ -54,14 +54,19 @@ func (installer *Installer) locatePythonExecutable(installDir string) (string, *
 }
 
 // extractRelocationPrefix will extract the prefix that needs to be replaced for this installation.
-func (installer *Installer) extractPythonRelocationPrefix(installDir string, python string) (string, *failures.Failure) {
+func extractPythonRelocationPrefix(installDir string, python string) (string, *failures.Failure) {
 	prefixBytes, err := exec.Command(python, "-c", "import activestate; print('\\n'.join(activestate.prefixes))").Output()
+	logging.Debug("bin: %s", python)
+	logging.Debug("OUTPUT: %s", string(prefixBytes))
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
 			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
 			return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
 		}
 		return "", FailRuntimeInvalid.Wrap(err)
+	}
+	if strings.TrimSpace(string(prefixBytes)) == "" {
+		return "", FailRuntimeNoPrefixes.New("installer_err_fail_obtain_prefixes", installDir)
 	}
 	return strings.Split(string(prefixBytes), "\n")[0], nil
 }

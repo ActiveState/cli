@@ -9,13 +9,16 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/termsize"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"gopkg.in/AlecAivazis/survey.v1/core"
+	"github.com/ActiveState/survey/core"
 )
 
 func init() {
 	core.ErrorIcon = ""
 	core.HelpIcon = ""
 	core.QuestionIcon = ""
+	core.SelectFocusIcon = ">"
+	core.MarkedOptionIcon = "[x]"
+	core.UnmarkedOptionIcon = "[ ]"
 	core.ErrorTemplate = locale.Tt("survey_error_template")
 }
 
