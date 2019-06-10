@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/ActiveState/cli/d7ebc72"
+project: "https://platform.activestate.com/ActiveState/cli?commitID=d7ebc72"
 events:
   - name: ACTIVATE
     value: |

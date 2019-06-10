@@ -166,6 +166,14 @@ func (p *Project) Save() *failures.Failure {
 		return failures.FailMarshal.Wrap(err)
 	}
 
+	url := p.Project
+	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
+	re := regexp.MustCompile(`\/(.*)\/(.*)\?commitID=(.*)`)
+	match := re.FindStringSubmatch(path)
+	if len(match) != 4 {
+		return FailParseProject.New(locale.T("err_bad_project_url"))
+	}
+
 	f, err := os.Create(p.Path())
 	if err != nil {
 		return failures.FailIO.Wrap(err)

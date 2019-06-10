@@ -228,6 +228,14 @@ func TestSave(t *testing.T) {
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
 
+	projectURL := project.Project
+	project.Project = "thisisnotatallaprojectURL"
+	fail := project.Save()
+	assert.Error(t, fail.ToError(), "Saving project should fail due to bad projectURL format")
+	project.Project = projectURL
+	fail = project.Save()
+	assert.NoError(t, fail.ToError(), "Saving project should now pass")
+
 	err = tmpfile.Close()
 	assert.NoError(t, err, "Should close our temp file")
 

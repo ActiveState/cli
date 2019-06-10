@@ -24,7 +24,7 @@ func loadProject(t *testing.T) *Project {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://https://platform.activestate.com/string/string/string"
+project: "https://https://platform.activestate.com/string/string?commitID=string"
 platforms:
   - name: Linux
     os: linux
@@ -136,7 +136,7 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 func TestExpandProjectPlatform(t *testing.T) {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://https://platform.activestate.com/string/string/string"
+project: "https://https://platform.activestate.com/string/string?commitID=string"
 platforms:
   - name: Any
   `)
@@ -155,7 +155,7 @@ platforms:
 func TestExpandDashed(t *testing.T) {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://https://platform.activestate.com/string/string/string"
+project: "https://https://platform.activestate.com/string/string?commitID=string"
 scripts:
   - name: foo-bar
     value: bar

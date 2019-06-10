@@ -58,7 +58,7 @@ func TestActivateFailures(t *testing.T) {
 }
 
 func TestRunCommand(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}

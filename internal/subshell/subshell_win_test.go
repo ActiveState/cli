@@ -38,7 +38,7 @@ func TestBashDontEscapeSpace(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
@@ -68,7 +68,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}

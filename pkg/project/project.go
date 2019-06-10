@@ -20,6 +20,7 @@ import (
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
+var FailProjectCorrupted = failures.Type("project.fail.corrupted", failures.FailUser)
 
 // RegisteVariableExpander Register a variables expander
 func RegisteVariableExpander() {
@@ -136,25 +137,47 @@ func (p *Project) URL() string {
 	return p.projectfile.Project
 }
 
-func (p *Project) parseProjectURL() []string {
+func (p *Project) parseProjectURL() (map[string]string, *failures.Failure) {
 	url := p.URL()
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-	return strings.Split(path, "/")
+
+	re := regexp.MustCompile(`\/(.*)\/(.*)\?commitID=(.*)`)
+	match := re.FindStringSubmatch(path)
+	if len(match) != 4 {
+		return nil, FailProjectCorrupted.New(locale.T("err_corrupt_project_field"))
+	}
+	parts := map[string]string{"owner": match[1], "project": match[2], "commitID": match[3]}
+	return parts, nil
 }
 
 // Owner returns project owner
 func (p *Project) Owner() string {
-	return p.parseProjectURL()[1]
+	projectParts, fail := p.parseProjectURL()
+	if fail != nil {
+		failures.Handle(fail.ToError(), fail.Error())
+		os.Exit(1)
+	}
+	return projectParts["owner"]
 }
 
 // Name returns project name
 func (p *Project) Name() string {
-	return p.parseProjectURL()[2]
+	projectParts, fail := p.parseProjectURL()
+	if fail != nil {
+		failures.Handle(fail.ToError(), fail.Error())
+		os.Exit(1)
+	}
+	return projectParts["project"]
 }
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	return p.parseProjectURL()[3]
+	projectParts, fail := p.parseProjectURL()
+	if fail != nil {
+		failures.Handle(fail.ToError(), fail.Error())
+		os.Exit(1)
+	}
+	return projectParts["commitID"]
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)

@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
+project: "https://platform.activestate.com/ActiveState/project?commitID=d7ebc72"
 namespace: github.com/ActiveState/CodeIntel
 environments: dev,qa,prod
 platforms:

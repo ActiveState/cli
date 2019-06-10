@@ -753,3 +753,7 @@ variable_deprecation_warning:
   other: "DEPRECATION WARNING: Variable '{{.V0}}' is using a deprecated field 'pullfrom'. Please rename this field to 'store'."
 err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
+err_bad_project_url:
+  other: Invalid project URL in configuration file.
+err_corrupt_project_field:
+  other: Project field has been corrupted

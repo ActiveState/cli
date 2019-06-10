@@ -18,7 +18,7 @@ import (
 func TestExecute(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
+project: "https://platform.activestate.com/ActiveState/project?commitID=d7ebc72"
 scripts:
   - name: run
     value: whatever
@@ -87,7 +87,7 @@ func TestScriptsTable(t *testing.T) {
 func newScript(t *testing.T, name, desc, val string) *project.Script {
 	p := projectfile.Project{}
 	contents := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
+project: "https://platform.activestate.com/ActiveState/project?commitID=d7ebc72"
 scripts:
   - name: %s
     description: %s

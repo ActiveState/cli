@@ -36,7 +36,7 @@ type RuntimeDLTestSuite struct {
 }
 
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pj := &projectfile.Project{Project: projectURL}
 	suite.project = project.New(pj)
 

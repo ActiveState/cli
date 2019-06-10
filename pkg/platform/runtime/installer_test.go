@@ -41,7 +41,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
@@ -100,7 +100,7 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
@@ -137,7 +137,7 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, "string", "string")
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}

@@ -34,7 +34,7 @@ type SecretsExpanderTestSuite struct {
 func loadSecretsProject() (*projectfile.Project, error) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/SecretOrg/SecretProject/string"
+project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=string"
 `)
 
 	err := yaml.Unmarshal([]byte(contents), project)
