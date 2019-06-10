@@ -21,8 +21,8 @@ import (
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
 
-// FailProjectCorupted identifies a failure to load a projectfile into a project
-var FailProjectCorupted = failures.Type("project.fail.corrupted", failures.FailUser)
+// FailProjectCorrupted identifies a failure to load a projectfile into a project
+var FailProjectCorrupted = failures.Type("project.fail.corrupted", failures.FailUser)
 
 // RegisteVariableExpander Register a variables expander
 func RegisteVariableExpander() {
