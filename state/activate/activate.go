@@ -147,6 +147,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+	commitID := branch.CommitID
 
 	languages, fail := model.FetchLanguagesForBranch(branch)
 	if fail != nil {
@@ -176,7 +177,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 
 		// Actually create the project
-		fail = createProject(org, name, languages, directory)
+		fail = createProject(org, name, commitID, languages, directory)
 		if fail != nil {
 			return fail
 		}
@@ -212,12 +213,12 @@ func getPathsForNamespace(namespace string) []string {
 }
 
 // createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project string, languages []string, directory string) *failures.Failure {
+func createProject(org, project, commitID string, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
-	projectURL := fmt.Sprintf("https://%s/%s/%s/", constants.PlatformURL, org, project)
+	projectURL := fmt.Sprintf("https://%s/%s/%s/%s", constants.PlatformURL, org, project, commitID)
 	pj := projectfile.Project{
 		Project:   projectURL,
 		Languages: []projectfile.Language{},
