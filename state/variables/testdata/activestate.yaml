@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
+project: "https://platform.activestate.com/ActiveState/CodeIntel/d7ebc72"
 namespace: github.com/ActiveState/CodeIntel
 version: master
 environments: dev,qa,prod

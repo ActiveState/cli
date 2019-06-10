@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/ActiveState/project/d7ebc72"
+project: "https://platform.activestate.com/Projects/project/d7ebc72"
 version: master
 environments: dev,qa,prod
 platforms:
