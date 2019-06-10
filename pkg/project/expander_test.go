@@ -84,12 +84,12 @@ func TestExpandProjectScript(t *testing.T) {
 func TestExpandProjectConstant(t *testing.T) {
 	project := loadProject(t)
 
-	expanded := expander.ExpandFromProject("$ $constants.constant", project)
-	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	expanded := ExpandFromProject("$ $constants.constant", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ value", expanded, "Expanded simple constant")
 
-	expanded = expander.ExpandFromProject("$ $constants.recursive", project)
-	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	expanded = ExpandFromProject("$ $constants.recursive", project)
+	assert.NoError(t, Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ recursive value", expanded, "Expanded recursive constant")
 }
 

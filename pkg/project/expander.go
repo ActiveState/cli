@@ -158,9 +158,10 @@ func ScriptExpander(name string, project *Project) (string, *failures.Failure) {
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func ConstantExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, constant := range project.Constants {
+	for _, constant := range projectFile.Constants {
 		if constant.Name == name && !constraints.IsConstrained(constant.Constraints) {
 			value = constant.Value
 			break

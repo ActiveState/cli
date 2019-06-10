@@ -324,7 +324,7 @@ func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant name
 func (c *Constant) Value() string {
-	return ExpandFromProject(c.constant.Value, c.projectfile)
+	return Expand(c.constant.Value)
 }
 
 // Variable covers the variable structure
