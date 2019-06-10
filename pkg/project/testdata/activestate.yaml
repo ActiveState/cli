@@ -16,7 +16,7 @@ environments: "something"
 version: "1.0"
 namespace: "my/name/space"
 owner: ActiveState
-variables:
+constants:
   - name: foo
     value: foo $platform.name
     constraints:
@@ -29,6 +29,7 @@ variables:
     value: baz $platform.name
     constraints:
       platform: OSX
+variables:
   - name: undefined-secret
     value: 
       store: organization
