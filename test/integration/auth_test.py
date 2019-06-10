@@ -88,7 +88,7 @@ class TestAuth(helpers.IntegrationTest):
         if r.status_code != 200:	
             self.fail("Create user failed: code: %d, response: %s" % (r.status_code, r.content))	
 
-         return data["username"], data["password"]	
+        return data["username"], data["password"]	
 
 if __name__ == '__main__':	
     helpers.Run()
