@@ -1,14 +1,14 @@
 import os	
 import tempfile	
 
- import auth_test	
+import auth_test	
 import helpers	
 
- dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))	
+dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))	
 
- class TestActivate(helpers.IntegrationTest):	
+class TestActivate(helpers.IntegrationTest):	
 
-     def test_activate_python2(self):	
+    def test_activate_python2(self):	
         path = os.path.join(dir_path, "testdata")	
         self.set_cwd(path)	
 
@@ -30,11 +30,11 @@ import helpers
         self.send_quit()	
         self.wait()	
 
-     def test_activate_python3(self):	
+    def test_activate_python3(self):	
         path = os.path.join(dir_path, "testdata")	
         self.set_cwd(path)	
 
-         auth = auth_test.TestAuth()	
+        auth = auth_test.TestAuth()	
         auth.set_config(self.config_dir)	
         auth.set_cwd(path)	
         auth.login_as_persistent_user()	
@@ -52,5 +52,5 @@ import helpers
         self.send_quit()	
         self.wait()	
 
- if __name__ == '__main__':	
+if __name__ == '__main__':	
     helpers.Run()
