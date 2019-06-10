@@ -154,6 +154,18 @@ func ScriptExpander(name string, project *projectfile.Project) (string, *failure
 	return value, nil
 }
 
+// ConstantExpander expands constants defined in the project-file.
+func ConstantExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+	var value string
+	for _, constant := range project.Constants {
+		if constant.Name == name && !constraints.IsConstrained(constant.Constraints) {
+			value = constant.Value
+			break
+		}
+	}
+	return value, nil
+}
+
 // VarExpander takes car of expanding user defined variables
 type VarExpander struct {
 	secretsClient   *secretsapi.Client
