@@ -1,5 +1,4 @@
-name: cli
-owner: ActiveState
+project: "https://platform.activestate.com/ActiveState/cli/d7ebc72"
 events:
   - name: ACTIVATE
     value: |
