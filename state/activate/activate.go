@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -213,7 +215,7 @@ func getPathsForNamespace(namespace string) []string {
 }
 
 // createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project, commitID string, languages []string, directory string) *failures.Failure {
+func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
