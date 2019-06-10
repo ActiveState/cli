@@ -71,7 +71,7 @@ steps:
   - script: |
       cd test\integration
       pip3 install -r requirements.txt
-      python -m unittest discover -p "*_test.p"
+      python -m unittest discover -p "*_test.py"
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'], 'Windows_NT')
     displayName: Windows Integration Tests
