@@ -8,18 +8,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
-
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func TestActivateRuntimeEnvironment(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project := &projectfile.Project{}
 	dat := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/string/string?commitID=string"
 languages:
     - name: Python3`)
 	yaml.Unmarshal([]byte(dat), &project)
