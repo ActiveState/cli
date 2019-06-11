@@ -24,7 +24,7 @@ class TestActivate(helpers.IntegrationTest):
         self.send(tempfile.TemporaryDirectory().name)
         if os.name == 'nt':
             # No py2 project on the platform yet
-            self.expect("Activating Virtual Environment")
+            self.expect("Your project does not have a configuration that is compatible with your platform")
         else:
             self.expect("Downloading", timeout=240)
             self.expect("Installing", timeout=240)
