@@ -319,7 +319,7 @@ const (
 	SecretScopeProject SecretScope = "project"
 )
 
-// NewScope creates a new SecretScope from the given string name and will fail if the given string name does not
+// NewSecretScope creates a new SecretScope from the given string name and will fail if the given string name does not
 // match one of the available scopes
 func NewSecretScope(name string) (SecretScope, *failures.Failure) {
 	var scope SecretScope
