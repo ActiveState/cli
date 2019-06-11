@@ -146,7 +146,7 @@ func SaveSecretShares(secretsClient *Client, org *mono_models.Organization, user
 	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Debug("error sharing user secrets: %v", err)
-		return FailSave.New("variables_err_save")
+		return FailSave.New("secrets_err_save")
 	}
 	return nil
 }

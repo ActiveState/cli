@@ -9,10 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -73,22 +71,31 @@ func (p *Project) ConstantByName(name string) *Constant {
 	return nil
 }
 
-// Variables returns a reference to projectfile.Variables
-func (p *Project) Variables() []*Variable {
-	variables := []*Variable{}
-	for i, variable := range p.projectfile.Variables {
-		if !constraints.IsConstrained(variable.Constraints) {
-			variables = append(variables, &Variable{p.projectfile.Variables[i], p.projectfile})
+// Secrets returns a reference to projectfile.Secrets
+func (p *Project) Secrets() []*Secret {
+	secrets := []*Secret{}
+	if p.projectfile.Secrets != nil && p.projectfile.Secrets.User != nil {
+		for _, secret := range p.projectfile.Secrets.User {
+			if !constraints.IsConstrained(secret.Constraints) {
+				secrets = append(secrets, p.NewSecret(secret, SecretScopeUser))
+			}
 		}
 	}
-	return variables
+	if p.projectfile.Secrets != nil && p.projectfile.Secrets.User != nil {
+		for _, secret := range p.projectfile.Secrets.Project {
+			if !constraints.IsConstrained(secret.Constraints) {
+				secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
+			}
+		}
+	}
+	return secrets
 }
 
-// VariableByName returns a variable matching the given name (if any)
-func (p *Project) VariableByName(name string) *Variable {
-	for _, variable := range p.Variables() {
-		if variable.Name() == name {
-			return variable
+// SecretByName returns a secret matching the given name (if any)
+func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
+	for _, secret := range p.Secrets() {
+		if secret.Name() == name && secret.scope == scope {
+			return secret
 		}
 	}
 	return nil
@@ -189,31 +196,31 @@ func (p *Platform) Source() *projectfile.Project { return p.projectfile }
 // Name returns platform name
 func (p *Platform) Name() string { return p.platform.Name }
 
-// Os returned with all variables evaluated
+// Os returned with all secrets evaluated
 func (p *Platform) Os() string {
 	value := expander.ExpandFromProject(p.platform.Os, p.projectfile)
 	return value
 }
 
-// Version returned with all variables evaluated
+// Version returned with all secrets evaluated
 func (p *Platform) Version() string {
 	value := expander.ExpandFromProject(p.platform.Version, p.projectfile)
 	return value
 }
 
-// Architecture with all variables evaluated
+// Architecture with all secrets evaluated
 func (p *Platform) Architecture() string {
 	value := expander.ExpandFromProject(p.platform.Architecture, p.projectfile)
 	return value
 }
 
-// Libc returned are constrained and all variables evaluated
+// Libc returned are constrained and all secrets evaluated
 func (p *Platform) Libc() string {
 	value := expander.ExpandFromProject(p.platform.Libc, p.projectfile)
 	return value
 }
 
-// Compiler returned are constrained and all variables evaluated
+// Compiler returned are constrained and all secrets evaluated
 func (p *Platform) Compiler() string {
 	value := expander.ExpandFromProject(p.platform.Compiler, p.projectfile)
 	return value
@@ -228,10 +235,10 @@ type Language struct {
 // Source returns the source projectfile
 func (l *Language) Source() *projectfile.Project { return l.projectfile }
 
-// Name with all variables evaluated
+// Name with all secrets evaluated
 func (l *Language) Name() string { return l.language.Name }
 
-// Version with all variables evaluated
+// Version with all secrets evaluated
 func (l *Language) Version() string { return l.language.Version }
 
 // ID is an identifier for this language; e.g. the Name + Version
@@ -239,7 +246,7 @@ func (l *Language) ID() string {
 	return l.Name() + l.Version()
 }
 
-// Build with all variables evaluated
+// Build with all secrets evaluated
 func (l *Language) Build() *Build {
 	build := Build{}
 	for key, val := range l.language.Build {
@@ -278,7 +285,7 @@ func (p *Package) Name() string { return p.pkg.Name }
 // Version returns package version
 func (p *Package) Version() string { return p.pkg.Version }
 
-// Build returned with all variables evaluated
+// Build returned with all secrets evaluated
 func (p *Package) Build() *Build {
 	build := Build{}
 	for key, val := range p.pkg.Build {
@@ -302,138 +309,98 @@ func (c *Constant) Value() string {
 	return expander.ExpandFromProject(c.constant.Value, c.projectfile)
 }
 
-// Variable covers the variable structure
-type Variable struct {
-	variable    *projectfile.Variable
+// SecretScope defines the scope of a secret
+type SecretScope string
+
+const (
+	// SecretScopeUser defines a secret as being a user secret
+	SecretScopeUser SecretScope = "user"
+	// SecretScopeProject defines a secret as being a Project secret
+	SecretScopeProject SecretScope = "project"
+)
+
+// NewSecretScope creates a new SecretScope from the given string name and will fail if the given string name does not
+// match one of the available scopes
+func NewSecretScope(name string) (SecretScope, *failures.Failure) {
+	var scope SecretScope
+	switch name {
+	case string(SecretScopeUser):
+		return SecretScopeUser, nil
+	case string(SecretScopeProject):
+		return SecretScopeProject, nil
+	default:
+		return scope, failures.FailInput.New("secrets_err_invalid_namespace")
+	}
+}
+
+// Secret covers the secret structure
+type Secret struct {
+	secret      *projectfile.Secret
 	projectfile *projectfile.Project
+	scope       SecretScope
 }
 
-// InitVariable creates a new variable with the given name and all default settings
-func (p *Project) InitVariable(name string) *Variable {
-	store := projectfile.VariableStoreProject
-	share := projectfile.VariableShareOrg
-	return p.NewVariable(&projectfile.Variable{
+// InitSecret creates a new secret with the given name and all default settings
+func (p *Project) InitSecret(name string, scope SecretScope) *Secret {
+	return p.NewSecret(&projectfile.Secret{
 		Name: name,
-		Value: projectfile.VariableValue{
-			Store: &store,
-			Share: &share,
-		},
-	})
+	}, scope)
 }
 
-// NewVariable creates a new variable struct
-func (p *Project) NewVariable(v *projectfile.Variable) *Variable {
-	return &Variable{v, p.Source()}
+// NewSecret creates a new secret struct
+func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope) *Secret {
+	return &Secret{s, p.Source(), scope}
 }
 
 // Source returns the source projectfile
-func (v *Variable) Source() *projectfile.Project { return v.projectfile }
+func (s *Secret) Source() *projectfile.Project { return s.projectfile }
 
-// Name returns variable name
-func (v *Variable) Name() string { return v.variable.Name }
+// Name returns secret name
+func (s *Secret) Name() string { return s.secret.Name }
 
-// Description returns variable description
-func (v *Variable) Description() string { return v.variable.Description }
+// Description returns secret description
+func (s *Secret) Description() string { return s.secret.Description }
 
-// IsSecret returns whether this variable is a secret variable or static
-func (v *Variable) IsSecret() bool { return v.variable.Value.StaticValue == nil }
+// IsUser returns whether this secret is user scoped
+func (s *Secret) IsUser() bool { return s.scope == SecretScopeUser }
 
-// IsShared returns whether this variable is shared or not
-func (v *Variable) IsShared() bool { return v.variable.Value.Share != nil }
-
-// SharedWith returns who this variable is shared with
-func (v *Variable) SharedWith() *projectfile.VariableShare { return v.variable.Value.Share }
-
-// Store returns where this variable was pulled from
-func (v *Variable) Store() *projectfile.VariableStore { return v.variable.Value.Store }
+// IsProject returns whether this secret is project scoped
+func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
-func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
-	variable := v.variable
-	if variable.Value.StaticValue != nil {
-		value := expander.ExpandFromProject(*variable.Value.StaticValue, v.projectfile)
-		return &value, nil
-	}
-
-	secretsExpander := expander.NewSecretExpander(secretsapi.GetClient())
-	value, failure := secretsExpander.Expand(v.variable.Name, v.projectfile)
-	if failure != nil {
-		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
+func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
+	secretsExpander := expander.NewSecretExpander(secretsapi.GetClient(), s.IsUser())
+	value, fail := secretsExpander.Expand(s.secret.Name, s.projectfile)
+	if fail != nil {
+		if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil
 		}
-		logging.Error("Could not expand secret variable %s, error: %s", v.Name(), failure.Error())
-		return nil, failure
+		logging.Error("Could not expand secret %s, error: %s", s.Name(), fail.Error())
+		return nil, fail
 	}
 	return &value, nil
 }
 
-// SharedWithLabel wraps v.SharedWith().String() for API consistency and localization.
-func (v *Variable) SharedWithLabel() string {
-	s := v.SharedWith().String()
-	if s == "" {
-		return s
-	}
-	return locale.T(s)
-}
-
-// StoreLabel returns a representation of the variable storage location.
-func (v *Variable) StoreLabel() string {
-	if !v.IsSecret() {
-		return locale.T("local")
-	}
-	return locale.T(v.Store().String())
-}
-
-// IsSetLabel returns a representation of whether the variable is set.
-func (v *Variable) IsSetLabel() (string, *failures.Failure) {
-	valornil, fail := v.ValueOrNil()
-	if fail != nil {
+// Value returned with all secrets evaluated
+func (s *Secret) Value() (string, *failures.Failure) {
+	value, fail := s.ValueOrNil()
+	if fail != nil || value == nil {
 		return "", fail
-	}
-	if valornil == nil {
-		return locale.T("variables_value_unset"), nil
-	}
-	return locale.T("variables_value_set"), nil
-}
-
-// IsEncryptedLabel returns a representation of encryption status.
-func (v *Variable) IsEncryptedLabel() string {
-	if v.IsSecret() {
-		return locale.T("confirmation")
-	}
-	return locale.T("contradiction")
-}
-
-// Value returned with all variables evaluated
-func (v *Variable) Value() (string, *failures.Failure) {
-	value, failure := v.ValueOrNil()
-	if failure != nil || value == nil {
-		return "", failure
 	}
 	return *value, nil
 }
 
-// Save will save the provided value for this variable to the project file if not a secret, else
+// Save will save the provided value for this secret to the project file if not a secret, else
 // will store back to the secrets store.
-func (v *Variable) Save(value string) *failures.Failure {
-	if v.IsSecret() {
-		return v.saveSecretValue(value)
-	}
-	return v.saveStaticValue(value)
-}
-
-func (v *Variable) saveSecretValue(value string) *failures.Failure {
-	org, failure := model.FetchOrgByURLName(v.projectfile.Owner)
+func (s *Secret) Save(value string) *failures.Failure {
+	org, failure := model.FetchOrgByURLName(s.projectfile.Owner)
 	if failure != nil {
 		return failure
 	}
 
-	var project *mono_models.Project
-	if projectfile.VariableStoreProject == *v.Store() {
-		project, failure = model.FetchProjectByName(org.Urlname, v.projectfile.Name)
-		if failure != nil {
-			return failure
-		}
+	project, failure := model.FetchProjectByName(org.Urlname, s.projectfile.Name)
+	if failure != nil {
+		return failure
 	}
 
 	kp, failure := secrets.LoadKeypairFromConfigDir()
@@ -441,22 +408,15 @@ func (v *Variable) saveSecretValue(value string) *failures.Failure {
 		return failure
 	}
 
-	isShareable := v.IsShared() && projectfile.VariableShareOrg == *v.SharedWith()
-	failure = secrets.Save(secretsapi.GetClient(), kp, org, project, !isShareable, v.Name(), value)
+	failure = secrets.Save(secretsapi.GetClient(), kp, org, project, s.IsUser(), s.Name(), value)
 	if failure != nil {
 		return failure
-	} else if isShareable {
-		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, project, v.Name(), value)
 	}
 
-	return nil
-}
-
-func (v *Variable) saveStaticValue(value string) *failures.Failure {
-	v.variable.ValueRaw = projectfile.VariableValue{StaticValue: &value}
-	if err := v.projectfile.Save(); err != nil {
-		return failures.FailIO.Wrap(err)
+	if s.IsProject() {
+		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, project, s.Name(), value)
 	}
+
 	return nil
 }
 
@@ -472,7 +432,7 @@ func (e *Event) Source() *projectfile.Project { return e.projectfile }
 // Name returns Event name
 func (e *Event) Name() string { return e.event.Name }
 
-// Value returned with all variables evaluated
+// Value returned with all secrets evaluated
 func (e *Event) Value() string {
 	value := expander.ExpandFromProject(e.event.Value, e.projectfile)
 	return value
@@ -493,7 +453,7 @@ func (script *Script) Name() string { return script.script.Name }
 // Description returns script description
 func (script *Script) Description() string { return script.script.Description }
 
-// Value returned with all variables evaluated
+// Value returned with all secrets evaluated
 func (script *Script) Value() string {
 	value := expander.ExpandFromProject(script.script.Value, script.projectfile)
 	return value

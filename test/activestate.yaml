@@ -39,11 +39,13 @@ constants:
         environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-variables:
-  - name: org-secret
-    value:
-      store: organization
-      share: organization
+secrets:
+  user:
+    - name: user-secret
+      description: user-secret-description
+  project:
+    - name: project-secret
+      description: project-secret-description
 events:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

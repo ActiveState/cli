@@ -10,15 +10,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/expander"
-	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-func init() {
-	secretsClient := secretsapi.NewDefaultClient(authentication.Get().BearerToken())
-	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsClient))
-}
 
 func loadProject(t *testing.T) *projectfile.Project {
 	projectfile.Reset()
@@ -34,16 +28,16 @@ platforms:
     os: windows
   - name: macOS
     os: macos
-events:
-  - name: pre
-    value: echo 'Hello $variables.foo!'
-  - name: post
-    value: echo 'Hello $variables.bar!'
 constants:
   - name: constant
     value: value
   - name: recursive
     value: recursive $constants.constant
+secrets:
+  project:
+    - name: proj-secret
+  user:
+    - name: user-proj-secret
 scripts:
   - name: test
     value: make test
@@ -53,9 +47,6 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
-
-	fail := project.Parse()
-	assert.NoError(t, fail.ToError())
 
 	project.Persist()
 
@@ -93,6 +84,26 @@ func TestExpandProjectConstant(t *testing.T) {
 	expanded = expander.ExpandFromProject("$ $constants.recursive", project)
 	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ recursive value", expanded, "Expanded recursive constant")
+}
+
+func TestExpandProjectSecret(t *testing.T) {
+	project := loadProject(t)
+
+	expander.RegisterExpander("secrets.user", func(name string, project *projectfile.Project) (string, *failures.Failure) {
+		return "user-proj-value", nil
+	})
+
+	expander.RegisterExpander("secrets.project", func(name string, project *projectfile.Project) (string, *failures.Failure) {
+		return "proj-value", nil
+	})
+
+	expanded := expander.ExpandFromProject("$ $secrets.user.user-proj-secret", project)
+	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	assert.Equal(t, "$ user-proj-value", expanded, "Expanded simple constant")
+
+	expanded = expander.ExpandFromProject("$ $secrets.project.proj-secret", project)
+	assert.NoError(t, expander.Failure().ToError(), "Ran without failure")
+	assert.Equal(t, "$ proj-value", expanded, "Expanded simple constant")
 }
 
 func TestExpandProjectAlternateSyntax(t *testing.T) {
@@ -166,8 +177,6 @@ scripts:
 
 	err := yaml.Unmarshal([]byte(contents), project)
 	assert.Nil(t, err, "Unmarshalled YAML")
-	fail := project.Parse()
-	assert.NoError(t, fail.ToError())
 	project.Persist()
 
 	expanded := expander.ExpandFromProject("- $scripts.foo-bar -", project)
