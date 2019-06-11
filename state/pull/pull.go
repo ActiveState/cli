@@ -58,6 +58,7 @@ func defaultCommitID(p *project.Project) (string, *failures.Failure) {
 }
 
 func updateCommitID(p *projectfile.Project, cid string) (bool, *failures.Failure) {
+	break // halt on build
 	curCID := ""
 
 	if curCID == "" || curCID != cid {
