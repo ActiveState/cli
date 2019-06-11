@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -309,4 +310,34 @@ func TestParseVersionInfo(t *testing.T) {
 	versionInfo, fail = ParseVersionInfo()
 	require.NoError(t, fail.ToError())
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
+}
+
+func TestOverwriteFile(t *testing.T) {
+	file := "./testdata/somejunkname"
+	defer setupFile(t, file, "some\ndata here\nmore\n")()
+
+	f, err := os.OpenFile(file, os.O_RDWR, 0)
+	require.NoError(t, err)
+	defer f.Close()
+
+	testContent := []byte("x")
+	buf := bytes.NewBuffer(testContent)
+	assert.NoError(t, overwriteFile(f, buf))
+
+	ss, err := f.Stat()
+	require.NoError(t, err)
+	assert.Equal(t, int64(len(testContent)), ss.Size())
+}
+
+func setupFile(t *testing.T, file, contents string) func() {
+	f, err := os.Create(file)
+	require.NoError(t, err)
+	defer f.Close()
+
+	_, err = f.WriteString(contents)
+	require.NoError(t, err)
+
+	return func() {
+		require.NoError(t, os.Remove(file))
+	}
 }
