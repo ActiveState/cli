@@ -44,19 +44,22 @@ type ProjectSimple struct {
 
 // Project covers the top level project structure of our yaml
 type Project struct {
-	Name         string      `yaml:"name"`
-	Owner        string      `yaml:"owner"`
-	Namespace    string      `yaml:"namespace,omitempty"`
-	Branch       string      `yaml:"branch,omitempty"`
-	Version      string      `yaml:"version,omitempty"`
-	Environments string      `yaml:"environments,omitempty"`
-	Platforms    []Platform  `yaml:"platforms,omitempty"`
-	Languages    []Language  `yaml:"languages,omitempty"`
-	Constants    []*Constant `yaml:"constants,omitempty"`
-	Variables    []*Variable `yaml:"variables,omitempty"`
-	Events       []Event     `yaml:"events,omitempty"`
-	Scripts      []Script    `yaml:"scripts,omitempty"`
-	path         string      // "private"
+	Name         string        `yaml:"name"`
+	Owner        string        `yaml:"owner"`
+	Namespace    string        `yaml:"namespace,omitempty"`
+	Branch       string        `yaml:"branch,omitempty"`
+	Version      string        `yaml:"version,omitempty"`
+	Environments string        `yaml:"environments,omitempty"`
+	Platforms    []Platform    `yaml:"platforms,omitempty"`
+	Languages    []Language    `yaml:"languages,omitempty"`
+	Constants    []*Constant   `yaml:"constants,omitempty"`
+	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
+	Events       []Event       `yaml:"events,omitempty"`
+	Scripts      []Script      `yaml:"scripts,omitempty"`
+	path         string        // "private"
+
+	// Deprecated
+	Variables interface{} `yaml:"variables,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -87,6 +90,19 @@ type Constant struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints,omitempty"`
+}
+
+// SecretScopes holds secret scopes, scopes define what the secrets belong to
+type SecretScopes struct {
+	User    []*Secret `yaml:"user,omitempty"`
+	Project []*Secret `yaml:"project,omitempty"`
+}
+
+// Secret covers the variable structure, which goes under Project
+type Secret struct {
+	Name        string     `yaml:"name"`
+	Description string     `yaml:"description"`
+	Constraints Constraint `yaml:"constraints"`
 }
 
 // Constraint covers the constraint structure, which can go under almost any other struct
@@ -136,19 +152,11 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
-	return &project, project.Parse()
-}
-
-// Parse further processes the current file by parsing mixed values (something go-yaml doesnt handle)
-func (p *Project) Parse() *failures.Failure {
-	for _, variable := range p.Variables {
-		fail := variable.Parse()
-		if fail != nil {
-			return fail
-		}
+	if project.Variables != nil {
+		return nil, FailValidate.New("variable_field_deprecation_warning")
 	}
 
-	return nil
+	return &project, nil
 }
 
 // Path returns the project's activestate.yaml file path.

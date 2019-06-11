@@ -1,6 +1,11 @@
-package variables
+package secrets
 
 import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -10,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -30,9 +36,9 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 	c := Command{
 		secretsClient: secretsClient,
 		config: &commands.Command{
-			Name:        "variables",
-			Aliases:     []string{"vars"},
-			Description: "variables_cmd_description",
+			Name:        "secrets",
+			Aliases:     []string{"variables", "vars"},
+			Description: "secrets_cmd_description",
 		},
 	}
 	c.config.Run = c.Execute
@@ -51,24 +57,39 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	failure := cmd.listAllVariables()
-	if failure != nil {
-		failures.Handle(failure, locale.T("variables_err"))
+	if strings.HasPrefix(os.Args[1], "var") {
+		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}
+
+	rows, failure := cmd.secretRows()
+	if failure != nil {
+		failures.Handle(failure, locale.T("secrets_err"))
+	}
+
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_usage")})
+	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
+	t.SetAlign("left")
+	print.Line(t.Render("simple"))
 }
 
-// listAllVariables prints a list of all of the variables defined for this project.
-func (cmd *Command) listAllVariables() *failures.Failure {
+// secretRows returns the rows used in our output table
+func (cmd *Command) secretRows() ([][]interface{}, *failures.Failure) {
 	prj := projectfile.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner, prj.Name)
 
-	secrets, fail := secrets.UserSecrets(cmd.secretsClient, projectfile.Get())
+	secrets, fail := secrets.ByProject(cmd.secretsClient, projectfile.Get())
 	if fail != nil {
-		return fail
+		return nil, fail
 	}
 
+	rows := [][]interface{}{}
 	for _, secret := range secrets {
-		print.Line(" - %s", *secret.Name)
+		scope := string(project.SecretScopeProject)
+		if secret.IsUser != nil && *secret.IsUser {
+			scope = string(project.SecretScopeUser)
+		}
+		rows = append(rows, []interface{}{*secret.Name, scope, fmt.Sprintf("%s.%s", scope, *secret.Name)})
 	}
-	return nil
+	return rows, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
-	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -71,10 +70,11 @@ func limitExpandFromProject(depth int, s string, p *projectfile.Project) string 
 		return ""
 	}
 
-	regex := regexp.MustCompile("\\${?\\w+\\.[\\w-]+}?")
+	regex := regexp.MustCompile("\\${?((?:\\w+\\.)+)([\\w-]+)}?")
 	expanded := regex.ReplaceAllStringFunc(s, func(variable string) string {
 		components := strings.Split(strings.Trim(variable, "${}"), ".")
-		category, name := components[0], components[1]
+		category := strings.Join(components[0:len(components)-1], ".")
+		name := components[len(components)-1 : len(components)][0]
 		var value string
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
@@ -164,32 +164,4 @@ func ConstantExpander(name string, project *projectfile.Project) (string, *failu
 		}
 	}
 	return value, nil
-}
-
-// VarExpander takes car of expanding user defined variables
-type VarExpander struct {
-	secretsClient   *secretsapi.Client
-	secretsExpander SecretFunc
-}
-
-// Expand is the main expander function
-func (e *VarExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
-	// Alias straight to secretsExpander as static variable won't be supported for the time being
-	return e.secretsExpander(name, projectFile)
-}
-
-// NewVarExpander creates an Expander which can retrieve and decrypt stored user secrets.
-func NewVarExpander(secretsClient *secretsapi.Client) Func {
-	secretsExpander := NewSecretExpander(secretsClient)
-	expander := &VarExpander{secretsClient, secretsExpander.Expand}
-	return expander.Expand
-}
-
-// NewVarPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
-// it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
-// value with the secrets service.
-func NewVarPromptingExpander(secretsClient *secretsapi.Client) Func {
-	secretsExpander := NewSecretExpander(secretsClient)
-	expander := &VarExpander{secretsClient, secretsExpander.ExpandWithPrompt}
-	return expander.Expand
 }

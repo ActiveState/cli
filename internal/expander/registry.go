@@ -20,9 +20,9 @@ var expanderRegistry = map[string]Func{
 func RegisterExpander(handle string, expanderFn Func) *failures.Failure {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
-		return FailExpanderBadName.New("variables_expander_err_empty_name")
+		return FailExpanderBadName.New("secrets_expander_err_empty_name")
 	} else if expanderFn == nil {
-		return FailExpanderNoFunc.New("variables_expander_err_undefined")
+		return FailExpanderNoFunc.New("secrets_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
 	return nil

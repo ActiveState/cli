@@ -156,6 +156,19 @@ value: valueForConstant`)
 	assert.Equal(t, "valueForConstant", constant.Value, "Constant should be set")
 }
 
+func TestSecretStruct(t *testing.T) {
+	secret := Secret{}
+	dat := strings.TrimSpace(`
+name: valueForName
+description: valueForDescription`)
+
+	err := yaml.Unmarshal([]byte(dat), &secret)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", secret.Name, "Name should be set")
+	assert.Equal(t, "valueForDescription", secret.Description, "Description should be set")
+}
+
 func TestParse(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 
@@ -199,8 +212,8 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Constants[0].Name, "Constant name should be set")
 	assert.NotEmpty(t, project.Constants[0].Value, "Constant value should be set")
 
-	assert.NotEmpty(t, project.Variables[0].Name, "Variable name should be set")
-	assert.Nil(t, project.Variables[0].Value.StaticValue, "Variable value should be set")
+	assert.NotEmpty(t, project.Secrets.User[0].Name, "Variable name should be set")
+	assert.NotEmpty(t, project.Secrets.Project[0].Name, "Variable name should be set")
 
 	assert.NotEmpty(t, project.Events[0].Name, "Event name should be set")
 	assert.NotEmpty(t, project.Events[0].Value, "Event value should be set")

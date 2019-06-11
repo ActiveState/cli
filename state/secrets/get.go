@@ -1,4 +1,4 @@
-package variables
+package secrets
 
 import (
 	"github.com/spf13/cobra"
@@ -7,19 +7,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 func buildGetCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
 		Name:        "get",
-		Description: "variables_get_cmd_description",
+		Description: "secrets_get_cmd_description",
 		Run:         cmd.ExecuteGet,
 
 		Arguments: []*commands.Argument{
 			&commands.Argument{
-				Name:        "variables_get_arg_name_name",
-				Description: "variables_get_arg_name_description",
+				Name:        "secrets_get_arg_name",
+				Description: "secrets_get_arg_name_description",
 				Variable:    &cmd.Args.Name,
 				Required:    true,
 			},
@@ -29,12 +28,24 @@ func buildGetCommand(cmd *Command) *commands.Command {
 
 // ExecuteGet processes the `secrets get` command.
 func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
-	prj := project.Get()
-	variable := prj.InitVariable(cmd.Args.Name)
-	value, fail := variable.Value()
+	secret, fail := getSecret(cmd.Args.Name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("variables_err"))
+		failures.Handle(fail, locale.T("secrets_err"))
 	}
 
-	print.Line(value)
+	value, fail := secret.ValueOrNil()
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err"))
+	}
+
+	if value == nil {
+		err := "secrets_err_project_not_defined"
+		if secret.IsUser() {
+			err = "secrets_err_user_not_defined"
+		}
+		print.Error(locale.Tr(err, cmd.Args.Name))
+		cmd.config.Exiter(1)
+	}
+
+	print.Line(*value)
 }

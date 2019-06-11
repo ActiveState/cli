@@ -64,7 +64,7 @@ func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Func {
+func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander(isUser bool) expander.Func {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
@@ -73,7 +73,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() expander.Fu
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return expander.NewVarPromptingExpander(suite.secretsClient)
+	return expander.NewSecretPromptingExpander(suite.secretsClient, isUser)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
@@ -82,7 +82,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 	})
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
-	expanderFn := suite.prepareWorkingExpander()
+	expanderFn := suite.prepareWorkingExpander(false)
 	expandedValue, failure := expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NotNil(failure)
@@ -100,7 +100,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 	})
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
-	expanderFn := suite.prepareWorkingExpander()
+	expanderFn := suite.prepareWorkingExpander(false)
 	expandedValue, failure := expanderFn(secretName, suite.projectFile)
 
 	suite.Require().NoError(bodyErr)
