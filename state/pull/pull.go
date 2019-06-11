@@ -58,6 +58,11 @@ func defaultCommitID(p *project.Project) (string, *failures.Failure) {
 }
 
 func updateCommitID(p *projectfile.Project, cid string) (bool, *failures.Failure) {
-	// add method to projectfile.Project type to regex replace value by key
+	curCID := ""
+
+	if curCID == "" || curCID != cid {
+		return true, p.ReplaceInValue("SOMEFAKEKEY", curCID, cid)
+	}
+
 	return false, nil
 }
