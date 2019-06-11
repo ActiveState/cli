@@ -139,48 +139,54 @@ func (p *Project) URL() string {
 	return p.projectfile.Project
 }
 
-func (p *Project) parseURL() (map[string]string, *failures.Failure) {
+type projectParts struct {
+	owner    string
+	project  string
+	commitID string
+}
+
+func (p *Project) parseURL() (*projectParts, *failures.Failure) {
 	url := p.URL()
 	if projectfile.ValidateProjectURL(url) != true {
 		return nil, FailProjectCorrupted.New(locale.Tr("err_bad_project_url"))
 	}
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
 	match := projectfile.ProjectURLRe.FindStringSubmatch(path)
-	parts := map[string]string{"owner": match[1], "project": match[2], "commitID": ""}
+	parts := projectParts{match[1], match[2], ""}
 	if len(match) == 4 {
-		parts["commitID"] = match[3]
+		parts.commitID = match[3]
 	}
-	return parts, nil
+	return &parts, nil
 }
 
 // Owner returns project owner
 func (p *Project) Owner() string {
-	projectParts, fail := p.parseProjectURL()
+	projectParts, fail := p.parseURL()
 	if fail != nil {
 		failures.Handle(fail.ToError(), fail.Error())
 		os.Exit(1)
 	}
-	return projectParts["owner"]
+	return projectParts.owner
 }
 
 // Name returns project name
 func (p *Project) Name() string {
-	projectParts, fail := p.parseProjectURL()
+	projectParts, fail := p.parseURL()
 	if fail != nil {
 		failures.Handle(fail.ToError(), fail.Error())
 		os.Exit(1)
 	}
-	return projectParts["project"]
+	return projectParts.project
 }
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	projectParts, fail := p.parseProjectURL()
+	projectParts, fail := p.parseURL()
 	if fail != nil {
 		failures.Handle(fail.ToError(), fail.Error())
 		os.Exit(1)
 	}
-	return projectParts["commitID"]
+	return projectParts.commitID
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
