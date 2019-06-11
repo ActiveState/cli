@@ -313,7 +313,9 @@ func TestParseVersionInfo(t *testing.T) {
 }
 
 func TestOverwriteFile(t *testing.T) {
-	file := "./testdata/somejunkname"
+	setCwd(t, "")
+
+	file := "somejunkname"
 	defer setupFile(t, file, "some\ndata here\nmore\n")()
 
 	f, err := os.OpenFile(file, os.O_RDWR, 0)
