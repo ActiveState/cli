@@ -1,5 +1,1 @@
 project: "https://platform.activestate.com/ActiveState/cli"
-events:
-  - name: ACTIVATE
-    value: |
-      echo activated
