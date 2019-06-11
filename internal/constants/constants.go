@@ -99,10 +99,10 @@ const ExperimentalBranch = "master"
 const MonoAPIPath = "/api/v1"
 
 // MonoURLProd is the host used for platform api calls when on production
-const MonoURLProd = "https://" + PlatformURL + MonoAPIPath
+const MonoURLProd = "https://platform.activestate.com" + MonoAPIPath
 
 // MonoURLStage is the host used for platform api calls when on staging
-const MonoURLStage = "https://" + StagingURL + MonoAPIPath
+const MonoURLStage = "https://staging.activestate.build" + MonoAPIPath
 
 // MonoURLDev is the host used for platform api calls when on staging
 const MonoURLDev = MonoURLStage
@@ -111,10 +111,10 @@ const MonoURLDev = MonoURLStage
 const SecretsAPIPath = "/api/secrets/v1"
 
 // SecretsURLProd is the host used for secrets api calls when on production
-const SecretsURLProd = "https://" + PlatformURL + SecretsAPIPath
+const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
 
 // SecretsURLStage is the host used for secrets api calls when on staging
-const SecretsURLStage = "https://" + StagingURL + SecretsAPIPath
+const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
 
 // SecretsURLDev is the host used for secrets api calls when on dev
 const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
@@ -132,10 +132,10 @@ const RuntimeMetaFile = "support/metadata.json"
 const HeadChefAPIPath = "/sv/head-chef/"
 
 // HeadChefURLProd is the host used for platform api calls when on production
-const HeadChefURLProd = "wss://" + PlatformURL + HeadChefAPIPath
+const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
 
 // HeadChefURLStage is the host used for platform api calls when on staging
-const HeadChefURLStage = "wss://" + StagingURL + HeadChefAPIPath
+const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
 
 // HeadChefURLDev is the host used for platform api calls when on staging
 const HeadChefURLDev = HeadChefURLStage
@@ -147,10 +147,10 @@ const HeadChefOrigin = "https://localhost"
 const InventoryAPIPath = "/sv/inventory-api"
 
 // InventoryURLProd is the host used for platform api calls when on production
-const InventoryURLProd = "https://" + PlatformURL + InventoryAPIPath
+const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
 
 // InventoryURLStage is the host used for platform api calls when on staging
-const InventoryURLStage = "https://" + StagingURL + InventoryAPIPath
+const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 
 // InventoryURLDev is the host used for platform api calls when on staging
 const InventoryURLDev = InventoryURLStage
@@ -162,7 +162,7 @@ const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/dep
 const DateFormatUser = "January 02, 2006"
 
 // PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://" + PlatformURL + "/create-account"
+const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -172,6 +172,3 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
-
-// StagingURL is the base domain for the staging platform
-const StagingURL = "staging.activestate.build"

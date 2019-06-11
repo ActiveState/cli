@@ -35,7 +35,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=d7ebc72"
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
     standalone: true
@@ -43,7 +43,7 @@ scripts:
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
 	} else {
 		contents = fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=d7ebc72"
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
     standalone: true
