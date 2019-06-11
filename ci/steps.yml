@@ -61,7 +61,6 @@ steps:
     displayName: 'Build'
   - bash: |
       set -e
-      export VERBOSE=true
       cd test/integration
       pip3 install -r requirements.txt
       cd ../../

@@ -107,10 +107,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	userScripts := ""
 	for _, event := range prj.Events() {
 		if event.Name() == "ACTIVATE" {
-			logging.Debug("We are attempting to perform the ACTIVATE event")
-
 			userScripts = userScripts + "\n" + event.Value()
-
 		}
 	}
 
@@ -135,7 +132,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	if len(inuse) > 0 {
 		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), prj.NormalizedName(), explicitName))
 	}
-	logging.Debug("USERSCRIPT VALUE: \n %s", userScripts)
+
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
@@ -162,7 +159,6 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 
 	tmpFile.WriteString(out.String())
-	logging.Debug("####INSTALLING####: %s", out.String())
 	tmpFile.Close()
 
 	return tmpFile, err
