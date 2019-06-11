@@ -56,7 +56,7 @@ class TestActivate(helpers.IntegrationTest):
         self.send(tempfile.TemporaryDirectory().name)
         self.expect("Downloading", timeout=240)
         self.expect("Installing", timeout=240)
-        self.wait_ready(timeout=600)
+        self.wait_ready(timeout=1200)
         self.send("which python3")
         self.send("python3 -c \"import sys; print(sys.copyright)\"")
         self.expect("ActiveState Software Inc.")

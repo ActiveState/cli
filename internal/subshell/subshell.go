@@ -158,6 +158,7 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 
 	tmpFile.WriteString(out.String())
+	logging.Debug("####INSTALLING####: %s", out.String())
 	tmpFile.Close()
 
 	return tmpFile, err

@@ -69,6 +69,7 @@ steps:
     condition: eq(variables['Agent.OS'], 'Linux')
     displayName: Unix Integration Tests
   - script: |
+      set VERBOSE=true
       cd test\integration
       pip3 install -r requirements.txt
       python -m unittest discover -p "*_test.py"
