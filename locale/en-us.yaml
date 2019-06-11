@@ -754,6 +754,4 @@ variable_deprecation_warning:
 err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
-  other: Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'.
-err_corrupt_project_field:
-  other: Project field has been corrupted
+  other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."

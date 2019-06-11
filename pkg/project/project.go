@@ -141,11 +141,11 @@ func (p *Project) URL() string {
 
 func (p *Project) parseURL() (map[string]string, *failures.Failure) {
 	url := p.URL()
+	if projectfile.ValidateProjectURL(url) != true {
+		return nil, FailProjectCorrupted.New(locale.Tr("err_bad_project_url"))
+	}
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
 	match := projectfile.ProjectURLRe.FindStringSubmatch(path)
-	if len(match) < 3 {
-		return nil, FailProjectCorrupted.New(locale.Tr("err_corrupt_project_field"))
-	}
 	parts := map[string]string{"owner": match[1], "project": match[2], "commitID": ""}
 	if len(match) == 4 {
 		parts["commitID"] = match[3]

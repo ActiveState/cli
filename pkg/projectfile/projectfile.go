@@ -162,6 +162,16 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
+// ValidateProjectURL validates the configured project URL
+func ValidateProjectURL(url string) bool {
+	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
+	match := ProjectURLRe.FindStringSubmatch(path)
+	if len(match) < 3 {
+		return false
+	}
+	return true
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -170,9 +180,7 @@ func (p *Project) Save() *failures.Failure {
 	}
 
 	url := p.Project
-	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-	match := ProjectURLRe.FindStringSubmatch(path)
-	if len(match) < 3 {
+	if ValidateProjectURL(url) != true {
 		return FailParseProject.New(locale.T("err_bad_project_url"))
 	}
 
