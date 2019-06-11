@@ -1,9 +1,6 @@
 package projectfile
 
 import (
-	"bufio"
-	"bytes"
-	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -30,6 +27,14 @@ var (
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
+)
+
+// FileKey represents tokens that are used as project file keys.
+type FileKey string
+
+// FileKey tokens available for key identification
+var (
+	ProjectKey FileKey = "project"
 )
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
@@ -179,7 +184,7 @@ func (p *Project) Save() *failures.Failure {
 
 // ReplaceInValue replaces strings in YAML values within the current project
 // file. This is done in-place so that line order is preserved.
-func (p *Project) ReplaceInValue(key, old, new string) *failures.Failure {
+func (p *Project) ReplaceInValue(key FileKey, old, new string) *failures.Failure {
 	fp, fail := getProjectFilePath()
 	if fail != nil {
 		return fail
@@ -202,67 +207,6 @@ func (p *Project) ReplaceInValue(key, old, new string) *failures.Failure {
 	}
 
 	return nil
-}
-
-type yamlReader struct {
-	io.Reader
-}
-
-func (r *yamlReader) replaceInValue(key, old, new string) (io.Reader, *failures.Failure) {
-	buf := &bytes.Buffer{}
-	sc := bufio.NewScanner(r)
-
-	for sc.Scan() {
-		l := sc.Text()
-		if !yamlLineHasKeyPrefix(l, key) {
-			if _, err := buf.WriteString(l + "\n"); err != nil {
-				return nil, failures.FailIO.Wrap(err)
-			}
-			continue
-		}
-
-		l = replaceInYAMLValue(l, old, new)
-		if _, err := buf.WriteString(l + "\n"); err != nil {
-			return nil, failures.FailIO.Wrap(err)
-		}
-	}
-	if err := sc.Err(); err != nil {
-		return nil, failures.FailIO.Wrap(err)
-	}
-
-	return buf, nil
-}
-
-func overwriteFile(f *os.File, r io.Reader) error {
-	if err := f.Truncate(0); err != nil {
-		return err
-	}
-
-	_, err := io.Copy(f, r)
-	return err
-}
-
-func yamlLineHasKeyPrefix(line, key string) bool {
-	spl := strings.SplitN(line, ":", 2)
-	if len(spl) < 2 {
-		return false
-	}
-
-	front := strings.TrimSpace(spl[0])
-
-	return strings.HasPrefix(front, key)
-}
-
-func replaceInYAMLValue(line, old, new string) string {
-	spl := strings.SplitN(line, ":", 2)
-	if len(spl) < 2 {
-		return line
-	}
-
-	front := spl[0]
-	back := strings.Replace(spl[1], old, new, 1)
-
-	return front + ":" + back
 }
 
 // Returns the path to the project activestate.yaml

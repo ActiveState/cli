@@ -61,7 +61,7 @@ func updateCommitID(p *projectfile.Project, cid string) (bool, *failures.Failure
 	curCID := ""
 
 	if curCID == "" || curCID != cid {
-		return true, p.ReplaceInValue("SOMEFAKEKEY", curCID, cid)
+		return true, p.ReplaceInValue(projectfile.ProjectKey, curCID, cid)
 	}
 
 	return false, nil
