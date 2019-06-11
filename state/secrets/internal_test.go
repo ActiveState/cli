@@ -1,33 +1,45 @@
 package secrets
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func TestGetUserSecret(t *testing.T) {
+type GetSecretTestSuite struct {
+	suite.Suite
+}
+
+func (suite *GetSecretTestSuite) BeforeTest(suiteName, testName string) {
+	p := &projectfile.Project{}
+	p.Persist()
+}
+
+func (suite *GetSecretTestSuite) AfterTest(suiteName, testName string) {
+	projectfile.Reset()
+}
+
+func (suite *GetSecretTestSuite) TestGetUserSecret() {
 	secret, fail := getSecret("user.foo")
-	require.NoError(t, fail.ToError())
-	require.True(t, secret.IsUser(), "Is user secret")
+	suite.Require().NoError(fail.ToError())
+	suite.True(secret.IsUser(), "Is user secret")
 }
 
-func TestGetProjectSecret(t *testing.T) {
+func (suite *GetSecretTestSuite) TestGetProjectSecret() {
 	secret, fail := getSecret("project.foo")
-	require.NoError(t, fail.ToError())
-	require.True(t, secret.IsProject(), "Is project secret")
+	suite.Require().NoError(fail.ToError())
+	suite.True(secret.IsProject(), "Is project secret")
 }
 
-func TestGetSecretFailTooManyDots(t *testing.T) {
+func (suite *GetSecretTestSuite) TestGetSecretFailTooManyDots() {
 	_, fail := getSecret("project.toomanydots.foo")
-	require.Error(t, fail.ToError())
-	require.Equal(t, failures.FailUserInput.Name, fail.Type.Name)
+	suite.Require().Error(fail.ToError())
+	suite.Equal(failures.FailUserInput.Name, fail.Type.Name)
 }
 
-func TestGetSecretFailScope(t *testing.T) {
+func (suite *GetSecretTestSuite) TestGetSecretFailScope() {
 	_, fail := getSecret("invalid.foo")
-	require.Error(t, fail.ToError())
-	require.Equal(t, failures.FailInput.Name, fail.Type.Name)
+	suite.Require().Error(fail.ToError())
+	suite.Equal(failures.FailInput.Name, fail.Type.Name)
 }
