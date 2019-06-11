@@ -197,8 +197,8 @@ func (p *Project) ReplaceInValue(key FileKey, old, new string) *failures.Failure
 	}
 	defer f.Close()
 
-	yr := yamlReader{f}
-	r, fail := yr.replaceInValue(key, old, new)
+	yfm := yamlFileMod{f}
+	r, fail := yfm.replaceInValue(key, old, new)
 	if fail != nil {
 		return fail
 	}

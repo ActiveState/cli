@@ -16,7 +16,7 @@ project: https://example.com/xowner/xproject?commitID=12345
 
 func TestYAMLReader(t *testing.T) {
 	buf := bytes.NewBuffer(exampleYAML)
-	yr := yamlReader{buf}
+	yr := yamlFileMod{buf}
 
 	_, fail := yr.replaceInValue("", "a", "b")
 	assert.Error(t, fail.ToError())

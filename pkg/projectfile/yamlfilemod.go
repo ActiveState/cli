@@ -9,11 +9,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 )
 
-type yamlReader struct {
+type yamlFileMod struct {
 	io.Reader
 }
 
-func (r *yamlReader) replaceInValue(key FileKey, old, new string) (io.Reader, *failures.Failure) {
+func (r *yamlFileMod) replaceInValue(key FileKey, old, new string) (io.Reader, *failures.Failure) {
 	if key == "" {
 		return r, failures.FailDeveloper.New("key must not be empty")
 	}
