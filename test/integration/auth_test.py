@@ -51,7 +51,7 @@ class TestAuth(helpers.IntegrationTest):
         self.expect("succesfully authenticated")
         self.wait()
 
-         # still logged in?
+        # still logged in?
         self.spawn("auth")
         self.expect("You are logged in")
         self.wait()
@@ -61,7 +61,7 @@ class TestAuth(helpers.IntegrationTest):
         self.expect("succesfully authenticated")
         self.wait()
 
-         # still logged in?
+        # still logged in?
         self.spawn("auth")
         self.expect("You are logged in")
         self.wait()
@@ -87,7 +87,6 @@ class TestAuth(helpers.IntegrationTest):
         r = requests.post("https://platform.activestate.com/api/v1/users", json=data)
         if r.status_code != 200:
             self.fail("Create user failed: code: %d, response: %s" % (r.status_code, r.content))
-
         return data["username"], data["password"]
 
 if __name__ == '__main__':
