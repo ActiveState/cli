@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
 	tempfile "github.com/mash/go-tempfile-suffix"
@@ -138,7 +137,6 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 	logging.Debug("USERSCRIPT VALUE: \n %s", userScripts)
 	rcData := map[string]interface{}{
-		"Project":     projectfile.Get(),
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
 		"Env":         virtualenvironment.Get().GetEnv(),
@@ -153,6 +151,9 @@ func getRcFile(v SubShell) (*os.File, error) {
 
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
+	if err != nil {
+		return nil, err
+	}
 
 	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
 
