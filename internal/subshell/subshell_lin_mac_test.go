@@ -3,6 +3,7 @@
 package subshell
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -35,9 +37,9 @@ func TestActivateZsh(t *testing.T) {
 }
 
 func TestRunCommandNoProjectEnv(t *testing.T) {
-	pfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "String",
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pfile.Persist()
 
@@ -63,9 +65,9 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 }
 
 func TestRunCommandError(t *testing.T) {
-	pfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "String",
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pfile.Persist()
 

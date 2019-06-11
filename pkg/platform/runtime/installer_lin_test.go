@@ -18,6 +18,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -47,9 +48,9 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
 
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, "string", "string", "imacommithash")
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
