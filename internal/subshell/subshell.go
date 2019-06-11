@@ -167,16 +167,15 @@ func getRcFile(v SubShell) (*os.File, error) {
 // Get returns the subshell relevant to the current process, but does not activate it
 func Get() (SubShell, error) {
 	var T = locale.T
-	binary := os.Getenv("SHELL")
-	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = os.Getenv("ComSpec")
-			if binary == "" {
-				binary = "cmd.exe"
-			}
-		} else {
+	binary := os.Getenv("ComSpec")
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		binary = os.Getenv("SHELL")
+		if binary == "" {
 			binary = "bash"
 		}
+	}
+	if runtime.GOOS == "windows" && binary == "" {
+		binary = "cmd.exe"
 	}
 
 	logging.Debug("Detected SHELL: %s", binary)
