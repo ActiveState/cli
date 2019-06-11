@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -47,15 +46,6 @@ func (r *yamlReader) replaceInValue(key FileKey, old, new string) (io.Reader, *f
 	}
 
 	return buf, nil
-}
-
-func overwriteFile(f *os.File, r io.Reader) error {
-	if err := f.Truncate(0); err != nil {
-		return err
-	}
-
-	_, err := io.Copy(f, r)
-	return err
 }
 
 func yamlLineHasKeyPrefix(line, key string) bool {

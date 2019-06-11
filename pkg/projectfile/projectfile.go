@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -190,7 +191,7 @@ func (p *Project) ReplaceInValue(key FileKey, old, new string) *failures.Failure
 		return fail
 	}
 
-	f, err := os.Open(fp)
+	f, err := os.OpenFile(fp, os.O_RDWR, 0)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
@@ -207,6 +208,15 @@ func (p *Project) ReplaceInValue(key FileKey, old, new string) *failures.Failure
 	}
 
 	return nil
+}
+
+func overwriteFile(f *os.File, r io.Reader) error {
+	if err := f.Truncate(0); err != nil {
+		return err
+	}
+
+	_, err := io.Copy(f, r)
+	return err
 }
 
 // Returns the path to the project activestate.yaml
