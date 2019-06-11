@@ -474,7 +474,7 @@ func (v *Variable) Save(value string) *failures.Failure {
 }
 
 func (v *Variable) saveSecretValue(value string) *failures.Failure {
-	project := &Project{v.projectfile}
+	project := New(v.projectfile)
 	org, failure := model.FetchOrgByURLName(project.Owner())
 	if failure != nil {
 		return failure
