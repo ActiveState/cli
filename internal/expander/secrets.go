@@ -33,7 +33,7 @@ func init() {
 	})
 }
 
-// SecretExpander takes care of expanding variables that we know to be secrets
+// SecretExpander takes care of expanding secrets
 type SecretExpander struct {
 	secretsClient *secretsapi.Client
 	keypair       keypairs.Keypair
