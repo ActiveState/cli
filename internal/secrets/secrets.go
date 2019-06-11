@@ -11,11 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type AccessScopeProvider interface {
-	Name() string
-	Owner() string
-}
-
 // Save will add a new secret for this user or update an existing one.
 func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *mono_models.Organization, project *mono_models.Project,
 	isUser bool, secretName, secretValue string) *failures.Failure {
