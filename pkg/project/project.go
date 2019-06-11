@@ -139,7 +139,7 @@ func (p *Project) URL() string {
 	return p.projectfile.Project
 }
 
-func (p *Project) parseProjectURL() (map[string]string, *failures.Failure) {
+func (p *Project) parseURL() (map[string]string, *failures.Failure) {
 	url := p.URL()
 	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
 	match := projectfile.ProjectURLRe.FindStringSubmatch(path)
