@@ -70,6 +70,7 @@ steps:
     displayName: Unix Integration Tests
   - script: |
       set VERBOSE=true
+      set SHELL=
       cd test\integration
       pip3 install -r requirements.txt
       python -m unittest discover -p "*_test.py"
