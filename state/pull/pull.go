@@ -24,7 +24,7 @@ var Command = &commands.Command{
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	cid, fail := defaultCommitID(project.Get())
+	cid, fail := latestCommitID(project.Get())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_get_commit_id"))
 		return
@@ -43,7 +43,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	print.Line(locale.T(locKey))
 }
 
-func defaultCommitID(p *project.Project) (string, *failures.Failure) {
+func latestCommitID(p *project.Project) (string, *failures.Failure) {
 	proj, fail := model.FetchProjectByName(p.Owner(), p.Name())
 	if fail != nil {
 		return "", fail
