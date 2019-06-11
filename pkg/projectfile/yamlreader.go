@@ -29,14 +29,10 @@ func (r *yamlReader) replaceInValue(key FileKey, old, new string) (io.Reader, *f
 
 	for sc.Scan() {
 		l := sc.Text()
-		if !yamlLineHasKeyPrefix(l, string(key)) {
-			if _, err := buf.WriteString(l + "\n"); err != nil {
-				return nil, failures.FailIO.Wrap(err)
-			}
-			continue
+		if yamlLineHasKeyPrefix(l, string(key)) {
+			l = replaceInYAMLValue(l, old, new)
 		}
 
-		l = replaceInYAMLValue(l, old, new)
 		if _, err := buf.WriteString(l + "\n"); err != nil {
 			return nil, failures.FailIO.Wrap(err)
 		}
