@@ -221,9 +221,9 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		return failures.FailIO.Wrap(err)
 	}
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, org, project, commitID)
-	if commitID == nil {
-		projectURL = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
+	if commitID != nil {
+		projectURL = fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, org, project, commitID)
 	}
 
 	pj := projectfile.Project{
