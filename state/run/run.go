@@ -41,6 +41,9 @@ var Args struct {
 
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
+	// project.CommitID() - send to model.CommitsBehindLatest()
+	// if count > 0, notify about state pull
+
 	logging.Debug("Execute")
 
 	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {

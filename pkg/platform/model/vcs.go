@@ -117,6 +117,9 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	return result
 }
 
+// CommitsBehindLatest compares the provided commit id with the latest commit
+// id and returns the count of commits it is behind.
+
 // Namespace represents regular expression strings used for defining matchable
 // requirements.
 type Namespace string

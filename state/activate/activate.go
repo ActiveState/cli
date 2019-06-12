@@ -87,6 +87,9 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
+	// project.CommitID() - send to model.CommitsBehindLatest()
+	// if count > 0, notify about state pull
+
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
