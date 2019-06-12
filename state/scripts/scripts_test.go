@@ -18,8 +18,7 @@ import (
 func TestExecute(t *testing.T) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
@@ -86,18 +85,19 @@ func TestScriptsTable(t *testing.T) {
 }
 
 func newScript(t *testing.T, name, desc, val string) *project.Script {
-	p := projectfile.Project{}
+	pjFile := projectfile.Project{}
 	contents := strings.TrimSpace(fmt.Sprintf(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
     description: %s
     value: %s
 `, name, desc, val))
 
-	err := yaml.Unmarshal([]byte(contents), &p)
+	err := yaml.Unmarshal([]byte(contents), &pjFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 
-	return project.New(&p).ScriptByName(name)
+	prj, fail := project.New(&pjFile)
+	assert.Nil(t, fail, "no failure should occur when loading project")
+	return prj.ScriptByName(name)
 }

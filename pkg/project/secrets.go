@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"strings"
@@ -16,10 +16,10 @@ import (
 )
 
 // FailExpandNoProjectDefined is used when error arises from an expander function being called without a project
-var FailExpandNoProjectDefined = failures.Type("expander.fail.secrets.expand.noproject")
+var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.noproject")
 
 // FailInputSecretValue is used when error arises from user providing a secret value.
-var FailInputSecretValue = failures.Type("expander.fail.secrets.input.value", failures.FailUserInput)
+var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
 
 func init() {
 	RegisterExpander("secrets.user", NewSecretPromptingExpander(secretsapi.Get(), true))
@@ -27,7 +27,7 @@ func init() {
 
 	// Deprecation mechanic
 	projectExpander := NewSecretPromptingExpander(secretsapi.Get(), false)
-	RegisterExpander("variables", func(name string, project *projectfile.Project) (string, *failures.Failure) {
+	RegisterExpander("variables", func(name string, project *Project) (string, *failures.Failure) {
 		print.Warning(locale.Tr("secrets_warn_deprecated_var_expand", name))
 		return projectExpander(name, project)
 	})
@@ -38,8 +38,9 @@ type SecretExpander struct {
 	secretsClient *secretsapi.Client
 	keypair       keypairs.Keypair
 	organization  *mono_models.Organization
-	project       *mono_models.Project
+	remoteProject *mono_models.Project
 	projectFile   *projectfile.Project
+	project       *Project
 	secrets       []*secretsModels.UserSecret
 	cachedSecrets map[string]string
 	isUser        bool
@@ -55,7 +56,7 @@ func NewSecretExpander(secretsClient *secretsapi.Client, isUser bool) *SecretExp
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
-func NewSecretQuietExpander(secretsClient *secretsapi.Client, isUser bool) Func {
+func NewSecretQuietExpander(secretsClient *secretsapi.Client, isUser bool) ExpanderFunc {
 	secretsExpander := NewSecretExpander(secretsClient, isUser)
 	return secretsExpander.Expand
 }
@@ -63,7 +64,7 @@ func NewSecretQuietExpander(secretsClient *secretsapi.Client, isUser bool) Func 
 // NewSecretPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewSecretPromptingExpander(secretsClient *secretsapi.Client, isUser bool) Func {
+func NewSecretPromptingExpander(secretsClient *secretsapi.Client, isUser bool) ExpanderFunc {
 	secretsExpander := NewSecretExpander(secretsClient, isUser)
 	return secretsExpander.ExpandWithPrompt
 }
@@ -87,12 +88,12 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 
 // Organization acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Failure) {
-	if e.projectFile == nil {
+	if e.project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
 	if e.organization == nil {
-		e.organization, fail = model.FetchOrgByURLName(e.projectFile.Owner)
+		e.organization, fail = model.FetchOrgByURLName(e.project.Owner())
 		if fail != nil {
 			return nil, fail
 		}
@@ -103,18 +104,18 @@ func (e *SecretExpander) Organization() (*mono_models.Organization, *failures.Fa
 
 // Project acts as a caching layer, and ensures that we have a projectfile
 func (e *SecretExpander) Project() (*mono_models.Project, *failures.Failure) {
-	if e.projectFile == nil {
+	if e.project == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
 	}
 	var fail *failures.Failure
-	if e.project == nil {
-		e.project, fail = model.FetchProjectByName(e.projectFile.Owner, e.projectFile.Name)
+	if e.remoteProject == nil {
+		e.remoteProject, fail = model.FetchProjectByName(e.project.Owner(), e.project.Name())
 		if fail != nil {
 			return nil, fail
 		}
 	}
 
-	return e.project, nil
+	return e.remoteProject, nil
 }
 
 // Secrets acts as a caching layer, and ensures that we have a projectfile
@@ -200,12 +201,15 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 }
 
 // SecretFunc defines what our expander functions will be returning
-type SecretFunc func(name string, projectFile *projectfile.Project) (string, *failures.Failure)
+type SecretFunc func(name string, project *Project) (string, *failures.Failure)
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) Expand(name string, project *Project) (string, *failures.Failure) {
+	if e.project == nil {
+		e.project = project
+	}
 	if e.projectFile == nil {
-		e.projectFile = projectFile
+		e.projectFile = project.Source()
 	}
 
 	keypair, fail := e.KeyPair()
@@ -236,9 +240,12 @@ func (e *SecretExpander) Expand(name string, projectFile *projectfile.Project) (
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(name string, projectFile *projectfile.Project) (string, *failures.Failure) {
+func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string, *failures.Failure) {
+	if e.project == nil {
+		e.project = project
+	}
 	if e.projectFile == nil {
-		e.projectFile = projectFile
+		e.projectFile = project.Source()
 	}
 
 	keypair, fail := e.KeyPair()

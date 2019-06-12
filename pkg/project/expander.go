@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"regexp"
@@ -9,30 +9,29 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
 	// FailExpandVariable identifies a failure during variable expansion.
-	FailExpandVariable = failures.Type("expander.fail.expandvariable", failures.FailUser)
+	FailExpandVariable = failures.Type("project.fail.expandvariable", failures.FailUser)
 
 	// FailExpandVariableBadCategory identifies a variable expansion failure due to a bad variable category.
-	FailExpandVariableBadCategory = failures.Type("expander.fail.expandvariable.badcategory", FailExpandVariable)
+	FailExpandVariableBadCategory = failures.Type("project.fail.expandvariable.badcategory", FailExpandVariable)
 
 	// FailExpandVariableBadName identifies a variable expansion failure due to a bad variable name.
-	FailExpandVariableBadName = failures.Type("expander.fail.expandvariable.badName", FailExpandVariable)
+	FailExpandVariableBadName = failures.Type("project.fail.expandvariable.badName", FailExpandVariable)
 
 	// FailExpandVariableRecursion identifies a variable expansion failure due to infinite recursion.
-	FailExpandVariableRecursion = failures.Type("expander.fail.expandvariable.recursion", FailExpandVariable)
+	FailExpandVariableRecursion = failures.Type("project.fail.expandvariable.recursion", FailExpandVariable)
 
 	// FailExpanderBadName is used when an Expanders name is invalid.
-	FailExpanderBadName = failures.Type("expander.fail.expander.badName", failures.FailVerify)
+	FailExpanderBadName = failures.Type("project.fail.expander.badName", failures.FailVerify)
 
 	// FailExpanderNoFunc is used when no handler func is found for an Expander.
-	FailExpanderNoFunc = failures.Type("expander.fail.expander.noFunc", failures.FailVerify)
+	FailExpanderNoFunc = failures.Type("project.fail.expander.noFunc", failures.FailVerify)
 
 	// FailVarNotFound is used when no handler func is found for an Expander.
-	FailVarNotFound = failures.Type("expander.fail.vars.notfound", FailExpandVariable)
+	FailVarNotFound = failures.Type("project.fail.vars.notfound", FailExpandVariable)
 )
 
 var lastFailure *failures.Failure
@@ -44,7 +43,7 @@ func Failure() *failures.Failure {
 
 // Expand will detect the active project and invoke ExpandFromProject with the given string
 func Expand(s string) string {
-	return ExpandFromProject(s, projectfile.Get())
+	return ExpandFromProject(s, Get())
 }
 
 // Prompter is accessible so tests can overwrite it with Mock.  Do not use if you're not writing code for this package
@@ -57,12 +56,12 @@ func init() {
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
-func ExpandFromProject(s string, p *projectfile.Project) string {
+func ExpandFromProject(s string, p *Project) string {
 	return limitExpandFromProject(0, s, p)
 }
 
 // limitExpandFromProject limits the depth of an expansion to avoid infinite expansion of a value.
-func limitExpandFromProject(depth int, s string, p *projectfile.Project) string {
+func limitExpandFromProject(depth int, s string, p *Project) string {
 	lastFailure = nil
 	if depth > constants.ExpanderMaxDepth {
 		lastFailure = FailExpandVariableRecursion.New("error_expand_variable_infinite_recursion", s)
@@ -98,14 +97,15 @@ func limitExpandFromProject(depth int, s string, p *projectfile.Project) string 
 	return expanded
 }
 
-// Func defines an Expander function which can expand the name for a category. An Expander expects the name
+// ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type Func func(name string, project *projectfile.Project) (string, *failures.Failure)
+type ExpanderFunc func(name string, project *Project) (string, *failures.Failure)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
-	for _, platform := range project.Platforms {
+func PlatformExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
+	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
 			continue
 		}
@@ -131,9 +131,10 @@ func PlatformExpander(name string, project *projectfile.Project) (string, *failu
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func EventExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, event := range project.Events {
+	for _, event := range projectFile.Events {
 		if event.Name == name && !constraints.IsConstrained(event.Constraints) {
 			value = event.Value
 			break
@@ -143,9 +144,10 @@ func EventExpander(name string, project *projectfile.Project) (string, *failures
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func ScriptExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, script := range project.Scripts {
+	for _, script := range projectFile.Scripts {
 		if script.Name == name && !constraints.IsConstrained(script.Constraints) {
 			value = script.Value
 			break
@@ -155,9 +157,10 @@ func ScriptExpander(name string, project *projectfile.Project) (string, *failure
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(name string, project *projectfile.Project) (string, *failures.Failure) {
+func ConstantExpander(name string, project *Project) (string, *failures.Failure) {
+	projectFile := project.Source()
 	var value string
-	for _, constant := range project.Constants {
+	for _, constant := range projectFile.Constants {
 		if constant.Name == name && !constraints.IsConstrained(constant.Constraints) {
 			value = constant.Value
 			break

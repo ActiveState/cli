@@ -1,4 +1,4 @@
-package expander
+package project
 
 import (
 	"strings"
@@ -7,7 +7,7 @@ import (
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
-var expanderRegistry = map[string]Func{
+var expanderRegistry = map[string]ExpanderFunc{
 	"platform":  PlatformExpander,
 	"events":    EventExpander,
 	"scripts":   ScriptExpander,
@@ -17,7 +17,7 @@ var expanderRegistry = map[string]Func{
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
 // must not effectively be a blank string and the Func must be defined. It is definitely possible
 // to replace an existing handler using this function.
-func RegisterExpander(handle string, expanderFn Func) *failures.Failure {
+func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
 		return FailExpanderBadName.New("secrets_expander_err_empty_name")

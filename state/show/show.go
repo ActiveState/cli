@@ -10,11 +10,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	prj "github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -44,40 +46,45 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	updater.PrintUpdateMessage()
 
-	var project *projectfile.Project
+	var project *prj.Project
 	if Args.Remote == "" {
-		project = projectfile.Get()
+		project = prj.Get()
 	} else {
 		path := Args.Remote
-		projectFile := filepath.Join(Args.Remote, constants.ConfigFileName)
+		projectFilePath := filepath.Join(Args.Remote, constants.ConfigFileName)
 		if _, err := os.Stat(path); err != nil {
 			print.Error(locale.T("err_state_show_path_does_not_exist"))
 			return
-		} else if _, err := os.Stat(projectFile); err != nil {
+		} else if _, err := os.Stat(projectFilePath); err != nil {
 			print.Error(locale.T("err_state_show_no_config"))
 			return
 		}
-		var err error
-		project, err = projectfile.Parse(projectFile)
+		projectFile, err := projectfile.Parse(projectFilePath)
 		if err != nil {
 			logging.Errorf("Unable to parse activestate.yaml: %s", err)
 			print.Error(locale.T("err_state_show_project_parse"))
 			return
 		}
+		var fail *failures.Failure
+		project, fail = prj.New(projectFile)
+		if fail != nil {
+			failures.Handle(fail.ToError(), fail.Message)
+			return
+		}
 	}
 
 	print.BoldInline("%s: ", locale.T("print_state_show_name"))
-	print.Line("%s", project.Name)
+	print.Line("%s", project.Name())
 
 	print.BoldInline("%s: ", locale.T("print_state_show_organization"))
-	print.Line("%s", project.Owner)
+	print.Line("%s", project.Owner())
 
 	print.Line("")
 
-	printPlatforms(project)
-	printLanguages(project)
-	printScripts(project)
-	printEvents(project)
+	printPlatforms(project.Source())
+	printLanguages(project.Source())
+	printScripts(project.Source())
+	printEvents(project.Source())
 }
 
 func printPlatforms(project *projectfile.Project) {

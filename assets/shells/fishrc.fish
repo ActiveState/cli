@@ -1,4 +1,4 @@
-echo - Active state: {{.Project.Owner}}/{{.Project.Name}}
+echo - Active state: {{.Owner}}/{{.Name}}
 
 {{range $K, $V := .Env}}
 set -xg {{$K}} "{{$V}}"

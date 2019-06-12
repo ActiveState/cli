@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -35,8 +35,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = fmt.Sprintf(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
     standalone: true
@@ -44,8 +43,7 @@ scripts:
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
 	} else {
 		contents = fmt.Sprintf(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: %s
     standalone: true

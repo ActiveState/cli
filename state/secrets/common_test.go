@@ -11,8 +11,7 @@ import (
 func loadSecretsProject() (*projectfile.Project, error) {
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: SecretProject
-owner: SecretOrg
+project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: echo-org-secret
     value: echo ${secrets.org-secret}

@@ -16,14 +16,13 @@ func TestActivateRuntimeEnvironment(t *testing.T) {
 	setup(t)
 	defer teardown()
 
-	project := &projectfile.Project{}
+	pj := &projectfile.Project{}
 	dat := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
 languages:
     - name: Python3`)
-	yaml.Unmarshal([]byte(dat), &project)
-	project.Persist()
+	yaml.Unmarshal([]byte(dat), &pj)
+	pj.Persist()
 
 	venv := Init()
 	fail := venv.Activate()

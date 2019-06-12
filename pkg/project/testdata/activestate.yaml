@@ -1,3 +1,4 @@
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 platforms:
   - name: fullexample
     os: darwin
@@ -11,11 +12,9 @@ platforms:
     os: linux
   - name: OSX
     os: macos
-name: project
 environments: "something"
 version: "1.0"
 namespace: "my/name/space"
-owner: ActiveState
 constants:
   - name: foo
     value: foo $platform.name

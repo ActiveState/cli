@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Command represents the secrets command and its dependencies.
@@ -75,10 +74,10 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 // secretRows returns the rows used in our output table
 func (cmd *Command) secretRows() ([][]interface{}, *failures.Failure) {
-	prj := projectfile.Get()
-	logging.Debug("listing variables for org=%s, project=%s", prj.Owner, prj.Name)
+	prj := project.Get()
+	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	secrets, fail := secrets.ByProject(cmd.secretsClient, projectfile.Get())
+	secrets, fail := secrets.ByProject(cmd.secretsClient, prj.Owner(), prj.Name())
 	if fail != nil {
 		return nil, fail
 	}

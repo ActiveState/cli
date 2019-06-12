@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -95,7 +98,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project := projectfile.Get()
+	project := project.Get()
 	print.Info(locale.T("info_activating_state", project))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -107,7 +110,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner, project.Name), filepath.Dir(project.Path()))
+	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.Source().Path()))
 
 	_, err := subshell.Activate(&wg)
 	if err != nil {
@@ -146,6 +149,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+	commitID := branch.CommitID
 
 	languages, fail := model.FetchLanguagesForBranch(branch)
 	if fail != nil {
@@ -175,7 +179,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 
 		// Actually create the project
-		fail = createProject(org, name, languages, directory)
+		fail = createProject(org, name, commitID, languages, directory)
 		if fail != nil {
 			return fail
 		}
@@ -211,15 +215,19 @@ func getPathsForNamespace(namespace string) []string {
 }
 
 // createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project string, languages []string, directory string) *failures.Failure {
+func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
 	}
 
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
+	if commitID != nil {
+		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
+	}
+
 	pj := projectfile.Project{
-		Name:      project,
-		Owner:     org,
+		Project:   projectURL,
 		Languages: []projectfile.Language{},
 	}
 
