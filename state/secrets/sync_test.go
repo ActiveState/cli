@@ -1,4 +1,4 @@
-package variables_test
+package secrets_test
 
 import (
 	"encoding/json"
@@ -9,10 +9,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -20,9 +24,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/state/variables"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/state/secrets"
 )
 
 type SecretsSyncCommandTestSuite struct {
@@ -58,32 +60,37 @@ func (suite *SecretsSyncCommandTestSuite) AfterTest(suiteName, testName string) 
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
-	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
+	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("sync", cc.Name())
-	suite.Equal(locale.T("variables_sync_cmd_description"), cc.Short, "translation")
+	suite.Equal(locale.T("secrets_sync_cmd_description"), cc.Short, "translation")
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 	suite.Require().False(cc.HasAvailableFlags())
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 
-	var execErr error
+	var exitCode int
+	ex := exiter.New()
+	cmd.Config().Exiter = ex.Exit
+
 	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
-		execErr = cmd.Config().Execute()
+		exitCode = ex.WaitForExit(func() {
+			cmd.Config().Execute()
+		})
 	})
+	suite.Equal(1, exitCode, "Exit code matches")
 	suite.Require().NoError(outErr)
-	suite.Error(execErr, "failure occurred")
 
 	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -100,11 +107,11 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "0", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "0", "ActiveState"))
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -128,7 +135,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "1", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "1", "ActiveState"))
 
 	suite.Require().Len(scottrSyncChanges, 2)
 	suite.NotZero(*scottrSyncChanges[0].Value)
@@ -141,7 +148,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -166,91 +173,9 @@ func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
 	})
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(execErr)
-	suite.Contains(outStr, locale.Tr("variables_sync_results_message", "0", "ActiveState"))
+	suite.Contains(outStr, locale.Tr("secrets_sync_results_message", "0", "ActiveState"))
 
 	suite.False(diffedCurrentUser, "should not have diffed current user")
-}
-
-func (suite *SecretsSyncCommandTestSuite) TestFailure_NoLocalPrivateKeyFound() {
-	cmd := variables.NewCommand(suite.secretsClient)
-
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Require().Error(execErr)
-	suite.Contains(outStr, locale.T("keypair_err_require_auth"))
-}
-
-func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToDecryptSecret() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-
-	orgID := "00010001-0001-0001-0001-000100010001"
-	scottrID := "00020002-0002-0002-0002-000200020002"
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
-
-	diffURI := fmt.Sprintf("/organizations/%s/user_secrets/%s/diff", orgID, scottrID)
-	suite.secretsMock.RegisterWithResponse("GET", diffURI, 200, diffURI+"-bad-encrypted-secret")
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Require().Error(execErr)
-	suite.Contains(outStr, locale.T("keypairs_err_base64_decoding"))
-}
-
-func (suite *SecretsSyncCommandTestSuite) TestFailure_UnableToEncryptNewSecret() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-
-	orgID := "00010001-0001-0001-0001-000100010001"
-	scottrID := "00020002-0002-0002-0002-000200020002"
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
-
-	diffURI := fmt.Sprintf("/organizations/%s/user_secrets/%s/diff", orgID, scottrID)
-	suite.secretsMock.RegisterWithResponse("GET", diffURI, 200, diffURI+"-bad-public-key")
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Require().Error(execErr)
-	suite.Contains(outStr, locale.T("keypairs_err_pem_encoding"))
-}
-
-func (suite *SecretsSyncCommandTestSuite) TestFailure_SavingSharedSecrets() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
-
-	orgID := "00010001-0001-0001-0001-000100010001"
-	scottrID := "00020002-0002-0002-0002-000200020002"
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
-	suite.secretsMock.RegisterWithCode("GET", fmt.Sprintf("/organizations/%s/user_secrets/%s/diff", orgID, scottrID), 200)
-	suite.secretsMock.RegisterWithResponse("PATCH", fmt.Sprintf("/organizations/%s/user_secrets/%s", orgID, scottrID), 400, "something-happened")
-
-	var execErr error
-	outStr, outErr := osutil.CaptureStderr(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
-		execErr = cmd.Config().Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Require().Error(execErr)
-	suite.Contains(outStr, locale.T("variables_err_save"))
 }
 
 func Test_SecretsSyncCommand_TestSuite(t *testing.T) {

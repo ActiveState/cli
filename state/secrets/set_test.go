@@ -1,4 +1,4 @@
-package variables_test
+package secrets_test
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/state/variables"
+	"github.com/ActiveState/cli/state/secrets"
 )
 
 type VarSetCommandTestSuite struct {
@@ -41,7 +41,7 @@ func (suite *VarSetCommandTestSuite) SetupSuite() {
 	path, err := environment.GetRootPath()
 	suite.Require().NoError(err, "error obtaining root path")
 
-	suite.testdataDir = filepath.Join(path, "state", "variables", "testdata")
+	suite.testdataDir = filepath.Join(path, "state", "secrets", "testdata")
 	suite.configDir = filepath.Join(suite.testdataDir, "generated", "config")
 }
 
@@ -72,26 +72,18 @@ func (suite *VarSetCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *VarSetCommandTestSuite) TestCommandConfig() {
-	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
+	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
 
 	suite.Equal("set", cc.Name())
-	suite.Equal(locale.T("variables_set_cmd_description"), cc.Short, "translation")
+	suite.Equal(locale.T("secrets_set_cmd_description"), cc.Short, "translation")
 
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 
 	suite.Require().False(cc.HasAvailableFlags())
 }
 
-func (suite *VarSetCommandTestSuite) TestExecute_RequiresNameAndValue() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	cmd.Config().GetCobraCmd().SetArgs([]string{"set"})
-	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: variables_set_arg_name_name\nArgument missing: variables_set_arg_value_name\n")
-	suite.NoError(failures.Handled(), "No failure occurred")
-}
-
 func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)

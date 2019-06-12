@@ -53,15 +53,6 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		return FailAlreadyActive.New("err_already_active", v.project.Owner()+"/"+v.project.Name())
 	}
 
-	// expand project vars to environment vars
-	for _, variable := range v.project.Variables() {
-		val, failure := variable.Value()
-		if failure != nil {
-			return failure
-		}
-		os.Setenv(variable.Name(), val)
-	}
-
 	if OS != "darwin" && strings.ToLower(os.Getenv(constants.DisableRuntime)) != "true" {
 		// Only Linux and Windows currently support runtime environments, but we still want to have virtual environments
 		// on mac

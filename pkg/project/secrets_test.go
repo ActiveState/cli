@@ -43,7 +43,7 @@ project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=0001
 		return nil, err
 	}
 
-	return pjfile, pjfile.Parse()
+	return pjfile, nil
 }
 
 func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
@@ -73,30 +73,31 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.Func {
+func (suite *SecretsExpanderTestSuite) prepareWorkingExpander(isUser bool) project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return project.NewVarExpander(suite.secretsClient)
+	return project.NewSecretQuietExpander(suite.secretsClient, isUser)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, fail := suite.prepareWorkingExpander()(secretName, suite.project)
+	value, fail := suite.prepareWorkingExpander(false)(secretName, suite.project)
+	suite.Require().Error(fail.ToError())
 	suite.Equal(expectedFailureType.Name, fail.Type.Name, "unexpected failure type")
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
-	value, failure := suite.prepareWorkingExpander()(secretName, suite.project)
+func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string, isUser bool) {
+	value, failure := suite.prepareWorkingExpander(isUser)(secretName, suite.project)
 	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(failure)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := project.NewVarExpander(suite.secretsClient)
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, false)
 	value, failure := expanderFn("undefined-secret", suite.project)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
 	suite.Zero(value)
@@ -116,8 +117,11 @@ func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
 }
 
 func (suite *SecretsExpanderTestSuite) TestProjectSecret() {
-	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("proj-secret", "proj-value")
+	suite.assertExpansionSuccess("proj-secret", "proj-value", false)
+}
+
+func (suite *SecretsExpanderTestSuite) TestUserSecret() {
+	suite.assertExpansionSuccess("user-proj-secret", "user-proj-value", true)
 }
 
 func Test_SecretsExpander_TestSuite(t *testing.T) {

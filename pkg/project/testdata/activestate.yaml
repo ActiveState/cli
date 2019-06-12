@@ -28,13 +28,13 @@ constants:
     value: baz $platform.name
     constraints:
       platform: OSX
-variables:
-  - name: undefined-secret
-    value: 
-      store: organization
-  - name: defined-secret-org
-    value: 
-      store: organization
+secrets:
+  user: 
+    - name: secret
+      description: secret-user
+  project:
+    - name: secret
+      description: secret-project
 events:
   - name: bar
     value: bar $platform.name

@@ -1,4 +1,4 @@
-package variables_test
+package secrets_test
 
 import (
 	"strings"
@@ -24,5 +24,5 @@ scripts:
 		return nil, err
 	}
 
-	return project, project.Parse()
+	return project, nil
 }

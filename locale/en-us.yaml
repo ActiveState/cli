@@ -307,9 +307,9 @@ err_api_project_not_found:
   other: The requested project does not exist on the ActiveState Platform
 err_api_member_not_found:
   other: Unable to find requested Member
-variables_expander_err_empty_name:
+secrets_expander_err_empty_name:
   other: Expander handle can not be an empty string
-variables_expander_err_undefined:
+secrets_expander_err_undefined:
   other: Expander must be defined
 error_expand_variable_infinite_recursion:
   other: Infinite recursion trying to expand variable '{{.V0}}'
@@ -439,97 +439,113 @@ print_state_show_secrets:
   other: Secret specifications
 err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: {{.V0}}"
-config_variable_prompt_value:
-  other: "Variable '{{.Name}}' undefined. Please enter a value:"
 err_already_active:
   other: "You cannot activate a new state when you are already in an activated state. You are in an activated state for project: {{.V0}}"
 run_listing_scripts:
   other: "Available Scripts: "
 
-variables_cmd_description:
-  other: Manage Your Variables
-variables_get_cmd_description:
-  other: Get the value of a variable
-variables_get_arg_name_name:
-  other: variable-name
-variables_get_arg_name_description:
-  other: Name of Variable
-variables_set_cmd_description:
-  other: Set the value of a variable
-variables_set_arg_name_name:
-  other: variable-name
-variables_set_arg_name_description:
-  other: Name of Variable
-variables_set_arg_value_name:
-  other: variable-value
-variables_set_arg_value_description:
-  other: Value of unencrypted Variable
-variables_set_flag_project:
-  other: Scope the variable to the current project
-variables_set_flag_user:
-  other: Scope the variable to the current user
-variables_share_cmd_description:
-  other: Share your organization and project variables with another user
-variables_share_arg_user_name:
+secrets_cmd_description:
+  other: Manage Your Secrets
+secrets_get_cmd_description:
+  other: Get the value of a secret
+secrets_get_arg_name:
+  other: secret-namespace
+secrets_get_arg_name_description:
+  other: Namespace of secret. eg. 'user.mySecret' or 'project.ourSecret'
+secrets_set_cmd_description:
+  other: Set the value of a secret
+secrets_set_arg_name:
+  other: secret-namespace
+secrets_set_arg_name_description:
+  other: Namespace of secret. eg. 'user.mySecret' or 'project.ourSecret'
+secrets_set_arg_value_name:
+  other: secret-value
+secrets_set_arg_value_description:
+  other: Value of unencrypted Secret
+secrets_set_flag_project:
+  other: Scope the secret to the current project
+secrets_set_flag_user:
+  other: Scope the secret to the current user
+secrets_share_cmd_description:
+  other: Share your organization and project secrets with another user
+secrets_share_arg_user_name:
   other: user-handle
-variables_share_arg_user_description:
+secrets_share_arg_user_description:
   other: Username of user in your organization
-variables_sync_cmd_description:
-  other: Synchronize your shareable variables organization-wide
-variables_sync_results_message:
+secrets_sync_cmd_description:
+  other: Synchronize your shareable secrets to everyone in the organization for the current project
+secrets_sync_results_message:
   other: Successfully synchronized {{.V0}} users of the {{.V1}} organization
-variables_col_name:
+secrets_col_name:
   other: Name
-variables_col_description:
+secrets_col_description:
   other: Description
-variables_col_setunset:
+secrets_col_setunset:
   other: Set/Unset
-variables_col_encrypted:
+secrets_col_encrypted:
   other: Encrypted
-variables_col_shared:
+secrets_col_shared:
   other: Shared
-variables_col_store:
+secrets_col_store:
   other: Store
-variables_value_secret_undefined:
+secrets_value_secret_undefined:
   other: <undefined>
-variables_value_set:
+secrets_value_set:
   other: Set
-variables_value_unset:
+secrets_value_unset:
   other: Unset
-variables_value_secret:
+secrets_value_secret:
   other: <encrypted>
-variables_err:
-  other: Error managing user's Variables
-variables_err_no_variables_found:
-  other: Unable to find any Variables for User
-variables_err_encrypting:
-  other: "Error encrypting a user's Variable: {{.V0}}"
-variables_err_decrypting:
-  other: "Error decrypting a user's Variable: {{.V0}}"
-variables_err_save:
-  other: Error updating user's Variables
-variables_err_base64_decoding:
+secrets_err:
+  other: Error managing user's Secrets
+secrets_err_no_secrets_found:
+  other: Unable to find any Secrets for User
+secrets_err_encrypting:
+  other: "Error encrypting a user's Secret: {{.V0}}"
+secrets_err_decrypting:
+  other: "Error decrypting a user's Secret: {{.V0}}"
+secrets_err_save:
+  other: Error updating user's Secrets
+secrets_err_base64_decoding:
   other: Error base64 decoding variable value
-variables_err_no_publickey_found:
+secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
-variables_err_value_prompt:
+secrets_err_value_prompt:
   other: The provided variable value is invalid 
-variables_expand_err_undefined:
-  other: "Variable `{{.V0}}` not defined in project"
-variables_expand_err_not_found:
+secrets_expand_err_undefined:
+  other: "Secret `{{.V0}}` not defined in project"
+secrets_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
-variable_err_undefined:
-  other: "Variable `{{.V0}}` not defined in project"
-variables_err_invalid_store:
+secrets_err_invalid_store:
   other: "Invalid 'store' property used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
-variables_err_invalid_share:
+secrets_err_invalid_share:
   other: "Invalid share level used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
-variables_err_value_with_store:
-  other: "Variable should not have a local value defined in the activestate.yaml if it's setting the 'share' or 'store' fields: {{.V0}}"
-variables_err_invalid_value:
-  other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
-variables_err_value_empty:
-  other: "Variable has no value defined: {{.V0}}"
+secrets_err_value_with_store:
+  other: "Secret should not have a local value defined in the activestate.yaml if it's setting the 'share' or 'store' fields: {{.V0}}"
+secrets_err_invalid_value:
+  other: "Secret '{{.V0}}' has an invalid value: {{.V1}}"
+secrets_err_value_empty:
+  other: "Secret has no value defined: {{.V0}}"
+secrets_err_invalid_namespace:
+  other: "Invalid namespace given for secret: {{.V0}}, namespace must be in format of 'scope.secretName', eg. 'user.mySecret' or 'project.ourSecret'."
+secrets_warn_deprecated_namespace:
+  other: "DEPRECATION WARNING: Setting or retrieving secrets without a namespace is deprecated and soon won't be supported. Please reference your secret along with its scope, eg. 'user.mySecret' or 'project.ourSecret'."
+secrets_warn_deprecated_var:
+  other: "DEPRECATION WARNING: 'state variables' (or 'state vars') has been retired in favour of secrets and constants. Please use 'state secrets' instead."
+secrets_warn_deprecated_var_expand:
+  other: "DEPRECATION WARNING: You are accessing a secret via '$variables.{{.V0}}', please update your activestate.yaml to instead use the format of '$secrets.project.{{.V0}}'"
+secrets_err_user_not_defined:
+  other: "Secret has not been defined: {{.V0}}. Define it by running 'state secrets set {{.V0}}'."
+secrets_err_project_not_defined:
+  other: "Secret has not been defined: {{.V0}}. Either define it by running 'state secrets set {{.V0}}' or have someone in your organization sync with you by having them run 'state secrets sync'."
+secrets_header_name:
+  other: Name
+secrets_header_scope:
+  other: Scope
+secrets_header_usage:
+  other: Usage
+variable_field_deprecation_warning:
+  other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -750,7 +766,7 @@ err_invalid_project:
 err_persist_invalid_project:
   other: Trying to persist an invalid project
 variable_deprecation_warning:
-  other: "DEPRECATION WARNING: Variable '{{.V0}}' is using a deprecated field 'pullfrom'. Please rename this field to 'store'."
+  other: "DEPRECATION WARNING: Your project holds a 'variables' field. Variables have been replaced by separate 'secrets' and 'constants' fields. Please update your activestate.yaml."
 err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:

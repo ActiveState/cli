@@ -37,7 +37,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
-		return secretsapi.FailSave.New("variables_err_save")
+		return secretsapi.FailSave.New("secrets_err_save")
 	}
 
 	return nil
@@ -107,8 +107,8 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 	return kp, nil
 }
 
-// UserSecrets fetches the secrets for the current user relevant to the given project
-func UserSecrets(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
+// ByProject fetches the secrets for the current user relevant to the given project
+func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
 	result := []*secretsModels.UserSecret{}
 
 	pjm, fail := model.FetchProjectByName(owner, projectName)
@@ -129,9 +129,6 @@ func UserSecrets(secretsClient *secretsapi.Client, owner string, projectName str
 	for _, secret := range secrets {
 		if secret.ProjectID != pjm.ProjectID {
 			continue // We only want secrets belonging to our project
-		}
-		if secret.IsUser != nil && *secret.IsUser {
-			continue // Not supported currently
 		}
 		result = append(result, secret)
 	}
