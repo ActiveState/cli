@@ -1,11 +1,9 @@
 package project
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/projectfile"
-	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/stretchr/testify/suite"
@@ -23,9 +21,7 @@ func (suite *ProjectInternalTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *ProjectInternalTestSuite) TestParseURL() {
 	{
 		// url pass including commitID
-		prj, fail := suite.loadProject(`project: "https://platform.activestate.com/Project/TestParseURL?commitID=00010001-0001-0001-0001-000100010001"`)
-		suite.NoError(fail.ToError(), "Should load project without issue.")
-		meta, fail := prj.parseURL()
+		meta, fail := parseURL("https://platform.activestate.com/Project/TestParseURL?commitID=00010001-0001-0001-0001-000100010001")
 		suite.NoError(fail.ToError(), "Should load project without issue.")
 		suite.Equal("Project", meta.owner, "They should match")
 		suite.Equal("TestParseURL", meta.name, "They should match")
@@ -33,9 +29,7 @@ func (suite *ProjectInternalTestSuite) TestParseURL() {
 	}
 	{
 		// url pass without commitID
-		prj, fail := suite.loadProject(`project: "https://platform.activestate.com/Project/TestParseURL"`)
-		suite.NoError(fail.ToError(), "Should load project without issue.")
-		meta, fail := prj.parseURL()
+		meta, fail := parseURL("https://platform.activestate.com/Project/TestParseURL")
 		suite.NoError(fail.ToError(), "Should load project without issue.")
 		suite.Equal("Project", meta.owner, "They should match")
 		suite.Equal("TestParseURL", meta.name, "They should match")
@@ -43,23 +37,10 @@ func (suite *ProjectInternalTestSuite) TestParseURL() {
 	}
 	{
 		// url fail
-		_, fail := suite.loadProject(`project: "Thisisnotavalidaprojecturl"`)
+		_, fail := parseURL("Thisisnotavalidaprojecturl")
 		suite.Error(fail.ToError(), "This should fail")
 	}
 
-}
-
-func (suite *ProjectInternalTestSuite) loadProject(projectStr string) (*Project, *failures.Failure) {
-	projectfile.Reset()
-
-	pjFile := &projectfile.Project{}
-	contents := strings.TrimSpace(projectStr)
-	err := yaml.Unmarshal([]byte(contents), pjFile)
-	suite.NoError(err, "Unmarshalled YAML")
-
-	pjFile.Persist()
-	prj, fail := New(pjFile)
-	return prj, fail
 }
 
 func Test_ProjectInternalTestSuite(t *testing.T) {

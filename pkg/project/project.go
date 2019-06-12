@@ -146,8 +146,7 @@ type urlMeta struct {
 	commitID string
 }
 
-func (p *Project) parseURL() (*urlMeta, *failures.Failure) {
-	url := p.projectfile.Project
+func parseURL(url string) (*urlMeta, *failures.Failure) {
 	fail := projectfile.ValidateProjectURL(url)
 	if fail != nil {
 		return nil, fail
@@ -203,7 +202,7 @@ func (p *Project) Environments() string { return p.projectfile.Environments }
 // New creates a new Project struct
 func New(p *projectfile.Project) (*Project, *failures.Failure) {
 	project := &Project{projectfile: p}
-	parts, fail := project.parseURL()
+	parts, fail := parseURL(p.Project)
 	if fail != nil {
 		return nil, fail
 	}
