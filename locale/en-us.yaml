@@ -529,9 +529,9 @@ variables_err_value_with_store:
 variables_err_invalid_value:
   other: "Variable '{{.V0}}' has an invalid value: {{.V1}}"
 pull_is_updated:
-  other: Updated to latest
+  other: Your activestate.yaml has been updated to the latest version available
 pull_not_updated:
-  other: Update not needed
+  other: Your activestate.yaml is already up to date!
 variables_err_value_empty:
   other: "Variable has no value defined: {{.V0}}"
 keypair_cmd_description:
