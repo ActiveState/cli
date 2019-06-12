@@ -3,6 +3,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -40,9 +41,9 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
 
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
@@ -99,14 +100,19 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	pjfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
+	downloadDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+	cacheDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+
 	var fail *failures.Failure
-	suite.installer, fail = runtime.InitInstaller()
+	suite.installer, fail = runtime.NewInstaller(downloadDir, cacheDir, runtime.InitDownload(downloadDir))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -131,9 +137,9 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	pjfile := &projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
@@ -153,7 +159,7 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 		}
 	}
 
-	suite.Equal(1, metaCount, "Installed one artifact via metafile")
+	suite.Equal(2, metaCount, "Both new and legacy got installed via metafile")
 }
 
 func Test_InstallerTestSuite(t *testing.T) {

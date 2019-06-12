@@ -8,13 +8,17 @@ package runtime_test
 // I'm sure there'll be exceptions, but for the moment it just isn't worth the timesink to mock these for each platform.
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -44,9 +48,9 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rmock = rmock.Init()
 	suite.rmock.MockFullRuntime()
 
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 
@@ -110,7 +114,7 @@ func (suite *InstallerLinuxTestSuite) TestInstall_RuntimeMissingPythonExecutable
 	archivePath := path.Join(suite.dataDir, "python-missing-python-binary.tar.gz")
 	fail := suite.installer.InstallFromArchives([]string{archivePath})
 	suite.Require().Error(fail.ToError())
-	suite.Equal(runtime.FailRuntimeNoExecutable, fail.Type)
+	suite.Equal(runtime.FailMetaDataNotDetected, fail.Type)
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_PythonFoundButNotExecutable() {
@@ -124,6 +128,45 @@ func (suite *InstallerLinuxTestSuite) TestInstall_InstallerFailsToGetPrefixes() 
 	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, "python-fail-prefixes.tar.gz")})
 	suite.Require().Error(fail.ToError())
 	suite.Equal(runtime.FailRuntimeNoPrefixes, fail.Type)
+}
+
+func (suite *InstallerLinuxTestSuite) TestRelocate() {
+	relocationPrefix := "######################################## RELOCATE ME ########################################"
+
+	fileutils.CopyFile(filepath.Join(suite.dataDir, "relocate/bin/python3"), filepath.Join(suite.cacheDir, "relocate/bin/python3"))
+
+	binary := "relocate/binary"
+	fileutils.CopyFile(filepath.Join(suite.dataDir, binary), filepath.Join(suite.cacheDir, binary))
+
+	text := "relocate/text.go"
+	fileutils.CopyFile(filepath.Join(suite.dataDir, text), filepath.Join(suite.cacheDir, text))
+
+	// Mock metaData
+	metaData := &runtime.MetaData{
+		Path:          filepath.Join(suite.cacheDir, "relocate"),
+		RelocationDir: relocationPrefix,
+		BinaryLocations: []runtime.MetaDataBinary{
+			runtime.MetaDataBinary{
+				Path:     "bin",
+				Relative: true,
+			},
+		},
+	}
+
+	metaData.MakeBackwardsCompatible()
+	suite.Equal("lib", metaData.RelocationTargetBinaries)
+
+	installDir := filepath.Join(suite.cacheDir, "relocate")
+	fail := suite.installer.Relocate(metaData)
+	suite.Require().NoError(fail.ToError())
+
+	// test text
+	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(suite.cacheDir, text))), fmt.Sprintf("-- %s --", installDir))
+
+	// test binary
+	libDir := filepath.Join(suite.cacheDir, "relocate/lib")
+	binaryData := fileutils.ReadFileUnsafe(filepath.Join(suite.cacheDir, binary))
+	suite.True(len(bytes.Split(binaryData, []byte(libDir))) > 1, "Correctly injects "+libDir)
 }
 
 func Test_InstallerLinuxTestSuite(t *testing.T) {

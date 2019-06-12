@@ -1,3 +1,4 @@
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 platforms:
   - name: fullexample
     os: darwin
@@ -11,12 +12,10 @@ platforms:
     os: linux
   - name: OSX
     os: macos
-name: project
 environments: "something"
 version: "1.0"
 namespace: "my/name/space"
-owner: ActiveState
-variables:
+constants:
   - name: foo
     value: foo $platform.name
     constraints:
@@ -29,12 +28,13 @@ variables:
     value: baz $platform.name
     constraints:
       platform: OSX
-  - name: undefined-secret
-    value: 
-      store: organization
-  - name: defined-secret-org
-    value: 
-      store: organization
+secrets:
+  user: 
+    - name: secret
+      description: secret-user
+  project:
+    - name: secret
+      description: secret-project
 events:
   - name: bar
     value: bar $platform.name

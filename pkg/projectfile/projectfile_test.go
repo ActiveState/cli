@@ -30,8 +30,7 @@ func setCwd(t *testing.T, subdir string) {
 func TestProjectStruct(t *testing.T) {
 	project := Project{}
 	dat := strings.TrimSpace(`
-name: valueForName
-owner: valueForOwner
+project: valueForProject
 namespace: valueForNamespace
 version: valueForVersion
 environments: valueForEnvironments`)
@@ -39,8 +38,7 @@ environments: valueForEnvironments`)
 	err := yaml.Unmarshal([]byte(dat), &project)
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.Equal(t, "valueForName", project.Name, "Name should be set")
-	assert.Equal(t, "valueForOwner", project.Owner, "Owner should be set")
+	assert.Equal(t, "valueForProject", project.Project, "Project should be set")
 	assert.Equal(t, "valueForNamespace", project.Namespace, "Namespace should be set")
 	assert.Equal(t, "valueForVersion", project.Version, "Version should be set")
 	assert.Equal(t, "valueForEnvironments", project.Environments, "Environments should be set")
@@ -144,6 +142,32 @@ standalone: true`)
 	assert.True(t, script.Standalone, "Standalone should be set")
 }
 
+func TestConstantStruct(t *testing.T) {
+	constant := Constant{}
+	dat := strings.TrimSpace(`
+name: valueForName
+value: valueForConstant`)
+
+	err := yaml.Unmarshal([]byte(dat), &constant)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", constant.Name, "Name should be set")
+	assert.Equal(t, "valueForConstant", constant.Value, "Constant should be set")
+}
+
+func TestSecretStruct(t *testing.T) {
+	secret := Secret{}
+	dat := strings.TrimSpace(`
+name: valueForName
+description: valueForDescription`)
+
+	err := yaml.Unmarshal([]byte(dat), &secret)
+	assert.Nil(t, err, "Should not throw an error")
+
+	assert.Equal(t, "valueForName", secret.Name, "Name should be set")
+	assert.Equal(t, "valueForDescription", secret.Description, "Description should be set")
+}
+
 func TestParse(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 
@@ -154,12 +178,10 @@ func TestParse(t *testing.T) {
 	project, err := Parse(filepath.Join(rootpath, "activestate.yml.nope"))
 	assert.NotNil(t, err, "Should throw an error")
 
-	project, err = Parse(filepath.Join(rootpath, "test", "activestate.yaml"))
+	project, err = Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
 	assert.Nil(t, err, "Should not throw an error")
 
-	assert.NotEmpty(t, project.Name, "Name should be set")
-	assert.NotEmpty(t, project.Owner, "Owner should be set")
-	assert.NotEmpty(t, project.Namespace, "Namespace should be set")
+	assert.NotEmpty(t, project.Project, "Project should be set")
 	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
 
@@ -184,8 +206,11 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
 	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
 
-	assert.NotEmpty(t, project.Variables[0].Name, "Variable name should be set")
-	assert.NotNil(t, project.Variables[0].Value.StaticValue, "Variable value should be set")
+	assert.NotEmpty(t, project.Constants[0].Name, "Constant name should be set")
+	assert.NotEmpty(t, project.Constants[0].Value, "Constant value should be set")
+
+	assert.NotEmpty(t, project.Secrets.User[0].Name, "Variable name should be set")
+	assert.NotEmpty(t, project.Secrets.Project[0].Name, "Variable name should be set")
 
 	assert.NotEmpty(t, project.Events[0].Name, "Event name should be set")
 	assert.NotEmpty(t, project.Events[0].Value, "Event value should be set")
@@ -204,7 +229,7 @@ func TestSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filepath.Join(rootpath, "test", "activestate.yaml")
+	path := filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml")
 	project, failure := Parse(path)
 	assert.Nil(t, failure, "unexpected failure parsing our yaml file")
 
@@ -216,6 +241,14 @@ func TestSave(t *testing.T) {
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
+
+	projectURL := project.Project
+	project.Project = "thisisnotatallaprojectURL"
+	fail := project.Save()
+	assert.Error(t, fail.ToError(), "Saving project should fail due to bad projectURL format")
+	project.Project = projectURL
+	fail = project.Save()
+	assert.NoError(t, fail.ToError(), "Saving project should now pass")
 
 	err = tmpfile.Close()
 	assert.NoError(t, err, "Should close our temp file")
@@ -234,11 +267,11 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	cwd, err := os.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	configPath, failure := getProjectFilePath()
 	require.Nil(t, failure)
-	expectedPath := filepath.Join(root, "test", constants.ConfigFileName)
+	expectedPath := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 
 	os.Setenv(constants.ProjectEnvVarName, "/some/path")
@@ -255,7 +288,7 @@ func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	cwd, _ := os.Getwd()
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config := Get()
 	assert.NotNil(t, config, "Config should be set")
@@ -269,17 +302,17 @@ func TestGet(t *testing.T) {
 func TestGetActivated(t *testing.T) {
 	root, _ := environment.GetRootPath()
 	cwd, _ := os.Getwd()
-	os.Chdir(filepath.Join(root, "test"))
+	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config1 := Get()
-	assert.Equal(t, filepath.Join(root, "test", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
+	assert.Equal(t, filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName), os.Getenv(constants.ProjectEnvVarName), "The activated state's config file is set")
 
 	os.Chdir(root)
 	config2, fail := GetSafe()
 	assert.NoError(t, fail.ToError(), "No error even if no activestate.yaml does not exist")
 	assert.Equal(t, config1, config2, "The same activated state is returned")
 
-	expected := filepath.Join(root, "test", constants.ConfigFileName)
+	expected := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	actual := os.Getenv(constants.ProjectEnvVarName)
 	assert.Equal(t, expected, actual, "The activated state's config file is still set properly")
 

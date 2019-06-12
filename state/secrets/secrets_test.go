@@ -1,4 +1,4 @@
-package variables_test
+package secrets_test
 
 import (
 	"net/http"
@@ -19,7 +19,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/variables"
+	"github.com/ActiveState/cli/state/secrets"
 )
 
 type VariablesCommandTestSuite struct {
@@ -41,7 +41,8 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	// support test projectfile access
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "state", "variables", "testdata"))
+	err = os.Chdir(filepath.Join(root, "state", "secrets", "testdata"))
+	suite.Require().NoError(err, "Should chdir")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
@@ -60,23 +61,8 @@ func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	suite.authMock.Close()
 }
 
-func (suite *VariablesCommandTestSuite) TestCommandConfig() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	conf := cmd.Config()
-	suite.Equal("variables", conf.Name)
-	suite.Equal("variables_cmd_description", conf.Description, "i18n symbol")
-
-	subCmds := conf.GetCobraCmd().Commands()
-	suite.Require().Len(subCmds, 3, "number of subcommands")
-	suite.Equal("get", subCmds[0].Name())
-	suite.Equal("set", subCmds[1].Name())
-	suite.Equal("sync", subCmds[2].Name())
-	suite.Len(conf.Flags, 0, "number of command flags supported")
-	suite.Len(conf.Arguments, 0, "number of commands args supported")
-}
-
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
@@ -94,7 +80,8 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().NoError(execErr)
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
-	suite.Equal("- proj-secret", strings.TrimSpace(outStr))
+	suite.Contains(strings.TrimSpace(outStr), "proj-secret")
+	suite.Contains(strings.TrimSpace(outStr), "user-proj-secret")
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {

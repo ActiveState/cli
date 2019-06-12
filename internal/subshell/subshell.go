@@ -10,13 +10,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/alecthomas/template"
+	"github.com/gobuffalo/packr"
+	tempfile "github.com/mash/go-tempfile-suffix"
+	ps "github.com/mitchellh/go-ps"
 	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -24,11 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/alecthomas/template"
-	"github.com/gobuffalo/packr"
-	tempfile "github.com/mash/go-tempfile-suffix"
-	ps "github.com/mitchellh/go-ps"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -135,7 +134,6 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 
 	rcData := map[string]interface{}{
-		"Project":     projectfile.Get(),
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
 		"Env":         virtualenvironment.Get().GetEnv(),
@@ -150,6 +148,9 @@ func getRcFile(v SubShell) (*os.File, error) {
 
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
+	if err != nil {
+		return nil, err
+	}
 
 	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
 

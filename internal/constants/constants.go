@@ -162,10 +162,13 @@ const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/dep
 const DateFormatUser = "January 02, 2006"
 
 // PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://platform.activestate.com/create-account"
+const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 
 // UserAgentTemplate is the template used to generate the actual user agent, which includes runtime information as well as build information
 const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architecture}})"
+
+// PlatformURL is the base domain for the production platform
+const PlatformURL = "platform.activestate.com"

@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -29,6 +31,11 @@ var (
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
 )
 
+var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+
+// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
+var ProjectURLRe = regexp.MustCompile(strReg)
+
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
 type VersionInfo struct {
@@ -38,24 +45,28 @@ type VersionInfo struct {
 
 // ProjectSimple reflects a bare basic project structure
 type ProjectSimple struct {
-	Name  string `yaml:"name"`
-	Owner string `yaml:"owner"`
+	Project string `yaml:"project"`
 }
 
 // Project covers the top level project structure of our yaml
 type Project struct {
-	Name         string      `yaml:"name"`
-	Owner        string      `yaml:"owner"`
-	Namespace    string      `yaml:"namespace,omitempty"`
-	Branch       string      `yaml:"branch,omitempty"`
-	Version      string      `yaml:"version,omitempty"`
-	Environments string      `yaml:"environments,omitempty"`
-	Platforms    []Platform  `yaml:"platforms,omitempty"`
-	Languages    []Language  `yaml:"languages,omitempty"`
-	Variables    []*Variable `yaml:"variables,omitempty"`
-	Events       []Event     `yaml:"events,omitempty"`
-	Scripts      []Script    `yaml:"scripts,omitempty"`
-	path         string      // "private"
+	Project      string        `yaml:"project"`
+	Namespace    string        `yaml:"namespace,omitempty"`
+	Branch       string        `yaml:"branch,omitempty"`
+	Version      string        `yaml:"version,omitempty"`
+	Environments string        `yaml:"environments,omitempty"`
+	Platforms    []Platform    `yaml:"platforms,omitempty"`
+	Languages    []Language    `yaml:"languages,omitempty"`
+	Constants    []*Constant   `yaml:"constants,omitempty"`
+	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
+	Events       []Event       `yaml:"events,omitempty"`
+	Scripts      []Script      `yaml:"scripts,omitempty"`
+	path         string        // "private"
+
+	// Deprecated
+	Variables interface{} `yaml:"variables,omitempty"`
+	Owner     string      `yaml:"owner,omitempty"`
+	Name      string      `yaml:"name,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -79,6 +90,26 @@ type Language struct {
 	Constraints Constraint `yaml:"constraints,omitempty"`
 	Build       Build      `yaml:"build,omitempty"`
 	Packages    []Package  `yaml:"packages,omitempty"`
+}
+
+// Constant covers the constant structure, which goes under Project
+type Constant struct {
+	Name        string     `yaml:"name"`
+	Value       string     `yaml:"value"`
+	Constraints Constraint `yaml:"constraints,omitempty"`
+}
+
+// SecretScopes holds secret scopes, scopes define what the secrets belong to
+type SecretScopes struct {
+	User    []*Secret `yaml:"user,omitempty"`
+	Project []*Secret `yaml:"project,omitempty"`
+}
+
+// Secret covers the variable structure, which goes under Project
+type Secret struct {
+	Name        string     `yaml:"name"`
+	Description string     `yaml:"description"`
+	Constraints Constraint `yaml:"constraints"`
 }
 
 // Constraint covers the constraint structure, which can go under almost any other struct
@@ -128,19 +159,16 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
-	return &project, project.Parse()
-}
-
-// Parse further processes the current file by parsing mixed values (something go-yaml doesnt handle)
-func (p *Project) Parse() *failures.Failure {
-	for _, variable := range p.Variables {
-		fail := variable.Parse()
-		if fail != nil {
-			return fail
-		}
+	if project.Variables != nil {
+		return nil, FailValidate.New("variable_field_deprecation_warning")
 	}
 
-	return nil
+	if project.Project == "" && project.Owner != "" && project.Name != "" {
+		print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
+	}
+
+	return &project, nil
 }
 
 // Path returns the project's activestate.yaml file path.
@@ -153,11 +181,25 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
+// ValidateProjectURL validates the configured project URL
+func ValidateProjectURL(url string) *failures.Failure {
+	match := ProjectURLRe.FindStringSubmatch(url)
+	if len(match) < 3 {
+		return FailParseProject.New(locale.T("err_bad_project_url"))
+	}
+	return nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
 	if err != nil {
 		return failures.FailMarshal.Wrap(err)
+	}
+
+	fail := ValidateProjectURL(p.Project)
+	if fail != nil {
+		return fail
 	}
 
 	f, err := os.Create(p.Path())
@@ -265,10 +307,6 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	if project.Name == "" || project.Owner == "" {
-		return nil, FailValidate.New("err_invalid_project_name_owner")
-	}
-
 	project.Persist()
 	return project, nil
 }
@@ -326,8 +364,8 @@ func Reset() {
 // to Get() return this project.
 // Only one project can persist at a time.
 func (p *Project) Persist() {
-	if p.Name == "" || p.Owner == "" {
-		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project_name_owner"))
+	if p.Project == "" {
+		failures.Handle(failures.FailDeveloper.New("err_persist_invalid_project"), locale.T("err_invalid_project"))
 		os.Exit(1)
 	}
 	persistentProject = p

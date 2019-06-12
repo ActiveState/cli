@@ -87,7 +87,6 @@ class TestAuth(helpers.IntegrationTest):
         r = requests.post("https://platform.activestate.com/api/v1/users", json=data)
         if r.status_code != 200:
             self.fail("Create user failed: code: %d, response: %s" % (r.status_code, r.content))
-        
         return data["username"], data["password"]
 
 if __name__ == '__main__':

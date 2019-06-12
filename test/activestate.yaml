@@ -1,5 +1,4 @@
-name: CodeIntel
-owner: ActiveState
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 namespace: github.com/ActiveState/CodeIntel
 environments: dev,qa,prod
 platforms:
@@ -30,7 +29,7 @@ languages:
         version: "2.*"
         build:
           override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
-variables:
+constants:
   - name: DEBUG
     value: true
   - name: PYTHONPATH
@@ -39,10 +38,13 @@ variables:
         environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-  - name: org-secret
-    value:
-      store: organization
-      share: organization
+secrets:
+  user:
+    - name: user-secret
+      description: user-secret-description
+  project:
+    - name: project-secret
+      description: project-secret-description
 events:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

@@ -33,8 +33,7 @@ func TestRunStandaloneCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo foo
@@ -42,8 +41,7 @@ scripts:
   `)
 	} else {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: cmd /C echo foo
@@ -69,8 +67,7 @@ func TestRunNoProjectInheritance(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo $ACTIVESTATE_PROJECT
@@ -78,8 +75,7 @@ scripts:
 `)
 	} else {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: echo %ACTIVESTATE_PROJECT%
@@ -108,8 +104,7 @@ func TestRunMissingCommandName(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
@@ -134,8 +129,7 @@ func TestRunUnknownCommandName(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
@@ -157,8 +151,7 @@ func TestRunUnknownCommand(t *testing.T) {
 
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
     value: whatever
@@ -198,17 +191,17 @@ func TestRunActivatedCommand(t *testing.T) {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
+    standalone: true
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
-name: string
-owner: string
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
+    standalone: true
     value: cmd /C echo foo`)
 	}
 	err = yaml.Unmarshal([]byte(contents), project)

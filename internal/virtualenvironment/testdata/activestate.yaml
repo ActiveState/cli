@@ -1,5 +1,4 @@
-name: string
-owner: string
+project: "https://platform.activestate.com/Projects/project?commitID=00010001-0001-0001-0001-000100010001"
 version: master
 environments: dev,qa,prod
 platforms:
@@ -30,15 +29,6 @@ languages:
         version: "2.*"
         build:
           override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
-variables:
-  - name: DEBUG
-    value: true
-  - name: PYTHONPATH
-    value: '%projectDir%/src:%projectDir%/tests'
-    constraints:
-        environment: dev,qa
-  - name: PYTHONPATH
-    value: '%projectDir%/src:%projectDir%/tests'
 hooks:
   - name: FIRST_INSTALL
     value: '%pythonExe% %projectDir%/setup.py prepare'

@@ -3,6 +3,7 @@
 package runtime_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
@@ -34,8 +36,11 @@ type RuntimeDLTestSuite struct {
 }
 
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
-	pj := &projectfile.Project{Name: "string", Owner: "string"}
-	suite.project = project.New(pj)
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pj := &projectfile.Project{Project: projectURL}
+	var fail *failures.Failure
+	suite.project, fail = project.New(pj)
+	suite.NoError(fail.ToError(), "No failure should occur when loading project")
 
 	var err error
 	suite.dir, err = ioutil.TempDir("", "runtime-test")
@@ -47,8 +52,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	suite.rtMock.MockFullRuntime()
 
 	pjfile := projectfile.Project{
-		Name:  "string",
-		Owner: "string",
+		Project: projectURL,
 	}
 	pjfile.Persist()
 

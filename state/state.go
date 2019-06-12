@@ -7,12 +7,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/deprecation"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
 	_ "github.com/ActiveState/state-required/require"
-	"github.com/spf13/cobra"
 )
 
 var exit = os.Exit

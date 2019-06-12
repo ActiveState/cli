@@ -24,13 +24,15 @@ class TestActivate(helpers.IntegrationTest):
         self.send(tempfile.TemporaryDirectory().name)
         if os.name == 'nt':
             # No py2 project on the platform yet
-            self.expect("Activating Virtual Environment")
+            self.expect("Your project does not have a configuration that is compatible with your platform")
         else:
-            self.expect("Downloading", timeout=120)
-            self.expect("Installing", timeout=120)
-            self.wait_ready(timeout=120)
+            self.expect("Downloading", timeout=240)
+            self.expect("Installing", timeout=240)
+            self.wait_ready(timeout=240)
             self.send("python2 -c \"import sys; print(sys.copyright)\"")
             self.expect("ActiveState Software Inc.")
+            self.send("python2 -c \"import numpy; print(numpy.__doc__)\"")
+            self.expect("import numpy as np")
         self.send_quit()
         if os.name == 'nt':
             # Windows returns nonzero on successful murdering of a process
@@ -52,11 +54,14 @@ class TestActivate(helpers.IntegrationTest):
         self.spawn("activate ActiveState-CLI/Python3")
         self.expect("Where would you like to checkout")
         self.send(tempfile.TemporaryDirectory().name)
-        self.expect("Downloading", timeout=120)
-        self.expect("Installing", timeout=120)
-        self.wait_ready(timeout=120)
+        self.expect("Downloading", timeout=240)
+        self.expect("Installing", timeout=240)
+        self.wait_ready(timeout=240)
+        self.send("which python3")
         self.send("python3 -c \"import sys; print(sys.copyright)\"")
         self.expect("ActiveState Software Inc.")
+        self.send("python3 -c \"import numpy; print(numpy.__doc__)\"")
+        self.expect("import numpy as np")
         self.send_quit()
         if os.name == 'nt':
             # Windows returns nonzero on successful murdering of a process

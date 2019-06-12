@@ -3,7 +3,6 @@
 package main
 
 import (
-	"github.com/ActiveState/cli/internal/expander"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
@@ -16,9 +15,9 @@ import (
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/run"
 	"github.com/ActiveState/cli/state/scripts"
+	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
 	"github.com/ActiveState/cli/state/update"
-	"github.com/ActiveState/cli/state/variables"
 )
 
 // register will register any commands and expanders
@@ -39,8 +38,6 @@ func register() {
 	Command.Append(scripts.Command)
 	Command.Append(pull.Command)
 
-	Command.Append(variables.NewCommand(secretsapi.Get()).Config())
+	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)
-
-	expander.RegisterExpander("variables", expander.NewVarPromptingExpander(secretsapi.Get()))
 }

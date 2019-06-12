@@ -13,8 +13,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -41,21 +39,30 @@ const (
 	AmendByPrepend
 )
 
+type includeFunc func(path string, contents []byte) (include bool)
+
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
-func ReplaceAll(filename, find, replace string) error {
+func ReplaceAll(filename, find string, replace string, include includeFunc) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
+
+	if !include(filename, fileBytes) {
+		return nil
+	}
+
+	logging.Debug("Replacing %s with %s in %s", find, replace, filename)
+
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
-	if bytes.IndexByte(fileBytes, nullByte) != -1 {
+	if IsBinary(fileBytes) {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
 			logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
@@ -67,6 +74,8 @@ func ReplaceAll(filename, find, replace string) error {
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
+	} else {
+		logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	chunks := bytes.Split(fileBytes, findBytes)
@@ -96,15 +105,12 @@ func ReplaceAll(filename, find, replace string) error {
 }
 
 // ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
-func ReplaceAllInDirectory(path string, exclude []string, find, replace string) error {
+func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
 	err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			return nil
 		}
-		if funk.ContainsString(exclude, filepath.Base(path)) {
-			return nil
-		}
-		return ReplaceAll(path, find, replace)
+		return ReplaceAll(path, find, replace, include)
 	})
 
 	if err != nil {
@@ -112,6 +118,11 @@ func ReplaceAllInDirectory(path string, exclude []string, find, replace string) 
 	}
 
 	return nil
+}
+
+// IsBinary checks if the given bytes are for a binary file
+func IsBinary(fileBytes []byte) bool {
+	return bytes.IndexByte(fileBytes, nullByte) != -1
 }
 
 // FileExists checks if the given file (not folder) exists

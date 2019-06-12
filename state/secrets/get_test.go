@@ -1,4 +1,4 @@
-package variables_test
+package secrets_test
 
 import (
 	"os"
@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -20,7 +21,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/state/variables"
+	"github.com/ActiveState/cli/state/secrets"
 )
 
 type SecretsGetCommandTestSuite struct {
@@ -72,28 +73,39 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 }
 
-func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
+func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType, expectedExitCode int) {
 	suite.prepareWorkingExpander()
 
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
-	execErr := cmd.Config().Execute()
-	suite.Require().Error(execErr, "expected a failure")
+
+	ex := exiter.New()
+	cmd.Config().Exiter = ex.Exit
+
+	exitCode := ex.WaitForExit(func() {
+		cmd.Config().Execute()
+	})
+	suite.Equal(expectedExitCode, exitCode, "expected exit code to match")
 
 	failure := failures.Handled().(*failures.Failure)
 	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)
 }
 
-func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string) {
+func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expectedExpansionValue string, expectedExitCode int) {
 	suite.prepareWorkingExpander()
-	cmd := variables.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient)
 
-	var execErr error
+	var exitCode int
+	ex := exiter.New()
+	cmd.Config().Exiter = ex.Exit
+
 	outStr, outErr := osutil.CaptureStdout(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
-		execErr = cmd.Config().Execute()
+		exitCode = ex.WaitForExit(func() {
+			cmd.Config().Execute()
+		})
 	})
-	suite.Require().NoError(execErr)
+	suite.Equal(expectedExitCode, exitCode, "expected exit code to match")
 	suite.Require().NoError(outErr)
 	suite.Require().NoError(failures.Handled(), "unexpected failure")
 
@@ -101,37 +113,29 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionSuccess(secretName strin
 }
 
 func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
-	cc := variables.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
+	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[0]
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
 	suite.Require().False(cc.HasAvailableFlags())
 }
 
-func (suite *SecretsGetCommandTestSuite) TestExecute_RequiresName() {
-	cmd := variables.NewCommand(suite.secretsClient)
-	cmd.Config().GetCobraCmd().SetArgs([]string{"get"})
-	err := cmd.Config().Execute()
-	suite.EqualError(err, "Argument missing: variables_get_arg_name_name\n")
-	suite.NoError(failures.Handled(), "No failure occurred")
-}
-
 func (suite *SecretsGetCommandTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
+	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode, 1)
 }
 
 func (suite *SecretsGetCommandTestSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt)
+	suite.assertExpansionFailure("invalid-encryption-secret", keypairs.FailDecrypt, 1)
 }
 
 func (suite *SecretsGetCommandTestSuite) TestSecretHasNoValue() {
 	// secret is not defined (has no value)
-	suite.assertExpansionSuccess("undefined-secret", "")
+	suite.assertExpansion("user.undefined-secret", "", 1)
 }
 
 func (suite *SecretsGetCommandTestSuite) TestSecretWithValue() {
 	// NOTE the user_secrets response has org and project scoped secrets with same name
-	suite.assertExpansionSuccess("secret-name", "proj-value")
+	suite.assertExpansion("project.secret-name", "proj-value", -1)
 }
 
 func Test_SecretsGetCommand_TestSuite(t *testing.T) {
