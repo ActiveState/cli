@@ -40,7 +40,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	pj := &projectfile.Project{Project: projectURL}
 	var fail *failures.Failure
 	suite.project, fail = project.New(pj)
-	suite.Nil(fail, "No failure should occur when loading project")
+	suite.NoError(fail.ToError(), "No failure should occur when loading project")
 
 	var err error
 	suite.dir, err = ioutil.TempDir("", "runtime-test")

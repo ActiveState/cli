@@ -249,7 +249,7 @@ func (suite *ProjectTestSuite) TestConstants() {
 
 func (suite *ProjectTestSuite) TestSecrets() {
 	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
+	suite.NoError(fail.ToError(), "Run without failure")
 	secrets := prj.Secrets()
 	suite.Len(secrets, 2)
 

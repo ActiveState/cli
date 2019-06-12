@@ -48,7 +48,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.projectFile = pjFile
 	var fail *failures.Failure
 	suite.project, fail = project.New(pjFile)
-	suite.Nil(fail, "no failure should occur when loading project")
+	suite.NoError(fail.ToError(), "no failure should occur when loading project")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
