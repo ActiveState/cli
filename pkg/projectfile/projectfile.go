@@ -264,10 +264,6 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	if project.Project == "" {
-		return nil, FailValidate.New("err_invalid_project")
-	}
-
 	project.Persist()
 	return project, nil
 }
