@@ -69,9 +69,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		project, fail = prj.New(projectFile)
 		if fail != nil {
 			failures.Handle(fail.ToError(), fail.Message)
-
-			// This should only happen while in development, hence the os.Exit
-			os.Exit(1)
+			return
 		}
 	}
 
