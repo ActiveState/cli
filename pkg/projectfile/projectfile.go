@@ -187,7 +187,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
-	out, fail := setCommit(data, commitID)
+	out, fail := setCommitInYAML(data, commitID)
 	if fail != nil {
 		return fail
 	}
@@ -204,7 +204,7 @@ var (
 	setCommitRE = regexp.MustCompile(`(?m:^(project:.*/[^?\n]*).*$)`)
 )
 
-func setCommit(data []byte, commitID string) ([]byte, *failures.Failure) {
+func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	if commitID == "" {
 		return nil, failures.FailDeveloper.New("commitID must not be empty")
 	}

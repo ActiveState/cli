@@ -312,7 +312,7 @@ func TestParseVersionInfo(t *testing.T) {
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
 }
 
-func TestSetCommit(t *testing.T) {
+func TestSetCommitInYAML(t *testing.T) {
 	exampleYAML := []byte(`
 junk: xgarbage
 project: https://example.com/xowner/xproject?commitID=123
@@ -320,15 +320,15 @@ project: https://example.com/xowner/xproject?commitID=123
 `)
 	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
-	_, fail := setCommit(exampleYAML, "")
+	_, fail := setCommitInYAML(exampleYAML, "")
 	assert.Error(t, fail.ToError())
 
-	out0, fail := setCommit(exampleYAML, "987")
+	out0, fail := setCommitInYAML(exampleYAML, "987")
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out0))
 
 	exampleYAMLNoID := bytes.Replace(exampleYAML, []byte("?commitID=123"), nil, 1)
-	out1, fail := setCommit(exampleYAMLNoID, "987")
+	out1, fail := setCommitInYAML(exampleYAMLNoID, "987")
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out1))
 }
