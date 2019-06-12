@@ -24,7 +24,6 @@ type Build map[string]string
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
-	projectURL  string
 	owner       string
 	name        string
 	commitID    string
@@ -138,23 +137,23 @@ func (p *Project) ScriptByName(name string) *Script {
 
 // URL returns the Project field of the project file
 func (p *Project) URL() string {
-	return p.projectURL
+	return p.projectfile.Project
 }
 
-type projectParts struct {
+type urlMeta struct {
 	owner    string
 	name     string
 	commitID string
 }
 
-func (p *Project) parseURL() (*projectParts, *failures.Failure) {
+func (p *Project) parseURL() (*urlMeta, *failures.Failure) {
 	url := p.projectfile.Project
 	fail := projectfile.ValidateProjectURL(url)
 	if fail != nil {
 		return nil, fail
 	}
 	match := projectfile.ProjectURLRe.FindStringSubmatch(url)
-	parts := projectParts{match[1], match[2], ""}
+	parts := urlMeta{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.commitID = match[3]
 	}
@@ -203,12 +202,11 @@ func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
 func New(p *projectfile.Project) (*Project, *failures.Failure) {
-	project := &Project{p, "", "", "", ""}
+	project := &Project{projectfile: p}
 	parts, fail := project.parseURL()
 	if fail != nil {
 		return nil, fail
 	}
-	project.projectURL = p.Project
 	project.owner = parts.owner
 	project.name = parts.name
 	project.commitID = parts.commitID
