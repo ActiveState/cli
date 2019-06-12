@@ -201,7 +201,11 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 }
 
 var (
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*/[^?\n]*).*$)`)
+	// regex captures from "project:" (at start of line) to last "/" and
+	// everything after until a "?" or newline is reached. Everything after
+	// that is targeted, but not captured so that only the first capture
+	// group can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\n]*).*)`)
 )
 
 func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
