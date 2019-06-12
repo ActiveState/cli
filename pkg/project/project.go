@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -217,7 +218,7 @@ func Get() *Project {
 	pj := projectfile.Get()
 	project, fail := New(pj)
 	if fail != nil {
-		failures.Handle(fail.ToError(), fail.Message)
+		failures.Handle(fail, locale.T("err_project_unavailable"))
 		os.Exit(1)
 	}
 	return project

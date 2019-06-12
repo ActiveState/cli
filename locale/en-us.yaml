@@ -147,6 +147,8 @@ update_hash_mismatch:
   other: The archive hash could not be verified
 err_project_file_unavailable:
   other: Could not load the project file
+err_project_unavailable:
+  other: Could not load the project
 err_project_parse:
   other: "Project file could not be parsed, the parser produced the following error: {{.Error}}"
 err_failure_test:
