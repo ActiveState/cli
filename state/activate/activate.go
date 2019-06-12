@@ -89,6 +89,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// project.CommitID() - send to model.CommitsBehindLatest()
 	// if count > 0, notify about state pull
+	break // to prevent build
 
 	var wg sync.WaitGroup
 
