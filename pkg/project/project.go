@@ -6,10 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -19,9 +17,6 @@ import (
 
 // FailProjectNotLoaded identifies a failure as being due to a missing project file
 var FailProjectNotLoaded = failures.Type("project.fail.notparsed", failures.FailUser)
-
-// FailProjectCorrupted identifies a failure to load a projectfile into a project
-var FailProjectCorrupted = failures.Type("project.fail.corrupted", failures.FailUser)
 
 // Build covers the build structure
 type Build map[string]string
@@ -154,11 +149,11 @@ type projectParts struct {
 
 func (p *Project) parseURL() (*projectParts, *failures.Failure) {
 	url := p.projectfile.Project
-	if projectfile.ValidateProjectURL(url) != true {
-		return nil, FailProjectCorrupted.New(locale.Tr("err_bad_project_url"))
+	fail := projectfile.ValidateProjectURL(url)
+	if fail != nil {
+		return nil, fail
 	}
-	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-	match := projectfile.ProjectURLRe.FindStringSubmatch(path)
+	match := projectfile.ProjectURLRe.FindStringSubmatch(url)
 	parts := projectParts{match[1], match[2], ""}
 	if len(match) == 4 {
 		parts.commitID = match[3]

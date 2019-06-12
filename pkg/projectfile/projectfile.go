@@ -29,10 +29,12 @@ var (
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
-
-	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
-	ProjectURLRe = regexp.MustCompile(`\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`)
 )
+
+var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+
+// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
+var ProjectURLRe = regexp.MustCompile(strReg)
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
 // the Project struct
@@ -180,13 +182,12 @@ func (p *Project) SetPath(path string) {
 }
 
 // ValidateProjectURL validates the configured project URL
-func ValidateProjectURL(url string) bool {
-	path := url[strings.Index(url, constants.PlatformURL)+len(constants.PlatformURL):]
-	match := ProjectURLRe.FindStringSubmatch(path)
+func ValidateProjectURL(url string) *failures.Failure {
+	match := ProjectURLRe.FindStringSubmatch(url)
 	if len(match) < 3 {
-		return false
+		return FailParseProject.New(locale.T("err_bad_project_url"))
 	}
-	return true
+	return nil
 }
 
 // Save the project to its activestate.yaml file
@@ -196,9 +197,9 @@ func (p *Project) Save() *failures.Failure {
 		return failures.FailMarshal.Wrap(err)
 	}
 
-	url := p.Project
-	if ValidateProjectURL(url) != true {
-		return FailParseProject.New(locale.T("err_bad_project_url"))
+	fail := ValidateProjectURL(p.Project)
+	if fail != nil {
+		return fail
 	}
 
 	f, err := os.Create(p.Path())
