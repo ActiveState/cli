@@ -9,7 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// Namespace ...
+// Namespace represents regular expression strings used for defining matchable
+// requirements.
 type Namespace string
 
 const (
