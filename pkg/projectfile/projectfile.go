@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -28,14 +27,6 @@ var (
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
-)
-
-// FileKey represents tokens that are used as project file keys.
-type FileKey string
-
-// FileKey tokens available for key identification
-var (
-	ProjectKey FileKey = "project"
 )
 
 // VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
@@ -183,40 +174,42 @@ func (p *Project) Save() *failures.Failure {
 	return nil
 }
 
-// ReplaceInValue replaces strings in YAML values within the current project
-// file. This is done in-place so that line order is preserved.
-func (p *Project) ReplaceInValue(key FileKey, old, new string) *failures.Failure {
+// SetCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetCommit(commitID string) *failures.Failure {
 	fp, fail := getProjectFilePath()
 	if fail != nil {
 		return fail
 	}
 
-	f, err := os.OpenFile(fp, os.O_RDWR, 0)
+	data, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
-	defer f.Close()
 
-	yfm := yamlFileMod{f}
-	r, fail := yfm.replaceInValue(key, old, new)
+	out, fail := setCommit(data, commitID)
 	if fail != nil {
 		return fail
 	}
 
-	if err := overwriteFile(f, r); err != nil {
-		return fail
+	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+		return failures.FailOS.Wrap(err)
 	}
 
 	return nil
 }
 
-func overwriteFile(f *os.File, r io.Reader) error {
-	if err := f.Truncate(0); err != nil {
-		return err
-	}
+var (
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*/[^?]*)(.*)?$)`)
+)
 
-	_, err := io.Copy(f, r)
-	return err
+func setCommit(data []byte, commitID string) ([]byte, *failures.Failure) {
+	if commitID == "" {
+		return nil, failures.FailDeveloper.New("commitID must not be empty")
+	}
+	commitQryParam := []byte("$1?commitID=" + commitID)
+
+	return setCommitRE.ReplaceAll(data, commitQryParam), nil
 }
 
 // Returns the path to the project activestate.yaml

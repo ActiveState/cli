@@ -24,13 +24,13 @@ var Command = &commands.Command{
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	cid, fail := latestCommitID(project.Get())
+	latestID, fail := latestCommitID(project.Get())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_get_commit_id"))
 		return
 	}
 
-	updated, fail := updateCommitID(projectfile.Get(), cid)
+	updated, fail := updateCommitID(projectfile.Get(), latestID)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_update_commit_id"))
 		return
@@ -57,12 +57,12 @@ func latestCommitID(p *project.Project) (string, *failures.Failure) {
 	return branch.CommitID.String(), nil
 }
 
-func updateCommitID(p *projectfile.Project, cid string) (bool, *failures.Failure) {
-	break // halt on build
-	curCID := ""
+func updateCommitID(p *projectfile.Project, newID string) (bool, *failures.Failure) {
+	//break // halt on build
+	oldID := ""
 
-	if curCID == "" || curCID != cid {
-		return true, p.ReplaceInValue(projectfile.ProjectKey, curCID, cid)
+	if oldID == "" || oldID != newID {
+		return true, p.SetCommit(newID)
 	}
 
 	return false, nil

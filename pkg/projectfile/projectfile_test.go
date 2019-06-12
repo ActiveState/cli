@@ -312,34 +312,19 @@ func TestParseVersionInfo(t *testing.T) {
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
 }
 
-func TestOverwriteFile(t *testing.T) {
-	setCwd(t, "")
+var exampleYAML = []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject?commitID=123
+123: xvalue
+`)
 
-	file := "somejunkname"
-	defer setupFile(t, file, "some\ndata here\nmore\n")()
+func TestSetCommit(t *testing.T) {
+	_, fail := setCommit(exampleYAML, "")
+	assert.Error(t, fail.ToError())
 
-	f, err := os.OpenFile(file, os.O_RDWR, 0)
-	require.NoError(t, err)
-	defer f.Close()
+	expected := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
-	testContent := []byte("x")
-	buf := bytes.NewBuffer(testContent)
-	assert.NoError(t, overwriteFile(f, buf))
-
-	ss, err := f.Stat()
-	require.NoError(t, err)
-	assert.Equal(t, int64(len(testContent)), ss.Size())
-}
-
-func setupFile(t *testing.T, file, contents string) func() {
-	f, err := os.Create(file)
-	require.NoError(t, err)
-	defer f.Close()
-
-	_, err = f.WriteString(contents)
-	require.NoError(t, err)
-
-	return func() {
-		require.NoError(t, os.Remove(file))
-	}
+	out, fail := setCommit(exampleYAML, "987")
+	assert.NoError(t, fail.ToError())
+	assert.Equal(t, string(expected), string(out))
 }
