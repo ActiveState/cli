@@ -1,6 +1,7 @@
 package projectfile
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 )
 
 var (
@@ -61,6 +63,8 @@ type Project struct {
 
 	// Deprecated
 	Variables interface{} `yaml:"variables,omitempty"`
+	Owner     string      `yaml:"owner,omitempty"`
+	Name      string      `yaml:"name,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -155,6 +159,11 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 
 	if project.Variables != nil {
 		return nil, FailValidate.New("variable_field_deprecation_warning")
+	}
+
+	if project.Project == "" && project.Owner != "" && project.Name != "" {
+		print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
 
 	return &project, nil
