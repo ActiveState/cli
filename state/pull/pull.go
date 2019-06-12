@@ -32,7 +32,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	projFile := projectfile.Get()
-	updated, fail := updateCommitID(projFile.SetCommit, "proj.CommitID()", latestID)
+	updated, fail := updateCommitID(projFile.SetCommit, proj.CommitID(), latestID)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_update_commit_id"))
 		return
