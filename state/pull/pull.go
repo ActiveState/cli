@@ -24,13 +24,15 @@ var Command = &commands.Command{
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	latestID, fail := latestCommitID(project.Get())
+	proj := project.Get()
+	latestID, fail := latestCommitID(proj.Owner(), proj.Name())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_get_commit_id"))
 		return
 	}
 
-	updated, fail := updateCommitID(projectfile.Get(), latestID)
+	projFile := projectfile.Get()
+	updated, fail := updateCommitID(projFile.SetCommit, "proj.CommitID()", latestID)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_pull_update_commit_id"))
 		return
@@ -43,31 +45,25 @@ func Execute(cmd *cobra.Command, args []string) {
 	print.Line(locale.T(locKey))
 }
 
-func latestCommitID(p *project.Project) (string, *failures.Failure) {
-	proj, fail := model.FetchProjectByName(p.Owner(), p.Name())
+func latestCommitID(owner, project string) (string, *failures.Failure) {
+	cid, fail := model.LatestCommitID(owner, project)
 	if fail != nil {
 		return "", fail
 	}
 
-	branch, fail := model.DefaultBranchForProject(proj)
-	if fail != nil {
-		return "", fail
+	var id string
+	if cid != nil {
+		id = cid.String()
 	}
 
-	var cid string
-	if branch.CommitID != nil {
-		cid = branch.CommitID.String()
-	}
-
-	return cid, nil
+	return id, nil
 }
 
-func updateCommitID(p *projectfile.Project, newID string) (bool, *failures.Failure) {
-	//break // halt on build
-	oldID := ""
+type setCommitFunc func(string) *failures.Failure
 
-	if oldID == "" || oldID != newID {
-		return true, p.SetCommit(newID)
+func updateCommitID(setCommit setCommitFunc, oldID, newID string) (bool, *failures.Failure) {
+	if newID != "" && oldID != newID {
+		return true, setCommit(newID)
 	}
 
 	return false, nil
