@@ -200,7 +200,7 @@ func (p *Project) SetCommit(commitID string) *failures.Failure {
 }
 
 var (
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*/[^?]*)(.*)?$)`)
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*/[^?\n]*).*$)`)
 )
 
 func setCommit(data []byte, commitID string) ([]byte, *failures.Failure) {
