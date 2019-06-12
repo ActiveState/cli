@@ -42,7 +42,7 @@ func (p *Project) Source() *projectfile.Project { return p.projectfile }
 func (p *Project) Platforms() []*Platform {
 	platforms := []*Platform{}
 	for i := range p.projectfile.Platforms {
-		platforms = append(platforms, &Platform{&p.projectfile.Platforms[i], p.projectfile})
+		platforms = append(platforms, &Platform{&p.projectfile.Platforms[i], p})
 	}
 	return platforms
 }
@@ -52,7 +52,7 @@ func (p *Project) Languages() []*Language {
 	languages := []*Language{}
 	for i, language := range p.projectfile.Languages {
 		if !constraints.IsConstrained(language.Constraints) {
-			languages = append(languages, &Language{&p.projectfile.Languages[i], p.projectfile})
+			languages = append(languages, &Language{&p.projectfile.Languages[i], p})
 		}
 	}
 	return languages
@@ -63,7 +63,7 @@ func (p *Project) Constants() []*Constant {
 	constants := []*Constant{}
 	for i, constant := range p.projectfile.Constants {
 		if !constraints.IsConstrained(constant.Constraints) {
-			constants = append(constants, &Constant{p.projectfile.Constants[i], p.projectfile})
+			constants = append(constants, &Constant{p.projectfile.Constants[i], p})
 		}
 	}
 	return constants
@@ -114,7 +114,7 @@ func (p *Project) Events() []*Event {
 	events := []*Event{}
 	for i, event := range p.projectfile.Events {
 		if !constraints.IsConstrained(event.Constraints) {
-			events = append(events, &Event{&p.projectfile.Events[i], p.projectfile})
+			events = append(events, &Event{&p.projectfile.Events[i], p})
 		}
 	}
 	return events
@@ -125,7 +125,7 @@ func (p *Project) Scripts() []*Script {
 	scripts := []*Script{}
 	for i, script := range p.projectfile.Scripts {
 		if !constraints.IsConstrained(script.Constraints) {
-			scripts = append(scripts, &Script{&p.projectfile.Scripts[i], p.projectfile})
+			scripts = append(scripts, &Script{&p.projectfile.Scripts[i], p})
 		}
 	}
 	return scripts
@@ -243,12 +243,12 @@ func GetSafe() (*Project, *failures.Failure) {
 
 // Platform covers the platform structure
 type Platform struct {
-	platform    *projectfile.Platform
-	projectfile *projectfile.Project
+	platform *projectfile.Platform
+	project  *Project
 }
 
 // Source returns the source projectfile
-func (p *Platform) Source() *projectfile.Project { return p.projectfile }
+func (p *Platform) Source() *projectfile.Project { return p.project.projectfile }
 
 // Name returns platform name
 func (p *Platform) Name() string { return p.platform.Name }
@@ -285,12 +285,12 @@ func (p *Platform) Compiler() string {
 
 // Language covers the language structure
 type Language struct {
-	language    *projectfile.Language
-	projectfile *projectfile.Project
+	language *projectfile.Language
+	project  *Project
 }
 
 // Source returns the source projectfile
-func (l *Language) Source() *projectfile.Project { return l.projectfile }
+func (l *Language) Source() *projectfile.Project { return l.project.projectfile }
 
 // Name with all secrets evaluated
 func (l *Language) Name() string { return l.language.Name }
@@ -320,7 +320,7 @@ func (l *Language) Packages() []Package {
 		if !constraints.IsConstrained(pkg.Constraints) {
 			newPkg := Package{}
 			newPkg.pkg = &l.language.Packages[i]
-			newPkg.projectfile = l.projectfile
+			newPkg.project = l.project
 			validPackages = append(validPackages, newPkg)
 		}
 	}
@@ -329,12 +329,12 @@ func (l *Language) Packages() []Package {
 
 // Package covers the package structure
 type Package struct {
-	pkg         *projectfile.Package
-	projectfile *projectfile.Project
+	pkg     *projectfile.Package
+	project *Project
 }
 
 // Source returns the source projectfile
-func (p *Package) Source() *projectfile.Project { return p.projectfile }
+func (p *Package) Source() *projectfile.Project { return p.project.projectfile }
 
 // Name returns package name
 func (p *Package) Name() string { return p.pkg.Name }
@@ -354,8 +354,8 @@ func (p *Package) Build() *Build {
 
 // Constant covers the constant structure
 type Constant struct {
-	constant    *projectfile.Constant
-	projectfile *projectfile.Project
+	constant *projectfile.Constant
+	project  *Project
 }
 
 // Name returns constant name
@@ -392,9 +392,9 @@ func NewSecretScope(name string) (SecretScope, *failures.Failure) {
 
 // Secret covers the secret structure
 type Secret struct {
-	secret      *projectfile.Secret
-	projectfile *projectfile.Project
-	scope       SecretScope
+	secret  *projectfile.Secret
+	project *Project
+	scope   SecretScope
 }
 
 // InitSecret creates a new secret with the given name and all default settings
@@ -406,11 +406,11 @@ func (p *Project) InitSecret(name string, scope SecretScope) *Secret {
 
 // NewSecret creates a new secret struct
 func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope) *Secret {
-	return &Secret{s, p.Source(), scope}
+	return &Secret{s, p, scope}
 }
 
 // Source returns the source projectfile
-func (s *Secret) Source() *projectfile.Project { return s.projectfile }
+func (s *Secret) Source() *projectfile.Project { return s.project.projectfile }
 
 // Name returns secret name
 func (s *Secret) Name() string { return s.secret.Name }
@@ -427,12 +427,8 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
 	secretsExpander := NewSecretExpander(secretsapi.GetClient(), s.IsUser())
-	pj, fail := New(s.projectfile)
-	if fail != nil {
-		return nil, fail
-	}
 
-	value, fail := secretsExpander.Expand(s.secret.Name, pj)
+	value, fail := secretsExpander.Expand(s.secret.Name, s.project)
 	if fail != nil {
 		if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil
@@ -455,17 +451,12 @@ func (s *Secret) Value() (string, *failures.Failure) {
 // Save will save the provided value for this secret to the project file if not a secret, else
 // will store back to the secrets store.
 func (s *Secret) Save(value string) *failures.Failure {
-	pj, fail := New(s.projectfile)
+	org, fail := model.FetchOrgByURLName(s.project.Owner())
 	if fail != nil {
 		return fail
 	}
 
-	org, fail := model.FetchOrgByURLName(pj.Owner())
-	if fail != nil {
-		return fail
-	}
-
-	remoteProject, fail := model.FetchProjectByName(org.Urlname, pj.Name())
+	remoteProject, fail := model.FetchProjectByName(org.Urlname, s.project.Name())
 	if fail != nil {
 		return fail
 	}
@@ -489,12 +480,12 @@ func (s *Secret) Save(value string) *failures.Failure {
 
 // Event covers the hook structure
 type Event struct {
-	event       *projectfile.Event
-	projectfile *projectfile.Project
+	event   *projectfile.Event
+	project *Project
 }
 
 // Source returns the source projectfile
-func (e *Event) Source() *projectfile.Project { return e.projectfile }
+func (e *Event) Source() *projectfile.Project { return e.project.projectfile }
 
 // Name returns Event name
 func (e *Event) Name() string { return e.event.Name }
@@ -507,12 +498,12 @@ func (e *Event) Value() string {
 
 // Script covers the command structure
 type Script struct {
-	script      *projectfile.Script
-	projectfile *projectfile.Project
+	script  *projectfile.Script
+	project *Project
 }
 
 // Source returns the source projectfile
-func (script *Script) Source() *projectfile.Project { return script.projectfile }
+func (script *Script) Source() *projectfile.Project { return script.project.projectfile }
 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
