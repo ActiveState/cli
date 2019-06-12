@@ -35,6 +35,10 @@ type Build map[string]string
 // Project covers the platform structure
 type Project struct {
 	projectfile *projectfile.Project
+	projectURL  string
+	owner       string
+	name        string
+	commitID    string
 }
 
 // Source returns the source projectfile
@@ -136,17 +140,17 @@ func (p *Project) ScriptByName(name string) *Script {
 
 // URL returns the Project field of the project file
 func (p *Project) URL() string {
-	return p.projectfile.Project
+	return p.projectURL
 }
 
 type projectParts struct {
 	owner    string
-	project  string
+	name     string
 	commitID string
 }
 
 func (p *Project) parseURL() (*projectParts, *failures.Failure) {
-	url := p.URL()
+	url := p.projectfile.Project
 	if projectfile.ValidateProjectURL(url) != true {
 		return nil, FailProjectCorrupted.New(locale.Tr("err_bad_project_url"))
 	}
@@ -161,32 +165,17 @@ func (p *Project) parseURL() (*projectParts, *failures.Failure) {
 
 // Owner returns project owner
 func (p *Project) Owner() string {
-	projectParts, fail := p.parseURL()
-	if fail != nil {
-		failures.Handle(fail.ToError(), fail.Error())
-		os.Exit(1)
-	}
-	return projectParts.owner
+	return p.owner
 }
 
 // Name returns project name
 func (p *Project) Name() string {
-	projectParts, fail := p.parseURL()
-	if fail != nil {
-		failures.Handle(fail.ToError(), fail.Error())
-		os.Exit(1)
-	}
-	return projectParts.project
+	return p.name
 }
 
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
-	projectParts, fail := p.parseURL()
-	if fail != nil {
-		failures.Handle(fail.ToError(), fail.Error())
-		os.Exit(1)
-	}
-	return projectParts.commitID
+	return p.commitID
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)
@@ -215,23 +204,38 @@ func (p *Project) Namespace() string { return p.projectfile.Namespace }
 func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
-func New(p *projectfile.Project) *Project {
-	return &Project{p}
+func New(p *projectfile.Project) (*Project, *failures.Failure) {
+	project := &Project{p, "", "", "", ""}
+	parts, fail := project.parseURL()
+	if fail != nil {
+		return nil, fail
+	}
+	project.projectURL = p.Project
+	project.owner = parts.owner
+	project.name = parts.name
+	project.commitID = parts.commitID
+	return project, nil
 }
 
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	return New(pj)
+	project, _ := New(pj)
+	return project
 }
 
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
 func GetSafe() (*Project, *failures.Failure) {
-	pj, fail := projectfile.GetSafe()
+	pjFile, fail := projectfile.GetSafe()
 	if fail.ToError() != nil {
 		return nil, fail
 	}
-	return &Project{pj}, nil
+	project, fail := New(pjFile)
+	if fail.ToError() != nil {
+		return nil, fail
+	}
+
+	return project, nil
 }
 
 // Platform covers the platform structure
@@ -413,7 +417,7 @@ func (v *Variable) ValueOrNil() (*string, *failures.Failure) {
 	}
 
 	secretsExpander := NewSecretExpander(secretsapi.GetClient())
-	value, failure := secretsExpander.Expand(v.variable.Name, New(v.projectfile))
+	value, failure := secretsExpander.Expand(v.variable.Name, Get())
 	if failure != nil {
 		if failure.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil
@@ -480,7 +484,7 @@ func (v *Variable) Save(value string) *failures.Failure {
 }
 
 func (v *Variable) saveSecretValue(value string) *failures.Failure {
-	project := New(v.projectfile)
+	project := Get()
 	org, failure := model.FetchOrgByURLName(project.Owner())
 	if failure != nil {
 		return failure

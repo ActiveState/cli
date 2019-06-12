@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -11,20 +11,21 @@ import (
 
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func init() {
 	secretsClient := secretsapi.NewDefaultClient(authentication.Get().BearerToken())
-	RegisterExpander("variables", NewVarPromptingExpander(secretsClient))
+	project.RegisterExpander("variables", project.NewVarPromptingExpander(secretsClient))
 }
 
-func loadProject(t *testing.T) *Project {
+func loadProject(t *testing.T) *project.Project {
 	projectfile.Reset()
 
-	project := &projectfile.Project{}
+	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001"
 platforms:
   - name: Linux
     os: linux
@@ -47,24 +48,24 @@ scripts:
     value: make test
   - name: recursive
     value: $scripts.recursive
-  `)
+`)
 
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 
-	fail := project.Parse()
+	fail := pjFile.Parse()
 	assert.NoError(t, fail.ToError())
 
-	project.Persist()
+	pjFile.Persist()
 
-	return New(project)
+	return project.Get()
 }
 
 func TestExpandProjectPlatformOs(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$platform.os", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded := project.ExpandFromProject("$platform.os", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 
 	if runtime.GOOS != "darwin" {
 		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
@@ -74,30 +75,30 @@ func TestExpandProjectPlatformOs(t *testing.T) {
 }
 
 func TestExpandProjectScript(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$ $scripts.test", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded := project.ExpandFromProject("$ $scripts.test", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ make test", expanded, "Expanded simple script")
 }
 
 func TestExpandProjectConstant(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$ $constants.constant", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded := project.ExpandFromProject("$ $constants.constant", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ value", expanded, "Expanded simple constant")
 
-	expanded = ExpandFromProject("$ $constants.recursive", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded = project.ExpandFromProject("$ $constants.recursive", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "$ recursive value", expanded, "Expanded recursive constant")
 }
 
 func TestExpandProjectAlternateSyntax(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("${platform.os}", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded := project.ExpandFromProject("${platform.os}", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	if runtime.GOOS != "darwin" {
 		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
 	} else {
@@ -106,69 +107,70 @@ func TestExpandProjectAlternateSyntax(t *testing.T) {
 }
 
 func TestExpandProjectUnknownCategory(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$unknown.unknown", project)
-	assert.Error(t, Failure().ToError(), "Ran with failure")
+	expanded := project.ExpandFromProject("$unknown.unknown", prj)
+	assert.Error(t, project.Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
-	assert.True(t, Failure().Type.Matches(FailExpandVariableBadCategory), "Handled unknown category")
+	assert.True(t, project.Failure().Type.Matches(project.FailExpandVariableBadCategory), "Handled unknown category")
 }
 
 func TestExpandProjectUnknownName(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$platform.unknown", project)
-	assert.Error(t, Failure().ToError(), "Ran with failure")
+	expanded := project.ExpandFromProject("$platform.unknown", prj)
+	assert.Error(t, project.Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
-	assert.True(t, Failure().Type.Matches(FailExpandVariableBadName), "Handled unknown category")
+	assert.True(t, project.Failure().Type.Matches(project.FailExpandVariableBadName), "Handled unknown category")
 }
 
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
-	project := loadProject(t)
+	prj := loadProject(t)
 
-	expanded := ExpandFromProject("$scripts.recursive", project)
-	assert.Error(t, Failure().ToError(), "Ran with failure")
+	expanded := project.ExpandFromProject("$scripts.recursive", prj)
+	assert.Error(t, project.Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
-	assert.True(t, Failure().Type.Matches(FailExpandVariableRecursion), "Handled unknown category")
+	assert.True(t, project.Failure().Type.Matches(project.FailExpandVariableRecursion), "Handled unknown category")
 }
 
 // Tests all possible $platform.[name] variable expansions.
 func TestExpandProjectPlatform(t *testing.T) {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: https://platform.activestate.com/Expander/Plarforms?commitID=00010001-0001-0001-0001-000100010001"
 platforms:
   - name: Any
-  `)
+`)
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	projectFile.Persist()
-	project := New(projectFile)
+	prj := project.Get()
 
 	for _, name := range []string{"name", "os", "version", "architecture", "libc", "compiler"} {
-		ExpandFromProject(fmt.Sprintf("$platform.%s", name), project)
-		assert.NoError(t, Failure().ToError(), "Ran without failure")
+		project.ExpandFromProject(fmt.Sprintf("$platform.%s", name), prj)
+		assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	}
 }
 
 func TestExpandDashed(t *testing.T) {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/Expander/Dashed?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: foo-bar
     value: bar
-  `)
+`)
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 	fail := projectFile.Parse()
 	assert.NoError(t, fail.ToError())
 	projectFile.Persist()
-	project := New(projectFile)
+	prj := project.Get()
 
-	expanded := ExpandFromProject("- $scripts.foo-bar -", project)
-	assert.NoError(t, Failure().ToError(), "Ran without failure")
+	expanded := project.ExpandFromProject("- $scripts.foo-bar -", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
+	projectfile.Reset()
 }

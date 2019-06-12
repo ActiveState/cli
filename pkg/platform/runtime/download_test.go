@@ -38,7 +38,9 @@ type RuntimeDLTestSuite struct {
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pj := &projectfile.Project{Project: projectURL}
-	suite.project = project.New(pj)
+	var fail *failures.Failure
+	suite.project, fail = project.New(pj)
+	suite.Nil(fail, "No failure should occur when loading project")
 
 	var err error
 	suite.dir, err = ioutil.TempDir("", "runtime-test")

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -64,7 +65,14 @@ func Execute(cmd *cobra.Command, args []string) {
 			print.Error(locale.T("err_state_show_project_parse"))
 			return
 		}
-		project = prj.New(projectFile)
+		var fail *failures.Failure
+		project, fail = prj.New(projectFile)
+		if fail != nil {
+			failures.Handle(fail.ToError(), fail.Message)
+
+			// This should only happen while in development, hence the os.Exit
+			os.Exit(1)
+		}
 	}
 
 	print.BoldInline("%s: ", locale.T("print_state_show_name"))

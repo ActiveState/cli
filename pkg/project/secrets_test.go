@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"strings"
@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -24,7 +25,7 @@ type SecretsExpanderTestSuite struct {
 	suite.Suite
 
 	projectFile *projectfile.Project
-	project     *Project
+	project     *project.Project
 
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
@@ -32,17 +33,17 @@ type SecretsExpanderTestSuite struct {
 }
 
 func loadSecretsProject() (*projectfile.Project, error) {
-	project := &projectfile.Project{}
+	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/SecretOrg/SecretProject?commitID=00010001-0001-0001-0001-000100010001"
 `)
 
-	err := yaml.Unmarshal([]byte(contents), project)
+	err := yaml.Unmarshal([]byte(contents), pjfile)
 	if err != nil {
 		return nil, err
 	}
 
-	return project, project.Parse()
+	return pjfile, pjfile.Parse()
 }
 
 func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
@@ -53,7 +54,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
 	suite.projectFile = projectFile
-	suite.project = New(projectFile)
+	suite.project = project.Get()
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
@@ -72,14 +73,14 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() Func {
+func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.Func {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return NewVarExpander(suite.secretsClient)
+	return project.NewVarExpander(suite.secretsClient)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
@@ -95,7 +96,7 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := NewVarExpander(suite.secretsClient)
+	expanderFn := project.NewVarExpander(suite.secretsClient)
 	value, failure := expanderFn("undefined-secret", suite.project)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
 	suite.Zero(value)

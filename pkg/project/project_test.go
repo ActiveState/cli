@@ -6,16 +6,18 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
+	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
 	suite.Suite
-
+	projectFile *projectfile.Project
+	project     *project.Project
 	testdataDir string
 }
 
@@ -29,6 +31,12 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
+	projectFile, fail := projectfile.GetSafe()
+	projectFile.Persist()
+	suite.projectFile = projectFile
+	suite.Require().Nil(fail, "Should retrieve projectfile without issue.")
+	suite.project, fail = project.GetSafe()
+	suite.Require().Nil(fail, "Should retrieve project without issue.")
 }
 
 func (suite *ProjectTestSuite) TestGet() {
@@ -43,34 +51,28 @@ func (suite *ProjectTestSuite) TestGetSafe() {
 }
 
 func (suite *ProjectTestSuite) TestProject() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-	suite.Equal("https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001", prj.URL(), "Values should match")
-	suite.Equal("project", prj.Name(), "Values should match")
-	suite.Equal("d7ebc72", prj.CommitID(), "Values should match")
-	suite.Equal("ActiveState", prj.Owner(), "Values should match")
-	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
-	suite.Equal("something", prj.Environments(), "Values should match")
-	suite.Equal("1.0", prj.Version(), "Values should match")
+	suite.Equal("https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001", suite.project.URL(), "Values should match")
+	suite.Equal("project", suite.project.Name(), "Values should match")
+	suite.Equal("00010001-0001-0001-0001-000100010001", suite.project.CommitID(), "Values should match")
+	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
+	suite.Equal("my/name/space", suite.project.Namespace(), "Values should match")
+	suite.Equal("something", suite.project.Environments(), "Values should match")
+	suite.Equal("1.0", suite.project.Version(), "Values should match")
 }
 
 func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
 	err := os.Chdir(filepath.Join(suite.testdataDir, "sub1", "sub2"))
 	suite.Require().NoError(err, "Should change dir without issue.")
 
-	prj, fail := project.GetSafe()
-	suite.Require().Nil(fail, "Run without failure")
-	suite.Equal("project", prj.Name(), "Values should match")
-	suite.Equal("ActiveState", prj.Owner(), "Values should match")
-	suite.Equal("my/name/space", prj.Namespace(), "Values should match")
-	suite.Equal("something", prj.Environments(), "Values should match")
-	suite.Equal("1.0", prj.Version(), "Values should match")
+	suite.Equal("project", suite.project.Name(), "Values should match")
+	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
+	suite.Equal("my/name/space", suite.project.Namespace(), "Values should match")
+	suite.Equal("something", suite.project.Environments(), "Values should match")
+	suite.Equal("1.0", suite.project.Version(), "Values should match")
 }
 
 func (suite *ProjectTestSuite) TestPlatforms() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-	val := prj.Platforms()
+	val := suite.project.Platforms()
 	plat := val[0]
 	suite.Equal(4, len(val), "Values should match")
 
@@ -98,10 +100,7 @@ func (suite *ProjectTestSuite) TestPlatforms() {
 }
 
 func (suite *ProjectTestSuite) TestEvents() {
-	prj, fail := project.GetSafe()
-	suite.NoError(fail.ToError(), "Run without failure")
-
-	events := prj.Events()
+	events := suite.project.Events()
 	suite.Equal(1, len(events), "Should match 1 out of three constrained items")
 
 	event := events[0]
@@ -121,10 +120,7 @@ func (suite *ProjectTestSuite) TestEvents() {
 }
 
 func (suite *ProjectTestSuite) TestLanguages() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-
-	languages := prj.Languages()
+	languages := suite.project.Languages()
 	suite.Equal(2, len(languages), "Should match 1 out of three constrained items")
 
 	lang := languages[0]
@@ -152,9 +148,7 @@ func (suite *ProjectTestSuite) TestLanguages() {
 }
 
 func (suite *ProjectTestSuite) TestPackages() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-	languages := prj.Languages()
+	languages := suite.project.Languages()
 	var language *project.Language
 	for _, l := range languages {
 		if l.Name() == "packages" {
@@ -185,9 +179,7 @@ func (suite *ProjectTestSuite) TestPackages() {
 }
 
 func (suite *ProjectTestSuite) TestScripts() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-	scripts := prj.Scripts()
+	scripts := suite.project.Scripts()
 	suite.Equal(1, len(scripts), "Should match 1 out of three constrained items")
 
 	script := scripts[0]
@@ -211,26 +203,23 @@ func (suite *ProjectTestSuite) TestScripts() {
 }
 
 func (suite *ProjectTestSuite) TestScriptByName() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-
-	script := prj.ScriptByName("noop")
+	script := suite.project.ScriptByName("noop")
 	suite.Nil(script)
 
 	if runtime.GOOS == "linux" {
-		script = prj.ScriptByName("foo")
+		script = suite.project.ScriptByName("foo")
 		suite.Require().NotNil(script)
 		suite.Equal("foo", script.Name(), "Names should match (Linux)")
 		suite.Equal("foo Linux", script.Value(), "Value should match (Linux)")
 		suite.True(script.Standalone(), "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
-		script = prj.ScriptByName("bar")
+		script = suite.project.ScriptByName("bar")
 		suite.Require().NotNil(script)
 		suite.Equal("bar", script.Name(), "Name should match (Windows)")
 		suite.Equal("bar Windows", script.Value(), "Value should match (Windows)")
 		suite.True(script.Standalone(), "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
-		script = prj.ScriptByName("baz")
+		script = suite.project.ScriptByName("baz")
 		suite.Require().NotNil(script)
 		suite.Equal("baz", script.Name(), "Names should match (OSX)")
 		suite.Equal("baz OSX", script.Value(), "Value should match (OSX)")
@@ -239,9 +228,7 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 }
 
 func (suite *ProjectTestSuite) TestConstants() {
-	prj, fail := project.GetSafe()
-	suite.Nil(fail, "Run without failure")
-	constants := prj.Constants()
+	constants := suite.project.Constants()
 
 	constant := constants[0]
 
