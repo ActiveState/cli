@@ -216,7 +216,11 @@ func New(p *projectfile.Project) (*Project, *failures.Failure) {
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
-	project, _ := New(pj)
+	project, fail := New(pj)
+	if fail != nil {
+		failures.Handle(fail.ToError(), fail.Message)
+		os.Exit(1)
+	}
 	return project
 }
 
