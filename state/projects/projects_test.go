@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/stretchr/testify/assert"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func setup(t *testing.T) {
@@ -101,6 +102,11 @@ func TestAuthError(t *testing.T) {
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")
 	assert.True(t, fail.Type.Matches(api.FailAuth), "Failure should be due to auth")
 
-	err := Command.Execute()
-	assert.Error(t, err, "Failure occurred")
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 }

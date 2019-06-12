@@ -27,7 +27,7 @@ func forwardAndExit(args []string) {
 	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_version_parse"))
-		exit(1)
+		Command.Exiter(1)
 	}
 	if versionInfo == nil {
 		return
@@ -51,7 +51,7 @@ func execForwardAndExit(binary string, args []string) {
 		logging.Error("Forwarding command resulted in error: %v", err)
 		print.Error(locale.Tr("forward_fail_with_error", err.Error()))
 	}
-	exit(code)
+	Command.Exiter(code)
 }
 
 func shouldForward(versionInfo *projectfile.VersionInfo) bool {
@@ -86,7 +86,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 	info, err := up.Info()
 	if err != nil {
 		failures.Handle(err, locale.T("forward_fail_download"))
-		exit(1)
+		Command.Exiter(1)
 	}
 
 	if info != nil {
@@ -94,7 +94,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 		err = up.Download(binary)
 		if err != nil {
 			failures.Handle(err, locale.T("forward_fail_download"))
-			exit(1)
+			Command.Exiter(1)
 		}
 
 		permissions, _ := permbits.Stat(binary)
@@ -102,7 +102,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 		err = permbits.Chmod(binary, permissions)
 		if err != nil {
 			failures.Handle(err, locale.T("forward_fail_perm"))
-			exit(1)
+			Command.Exiter(1)
 		}
 	}
 }
