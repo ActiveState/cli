@@ -54,7 +54,12 @@ func latestCommitID(p *project.Project) (string, *failures.Failure) {
 		return "", fail
 	}
 
-	return branch.CommitID.String(), nil
+	var cid string
+	if branch.CommitID != nil {
+		cid = branch.CommitID.String()
+	}
+
+	return cid, nil
 }
 
 func updateCommitID(p *projectfile.Project, newID string) (bool, *failures.Failure) {
