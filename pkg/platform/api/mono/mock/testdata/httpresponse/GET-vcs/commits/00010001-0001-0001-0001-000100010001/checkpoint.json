@@ -1,0 +1,7 @@
+[	
+    {	
+        "namespace": "language",	
+        "requirement": "Python",	
+        "version_constraint": "string"	
+    }	
+] 

@@ -56,19 +56,6 @@ func (suite *RecipeTestSuite) mockProject() *mono_models.Project {
 	}
 }
 
-func (suite *RecipeTestSuite) mockProject2() *mono_models.Project {
-	uid := strfmt.UUID("00010001-0001-0001-0001-000100010002")
-	return &mono_models.Project{
-		Branches: mono_models.Branches{
-			&mono_models.Branch{
-				BranchID: uid,
-				Default:  true,
-				CommitID: &uid,
-			},
-		},
-	}
-}
-
 func (suite *RecipeTestSuite) TestGetRecipe() {
 	recipes, fail := model.FetchRecipesForProject(suite.mockProject())
 	suite.Require().NoError(fail.ToError())
@@ -76,7 +63,7 @@ func (suite *RecipeTestSuite) TestGetRecipe() {
 }
 
 func (suite *RecipeTestSuite) TestGetRecipeWithCommit() {
-	recipes, fail := model.FetchRecipesForCommit(suite.mockProject2(), "00010001-0001-0001-0001-000100010002")
+	recipes, fail := model.FetchRecipesForCommit(suite.mockProject(), "00010001-0001-0001-0001-000100010001")
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(recipes, "Returns recipes")
 }
