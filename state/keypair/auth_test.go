@@ -3,9 +3,12 @@ package keypair_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -13,7 +16,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/keypair"
 	keyp "github.com/ActiveState/cli/state/keypair"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairAuthTestSuite struct {
@@ -43,9 +45,14 @@ func (suite *KeypairAuthTestSuite) TestExecute_APIAuthFailure() {
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
-	execErr := cmd.Execute()
 
-	suite.Require().Error(execErr, "expected failure")
+	ex := exiter.New()
+	cmd.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		cmd.Execute()
+	})
+
+	suite.Equal(1, exitCode, "Exited with code 1")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)
@@ -59,9 +66,14 @@ func (suite *KeypairAuthTestSuite) TestExecute_NoKeypairFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
-	execErr := cmd.Execute()
 
-	suite.Require().Error(execErr, "expected failure")
+	ex := exiter.New()
+	cmd.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		cmd.Execute()
+	})
+
+	suite.Equal(1, exitCode, "Exited with code 1")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)
@@ -75,11 +87,15 @@ func (suite *KeypairAuthTestSuite) TestExecute_InvalidPassphrase() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
 
 	cmd.GetCobraCmd().SetArgs([]string{"auth"})
-	var execErr error
 	suite.pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
-	execErr = cmd.Execute()
 
-	suite.Require().Error(execErr, "expected failure")
+	ex := exiter.New()
+	cmd.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		cmd.Execute()
+	})
+
+	suite.Equal(1, exitCode, "Exited with code 1")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 
 	failure := failures.Handled().(*failures.Failure)
