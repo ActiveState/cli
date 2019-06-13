@@ -548,6 +548,10 @@ secrets_header_usage:
   other: Usage
 variable_field_deprecation_warning:
   other: The variable field has been deprecated in favour of secrets and constants. Please update your activestate.yaml.
+pull_is_updated:
+  other: Your activestate.yaml has been updated to the latest version available
+pull_not_updated:
+  other: Your activestate.yaml is already up to date!
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -680,7 +684,10 @@ installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}'
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
-
+installer_err_runtime_no_commits:
+  other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
+installer_err_runtime_preplatform:
+  other: The version of the installer used in the project you specified is not compatible with the state tool. Please make a new project.
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -745,6 +752,10 @@ err_browser_open:
   other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
+err_pull_get_latest_commit_id:
+  other: Cannot get latest commit id from project
+err_pull_update_commit_id:
+  other: Cannot update commit id in project file
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 scripts_no_scripts:

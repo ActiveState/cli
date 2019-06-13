@@ -31,7 +31,7 @@ var (
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
 )
 
-var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
@@ -214,6 +214,49 @@ func (p *Project) Save() *failures.Failure {
 	}
 
 	return nil
+}
+
+// SetCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+func (p *Project) SetCommit(commitID string) *failures.Failure {
+	fp, fail := getProjectFilePath()
+	if fail != nil {
+		return fail
+	}
+
+	data, err := ioutil.ReadFile(fp)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	out, fail := setCommitInYAML(data, commitID)
+	if fail != nil {
+		return fail
+	}
+
+	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	Reset()
+	return nil
+}
+
+var (
+	// regex captures from "project:" (at start of line) to last "/" and
+	// everything after until a "?" or newline is reached. Everything after
+	// that is targeted, but not captured so that only the first capture
+	// group can be used in the replace value.
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\n]*).*)`)
+)
+
+func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
+	if commitID == "" {
+		return nil, failures.FailDeveloper.New("commitID must not be empty")
+	}
+	commitQryParam := []byte("$1?commitID=" + commitID)
+
+	return setCommitRE.ReplaceAll(data, commitQryParam), nil
 }
 
 // Returns the path to the project activestate.yaml

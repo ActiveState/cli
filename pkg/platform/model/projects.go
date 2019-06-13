@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -47,6 +50,15 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 		}
 	}
 	return nil, FailNoDefaultBranch.New(locale.T("err_no_default_branch"))
+}
+
+// ProjectURL creates a valid platform URL for the given project parameters
+func ProjectURL(owner, name, commitID string) string {
+	url := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
+	if commitID != "" {
+		url = url + "?commitID=" + commitID
+	}
+	return url
 }
 
 func processProjectErrorResponse(err error) *failures.Failure {

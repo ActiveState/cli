@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 
@@ -20,6 +21,8 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var (
@@ -34,6 +37,12 @@ var (
 
 	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
 	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
+
+	// FailNoCommits represents a Failure due to a project not having commits yet (and thus no runtime).
+	FailNoCommits = failures.Type("runtime.runtime.nocommits", failures.FailUser)
+
+	// FailPrePlatformNotSupported represents a Failure due to the runtime containing pre-platform bits.
+	FailPrePlatformNotSupported = failures.Type("runtime.runtime.preplatform", failures.FailUser)
 
 	// FailRuntimeInstallation represents a Failure to install a runtime.
 	FailRuntimeInstallation = failures.Type("runtime.runtime.installation", failures.FailOS)
@@ -87,6 +96,10 @@ func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() *failures.Failure {
+	if fail := installer.validateCheckpoint(); fail != nil {
+		return fail
+	}
+
 	artifactMap, fail := installer.fetchArtifactMap()
 	if fail != nil {
 		return fail
@@ -121,6 +134,27 @@ func (installer *Installer) Install() *failures.Failure {
 	}
 
 	return installer.InstallFromArchives(archives)
+}
+
+// validateCheckpoint tries to see if the checkpoint has any chance of succeeding
+func (installer *Installer) validateCheckpoint() *failures.Failure {
+	pj := project.Get()
+	if pj.CommitID() == "" {
+		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(pj.Owner(), pj.Name(), ""))
+	}
+
+	checkpoint, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
+	if fail != nil {
+		return fail
+	}
+
+	for _, change := range checkpoint {
+		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatform) {
+			return FailPrePlatformNotSupported.New("installer_err_runtime_preplatform")
+		}
+	}
+
+	return nil
 }
 
 func (installer *Installer) fetchArtifactMap() (map[*url.URL]string, *failures.Failure) {
