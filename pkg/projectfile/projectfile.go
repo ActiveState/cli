@@ -31,7 +31,7 @@ var (
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
 )
 
-var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_-]*)\/([\w_-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
+var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
 
 // ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 var ProjectURLRe = regexp.MustCompile(strReg)
