@@ -56,12 +56,6 @@ func (suite *RecipeTestSuite) mockProject() *mono_models.Project {
 	}
 }
 
-func (suite *RecipeTestSuite) TestGetRecipe() {
-	recipes, fail := model.FetchRecipesForProject(suite.mockProject())
-	suite.Require().NoError(fail.ToError())
-	suite.NotEmpty(recipes, "Returns recipes")
-}
-
 func (suite *RecipeTestSuite) TestGetRecipeWithCommit() {
 	recipes, fail := model.FetchRecipesForCommit(suite.mockProject(), "00010001-0001-0001-0001-000100010001")
 	suite.Require().NoError(fail.ToError())

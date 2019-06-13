@@ -80,11 +80,11 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 
 	commitID := strfmt.UUID(r.project.CommitID())
 	var recipes []*model.Recipe
-	if commitID != "" {
-		recipes, fail = model.FetchRecipesForCommit(platProject, commitID)
-	} else {
-		recipes, fail = model.FetchRecipesForProject(platProject)
+	if commitID == "" {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
+
+	recipes, fail = model.FetchRecipesForCommit(platProject, commitID)
 	if fail != nil {
 		return nil, fail
 	}

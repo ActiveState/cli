@@ -27,20 +27,6 @@ func init() {
 	OS = sysinfo.OS()
 }
 
-// FetchRecipesForProject Fetch recipes for the project (uses the main branch)
-func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failure) {
-	branch, fail := DefaultBranchForProject(pj)
-	if fail != nil {
-		return nil, fail
-	}
-
-	if branch.CommitID == nil {
-		return nil, FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	return FetchRecipesForCommit(pj, *branch.CommitID)
-}
-
 // FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
 	checkpoint, fail := FetchCheckpointForCommit(commitID)
@@ -66,7 +52,15 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 }
 
 func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
-	recipes, fail := FetchRecipesForProject(pj)
+	branch, fail := DefaultBranchForProject(pj)
+	if fail != nil {
+		return nil, fail
+	}
+	if branch.CommitID == nil {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
+	}
+
+	recipes, fail := FetchRecipesForCommit(pj, *branch.CommitID)
 	if fail != nil {
 		return nil, fail
 	}
