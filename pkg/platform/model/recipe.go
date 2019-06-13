@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
+	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -26,6 +27,7 @@ func init() {
 	OS = sysinfo.OS()
 }
 
+// FetchRecipesForProject Fetch recipes for the project (uses the main branch)
 func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
@@ -41,6 +43,30 @@ func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failu
 
 	params := inventory_operations.NewOrderRecipesParams()
 	params.OrderID = *branch.CommitID
+
+	order := CheckpointToOrder(checkpoint)
+	order.OrderID = &params.OrderID
+
+	params.Order = order
+	recipe, err := client.OrderRecipes(params)
+	if err != nil {
+		return nil, FailOrderRecipes.Wrap(err)
+	}
+
+	return recipe.Payload.Recipes, nil
+}
+
+// FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
+func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
+	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	client := inventory.Get()
+
+	params := inventory_operations.NewOrderRecipesParams()
+	params.OrderID = commitID
 
 	order := CheckpointToOrder(checkpoint)
 	order.OrderID = &params.OrderID

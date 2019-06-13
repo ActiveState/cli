@@ -37,6 +37,7 @@ func (m *Mock) MockSignS3URI() {
 
 func (m *Mock) MockVcsGetCheckpoint() {
 	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
+	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010002/checkpoint")
 }
 
 func (m *Mock) MockVcsGetCheckpointPython() {
@@ -53,6 +54,7 @@ func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *mono_models.Checkpoint
 	}
 	json := fmt.Sprintf("[%s]", string(jsonBytes))
 	m.httpmock.RegisterWithResponseBody("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint", 200, json)
+	m.httpmock.RegisterWithResponseBody("GET", "/vcs/commits/00010001-0001-0001-0001-000100010002/checkpoint", 200, json)
 }
 
 func (m *Mock) MockGetProject() {

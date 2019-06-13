@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -76,8 +78,13 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 		return nil, fail
 	}
 
-	// Fetch recipes for the project (uses the main branch)
-	recipes, fail := model.FetchRecipesForProject(platProject)
+	commitID := strfmt.UUID(r.project.CommitID())
+	var recipes []*model.Recipe
+	if commitID != "" {
+		recipes, fail = model.FetchRecipesForCommit(platProject, commitID)
+	} else {
+		recipes, fail = model.FetchRecipesForProject(platProject)
+	}
 	if fail != nil {
 		return nil, fail
 	}
