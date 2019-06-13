@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
@@ -41,8 +42,14 @@ var Args struct {
 
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
-	// project.CommitID() - send to model.CommitsBehindLatest()
-	// if count > 0, notify about state pull
+	prj := project.Get()
+	behindCount, fail := model.CommitsBehindLatest(prj.Owner(), prj.Name(), prj.CommitID())
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_could_not_get_commit_behind_count"))
+	}
+	if behindCount > 0 {
+		print.Info(locale.T("runtime_update_available", behindCount))
+	}
 
 	logging.Debug("Execute")
 
@@ -54,7 +61,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
-	prj := project.Get()
 	script := prj.ScriptByName(Args.Name)
 	if script == nil {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))

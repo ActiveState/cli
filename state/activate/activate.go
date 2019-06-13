@@ -87,8 +87,14 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
-	// project.CommitID() - send to model.CommitsBehindLatest()
-	// if count > 0, notify about state pull
+	project := project.Get()
+	behindCount, fail := model.CommitsBehindLatest(project.Owner(), project.Name(), project.CommitID())
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_could_not_get_commit_behind_count"))
+	}
+	if behindCount > 0 {
+		print.Info(locale.T("runtime_update_available", behindCount))
+	}
 	break // to prevent build
 
 	var wg sync.WaitGroup
@@ -102,7 +108,6 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project := project.Get()
 	print.Info(locale.T("info_activating_state", project))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -128,7 +133,6 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Bold(locale.T("info_deactivated", project))
-
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user

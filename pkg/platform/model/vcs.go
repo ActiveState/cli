@@ -1,16 +1,17 @@
 package model
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
+	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
-
-// CommitsBehindLatest compares the provided commit id with the latest commit
-// id and returns the count of commits it is behind.
 
 // Namespace represents regular expression strings used for defining matchable
 // requirements.
@@ -50,4 +51,61 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 	}
 
 	return branch.CommitID, nil
+}
+
+// CommitsBehindLatest compares the provided commit id with the latest commit
+// id and returns the count of commits it is behind.
+func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failures.Failure) {
+	if commitID == "" {
+		return 0, nil // special fail
+	}
+
+	params := vcsClient.NewGetCommitHistoryParams()
+	params.SetCommitID(strfmt.UUID(commitID))
+	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	if err != nil {
+		return 0, nil // wrap error with failure
+	}
+
+	latestID, fail := LatestCommitID(ownerName, projectName)
+	if fail != nil || latestID == nil {
+		return 0, fail
+	}
+
+	ordered := makeOrderedCommits(res.Payload)
+	ct, err := ordered.countBetween(commitID, string(*latestID))
+	if err != nil {
+		return ct, nil // wrap error with failure
+	}
+
+	return ct, nil
+}
+
+type orderedCommits map[string]string // key == commit id / val == parent id
+
+func makeOrderedCommits(cs []*mono_models.Commit) orderedCommits {
+	m := make(orderedCommits)
+
+	for _, c := range cs {
+		m[string(c.CommitID)] = string(c.ParentCommitID)
+	}
+
+	return m
+}
+
+func (cs orderedCommits) countBetween(first, last string) (int, error) {
+	next := last
+	var ok bool
+	var ct int
+
+	for next != "" {
+		next, ok = cs[next]
+		if !ok {
+			efmt := "cannot find commit %q in history"
+			return ct, fmt.Errorf(efmt, next)
+		}
+		ct++
+	}
+
+	return ct, nil
 }
