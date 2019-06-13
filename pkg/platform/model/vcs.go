@@ -26,6 +26,11 @@ const (
 	NamespacePrePlatform = `^pre-platform-installer$`
 )
 
+var (
+	// FailNoCommit is a failure due to a non-existent commit
+	FailNoCommit = failures.Type("model.fail.nocommit")
+)
+
 // NamespaceMatch Checks if the given namespace query matches the given namespace
 func NamespaceMatch(query string, namespace Namespace) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))

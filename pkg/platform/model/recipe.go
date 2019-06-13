@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
+	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -26,13 +27,9 @@ func init() {
 	OS = sysinfo.OS()
 }
 
-func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failure) {
-	branch, fail := DefaultBranchForProject(pj)
-	if fail != nil {
-		return nil, fail
-	}
-
-	checkpoint, fail := FetchCheckpointForBranch(branch)
+// FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
+func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
+	checkpoint, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -40,7 +37,7 @@ func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failu
 	client := inventory.Get()
 
 	params := inventory_operations.NewOrderRecipesParams()
-	params.OrderID = *branch.CommitID
+	params.OrderID = commitID
 
 	order := CheckpointToOrder(checkpoint)
 	order.OrderID = &params.OrderID
@@ -55,7 +52,15 @@ func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failu
 }
 
 func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
-	recipes, fail := FetchRecipesForProject(pj)
+	branch, fail := DefaultBranchForProject(pj)
+	if fail != nil {
+		return nil, fail
+	}
+	if branch.CommitID == nil {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
+	}
+
+	recipes, fail := FetchRecipesForCommit(pj, *branch.CommitID)
 	if fail != nil {
 		return nil, fail
 	}
