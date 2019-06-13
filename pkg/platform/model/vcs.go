@@ -3,6 +3,7 @@ package model
 import (
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -17,6 +18,11 @@ const (
 
 	// NamespacePackage is the namespace used for package requirements
 	NamespacePackage = `/package$`
+)
+
+var (
+	// FailNoCommit is a failure due to a non-existent commit
+	FailNoCommit = failures.Type("model.fail.nocommit")
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace

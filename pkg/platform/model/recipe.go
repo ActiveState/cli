@@ -34,26 +34,11 @@ func FetchRecipesForProject(pj *mono_models.Project) ([]*Recipe, *failures.Failu
 		return nil, fail
 	}
 
-	checkpoint, fail := FetchCheckpointForBranch(branch)
-	if fail != nil {
-		return nil, fail
+	if branch.CommitID == nil {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	client := inventory.Get()
-
-	params := inventory_operations.NewOrderRecipesParams()
-	params.OrderID = *branch.CommitID
-
-	order := CheckpointToOrder(checkpoint)
-	order.OrderID = &params.OrderID
-
-	params.Order = order
-	recipe, err := client.OrderRecipes(params)
-	if err != nil {
-		return nil, FailOrderRecipes.Wrap(err)
-	}
-
-	return recipe.Payload.Recipes, nil
+	return FetchRecipesForCommit(pj, *branch.CommitID)
 }
 
 // FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
