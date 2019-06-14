@@ -7,10 +7,16 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+)
+
+var (
+	// FailGetCommitHistory is a failure in the call to api.GetCommitHistory
+	FailGetCommitHistory = failures.Type("model.fail.getcommithistory")
 )
 
 // Namespace represents regular expression strings used for defining matchable
@@ -67,7 +73,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		if commitID == "" {
 			return 0, nil // ok, nothing to do
 		}
-		return 0, nil // special fail (commitID with no latest)
+		return 0, failures.FailDeveloper.New("latest commit id is not set while commit id is set")
 	}
 
 	if latestCID.String() == commitID {
@@ -78,13 +84,13 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	params.SetCommitID(*latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
-		return 0, nil // wrap error with failure
+		return 0, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", err.Error()))
 	}
 
 	indexed := makeIndexedCommits(res.Payload)
 	ct, err := indexed.countBetween(commitID, latestCID.String())
 	if err != nil {
-		return -1, nil // wrap error with failure
+		return -1, failures.FailVerify.Wrap(err)
 	}
 
 	return ct, nil

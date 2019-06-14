@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"sync"
 
 	"github.com/go-openapi/strfmt"
@@ -133,13 +134,15 @@ func runCommitBehindNotifier(p *project.Project) {
 	if fail != nil {
 		switch {
 		case count == -1:
-			logging.Error(locale.T("err_unclear_value_commit_behind_count"))
+			print.Info(locale.Tr("runtime_update_available_unknown_count", p.Owner(), p.Name()))
 		case count == 0:
 			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
 		}
+		return
 	}
 	if count > 0 {
-		print.Info(locale.T("runtime_update_available", count))
+		ct := strconv.Itoa(count)
+		print.Info(locale.Tr("runtime_update_available", ct, p.Owner(), p.Name()))
 	}
 }
 

@@ -647,6 +647,10 @@ update_available:
     Available Version: {{.V1}}
 
     You can update by running `state self-update`
+runtime_update_available:
+  other: Your activestate.yaml is {{.V0}} commits behind, run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V1}}/{{.V2}}
+runtime_update_available_unknown_count:
+  other: Your activestate.yaml is behind, run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -673,7 +677,7 @@ installer_err_runtime_missing_meta:
 installer_err_runtime_no_executable:
   other: Expected runtime installer '{{.V0}}' to include '{{.V1}}' or '{{.V2}}'
 installer_err_runtime_no_file:
-  other: Expected runtime installer '{{.V0}}' to include '{{.V1}}''
+  other: Expected runtime installer '{{.V0}}' to include '{{.V1}}'
 installer_err_runtime_executable_not_exec:
   other: Executable '{{.V1}}' does not have execute permissions for runtime '{{.V0}}'
 installer_err_fail_obtain_prefixes:
@@ -691,6 +695,8 @@ err_no_commit:
   other: Project branch has no commits
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
+err_get_commit_history:
+  other: "Error occurred while trying to retrieve the latest commit history for your project: {{.V0}}"
 err_no_effective_recipe:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_artifacts:
@@ -709,6 +715,8 @@ err_invalid_namespace:
   other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
 err_namespace_dir_exists:
   other: "Target directory already exists"
+err_could_not_get_commit_behind_count:
+  other: Could not obtain commit history properly
 activate_namespace_existing:
   other: "You already have this project checked out, which one would you like to activate?"
 activate_select_optout:
