@@ -68,6 +68,10 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		return 0, nil // special fail (commitID with no latest)
 	}
 
+	if latestCID.String() == commitID {
+		return 0, nil
+	}
+
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(*latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
@@ -78,7 +82,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	indexed := makeIndexedCommits(res.Payload)
 	ct, err := indexed.countBetween(commitID, latestCID.String())
 	if err != nil {
-		return ct, nil // wrap error with failure
+		return -1, nil // wrap error with failure
 	}
 
 	return ct, nil
@@ -97,17 +101,34 @@ func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
 }
 
 func (cs indexedCommits) countBetween(first, last string) (int, error) {
+	efmt := "cannot find commit %q in history"
+
+	if first == last {
+		return 0, nil
+	}
+
+	if last == "" {
+		return -1, fmt.Errorf(efmt, last)
+	}
+
 	next := last
 	var ok bool
 	var ct int
+	for ct <= len(cs) {
+		if next == first {
+			return ct, nil
+		}
 
-	for next != "" {
+		ct++
+
 		next, ok = cs[next]
 		if !ok {
-			efmt := "cannot find commit %q in history"
-			return ct, fmt.Errorf(efmt, next)
+			return 0, fmt.Errorf(efmt, next) // cant find
 		}
-		ct++
+	}
+
+	if _, ok = cs[first]; !ok {
+		return 0, fmt.Errorf(efmt, next) // first doesn't exist
 	}
 
 	return ct, nil
