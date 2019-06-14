@@ -56,24 +56,27 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 // CommitsBehindLatest compares the provided commit id with the latest commit
 // id and returns the count of commits it is behind.
 func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failures.Failure) {
-	if commitID == "" {
-		return 0, nil // special fail
+	latestCID, fail := LatestCommitID(ownerName, projectName)
+	if fail != nil {
+		return 0, fail
+	}
+
+	if latestCID == nil {
+		if commitID == "" {
+			return 0, nil // ok, nothing to do
+		}
+		return 0, nil // special fail (commitID with no latest)
 	}
 
 	params := vcsClient.NewGetCommitHistoryParams()
-	params.SetCommitID(strfmt.UUID(commitID))
+	params.SetCommitID(*latestCID)
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
 		return 0, nil // wrap error with failure
 	}
 
-	latestID, fail := LatestCommitID(ownerName, projectName)
-	if fail != nil || latestID == nil {
-		return 0, fail
-	}
-
 	ordered := makeOrderedCommits(res.Payload)
-	ct, err := ordered.countBetween(commitID, string(*latestID))
+	ct, err := ordered.countBetween(commitID, latestCID.String())
 	if err != nil {
 		return ct, nil // wrap error with failure
 	}
