@@ -75,8 +75,8 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		return 0, nil // wrap error with failure
 	}
 
-	ordered := makeOrderedCommits(res.Payload)
-	ct, err := ordered.countBetween(commitID, latestCID.String())
+	indexed := makeIndexedCommits(res.Payload)
+	ct, err := indexed.countBetween(commitID, latestCID.String())
 	if err != nil {
 		return ct, nil // wrap error with failure
 	}
@@ -84,10 +84,10 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	return ct, nil
 }
 
-type orderedCommits map[string]string // key == commit id / val == parent id
+type indexedCommits map[string]string // key == commit id / val == parent id
 
-func makeOrderedCommits(cs []*mono_models.Commit) orderedCommits {
-	m := make(orderedCommits)
+func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
+	m := make(indexedCommits)
 
 	for _, c := range cs {
 		m[string(c.CommitID)] = string(c.ParentCommitID)
@@ -96,7 +96,7 @@ func makeOrderedCommits(cs []*mono_models.Commit) orderedCommits {
 	return m
 }
 
-func (cs orderedCommits) countBetween(first, last string) (int, error) {
+func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	next := last
 	var ok bool
 	var ct int
