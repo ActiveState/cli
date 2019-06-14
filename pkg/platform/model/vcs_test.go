@@ -23,11 +23,11 @@ func testIndexedCommitsCountBetween(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		ocs   indexedCommits
-		first string
-		last  string
-		want  int
-		werr  bool
+		indexed indexedCommits
+		first   string
+		last    string
+		want    int
+		wantErr bool
 	}{
 		"basic: none to last":     {basic, "", "e", 5, false},
 		"basic: first to none":    {basic, "a", "", -1, true},
@@ -43,19 +43,17 @@ func testIndexedCommitsCountBetween(t *testing.T) {
 		"split: second to broken": {split, "b", "d", 0, true},
 	}
 
-	efmt := "%s: got %v, want %v"
-
-	for tn, tt := range tests {
-		got, gerr := tt.ocs.countBetween(tt.first, tt.last)
-		if tt.werr && gerr == nil {
-			t.Errorf(efmt, tn, "nil", "error")
+	for label, test := range tests {
+		got, gotErr := test.indexed.countBetween(test.first, test.last)
+		if test.wantErr && gotErr == nil {
+			t.Errorf("%s: got %v, want %v", label, "nil", "error")
 		}
-		if !tt.werr && gerr != nil {
-			t.Errorf(efmt, tn, gerr, "nil")
+		if !test.wantErr && gotErr != nil {
+			t.Errorf("%s: got %v, want %v", label, gotErr, "nil")
 		}
 
-		if got != tt.want {
-			t.Errorf(efmt, tn, got, tt.want)
+		if got != test.want {
+			t.Errorf("%s: got %v, want %v", label, got, test.want)
 		}
 	}
 }
