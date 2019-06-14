@@ -122,6 +122,12 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 		return -1, fmt.Errorf(efmt, last)
 	}
 
+	if first != "" {
+		if _, ok := cs[first]; !ok {
+			return 0, fmt.Errorf(efmt, first)
+		}
+	}
+
 	next := last
 	var ok bool
 	var ct int
@@ -136,10 +142,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 		if !ok {
 			return 0, fmt.Errorf(efmt, next) // cant find
 		}
-	}
-
-	if _, ok = cs[first]; !ok {
-		return 0, fmt.Errorf(efmt, next) // first doesn't exist
 	}
 
 	return ct, nil
