@@ -129,7 +129,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	}
 
 	next := last
-	var ok bool
 	var ct int
 	for ct <= len(cs) {
 		if next == first {
@@ -138,6 +137,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 
 		ct++
 
+		var ok bool
 		next, ok = cs[next]
 		if !ok {
 			return 0, fmt.Errorf(efmt, next) // cant find
