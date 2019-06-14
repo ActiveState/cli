@@ -7,6 +7,8 @@ func TestIndexedCommits(t *testing.T) {
 }
 
 func testIndexedCommitsCountBetween(t *testing.T) {
+	// linked data
+	// a-b-c-d-e
 	basic := indexedCommits{
 		"e": "d",
 		"d": "c",
@@ -14,6 +16,10 @@ func testIndexedCommitsCountBetween(t *testing.T) {
 		"b": "a",
 		"a": "",
 	}
+	// linked data with split
+	// a-b-c
+	//  \
+	//   d-e
 	split := indexedCommits{
 		"e": "d",
 		"d": "a",
