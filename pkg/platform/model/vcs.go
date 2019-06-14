@@ -54,7 +54,9 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 }
 
 // CommitsBehindLatest compares the provided commit id with the latest commit
-// id and returns the count of commits it is behind.
+// id and returns the count of commits it is behind. If an error is returned
+// along with a value of -1, then the provided commit is more than likely
+// behind, but it is not possible to clarify the count exactly.
 func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failures.Failure) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
@@ -100,6 +102,8 @@ func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
 	return m
 }
 
+// countBetween returns 0 if same or if unable to determine the count. If the
+// last commit is empty, -1 is returned.
 func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	efmt := "cannot find commit %q in history"
 
