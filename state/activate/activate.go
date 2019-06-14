@@ -87,15 +87,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
-	project := project.Get()
-	behindCount, fail := model.CommitsBehindLatest(project.Owner(), project.Name(), project.CommitID())
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_could_not_get_commit_behind_count"))
-	}
-	if behindCount > 0 {
-		print.Info(locale.T("runtime_update_available", behindCount))
-	}
-	break // to prevent build
+	proj := project.Get()
+	runCommitBehindNotifier(proj)
 
 	var wg sync.WaitGroup
 
@@ -108,7 +101,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	print.Info(locale.T("info_activating_state", project))
+	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
@@ -119,7 +112,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.Source().Path()))
+	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
 	_, err := subshell.Activate(&wg)
 	if err != nil {
@@ -132,7 +125,22 @@ func Execute(cmd *cobra.Command, args []string) {
 		wg.Wait()
 	}
 
-	print.Bold(locale.T("info_deactivated", project))
+	print.Bold(locale.T("info_deactivated", proj))
+}
+
+func runCommitBehindNotifier(p *project.Project) {
+	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	if fail != nil {
+		switch {
+		case count == -1:
+			logging.Error(locale.T("err_unclear_value_commit_behind_count"))
+		case count == 0:
+			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
+		}
+	}
+	if count > 0 {
+		print.Info(locale.T("runtime_update_available", count))
+	}
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user

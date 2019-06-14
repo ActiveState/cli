@@ -43,13 +43,7 @@ var Args struct {
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	prj := project.Get()
-	behindCount, fail := model.CommitsBehindLatest(prj.Owner(), prj.Name(), prj.CommitID())
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_could_not_get_commit_behind_count"))
-	}
-	if behindCount > 0 {
-		print.Info(locale.T("runtime_update_available", behindCount))
-	}
+	runCommitBehindNotifier(prj)
 
 	logging.Debug("Execute")
 
@@ -95,5 +89,20 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)
 		return
+	}
+}
+
+func runCommitBehindNotifier(p *project.Project) {
+	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
+	if fail != nil {
+		switch {
+		case count == -1:
+			logging.Error(locale.T("err_unclear_value_commit_behind_count"))
+		case count == 0:
+			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
+		}
+	}
+	if count > 0 {
+		print.Info(locale.T("runtime_update_available", count))
 	}
 }
