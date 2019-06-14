@@ -1,7 +1,6 @@
 package run
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -10,8 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
@@ -44,7 +43,7 @@ var Args struct {
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	prj := project.Get()
-	runCommitBehindNotifier(prj)
+	checker.RunCommitsBehindNotifier(prj)
 
 	logging.Debug("Execute")
 
@@ -90,22 +89,5 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)
 		return
-	}
-}
-
-func runCommitBehindNotifier(p *project.Project) {
-	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
-	if fail != nil {
-		switch {
-		case count == -1:
-			print.Info(locale.Tr("runtime_update_available_unknown_count", p.Owner(), p.Name()))
-		case count == 0:
-			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
-		}
-		return
-	}
-	if count > 0 {
-		ct := strconv.Itoa(count)
-		print.Info(locale.Tr("runtime_update_available", ct, p.Owner(), p.Name()))
 	}
 }

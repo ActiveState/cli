@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"sync"
 
 	"github.com/go-openapi/strfmt"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -89,7 +89,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	proj := project.Get()
-	runCommitBehindNotifier(proj)
+	checker.RunCommitsBehindNotifier(proj)
 
 	var wg sync.WaitGroup
 
@@ -127,23 +127,6 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
-}
-
-func runCommitBehindNotifier(p *project.Project) {
-	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
-	if fail != nil {
-		switch {
-		case count == -1:
-			print.Info(locale.Tr("runtime_update_available_unknown_count", p.Owner(), p.Name()))
-		case count == 0:
-			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
-		}
-		return
-	}
-	if count > 0 {
-		ct := strconv.Itoa(count)
-		print.Info(locale.Tr("runtime_update_available", ct, p.Owner(), p.Name()))
-	}
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
