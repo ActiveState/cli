@@ -10,17 +10,17 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// RunCommitsBehindNotifier checks the current for the commits behind count and
-// displays the results to the user in a helpful manner.
+// RunCommitsBehindNotifier checks for the commits behind count based on the
+// provided project and displays the results to the user in a helpful manner.
 func RunCommitsBehindNotifier(p *project.Project) {
 	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
 	if fail != nil {
-		switch {
-		case count == -1:
+		if fail.Type.Matches(model.FailCommitCountUnknowable) {
 			print.Info(locale.Tr("runtime_update_available_unknown_count", p.Owner(), p.Name()))
-		case count == 0:
-			logging.Error(locale.T("err_could_not_get_commit_behind_count"))
+			return
 		}
+
+		logging.Error(locale.T("err_could_not_get_commit_behind_count"))
 		return
 	}
 	if count > 0 {
