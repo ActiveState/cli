@@ -17,6 +17,10 @@ import (
 var (
 	// FailGetCommitHistory is a failure in the call to api.GetCommitHistory
 	FailGetCommitHistory = failures.Type("model.fail.getcommithistory")
+	// FailCommitCountImpossible is a failure counting between commits
+	FailCommitCountImpossible = failures.Type("model.fail.commitcountimpossible")
+	// FailCommitCountUnknowable is a failure counting between commits
+	FailCommitCountUnknowable = failures.Type("model.fail.commitcountunknowable")
 )
 
 // Namespace represents regular expression strings used for defining matchable
@@ -73,7 +77,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		if commitID == "" {
 			return 0, nil // ok, nothing to do
 		}
-		return 0, failures.FailDeveloper.New("latest commit id is not set while commit id is set")
+		return 0, FailCommitCountImpossible.New("latest commit id is not set while commit id is set")
 	}
 
 	if latestCID.String() == commitID {
@@ -88,12 +92,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	}
 
 	indexed := makeIndexedCommits(res.Payload)
-	ct, err := indexed.countBetween(commitID, latestCID.String())
-	if err != nil {
-		return -1, failures.FailVerify.Wrap(err)
-	}
-
-	return ct, nil
+	return indexed.countBetween(commitID, latestCID.String())
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id
@@ -111,20 +110,18 @@ func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
 // countBetween returns 0 if same or if unable to determine the count. If the
 // last commit is empty, -1 is returned. Caution: Currently, the logic does not
 // verify that the first commit is "before" the last commit.
-func (cs indexedCommits) countBetween(first, last string) (int, error) {
-	efmt := "cannot find commit %q in history"
-
+func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failure) {
 	if first == last {
 		return 0, nil
 	}
 
 	if last == "" {
-		return -1, fmt.Errorf(efmt, last)
+		return 0, FailCommitCountImpossible.New("missing last commit id")
 	}
 
 	if first != "" {
 		if _, ok := cs[first]; !ok {
-			return 0, fmt.Errorf(efmt, first)
+			return 0, FailCommitCountUnknowable.New("missing first commit id")
 		}
 	}
 
@@ -140,7 +137,8 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 		var ok bool
 		next, ok = cs[next]
 		if !ok {
-			return 0, fmt.Errorf(efmt, next) // cant find
+			msg := fmt.Sprintf("cannot find commit (%s) in indexed", next)
+			return 0, FailCommitCountUnknowable.New(msg)
 		}
 	}
 
