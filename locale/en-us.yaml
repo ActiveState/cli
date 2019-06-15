@@ -647,10 +647,12 @@ update_available:
     Available Version: {{.V1}}
 
     You can update by running `state self-update`
-runtime_update_available:
-  other: Your activestate.yaml is {{.V0}} commits behind, run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V1}}/{{.V2}}
-runtime_update_available_unknown_count:
-  other: Your activestate.yaml is behind, run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}
+runtime_update_notice_known_count:
+  other: Your activestate.yaml is {{.V0}} commits behind.
+runtime_update_notice_unknown_count:
+  other: Your activestate.yaml is behind.
+runtime_update_help:
+  other: Run `state pull` to pull in the latest runtime environment as defined in your project on https://platform.activestate.com/{{.V0}}/{{.V1}}
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
