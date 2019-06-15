@@ -121,7 +121,8 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 
 	if first != "" {
 		if _, ok := cs[first]; !ok {
-			return 0, FailCommitCountUnknowable.New("missing first commit id")
+			msg := fmt.Sprintf("cannot find first commit (%s) in indexed", first)
+			return 0, FailCommitCountUnknowable.New(msg)
 		}
 	}
 
