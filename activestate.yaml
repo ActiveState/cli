@@ -1,4 +1,6 @@
-project: https://platform.activestate.com/ActiveState/cli?commitID=003f0402-b855-4f89-b518-6feab8da9bcc
+name: cli
+owner: ActiveState
+namespace: github.com/ActiveState/cli
 scripts: 
   - name: SET_ENV
     description: The environment settings used throughout our project
