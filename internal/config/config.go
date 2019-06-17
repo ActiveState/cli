@@ -28,7 +28,7 @@ func init() {
 		}
 	}
 
-	defaultConfig = New(localPath)
+	defaultConfig = New(localPath, os.Getenv(C.CacheEnvVarName))
 }
 
 // ConfigPath returns the directory in which we'll be storing all our appdata

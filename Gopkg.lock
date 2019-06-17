@@ -401,6 +401,14 @@
   revision = "3035450ff8b987ec4373f65c40767f096b35f2d2"
 
 [[projects]]
+  digest = "1:5b4ba0b32ce93a5cf68fb3559b097cf85f440d1a14eac1fbd6014264f28cd362"
+  name = "github.com/kr/pty"
+  packages = ["."]
+  pruneopts = ""
+  revision = "b6e1bdd4a4f88614e0c6e5e8089c7abed98aae17"
+  version = "v1.1.5"
+
+[[projects]]
   digest = "1:739b2038a38cebb50e922d18f4b042c042256320fea2db094814aeef8891e0c1"
   name = "github.com/magiconair/properties"
   packages = ["."]
@@ -804,9 +812,9 @@
     "github.com/jarcoal/httpmock",
     "github.com/kami-zh/go-capturer",
     "github.com/kardianos/osext",
+    "github.com/kr/pty",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mitchellh/go-ps",
-    "github.com/mitchellh/mapstructure",
     "github.com/nicksnyder/go-i18n/i18n",
     "github.com/phayes/permbits",
     "github.com/pkg/errors",

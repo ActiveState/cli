@@ -22,13 +22,15 @@ type Instance struct {
 	configDir *configdir.Config
 	cacheDir  *configdir.Config
 	localPath string
+	cachePath string
 	Exit      func(code int)
 }
 
 // New creates a new config instance
-func New(localPath string) *Instance {
+func New(localPath string, cachePath string) *Instance {
 	instance := &Instance{
 		localPath: localPath,
+		cachePath: cachePath,
 		Exit:      os.Exit,
 	}
 
@@ -71,6 +73,10 @@ func (i *Instance) ConfigPath() string {
 
 // CachePath returns the path at which our cache is stored
 func (i *Instance) CachePath() string {
+	if i.cachePath != "" {
+		fmt.Println("Using hardcoded cache: " + i.cachePath)
+		return i.cachePath
+	}
 	return i.cacheDir.Path
 }
 
@@ -132,6 +138,12 @@ func (i *Instance) ensureConfigExists() {
 }
 
 func (i *Instance) ensureCacheExists() {
+	if i.cachePath != "" {
+		if err := os.MkdirAll(i.cachePath, 0755); err != nil {
+			i.exit("Can't create hardcoded cache directory: %s", err)
+		}
+		return
+	}
 	i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)

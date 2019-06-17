@@ -55,7 +55,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	logging.Debug("Replacing %s with %s in %s", find, replace, filename)
+	//logging.Debug("Replacing %s with %s in %s", find, replace, filename)
 
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
@@ -63,19 +63,19 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	if IsBinary(fileBytes) {
-		logging.Debug("Assuming file '%s' is a binary file", filename)
+		//logging.Debug("Assuming file '%s' is a binary file", filename)
 		if len(replaceBytes) > len(findBytes) {
-			logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
+			logging.Error("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > len(replaceBytes) {
 			// Pad replacement with NUL bytes.
-			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
-		logging.Debug("Assuming file '%s' is a text file", filename)
+		//logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	chunks := bytes.Split(fileBytes, findBytes)

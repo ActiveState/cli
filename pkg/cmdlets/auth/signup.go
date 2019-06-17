@@ -3,15 +3,15 @@ package auth
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type signupInput struct {
@@ -113,12 +113,16 @@ func doSignup(input *signupInput) {
 
 	// Error checking
 	if err != nil {
+		errMsg := api.ErrorMessageFromPayload(err)
+		if errMsg == "" {
+			errMsg = err.Error()
+		}
 		switch err.(type) {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
-			failures.Handle(err, locale.T("err_auth_signup_email_exists"))
+			failures.Handle(errors.New(errMsg), locale.T("err_auth_signup_email_exists"))
 		default:
-			failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
+			failures.Handle(errors.New(errMsg), locale.T("err_auth_failed_unknown_cause"))
 		}
 		return
 	}
