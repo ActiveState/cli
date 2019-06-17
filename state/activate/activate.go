@@ -88,8 +88,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
-	proj := project.Get()
-	checker.RunCommitsBehindNotifier(proj)
+	checker.RunCommitsBehindNotifier()
 
 	var wg sync.WaitGroup
 
@@ -102,6 +101,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	proj := project.Get()
 	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -187,6 +187,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 	}
 
+	projectfile.Reset()
 	err := os.Chdir(directory)
 	if err != nil {
 		return failures.FailIO.Wrap(err)

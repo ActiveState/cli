@@ -8,11 +8,15 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(p *project.Project) {
+func RunCommitsBehindNotifier() {
+	p := project.Get()
+	defer projectfile.Reset()
+
 	count, fail := model.CommitsBehindLatest(p.Owner(), p.Name(), p.CommitID())
 	if fail != nil {
 		if fail.Type.Matches(model.FailCommitCountUnknowable) {

@@ -42,8 +42,7 @@ var Args struct {
 
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
-	prj := project.Get()
-	checker.RunCommitsBehindNotifier(prj)
+	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
 
@@ -55,7 +54,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
-	script := prj.ScriptByName(Args.Name)
+	script := project.Get().ScriptByName(Args.Name)
 	if script == nil {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
 		return
