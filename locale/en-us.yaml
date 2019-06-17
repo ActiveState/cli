@@ -699,6 +699,14 @@ err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
 err_get_commit_history:
   other: "Error occurred while trying to retrieve the latest commit history for your project: {{.V0}}"
+err_commit_count_no_latest_with_commit:
+  other: "Latest commit id is not set while commit id is set"
+err_commit_count_cannot_find:
+  other: "Cannot find commit ({{.V0}}) in indexed"
+err_commit_count_cannot_find_first:
+  other: "Cannot find first commit ({{.V0}}) in indexed"
+err_commit_count_missing_last:
+  other: "Missing last commit id"
 err_no_effective_recipe:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_artifacts:

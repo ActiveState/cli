@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/go-openapi/strfmt"
@@ -77,7 +76,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		if commitID == "" {
 			return 0, nil // ok, nothing to do
 		}
-		return 0, FailCommitCountImpossible.New("latest commit id is not set while commit id is set")
+		return 0, FailCommitCountImpossible.New(locale.T("err_commit_count_no_latest_with_commit"))
 	}
 
 	if latestCID.String() == commitID {
@@ -116,13 +115,12 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 	}
 
 	if last == "" {
-		return 0, FailCommitCountImpossible.New("missing last commit id")
+		return 0, FailCommitCountImpossible.New(locale.T("err_commit_count_missing_last"))
 	}
 
 	if first != "" {
 		if _, ok := cs[first]; !ok {
-			msg := fmt.Sprintf("cannot find first commit (%s) in indexed", first)
-			return 0, FailCommitCountUnknowable.New(msg)
+			return 0, FailCommitCountUnknowable.New(locale.Tr("err_commit_count_cannot_find_first", first))
 		}
 	}
 
@@ -138,8 +136,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 		var ok bool
 		next, ok = cs[next]
 		if !ok {
-			msg := fmt.Sprintf("cannot find commit (%s) in indexed", next)
-			return 0, FailCommitCountUnknowable.New(msg)
+			return 0, FailCommitCountUnknowable.New(locale.Tr("err_commit_count_cannot_find", next))
 		}
 	}
 
