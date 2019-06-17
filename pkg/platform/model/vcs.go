@@ -35,6 +35,14 @@ const (
 
 	// NamespacePackage is the namespace used for package requirements
 	NamespacePackage = `/package$`
+
+	// NamespacePrePlatform is the namespace used for pre-platform bits
+	NamespacePrePlatform = `^pre-platform-installer$`
+)
+
+var (
+	// FailNoCommit is a failure due to a non-existent commit
+	FailNoCommit = failures.Type("model.fail.nocommit")
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace

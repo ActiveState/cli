@@ -13,9 +13,6 @@ import (
 )
 
 var (
-	// FailNoCommit is a failure due to a non-existent commit
-	FailNoCommit = failures.Type("model.fail.nocommit")
-
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
 )

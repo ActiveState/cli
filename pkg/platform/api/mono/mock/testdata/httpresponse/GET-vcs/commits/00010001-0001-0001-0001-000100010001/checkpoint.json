@@ -1,7 +1,7 @@
-[
-    {
-        "namespace": "language",
-        "requirement": "Python",
-        "version_constraint": "string"
-    }
-]
+[	
+    {	
+        "namespace": "language",	
+        "requirement": "Python",	
+        "version_constraint": "string"	
+    }	
+] 

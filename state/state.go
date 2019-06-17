@@ -23,8 +23,6 @@ import (
 	_ "github.com/ActiveState/state-required/require"
 )
 
-var exit = os.Exit
-
 var branchName = constants.BranchName
 
 // T links to locale.T
@@ -107,7 +105,7 @@ func main() {
 
 	if err != nil {
 		fmt.Println(err)
-		exit(1)
+		Command.Exiter(1)
 		return
 	}
 

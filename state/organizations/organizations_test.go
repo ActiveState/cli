@@ -5,16 +5,17 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func setup(t *testing.T) {
@@ -57,12 +58,15 @@ func TestClientError(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 
-	var execErr error
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
 	outStr, outErr := osutil.CaptureStderr(func() {
-		execErr = Command.Execute()
+		exitCode := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		require.Equal(t, 1, exitCode, "Exited with code 1")
 	})
 	require.NoError(t, outErr)
-	assert.Error(t, execErr, "Failure occurred")
 
 	// Should not be able to fetch organizations without mock
 	assert.Contains(t, outStr, "no responder found")
@@ -78,12 +82,15 @@ func TestAuthError(t *testing.T) {
 	authentication.Get().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
-	var execErr error
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
 	outStr, outErr := osutil.CaptureStderr(func() {
-		execErr = Command.Execute()
+		exitCode := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		require.Equal(t, 1, exitCode, "Exited with code 1")
 	})
 	require.NoError(t, outErr)
-	assert.Error(t, execErr, "Failure occurred")
 
 	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
 }

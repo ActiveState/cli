@@ -115,8 +115,13 @@ scripts:
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{""})
-	err = Command.Execute()
-	assert.Error(t, err)
+
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 
 	handled := failures.Handled()
 	require.NotNil(t, handled, "expected a failure")

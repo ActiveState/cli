@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -16,7 +19,6 @@ import (
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/state/keypair"
 	keyp "github.com/ActiveState/cli/state/keypair"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairGenerateTestSuite struct {
@@ -85,14 +87,18 @@ func (suite *KeypairGenerateTestSuite) TestExecute_SaveFails() {
 	httpmock.RegisterWithCode("GET", "/whoami", 200)
 	httpmock.RegisterWithCode("PUT", "/keypair", 400)
 
-	var execErr error
 	suite.promptMock.OnMethod("InputSecret").Once().Return("abc123", nil)
 	osutil.CaptureStdout(func() {
 		cmd.GetCobraCmd().SetArgs([]string{"generate", "-b", "512"})
-		execErr = cmd.Execute()
+
+		ex := exiter.New()
+		cmd.Exiter = ex.Exit
+		exitCode := ex.WaitForExit(func() {
+			cmd.Execute()
+		})
+		suite.Equal(1, exitCode, "Exited with code 1")
 	})
 
-	suite.Error(execErr, "expected failure")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailSave), "should be a FailSave failure")

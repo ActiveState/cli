@@ -1,70 +1,33 @@
-package model
+package model_test
 
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-func TestIndexedCommits(t *testing.T) {
-	t.Run("countBetween", testIndexedCommitsCountBetween)
+type VCSTestSuite struct {
+	suite.Suite
 }
 
-func testIndexedCommitsCountBetween(t *testing.T) {
-	// linked data
-	// a-b-c-d-e
-	basic := indexedCommits{
-		"e": "d",
-		"d": "c",
-		"c": "b",
-		"b": "a",
-		"a": "",
-	}
-	// linked data with split
-	// a-b-c
-	//  \
-	//   d-e
-	split := indexedCommits{
-		"e": "d",
-		"d": "a",
-		"c": "b",
-		"b": "a",
-		"a": "",
-	}
+func (suite *VCSTestSuite) TestNamespaceMatch() {
+	suite.True(model.NamespaceMatch("platform", model.NamespacePlatform))
+	suite.False(model.NamespaceMatch(" platform ", model.NamespacePlatform))
+	suite.False(model.NamespaceMatch("not-platform", model.NamespacePlatform))
 
-	tests := map[string]struct {
-		indexed  indexedCommits
-		first    string
-		last     string
-		want     int
-		failType *failures.FailureType
-	}{
-		"basic: none to last":     {basic, "", "e", 5, nil},
-		"basic: first to none":    {basic, "a", "", 0, FailCommitCountImpossible},
-		"basic: first to last":    {basic, "a", "e", 4, nil},
-		"basic: first to second":  {basic, "a", "b", 1, nil},
-		"basic: second to fourth": {basic, "b", "d", 2, nil},
-		"basic: first to badval":  {basic, "a", "x", 0, FailCommitCountUnknowable},
-		"basic: badval to last":   {basic, "x", "e", 0, FailCommitCountUnknowable},
-		"split: none to last":     {split, "", "e", 3, nil},
-		"split: first to none":    {split, "a", "", 0, FailCommitCountImpossible},
-		"split: first to last":    {split, "a", "e", 2, nil},
-		"split: first to second":  {split, "a", "b", 1, nil},
-		"split: second to broken": {split, "b", "d", 0, FailCommitCountUnknowable},
-	}
+	suite.True(model.NamespaceMatch("language", model.NamespaceLanguage))
+	suite.False(model.NamespaceMatch(" language ", model.NamespaceLanguage))
+	suite.False(model.NamespaceMatch("not-language", model.NamespaceLanguage))
 
-	for label, test := range tests {
-		got, gotFail := test.indexed.countBetween(test.first, test.last)
+	suite.True(model.NamespaceMatch("language/foo/package", model.NamespacePackage))
+	suite.False(model.NamespaceMatch(" language/foo/package ", model.NamespacePackage))
 
-		if test.failType != nil && !test.failType.Matches(gotFail.Type) {
-			t.Errorf("%s: got %v, want %v", label, gotFail, test.failType)
-		}
-		if test.failType == nil && gotFail != nil {
-			t.Errorf("%s: got %v, want %v", label, gotFail, test.failType)
-		}
+	suite.True(model.NamespaceMatch("pre-platform-installer", model.NamespacePrePlatform))
+	suite.False(model.NamespaceMatch(" pre-platform-installer ", model.NamespacePrePlatform))
+}
 
-		if got != test.want {
-			t.Errorf("%s: got %v, want %v", label, got, test.want)
-		}
-	}
+func TestVCSTestSuite(t *testing.T) {
+	suite.Run(t, new(VCSTestSuite))
 }

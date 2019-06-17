@@ -206,7 +206,9 @@ func (c *Command) Register() {
 		if flag.Lookup("test.v") == nil {
 			c.Exiter = os.Exit
 		} else {
-			c.Exiter = func(code int) {}
+			c.Exiter = func(code int) {
+				panic(fmt.Sprintf("Test exited with code %d, you probably want to use testhelpers/exiter.", code))
+			}
 		}
 	}
 

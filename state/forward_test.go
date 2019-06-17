@@ -45,7 +45,7 @@ func TestForwardNotUsed(t *testing.T) {
 	updatemocks.MockUpdater(t, filepath.Join(testdatadir, "state.sh"), constants.BranchName, constants.Version)
 
 	var args = []string{"somebinary", "arg1", "arg2", "--flag"}
-	exit = exiter.Exit
+	Command.Exiter = exiter.Exit
 	exitCode := exiter.WaitForExit(func() {
 		forwardAndExit(args)
 	})
@@ -55,7 +55,7 @@ func TestForwardNotUsed(t *testing.T) {
 func TestForwardAndExit(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
-	exit = exiter.Exit
+	Command.Exiter = exiter.Exit
 
 	setupCwd(t, true)
 	ext := ".sh"

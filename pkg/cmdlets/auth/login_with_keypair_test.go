@@ -10,19 +10,20 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type LoginWithKeypairTestSuite struct {
@@ -229,7 +230,6 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	var execErr error
 	// login
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("newpassword", nil)
@@ -237,13 +237,17 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.promptMock.OnMethod("InputSecret").Once().Return("stillwrong", nil)
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
-	execOut, execOutErr := osutil.CaptureStdout(func() {
-		execErr = Command.Execute()
 
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	execOut, execOutErr := osutil.CaptureStdout(func() {
+		exitCode := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		suite.Require().Equal(1, exitCode, "Exited with code 1")
 	})
 
 	suite.Require().NoError(execOutErr, "Captured stdout with error")
-	suite.Require().Error(execErr, "Expected Failure")
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	suite.Contains(execOut, locale.T("auth_unresolved_keypair_issue_message"))
