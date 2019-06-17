@@ -10,18 +10,19 @@ import (
 )
 
 type Process struct {
-	cmd      *exec.Cmd
-	onOutput func([]byte)
-	onStdout func([]byte)
-	onStderr func([]byte)
-	pty      *os.File
-	stdin    io.WriteCloser
-	combined string
-	stdout   string
-	stderr   string
-	errors   []string
-	running  bool
-	exited   bool
+	cmd       *exec.Cmd
+	onOutput  func([]byte)
+	onStdout  func([]byte)
+	onStderr  func([]byte)
+	pty       *os.File
+	stdin     io.WriteCloser
+	outWriter io.Writer
+	combined  string
+	stdout    string
+	stderr    string
+	errors    []string
+	running   bool
+	exited    bool
 }
 
 func NewProcess(name string, args ...string) *Process {
@@ -43,17 +44,6 @@ func (p *Process) setupStdin() {
 	if err != nil {
 		panic(fmt.Sprintf("Could not pipe stdin: %v\n", err))
 	}
-}
-
-func (p *Process) setupStdout() {
-	outWriter := NewStdWriter()
-	outWriter.OnWrite(func(data []byte) {
-		p.stdout = p.stdout + string(data)
-		p.combined = p.combined + string(data)
-		p.onOutput(data)
-		p.onStdout(data)
-	})
-	p.cmd.Stdout = outWriter
 }
 
 func (p *Process) setupStderr() {
@@ -124,6 +114,23 @@ func (p *Process) Run() error {
 	}
 
 	return nil
+}
+
+type StdReader struct {
+	onRead func(data []byte)
+}
+
+func NewStdReader() *StdReader {
+	return &StdReader{}
+}
+
+func (w *StdReader) OnRead(cb func(data []byte)) {
+	w.onRead = cb
+}
+
+func (w *StdReader) Read(p []byte) (n int, err error) {
+	w.onRead(p)
+	return len(p), nil
 }
 
 type StdWriter struct {
