@@ -4,12 +4,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/stretchr/testify/require"
 
 	_ "github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetRootPath(t *testing.T) {
@@ -19,7 +17,6 @@ func TestGetRootPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := filepath.Join(rootPath, "activestate.yaml")
+	file := filepath.Join(rootPath, "internal/environment/environment_test.go")
 	require.FileExists(t, file)
-	assert.Contains(t, string(fileutils.ReadFileUnsafe(file))[0:50], "name: cli")
 }
