@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
@@ -41,6 +42,8 @@ var Args struct {
 
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
+	checker.RunCommitsBehindNotifier()
+
 	logging.Debug("Execute")
 
 	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
@@ -51,8 +54,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
-	prj := project.Get()
-	script := prj.ScriptByName(Args.Name)
+	script := project.Get().ScriptByName(Args.Name)
 	if script == nil {
 		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
 		return

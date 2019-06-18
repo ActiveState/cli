@@ -291,6 +291,17 @@ func GetSafe() (*Project, *failures.Failure) {
 		return persistentProject, nil
 	}
 
+	project, fail := GetOnce()
+	if fail != nil {
+		return nil, fail
+	}
+
+	project.Persist()
+	return project, nil
+}
+
+// GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
+func GetOnce() (*Project, *failures.Failure) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, failure := getProjectFilePath()
 	if failure != nil {
@@ -307,7 +318,6 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	project.Persist()
 	return project, nil
 }
 

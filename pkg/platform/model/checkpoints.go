@@ -55,7 +55,7 @@ func FetchCheckpointForBranch(branch *mono_models.Branch) (Checkpoint, *failures
 	return FetchCheckpointForCommit(*branch.CommitID)
 }
 
-// FetchCheckpointForBranch fetches the checkpoint for the given commit
+// FetchCheckpointForCommit fetches the checkpoint for the given commit
 func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
 	auth := authentication.Get()
 	params := version_control.NewGetCheckpointParams()

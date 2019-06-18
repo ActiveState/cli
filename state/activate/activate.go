@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -87,6 +88,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
+	checker.RunCommitsBehindNotifier()
+
 	var wg sync.WaitGroup
 
 	logging.Debug("Execute")
@@ -98,8 +101,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project := project.Get()
-	print.Info(locale.T("info_activating_state", project))
+	proj := project.Get()
+	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
@@ -110,7 +113,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.Source().Path()))
+	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
 	_, err := subshell.Activate(&wg)
 	if err != nil {
@@ -123,8 +126,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		wg.Wait()
 	}
 
-	print.Bold(locale.T("info_deactivated", project))
-
+	print.Bold(locale.T("info_deactivated", proj))
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
@@ -185,6 +187,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 	}
 
+	projectfile.Reset()
 	err := os.Chdir(directory)
 	if err != nil {
 		return failures.FailIO.Wrap(err)

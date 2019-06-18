@@ -227,11 +227,25 @@ func Get() *Project {
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
 func GetSafe() (*Project, *failures.Failure) {
 	pjFile, fail := projectfile.GetSafe()
-	if fail.ToError() != nil {
+	if fail != nil {
 		return nil, fail
 	}
 	project, fail := New(pjFile)
-	if fail.ToError() != nil {
+	if fail != nil {
+		return nil, fail
+	}
+
+	return project, nil
+}
+
+// GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
+func GetOnce() (*Project, *failures.Failure) {
+	pjFile, fail := projectfile.GetOnce()
+	if fail != nil {
+		return nil, fail
+	}
+	project, fail := New(pjFile)
+	if fail != nil {
 		return nil, fail
 	}
 
