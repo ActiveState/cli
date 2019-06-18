@@ -238,6 +238,20 @@ func GetSafe() (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
+func GetOnce() (*Project, *failures.Failure) {
+	pjFile, fail := projectfile.GetOnce()
+	if fail.ToError() != nil {
+		return nil, fail
+	}
+	project, fail := New(pjFile)
+	if fail.ToError() != nil {
+		return nil, fail
+	}
+
+	return project, nil
+}
+
 // Platform covers the platform structure
 type Platform struct {
 	platform *projectfile.Platform
