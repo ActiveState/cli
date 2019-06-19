@@ -22,8 +22,9 @@ type UserSecretShare struct {
 	Name *string `json:"name"`
 
 	// project id
+	// Required: true
 	// Format: uuid
-	ProjectID strfmt.UUID `json:"project_id,omitempty"`
+	ProjectID *strfmt.UUID `json:"project_id"`
 
 	// value
 	// Required: true
@@ -63,8 +64,8 @@ func (m *UserSecretShare) validateName(formats strfmt.Registry) error {
 
 func (m *UserSecretShare) validateProjectID(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.ProjectID) { // not required
-		return nil
+	if err := validate.Required("project_id", "body", m.ProjectID); err != nil {
+		return err
 	}
 
 	if err := validate.FormatOf("project_id", "body", "uuid", m.ProjectID.String(), formats); err != nil {

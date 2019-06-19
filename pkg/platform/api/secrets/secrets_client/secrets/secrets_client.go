@@ -120,6 +120,37 @@ func (a *Client) GetAllUserSecrets(params *GetAllUserSecretsParams, authInfo run
 }
 
 /*
+GetDefinitions gets secret definitions for the given project
+
+Get secret definitions for the given project
+*/
+func (a *Client) GetDefinitions(params *GetDefinitionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetDefinitionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetDefinitionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getDefinitions",
+		Method:             "GET",
+		PathPattern:        "/definitions/{projectID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetDefinitionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetDefinitionsOK), nil
+
+}
+
+/*
 SaveAllUserSecrets saves a collection of user secrets
 
 Update the user's vault with the provided collection of secrets
@@ -147,6 +178,37 @@ func (a *Client) SaveAllUserSecrets(params *SaveAllUserSecretsParams, authInfo r
 		return nil, err
 	}
 	return result.(*SaveAllUserSecretsNoContent), nil
+
+}
+
+/*
+SaveDefinition saves a secret definition
+
+Save a secret definition
+*/
+func (a *Client) SaveDefinition(params *SaveDefinitionParams, authInfo runtime.ClientAuthInfoWriter) (*SaveDefinitionNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSaveDefinitionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "saveDefinition",
+		Method:             "PUT",
+		PathPattern:        "/definitions/{projectID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &SaveDefinitionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*SaveDefinitionNoContent), nil
 
 }
 
