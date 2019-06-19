@@ -29,6 +29,9 @@ var (
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
+
+	// FailSetCommitID identifies a failure as being caused by the commit id not getting set
+	FailSetCommitID = failures.Type("projectfile.fail.setcommitid")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -256,7 +259,12 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	}
 	commitQryParam := []byte("$1?commitID=" + commitID)
 
-	return setCommitRE.ReplaceAll(data, commitQryParam), nil
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), commitID) {
+		return nil, FailSetCommitID.New("err_set_commit_id")
+	}
+
+	return out, nil
 }
 
 // Returns the path to the project activestate.yaml

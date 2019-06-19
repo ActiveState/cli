@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 func setCwd(t *testing.T, subdir string) {
@@ -354,7 +355,10 @@ project: https://example.com/xowner/xproject?commitID=123
 	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
 	_, fail := setCommitInYAML(exampleYAML, "")
-	assert.Error(t, fail.ToError())
+	assert.Equal(t, failures.FailDeveloper.Name, fail.Type.Name)
+
+	_, fail = setCommitInYAML([]byte(""), "123")
+	assert.Equal(t, FailSetCommitID.Name, fail.Type.Name)
 
 	out0, fail := setCommitInYAML(exampleYAML, "987")
 	assert.NoError(t, fail.ToError())
