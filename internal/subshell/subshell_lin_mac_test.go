@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,10 +19,9 @@ import (
 
 func TestActivateZsh(t *testing.T) {
 	setup(t)
-	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "zsh")
-	venv, err := Activate(&wg)
+	venv, _, err := GetActivated()
 
 	assert.NoError(t, err, "Should activate")
 

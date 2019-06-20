@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,11 +23,10 @@ func setup(t *testing.T) {
 
 func TestActivate(t *testing.T) {
 	setup(t)
-	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ComSpec", "cmd.exe")
-	venv, err := Activate(&wg)
+	venv, _, err := GetActivated()
 
 	assert.NoError(t, err, "Should activate")
 
@@ -43,14 +41,13 @@ func TestActivate(t *testing.T) {
 
 func TestActivateFailures(t *testing.T) {
 	setup(t)
-	var wg sync.WaitGroup
 
 	shell := os.Getenv("SHELL")
 	comspec := os.Getenv("ComSpec")
 
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
-	_, err := Activate(&wg)
+	_, _, err := GetActivated()
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 

@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -72,10 +71,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(wg *sync.WaitGroup) error {
-	v.wg = wg
-	wg.Add(1)
-
+func (v *SubShell) Activate() <-chan error {
 	shellArgs := []string{"/K", v.rcFile.Name()}
 
 	cmd := exec.Command("cmd", shellArgs...)
@@ -84,19 +80,12 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	v.cmd = cmd
 
-	var err error
+	ec := make(chan error, 1)
 	go func() {
-		// Intentionally ignore error from command.  Given this is an on going
-		// terminal session that the user interacts with, they would have seen
-		// any errors already and dealt with them.
-		err = cmd.Wait()
-		if err != nil {
-			logging.Warning(err.Error())
-		}
-		v.wg.Done()
+		ec <- cmd.Wait()
 	}()
 
-	return err
+	return ec
 }
 
 // Deactivate - see subshell.SubShell

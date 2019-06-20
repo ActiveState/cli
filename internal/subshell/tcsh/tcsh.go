@@ -72,10 +72,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(wg *sync.WaitGroup) error {
-	v.wg = wg
-	wg.Add(1)
-
+func (v *SubShell) Activate() <-chan error {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -91,13 +88,12 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	v.cmd = cmd
 
-	var err error
+	ec := make(chan error, 1)
 	go func() {
-		err = cmd.Wait()
-		v.wg.Done()
+		ec <- cmd.Wait()
 	}()
 
-	return err
+	return ec
 }
 
 // Deactivate - see subshell.SubShell

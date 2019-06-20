@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
@@ -34,7 +33,7 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(wg *sync.WaitGroup) error
+	Activate() <-chan error
 
 	// Deactivate the given subshell
 	Deactivate() error
@@ -73,28 +72,33 @@ type SubShell interface {
 	Quote(value string) string
 }
 
-// Activate the virtual environment
-func Activate(wg *sync.WaitGroup) (SubShell, error) {
+// GetActivated returns the correct subshell for the current environment and
+// activates the relevant virtual environment
+func GetActivated() (SubShell, <-chan error, error) {
 	logging.Debug("Activating Subshell")
 
 	// Why another check here? Because some things like events / run script don't take the virtualenv route,
 	// realistically this shouldn't really happen, but it's a useful failsafe for us
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
+		return nil, nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
 	}
 
 	subs, fail := Get()
 	if fail != nil {
-		return nil, fail
+		return nil, nil, fail
 	}
 
-	err := subs.Activate(wg)
-	if err != nil {
-		return nil, err
+	ec := subs.Activate()
+	select {
+	case err := <-ec:
+		if err != nil {
+			return nil, nil, err
+		}
+	default:
 	}
 
-	return subs, nil
+	return subs, ec, nil
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic

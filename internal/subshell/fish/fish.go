@@ -73,10 +73,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(wg *sync.WaitGroup) error {
-	v.wg = wg
-	wg.Add(1)
-
+func (v *SubShell) Activate() <-chan error {
 	shellArgs := []string{"-i", "-C", fmt.Sprintf("source %s", v.rcFile.Name())}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -84,13 +81,12 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	v.cmd = cmd
 
-	var err error
+	ec := make(chan error, 1)
 	go func() {
-		err = cmd.Wait()
-		v.wg.Done()
+		ec <- cmd.Wait()
 	}()
 
-	return err
+	return ec
 }
 
 // Deactivate - see subshell.SubShell

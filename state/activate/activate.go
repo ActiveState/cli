@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sync"
 
 	"github.com/go-openapi/strfmt"
 
@@ -90,8 +89,6 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	checker.RunCommitsBehindNotifier()
 
-	var wg sync.WaitGroup
-
 	logging.Debug("Execute")
 	if Args.Namespace != "" {
 		fail := activateFromNamespace(Args.Namespace)
@@ -115,15 +112,20 @@ func Execute(cmd *cobra.Command, args []string) {
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
-	_, err := subshell.Activate(&wg)
+	_, ec, err := subshell.GetActivated()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return
 	}
 
-	// Don't exit until our subshell has finished
 	if flag.Lookup("test.v") == nil {
-		wg.Wait()
+		select {
+		case err := <-ec:
+			if err != nil {
+				failures.Handle(err, locale.T("error_ending_activated_subshell"))
+				return
+			}
+		}
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
