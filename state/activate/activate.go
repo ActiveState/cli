@@ -4,14 +4,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -98,15 +102,61 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	proj := project.Get()
+	var proj *project.Project
+	var haltActivationSequence bool
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+
+	for !haltActivationSequence {
+		start := time.Now()
+		proj = project.Get()
+		ec := activate(proj)
+		hc, err := hail.Open(fname)
+		if err != nil {
+			failures.Handle(err, locale.T("error_opening_hail_channel"))
+			return
+		}
+
+		if flag.Lookup("test.v") != nil {
+			break
+		}
+
+		var haltHailingSequence bool
+
+		for !haltHailingSequence {
+			select {
+			case file := <-hc:
+				_ = file
+				_ = start
+				// if file is older than current loop, continue
+				// if file commit id == project commit id, continue
+
+				haltHailingSequence = true
+				continue
+			case err := <-ec:
+				if err != nil {
+					failures.Handle(err, locale.T("error_ending_activated_subshell"))
+					return
+				}
+
+				haltHailingSequence = true
+				haltActivationSequence = true
+				continue
+			}
+		}
+	}
+
+	print.Bold(locale.T("info_deactivated", proj))
+}
+
+func activate(proj *project.Project) <-chan error {
 	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail = venv.Activate()
+	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return
+		return nil
 	}
 
 	// Save path to project for future use
@@ -115,20 +165,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	_, ec, err := subshell.GetActivated()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return
+		return nil
 	}
 
-	if flag.Lookup("test.v") == nil {
-		select {
-		case err := <-ec:
-			if err != nil {
-				failures.Handle(err, locale.T("error_ending_activated_subshell"))
-				return
-			}
-		}
-	}
-
-	print.Bold(locale.T("info_deactivated", proj))
+	return ec
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
