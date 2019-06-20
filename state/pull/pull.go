@@ -1,7 +1,6 @@
 package pull
 
 import (
-	"os"
 	"path"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -51,12 +50,10 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	print.Line(locale.T("pull_is_updated"))
 
-	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
-		// must happen last in this function scope (defer if needed)
-		if fail := hail.Send(fname, nil); fail != nil {
-			logging.Error("failed to send hail via %q: %s", fname, fail)
-		}
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+	// must happen last in this function scope (defer if needed)
+	if fail := hail.Send(fname, nil); fail != nil {
+		logging.Error("failed to send hail via %q: %s", fname, fail)
 	}
 }
 
