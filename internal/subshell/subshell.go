@@ -72,9 +72,9 @@ type SubShell interface {
 	Quote(value string) string
 }
 
-// GetActivated returns the correct subshell for the current environment and
-// activates the relevant virtual environment
-func GetActivated() (SubShell, <-chan error, error) {
+// Activate returns the correct subshell for the current environment after
+// activating the relevant virtual environment
+func Activate() (SubShell, <-chan error, error) {
 	logging.Debug("Activating Subshell")
 
 	// Why another check here? Because some things like events / run script don't take the virtualenv route,

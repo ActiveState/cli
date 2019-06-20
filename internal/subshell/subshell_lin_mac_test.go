@@ -21,7 +21,7 @@ func TestActivateZsh(t *testing.T) {
 	setup(t)
 
 	os.Setenv("SHELL", "zsh")
-	venv, _, err := GetActivated()
+	venv, _, err := Activate()
 
 	assert.NoError(t, err, "Should activate")
 

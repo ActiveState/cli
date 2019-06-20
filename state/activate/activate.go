@@ -162,7 +162,7 @@ func activate(proj *project.Project) <-chan error {
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
-	_, ec, err := subshell.GetActivated()
+	_, ec, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return nil
