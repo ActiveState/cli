@@ -109,7 +109,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	for !haltActivationSequence {
 		start := time.Now()
 		proj = project.Get()
-		ec := activate(proj)
+		ec, ok := activate(proj)
+		if !ok {
+			return
+		}
+
 		hc, err := hail.Open(fname)
 		if err != nil {
 			failures.Handle(err, locale.T("error_opening_hail_channel"))
@@ -148,7 +152,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	print.Bold(locale.T("info_deactivated", proj))
 }
 
-func activate(proj *project.Project) <-chan error {
+func activate(proj *project.Project) (<-chan error, bool) {
 	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -156,7 +160,7 @@ func activate(proj *project.Project) <-chan error {
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return nil
+		return nil, false
 	}
 
 	// Save path to project for future use
@@ -165,10 +169,10 @@ func activate(proj *project.Project) <-chan error {
 	_, ec, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return nil
+		return nil, false
 	}
 
-	return ec
+	return ec, true
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
