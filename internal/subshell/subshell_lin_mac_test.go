@@ -21,14 +21,14 @@ func TestActivateZsh(t *testing.T) {
 	setup(t)
 
 	os.Setenv("SHELL", "zsh")
-	venv, _, err := Activate()
+	venv, _, fail := Activate()
 
-	assert.NoError(t, err, "Should activate")
+	assert.NoError(t, fail.ToError(), "Should activate")
 
 	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
 	assert.True(t, venv.IsActive(), "Subshell should be active")
 
-	err = venv.Deactivate()
+	err := venv.Deactivate()
 	assert.NoError(t, err, "Should deactivate")
 
 	assert.False(t, venv.IsActive(), "Subshell should be inactive")
@@ -44,8 +44,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 
-	subs, err := Get()
-	assert.NoError(t, err)
+	subs, fail := Get()
+	assert.NoError(t, fail.ToError())
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	assert.NoError(t, err)
@@ -71,8 +71,8 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Setenv("SHELL", "bash")
 
-	subs, err := Get()
-	assert.NoError(t, err)
+	subs, fail := Get()
+	assert.NoError(t, fail.ToError())
 
 	code, err := subs.Run("some-command-that-doesnt-exist")
 	assert.Equal(t, 127, code, "Returns exit code 127")

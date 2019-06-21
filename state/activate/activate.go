@@ -109,7 +109,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	for !haltActivationSequence {
 		start := time.Now()
 		proj = project.Get()
-		ec, ok := activate(proj)
+		fc, ok := activate(proj)
 		if !ok {
 			return
 		}
@@ -136,9 +136,9 @@ func Execute(cmd *cobra.Command, args []string) {
 
 				haltHailingSequence = true
 				continue
-			case err := <-ec:
-				if err != nil {
-					failures.Handle(err, locale.T("error_ending_activated_subshell"))
+			case fail := <-fc:
+				if fail != nil {
+					failures.Handle(fail, locale.T("error_ending_activated_subshell"))
 					return
 				}
 
@@ -152,7 +152,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	print.Bold(locale.T("info_deactivated", proj))
 }
 
-func activate(proj *project.Project) (<-chan error, bool) {
+func activate(proj *project.Project) (<-chan *failures.Failure, bool) {
 	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -166,13 +166,13 @@ func activate(proj *project.Project) (<-chan error, bool) {
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
-	_, ec, err := subshell.Activate()
+	_, fc, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
 		return nil, false
 	}
 
-	return ec, true
+	return fc, true
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user

@@ -72,7 +72,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan error {
+func (v *SubShell) Activate() <-chan *failures.Failure {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -88,12 +88,14 @@ func (v *SubShell) Activate() <-chan error {
 
 	v.cmd = cmd
 
-	ec := make(chan error, 1)
+	fc := make(chan *failures.Failure, 1)
 	go func() {
-		ec <- cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			fc <- failures.FailExecPkg.Wrap(err)
+		}
 	}()
 
-	return ec
+	return fc
 }
 
 // Deactivate - see subshell.SubShell

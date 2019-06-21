@@ -78,20 +78,20 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan error {
-	ec := make(chan error, 1)
+func (v *SubShell) Activate() <-chan *failures.Failure {
+	fc := make(chan *failures.Failure, 1)
 
 	path, err := ioutil.TempDir("", "state-zsh")
 	if err != nil {
-		ec <- err
-		return ec
+		fc <- failures.FailOS.Wrap(err)
+		return fc
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
 	fail := fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
 	if fail != nil {
-		ec <- fail
-		return ec
+		fc <- fail
+		return fc
 	}
 
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
@@ -109,8 +109,8 @@ func (v *SubShell) Activate() <-chan error {
 
 	fail = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
 	if fail != nil {
-		ec <- fail
-		return ec
+		fc <- fail
+		return fc
 	}
 	os.Setenv("ZDOTDIR", path)
 
@@ -122,10 +122,12 @@ func (v *SubShell) Activate() <-chan error {
 	v.cmd = cmd
 
 	go func() {
-		ec <- cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			fc <- failures.FailExecPkg.Wrap(err)
+		}
 	}()
 
-	return ec
+	return fc
 }
 
 // Deactivate - see subshell.SubShell

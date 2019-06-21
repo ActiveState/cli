@@ -73,7 +73,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan error {
+func (v *SubShell) Activate() <-chan *failures.Failure {
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -81,12 +81,14 @@ func (v *SubShell) Activate() <-chan error {
 
 	v.cmd = cmd
 
-	ec := make(chan error, 1)
+	fc := make(chan *failures.Failure, 1)
 	go func() {
-		ec <- cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			fc <- failures.FailExecPkg.Wrap(err)
+		}
 	}()
 
-	return ec
+	return fc
 }
 
 // Deactivate - see subshell.SubShell
