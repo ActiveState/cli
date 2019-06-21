@@ -7,7 +7,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -107,53 +106,63 @@ func Execute(cmd *cobra.Command, args []string) {
 	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
 
 	for !haltActivationSequence {
-		start := time.Now()
-		proj = project.Get()
-		fc, ok := activate(proj)
-		if !ok {
-			return
-		}
-
-		if flag.Lookup("test.v") != nil {
-			break
-		}
-
-		hc, err := hail.Open(fname)
-		if err != nil {
-			failures.Handle(err, locale.T("error_opening_hail_channel"))
-			return
-		}
-
-		var haltHailingSequence bool
-
-		for !haltHailingSequence {
-			select {
-			case file := <-hc:
-				_ = file
-				_ = start
-				// if file is older than current loop, continue
-				// if file commit id == project commit id, continue
-
-				haltHailingSequence = true
-				continue
-
-			case fail := <-fc:
-				if fail != nil {
-					failures.Handle(fail, locale.T("error_ending_activated_subshell"))
-					return
-				}
-
-				haltHailingSequence = true
+		func() {
+			proj = project.Get()
+			subs, fc, ok := activate(proj)
+			if !ok {
+				fmt.Println("activate not ok")
 				haltActivationSequence = true
-				continue
+				return
 			}
-		}
+
+			if flag.Lookup("test.v") != nil {
+				haltActivationSequence = true
+				return
+			}
+
+			done := make(chan struct{})
+			defer close(done)
+			rc, fail := hail.Open(done, fname)
+			if fail != nil {
+				fmt.Println("---------------------------------------------------->", fail)
+				failures.Handle(fail, locale.T("error_opening_hail_channel"))
+				haltActivationSequence = true
+				return
+			}
+
+			var haltHailingSequence bool
+
+			for !haltHailingSequence {
+				select {
+				case rcvd := <-rc:
+					_ = rcvd
+					// if file is older than current loop, continue
+					// if file commit id == project commit id, continue
+
+					_ = subs.Deactivate()
+					print.Bold(locale.T("info_deactivated", proj))
+					print.Bold(locale.T("info_reactivating", proj))
+					haltHailingSequence = true
+					continue
+
+				case fail := <-fc:
+					if fail != nil {
+						failures.Handle(fail, locale.T("error_ending_activated_subshell"))
+						return
+					}
+
+					haltHailingSequence = true
+					haltActivationSequence = true
+					continue
+				}
+			}
+		}()
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
 }
 
-func activate(proj *project.Project) (<-chan *failures.Failure, bool) {
+func activate(proj *project.Project) (subshell.SubShell, <-chan *failures.Failure, bool) {
 	print.Info(locale.T("info_activating_state", proj))
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
@@ -161,19 +170,19 @@ func activate(proj *project.Project) (<-chan *failures.Failure, bool) {
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return nil, false
+		return nil, nil, false
 	}
 
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
 
-	_, fc, err := subshell.Activate()
+	subs, fc, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return nil, false
+		return nil, nil, false
 	}
 
-	return fc, true
+	return subs, fc, true
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
