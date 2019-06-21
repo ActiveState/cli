@@ -114,14 +114,14 @@ func Execute(cmd *cobra.Command, args []string) {
 			return
 		}
 
+		if flag.Lookup("test.v") != nil {
+			break
+		}
+
 		hc, err := hail.Open(fname)
 		if err != nil {
 			failures.Handle(err, locale.T("error_opening_hail_channel"))
 			return
-		}
-
-		if flag.Lookup("test.v") != nil {
-			break
 		}
 
 		var haltHailingSequence bool
@@ -136,6 +136,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 				haltHailingSequence = true
 				continue
+
 			case fail := <-fc:
 				if fail != nil {
 					failures.Handle(fail, locale.T("error_ending_activated_subshell"))
