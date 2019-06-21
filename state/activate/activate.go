@@ -84,6 +84,8 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	break
+
 	updater.PrintUpdateMessage()
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
