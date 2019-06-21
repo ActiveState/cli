@@ -40,6 +40,17 @@ var (
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
+// Scope covers what scope a secret belongs to
+type Scope string
+
+var (
+	// ScopeUser is the user scope
+	ScopeUser Scope = "user"
+
+	//ScopeProject is the project scope
+	ScopeProject Scope = "project"
+)
+
 var persistentClient *Client
 
 // Client encapsulates a Secrets Service API client and its configuration
