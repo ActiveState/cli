@@ -31,9 +31,8 @@ type UserSecret struct {
 	OrganizationID *strfmt.UUID `json:"organization_id"`
 
 	// project id
-	// Required: true
 	// Format: uuid
-	ProjectID *strfmt.UUID `json:"project_id"`
+	ProjectID strfmt.UUID `json:"project_id,omitempty"`
 
 	// secret id
 	// Required: true
@@ -121,8 +120,8 @@ func (m *UserSecret) validateOrganizationID(formats strfmt.Registry) error {
 
 func (m *UserSecret) validateProjectID(formats strfmt.Registry) error {
 
-	if err := validate.Required("project_id", "body", m.ProjectID); err != nil {
-		return err
+	if swag.IsZero(m.ProjectID) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("project_id", "body", "uuid", m.ProjectID.String(), formats); err != nil {
