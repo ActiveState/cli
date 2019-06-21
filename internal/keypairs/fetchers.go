@@ -2,6 +2,7 @@ package keypairs
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -16,6 +17,7 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, *failure
 		if api.ErrorCode(err) == 404 {
 			return nil, secretsapi.FailKeypairNotFound.New("keypair_err_not_found")
 		}
+		logging.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
 		return nil, api.FailUnknown.Wrap(err)
 	}
 

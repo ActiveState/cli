@@ -199,8 +199,21 @@ auth_err_unrecoverable_keypair:
   other: "Unrecoverable keypair issue"
 previous_password_prompt:
   other: "Enter your previous password:"
+secret_value_prompt_summary:
+  other: | 
+
+    The action you are taking uses a secret that has not been given a value yet.
+    Name: {{.V0}}
+    Description: {{.V1}}
+    Scope: {{.V2}} ({{.V3}})
 secret_value_prompt:
-  other: "Enter value for variable '{{.V0}}':"
+  other: "Please enter a value for secret \"{{.V0}}\":"
+secret_prompt_user:
+  other: Only you can access the value
+secret_prompt_project:
+  other: Organization members can access the value
+secret_no_description:
+  other: "- (This secret has no description, you can set one via the web dashboard)"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -544,6 +557,8 @@ secrets_header_name:
   other: Name
 secrets_header_scope:
   other: Scope
+secrets_header_description:
+  other: Description
 secrets_header_usage:
   other: Usage
 variable_field_deprecation_warning:

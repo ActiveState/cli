@@ -3,19 +3,18 @@ package secrets
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client"
-
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -39,6 +38,17 @@ var (
 
 	// FailUserSecretSave indicates a failure to save a user secret.
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
+)
+
+// Scope covers what scope a secret belongs to
+type Scope string
+
+var (
+	// ScopeUser is the user scope
+	ScopeUser Scope = "user"
+
+	//ScopeProject is the project scope
+	ScopeProject Scope = "project"
 )
 
 var persistentClient *Client
@@ -68,8 +78,10 @@ func Reset() {
 // API request in order to authenticate each request.
 func NewClient(schema, host, basePath, bearerToken string) *Client {
 	logging.Debug("secrets-api scheme=%s host=%s base_path=%s", schema, host, basePath)
+	transportRuntime := httptransport.New(host, basePath, []string{schema})
+	//transportRuntime.SetDebug(true)
 	secretsClient := &Client{
-		Secrets: secrets_client.New(httptransport.New(host, basePath, []string{schema}), strfmt.Default),
+		Secrets: secrets_client.New(transportRuntime, strfmt.Default),
 		BaseURI: fmt.Sprintf("%s://%s%s", schema, host, basePath),
 		Auth:    httptransport.BearerToken(bearerToken),
 	}
@@ -127,6 +139,22 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
+	if err != nil {
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		default:
+			return nil, api.FailUnknown.Wrap(err)
+		}
+	}
+	return getOk.Payload, nil
+}
+
+// FetchDefinitions fetchs the secret definitions for a given project.
+func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+	params := secretsapiClient.NewGetDefinitionsParams()
+	params.ProjectID = projectID
+	getOk, err := client.Secrets.Secrets.GetDefinitions(params, client.Auth)
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
