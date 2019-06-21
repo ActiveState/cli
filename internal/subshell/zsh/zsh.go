@@ -124,7 +124,9 @@ func (v *SubShell) Activate() <-chan *failures.Failure {
 	go func() {
 		if err := cmd.Wait(); err != nil {
 			fc <- failures.FailExecPkg.Wrap(err)
+			return
 		}
+		fc <- nil
 	}()
 
 	return fc
