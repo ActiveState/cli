@@ -66,9 +66,8 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
-	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
-		// if we don't do it this way, something with the mock framework breaks
-		return 200, "organizations/00010001-0001-0001-0001-000100010001/user_secrets"
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
+		return 200, "definitions/00020002-0002-0002-0002-000200020002"
 	})
 
 	var execErr error
@@ -81,7 +80,9 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
 
 	suite.Contains(strings.TrimSpace(outStr), "proj-secret")
-	suite.Contains(strings.TrimSpace(outStr), "user-proj-secret")
+	suite.Contains(strings.TrimSpace(outStr), "proj-secret-description")
+	suite.Contains(strings.TrimSpace(outStr), "user-secret")
+	suite.Contains(strings.TrimSpace(outStr), "user-secret-description")
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {
