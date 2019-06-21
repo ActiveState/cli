@@ -544,6 +544,8 @@ secrets_header_name:
   other: Name
 secrets_header_scope:
   other: Scope
+secrets_header_description:
+  other: Description
 secrets_header_usage:
   other: Usage
 variable_field_deprecation_warning:
