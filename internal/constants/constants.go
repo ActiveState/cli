@@ -172,3 +172,6 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
+
+// RollbarToken is the token used to talk to rollbar
+const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
