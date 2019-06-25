@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 	"os/exec"
-	"strings"
+	"syscall"
 )
 
 type xcmd struct {
-	*exec.Cmd
+	cmd *exec.Cmd
 }
 
 func newXCmd() (*xcmd, error) {
@@ -22,20 +22,23 @@ func newXCmd() (*xcmd, error) {
 	}
 
 	c := &xcmd{
-		Cmd: cmd,
+		cmd: cmd,
 	}
 
 	return c, nil
 }
 
 func (c *xcmd) close() error {
-	return c.Cmd.Process.Kill()
+	return c.cmd.Process.Signal(syscall.SIGTERM)
 }
 
 func (c *xcmd) wait() error {
-	if err := c.Wait(); err != nil {
-		if !strings.Contains(err.Error(), "killed") {
-			return err
+	if err := c.cmd.Wait(); err != nil {
+		if eerr, ok := err.(*exec.ExitError); ok {
+			if eerr.Exited() && eerr.ExitCode() == -1 {
+				return nil
+			}
+			return eerr
 		}
 	}
 	return nil

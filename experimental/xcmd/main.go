@@ -1,14 +1,20 @@
 package main
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 func main() {
-	for i := 0; i < 10; i++ {
+	os.Setenv("CLITEST", "yeup")
+
+	for i := 0; i < 2; i++ {
 		cmd, err := newXCmd()
 		check(err)
 
 		go func() {
 			time.Sleep(time.Second * 6)
+
 			check(cmd.close())
 		}()
 
