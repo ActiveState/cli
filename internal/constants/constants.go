@@ -105,7 +105,7 @@ const MonoURLProd = "https://platform.activestate.com" + MonoAPIPath
 const MonoURLStage = "https://staging.activestate.build" + MonoAPIPath
 
 // MonoURLDev is the host used for platform api calls when on staging
-const MonoURLDev = MonoURLStage
+const MonoURLDev = "http://localhost" + MonoAPIPath
 
 // SecretsAPIPath is the api path used for the secrets api
 const SecretsAPIPath = "/api/secrets/v1"
@@ -117,7 +117,7 @@ const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
 const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
 
 // SecretsURLDev is the host used for secrets api calls when on dev
-const SecretsURLDev = "http://localhost:8080" + SecretsAPIPath
+const SecretsURLDev = "http://localhost" + SecretsAPIPath
 
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
 const ActivePythonDistsDir = "python"
@@ -138,10 +138,10 @@ const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
 const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
 
 // HeadChefURLDev is the host used for platform api calls when on staging
-const HeadChefURLDev = HeadChefURLStage
+const HeadChefURLDev = "http://localhost" + HeadChefAPIPath
 
 // HeadChefOrigin is the Origin header to use when making head-chef requests
-const HeadChefOrigin = "https://localhost"
+const HeadChefOrigin = "http://localhost"
 
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api"
@@ -153,7 +153,7 @@ const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
 const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
 
 // InventoryURLDev is the host used for platform api calls when on staging
-const InventoryURLDev = InventoryURLStage
+const InventoryURLDev = "http://localhost" + InventoryAPIPath
 
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
 const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"

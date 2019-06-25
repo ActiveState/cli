@@ -107,6 +107,16 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 	return kp, nil
 }
 
+// DefsByProject fetches the secret definitions for the current user relevant to the given project
+func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+	pjm, fail := model.FetchProjectByName(owner, projectName)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return secretsapi.FetchDefinitions(secretsClient, pjm.ProjectID)
+}
+
 // ByProject fetches the secrets for the current user relevant to the given project
 func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, *failures.Failure) {
 	result := []*secretsModels.UserSecret{}
