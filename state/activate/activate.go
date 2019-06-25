@@ -84,8 +84,6 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	break
-
 	updater.PrintUpdateMessage()
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
@@ -104,85 +102,18 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	var proj *project.Project
-	var haltActivationSequence bool
-	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+	for {
+		proj = project.Get()
+		print.Info(locale.T("info_activating_state", proj))
 
-	for !haltActivationSequence {
-		func() {
-			proj = project.Get()
-			subs, fc, ok := activate(proj)
-			if !ok {
-				fmt.Println("activate not ok")
-				haltActivationSequence = true
-				return
-			}
+		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
+			break
+		}
 
-			if flag.Lookup("test.v") != nil {
-				haltActivationSequence = true
-				return
-			}
-
-			done := make(chan struct{})
-			defer close(done)
-			rc, fail := hail.Open(done, fname)
-			if fail != nil {
-				failures.Handle(fail, locale.T("error_opening_hail_channel"))
-				haltActivationSequence = true
-				return
-			}
-
-			var haltHailingSequence bool
-
-			for !haltHailingSequence {
-				select {
-				case <-rc:
-					haltHailingSequence = true
-
-					derr := subs.Deactivate()
-					fmt.Println(derr) // deal with derr
-
-					print.Bold(locale.T("info_reactivating", proj))
-					continue
-
-				case fail := <-fc:
-					haltHailingSequence = true
-					haltActivationSequence = true
-
-					if fail != nil {
-						failures.Handle(fail, locale.T("error_ending_activated_subshell"))
-						return
-					}
-
-					continue
-				}
-			}
-		}()
+		print.Bold(locale.T("info_reactivating", proj))
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
-}
-
-func activate(proj *project.Project) (subshell.SubShell, <-chan *failures.Failure, bool) {
-	print.Info(locale.T("info_activating_state", proj))
-	venv := virtualenvironment.Get()
-	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail := venv.Activate()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return nil, nil, false
-	}
-
-	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
-
-	subs, fc, err := subshell.Activate()
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return nil, nil, false
-	}
-
-	return subs, fc, true
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
@@ -340,4 +271,59 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	}
 
 	return nil, nil
+}
+
+// activate will activate the venv and subshell. It is meant to be run in a loop
+// with the return value indicating whether another iteration is warranted.
+func activate(owner, name, srcPath string) bool {
+	venv := virtualenvironment.Get()
+	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+	fail := venv.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	// Save path to project for future use
+	savePathForNamespace(fmt.Sprintf("%s/%s", owner, name), filepath.Dir(srcPath))
+
+	subs, err := subshell.Activate()
+	if err != nil {
+		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
+		return false
+	}
+
+	if flag.Lookup("test.v") != nil {
+		return false
+	}
+
+	done := make(chan struct{})
+	defer close(done)
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+
+	hails, fail := hail.Open(done, fname)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_opening_hail_channel")) // l10n
+		return false
+	}
+
+	return listenForReactivation(hails, subs)
+}
+
+func listenForReactivation(hs <-chan *hail.Received, subs subshell.SubShell) bool {
+	select {
+	case <-hs:
+		err := subs.Deactivate()
+		fmt.Println(err) // deal with err
+
+		return true
+
+	case fail := <-subs.Failures():
+		if fail != nil {
+			failures.Handle(fail, locale.T("error_ending_activated_subshell")) // l10n ?
+		}
+
+		return false
+	}
 }

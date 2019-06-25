@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"sync"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -21,8 +20,8 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	wg     *sync.WaitGroup
 	env    []string
+	fs     chan *failures.Failure
 }
 
 // Shell - see subshell.SubShell
@@ -71,7 +70,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan *failures.Failure {
+func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{"/K", v.rcFile.Name()}
 
 	cmd := exec.Command("cmd", shellArgs...)
@@ -79,17 +78,22 @@ func (v *SubShell) Activate() <-chan *failures.Failure {
 	cmd.Start()
 
 	v.cmd = cmd
+	v.fs = make(chan *failures.Failure, 1)
 
-	fc := make(chan *failures.Failure, 1)
 	go func() {
 		if err := cmd.Wait(); err != nil {
-			fc <- failures.FailExecPkg.Wrap(err)
+			v.fs <- failures.FailExecPkg.Wrap(err)
 			return
 		}
-		fc <- nil
+		v.fs <- nil
 	}()
 
-	return fc
+	return nil
+}
+
+// Failures returns a channel for receiving errors related to active behavior
+func (v *SubShell) Failures() <-chan *failures.Failure {
+	return v.fs
 }
 
 // Deactivate - see subshell.SubShell

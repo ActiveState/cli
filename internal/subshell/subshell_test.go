@@ -26,7 +26,7 @@ func TestActivate(t *testing.T) {
 
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ComSpec", "cmd.exe")
-	venv, _, fail := Activate()
+	venv, fail := Activate()
 
 	assert.NoError(t, fail.ToError(), "Should activate")
 
@@ -47,7 +47,7 @@ func TestActivateFailures(t *testing.T) {
 
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
-	_, _, err := Activate()
+	_, err := Activate()
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 

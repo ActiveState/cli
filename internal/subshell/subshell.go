@@ -33,7 +33,10 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate() <-chan *failures.Failure
+	Activate() *failures.Failure
+
+	// Failures returns a channel to receive failures
+	Failures() <-chan *failures.Failure
 
 	// Deactivate the given subshell
 	Deactivate() error
@@ -74,31 +77,22 @@ type SubShell interface {
 
 // Activate returns the correct subshell for the current environment after
 // activating the relevant virtual environment
-func Activate() (SubShell, <-chan *failures.Failure, *failures.Failure) {
+func Activate() (SubShell, *failures.Failure) {
 	logging.Debug("Activating Subshell")
 
 	// Why another check here? Because some things like events / run script don't take the virtualenv route,
 	// realistically this shouldn't really happen, but it's a useful failsafe for us
 	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
 	if activeProject != "" {
-		return nil, nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
+		return nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
 	}
 
 	subs, fail := Get()
 	if fail != nil {
-		return nil, nil, fail
+		return nil, fail
 	}
 
-	fc := subs.Activate()
-	select {
-	case fail := <-fc:
-		if fail != nil {
-			return nil, nil, fail
-		}
-	default:
-	}
-
-	return subs, fc, nil
+	return subs, subs.Activate()
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic

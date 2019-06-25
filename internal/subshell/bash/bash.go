@@ -24,6 +24,7 @@ type SubShell struct {
 	rcFile *os.File
 	cmd    *exec.Cmd
 	env    []string
+	fs     chan *failures.Failure
 }
 
 // Shell - see subshell.SubShell
@@ -72,31 +73,35 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan *failures.Failure {
+func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
 
 	v.cmd = cmd
+	v.fs = make(chan *failures.Failure, 1)
 
-	fc := make(chan *failures.Failure, 1)
 	go func() {
-
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
 				if eerr.Exited() && eerr.ExitCode() == -1 {
-					fc <- nil
+					v.fs <- nil
 					return
 				}
-				fc <- failures.FailExecPkg.Wrap(eerr)
+				v.fs <- failures.FailExecPkg.Wrap(eerr)
 				return
 			}
 		}
-		fc <- nil
+		v.fs <- nil
 	}()
 
-	return fc
+	return nil
+}
+
+// Failures returns a channel for receiving errors related to active behavior
+func (v *SubShell) Failures() <-chan *failures.Failure {
+	return v.fs
 }
 
 // Deactivate - see subshell.SubShell

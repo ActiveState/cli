@@ -9,7 +9,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -28,8 +27,8 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	wg     *sync.WaitGroup
 	env    []string
+	fs     chan *failures.Failure
 }
 
 // Shell - see subshell.SubShell
@@ -78,20 +77,17 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate() <-chan *failures.Failure {
-	fc := make(chan *failures.Failure, 1)
+func (v *SubShell) Activate() *failures.Failure {
 
 	path, err := ioutil.TempDir("", "state-zsh")
 	if err != nil {
-		fc <- failures.FailOS.Wrap(err)
-		return fc
+		return failures.FailOS.Wrap(err)
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
 	fail := fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
 	if fail != nil {
-		fc <- fail
-		return fc
+		return fail
 	}
 
 	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
@@ -109,8 +105,7 @@ func (v *SubShell) Activate() <-chan *failures.Failure {
 
 	fail = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
 	if fail != nil {
-		fc <- fail
-		return fc
+		return fail
 	}
 	os.Setenv("ZDOTDIR", path)
 
@@ -120,16 +115,22 @@ func (v *SubShell) Activate() <-chan *failures.Failure {
 	cmd.Start()
 
 	v.cmd = cmd
+	v.fs = make(chan *failures.Failure, 1)
 
 	go func() {
 		if err := cmd.Wait(); err != nil {
-			fc <- failures.FailExecPkg.Wrap(err)
+			v.fs <- failures.FailExecPkg.Wrap(err)
 			return
 		}
-		fc <- nil
+		v.fs <- nil
 	}()
 
-	return fc
+	return nil
+}
+
+// Failures returns a channel for receiving errors related to active behavior
+func (v *SubShell) Failures() <-chan *failures.Failure {
+	return v.fs
 }
 
 // Deactivate - see subshell.SubShell
