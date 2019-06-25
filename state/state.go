@@ -106,7 +106,7 @@ func main() {
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
-	if fail != nil && !fail.Type.Matches(deprecation.FailTimeout) {
+	if fail != nil && !fail.Type.Matches(failures.FailNonFatal) {
 		logging.Error("Could not check for deprecation: %s", fail.Error())
 	}
 	if deprecated != nil {
