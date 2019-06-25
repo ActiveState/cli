@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
@@ -23,7 +23,6 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	wg     *sync.WaitGroup
 	env    []string
 }
 
@@ -83,9 +82,16 @@ func (v *SubShell) Activate() <-chan *failures.Failure {
 
 	fc := make(chan *failures.Failure, 1)
 	go func() {
+
 		if err := cmd.Wait(); err != nil {
-			fc <- failures.FailExecPkg.Wrap(err)
-			return
+			if eerr, ok := err.(*exec.ExitError); ok {
+				if eerr.Exited() && eerr.ExitCode() == -1 {
+					fc <- nil
+					return
+				}
+				fc <- failures.FailExecPkg.Wrap(eerr)
+				return
+			}
 		}
 		fc <- nil
 	}()
@@ -101,14 +107,14 @@ func (v *SubShell) Deactivate() error {
 
 	var err error
 	func() {
-		// Go's Process.Kill is not very safe to use, it throws a panic if the process no longer exists
+		// may panic if process no longer exists
 		defer failures.Recover()
-		err = v.cmd.Process.Kill()
+		err = v.cmd.Process.Signal(syscall.SIGTERM)
 	}()
-
 	if err == nil {
 		v.cmd = nil
 	}
+
 	return err
 }
 

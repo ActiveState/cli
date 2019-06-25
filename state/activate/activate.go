@@ -126,7 +126,6 @@ func Execute(cmd *cobra.Command, args []string) {
 			defer close(done)
 			rc, fail := hail.Open(done, fname)
 			if fail != nil {
-				fmt.Println("---------------------------------------------------->", fail)
 				failures.Handle(fail, locale.T("error_opening_hail_channel"))
 				haltActivationSequence = true
 				return
@@ -136,25 +135,24 @@ func Execute(cmd *cobra.Command, args []string) {
 
 			for !haltHailingSequence {
 				select {
-				case rcvd := <-rc:
-					_ = rcvd
-					// if file is older than current loop, continue
-					// if file commit id == project commit id, continue
-
-					_ = subs.Deactivate()
-					print.Bold(locale.T("info_deactivated", proj))
-					print.Bold(locale.T("info_reactivating", proj))
+				case <-rc:
 					haltHailingSequence = true
+
+					derr := subs.Deactivate()
+					fmt.Println(derr) // deal with derr
+
+					print.Bold(locale.T("info_reactivating", proj))
 					continue
 
 				case fail := <-fc:
+					haltHailingSequence = true
+					haltActivationSequence = true
+
 					if fail != nil {
 						failures.Handle(fail, locale.T("error_ending_activated_subshell"))
 						return
 					}
 
-					haltHailingSequence = true
-					haltActivationSequence = true
 					continue
 				}
 			}
