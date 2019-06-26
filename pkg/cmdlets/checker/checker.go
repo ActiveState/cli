@@ -15,7 +15,7 @@ import (
 func RunCommitsBehindNotifier() {
 	p, fail := project.GetOnce()
 	if fail != nil {
-		logging.Error("Could not retrieve project, error: %v", fail.Error())
+		logging.Warning("Could not retrieve project, error: %v", fail.Error())
 		return
 	}
 
@@ -27,7 +27,7 @@ func RunCommitsBehindNotifier() {
 			return
 		}
 
-		logging.Error(locale.T("err_could_not_get_commit_behind_count"))
+		logging.Warning(locale.T("err_could_not_get_commit_behind_count"))
 		return
 	}
 	if count > 0 {
