@@ -7,8 +7,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/rollbar/rollbar-go"
+
 	"github.com/ActiveState/cli/internal/config"
 )
+
+// Logger describes a logging function, like Debug, Error, Warning, etc.
+type Logger func(msg string, args ...interface{})
 
 type fileHandler struct {
 	formatter Formatter
@@ -28,8 +33,13 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, "log.txt")
 
+	if ctx.Level == "ERROR" {
+		rollbar.Error(fmt.Errorf(message, args...))
+	}
+
+	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose {
-		fmt.Fprintln(os.Stderr, l.formatter.Format(ctx, message, args...))
+		fmt.Fprintln(os.Stderr, message)
 	}
 
 	if l.file == nil {
@@ -40,7 +50,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 		l.file = f
 	}
 
-	_, err := l.file.WriteString(l.formatter.Format(ctx, message, args...) + "\n")
+	_, err := l.file.WriteString(message + "\n")
 	if err != nil {
 		return err
 	}

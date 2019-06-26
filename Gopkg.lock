@@ -549,6 +549,14 @@
   version = "v1.1"
 
 [[projects]]
+  digest = "1:246edc359769a0657d6c7b400d03f34f0a5f0ffef70ef6d14e130245906b042b"
+  name = "github.com/rollbar/rollbar-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "0838415a95e06523ce50f5d06aee37713fc99e6a"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:3763511b38744179c12c34edd3a0694bdfe653f5f5a509a02e600c90ce3593f3"
   name = "github.com/sacOO7/go-logger"
@@ -806,11 +814,11 @@
     "github.com/kardianos/osext",
     "github.com/mash/go-tempfile-suffix",
     "github.com/mitchellh/go-ps",
-    "github.com/mitchellh/mapstructure",
     "github.com/nicksnyder/go-i18n/i18n",
     "github.com/phayes/permbits",
     "github.com/pkg/errors",
     "github.com/posener/wstest",
+    "github.com/rollbar/rollbar-go",
     "github.com/sacOO7/gowebsocket",
     "github.com/shibukawa/configdir",
     "github.com/skratchdot/open-golang/open",

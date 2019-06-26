@@ -36,12 +36,6 @@ func TestTypeIsSet(t *testing.T) {
 	assert.NotNil(t, err.Type, "Type is set")
 }
 
-func TestLog(t *testing.T) {
-	err := FailCmd.New("hello")
-	err.Log()
-	// ? no panic
-}
-
 func TestHandle(t *testing.T) {
 	err := FailCmd.New("hello")
 	Handle(err, "Description")
