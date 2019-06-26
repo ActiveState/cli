@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	clientAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
@@ -96,7 +95,7 @@ func TestAuthInvalidUser(t *testing.T) {
 	}
 	auth := New()
 	fail := auth.AuthenticateWithModel(credentials)
-	assert.IsType(t, new(clientAuth.PostLoginUnauthorized), fail.ToError(), "Should fail to authenticate")
+	assert.Equal(t, FailAuthUnauthorized.Name, fail.Type.Name, "Should fail to authenticate")
 }
 
 func TestAuthInvalidToken(t *testing.T) {

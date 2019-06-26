@@ -27,6 +27,9 @@ var (
 	// FailAuthAPI identifies a failure due to the auth api call
 	FailAuthAPI = failures.Type("authentication.fail.api", api.FailUnknown)
 
+	// FailAuthUnauthorized identifies a failure due to the user not being authorized (invalid credentials?)
+	FailAuthUnauthorized = failures.Type("authentication.fail.api", failures.FailUserInput)
+
 	// FailTokenList identifies a failure in listing tokens from the api
 	FailTokenList = failures.Type("authentication.fail.tokenlist", api.FailUnknown)
 
@@ -138,6 +141,10 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 
 	if err != nil {
 		s.Logout()
+		if api.ErrorCodeFromPayload(err) == 401 {
+			logging.Error("Authentication API returned %v", err)
+			return FailAuthUnauthorized.New("err_unauthorized")
+		}
 		return FailAuthAPI.Wrap(err)
 	}
 

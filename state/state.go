@@ -148,6 +148,7 @@ func setupRollbar() {
 	rollbar.SetEnvironment(constants.BranchName)
 	rollbar.SetCodeVersion(constants.RevisionHash)
 	rollbar.SetPerson(id, id, id)
+	rollbar.SetServerRoot("github.com/ActiveState/cli")
 
 	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
 	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.
