@@ -110,7 +110,7 @@ func Execute(cmd *cobra.Command, args []string) {
 			break
 		}
 
-		print.Bold(locale.T("info_reactivating", proj))
+		print.Info(locale.T("info_reactivating", proj))
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
@@ -304,7 +304,7 @@ func activate(owner, name, srcPath string) bool {
 
 	hails, fail := hail.Open(done, fname)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_opening_hail_channel")) // l10n
+		failures.Handle(fail, locale.T("error_opening_hailing_channel"))
 		return false
 	}
 
@@ -314,14 +314,16 @@ func activate(owner, name, srcPath string) bool {
 func listenForReactivation(hs <-chan *hail.Received, subs subshell.SubShell) bool {
 	select {
 	case <-hs:
-		err := subs.Deactivate()
-		fmt.Println(err) // deal with err
+		if fail := subs.Deactivate(); fail != nil {
+			failures.Handle(fail, locale.T("error_deactivating_subshell"))
+			return false
+		}
 
 		return true
 
 	case fail := <-subs.Failures():
 		if fail != nil {
-			failures.Handle(fail, locale.T("error_ending_activated_subshell")) // l10n ?
+			failures.Handle(fail, locale.T("error_in_active_subshell"))
 		}
 
 		return false

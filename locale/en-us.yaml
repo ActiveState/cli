@@ -109,6 +109,14 @@ error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
   other: Could not activate a new subshell
+error_opening_hailing_channel:
+  other: Could not open channel to monitor pulls
+error_deactivating_subshell:
+  other: Failed to deactivate shell properly
+error_in_active_shell:
+  other: Failure encountered in active shell
+info_reactivating:
+  other: Reactivating state
 info_deactivated:
   other: Deactivated {{.Owner}}/{{.Name}}
 venv_installer_is_nil:
