@@ -111,6 +111,8 @@ error_could_not_activate_subshell:
   other: Could not activate a new subshell
 error_opening_hailing_channel:
   other: Could not open channel to monitor pulls
+error_in_hailing_channel:
+  other: Pull monitoring broken; Cycling activation state
 error_deactivating_subshell:
   other: Failed to deactivate shell properly
 error_in_active_shell:

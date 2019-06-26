@@ -311,9 +311,13 @@ func activate(owner, name, srcPath string) bool {
 	return listenForReactivation(hails, subs)
 }
 
-func listenForReactivation(hs <-chan *hail.Received, subs subshell.SubShell) bool {
+func listenForReactivation(rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
 	select {
-	case <-hs:
+	case rcvd := <-rcvs:
+		if rcvd.Fail != nil {
+			failures.Handle(rcvd.Fail, locale.T("error_in_hailing_channel"))
+		}
+
 		if fail := subs.Deactivate(); fail != nil {
 			failures.Handle(fail, locale.T("error_deactivating_subshell"))
 			return false
