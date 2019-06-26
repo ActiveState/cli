@@ -829,3 +829,5 @@ err_deprection_code:
   other: Could not check for deprecation as the service returned a code {{.V0}}
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of 'project: https://platform.activestate.com/Owner/ProjectName'"
+err_unauthorized:
+  other: You are not authorized, did you provide valid login credentials?
