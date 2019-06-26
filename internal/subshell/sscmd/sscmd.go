@@ -2,6 +2,7 @@ package sscmd
 
 import (
 	"os/exec"
+	"runtime"
 	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -40,9 +41,14 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 
 // Stop signals the provided command to terminate.
 func Stop(cmd *exec.Cmd) *failures.Failure {
+	sig := syscall.SIGTERM
+	if runtime.GOOS == "windows" {
+		sig = syscall.SIGKILL
+	}
+
 	// may panic if process no longer exists
 	defer failures.Recover()
-	if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+	if err := cmd.Process.Signal(sig); err != nil {
 		return FailSignalCmd.Wrap(err)
 	}
 
