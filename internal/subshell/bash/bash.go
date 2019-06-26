@@ -5,12 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/subshell/ssfailures"
+	"github.com/ActiveState/cli/internal/subshell/sscmd"
 )
 
 var escaper *osutils.ShellEscape
@@ -78,25 +77,9 @@ func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Start()
 
+	v.fs = sscmd.Start(cmd)
 	v.cmd = cmd
-	v.fs = make(chan *failures.Failure, 1)
-
-	go func() {
-		if err := cmd.Wait(); err != nil {
-			if eerr, ok := err.(*exec.ExitError); ok {
-				if eerr.Exited() && eerr.ExitCode() == -1 {
-					v.fs <- nil
-					return
-				}
-				v.fs <- ssfailures.FailExecCmd.Wrap(eerr)
-				return
-			}
-		}
-		v.fs <- nil
-	}()
-
 	return nil
 }
 
@@ -111,15 +94,7 @@ func (v *SubShell) Deactivate() *failures.Failure {
 		return nil
 	}
 
-	var fail *failures.Failure
-	func() {
-		// may panic if process no longer exists
-		defer failures.Recover()
-		if err := v.cmd.Process.Signal(syscall.SIGTERM); err != nil {
-			fail = ssfailures.FailSignalCmd.Wrap(err)
-		}
-	}()
-	if fail != nil {
+	if fail := sscmd.Stop(v.cmd); fail != nil {
 		return fail
 	}
 

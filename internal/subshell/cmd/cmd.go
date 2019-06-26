@@ -7,7 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/subshell/ssfailures"
+	"github.com/ActiveState/cli/internal/subshell/sscmd"
 )
 
 var escaper *osutils.ShellEscape
@@ -76,19 +76,9 @@ func (v *SubShell) Activate() *failures.Failure {
 
 	cmd := exec.Command("cmd", shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Start()
 
+	v.fs = sscmd.Start(cmd)
 	v.cmd = cmd
-	v.fs = make(chan *failures.Failure, 1)
-
-	go func() {
-		if err := cmd.Wait(); err != nil {
-			v.fs <- ssfailures.FailExecCmd.Wrap(err)
-			return
-		}
-		v.fs <- nil
-	}()
-
 	return nil
 }
 
@@ -103,15 +93,7 @@ func (v *SubShell) Deactivate() *failures.Failure {
 		return nil
 	}
 
-	var fail *failures.Failure
-	func() {
-		// may panic if process no longer exists
-		defer failures.Recover()
-		if err := v.cmd.Process.Kill(); err != nil {
-			fail = ssfailures.FailSignalCmd.Wrap(err)
-		}
-	}()
-	if fail != nil {
+	if fail := sscmd.Stop(v.cmd); fail != nil {
 		return fail
 	}
 
