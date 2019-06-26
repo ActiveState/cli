@@ -18,6 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
+
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
@@ -360,7 +362,7 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
 		return filepath, nil
 	}
-	return "", failures.FailNotFound.New("err_file_not_found_in_path", filename, absDir)
+	return "", FailFindInPathNotFound.New("err_file_not_found_in_path", filename, absDir)
 }
 
 // walkPathAndFindFile finds a file in the provided directory or one of its parent directories.
