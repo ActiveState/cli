@@ -113,7 +113,6 @@ func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Start()
 
 	v.fs = sscmd.Start(cmd)
 	v.cmd = cmd
