@@ -1,6 +1,8 @@
 package model
 
 import (
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -10,13 +12,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
 	FailOrderRecipes = failures.Type("model.fail.orderrecipes", api.FailUnknown)
 
-	FailNoEffectiveRecipe = failures.Type("model.fail.recipes.noeffective")
+	FailNoEffectiveRecipe = failures.Type("model.fail.recipes.noeffective", failures.FailNonFatal)
 )
 
 var OS sysinfo.OsInfo
