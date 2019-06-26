@@ -1,7 +1,6 @@
 package hail
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
 	"time"
@@ -10,12 +9,29 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+var (
+	// FailWatcherRead indicates a failure to read from a Watcher chan
+	FailWatcherRead = failures.Type("hail.fail.watcherread")
+
+	// FailWatcherInstance indicates a failure from an active Watcher
+	FailWatcherInstance = failures.Type("hail.fail.watcherinstance")
+)
+
 // Received represents the data related to a message sent via watched file.
 type Received struct {
 	Open time.Time
 	Time time.Time
 	Data []byte
 	Fail *failures.Failure
+}
+
+func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Received {
+	return &Received{
+		Open: openedAt,
+		Time: time.Now(),
+		Data: data,
+		Fail: fail,
+	}
 }
 
 // Send sends a hail by saving data to the file located by the file name
@@ -40,68 +56,75 @@ func Send(file string, data []byte) *failures.Failure {
 func Open(done <-chan struct{}, file string) (<-chan *Received, *failures.Failure) {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0660)
 	if err != nil {
-		return nil, failures.FailDeveloper.Wrap(err) // fix fail type
+		return nil, failures.FailOS.Wrap(err)
 	}
 	f.Close()
 
 	t := time.Now()
 	rc := make(chan *Received)
-
-	if err := open(done, rc, t, file); err != nil {
-		return nil, failures.FailDeveloper.Wrap(err) // fix fail type
+	if fail := open(done, rc, t, file); fail != nil {
+		return nil, fail
 	}
 
 	return rc, nil
 }
 
-func open(done <-chan struct{}, rc chan<- *Received, t time.Time, file string) error {
+func open(done <-chan struct{}, rc chan<- *Received, t time.Time, file string) *failures.Failure {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		return err
+		return failures.FailOS.Wrap(err)
 	}
 
-	go func() {
-		defer w.Close()
+	m := &monitor{done, rc}
+	go m.run(w, t, file)
 
-		for {
-			select {
-			case <-done:
+	if err := w.Add(file); err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+	return nil
+}
+
+type monitor struct {
+	done <-chan struct{}
+	rcvs chan<- *Received
+}
+
+func (m *monitor) run(w *fsnotify.Watcher, t time.Time, file string) {
+	defer w.Close()
+
+	for {
+		select {
+		case <-m.done:
+			return
+
+		case _, ok := <-w.Events: // event type is unimportant for now
+			r := newReceived(t, nil, nil)
+			if !ok {
+				r.Fail = FailWatcherRead.New("events channel is closed")
+				m.rcvs <- r
 				return
-
-			case _, ok := <-w.Events:
-				// consider checking for deletion
-				r := &Received{Open: t, Time: time.Now()}
-				if !ok {
-					r.Fail = failures.FailDeveloper.Wrap(
-						errors.New("oops - closed events"),
-					) // fix fail type
-					rc <- r
-					return
-				}
-
-				data, err := ioutil.ReadFile(file)
-				if err != nil {
-					r.Fail = failures.FailDeveloper.Wrap(err) // fix fail type
-					rc <- r
-					return
-				}
-
-				r.Data = data
-				rc <- r
-
-			case err, ok := <-w.Errors:
-				if !ok {
-					err = errors.New("oh no - closed errors")
-				}
-
-				rc <- &Received{
-					Open: t,
-					Time: time.Now(),
-					Fail: failures.FailDeveloper.Wrap(err), // fix fail type
-				}
 			}
-		}
-	}()
 
-	return w.Add(file)
+			data, err := ioutil.ReadFile(file)
+			if err != nil {
+				r.Fail = failures.FailOS.Wrap(err)
+				m.rcvs <- r
+				return
+			}
+
+			r.Data = data
+			m.rcvs <- r
+
+		case err, ok := <-w.Errors:
+			var fail *failures.Failure
+			if !ok {
+				fail = FailWatcherRead.New("errors channel is closed")
+			}
+			if err != nil && fail == nil {
+				fail = FailWatcherInstance.Wrap(err)
+			}
+
+			m.rcvs <- newReceived(t, nil, fail)
+		}
+	}
 }
