@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
@@ -28,7 +29,10 @@ var (
 	FailAuthAPI = failures.Type("authentication.fail.api", api.FailUnknown)
 
 	// FailAuthUnauthorized identifies a failure due to the user not being authorized (invalid credentials?)
-	FailAuthUnauthorized = failures.Type("authentication.fail.api", failures.FailUserInput)
+	FailAuthUnauthorized = failures.Type("authentication.fail.unauthorized", failures.FailUserInput)
+
+	// FailAuthNeedToken identifies a failure due to the authentication requiring a token
+	FailAuthNeedToken = failures.Type("authentication.fail.token", failures.FailUserInput)
 
 	// FailTokenList identifies a failure in listing tokens from the api
 	FailTokenList = failures.Type("authentication.fail.tokenlist", api.FailUnknown)
@@ -141,11 +145,15 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 
 	if err != nil {
 		s.Logout()
-		if api.ErrorCodeFromPayload(err) == 401 {
-			logging.Error("Authentication API returned %v", err)
+		switch err.(type) {
+		case *apiAuth.PostLoginUnauthorized:
 			return FailAuthUnauthorized.New("err_unauthorized")
+		case *apiAuth.PostLoginRetryWith:
+			return FailAuthNeedToken.New("err_auth_fail_totp")
+		default:
+			logging.Error("Authentication API returned %v", err)
+			return FailAuthAPI.Wrap(err)
 		}
-		return FailAuthAPI.Wrap(err)
 	}
 
 	payload := loginOK.Payload
