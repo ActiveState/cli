@@ -52,7 +52,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
 	// must happen last in this function scope (defer if needed)
-	if fail := hail.Send(fname, nil); fail != nil {
+	if fail := hail.Send(fname, []byte(latestID)); fail != nil {
 		logging.Error("failed to send hail via %q: %s", fname, fail)
 	}
 }
