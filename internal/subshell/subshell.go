@@ -39,7 +39,7 @@ type SubShell interface {
 	Failures() <-chan *failures.Failure
 
 	// Deactivate the given subshell
-	Deactivate() error
+	Deactivate() *failures.Failure
 
 	// Run a script string, passing the provided command-line arguments, that assumes this shell and returns the exit code
 	Run(script string, args ...string) (int, error)

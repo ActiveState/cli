@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell/ssfailures"
 )
 
 var escaper *osutils.ShellEscape
@@ -90,7 +91,7 @@ func (v *SubShell) Activate() *failures.Failure {
 
 	go func() {
 		if err := cmd.Wait(); err != nil {
-			v.fs <- failures.FailExecPkg.Wrap(err)
+			v.fs <- ssfailures.FailExecCmd.Wrap(err)
 			return
 		}
 		v.fs <- nil
@@ -105,22 +106,25 @@ func (v *SubShell) Failures() <-chan *failures.Failure {
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() error {
+func (v *SubShell) Deactivate() *failures.Failure {
 	if !v.IsActive() {
 		return nil
 	}
 
-	var err error
+	var fail *failures.Failure
 	func() {
-		// Go's Process.Kill is not very safe to use, it throws a panic if the process no longer exists
+		// may panic if process no longer exists
 		defer failures.Recover()
-		err = v.cmd.Process.Kill()
+		if err := v.cmd.Process.Kill(); err != nil {
+			fail = ssfailures.FailSignalCmd.Wrap(err)
+		}
 	}()
-
-	if err == nil {
-		v.cmd = nil
+	if fail != nil {
+		return fail
 	}
-	return err
+
+	v.cmd = nil
+	return nil
 }
 
 // Run - see subshell.SubShell

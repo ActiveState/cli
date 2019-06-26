@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell/ssfailures"
 )
 
 var escaper *osutils.ShellEscape
@@ -89,7 +90,7 @@ func (v *SubShell) Activate() *failures.Failure {
 					v.fs <- nil
 					return
 				}
-				v.fs <- failures.FailExecPkg.Wrap(eerr)
+				v.fs <- ssfailures.FailExecCmd.Wrap(eerr)
 				return
 			}
 		}
@@ -105,22 +106,25 @@ func (v *SubShell) Failures() <-chan *failures.Failure {
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() error {
+func (v *SubShell) Deactivate() *failures.Failure {
 	if !v.IsActive() {
 		return nil
 	}
 
-	var err error
+	var fail *failures.Failure
 	func() {
 		// may panic if process no longer exists
 		defer failures.Recover()
-		err = v.cmd.Process.Signal(syscall.SIGTERM)
+		if err := v.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			fail = ssfailures.FailSignalCmd.Wrap(err)
+		}
 	}()
-	if err == nil {
-		v.cmd = nil
+	if fail != nil {
+		return fail
 	}
 
-	return err
+	v.cmd = nil
+	return nil
 }
 
 // Run - see subshell.SubShell

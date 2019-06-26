@@ -28,8 +28,8 @@ func TestActivateZsh(t *testing.T) {
 	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
 	assert.True(t, venv.IsActive(), "Subshell should be active")
 
-	err := venv.Deactivate()
-	assert.NoError(t, err, "Should deactivate")
+	fail = venv.Deactivate()
+	assert.NoError(t, fail.ToError(), "Should deactivate")
 
 	assert.False(t, venv.IsActive(), "Subshell should be inactive")
 }
