@@ -26,17 +26,17 @@ func TestActivate(t *testing.T) {
 
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ComSpec", "cmd.exe")
-	venv, fail := Activate()
+	subs, fail := Activate()
 
 	assert.NoError(t, fail.ToError(), "Should activate")
 
-	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
-	assert.True(t, venv.IsActive(), "Subshell should be active")
+	assert.NotEqual(t, "", subs.Shell(), "Should detect a shell")
+	assert.True(t, subs.IsActive(), "Subshell should be active")
 
-	fail = venv.Deactivate()
+	fail = subs.Deactivate()
 	assert.NoError(t, fail.ToError(), "Should deactivate")
 
-	assert.False(t, venv.IsActive(), "Subshell should be inactive")
+	assert.False(t, subs.IsActive(), "Subshell should be inactive")
 }
 
 func TestActivateFailures(t *testing.T) {
