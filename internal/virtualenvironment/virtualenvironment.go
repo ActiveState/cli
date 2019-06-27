@@ -119,6 +119,10 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 
+	if uid := os.Getenv(constants.ActivatedStateIDEnvVarName); uid != "" {
+		env[constants.ActivatedStateIDEnvVarName] = uid
+	}
+
 	return env
 }
 

@@ -7,8 +7,10 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -276,6 +278,9 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
 func activate(owner, name, srcPath string) bool {
+	activationID := uuid.New().String()
+	os.Setenv(constants.ActivatedStateIDEnvVarName, activationID)
+
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
@@ -308,15 +313,21 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	return listenForReactivation(hails, subs)
+	return listenForReactivation(activationID, hails, subs)
 }
 
-func listenForReactivation(rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
 	select {
 	case rcvd := <-rcvs:
 		if rcvd.Fail != nil {
 			failures.Handle(rcvd.Fail, locale.T("error_in_hailing_channel"))
 		}
+
+		if id == "" || len(rcvd.Data) == 0 || id != string(rcvd.Data) {
+			return listenForReactivation(id, rcvs, subs)
+		}
+
+		time.Sleep(time.Second) // hack to wait for `state pull`
 
 		if fail := subs.Deactivate(); fail != nil {
 			failures.Handle(fail, locale.T("error_deactivating_subshell"))
