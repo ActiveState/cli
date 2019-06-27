@@ -115,7 +115,7 @@ error_in_hailing_channel:
   other: Pull monitoring broken; Cycling activation state
 error_deactivating_subshell:
   other: Failed to deactivate shell properly
-error_in_active_shell:
+error_in_active_subshell:
   other: Failure encountered in active shell
 info_reactivating:
   other: Reactivating state
