@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/alecthomas/template"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/sysinfo"
-	"github.com/alecthomas/template"
 )
 
 var (
@@ -103,4 +104,25 @@ func ErrorCodeFromPayload(err interface{}) int {
 		return -1
 	}
 	return int(codeVal.Int())
+}
+
+// ErrorMessageFromPayload tries to retrieve the code associated with an API error from a
+// Message object referenced as a Payload.
+func ErrorMessageFromPayload(err interface{}) string {
+	errVal := reflect.ValueOf(err)
+	payloadVal := reflect.Indirect(errVal).FieldByName("Payload")
+	if !payloadVal.IsValid() {
+		return ""
+	}
+
+	codePtr := reflect.Indirect(payloadVal).FieldByName("Message")
+	if !codePtr.IsValid() {
+		return ""
+	}
+
+	codeVal := reflect.Indirect(codePtr)
+	if !codeVal.IsValid() {
+		return ""
+	}
+	return codeVal.String()
 }

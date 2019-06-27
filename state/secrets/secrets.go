@@ -66,7 +66,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_usage")})
+	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
 	t.SetAlign("left")
 	print.Line(t.Render("simple"))
@@ -77,18 +77,18 @@ func (cmd *Command) secretRows() ([][]interface{}, *failures.Failure) {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	secrets, fail := secrets.ByProject(cmd.secretsClient, prj.Owner(), prj.Name())
+	defs, fail := secrets.DefsByProject(cmd.secretsClient, prj.Owner(), prj.Name())
 	if fail != nil {
 		return nil, fail
 	}
 
 	rows := [][]interface{}{}
-	for _, secret := range secrets {
-		scope := string(project.SecretScopeProject)
-		if secret.IsUser != nil && *secret.IsUser {
-			scope = string(project.SecretScopeUser)
+	for _, def := range defs {
+		description := "-"
+		if def.Description != "" {
+			description = def.Description
 		}
-		rows = append(rows, []interface{}{*secret.Name, scope, fmt.Sprintf("%s.%s", scope, *secret.Name)})
+		rows = append(rows, []interface{}{*def.Name, *def.Scope, description, fmt.Sprintf("%s.%s", *def.Scope, *def.Name)})
 	}
 	return rows, nil
 }

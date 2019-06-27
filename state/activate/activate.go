@@ -11,6 +11,9 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -30,9 +33,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/thoas/go-funk"
 )
 
 var (
@@ -210,7 +210,7 @@ func getPathsForNamespace(namespace string) []string {
 func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return failures.FailUserInput.Wrap(err)
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)

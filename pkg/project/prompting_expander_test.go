@@ -83,6 +83,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 400, "something-happened"
 	})
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander(false)
@@ -101,6 +102,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
 	})
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander(false)

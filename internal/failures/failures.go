@@ -36,7 +36,7 @@ var (
 	FailOS = Type("failures.fail.os")
 
 	// FailInput identifies a failure as an input failure
-	FailInput = Type("failures.fail.input", FailUser)
+	FailInput = Type("failures.fail.input")
 
 	// FailUserInput identifies a failure as an input failure
 	FailUserInput = Type("failures.fail.userinput", FailInput, FailUser)
@@ -70,6 +70,10 @@ var (
 
 	// FailInvalidArgument identifies a failure as being due to an argument to a function being invalid.
 	FailInvalidArgument = Type("failures.fail.invalid_arg")
+
+	// FailNonFatal is not supposed to be used directly. It communicates a failure that can safely be ignored.
+	// Failures that inerhit from this type will not be logged to rollbar.
+	FailNonFatal = Type("failures.fail.nonfatal")
 )
 
 var handled error
@@ -105,8 +109,15 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 
 	file, line := trace()
-	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
-	return &Failure{locale.T(message, input), f, file, line, stacktrace.Get(), nil}
+	message = locale.T(message, input)
+
+	var logger logging.Logger = logging.Debug
+	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
+		logger = logging.Error
+	}
+	logger("%s. Failure: %s File: %s, Line: %d", message, f.Name, file, line)
+
+	return &Failure{message, f, file, line, stacktrace.Get(), nil}
 }
 
 // Wrap wraps another error
@@ -143,11 +154,6 @@ func (e *Failure) ToError() error {
 	return errors.New(e.Error())
 }
 
-// Log the failure
-func (e *Failure) Log() {
-	logging.Error(fmt.Sprintf("%s: %s", e.Type.Name, e.Message))
-}
-
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 func (e *Failure) Handle(description string) {
@@ -159,8 +165,6 @@ func (e *Failure) Handle(description string) {
 		// Descriptions are always communicated to the user
 		print.Error(description)
 	}
-
-	e.Log()
 
 	print.Error(e.Error())
 }

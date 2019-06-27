@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"github.com/skratchdot/open-golang/open"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -8,12 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
-	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/skratchdot/open-golang/open"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -115,9 +115,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 
 	// Error checking
 	if fail != nil {
-		switch fail.ToError().(type) {
-		// Authentication failed due to username not existing
-		case *apiAuth.PostLoginUnauthorized:
+		if fail.Type.Matches(authentication.FailAuthUnauthorized) {
 			params := users.NewUniqueUsernameParams()
 			params.SetUsername(credentials.Username)
 			_, err := mono.Get().Users.UniqueUsername(params)
@@ -134,7 +132,8 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 				failures.Handle(err, locale.T("err_auth_failed"))
 			}
 			return
-		case *apiAuth.PostLoginRetryWith:
+		}
+		if fail.Type.Matches(authentication.FailAuthNeedToken) {
 			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
 			if fail != nil {
 				failures.Handle(fail, locale.T("err_auth_fail_totp"))
@@ -146,10 +145,9 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			}
 			AuthenticateWithCredentials(credentials)
 			return
-		default:
-			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
-			return
 		}
+		failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+		return
 	}
 
 	print.Line(locale.T("login_success_welcome_back", map[string]string{

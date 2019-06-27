@@ -209,8 +209,21 @@ auth_err_unrecoverable_keypair:
   other: "Unrecoverable keypair issue"
 previous_password_prompt:
   other: "Enter your previous password:"
+secret_value_prompt_summary:
+  other: | 
+
+    The action you are taking uses a secret that has not been given a value yet.
+    Name: {{.V0}}
+    Description: {{.V1}}
+    Scope: {{.V2}} ({{.V3}})
 secret_value_prompt:
-  other: "Enter value for variable '{{.V0}}':"
+  other: "Please enter a value for secret \"{{.V0}}\":"
+secret_prompt_user:
+  other: Only you can access the value
+secret_prompt_project:
+  other: Organization members can access the value
+secret_no_description:
+  other: "- (This secret has no description, you can set one via the web dashboard)"
 username_prompt_signup:
   other: "Choose a username:"
 password_prompt_signup:
@@ -554,6 +567,8 @@ secrets_header_name:
   other: Name
 secrets_header_scope:
   other: Scope
+secrets_header_description:
+  other: Description
 secrets_header_usage:
   other: Usage
 variable_field_deprecation_warning:
@@ -818,5 +833,15 @@ err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
 warn_deprecation_owner_name_fields:
   other: "DEPRECATION WARNING: Your project is using 'owner' and 'name' fields, these should be replaced with a single project field, eg. 'project: https://platform.activestate.com/{{.V0}}/{{.V1}}'"
+err_main_panic:
+  other: |
+    An unexpected error occurred while running the State tool
+    Check the error log for more information
+err_deprection_404:
+  other: Could not check for deprecation as the service returned a 404 not found
+err_deprection_code:
+  other: Could not check for deprecation as the service returned a code {{.V0}}
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of 'project: https://platform.activestate.com/Owner/ProjectName'"
+err_unauthorized:
+  other: You are not authorized, did you provide valid login credentials?
