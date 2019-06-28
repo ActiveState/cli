@@ -27,7 +27,8 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
-				if eerr.Exited() && eerr.ExitCode() == -1 {
+				code := eerr.ExitCode()
+				if code == 130 || eerr.Exited() && code == -1 {
 					return
 				}
 				fs <- FailExecCmd.Wrap(eerr)
