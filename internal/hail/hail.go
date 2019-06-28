@@ -62,14 +62,14 @@ func Open(done <-chan struct{}, file string) (<-chan *Received, *failures.Failur
 
 	t := time.Now()
 	rc := make(chan *Received)
-	if fail := open(done, rc, t, file); fail != nil {
+	if fail := run(done, rc, t, file); fail != nil {
 		return nil, fail
 	}
 
 	return rc, nil
 }
 
-func open(done <-chan struct{}, rc chan<- *Received, t time.Time, file string) *failures.Failure {
+func run(done <-chan struct{}, rc chan<- *Received, t time.Time, file string) *failures.Failure {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		return failures.FailOS.Wrap(err)
