@@ -54,7 +54,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	actID := os.Getenv(constants.ActivatedStateIDEnvVarName)
 	if actID == "" {
-		print.Line(locale.T("notify_user_to_reactivate_current"))
+		logging.Error("failed to obtain activated id, hail not sent")
 		return
 	}
 
