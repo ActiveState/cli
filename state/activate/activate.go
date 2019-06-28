@@ -326,7 +326,10 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.
 				continue
 			}
 
-			time.Sleep(time.Second) // hack to wait for `state pull`
+			// A subshell will have triggered this case; Wait for
+			// output completion before deactivating. The nature of
+			// this issue is unclear at this time.
+			time.Sleep(time.Second)
 
 			if fail := subs.Deactivate(); fail != nil {
 				failures.Handle(fail, locale.T("error_deactivating_subshell"))
