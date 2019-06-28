@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -278,9 +277,6 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
 func activate(owner, name, srcPath string) bool {
-	activationID := uuid.New().String()
-	os.Setenv(constants.ActivatedStateIDEnvVarName, activationID)
-
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
@@ -313,7 +309,7 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	return listenForReactivation(activationID, hails, subs)
+	return listenForReactivation(venv.ActivationID(), hails, subs)
 }
 
 func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
