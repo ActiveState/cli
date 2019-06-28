@@ -32,12 +32,20 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
 				code := eerr.ExitCode()
-				if code == 130 || eerr.Exited() && code == -1 {
+				// code 130 is returned when a process halts
+				// due to SIGTERM after receiving a SIGINT
+				// code -1 is returned when a process halts
+				// due to SIGTERM without any interference.
+				if code == 130 || (eerr.Exited() && code == -1) {
 					return
 				}
+
 				fs <- FailExecCmd.Wrap(eerr)
 				return
 			}
+
+			fs <- FailExecCmd.Wrap(err)
+			return
 		}
 	}()
 
