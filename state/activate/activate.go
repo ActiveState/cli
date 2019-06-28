@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -292,6 +295,10 @@ func activate(owner, name, srcPath string) bool {
 
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", owner, name), filepath.Dir(srcPath))
+
+	if runtime.GOOS == "windows" {
+		signal.Ignore(syscall.SIGINT)
+	}
 
 	subs, err := subshell.Activate()
 	if err != nil {
