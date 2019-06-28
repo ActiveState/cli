@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/subshell/sscmd"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 var escaper *osutils.ShellEscape
@@ -78,7 +78,7 @@ func (v *SubShell) Activate() *failures.Failure {
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
-	v.fs = sscmd.Start(cmd)
+	v.fs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
 }
@@ -94,7 +94,7 @@ func (v *SubShell) Deactivate() *failures.Failure {
 		return nil
 	}
 
-	if fail := sscmd.Stop(v.cmd); fail != nil {
+	if fail := sscommon.Stop(v.cmd); fail != nil {
 		return fail
 	}
 

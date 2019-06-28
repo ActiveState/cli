@@ -1,4 +1,4 @@
-package sscmd
+package sscommon
 
 import (
 	"os/exec"
@@ -10,10 +10,10 @@ import (
 
 var (
 	// FailExecCmd represents a failure running a cmd
-	FailExecCmd = failures.Type("sscmd.fail.execcmd")
+	FailExecCmd = failures.Type("sscommon.fail.execcmd")
 
 	// FailSignalCmd represents a failure sending a system signal to a cmd
-	FailSignalCmd = failures.Type("sscmd.fail.signalcmd")
+	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
 
 // Start starts the provided command and returns a channel to monitor errors on.
