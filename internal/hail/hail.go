@@ -109,22 +109,26 @@ func (m *monitor) run(w *fsnotify.Watcher, t time.Time, file string) {
 			if err != nil {
 				r.Fail = failures.FailOS.Wrap(err)
 				m.rcvs <- r
-				return
+				break
 			}
 
 			r.Data = data
 			m.rcvs <- r
 
 		case err, ok := <-w.Errors:
-			var fail *failures.Failure
+			r := newReceived(t, nil, nil)
 			if !ok {
-				fail = FailWatcherRead.New("errors channel is closed")
+				r.Fail = FailWatcherRead.New("errors channel is closed")
+				m.rcvs <- r
+				return
 			}
-			if err != nil && fail == nil {
-				fail = FailWatcherInstance.Wrap(err)
+			if err != nil {
+				r.Fail = FailWatcherInstance.Wrap(err)
+				m.rcvs <- r
+				break
 			}
 
-			m.rcvs <- newReceived(t, nil, fail)
+			m.rcvs <- r
 		}
 	}
 }
