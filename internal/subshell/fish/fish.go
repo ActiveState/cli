@@ -76,7 +76,6 @@ func (v *SubShell) Quote(value string) string {
 func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{"-i", "-C", fmt.Sprintf("source %s", v.rcFile.Name())}
 	cmd := exec.Command(v.Binary(), shellArgs...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	v.fs = sscommon.Start(cmd)
 	v.cmd = cmd

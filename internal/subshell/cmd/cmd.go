@@ -75,7 +75,6 @@ func (v *SubShell) Activate() *failures.Failure {
 	shellArgs := []string{"/K", v.rcFile.Name()}
 
 	cmd := exec.Command("cmd", shellArgs...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	v.fs = sscommon.Start(cmd)
 	v.cmd = cmd

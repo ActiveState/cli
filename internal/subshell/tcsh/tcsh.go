@@ -83,7 +83,6 @@ func (v *SubShell) Activate() *failures.Failure {
 	// hack to make it work.
 	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	v.fs = sscommon.Start(cmd)
 	v.cmd = cmd

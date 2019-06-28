@@ -1,6 +1,7 @@
 package sscommon
 
 import (
+	"os"
 	"os/exec"
 	"runtime"
 	"syscall"
@@ -16,8 +17,11 @@ var (
 	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
 
-// Start starts the provided command and returns a channel to monitor errors on.
+// Start wires stdin/stdout/stderr into the provided command, starts it, and
+// returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan *failures.Failure {
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
 	cmd.Start()
 
 	fs := make(chan *failures.Failure, 1)
