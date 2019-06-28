@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
@@ -32,11 +33,13 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
 				code := eerr.ExitCode()
+				valid := eerr.Exited()
 				// code 130 is returned when a process halts
 				// due to SIGTERM after receiving a SIGINT
 				// code -1 is returned when a process halts
 				// due to SIGTERM without any interference.
-				if code == 130 || (eerr.Exited() && code == -1) {
+				if code == 130 || (valid && code == -1) {
+					logging.Debug("exit - valid: %t, code: %d", valid, code)
 					return
 				}
 
