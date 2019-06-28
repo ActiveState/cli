@@ -315,30 +315,32 @@ func activate(owner, name, srcPath string) bool {
 }
 
 func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
-	select {
-	case rcvd := <-rcvs:
-		if rcvd.Fail != nil {
-			failures.Handle(rcvd.Fail, locale.T("error_in_hailing_channel"))
-		}
+	for {
+		select {
+		case rcvd := <-rcvs:
+			if rcvd.Fail != nil {
+				failures.Handle(rcvd.Fail, locale.T("error_in_hailing_channel"))
+			}
 
-		if id == "" || len(rcvd.Data) == 0 || id != string(rcvd.Data) {
-			return listenForReactivation(id, rcvs, subs)
-		}
+			if id == "" || len(rcvd.Data) == 0 || id != string(rcvd.Data) {
+				continue
+			}
 
-		time.Sleep(time.Second) // hack to wait for `state pull`
+			time.Sleep(time.Second) // hack to wait for `state pull`
 
-		if fail := subs.Deactivate(); fail != nil {
-			failures.Handle(fail, locale.T("error_deactivating_subshell"))
+			if fail := subs.Deactivate(); fail != nil {
+				failures.Handle(fail, locale.T("error_deactivating_subshell"))
+				return false
+			}
+
+			return true
+
+		case fail := <-subs.Failures():
+			if fail != nil {
+				failures.Handle(fail, locale.T("error_in_active_subshell"))
+			}
+
 			return false
 		}
-
-		return true
-
-	case fail := <-subs.Failures():
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_in_active_subshell"))
-		}
-
-		return false
 	}
 }
