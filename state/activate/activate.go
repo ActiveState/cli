@@ -102,6 +102,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	// activate should be continually called while returning true
+	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
 	for {
 		proj = project.Get()
