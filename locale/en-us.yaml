@@ -109,14 +109,12 @@ error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
   other: Could not activate a new subshell
-error_opening_hailing_channel:
-  other: Could not open channel to monitor pulls
-error_in_hailing_channel:
-  other: Pull monitoring broken; Cycling activation state
+error_unable_to_monitor_pulls:
+  other: Failed to setup pull monitoring
 error_deactivating_subshell:
-  other: Failed to deactivate shell properly
+  other: Failed to deactivate subshell properly
 error_in_active_subshell:
-  other: Failure encountered in active shell
+  other: Failure encountered in active subshell
 info_reactivating:
   other: Reactivating state
 info_deactivated:

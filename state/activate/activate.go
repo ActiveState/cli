@@ -307,7 +307,7 @@ func activate(owner, name, srcPath string) bool {
 
 	hails, fail := hail.Open(done, fname)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_opening_hailing_channel"))
+		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
 		return false
 	}
 
@@ -319,7 +319,8 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.
 		select {
 		case rcvd := <-rcvs:
 			if rcvd.Fail != nil {
-				failures.Handle(rcvd.Fail, locale.T("error_in_hailing_channel"))
+				logging.Error("error in hailing channel: %s", rcvd.Fail)
+				continue
 			}
 
 			if id == "" || len(rcvd.Data) == 0 || id != string(rcvd.Data) {
