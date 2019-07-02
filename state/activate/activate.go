@@ -314,7 +314,12 @@ func activate(owner, name, srcPath string) bool {
 	return listenForReactivation(venv.ActivationID(), hails, subs)
 }
 
-func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subshell.SubShell) bool {
+type subShell interface {
+	Deactivate() *failures.Failure
+	Failures() <-chan *failures.Failure
+}
+
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
 	for {
 		select {
 		case rcvd := <-rcvs:
