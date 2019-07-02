@@ -12,10 +12,10 @@ import (
 )
 
 func TestSend(t *testing.T) {
-	fail := Send("../hail", []byte{})
+	fail := Send("./", []byte{})
 	assert.Error(t, fail.ToError())
 
-	file := "hail-garbage"
+	file := "garbage"
 	f, err := os.Create(file)
 	require.NoError(t, err)
 	defer func() {
@@ -37,10 +37,10 @@ func TestOpen(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 
-	_, fail := Open(done, "../hail")
+	_, fail := Open(done, "./")
 	assert.Error(t, fail.ToError())
 
-	file := "hail-garbage"
+	file := "garbage"
 	rcvs, fail := Open(done, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
