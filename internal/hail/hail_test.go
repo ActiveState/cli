@@ -15,7 +15,7 @@ import (
 func directory() string {
 	dir := "/"
 	if runtime.GOOS == "windows" {
-		dir = `C:\`
+		dir = `WAT:\`
 	}
 	return dir
 }
