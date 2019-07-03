@@ -1,23 +1,26 @@
 package activate
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
-	"fmt"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/hail"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 const ProjectNamespace = "string/string"
@@ -176,6 +179,129 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
 }
 
+// lfrValOk calls listenForReactivation in such a way that we can be sure it
+// will not hang forever.
+func lfrValOk(max time.Duration, id string, rs <-chan *hail.Received, ss subShell) (bool, bool) {
+	c := make(chan bool)
+	go func() {
+		defer close(c)
+		c <- listenForReactivation(id, rs, ss)
+	}()
+
+	select {
+	case <-time.After(max):
+		return false, false
+	case val := <-c:
+		return val, true
+	}
+}
+
+type lfrParams struct {
+	id   string
+	rcvs chan *hail.Received
+	subs *mockSubShell
+}
+
+func makeLFRParams() lfrParams {
+	return lfrParams{
+		id:   "identifier",
+		rcvs: make(chan *hail.Received, 1),
+		subs: newMockSubShell(),
+	}
+}
+
+func (suite *ActivateTestSuite) TestListenForReactivation() {
+	t := suite.T() // used for subtests
+	timeout := time.Millisecond * 1200
+	timeoutFail := func() { suite.FailNow("timedout") }
+
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+
+	go t.Run("trigger deactivation (hail.Received.Fail)", func(t *testing.T) {
+		defer wg.Done()
+
+		lp := makeLFRParams()
+		lp.rcvs <- &hail.Received{Fail: failures.FailDeveloper.New("hail failure")}
+
+		if _, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.Fail("should timeout")
+		}
+	})
+
+	go t.Run("trigger deactivation (invalid id)", func(t *testing.T) {
+		defer wg.Done()
+
+		lp := makeLFRParams()
+		lp.rcvs <- &hail.Received{}
+
+		if _, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.Fail("should timeout")
+		}
+	})
+
+	go t.Run("trigger deactivation (no wait/wait)", func(t *testing.T) {
+		defer wg.Done()
+
+		lp := makeLFRParams()
+		r := &hail.Received{Data: []byte(lp.id)}
+		lp.rcvs <- r
+
+		if _, ok := lfrValOk(time.Millisecond*500, lp.id, lp.rcvs, lp.subs); ok {
+			suite.Fail("should take more than 500ms")
+		}
+
+		lp.rcvs <- r
+
+		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.True(v)
+			suite.Equal(2, lp.subs.deacts)
+			return
+		}
+		timeoutFail()
+	})
+
+	wg.Wait()
+
+	t.Run("close hails", func(t *testing.T) {
+		lp := makeLFRParams()
+		go close(lp.rcvs)
+
+		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.False(v)
+			return
+		}
+		timeoutFail()
+	})
+}
+
 func TestActivateSuite(t *testing.T) {
 	suite.Run(t, new(ActivateTestSuite))
+}
+
+type mockSubShell struct {
+	deacts   int
+	failNext bool
+	fails    chan *failures.Failure
+}
+
+func newMockSubShell() *mockSubShell {
+	return &mockSubShell{
+		deacts:   0,
+		failNext: false,
+		fails:    make(chan *failures.Failure, 1),
+	}
+}
+
+func (ss *mockSubShell) Deactivate() *failures.Failure {
+	ss.deacts++
+	if ss.failNext {
+		ss.failNext = false
+		return failures.FailDeveloper.New("deactivation error")
+	}
+	return nil
+}
+
+func (ss *mockSubShell) Failures() <-chan *failures.Failure {
+	return ss.fails
 }
