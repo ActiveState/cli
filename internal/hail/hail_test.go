@@ -12,7 +12,7 @@ import (
 )
 
 func TestSend(t *testing.T) {
-	fail := Send("/", []byte{})
+	fail := Send(".", []byte{})
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
@@ -37,7 +37,7 @@ func TestOpen(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 
-	_, fail := Open(done, "/")
+	_, fail := Open(done, ".")
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
