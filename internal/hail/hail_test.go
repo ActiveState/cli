@@ -59,6 +59,7 @@ func TestOpen(t *testing.T) {
 		r := <-rcvs
 		assert.True(t, r.Open.After(start) && postOpen.After(r.Open))
 		assert.True(t, r.Time.After(postOpen))
+		assert.Equal(t, data, r.Data)
 	}()
 
 	f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
