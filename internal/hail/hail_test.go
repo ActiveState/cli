@@ -1,6 +1,7 @@
 package hail
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -57,12 +58,14 @@ func TestOpen(t *testing.T) {
 		defer wg.Done()
 
 		r := <-rcvs
-		assert.True(t, r.Open.After(start) && postOpen.After(r.Open))
+		fmt.Println("strt:", start, "\nopen:", r.Open, "\npost:", postOpen, "\nrcvd:", r.Time)
+		assert.True(t, r.Open.After(start))
+		assert.True(t, postOpen.After(r.Open))
 		assert.True(t, r.Time.After(postOpen))
 		assert.Equal(t, data, r.Data)
 	}()
 
-	time.Sleep(time.Millisecond * 100) // else windows fails at "r.Time.After(postOpen)"
+	//time.Sleep(time.Millisecond * 100) // else windows fails at "r.Time.After(postOpen)"
 
 	f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
 	require.NoError(t, err)
