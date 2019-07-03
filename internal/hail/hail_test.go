@@ -3,7 +3,7 @@ package hail
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -13,9 +13,9 @@ import (
 )
 
 func directory() string {
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		panic(err)
+	dir := "/"
+	if runtime.GOOS == "windows" {
+		dir = `C:\`
 	}
 	return dir
 }
