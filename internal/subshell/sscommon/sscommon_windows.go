@@ -8,7 +8,7 @@ import (
 )
 
 func stop(cmd *exec.Cmd) *failures.Failure {
-	sig = syscall.SIGKILL
+	sig := syscall.SIGKILL
 
 	// may panic if process no longer exists
 	defer failures.Recover()
