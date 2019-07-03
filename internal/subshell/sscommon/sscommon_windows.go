@@ -8,6 +8,7 @@ import (
 )
 
 func stop(cmd *exec.Cmd) *failures.Failure {
+	// windows should use "CTRL_CLOSE_EVENT"; SIGKILL works
 	sig := syscall.SIGKILL
 
 	// may panic if process no longer exists
