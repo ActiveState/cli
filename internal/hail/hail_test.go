@@ -62,6 +62,8 @@ func TestOpen(t *testing.T) {
 		assert.Equal(t, data, r.Data)
 	}()
 
+	time.Sleep(time.Millisecond * 100) // else windows fails at "r.Time.After(postOpen)"
+
 	f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
 	require.NoError(t, err)
 	_, err = f.Write(data)
