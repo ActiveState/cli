@@ -3,7 +3,6 @@ package hail
 import (
 	"io/ioutil"
 	"os"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -12,16 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func directory() string {
-	dir := "/"
-	if runtime.GOOS == "windows" {
-		dir = `WAT:\`
-	}
-	return dir
-}
-
 func TestSend(t *testing.T) {
-	fail := Send(directory(), []byte{})
+	fail := Send("/", []byte{})
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
@@ -46,7 +37,7 @@ func TestOpen(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 
-	_, fail := Open(done, directory())
+	_, fail := Open(done, "/")
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
