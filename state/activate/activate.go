@@ -322,13 +322,18 @@ type subShell interface {
 func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
 	for {
 		select {
-		case rcvd := <-rcvs:
+		case rcvd, ok := <-rcvs:
+			if !ok {
+				logging.Error("hailing channel closed")
+				return false
+			}
+
 			if rcvd.Fail != nil {
 				logging.Error("error in hailing channel: %s", rcvd.Fail)
 				continue
 			}
 
-			if id == "" || len(rcvd.Data) == 0 || id != string(rcvd.Data) {
+			if !idsValid(id, rcvd.Data) {
 				continue
 			}
 
@@ -344,7 +349,12 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 			return true
 
-		case fail := <-subs.Failures():
+		case fail, ok := <-subs.Failures():
+			if !ok {
+				logging.Error("subshell failure channel closed")
+				return false
+			}
+
 			if fail != nil {
 				failures.Handle(fail, locale.T("error_in_active_subshell"))
 			}
@@ -352,4 +362,8 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 			return false
 		}
 	}
+}
+
+func idsValid(currID string, rcvdID []byte) bool {
+	return currID != "" && len(rcvdID) > 0 && currID == string(rcvdID)
 }
