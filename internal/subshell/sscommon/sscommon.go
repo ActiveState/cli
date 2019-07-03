@@ -64,7 +64,7 @@ func Stop(cmd *exec.Cmd) *failures.Failure {
 
 	// may panic if process no longer exists
 	defer failures.Recover()
-	if err := cmd.Process.Signal(sig); err != nil {
+	if err := syscall.Kill(cmd.Process.Pid, sig); err != nil {
 		return FailSignalCmd.Wrap(err)
 	}
 
