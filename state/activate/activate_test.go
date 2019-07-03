@@ -216,9 +216,9 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 	timeoutFail := func() { suite.FailNow("timedout") }
 
 	wg := &sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(4)
 
-	go t.Run("trigger deactivation (hail.Received.Fail)", func(t *testing.T) {
+	go t.Run("hail received (failure)", func(t *testing.T) {
 		defer wg.Done()
 
 		lp := makeLFRParams()
@@ -227,9 +227,11 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 		if _, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
 			suite.Fail("should timeout")
 		}
+
+		suite.Equal(0, len(lp.rcvs), "channel should be empty")
 	})
 
-	go t.Run("trigger deactivation (invalid id)", func(t *testing.T) {
+	go t.Run("hail received (invalid id)", func(t *testing.T) {
 		defer wg.Done()
 
 		lp := makeLFRParams()
@@ -238,9 +240,11 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 		if _, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
 			suite.Fail("should timeout")
 		}
+
+		suite.Equal(0, len(lp.rcvs), "channel should be empty")
 	})
 
-	go t.Run("trigger deactivation (no wait/wait)", func(t *testing.T) {
+	go t.Run("hail received (no wait/wait)", func(t *testing.T) {
 		defer wg.Done()
 
 		lp := makeLFRParams()
@@ -250,6 +254,8 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 		if _, ok := lfrValOk(time.Millisecond*500, lp.id, lp.rcvs, lp.subs); ok {
 			suite.Fail("should take more than 500ms")
 		}
+
+		suite.Equal(0, len(lp.rcvs), "channel should be empty")
 
 		lp.rcvs <- r
 
@@ -261,11 +267,47 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 		timeoutFail()
 	})
 
+	go t.Run("hail received (deactivation failure)", func(t *testing.T) {
+		defer wg.Done()
+
+		lp := makeLFRParams()
+		lp.rcvs <- &hail.Received{Data: []byte(lp.id)}
+		lp.subs.failNext = true
+
+		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.False(v)
+			return
+		}
+		timeoutFail()
+	})
+
 	wg.Wait()
 
 	t.Run("close hails", func(t *testing.T) {
 		lp := makeLFRParams()
 		go close(lp.rcvs)
+
+		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.False(v)
+			return
+		}
+		timeoutFail()
+	})
+
+	t.Run("subs failure received", func(t *testing.T) {
+		lp := makeLFRParams()
+		lp.subs.fails <- failures.FailDeveloper.New("subs failure")
+
+		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
+			suite.False(v)
+			return
+		}
+		timeoutFail()
+	})
+
+	t.Run("close subs failures", func(t *testing.T) {
+		lp := makeLFRParams()
+		go close(lp.subs.fails)
 
 		if v, ok := lfrValOk(timeout, lp.id, lp.rcvs, lp.subs); ok {
 			suite.False(v)
