@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -111,6 +112,9 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return
 	}
+
+	// ensure changes are picked up by subshell
+	config.Save()
 
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
