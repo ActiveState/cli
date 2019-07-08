@@ -21,8 +21,8 @@ func TestBash(t *testing.T) {
 	setup(t)
 
 	os.Setenv("SHELL", `C:\Program Files\bash.exe`)
-	subs, err := Get()
-	require.NoError(t, err)
+	subs, fail := Get()
+	require.NoError(t, fail.ToError())
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 
 }
@@ -32,8 +32,8 @@ func TestBashDontEscapeSpace(t *testing.T) {
 
 	// Reproduce bug in which paths are being incorrectly escaped on windows
 	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
-	subs, err := Get()
-	require.NoError(t, err)
+	subs, fail := Get()
+	require.NoError(t, fail.ToError())
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 }
 
@@ -47,8 +47,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
 
-	subs, err := Get()
-	assert.NoError(t, err)
+	subs, fail := Get()
+	assert.NoError(t, fail.ToError())
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	assert.NoError(t, err)
@@ -76,8 +76,8 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Unsetenv("SHELL")
 
-	subs, err := Get()
-	assert.NoError(t, err)
+	subs, fail := Get()
+	assert.NoError(t, fail.ToError())
 
 	code, err := subs.Run("some-command-that-doesnt-exist")
 	assert.Equal(t, 1, code, "Returns exit code 1")

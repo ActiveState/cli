@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,33 +23,31 @@ func setup(t *testing.T) {
 
 func TestActivate(t *testing.T) {
 	setup(t)
-	var wg sync.WaitGroup
 
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ComSpec", "cmd.exe")
-	venv, err := Activate(&wg)
+	subs, fail := Activate()
 
-	assert.NoError(t, err, "Should activate")
+	assert.NoError(t, fail.ToError(), "Should activate")
 
-	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
-	assert.True(t, venv.IsActive(), "Subshell should be active")
+	assert.NotEqual(t, "", subs.Shell(), "Should detect a shell")
+	assert.True(t, subs.IsActive(), "Subshell should be active")
 
-	err = venv.Deactivate()
-	assert.NoError(t, err, "Should deactivate")
+	fail = subs.Deactivate()
+	assert.NoError(t, fail.ToError(), "Should deactivate")
 
-	assert.False(t, venv.IsActive(), "Subshell should be inactive")
+	assert.False(t, subs.IsActive(), "Subshell should be inactive")
 }
 
 func TestActivateFailures(t *testing.T) {
 	setup(t)
-	var wg sync.WaitGroup
 
 	shell := os.Getenv("SHELL")
 	comspec := os.Getenv("ComSpec")
 
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
-	_, err := Activate(&wg)
+	_, err := Activate()
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 
@@ -72,8 +69,8 @@ func TestRunCommand(t *testing.T) {
 		os.Setenv("SHELL", "bash")
 	}
 
-	subs, err := Get()
-	assert.NoError(t, err)
+	subs, fail := Get()
+	assert.NoError(t, fail.ToError())
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	assert.NoError(t, err)

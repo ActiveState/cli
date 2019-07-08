@@ -4,18 +4,21 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
-	"sync"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -90,8 +93,6 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	checker.RunCommitsBehindNotifier()
 
-	var wg sync.WaitGroup
-
 	logging.Debug("Execute")
 	if Args.Namespace != "" {
 		fail := activateFromNamespace(Args.Namespace)
@@ -101,29 +102,18 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	proj := project.Get()
-	print.Info(locale.T("info_activating_state", proj))
-	venv := virtualenvironment.Get()
-	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail = venv.Activate()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return
-	}
+	// activate should be continually called while returning true
+	// looping here provides a layer of scope to handle printing output
+	var proj *project.Project
+	for {
+		proj = project.Get()
+		print.Info(locale.T("info_activating_state", proj))
 
-	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", proj.Owner(), proj.Name()), filepath.Dir(proj.Source().Path()))
+		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
+			break
+		}
 
-	_, err := subshell.Activate(&wg)
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return
-	}
-
-	// Don't exit until our subshell has finished
-	if flag.Lookup("test.v") == nil {
-		wg.Wait()
+		print.Info(locale.T("info_reactivating", proj))
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
@@ -284,4 +274,96 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	}
 
 	return nil, nil
+}
+
+// activate will activate the venv and subshell. It is meant to be run in a loop
+// with the return value indicating whether another iteration is warranted.
+func activate(owner, name, srcPath string) bool {
+	venv := virtualenvironment.Get()
+	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+	fail := venv.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	// Save path to project for future use
+	savePathForNamespace(fmt.Sprintf("%s/%s", owner, name), filepath.Dir(srcPath))
+
+	subs, err := subshell.Activate()
+	if err != nil {
+		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
+		return false
+	}
+
+	if flag.Lookup("test.v") != nil {
+		return false
+	}
+
+	done := make(chan struct{})
+	defer close(done)
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+
+	hails, fail := hail.Open(done, fname)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
+		return false
+	}
+
+	return listenForReactivation(venv.ActivationID(), hails, subs)
+}
+
+type subShell interface {
+	Deactivate() *failures.Failure
+	Failures() <-chan *failures.Failure
+}
+
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
+	for {
+		select {
+		case rcvd, ok := <-rcvs:
+			if !ok {
+				logging.Error("hailing channel closed")
+				return false
+			}
+
+			if rcvd.Fail != nil {
+				logging.Error("error in hailing channel: %s", rcvd.Fail)
+				continue
+			}
+
+			if !idsValid(id, rcvd.Data) {
+				continue
+			}
+
+			// A subshell will have triggered this case; Wait for
+			// output completion before deactivating. The nature of
+			// this issue is unclear at this time.
+			time.Sleep(time.Second)
+
+			if fail := subs.Deactivate(); fail != nil {
+				failures.Handle(fail, locale.T("error_deactivating_subshell"))
+				return false
+			}
+
+			return true
+
+		case fail, ok := <-subs.Failures():
+			if !ok {
+				logging.Error("subshell failure channel closed")
+				return false
+			}
+
+			if fail != nil {
+				failures.Handle(fail, locale.T("error_in_active_subshell"))
+			}
+
+			return false
+		}
+	}
+}
+
+func idsValid(currID string, rcvdID []byte) bool {
+	return currID != "" && len(rcvdID) > 0 && currID == string(rcvdID)
 }
