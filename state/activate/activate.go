@@ -94,6 +94,9 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
+	// ensure changes are picked up by subshell
+	config.Save()
+
 	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
