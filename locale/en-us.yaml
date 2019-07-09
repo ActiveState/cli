@@ -109,6 +109,14 @@ error_cannot_clone_uri:
   other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
   other: Could not activate a new subshell
+error_unable_to_monitor_pulls:
+  other: Failed to setup pull monitoring
+error_deactivating_subshell:
+  other: Failed to deactivate subshell properly
+error_in_active_subshell:
+  other: Failure encountered in active subshell
+info_reactivating:
+  other: Reactivating state
 info_deactivated:
   other: Deactivated {{.Owner}}/{{.Name}}
 venv_installer_is_nil:
@@ -567,6 +575,8 @@ pull_is_updated:
   other: Your activestate.yaml has been updated to the latest version available
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
+notify_user_to_reactivate_instances:
+  other: Please reactivate any activated instances of the State Tool
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:

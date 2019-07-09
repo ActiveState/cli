@@ -56,6 +56,9 @@ var (
 	// FailNetwork identifies a failure due to a networking issue
 	FailNetwork = Type("failures.fail.network")
 
+	// FailTemplating identifies a failure due to a templating issue
+	FailTemplating = Type("failures.fail.templating")
+
 	// FailArchiving identifies a failure due to archiving (compressing or decompressing)
 	FailArchiving = Type("failures.fail.archiving")
 

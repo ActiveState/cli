@@ -9,12 +9,12 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 var escaper *osutils.ShellEscape
@@ -28,8 +28,8 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	wg     *sync.WaitGroup
 	env    []string
+	fs     chan *failures.Failure
 }
 
 // Shell - see subshell.SubShell
@@ -78,13 +78,11 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(wg *sync.WaitGroup) error {
-	v.wg = wg
-	wg.Add(1)
+func (v *SubShell) Activate() *failures.Failure {
 
 	path, err := ioutil.TempDir("", "state-zsh")
 	if err != nil {
-		return err
+		return failures.FailOS.Wrap(err)
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
@@ -114,36 +112,29 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 
 	shellArgs := []string{}
 	cmd := exec.Command(v.Binary(), shellArgs...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Start()
 
+	v.fs = sscommon.Start(cmd)
 	v.cmd = cmd
+	return nil
+}
 
-	go func() {
-		err = cmd.Wait()
-		v.wg.Done()
-	}()
-
-	return err
+// Failures returns a channel for receiving errors related to active behavior
+func (v *SubShell) Failures() <-chan *failures.Failure {
+	return v.fs
 }
 
 // Deactivate - see subshell.SubShell
-func (v *SubShell) Deactivate() error {
+func (v *SubShell) Deactivate() *failures.Failure {
 	if !v.IsActive() {
 		return nil
 	}
 
-	var err error
-	func() {
-		// Go's Process.Kill is not very safe to use, it throws a panic if the process no longer exists
-		defer failures.Recover()
-		err = v.cmd.Process.Kill()
-	}()
-
-	if err == nil {
-		v.cmd = nil
+	if fail := sscommon.Stop(v.cmd); fail != nil {
+		return fail
 	}
-	return err
+
+	v.cmd = nil
+	return nil
 }
 
 // Run - see subshell.SubShell

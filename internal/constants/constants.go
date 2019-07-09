@@ -30,6 +30,9 @@ const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
+// UpdateHailFileName is the file name used to pass messages from sub-processes to the parent.
+const UpdateHailFileName = "hail-update"
+
 // AutoUpdateTimeoutEnvVarName is the env var that is used to override the timeout for auto update checks
 const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"
 
@@ -44,6 +47,9 @@ const ProjectEnvVarName = "ACTIVESTATE_PROJECT"
 
 // ActivatedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
+
+// ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
+const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
 
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"

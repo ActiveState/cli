@@ -76,9 +76,9 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	// Run the script.
 	scriptBlock := project.Expand(script.Value())
-	subs, err := subshell.Get()
-	if err != nil {
-		failures.Handle(err, locale.T("error_state_run_no_shell"))
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
 		return
 	}
 

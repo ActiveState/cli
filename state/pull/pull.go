@@ -1,8 +1,14 @@
 package pull
 
 import (
+	"os"
+	"path"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/hail"
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -38,11 +44,25 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	locKey := "pull_is_updated"
 	if !updated {
-		locKey = "pull_not_updated"
+		print.Line(locale.T("pull_not_updated"))
+		return
 	}
-	print.Line(locale.T(locKey))
+
+	print.Line(locale.T("pull_is_updated"))
+	print.Line(locale.T("notify_user_to_reactivate_instances"))
+
+	actID := os.Getenv(constants.ActivatedStateIDEnvVarName)
+	if actID == "" {
+		logging.Error("failed to obtain activated id, hail not sent")
+		return
+	}
+
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+	// must happen last in this function scope (defer if needed)
+	if fail := hail.Send(fname, []byte(actID)); fail != nil {
+		logging.Error("failed to send hail via %q: %s", fname, fail)
+	}
 }
 
 func latestCommitID(owner, project string) (string, *failures.Failure) {

@@ -30,6 +30,7 @@ func setup(t *testing.T) {
 	rtMock.MockFullRuntime()
 
 	os.Unsetenv(constants.ActivatedStateEnvVarName)
+	os.Unsetenv(constants.ActivatedStateIDEnvVarName)
 }
 
 func teardown() {
@@ -132,4 +133,6 @@ func TestEnv(t *testing.T) {
 	env := venv.GetEnv()
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
+	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
+	assert.NotEmpty(t, venv.ActivationID())
 }
