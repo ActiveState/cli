@@ -329,6 +329,24 @@ func GetOnce() (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// New takes content to be added to
+func New(projectURL string, path string) (*Project, *failures.Failure) {
+	data := map[string]interface{}{
+		"Project": projectURL,
+		"Content": locale.T("sample_yaml"),
+	}
+
+	fail := loadTemplate(data, path)
+	if fail != nil {
+		return nil, fail
+	}
+	project, fail := Parse(path)
+	if fail != nil {
+		return nil, fail
+	}
+	return project, nil
+}
+
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't
 // trip over older activestate.yaml's with breaking changes
 func ParseVersionInfo() (*VersionInfo, *failures.Failure) {

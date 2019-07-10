@@ -841,3 +841,23 @@ err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of 'project: https://platform.activestate.com/Owner/ProjectName'"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
+sample_yaml:
+  other: |
+    scripts:
+    # This script uses a secret. Note that you can define your own secrets at
+    # https://platform.activestate.com/OWNER/PROJECT/scripts
+      - name: helloWorld
+        value: echo ${secrets.user.world}
+    events:
+      # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
+      # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
+      - name: ACTIVATE
+        value: |
+            echo "
+            You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+
+            Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
+
+            To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/<ORG>/<NAME>.
+
+            To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running `helloWorld`"

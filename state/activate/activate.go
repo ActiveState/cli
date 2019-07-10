@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -13,9 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alecthomas/template"
 	"github.com/go-openapi/strfmt"
-	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -43,7 +40,6 @@ import (
 var (
 	failInvalidNamespace = failures.Type("activate.fail.invalidnamespace", failures.FailUserInput)
 	failTargetDirExists  = failures.Type("activate.fail.direxists", failures.FailUserInput)
-	failTemplateLoad     = failures.Type("activate.fail.templateload", failures.FailRuntime)
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
@@ -225,56 +221,15 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
-	var data map[string]interface{}
 	if commitID != nil {
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
-	data["Project"] = projectURL
-	projectfilePath := filepath.Join(directory, constants.ConfigFileName)
-	err = loadTemplate(data, projectfilePath)
-	if err != nil {
-		return failTemplateLoad.Wrap(err)
-	}
-	pj, fail := projectfile.Parse(projectfilePath)
+
+	_, fail := projectfile.New(projectURL, filepath.Join(directory, constants.ConfigFileName))
 	if fail != nil {
 		return fail
 	}
 
-	pj.Languages = []projectfile.Language{}
-	for _, language := range languages {
-		pj.Languages = append(pj.Languages, projectfile.Language{Name: language})
-	}
-
-	fail = pj.Save()
-	if fail != nil {
-		return fail
-	}
-
-	return nil
-}
-
-func loadTemplate(data map[string]interface{}, path string) error {
-	box := packr.NewBox("../../assets/")
-	tpl := box.String("activestate.yaml")
-	t, err := template.New("activestateYAML").Parse(tpl)
-	if err != nil {
-		return err
-	}
-	var out bytes.Buffer
-	err = t.Execute(&out, data)
-	if err != nil {
-		return failures.FailTemplating.Wrap(err)
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	defer f.Close()
-
-	_, err = f.Write([]byte(out.String()))
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
 	return nil
 }
 
