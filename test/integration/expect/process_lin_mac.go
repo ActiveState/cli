@@ -23,13 +23,17 @@ func (p *Process) start() error {
 	}()
 
 	go func() {
-		_, err := io.Copy(p.pty, p.cmd.Stdin)
+		_, err := io.Copy(p.pty, p.inReader)
 		if err != nil {
 			panic(fmt.Sprintf("Error while copying stdin: %v", err))
 		}
 	}()
 
 	return nil
+}
+
+func (p *Process) setupStdin() {
+	p.inReader, p.inWriter = io.Pipe()
 }
 
 func (p *Process) setupStdout() {
@@ -48,6 +52,6 @@ func (p *Process) close() error {
 }
 
 func (p *Process) Write(input string) error {
-	_, err := io.WriteString(p.stdin, input)
+	_, err := fmt.Fprintf(p.inWriter, "%s\n", input)
 	return err
 }

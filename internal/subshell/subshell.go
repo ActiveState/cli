@@ -89,6 +89,7 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 		return nil, fail
 	}
 
+	logging.Debug("Calling Activate")
 	err := subs.Activate(wg)
 	if err != nil {
 		return nil, err

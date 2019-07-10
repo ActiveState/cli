@@ -1,28 +1,35 @@
 package expect
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 type Process struct {
-	cmd       *exec.Cmd
-	onOutput  func([]byte)
-	onStdout  func([]byte)
-	onStderr  func([]byte)
-	pty       *os.File
+	// Process
+	cmd *exec.Cmd
+	pty *os.File
+
+	// Event handlers
+	onOutput func([]byte)
+	onStdout func([]byte)
+	onStderr func([]byte)
+
+	// stdin/stdout/stderr proxies
 	stdin     io.WriteCloser
+	inReader  io.Reader
+	inWriter  io.Writer
 	outWriter io.Writer
-	combined  string
-	stdout    string
-	stderr    string
-	errors    []string
-	running   bool
-	exited    bool
+
+	// Output tracking
+	combined string
+	stdout   string
+	stderr   string
+
+	// State
+	running bool
+	exited  bool
 }
 
 func NewProcess(name string, args ...string) *Process {
@@ -36,14 +43,6 @@ func NewProcess(name string, args ...string) *Process {
 	p.setupStdout()
 	p.setupStderr()
 	return p
-}
-
-func (p *Process) setupStdin() {
-	var err error
-	p.stdin, err = p.cmd.StdinPipe()
-	if err != nil {
-		panic(fmt.Sprintf("Could not pipe stdin: %v\n", err))
-	}
 }
 
 func (p *Process) setupStderr() {
@@ -107,10 +106,6 @@ func (p *Process) Run() error {
 
 	if err := p.cmd.Wait(); err != nil {
 		return err
-	}
-
-	if len(p.errors) > 0 {
-		return errors.New(strings.Join(p.errors, "\n")) // can only return one, but the rest is still logged
 	}
 
 	return nil

@@ -78,6 +78,8 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	wg.Add(1)
 
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
+	logging.Debug("Activating shell with command: %s %s", v.Binary(), strings.Join(shellArgs, " "))
+
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
@@ -88,6 +90,8 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	go func() {
 		err = cmd.Wait()
 		v.wg.Done()
+		logging.Debug("Exit code: %d", osutils.CmdExitCode(cmd))
+		logging.Debug("Error: %v", err)
 	}()
 
 	return err
@@ -116,7 +120,7 @@ func (v *SubShell) Deactivate() error {
 func (v *SubShell) Run(script string, args ...string) (int, error) {
 	tmpfile, err := ioutil.TempFile("", "bash-script")
 	if err != nil {
-		return 1, err
+		return 1, failures.FailIO.Wrap(err)
 	}
 
 	tmpfile.WriteString("#!/usr/bin/env bash\n" + script)
@@ -139,8 +143,12 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = v.env
 
+	fail = nil
 	err = runCmd.Run()
-	return osutils.CmdExitCode(runCmd), err
+	if err != nil {
+		fail = failures.FailOS.Wrap(err)
+	}
+	return osutils.CmdExitCode(runCmd), fail
 }
 
 // IsActive - see subshell.SubShell

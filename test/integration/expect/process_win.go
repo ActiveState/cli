@@ -2,7 +2,10 @@
 
 package expect
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 func (p *Process) start() error {
 	return p.cmd.Start()
@@ -10,6 +13,14 @@ func (p *Process) start() error {
 
 func (p *Process) close() error {
 	return nil
+}
+
+func (p *Process) setupStdin() {
+	var err error
+	p.stdin, err = p.cmd.StdinPipe()
+	if err != nil {
+		panic(fmt.Sprintf("Could not pipe stdin: %v\n", err))
+	}
 }
 
 func (p *Process) setupStdout() {
