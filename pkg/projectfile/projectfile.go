@@ -339,7 +339,7 @@ func GetOnce() (*Project, *failures.Failure) {
 // Create a new activestate.yaml with default content
 func Create(projectURL string, path string) (*Project, *failures.Failure) {
 	if path == "" {
-		return nil, FailNewBlankPath.New("'projectfil.New' requires a path")
+		return nil, FailNewBlankPath.New(locale.T("err_project_require_path"))
 	}
 	path = filepath.Join(path, constants.ConfigFileName)
 
@@ -365,7 +365,7 @@ func Create(projectURL string, path string) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	fail = writeTemplate(path, content)
+	fail = fileutils.WriteFile(path, []byte(content.String()))
 	if fail != nil {
 		return nil, fail
 	}

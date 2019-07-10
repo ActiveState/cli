@@ -843,6 +843,8 @@ err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
   other: A project already exists in the specified directory
+err_project_require_path:
+  other: Require a path
 sample_yaml:
   other: |
     scripts:

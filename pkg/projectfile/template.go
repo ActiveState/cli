@@ -2,8 +2,6 @@ package projectfile
 
 import (
 	"bytes"
-	"fmt"
-	"os"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/alecthomas/template"
@@ -28,18 +26,4 @@ func loadTemplate(path string, data map[string]interface{}) (*bytes.Buffer, *fai
 	}
 
 	return &out, nil
-}
-
-func writeTemplate(path string, content *bytes.Buffer) *failures.Failure {
-	f, err := os.Create(path)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	defer f.Close()
-	fmt.Println(path)
-	_, err = f.Write([]byte(content.String()))
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	return nil
 }
