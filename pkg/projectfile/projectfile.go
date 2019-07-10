@@ -36,6 +36,9 @@ var (
 
 	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
 	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
+
+	// FailProjectExists identifies a failure as being caused by the commit id not getting set
+	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -333,20 +336,17 @@ func GetOnce() (*Project, *failures.Failure) {
 	return project, nil
 }
 
-// New takes content to be added to a new activestate.yaml
-func New(projectURL string, path string) (*Project, *failures.Failure) {
+// Create a new activestate.yaml with default content
+func Create(projectURL string, path string) (*Project, *failures.Failure) {
 	if path == "" {
 		return nil, FailNewBlankPath.New("'projectfil.New' requires a path")
 	}
 	path = filepath.Join(path, constants.ConfigFileName)
 
 	if fileutils.FileExists(path) {
-		return Parse(path)
+		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
 	}
-	return createDefaultProject(projectURL, path)
-}
 
-func createDefaultProject(projectURL string, path string) (*Project, *failures.Failure) {
 	fail := ValidateProjectURL(projectURL)
 	if fail != nil {
 		return nil, fail
@@ -360,7 +360,7 @@ func createDefaultProject(projectURL string, path string) (*Project, *failures.F
 			map[string]interface{}{"Owner": owner, "Project": project}),
 	}
 
-	content, fail := loadTemplate(data, path)
+	content, fail := loadTemplate(path, data)
 	if fail != nil {
 		return nil, fail
 	}

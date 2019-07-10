@@ -841,6 +841,8 @@ err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of 'project: https://platform.activestate.com/Owner/ProjectName'"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
+err_projectfile_exists:
+  other: A project already exists in the specified directory
 sample_yaml:
   other: |
     scripts:
