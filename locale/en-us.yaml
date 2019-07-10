@@ -844,7 +844,7 @@ err_unauthorized:
 err_projectfile_exists:
   other: A project already exists in the specified directory
 err_project_require_path:
-  other: Require a path
+  other: A project path was not supplied
 sample_yaml:
   other: |
     scripts:
