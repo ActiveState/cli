@@ -860,4 +860,4 @@ sample_yaml:
 
             To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/<ORG>/<NAME>.
 
-            To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running `helloWorld`"
+            To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
