@@ -347,9 +347,17 @@ func New(projectURL string, path string) (*Project, *failures.Failure) {
 }
 
 func defaultProject(projectURL string, path string) (*Project, *failures.Failure) {
+	fail := ValidateProjectURL(projectURL)
+	if fail != nil {
+		return nil, fail
+	}
+	match := ProjectURLRe.FindStringSubmatch(projectURL)
+	owner, project := match[1], match[2]
+
 	data := map[string]interface{}{
 		"Project": projectURL,
-		"Content": locale.T("sample_yaml"),
+		"Content": locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project}),
 	}
 
 	content, fail := loadTemplate(data, path)

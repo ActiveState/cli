@@ -375,10 +375,10 @@ func TestNewProjectfile(t *testing.T) {
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 
-	pjFile, fail := New("https://example.com/xowner/xproject", dir)
+	pjFile, fail := New("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, fail.ToError(), "There should be no error when laoding from a path")
 	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
 
-	_, fail = New("https://example.com/xowner/xproject", "")
+	_, fail = New("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, fail.ToError(), "We don't accept blank paths")
 }

@@ -845,7 +845,7 @@ sample_yaml:
   other: |
     scripts:
     # This script uses a secret. Note that you can define your own secrets at
-    # https://platform.activestate.com/OWNER/PROJECT/scripts
+    # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
       - name: helloWorld
         value: echo ${secrets.user.world}
     events:
@@ -858,6 +858,6 @@ sample_yaml:
 
             Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
 
-            To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/<ORG>/<NAME>.
+            To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
 
             To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
