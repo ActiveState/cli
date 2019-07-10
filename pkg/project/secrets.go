@@ -310,7 +310,7 @@ func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string
 		return "", fail
 	}
 
-	fail = secrets.Save(e.secretsClient, keypair, org, pj, false, name, value)
+	fail = secrets.Save(e.secretsClient, keypair, org, pj, e.isUser, name, value)
 
 	if fail != nil {
 		return "", fail
