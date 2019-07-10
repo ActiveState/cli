@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -335,11 +336,13 @@ func New(projectURL string, path string) (*Project, *failures.Failure) {
 		"Project": projectURL,
 		"Content": locale.T("sample_yaml"),
 	}
+	path = filepath.Join(path, constants.ConfigFileName)
 
 	fail := loadTemplate(data, path)
 	if fail != nil {
 		return nil, fail
 	}
+
 	project, fail := Parse(path)
 	if fail != nil {
 		return nil, fail
