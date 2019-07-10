@@ -72,6 +72,9 @@ type Project struct {
 	Name      string      `yaml:"name,omitempty"`
 }
 
+// tracks deprecation warning; remove as soon as possible
+var warned bool
+
 // Platform covers the platform structure of our yaml
 type Platform struct {
 	Name         string `yaml:"name,omitempty"`
@@ -167,7 +170,10 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 	}
 
 	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+		if !warned {
+			print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+			warned = true
+		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
 
