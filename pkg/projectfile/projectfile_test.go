@@ -382,3 +382,11 @@ func TestNewProjectfile(t *testing.T) {
 	_, fail = New("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, fail.ToError(), "We don't accept blank paths")
 }
+
+func TestValidateProjectURL(t *testing.T) {
+	fail := ValidateProjectURL("https://example.com/xowner/xproject")
+	assert.Error(t, fail.ToError(), "This is an invalid project URL, good catch!")
+
+	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
+	assert.Nil(t, fail, "This is an invalid project URL, good catch!")
+}
