@@ -33,6 +33,9 @@ var (
 
 	// FailSetCommitID identifies a failure as being caused by the commit id not getting set
 	FailSetCommitID = failures.Type("projectfile.fail.setcommitid")
+
+	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
+	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -331,23 +334,16 @@ func GetOnce() (*Project, *failures.Failure) {
 }
 
 // New takes content to be added to a new activestate.yaml
-// If path is "" default to cwd
 func New(projectURL string, path string) (*Project, *failures.Failure) {
+	if path == "" {
+		return nil, FailNewBlankPath.New("'projectfil.New' requires a path")
+	}
+	path = filepath.Join(path, constants.ConfigFileName)
+
 	data := map[string]interface{}{
 		"Project": projectURL,
 		"Content": locale.T("sample_yaml"),
 	}
-
-	if path == "" {
-		var err error
-		path, err = os.Getwd()
-		if err != nil {
-			logging.Warning("Could not get project root path: %v", err)
-			return nil, failures.FailOS.Wrap(err)
-		}
-	}
-
-	path = filepath.Join(path, constants.ConfigFileName)
 
 	fail := loadTemplate(data, path)
 	if fail != nil {
