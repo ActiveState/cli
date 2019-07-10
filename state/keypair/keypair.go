@@ -1,6 +1,8 @@
 package keypair
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -9,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -32,6 +33,7 @@ var Command = &commands.Command{
 	Name:        "keypair",
 	Description: "keypair_cmd_description",
 	Run:         Execute,
+	Hidden:      true,
 }
 
 // GenerateCommand is a sub-command of keypair.
