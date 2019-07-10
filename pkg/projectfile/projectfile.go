@@ -343,10 +343,10 @@ func New(projectURL string, path string) (*Project, *failures.Failure) {
 	if fileutils.FileExists(path) {
 		return Parse(path)
 	}
-	return defaultProject(projectURL, path)
+	return createDefaultProject(projectURL, path)
 }
 
-func defaultProject(projectURL string, path string) (*Project, *failures.Failure) {
+func createDefaultProject(projectURL string, path string) (*Project, *failures.Failure) {
 	fail := ValidateProjectURL(projectURL)
 	if fail != nil {
 		return nil, fail
