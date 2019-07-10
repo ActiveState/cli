@@ -329,7 +329,7 @@ func GetOnce() (*Project, *failures.Failure) {
 	return project, nil
 }
 
-// New takes content to be added to
+// New takes content to be added to a new activestate.yaml
 func New(projectURL string, path string) (*Project, *failures.Failure) {
 	data := map[string]interface{}{
 		"Project": projectURL,
