@@ -68,6 +68,7 @@ type Command struct {
 	Arguments          []*Argument
 	DisableFlagParsing bool
 	Exiter             func(int)
+	Hidden             bool
 
 	UsageTemplate string
 
@@ -219,6 +220,7 @@ func (c *Command) Register() {
 		Run:                c.runner,
 		Args:               c.argInputValidator,
 		DisableFlagParsing: c.DisableFlagParsing,
+		Hidden:             c.Hidden,
 	}
 
 	for _, flag := range c.Flags {
