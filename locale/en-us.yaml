@@ -296,6 +296,8 @@ flag_state_new_path_description:
   other: Path to create a new project in.
 flag_state_new_owner_description:
   other: Owner of the project being created.
+arg_state_new_name:
+  other: projectName.
 arg_state_new_name_description:
   other: Name of the new project.
 error_state_new_no_auth:
@@ -472,13 +474,13 @@ secrets_cmd_description:
 secrets_get_cmd_description:
   other: Get the value of a secret
 secrets_get_arg_name:
-  other: secret-namespace
+  other: owner/projectName
 secrets_get_arg_name_description:
   other: Namespace of secret. eg. 'user.mySecret' or 'project.ourSecret'
 secrets_set_cmd_description:
   other: Set the value of a secret
 secrets_set_arg_name:
-  other: secret-namespace
+  other: owner/projectName
 secrets_set_arg_name_description:
   other: Namespace of secret. eg. 'user.mySecret' or 'project.ourSecret'
 secrets_set_arg_value_name:
@@ -799,6 +801,8 @@ err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
 err_pull_update_commit_id:
   other: Cannot update commit id in project file
+pull_latest: 
+  other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 scripts_no_scripts:
