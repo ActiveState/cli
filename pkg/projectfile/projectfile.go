@@ -352,7 +352,12 @@ func defaultProject(projectURL string, path string) (*Project, *failures.Failure
 		"Content": locale.T("sample_yaml"),
 	}
 
-	fail := loadTemplate(data, path)
+	content, fail := loadTemplate(data, path)
+	if fail != nil {
+		return nil, fail
+	}
+
+	fail = writeTemplate(path, content)
 	if fail != nil {
 		return nil, fail
 	}
