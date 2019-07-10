@@ -371,13 +371,14 @@ project: https://example.com/xowner/xproject?commitID=123
 }
 
 func TestNewProjectfile(t *testing.T) {
-	setCwd(t, "")
-	pjFile, fail := New("https://example.com/xowner/xproject?commitID=123", "")
-	assert.NoError(t, fail.ToError(), "There should be no error loading the template.")
-	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
 	dir, err := ioutil.TempDir("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
-	_, fail = New("https://example.com/xowner/xproject?commitID=123", dir)
+
+	pjFile, fail := New("https://example.com/xowner/xproject", "")
 	assert.NoError(t, fail.ToError(), "There should be no error loading the template.")
+	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+
+	_, fail = New("https://example.com/xowner/xproject?commitID=123", dir)
+	assert.NoError(t, fail.ToError(), "There should be no error when laoding from a path")
 }

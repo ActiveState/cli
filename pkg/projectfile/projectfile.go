@@ -331,11 +331,22 @@ func GetOnce() (*Project, *failures.Failure) {
 }
 
 // New takes content to be added to a new activestate.yaml
+// If path is "" default to cwd
 func New(projectURL string, path string) (*Project, *failures.Failure) {
 	data := map[string]interface{}{
 		"Project": projectURL,
 		"Content": locale.T("sample_yaml"),
 	}
+
+	if path == "" {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			logging.Warning("Could not get project root path: %v", err)
+			return nil, failures.FailOS.Wrap(err)
+		}
+	}
+
 	path = filepath.Join(path, constants.ConfigFileName)
 
 	fail := loadTemplate(data, path)
