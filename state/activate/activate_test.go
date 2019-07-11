@@ -121,7 +121,6 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
 	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
-
 	return pjfile
 }
 

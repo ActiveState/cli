@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -32,6 +33,12 @@ var (
 
 	// FailSetCommitID identifies a failure as being caused by the commit id not getting set
 	FailSetCommitID = failures.Type("projectfile.fail.setcommitid")
+
+	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
+	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
+
+	// FailProjectExists identifies a failure as being caused by the commit id not getting set
+	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -333,6 +340,43 @@ func GetOnce() (*Project, *failures.Failure) {
 	}
 
 	return project, nil
+}
+
+// Create a new activestate.yaml with default content
+func Create(projectURL string, path string) (*Project, *failures.Failure) {
+	if path == "" {
+		return nil, FailNewBlankPath.New(locale.T("err_project_require_path"))
+	}
+	path = filepath.Join(path, constants.ConfigFileName)
+
+	if fileutils.FileExists(path) {
+		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
+	}
+
+	fail := ValidateProjectURL(projectURL)
+	if fail != nil {
+		return nil, fail
+	}
+	match := ProjectURLRe.FindStringSubmatch(projectURL)
+	owner, project := match[1], match[2]
+
+	data := map[string]interface{}{
+		"Project": projectURL,
+		"Content": locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project}),
+	}
+
+	content, fail := loadTemplate(path, data)
+	if fail != nil {
+		return nil, fail
+	}
+
+	fail = fileutils.WriteFile(path, []byte(content.String()))
+	if fail != nil {
+		return nil, fail
+	}
+
+	return Parse(path)
 }
 
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't

@@ -225,17 +225,7 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
 
-	pj := projectfile.Project{
-		Project:   projectURL,
-		Languages: []projectfile.Language{},
-	}
-
-	for _, language := range languages {
-		pj.Languages = append(pj.Languages, projectfile.Language{Name: language})
-	}
-
-	pj.SetPath(filepath.Join(directory, constants.ConfigFileName))
-	fail := pj.Save()
+	_, fail := projectfile.Create(projectURL, directory)
 	if fail != nil {
 		return fail
 	}

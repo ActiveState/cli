@@ -369,3 +369,30 @@ project: https://example.com/xowner/xproject?commitID=123
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out1))
 }
+
+func TestNewProjectfile(t *testing.T) {
+	dir, err := ioutil.TempDir("", "projectfile-test")
+	assert.NoError(t, err, "Should be no error when getting a temp directory")
+	os.Chdir(dir)
+
+	pjFile, fail := Create("https://platform.activestate.com/xowner/xproject", dir)
+	assert.NoError(t, fail.ToError(), "There should be no error when laoding from a path")
+	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+
+	_, fail = Create("https://platform.activestate.com/xowner/xproject", "")
+	assert.Error(t, fail.ToError(), "We don't accept blank paths")
+
+	setCwd(t, "")
+	dir, err = os.Getwd()
+	assert.NoError(t, err, "Should be no error when getting the CWD")
+	_, fail = Create("https://platform.activestate.com/xowner/xproject", dir)
+	assert.Error(t, fail.ToError(), "Cannot create new project if existing as.yaml ...exists")
+}
+
+func TestValidateProjectURL(t *testing.T) {
+	fail := ValidateProjectURL("https://example.com/xowner/xproject")
+	assert.Error(t, fail.ToError(), "This is an invalid project URL, good catch!")
+
+	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
+	assert.Nil(t, fail, "This is an invalid project URL, good catch!")
+}
