@@ -287,9 +287,7 @@ func activate(owner, name, srcPath string) bool {
 	// Save path to project for future use
 	savePathForNamespace(fmt.Sprintf("%s/%s", owner, name), filepath.Dir(srcPath))
 
-	if runtime.GOOS == "windows" {
-		signal.Ignore(syscall.SIGINT)
-	}
+	ignoreWindowsInterrupts()
 
 	subs, err := subshell.Activate()
 	if err != nil {
@@ -312,6 +310,17 @@ func activate(owner, name, srcPath string) bool {
 	}
 
 	return listenForReactivation(venv.ActivationID(), hails, subs)
+}
+
+func ignoreWindowsInterrupts() {
+	if runtime.GOOS == "windows" {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT)
+		go func() {
+			for range c {
+			}
+		}()
+	}
 }
 
 type subShell interface {
