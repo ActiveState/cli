@@ -861,11 +861,10 @@ sample_yaml:
       # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
         value: |
-            echo "
-            You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
-
-            Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
-
-            To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
-
-            To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
+          echo "You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system."
+          echo ""
+          echo "Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory."
+          echo ""
+          echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/ActiveState/cli."
+          echo ""
+          echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
