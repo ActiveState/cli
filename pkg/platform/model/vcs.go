@@ -15,11 +15,11 @@ import (
 
 var (
 	// FailGetCommitHistory is a failure in the call to api.GetCommitHistory
-	FailGetCommitHistory = failures.Type("model.fail.getcommithistory")
+	FailGetCommitHistory = failures.Type("model.fail.getcommithistory", failures.FailNonFatal)
 	// FailCommitCountImpossible is a failure counting between commits
-	FailCommitCountImpossible = failures.Type("model.fail.commitcountimpossible")
+	FailCommitCountImpossible = failures.Type("model.fail.commitcountimpossible", failures.FailNonFatal)
 	// FailCommitCountUnknowable is a failure counting between commits
-	FailCommitCountUnknowable = failures.Type("model.fail.commitcountunknowable")
+	FailCommitCountUnknowable = failures.Type("model.fail.commitcountunknowable", failures.FailNonFatal)
 )
 
 // Namespace represents regular expression strings used for defining matchable
