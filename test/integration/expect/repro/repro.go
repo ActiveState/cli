@@ -55,13 +55,13 @@ func (w *stdWriter) Write(p []byte) (n int, err error) {
 
 func main() {
 	p := &Process{
-		cmd: exec.Command("bash", "--rcfile", "hello.rc"),
+		cmd: exec.Command("./sub/sub"),
 	}
 	p.start()
 
 	go func() {
 		fmt.Fprintf(p.stdin, "tty\n")
-		fmt.Fprintf(p.stdin, "echo $PATH\n")
+		fmt.Fprintf(p.stdin, "echo \"-- OUT -- $ACTIVESTATE_ACTIVATED -- OUT --\"\n")
 		fmt.Fprintf(p.stdin, "exit\n")
 	}()
 	p.cmd.Wait()
