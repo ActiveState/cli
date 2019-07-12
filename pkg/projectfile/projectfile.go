@@ -297,6 +297,8 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, failure
 	}
 
+	logging.Debug("Using: %s", projectFilePath)
+
 	_, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		logging.Warning("Cannot load config file: %v", err)

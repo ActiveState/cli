@@ -17,6 +17,7 @@ type Process struct {
 }
 
 func (p *Process) start() error {
+	//_, outWriter := io.Pipe()
 	stdinR, stdinW := io.Pipe()
 
 	outWriter := &stdWriter{}
@@ -63,4 +64,5 @@ func main() {
 		fmt.Fprintf(p.stdin, "echo $PATH\n")
 		fmt.Fprintf(p.stdin, "exit\n")
 	}()
+	p.cmd.Wait()
 }

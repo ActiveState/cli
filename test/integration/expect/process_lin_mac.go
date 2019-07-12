@@ -7,6 +7,8 @@ import (
 	"io"
 
 	"github.com/kr/pty"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 func (p *Process) start() error {
@@ -18,14 +20,14 @@ func (p *Process) start() error {
 	go func() {
 		_, err := io.Copy(p.outWriter, p.pty)
 		if err != nil {
-			panic(fmt.Sprintf("Error while copying stdout: %v", err))
+			logging.Error("Error while copying stdout: %v", err)
 		}
 	}()
 
 	go func() {
 		_, err := io.Copy(p.pty, p.inReader)
 		if err != nil {
-			panic(fmt.Sprintf("Error while copying stdin: %v", err))
+			logging.Error("Error while copying stdin: %v", err)
 		}
 	}()
 
