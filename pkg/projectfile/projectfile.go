@@ -23,7 +23,7 @@ var (
 	FailNoProject = failures.Type("projectfile.fail.noproject")
 
 	// FailParseProject identifies a failure as being due inability to parse file contents
-	FailParseProject = failures.Type("projectfile.fail.parseproject")
+	FailParseProject = failures.Type("projectfile.fail.parseproject", failures.FailUser)
 
 	// FailValidate identifies a failure during validation
 	FailValidate = failures.Type("projectfile.fail.validate")

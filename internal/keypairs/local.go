@@ -13,7 +13,7 @@ import (
 
 var (
 	// FailLoad indicates a failure when loading something.
-	FailLoad = failures.Type("keypairs.fail.load")
+	FailLoad = failures.Type("keypairs.fail.load", failures.FailUser)
 
 	// FailLoadUnknown represents a failure to successfully load Keypair for for some unknown reason.
 	FailLoadUnknown = failures.Type("keypairs.fail.load.unknown", FailLoad)
