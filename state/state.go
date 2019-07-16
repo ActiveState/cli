@@ -82,6 +82,7 @@ var Command = &commands.Command{
 
 func main() {
 	logging.Debug("main")
+	Command.Register()
 
 	// Handle panics gracefully
 	defer func() {
