@@ -218,6 +218,7 @@ func Get() (SubShell, error) {
 	subs.SetBinary(binary)
 	logging.Debug("Using RC File: %s", rcFile.Name())
 	subs.SetRcFile(rcFile)
+	os.Setenv("BASH_ENV", rcFile.Name())
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
