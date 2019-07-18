@@ -32,7 +32,6 @@ var RecipeCommand = &commands.Command{
 	Flags: []*commands.Flag{
 		&commands.Flag{
 			Name:        "pretty",
-			Shorthand:   "p",
 			Description: "export_recipe_flag_pretty",
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.Pretty,
