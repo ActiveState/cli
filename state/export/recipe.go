@@ -1,4 +1,4 @@
-package keypair
+package export
 
 import (
 	"github.com/ActiveState/cli/internal/logging"

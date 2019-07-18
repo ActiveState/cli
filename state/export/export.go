@@ -20,7 +20,6 @@ var Command = &commands.Command{
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 	fmt.Println(cmd.Name())
-	panic("TEST")
 	cmd.Usage()
 }
 
