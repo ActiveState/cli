@@ -16,10 +16,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	Command.Append(RecipeCommand)
-}
-
 // RecipeCommand is a sub-command of export.
 var RecipeCommand = &commands.Command{
 	Name:        "recipe",

@@ -24,6 +24,10 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
+func init() {
+	Command.Append(RecipeCommand)
+}
+
 // Execute the export command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
