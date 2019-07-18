@@ -52,6 +52,14 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	return recipe.Payload.Recipes, nil
 }
 
+func FetchEffectiveRecipeForCommit(pj *mono_models.Project, commitID strfmt.UUID) (*Recipe, *failures.Failure) {
+	recipes, fail := FetchRecipesForCommit(pj, commitID)
+	if fail != nil {
+		return nil, fail
+	}
+	return EffectiveRecipe(recipes)
+}
+
 func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
@@ -61,11 +69,7 @@ func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipes, fail := FetchRecipesForCommit(pj, *branch.CommitID)
-	if fail != nil {
-		return nil, fail
-	}
-	return EffectiveRecipe(recipes)
+	return FetchEffectiveRecipeForCommit(pj, *branch.CommitID)
 }
 
 func EffectiveRecipe(recipes []*Recipe) (*Recipe, *failures.Failure) {
