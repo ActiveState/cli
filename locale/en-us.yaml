@@ -812,7 +812,7 @@ unstable_version_warning:
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
-  other: Print formatted recipe data
+  other: Print json formatted recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
