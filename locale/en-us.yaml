@@ -813,6 +813,16 @@ export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
   other: Print json formatted recipe data
+export_recipe_cmd_commitid_arg:
+  other: commitID
+export_recipe_cmd_commitid_arg_description:
+  other: Commit ID used to fetch recipe for exporting
+export_recipe_flag_pretty:
+  other: Enables export format beautification
+err_parse_commitid:
+  other: Cannot parse provided commit ID
+err_fetching_recipe_data:
+  other: Cannot fetch recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
