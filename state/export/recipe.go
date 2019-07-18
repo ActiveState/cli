@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -12,8 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
-	"github.com/spf13/cobra"
 )
 
 // RecipeCommand is a sub-command of export.
@@ -50,36 +51,36 @@ func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	}
 
 	proj := project.Get()
-	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_fetching_project"))
-		return
-	}
 
-	r, fail := fetchEffectiveRecipe(pj, commitID)
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_fetching_recipe"))
-		return
-	}
-
-	data, err := r.MarshalBinary()
-	if err != nil {
-		failures.Handle(err, locale.T("err_marshaling_recipe"))
-		return
-	}
-
-	/* OR place lines 29-45 in a subroutine to unify the Handle message?
 	data, fail := recipeData(proj, commitID)
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_generic_failure_msg"))
+		failures.Handle(fail, locale.T("err_fetching_recipe_data"))
 	}
-	*/
 
 	if Flags.Pretty {
 		data = beautifyJSON(data)
 	}
 
 	print.Line(string(data))
+}
+
+func recipeData(proj *project.Project, commitID *strfmt.UUID) ([]byte, *failures.Failure) {
+	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if fail != nil {
+		return nil, fail
+	}
+
+	r, fail := fetchEffectiveRecipe(pj, commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	data, err := r.MarshalBinary()
+	if err != nil {
+		return nil, failures.FailMarshal.Wrap(err)
+	}
+
+	return data, nil
 }
 
 // expects valid json or explodes
