@@ -27,5 +27,5 @@ var Command = &commands.Command{
 // Execute the export command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
-	cmd.Usage()
+	cmd.Help()
 }
