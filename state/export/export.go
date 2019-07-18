@@ -1,8 +1,6 @@
 package export
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/logging"
@@ -19,7 +17,6 @@ var Command = &commands.Command{
 // Execute the pull command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
-	fmt.Println(cmd.Name())
 	cmd.Usage()
 }
 
