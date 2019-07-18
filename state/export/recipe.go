@@ -1,29 +1,90 @@
 package export
 
 import (
+	"bytes"
+	"encoding/json"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 )
 
 // ExecuteRecipe processes the `export recipe` command.
-func ExecuteRecipe(cmd *cobra.Command, args []string) {
+func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	logging.Debug("Execute")
 
-	// get project
+	commitID, fail := parseCommitID(Args.CommitID)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_parse_commitid"))
+		return
+	}
 
-	// pkg/platform/model
-	//func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
+	proj := project.Get()
+	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_fetching_project"))
+		return
+	}
 
-	// if no commit id
-	// pkg/platform/model
-	//func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
+	r, fail := fetchEffectiveRecipe(pj, commitID)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_fetching_recipe"))
+		return
+	}
 
-	// if commit id
-	// pkg/platform/model
-	//func FetchEffectiveRecipeForCommit(pj *mono_models.Project, commitID strfmt.UUID) (*Recipe, *failures.Failure) {
+	data, err := r.MarshalBinary()
+	if err != nil {
+		failures.Handle(err, locale.T("err_marshaling_recipe"))
+		return
+	}
 
-	// Recipe type
-	//func (m *RecipeResponseRecipesItems0) MarshalBinary() ([]byte, error) {
+	/* OR place lines 29-45 in a subroutine to unify the Handle message?
+	data, fail := recipeData(proj, commitID)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_generic_failure_msg"))
+	}
+	*/
 
-	//print []byte as string
+	if Flags.Pretty {
+		data = beautifyJSON(data)
+	}
+
+	print.Line(string(data))
+}
+
+// expects valid json or explodes
+func beautifyJSON(d []byte) []byte {
+	var b bytes.Buffer
+	if err := json.Indent(&b, d, "", "\t"); err != nil {
+		panic(err)
+	}
+	return b.Bytes()
+}
+
+func parseCommitID(s string) (*strfmt.UUID, *failures.Failure) {
+	if s == "" {
+		return nil, nil
+	}
+
+	if !strfmt.IsUUID(s) {
+		return nil, failures.FailUserInput.New("data is not a valid UUID")
+	}
+
+	cid := strfmt.UUID(s)
+
+	return &cid, nil
+}
+
+func fetchEffectiveRecipe(pj *mono_models.Project, commitID *strfmt.UUID) (*model.Recipe, *failures.Failure) {
+	if commitID == nil {
+		return model.FetchEffectiveRecipeForProject(pj)
+	}
+
+	return model.FetchEffectiveRecipeForCommit(pj, *commitID)
 }
