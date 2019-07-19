@@ -96,7 +96,7 @@ func beautifyJSON(d []byte) []byte {
 
 func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*model.Recipe, *failures.Failure) {
 	if platform == "" {
-		platform = model.EffectivePlatform
+		platform = model.HostPlatform
 	}
 
 	if commitID != "" {
