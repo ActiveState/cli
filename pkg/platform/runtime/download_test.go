@@ -66,7 +66,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	// If we want to skip this on mac it should be skipped through build tags, in
 	// which case this tweak is meaningless and only a convenience for when testing manually
 	if rt.GOOS == "darwin" {
-		model.OS = sysinfo.Linux
+		model.HostPlatform = sysinfo.Linux.String()
 	}
 }
 

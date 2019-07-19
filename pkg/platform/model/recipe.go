@@ -21,12 +21,12 @@ var (
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 )
 
-var EffectivePlatform string
+var HostPlatform string
 
 type Recipe = inventory_models.RecipeResponseRecipesItems0
 
 func init() {
-	EffectivePlatform = sysinfo.OS().String()
+	HostPlatform = sysinfo.OS().String()
 }
 
 // FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
