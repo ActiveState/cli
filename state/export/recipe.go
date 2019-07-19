@@ -23,14 +23,14 @@ var RecipeCommand = &commands.Command{
 	Description: "export_recipe_cmd_description",
 	Run:         ExecuteRecipe,
 	Arguments: []*commands.Argument{
-		&commands.Argument{
+		{
 			Name:        "export_recipe_cmd_commitid_arg",
 			Description: "export_recipe_cmd_commitid_arg_description",
 			Variable:    &Args.CommitID,
 		},
 	},
 	Flags: []*commands.Flag{
-		&commands.Flag{
+		{
 			Name:        "pretty",
 			Description: "export_recipe_flag_pretty",
 			Type:        commands.TypeBool,
