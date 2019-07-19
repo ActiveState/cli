@@ -9,7 +9,8 @@ import (
 
 // Flags captures values for any of the flags used with the export command or its sub-commands.
 var Flags struct {
-	Pretty bool
+	Pretty   bool
+	Platform string
 }
 
 // Args captures values for any of the args used with the export command or its sub-commands.

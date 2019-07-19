@@ -36,6 +36,13 @@ var RecipeCommand = &commands.Command{
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.Pretty,
 		},
+		{
+			Name:        "platform",
+			Shorthand:   "p",
+			Description: "export_recipe_flag_platform",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Platform,
+		},
 	},
 }
 
@@ -43,15 +50,9 @@ var RecipeCommand = &commands.Command{
 func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	logging.Debug("Execute")
 
-	commitID, fail := parseCommitID(Args.CommitID)
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_parse_commitid"))
-		return
-	}
-
 	proj := project.Get()
 
-	data, fail := recipeData(proj, commitID)
+	data, fail := recipeData(proj, Args.CommitID, Flags.Platform)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fetching_recipe_data"))
 	}
@@ -63,13 +64,15 @@ func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	print.Line(string(data))
 }
 
-func recipeData(proj *project.Project, commitID *strfmt.UUID) ([]byte, *failures.Failure) {
+func recipeData(proj *project.Project, commitID, platform string) ([]byte, *failures.Failure) {
 	pj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
 	if fail != nil {
 		return nil, fail
 	}
 
-	r, fail := fetchEffectiveRecipe(pj, commitID)
+	cid := strfmt.UUID(commitID)
+
+	r, fail := fetchRecipe(pj, cid, platform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -91,24 +94,14 @@ func beautifyJSON(d []byte) []byte {
 	return b.Bytes()
 }
 
-func parseCommitID(s string) (*strfmt.UUID, *failures.Failure) {
-	if s == "" {
-		return nil, nil
+func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*model.Recipe, *failures.Failure) {
+	if platform == "" {
+		platform = model.EffectivePlatform
 	}
 
-	if !strfmt.IsUUID(s) {
-		return nil, failures.FailUserInput.New("data is not a valid UUID")
+	if commitID != "" {
+		return model.FetchRecipeForCommitAndPlatform(pj, commitID, platform)
 	}
 
-	cid := strfmt.UUID(s)
-
-	return &cid, nil
-}
-
-func fetchEffectiveRecipe(pj *mono_models.Project, commitID *strfmt.UUID) (*model.Recipe, *failures.Failure) {
-	if commitID == nil {
-		return model.FetchEffectiveRecipeForProject(pj)
-	}
-
-	return model.FetchEffectiveRecipeForCommit(pj, *commitID)
+	return model.FetchRecipeForPlatform(pj, platform)
 }

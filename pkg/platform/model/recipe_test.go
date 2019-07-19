@@ -33,7 +33,7 @@ func (suite *RecipeTestSuite) BeforeTest(suiteName, testName string) {
 	suite.invMock.MockPlatforms()
 
 	if runtime.GOOS == "darwin" {
-		model.OS = sysinfo.Linux // mac is not supported yet, so spoof linux
+		model.EffectivePlatform = sysinfo.Linux.String() // mac is not supported yet, so spoof linux
 	}
 }
 
@@ -63,13 +63,13 @@ func (suite *RecipeTestSuite) TestGetRecipeWithCommit() {
 }
 
 func (suite *RecipeTestSuite) TestFetchEffectiveRecipeForProject() {
-	recipe, fail := model.FetchEffectiveRecipeForProject(suite.mockProject())
+	recipe, fail := model.FetchRecipeForPlatform(suite.mockProject(), model.EffectivePlatform)
 	suite.Require().NoError(fail.ToError())
 	suite.Equal(strfmt.UUID("00010001-0001-0001-0001-000100010001"), *recipe.PlatformID, "Returns recipe")
 }
 
 func (suite *RecipeTestSuite) TestRecipeToBuildRecipe() {
-	recipe, fail := model.FetchEffectiveRecipeForProject(suite.mockProject())
+	recipe, fail := model.FetchRecipeForPlatform(suite.mockProject(), model.EffectivePlatform)
 	suite.Require().NoError(fail.ToError())
 	buildRecipe, fail := model.RecipeToBuildRecipe(recipe)
 	suite.Require().NoError(fail.ToError())

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -10,22 +12,21 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
 )
 
 var (
-	FailOrderRecipes = failures.Type("model.fail.orderrecipes", api.FailUnknown)
-
-	FailNoEffectiveRecipe = failures.Type("model.fail.recipes.noeffective", failures.FailNonFatal)
+	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown)
+	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 )
 
-var OS sysinfo.OsInfo
+var EffectivePlatform string
 
 type Recipe = inventory_models.RecipeResponseRecipesItems0
 
 func init() {
-	OS = sysinfo.OS()
+	EffectivePlatform = sysinfo.OS().String()
 }
 
 // FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
@@ -52,15 +53,38 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	return recipe.Payload.Recipes, nil
 }
 
-func FetchEffectiveRecipeForCommit(pj *mono_models.Project, commitID strfmt.UUID) (*Recipe, *failures.Failure) {
+func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
+	for _, recipe := range recipes {
+		if recipe.PlatformID == nil {
+			continue
+		}
+
+		pf, fail := FetchPlatformByUID(*recipe.PlatformID)
+		if fail != nil {
+			return nil, fail
+		}
+
+		if pf.OsName == nil {
+			continue
+		}
+
+		if lowerEqual(*pf.OsName, platform) {
+			return recipe, nil
+		}
+	}
+
+	return nil, FailRecipeNotFound.New(locale.T("err_recipe_not_found"))
+}
+
+func FetchRecipeForCommitAndPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
 	recipes, fail := FetchRecipesForCommit(pj, commitID)
 	if fail != nil {
 		return nil, fail
 	}
-	return EffectiveRecipe(recipes)
+	return RecipeByPlatform(recipes, platform)
 }
 
-func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
+func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return nil, fail
@@ -69,32 +93,7 @@ func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	return FetchEffectiveRecipeForCommit(pj, *branch.CommitID)
-}
-
-func EffectiveRecipe(recipes []*Recipe) (*Recipe, *failures.Failure) {
-	for _, recipe := range recipes {
-		if recipe.PlatformID == nil {
-			continue
-		}
-
-		platform, fail := FetchPlatformByUID(*recipe.PlatformID)
-		if fail != nil {
-			return nil, fail
-		}
-
-		if platform.OsName == nil {
-			continue
-		}
-
-		if (*platform.OsName == inventory_models.PlatformOsNameLinux && OS == sysinfo.Linux) ||
-			(*platform.OsName == inventory_models.PlatformOsNameMacOS && OS == sysinfo.Mac) ||
-			(*platform.OsName == inventory_models.PlatformOsNameWindows && OS == sysinfo.Windows) {
-			return recipe, nil
-		}
-	}
-
-	return nil, FailNoEffectiveRecipe.New(locale.T("err_no_effective_recipe"))
+	return FetchRecipeForCommitAndPlatform(pj, *branch.CommitID, platform)
 }
 
 func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *failures.Failure) {
@@ -110,4 +109,21 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *
 	}
 
 	return buildRecipe, nil
+}
+
+func lowerEqual(a, b string) bool {
+	return strings.ToLower(a) == strings.ToLower(b)
+}
+
+func sysOSToPlatformOS(os string) string {
+	switch os {
+	case sysinfo.Linux.String():
+		return inventory_models.PlatformOsNameLinux
+	case sysinfo.Mac.String():
+		return inventory_models.PlatformOsNameMacOS
+	case sysinfo.Windows.String():
+		return inventory_models.PlatformOsNameWindows
+	default:
+		return ""
+	}
 }
