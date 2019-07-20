@@ -816,11 +816,13 @@ export_recipe_cmd_description:
 export_recipe_cmd_commitid_arg:
   other: commitID
 export_recipe_cmd_commitid_arg_description:
-  other: Commit ID used to fetch recipe for exporting
+  other: "Sets target commit by ID (default: current commit)"
 export_recipe_flag_pretty:
   other: Enables export format beautification
-err_parse_commitid:
-  other: Cannot parse provided commit ID
+export_recipe_flag_platform:
+  other: Sets target platform
+err_fetching_recipe_data:
+  other: Cannot fetch recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
