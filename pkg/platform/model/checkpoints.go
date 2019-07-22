@@ -38,7 +38,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 
 	languages := []string{}
 	for _, requirement := range checkpoint {
-		if NamespaceMatch(requirement.Namespace, NamespaceLanguage) {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
 			languages = append(languages, requirement.Requirement)
 		}
 	}
@@ -84,7 +84,7 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRe
 	result := []*inventory_models.OrderRequirementsItems0{}
 
 	for _, req := range checkpoint {
-		if NamespaceMatch(req.Namespace, NamespacePlatform) {
+		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
 		result = append(result, &inventory_models.OrderRequirementsItems0{
@@ -102,7 +102,7 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	result := []strfmt.UUID{}
 
 	for _, req := range checkpoint {
-		if !NamespaceMatch(req.Namespace, NamespacePlatform) {
+		if !NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
 		result = append(result, strfmt.UUID(req.Requirement))
