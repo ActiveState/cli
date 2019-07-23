@@ -49,21 +49,34 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RecipeCommandTestSuite) TestExportRecipe() {
-	setupRecipeCommand(suite, "test")
+	runRecipeCommand := func(args ...string) func(*testing.T) {
+		return func(tt *testing.T) {
+			t := suite.T()
+			suite.SetT(tt)
+			defer suite.SetT(t)
 
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
+			setupRecipeCommand(suite, args...)
+
+			projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+			pjfile := projectfile.Project{
+				Project: projectURL,
+			}
+			pjfile.Persist()
+
+			ex := exiter.New()
+			Command.Exiter = ex.Exit
+			exitCode := ex.WaitForExit(func() {
+				Command.Execute()
+			})
+
+			suite.Equal(0, exitCode, "exited with code 0")
+		}
 	}
-	pjfile.Persist()
 
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
+	suite.T().Run("with missing commit arg", runRecipeCommand())
 
-	suite.Equal(0, exitCode, "exited with code 0")
+	cmt := "00020002-0002-0002-0002-000200020002"
+	suite.T().Run("with valid commit arg", runRecipeCommand(cmt))
 }
 
 func TestRecipeCommandTestSuite(t *testing.T) {
