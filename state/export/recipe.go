@@ -55,6 +55,7 @@ func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	data, fail := recipeData(proj, Args.CommitID, Flags.Platform)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fetching_recipe_data"))
+		return
 	}
 
 	if Flags.Pretty {
