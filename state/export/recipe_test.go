@@ -1,6 +1,7 @@
 package export
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,10 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setupRecipeCommand(t *testing.T, args ...string) func() {
@@ -22,17 +26,21 @@ func setupRecipeCommand(t *testing.T, args ...string) func() {
 	cc := Command.GetCobraCmd()
 	cc.SetArgs(append([]string{"recipe"}, args...))
 
-	im := invMock.Init()
-	am := authMock.Init()
+	apim := apiMock.Init()
+	authm := authMock.Init()
+	invm := invMock.Init()
+
 	cleanup := func() {
-		im.Close()
-		am.Close()
+		invm.Close()
+		authm.Close()
+		apim.Close()
 	}
 
-	im.MockPlatforms()
-	im.MockOrderRecipes()
-
-	am.MockLoggedin()
+	authm.MockLoggedin()
+	apim.MockGetProject()
+	apim.MockVcsGetCheckpoint()
+	invm.MockPlatforms()
+	invm.MockOrderRecipes()
 
 	return cleanup
 }
@@ -40,6 +48,12 @@ func setupRecipeCommand(t *testing.T, args ...string) func() {
 func TestExportRecipe(t *testing.T) {
 	cleanup := setupRecipeCommand(t, "test")
 	defer cleanup()
+
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
+	}
+	pjfile.Persist()
 
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
