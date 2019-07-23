@@ -55,7 +55,8 @@ func (suite *RecipeCommandTestSuite) TestExportRecipe() {
 			suite.SetT(tt)
 			defer suite.SetT(t)
 
-			setupRecipeCommand(suite, args...)
+			cc := Command.GetCobraCmd()
+			cc.SetArgs(append([]string{"recipe"}, args...))
 
 			projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 			pjfile := projectfile.Project{
@@ -81,9 +82,4 @@ func (suite *RecipeCommandTestSuite) TestExportRecipe() {
 
 func TestRecipeCommandTestSuite(t *testing.T) {
 	suite.Run(t, new(RecipeCommandTestSuite))
-}
-
-func setupRecipeCommand(suite *RecipeCommandTestSuite, args ...string) {
-	cc := Command.GetCobraCmd()
-	cc.SetArgs(append([]string{"recipe"}, args...))
 }
