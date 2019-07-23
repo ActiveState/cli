@@ -35,9 +35,9 @@ var (
 type Operation string
 
 const (
-	OperationAdded   Operation = Operation(mono_models.CommitChangeEditableOperationAdded)
-	OperationUpdated           = Operation(mono_models.CommitChangeEditableOperationUpdated)
-	OperationRemoved           = Operation(mono_models.CommitChangeEditableOperationRemoved)
+	OperationAdded   = Operation(mono_models.CommitChangeEditableOperationAdded)
+	OperationUpdated = Operation(mono_models.CommitChangeEditableOperationUpdated)
+	OperationRemoved = Operation(mono_models.CommitChangeEditableOperationRemoved)
 )
 
 // NamespaceMatchable represents regular expression strings used for defining matchable
