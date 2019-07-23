@@ -13,12 +13,16 @@ import (
 )
 
 var (
+	// FailIngredients is a failure in calling the ingredients endpoint
 	FailIngredients = failures.Type("model.fail.ingredients", api.FailUnknown)
-	FailPlatforms   = failures.Type("model.fail.platforms", api.FailUnknown)
+	// FailPlatforms is a failure in calling the platforms endpoint
+	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
 )
 
 var platformCache []*inventory_models.Platform
 
+// IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
+// matching ingredient will be returned.
 func IngredientByNameAndVersion(name, version string) (*inventory_models.IngredientAndVersions, *failures.Failure) {
 	client := inventory.Get()
 
@@ -44,6 +48,7 @@ func IngredientByNameAndVersion(name, version string) (*inventory_models.Ingredi
 	return nil, nil
 }
 
+// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingradient name
 func IngredientWithLatestVersion(name string) (*inventory_models.IngredientAndVersions, *inventory_models.IngredientVersion, *failures.Failure) {
 	client := inventory.Get()
 

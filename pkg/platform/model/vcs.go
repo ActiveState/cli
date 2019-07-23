@@ -32,11 +32,15 @@ var (
 	FailNoLanguages = failures.Type("model.fail.nolanguages")
 )
 
+// Operation is the action to be taken in a commit
 type Operation string
 
 const (
-	OperationAdded   = Operation(mono_models.CommitChangeEditableOperationAdded)
+	// OperationAdded is for adding a new requirement
+	OperationAdded = Operation(mono_models.CommitChangeEditableOperationAdded)
+	// OperationUpdated is for updating an existing requirement
 	OperationUpdated = Operation(mono_models.CommitChangeEditableOperationUpdated)
+	// OperationRemoved is for removing an existing requirement
 	OperationRemoved = Operation(mono_models.CommitChangeEditableOperationRemoved)
 )
 
@@ -67,8 +71,10 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	return match
 }
 
+// Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
 type Namespace string
 
+// NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
 	return Namespace(fmt.Sprintf("language/%s/package", language))
 }
@@ -121,6 +127,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	return indexed.countBetween(commitID, latestCID.String())
 }
 
+// AddCommit creates a new commit with a single change
 func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(&mono_models.CommitEditable{
@@ -142,6 +149,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 	return res.Payload, nil
 }
 
+// UpdateBranchCommit updates the commit that a branch is pointed at
 func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Failure {
 	params := vcsClient.NewUpdateBranchParams()
 	params.SetBranchID(branchID)
@@ -156,6 +164,7 @@ func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Fa
 	return nil
 }
 
+// CommitPackage commits a single package commit
 func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
