@@ -316,5 +316,8 @@ func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string
 		return "", fail
 	}
 
+	// Cache it so we're not repeatedly prompting for the same secret
+	e.cachedSecrets[name] = value
+
 	return value, nil
 }
