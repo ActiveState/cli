@@ -16,6 +16,7 @@ var UpdateArgs struct {
 	Name string
 }
 
+// UpdateCommand is the `state package update` command struct
 var UpdateCommand = &commands.Command{
 	Name:        "update",
 	Description: "package_update_description",
@@ -34,6 +35,7 @@ func init() {
 	UpdateCommand.Run = ExecuteUpdate // Work around initialization loop
 }
 
+// ExecuteUpdate is ran when `state package update` is ran
 func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteUpdate")
 
@@ -53,5 +55,5 @@ func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 		}
 	}
 
-	executeAddUpdate(name, version, model.OperationUpdated)
+	executeAddUpdate(UpdateCommand, name, version, model.OperationUpdated)
 }

@@ -13,6 +13,7 @@ var AddArgs struct {
 	Name string
 }
 
+// AddCommand is the `package add` command struct
 var AddCommand = &commands.Command{
 	Name:        "add",
 	Description: "package_add_description",
@@ -31,9 +32,10 @@ func init() {
 	AddCommand.Run = ExecuteAdd // Work around initialization loop
 }
 
+// ExecuteAdd is executed with `state package add` is ran
 func ExecuteAdd(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteAdd")
 
-	name, version := splitNameAndVersion(UpdateArgs.Name)
-	executeAddUpdate(name, version, model.OperationAdded)
+	name, version := splitNameAndVersion(AddArgs.Name)
+	executeAddUpdate(AddCommand, name, version, model.OperationAdded)
 }

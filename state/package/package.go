@@ -17,6 +17,7 @@ import (
 
 const latestVersion = "latest"
 
+// Command is the main `state package` command struct
 var Command = &commands.Command{
 	Name:        "packages",
 	Description: "package_description",
@@ -30,6 +31,7 @@ func init() {
 	Command.Append(UpdateCommand)
 }
 
+// Execute is ran when `state package` is ran
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
 	err := cmd.Help()
@@ -38,7 +40,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 }
 
-func executeAddUpdate(name, version string, operation model.Operation) {
+func executeAddUpdate(cmd *commands.Command, name, version string, operation model.Operation) {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
@@ -58,12 +60,12 @@ func executeAddUpdate(name, version string, operation model.Operation) {
 	ingredient, fail := model.IngredientByNameAndVersion(name, version)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_ingredient_err"))
-		AddCommand.Exiter(1)
+		cmd.Exiter(1)
 		return
 	}
 	if ingredient == nil {
 		print.Error(locale.T("package_ingredient_not_found"))
-		AddCommand.Exiter(1)
+		cmd.Exiter(1)
 		return
 	}
 
@@ -72,7 +74,7 @@ func executeAddUpdate(name, version string, operation model.Operation) {
 	fail = model.CommitPackage(pj.Owner(), pj.Name(), operation, name, version)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_package_"+operationStr))
-		AddCommand.Exiter(1)
+		cmd.Exiter(1)
 		return
 	}
 

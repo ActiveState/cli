@@ -17,6 +17,7 @@ var RemoveArgs struct {
 	Name string
 }
 
+// RemoveCommand is the `state package remove` command struct
 var RemoveCommand = &commands.Command{
 	Name:        "remove",
 	Description: "package_remove_description",
@@ -35,6 +36,7 @@ func init() {
 	RemoveCommand.Run = ExecuteRemove // Work around initialization loop
 }
 
+// ExecuteRemove is ran when `state package remove` is ran
 func ExecuteRemove(cmd *cobra.Command, allArgs []string) {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
