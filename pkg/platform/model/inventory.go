@@ -67,15 +67,16 @@ func IngredientWithLatestVersion(name string) (*inventory_models.IngredientAndVe
 				continue
 			}
 
-			if latest == nil || latest.ReleaseDate == nil {
+			switch {
+			case latest == nil || latest.ReleaseDate == nil:
 				// If latest is not valid, just make the current value latest
 				latest = v
 
-			} else if v.ReleaseDate.String() == latest.ReleaseDate.String() {
+			case v.ReleaseDate.String() == latest.ReleaseDate.String():
 				// If the release dates equal (or are both nil) just assume that the later entry it the latest
 				latest = v
 
-			} else if v.ReleaseDate != nil && time.Time(*v.ReleaseDate).After(time.Time(*latest.ReleaseDate)) {
+			case v.ReleaseDate != nil && time.Time(*v.ReleaseDate).After(time.Time(*latest.ReleaseDate)):
 				// If the release date is later then this entry is latest
 				latest = v
 			}
