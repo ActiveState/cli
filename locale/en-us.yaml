@@ -823,6 +823,8 @@ export_recipe_flag_platform:
   other: Sets target platform
 err_fetching_recipe_data:
   other: Cannot fetch recipe data
+err_processing_recipe_data:
+  other: Cannot process recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:

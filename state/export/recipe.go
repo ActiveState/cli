@@ -70,7 +70,11 @@ func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 	}
 
 	if RecipeFlags.Pretty {
-		data = beautifyJSON(data)
+		data, fail = beautifyJSON(data)
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_processing_recipe_data"))
+			return
+		}
 	}
 
 	print.Line(string(data))
@@ -98,12 +102,12 @@ func recipeData(proj *project.Project, commitID, platform string) ([]byte, *fail
 }
 
 // expects valid json or explodes
-func beautifyJSON(d []byte) []byte {
+func beautifyJSON(d []byte) ([]byte, *failures.Failure) {
 	var b bytes.Buffer
 	if err := json.Indent(&b, d, "", "\t"); err != nil {
-		panic(err)
+		return nil, failures.FailInput.Wrap(err)
 	}
-	return b.Bytes()
+	return b.Bytes(), nil
 }
 
 func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*model.Recipe, *failures.Failure) {
