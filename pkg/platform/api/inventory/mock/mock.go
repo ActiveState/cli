@@ -34,4 +34,5 @@ func (m *Mock) MockPlatforms() {
 
 func (m *Mock) MockOrderRecipes() {
 	m.httpmock.Register("POST", "/orders/00010001-0001-0001-0001-000100010001/recipes")
+	m.httpmock.Register("POST", "/orders/00020002-0002-0002-0002-000200020002/recipes")
 }
