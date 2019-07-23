@@ -6,8 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -18,36 +17,39 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func setupRecipeCommand(t *testing.T, args ...string) func() {
-	root, err := environment.GetRootPath()
-	require.NoError(t, err, "should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
-
-	cc := Command.GetCobraCmd()
-	cc.SetArgs(append([]string{"recipe"}, args...))
-
-	apim := apiMock.Init()
-	authm := authMock.Init()
-	invm := invMock.Init()
-
-	cleanup := func() {
-		invm.Close()
-		authm.Close()
-		apim.Close()
-	}
-
-	authm.MockLoggedin()
-	apim.MockGetProject()
-	apim.MockVcsGetCheckpoint()
-	invm.MockPlatforms()
-	invm.MockOrderRecipes()
-
-	return cleanup
+type RecipeCommandTestSuite struct {
+	suite.Suite
+	apim  *apiMock.Mock
+	authm *authMock.Mock
+	invm  *invMock.Mock
 }
 
-func TestExportRecipe(t *testing.T) {
-	cleanup := setupRecipeCommand(t, "test")
-	defer cleanup()
+func (suite *RecipeCommandTestSuite) SetupTest() {
+	root, err := environment.GetRootPath()
+	suite.Require().NoError(err, "should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+}
+
+func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
+	suite.apim = apiMock.Init()
+	suite.authm = authMock.Init()
+	suite.invm = invMock.Init()
+
+	suite.authm.MockLoggedin()
+	suite.apim.MockGetProject()
+	suite.apim.MockVcsGetCheckpoint()
+	suite.invm.MockPlatforms()
+	suite.invm.MockOrderRecipes()
+}
+
+func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
+	suite.invm.Close()
+	suite.authm.Close()
+	suite.apim.Close()
+}
+
+func (suite *RecipeCommandTestSuite) TestExportRecipe() {
+	setupRecipeCommand(suite, "test")
 
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
@@ -61,5 +63,14 @@ func TestExportRecipe(t *testing.T) {
 		Command.Execute()
 	})
 
-	assert.Equal(t, 0, exitCode, "exited with code 0")
+	suite.Equal(0, exitCode, "exited with code 0")
+}
+
+func TestRecipeCommandTestSuite(t *testing.T) {
+	suite.Run(t, new(RecipeCommandTestSuite))
+}
+
+func setupRecipeCommand(suite *RecipeCommandTestSuite, args ...string) {
+	cc := Command.GetCobraCmd()
+	cc.SetArgs(append([]string{"recipe"}, args...))
 }
