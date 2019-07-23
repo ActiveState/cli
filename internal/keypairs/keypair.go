@@ -19,7 +19,7 @@ var (
 	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailKeypair)
 
 	// FailKeypairPassphrase indicates a failure with passphrase.
-	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse)
+	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse, failures.FailUser)
 
 	// FailKeypairGenerate indicates a failure to generate a keypair.
 	FailKeypairGenerate = failures.Type("keypairs.fail.keypair.generate", FailKeypair)

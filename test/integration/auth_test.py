@@ -1,4 +1,6 @@
 import time
+import os
+
 import helpers
 import uuid
 import requests
@@ -12,11 +14,15 @@ class TestAuth(helpers.IntegrationTest):
         self.email = "%s@test.tld" % self.username
 
     def test_auth(self):
+        if os.name == 'nt':
+            return
         self.auth_signup()
         self.auth_logout()
         self.auth_login()
 
     def test_helpers(self):
+        if os.name == 'nt':
+            return
         self.auth_logout()
         self.login_as_persistent_user()
         self.auth_logout()
