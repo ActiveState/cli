@@ -17,6 +17,17 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// RecipeFlags captures values for any of the flags used with the export recipe sub-command.
+var RecipeFlags struct {
+	Pretty   bool
+	Platform string
+}
+
+// RecipeArgs captures values for any of the args used with the export recipe sub-command.
+var RecipeArgs struct {
+	CommitID string
+}
+
 // RecipeCommand is a sub-command of export.
 var RecipeCommand = &commands.Command{
 	Name:        "recipe",
@@ -26,7 +37,7 @@ var RecipeCommand = &commands.Command{
 		{
 			Name:        "export_recipe_cmd_commitid_arg",
 			Description: "export_recipe_cmd_commitid_arg_description",
-			Variable:    &Args.CommitID,
+			Variable:    &RecipeArgs.CommitID,
 		},
 	},
 	Flags: []*commands.Flag{
@@ -34,14 +45,14 @@ var RecipeCommand = &commands.Command{
 			Name:        "pretty",
 			Description: "export_recipe_flag_pretty",
 			Type:        commands.TypeBool,
-			BoolVar:     &Flags.Pretty,
+			BoolVar:     &RecipeFlags.Pretty,
 		},
 		{
 			Name:        "platform",
 			Shorthand:   "p",
 			Description: "export_recipe_flag_platform",
 			Type:        commands.TypeString,
-			StringVar:   &Flags.Platform,
+			StringVar:   &RecipeFlags.Platform,
 		},
 	},
 }
@@ -52,13 +63,13 @@ func ExecuteRecipe(cmd *cobra.Command, _ []string) {
 
 	proj := project.Get()
 
-	data, fail := recipeData(proj, Args.CommitID, Flags.Platform)
+	data, fail := recipeData(proj, RecipeArgs.CommitID, RecipeFlags.Platform)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fetching_recipe_data"))
 		return
 	}
 
-	if Flags.Pretty {
+	if RecipeFlags.Pretty {
 		data = beautifyJSON(data)
 	}
 
