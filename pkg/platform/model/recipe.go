@@ -1,8 +1,6 @@
 package model
 
 import (
-	"strings"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -68,7 +66,7 @@ func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Fa
 			continue
 		}
 
-		if lowerEqual(*pf.OsName, platform) {
+		if *pf.OsName == sysOSToPlatformOS(platform) {
 			return recipe, nil
 		}
 	}
@@ -109,10 +107,6 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *
 	}
 
 	return buildRecipe, nil
-}
-
-func lowerEqual(a, b string) bool {
-	return strings.ToLower(a) == strings.ToLower(b)
 }
 
 func sysOSToPlatformOS(os string) string {
