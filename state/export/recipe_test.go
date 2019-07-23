@@ -49,35 +49,36 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RecipeCommandTestSuite) TestExportRecipe() {
-	runRecipeCommand := func(args ...string) func(*testing.T) {
-		return func(tt *testing.T) {
-			t := suite.T()
-			suite.SetT(tt)
-			defer suite.SetT(t)
-
-			cc := Command.GetCobraCmd()
-			cc.SetArgs(append([]string{"recipe"}, args...))
-
-			projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-			pjfile := projectfile.Project{
-				Project: projectURL,
-			}
-			pjfile.Persist()
-
-			ex := exiter.New()
-			Command.Exiter = ex.Exit
-			exitCode := ex.WaitForExit(func() {
-				Command.Execute()
-			})
-
-			suite.Equal(0, exitCode, "exited with code 0")
-		}
-	}
-
-	suite.T().Run("with missing commit arg", runRecipeCommand())
+	suite.T().Run("with missing commit arg", runRecipeCommandTest(suite))
 
 	cmt := "00020002-0002-0002-0002-000200020002"
-	suite.T().Run("with valid commit arg", runRecipeCommand(cmt))
+	suite.T().Run("with valid commit arg", runRecipeCommandTest(suite, cmt))
+}
+
+func runRecipeCommandTest(suite *RecipeCommandTestSuite, args ...string) func(*testing.T) {
+	return func(tt *testing.T) {
+		// setup "subtest"
+		t := suite.T()
+		suite.SetT(tt)
+		defer suite.SetT(t)
+
+		cc := Command.GetCobraCmd()
+		cc.SetArgs(append([]string{"recipe"}, args...))
+
+		projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+		pjfile := projectfile.Project{
+			Project: projectURL,
+		}
+		pjfile.Persist()
+
+		ex := exiter.New()
+		Command.Exiter = ex.Exit
+		exitCode := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+
+		suite.Equal(0, exitCode, "exited with code 0")
+	}
 }
 
 func TestRecipeCommandTestSuite(t *testing.T) {
