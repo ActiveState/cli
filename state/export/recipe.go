@@ -24,7 +24,9 @@ var RecipeFlags struct {
 }
 
 // RecipeArgs captures values for any of the args used with the export recipe sub-command.
-var RecipeArgs struct {
+var RecipeArgs recipeArgs
+
+type recipeArgs struct {
 	CommitID string
 }
 

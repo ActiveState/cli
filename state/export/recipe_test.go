@@ -60,6 +60,14 @@ func (suite *RecipeCommandTestSuite) TestExportRecipe() {
 	suite.T().Run("with valid platform (alt caps)",
 		runRecipeCommandTest(suite, -1, "--platform", "Linux"),
 	)
+
+	suite.T().Run("with invalid platform",
+		runRecipeCommandTest(suite, 1, "--platform", "junk"),
+	)
+
+	suite.T().Run("with valid platform (other platform)",
+		runRecipeCommandTest(suite, -1, "--platform", "macos"),
+	)
 }
 
 func runRecipeCommandTest(suite *RecipeCommandTestSuite, code int, args ...string) func(*testing.T) {
@@ -68,6 +76,8 @@ func runRecipeCommandTest(suite *RecipeCommandTestSuite, code int, args ...strin
 		t := suite.T()
 		suite.SetT(tt)
 		defer suite.SetT(t)
+
+		defer func() { RecipeArgs = recipeArgs{} }()
 
 		cc := Command.GetCobraCmd()
 		cc.SetArgs(append([]string{"recipe"}, args...))
