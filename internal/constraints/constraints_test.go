@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,16 +25,12 @@ func setProjectDir(t *testing.T) {
 }
 
 func TestOsConstraints(t *testing.T) {
-	osname := runtime.GOOS
-	exclude := "-linux"
-	if sysinfo.OS() == sysinfo.Windows {
-		exclude = "-windows"
-	} else if sysinfo.OS() == sysinfo.Mac {
-		exclude = "-macos"
-	}
+	osname := sysinfo.OS().String()
+	exclude := "-" + osname
+
 	//Test single
 	if sysinfo.OS() == sysinfo.Windows {
-		assert.False(t, osIsConstrained("windows"))
+		assert.False(t, osIsConstrained(osname))
 		assert.True(t, osIsConstrained(exclude))
 		assert.True(t, osIsConstrained("macos"))
 		assert.True(t, osIsConstrained("Linux"))
@@ -88,14 +83,14 @@ func TestMatchConstraint(t *testing.T) {
 	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
-	constraint := projectfile.Constraint{runtime.GOOS, "Windows10Label", "dev"}
+	constraint := projectfile.Constraint{sysinfo.OS().String(), "Windows10Label", "dev"}
 	assert.True(t, IsConstrained(constraint))
-	assert.False(t, IsConstrained(projectfile.Constraint{runtime.GOOS, "", ""}))
-	shouldnotwork := "windows"
+	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
+	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
-		shouldnotwork = "linux"
+		beConstrained = "linux"
 	}
-	assert.True(t, IsConstrained(projectfile.Constraint{shouldnotwork, "", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
 }
 
 func TestOsMatches(t *testing.T) {

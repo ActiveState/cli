@@ -239,6 +239,6 @@ func IsConstrained(constraint projectfile.Constraint) bool {
 		return false
 	}
 	return osIsConstrained(constraint.OS) ||
-		constraint.Platform != "" && platformIsConstrained(constraint.Platform) ||
+		(constraint.Platform != "" && platformIsConstrained(constraint.Platform)) ||
 		environmentIsConstrained(constraint.Environment)
 }
