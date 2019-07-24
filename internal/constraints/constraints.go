@@ -182,6 +182,22 @@ func PlatformMatches(platform projectfile.Platform) bool {
 		(platform.Compiler == "" || compilerMatches(platform.Compiler))
 }
 
+//Returns whether or not the current OS is constrained by the given
+// named constraints, which are defined in the given project configuration.
+func osIsConstrained(constraintOSes string) bool {
+	names := strings.Split(constraintOSes, ",")
+	constrained := true
+	for _, name := range names {
+		if osMatches(strings.TrimLeft(name, "-")) {
+			if strings.HasPrefix(name, "-") {
+				return true
+			}
+			constrained = false
+		}
+	}
+	return constrained
+}
+
 // Returns whether or not the current platform is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func platformIsConstrained(constraintNames string) bool {
@@ -217,9 +233,12 @@ func environmentIsConstrained(constraints string) bool {
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
 func IsConstrained(constraint projectfile.Constraint) bool {
-	if constraint.Platform == "" && constraint.Environment == "" {
+	if constraint.Platform == "" &&
+		constraint.Environment == "" &&
+		constraint.OS == "" {
 		return false
 	}
-	return platformIsConstrained(constraint.Platform) ||
+	return osIsConstrained(constraint.OS) ||
+		constraint.Platform != "" && platformIsConstrained(constraint.Platform) ||
 		environmentIsConstrained(constraint.Environment)
 }

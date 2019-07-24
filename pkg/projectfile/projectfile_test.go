@@ -92,12 +92,14 @@ version: valueForVersion`)
 func TestConstraintStruct(t *testing.T) {
 	constraint := Constraint{}
 	dat := strings.TrimSpace(`
+os: valueForOS
 platform: valueForPlatform
 environment: valueForEnvironment`)
 
 	err := yaml.Unmarshal([]byte(dat), &constraint)
 	assert.Nil(t, err, "Should not throw an error")
 
+	assert.Equal(t, "valueForOS", constraint.OS, "Os should be set")
 	assert.Equal(t, "valueForPlatform", constraint.Platform, "Platform should be set")
 	assert.Equal(t, "valueForEnvironment", constraint.Environment, "Environment should be set")
 }
@@ -376,7 +378,7 @@ func TestNewProjectfile(t *testing.T) {
 	os.Chdir(dir)
 
 	pjFile, fail := Create("https://platform.activestate.com/xowner/xproject", dir)
-	assert.NoError(t, fail.ToError(), "There should be no error when laoding from a path")
+	assert.NoError(t, fail.ToError(), "There should be no error when loading from a path")
 	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
 
 	_, fail = Create("https://platform.activestate.com/xowner/xproject", "")

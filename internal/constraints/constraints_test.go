@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,6 +23,38 @@ func setProjectDir(t *testing.T) {
 	err = os.Chdir(filepath.Join(cwd, "internal", "constraints", "testdata"))
 	assert.NoError(t, err, "Should change dir without issue.")
 	projectfile.Reset()
+}
+
+func TestOsConstraints(t *testing.T) {
+	osname := runtime.GOOS
+	exclude := "-linux"
+	if sysinfo.OS() == sysinfo.Windows {
+		exclude = "-windows"
+	} else if sysinfo.OS() == sysinfo.Mac {
+		exclude = "-macos"
+	}
+	//Test single
+	if sysinfo.OS() == sysinfo.Windows {
+		assert.False(t, osIsConstrained("windows"))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("macos"))
+		assert.True(t, osIsConstrained("Linux"))
+	}
+	if sysinfo.OS() == sysinfo.Mac {
+		assert.False(t, osIsConstrained(osname))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("linux"))
+		assert.True(t, osIsConstrained("windows"))
+	}
+	if sysinfo.OS() == sysinfo.Linux {
+		assert.False(t, osIsConstrained(osname))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("macos"))
+		assert.True(t, osIsConstrained("windows"))
+	}
+	// Test multiple
+	assert.False(t, osIsConstrained("linux,windows,macos"))
+	assert.True(t, osIsConstrained(fmt.Sprintf("linux,windows,macos,%s", exclude)))
 }
 
 func TestPlatformConstraints(t *testing.T) {
@@ -55,8 +88,14 @@ func TestMatchConstraint(t *testing.T) {
 	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
-	constraint := projectfile.Constraint{"Windows10Label", "dev"}
+	constraint := projectfile.Constraint{runtime.GOOS, "Windows10Label", "dev"}
 	assert.True(t, IsConstrained(constraint))
+	assert.False(t, IsConstrained(projectfile.Constraint{runtime.GOOS, "", ""}))
+	shouldnotwork := "windows"
+	if sysinfo.OS() == sysinfo.Windows {
+		shouldnotwork = "linux"
+	}
+	assert.True(t, IsConstrained(projectfile.Constraint{shouldnotwork, "", ""}))
 }
 
 func TestOsMatches(t *testing.T) {
