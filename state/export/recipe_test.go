@@ -49,13 +49,13 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RecipeCommandTestSuite) TestExportRecipe() {
-	suite.T().Run("with missing commit arg", runRecipeCommandTest(suite))
+	suite.T().Run("with missing commit arg", runRecipeCommandTest(suite, -1))
 
 	cmt := "00020002-0002-0002-0002-000200020002"
-	suite.T().Run("with valid commit arg", runRecipeCommandTest(suite, cmt))
+	suite.T().Run("with valid commit arg", runRecipeCommandTest(suite, -1, cmt))
 }
 
-func runRecipeCommandTest(suite *RecipeCommandTestSuite, args ...string) func(*testing.T) {
+func runRecipeCommandTest(suite *RecipeCommandTestSuite, code int, args ...string) func(*testing.T) {
 	return func(tt *testing.T) {
 		// setup "subtest"
 		t := suite.T()
@@ -77,7 +77,7 @@ func runRecipeCommandTest(suite *RecipeCommandTestSuite, args ...string) func(*t
 			Command.Execute()
 		})
 
-		suite.Equal(0, exitCode, "exited with code 0")
+		suite.Equal(code, exitCode, "exited without output")
 	}
 }
 
