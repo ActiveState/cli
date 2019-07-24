@@ -53,6 +53,13 @@ func (suite *RecipeCommandTestSuite) TestExportRecipe() {
 
 	cmt := "00020002-0002-0002-0002-000200020002"
 	suite.T().Run("with valid commit arg", runRecipeCommandTest(suite, -1, cmt))
+
+	suite.T().Run("with valid platform",
+		runRecipeCommandTest(suite, -1, "--platform", "linux"),
+	)
+	suite.T().Run("with valid platform (alt caps)",
+		runRecipeCommandTest(suite, -1, "--platform", "Linux"),
+	)
 }
 
 func runRecipeCommandTest(suite *RecipeCommandTestSuite, code int, args ...string) func(*testing.T) {

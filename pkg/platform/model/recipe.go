@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -110,12 +112,12 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *
 }
 
 func sysOSToPlatformOS(os string) string {
-	switch os {
-	case sysinfo.Linux.String():
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
 		return inventory_models.PlatformOsNameLinux
-	case sysinfo.Mac.String():
+	case strings.ToLower(sysinfo.Mac.String()):
 		return inventory_models.PlatformOsNameMacOS
-	case sysinfo.Windows.String():
+	case strings.ToLower(sysinfo.Windows.String()):
 		return inventory_models.PlatformOsNameWindows
 	default:
 		return ""
