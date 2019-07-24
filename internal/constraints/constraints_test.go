@@ -85,12 +85,29 @@ func TestMatchConstraint(t *testing.T) {
 
 	constraint := projectfile.Constraint{sysinfo.OS().String(), "Windows10Label", "dev"}
 	assert.True(t, IsConstrained(constraint))
-	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
 	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
 		beConstrained = "linux"
 	}
 	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+	// Confirm passing only one constraint doesn't get constrained when we don't expect
+	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
+	osOverride = "windows"
+	osVersionOverride = "10"
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+	osOverride = ""
+	osVersionOverride = ""
+	os.Setenv("ACTIVESTATE_ENVIRONMENT", "itworks")
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "", "itworks"}))
+	os.Setenv("ACTIVESTATE_ENVIRONMENT", "")
+	osOverride = ""
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+	// Confirm we DO get constrained with only one value set
+	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{"", "", "dev"}))
+	// Don't constrain at all if nothing is passed in
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
 }
 
 func TestOsMatches(t *testing.T) {
