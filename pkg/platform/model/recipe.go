@@ -16,20 +16,23 @@ import (
 	"github.com/ActiveState/sysinfo"
 )
 
+// Fail types for this package
 var (
 	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown)
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 )
 
+// HostPlatform stores a reference to current platform
 var HostPlatform string
 
+// Recipe aliases recipe model
 type Recipe = inventory_models.RecipeResponseRecipesItems0
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
 }
 
-// FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
+// FetchRecipesForCommit returns a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
 	checkpoint, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
@@ -53,6 +56,7 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	return recipe.Payload.Recipes, nil
 }
 
+// RecipeByPlatform filters multiple recipes down to one based on it's platform name
 func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
 	for _, recipe := range recipes {
 		if recipe.PlatformID == nil {
@@ -76,6 +80,7 @@ func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Fa
 	return nil, FailRecipeNotFound.New(locale.T("err_recipe_not_found"))
 }
 
+// FetchRecipeForCommitAndPlatform returns the available recipe matching the commit id and platform string
 func FetchRecipeForCommitAndPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
 	recipes, fail := FetchRecipesForCommit(pj, commitID)
 	if fail != nil {
@@ -84,6 +89,7 @@ func FetchRecipeForCommitAndPlatform(pj *mono_models.Project, commitID strfmt.UU
 	return RecipeByPlatform(recipes, platform)
 }
 
+// FetchRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
 func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
@@ -96,6 +102,7 @@ func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, 
 	return FetchRecipeForCommitAndPlatform(pj, *branch.CommitID, platform)
 }
 
+// RecipeToBuildRecipe converts a *Recipe to the related head chef model
 func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *failures.Failure) {
 	b, err := recipe.MarshalBinary()
 	if err != nil {
