@@ -87,6 +87,9 @@ func main() {
 	// Handle panics gracefully
 	defer func() {
 		if r := recover(); r != nil {
+			if fmt.Sprintf("%v", r) == "exiter" {
+				panic(r) // don't capture exiter panics
+			}
 			failures.Handle(FailMainPanic.New("err_main_panic"), "")
 			logging.Error("%v - caught panic", r)
 			logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
