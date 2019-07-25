@@ -30,8 +30,7 @@ Usage:
   [[end]]
 
 [[if gt (len .Aliases) 0]]
-[[BR]][[BR]]
-Aliases:[[BR]]
+[[BR]][[BR]]Aliases:[[BR]]
   [[.NameAndAliases]][[end]]
 
 [[if .HasExample]]
@@ -727,6 +726,12 @@ err_no_commit:
   other: Project branch has no commits
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
+err_project_no_languages:
+  other: Your project does not have any languages configured
+err_add_commit:
+  other: "Error occurred while trying to create a commit: {{.V0}}"
+err_update_branch:
+  other: "Error occurred while trying to update a branch: {{.V0}}"
 err_get_commit_history:
   other: "Error occurred while trying to retrieve the latest commit history for your project: {{.V0}}"
 err_commit_count_no_latest_with_commit:
@@ -881,6 +886,52 @@ sample_yaml:
           echo ""
           echo "Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory."
           echo ""
-          echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/ActiveState/cli."
+          echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}."
           echo ""
           echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
+package_description:
+  other: Manage packages used in your project
+package_add_description:
+  other: Add a new package to your project
+package_update_description:
+  other: Update a package in your project to the latest available version
+package_remove_description:
+  other: Remove a package from your project
+package_err_help:
+  other: Error occurred while trying to produce help information
+package_arg_name:
+  other: name
+package_arg_name_description:
+  other: Package name
+package_arg_nameversion:
+  other: name[@version]
+package_arg_nameversion_description:
+  other: Package name and optionally the desired version
+commit_message_add_package:
+  other: "Added package: {{.V0}}@{{.V1}}"
+commit_message_removed_package:
+  other: "Removed package: {{.V0}}"
+commit_message_updated_package:
+  other: "Updated package: {{.V0}} to {{.V1}}"
+err_package_add:
+  other: Failed to add package
+package_add:
+  other: "Package added: {{.V0}}"
+package_version_add:
+  other: "Package added: {{.V0}}@{{.V1}}"
+err_package_update:
+  other: Failed to update package
+package_update:
+  other: "Package updated: {{.V0}}"
+package_version_update:
+  other: "Package updated: {{.V0}}@{{.V1}}"
+package_ingredient_err:
+  other: Could not verify package name
+package_ingredient_not_found:
+  other: The provided package does not exist
+package_ingredient_version_not_available:
+  other: The provided package does not have any versions available
+err_package_removed:
+  other: Failed to remove package
+package_removed:
+  other: "Package removed: {{.V0}}"

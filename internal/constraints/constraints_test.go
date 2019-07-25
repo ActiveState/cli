@@ -24,6 +24,34 @@ func setProjectDir(t *testing.T) {
 	projectfile.Reset()
 }
 
+func TestOsConstraints(t *testing.T) {
+	osname := sysinfo.OS().String()
+	exclude := "-" + osname
+
+	//Test single
+	if sysinfo.OS() == sysinfo.Windows {
+		assert.False(t, osIsConstrained(osname))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("macos"))
+		assert.True(t, osIsConstrained("Linux"))
+	}
+	if sysinfo.OS() == sysinfo.Mac {
+		assert.False(t, osIsConstrained(osname))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("linux"))
+		assert.True(t, osIsConstrained("windows"))
+	}
+	if sysinfo.OS() == sysinfo.Linux {
+		assert.False(t, osIsConstrained(osname))
+		assert.True(t, osIsConstrained(exclude))
+		assert.True(t, osIsConstrained("macos"))
+		assert.True(t, osIsConstrained("windows"))
+	}
+	// Test multiple
+	assert.False(t, osIsConstrained("linux,windows,macos"))
+	assert.True(t, osIsConstrained(fmt.Sprintf("linux,windows,macos,%s", exclude)))
+}
+
 func TestPlatformConstraints(t *testing.T) {
 	setProjectDir(t)
 	exclude := "-linux-label"
@@ -55,8 +83,37 @@ func TestMatchConstraint(t *testing.T) {
 	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
-	constraint := projectfile.Constraint{"Windows10Label", "dev"}
+	constraint := projectfile.Constraint{sysinfo.OS().String(), "Windows10Label", "dev"}
 	assert.True(t, IsConstrained(constraint))
+	beConstrained := "windows"
+	if sysinfo.OS() == sysinfo.Windows {
+		beConstrained = "linux"
+	}
+	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+
+	// Confirm passing only one constraint doesn't get constrained when we don't expect
+	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
+	{
+		osOverride = "windows"
+		osVersionOverride = "10"
+		assert.False(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+		osOverride = ""
+		osVersionOverride = ""
+	}
+	{
+		os.Setenv("ACTIVESTATE_ENVIRONMENT", "itworks")
+		assert.False(t, IsConstrained(projectfile.Constraint{"", "", "itworks"}))
+		os.Setenv("ACTIVESTATE_ENVIRONMENT", "")
+	}
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+
+	// Confirm we DO get constrained with only one value set
+	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{"", "", "dev"}))
+
+	// Don't constrain at all if nothing is passed in
+	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
 }
 
 func TestOsMatches(t *testing.T) {

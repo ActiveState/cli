@@ -18,6 +18,7 @@ languages:
   - name: Go
     version: 1.10
     constraints:
+        os: windows,linux,macos
         platform: Windows10Label,Linux64Label
         environment: dev,qa,prod
     packages:

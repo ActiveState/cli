@@ -112,6 +112,9 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 	suite.Require().Nil(failure)
 	suite.Equal(expectedValue, expandedValue)
 
+	_, failure = expanderFn(secretName, suite.project)
+	suite.Require().Nil(failure, "Should not prompt again because it should have stored/cached the secret")
+
 	suite.Require().Len(userChanges, 1)
 
 	change := userChanges[0]

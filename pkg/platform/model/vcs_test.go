@@ -13,19 +13,19 @@ type VCSTestSuite struct {
 }
 
 func (suite *VCSTestSuite) TestNamespaceMatch() {
-	suite.True(model.NamespaceMatch("platform", model.NamespacePlatform))
-	suite.False(model.NamespaceMatch(" platform ", model.NamespacePlatform))
-	suite.False(model.NamespaceMatch("not-platform", model.NamespacePlatform))
+	suite.True(model.NamespaceMatch("platform", model.NamespacePlatformMatch))
+	suite.False(model.NamespaceMatch(" platform ", model.NamespacePlatformMatch))
+	suite.False(model.NamespaceMatch("not-platform", model.NamespacePlatformMatch))
 
-	suite.True(model.NamespaceMatch("language", model.NamespaceLanguage))
-	suite.False(model.NamespaceMatch(" language ", model.NamespaceLanguage))
-	suite.False(model.NamespaceMatch("not-language", model.NamespaceLanguage))
+	suite.True(model.NamespaceMatch("language", model.NamespaceLanguageMatch))
+	suite.False(model.NamespaceMatch(" language ", model.NamespaceLanguageMatch))
+	suite.False(model.NamespaceMatch("not-language", model.NamespaceLanguageMatch))
 
-	suite.True(model.NamespaceMatch("language/foo/package", model.NamespacePackage))
-	suite.False(model.NamespaceMatch(" language/foo/package ", model.NamespacePackage))
+	suite.True(model.NamespaceMatch("language/foo/package", model.NamespacePackageMatch))
+	suite.False(model.NamespaceMatch(" language/foo/package ", model.NamespacePackageMatch))
 
-	suite.True(model.NamespaceMatch("pre-platform-installer", model.NamespacePrePlatform))
-	suite.False(model.NamespaceMatch(" pre-platform-installer ", model.NamespacePrePlatform))
+	suite.True(model.NamespaceMatch("pre-platform-installer", model.NamespacePrePlatformMatch))
+	suite.False(model.NamespaceMatch(" pre-platform-installer ", model.NamespacePrePlatformMatch))
 }
 
 func TestVCSTestSuite(t *testing.T) {
