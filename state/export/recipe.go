@@ -15,10 +15,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/sysinfo"
 )
 
 // RecipeFlags captures values for any of the flags used with the export recipe sub-command.
-var RecipeFlags struct {
+var RecipeFlags recipeFlags
+
+type recipeFlags struct {
 	Pretty   bool
 	Platform string
 }
@@ -114,7 +117,7 @@ func beautifyJSON(d []byte) ([]byte, *failures.Failure) {
 
 func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*model.Recipe, *failures.Failure) {
 	if platform == "" {
-		platform = model.HostPlatform
+		platform = sysinfo.OS().String()
 	}
 
 	if commitID != "" {

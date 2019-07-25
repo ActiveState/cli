@@ -22,5 +22,17 @@
             "bit_width": "32",
             "cpu_type": "string"
         }
+    },
+    {
+        "display_name": "string",
+        "end_of_support_date": "1970-01-01",
+        "is_user_visible": true,
+        "os_name": "Windows",
+        "os_version": "1.0",
+        "platform_id": "00030003-0003-0003-0003-000300030003",
+        "processor": {
+            "bit_width": "32",
+            "cpu_type": "string"
+        }
     }
 ]

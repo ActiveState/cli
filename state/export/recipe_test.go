@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
@@ -22,6 +23,7 @@ type RecipeCommandTestSuite struct {
 	apim  *apiMock.Mock
 	authm *authMock.Mock
 	invm  *invMock.Mock
+	ex    *exiter.Exiter
 }
 
 func (suite *RecipeCommandTestSuite) SetupTest() {
@@ -40,62 +42,66 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apim.MockVcsGetCheckpoint()
 	suite.invm.MockPlatforms()
 	suite.invm.MockOrderRecipes()
+
+	suite.ex = exiter.New()
+	Command.Exiter = suite.ex.Exit
 }
 
 func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 	suite.invm.Close()
 	suite.authm.Close()
 	suite.apim.Close()
+
+	RecipeArgs = recipeArgs{}
+	RecipeFlags = recipeFlags{}
+
+	cc := Command.GetCobraCmd()
+	cc.SetArgs([]string{})
+
+	projectfile.Reset()
+	failures.ResetHandled()
 }
 
-func (suite *RecipeCommandTestSuite) TestExportRecipe() {
-	suite.T().Run("with missing commit arg", runRecipeCommandTest(suite, -1))
+func (suite *RecipeCommandTestSuite) TestNoArg() {
+	suite.runRecipeCommandTest(-1)
+}
 
+func (suite *RecipeCommandTestSuite) TestValidArg() {
 	cmt := "00020002-0002-0002-0002-000200020002"
-	suite.T().Run("with valid commit arg", runRecipeCommandTest(suite, -1, cmt))
-
-	suite.T().Run("with valid platform",
-		runRecipeCommandTest(suite, -1, "--platform", "linux"),
-	)
-	suite.T().Run("with valid platform (alt caps)",
-		runRecipeCommandTest(suite, -1, "--platform", "Linux"),
-	)
-
-	suite.T().Run("with invalid platform",
-		runRecipeCommandTest(suite, 1, "--platform", "junk"),
-	)
-
-	suite.T().Run("with valid platform (other platform)",
-		runRecipeCommandTest(suite, -1, "--platform", "macos"),
-	)
+	suite.runRecipeCommandTest(-1, cmt)
 }
 
-func runRecipeCommandTest(suite *RecipeCommandTestSuite, code int, args ...string) func(*testing.T) {
-	return func(tt *testing.T) {
-		// setup "subtest"
-		t := suite.T()
-		suite.SetT(tt)
-		defer suite.SetT(t)
+func (suite *RecipeCommandTestSuite) TestValidPlatform() {
+	suite.runRecipeCommandTest(-1, "--platform", "linux")
+}
 
-		defer func() { RecipeArgs = recipeArgs{} }()
+func (suite *RecipeCommandTestSuite) TestValidPlatformWithCaps() {
+	suite.runRecipeCommandTest(-1, "--platform", "Linux")
+}
 
-		cc := Command.GetCobraCmd()
-		cc.SetArgs(append([]string{"recipe"}, args...))
+func (suite *RecipeCommandTestSuite) TestInvalidPlatform() {
+	suite.runRecipeCommandTest(1, "--platform", "junk")
+}
 
-		projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-		pjfile := projectfile.Project{
-			Project: projectURL,
-		}
-		pjfile.Persist()
+func (suite *RecipeCommandTestSuite) TestOtherPlatform() {
+	suite.runRecipeCommandTest(-1, "--platform", "macos")
+}
 
-		ex := exiter.New()
-		Command.Exiter = ex.Exit
-		exitCode := ex.WaitForExit(func() {
-			Command.Execute()
-		})
+func (suite *RecipeCommandTestSuite) runRecipeCommandTest(code int, args ...string) {
+	cc := Command.GetCobraCmd()
+	cc.SetArgs(append([]string{"recipe"}, args...))
 
-		suite.Equal(code, exitCode, "exited without output")
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
 	}
+	pjfile.Persist()
+
+	exitCode := suite.ex.WaitForExit(func() {
+		Command.Execute()
+	})
+
+	suite.Equal(code, exitCode, "exited with wrong exitcode")
 }
 
 func TestRecipeCommandTestSuite(t *testing.T) {
