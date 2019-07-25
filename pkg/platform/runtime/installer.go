@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -105,14 +104,14 @@ func (installer *Installer) Install() *failures.Failure {
 		return fail
 	}
 
-	downloadURLs := []*url.URL{}
-	for url, installDir := range artifactMap {
+	downloadArtfs := []*HeadChefArtifact{}
+	for installDir, artf := range artifactMap {
 		if !fileutils.DirExists(installDir) {
-			downloadURLs = append(downloadURLs, url)
+			downloadArtfs = append(downloadArtfs, artf)
 		}
 	}
 
-	if len(downloadURLs) == 0 {
+	if len(downloadArtfs) == 0 {
 		// Already installed, no need to download or install
 		logging.Debug("Nothing to download")
 		return nil
@@ -122,15 +121,9 @@ func (installer *Installer) Install() *failures.Failure {
 		installer.onDownload()
 	}
 
-	archives := []string{}
-
-	filenames, fail := installer.runtimeDownloader.Download(downloadURLs)
+	archives, fail := installer.runtimeDownloader.Download(downloadArtfs)
 	if fail != nil {
 		return fail
-	}
-
-	for _, filename := range filenames {
-		archives = append(archives, filepath.Join(installer.downloadDir, filename))
 	}
 
 	return installer.InstallFromArchives(archives)
@@ -157,20 +150,20 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 	return nil
 }
 
-func (installer *Installer) fetchArtifactMap() (map[*url.URL]string, *failures.Failure) {
-	artifactMap := map[*url.URL]string{}
+func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *failures.Failure) {
+	artifactMap := map[string]*HeadChefArtifact{}
 
-	artifactURLs, fail := installer.runtimeDownloader.FetchArtifactURLs()
+	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
 	if fail != nil {
 		return artifactMap, fail
 	}
 
-	for _, url := range artifactURLs {
-		installDir, fail := installer.installDir(filepath.Base(url.Path))
+	for _, artf := range artifacts {
+		installDir, fail := installer.installDir(artf)
 		if fail != nil {
 			return artifactMap, fail
 		}
-		artifactMap[url] = installDir
+		artifactMap[installDir] = artf
 		installer.installDirs = append(installer.installDirs, installDir)
 	}
 
@@ -180,13 +173,13 @@ func (installer *Installer) fetchArtifactMap() (map[*url.URL]string, *failures.F
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archivePaths []string) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact) *failures.Failure {
 	if installer.onInstall != nil {
 		installer.onInstall()
 	}
 
-	for _, archivePath := range archivePaths {
-		if fail := installer.InstallFromArchive(archivePath); fail != nil {
+	for archivePath, artf := range archives {
+		if fail := installer.InstallFromArchive(archivePath, artf); fail != nil {
 			return fail
 		}
 	}
@@ -195,10 +188,10 @@ func (installer *Installer) InstallFromArchives(archivePaths []string) *failures
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact) *failures.Failure {
 	var installDir string
 	var fail *failures.Failure
-	if installDir, fail = installer.installDir(filepath.Base(archivePath)); fail != nil {
+	if installDir, fail = installer.installDir(artf); fail != nil {
 		return fail
 	}
 	installer.installDirs = append(installer.installDirs, installDir)
@@ -232,8 +225,8 @@ func (installer *Installer) InstallDirs() []string {
 	return funk.Uniq(installer.installDirs).([]string)
 }
 
-func (installer *Installer) installDir(filename string) (string, *failures.Failure) {
-	installDir := filepath.Join(installer.cacheDir, shortHash(filename))
+func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failures.Failure) {
+	installDir := filepath.Join(installer.cacheDir, shortHash(artf.ArtifactID.String()))
 
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
