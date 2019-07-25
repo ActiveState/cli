@@ -68,6 +68,10 @@ func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Fa
 			return nil, fail
 		}
 
+		if pf == nil {
+			continue
+		}
+
 		if pf.OsName == nil {
 			continue
 		}
