@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/go-openapi/strfmt"
@@ -8,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -20,38 +22,61 @@ var (
 	FailCommitCountImpossible = failures.Type("model.fail.commitcountimpossible", failures.FailNonFatal)
 	// FailCommitCountUnknowable is a failure counting between commits
 	FailCommitCountUnknowable = failures.Type("model.fail.commitcountunknowable", failures.FailNonFatal)
-)
-
-// Namespace represents regular expression strings used for defining matchable
-// requirements.
-type Namespace string
-
-const (
-	// NamespacePlatform is the namespace used for platform requirements
-	NamespacePlatform Namespace = `^platform$`
-
-	// NamespaceLanguage is the namespace used for language requirements
-	NamespaceLanguage = `^language$`
-
-	// NamespacePackage is the namespace used for package requirements
-	NamespacePackage = `/package$`
-
-	// NamespacePrePlatform is the namespace used for pre-platform bits
-	NamespacePrePlatform = `^pre-platform-installer$`
-)
-
-var (
+	// FailAddCommit is a failure in adding a new commit
+	FailAddCommit = failures.Type("model.fail.addcommit")
+	// FailUpdateBranch is a failure in updating a branch
+	FailUpdateBranch = failures.Type("model.fail.updatebranch")
 	// FailNoCommit is a failure due to a non-existent commit
 	FailNoCommit = failures.Type("model.fail.nocommit")
+	// FailNoLanguages is a failure due to the checkpoint not having any languages
+	FailNoLanguages = failures.Type("model.fail.nolanguages")
+)
+
+// Operation is the action to be taken in a commit
+type Operation string
+
+const (
+	// OperationAdded is for adding a new requirement
+	OperationAdded = Operation(mono_models.CommitChangeEditableOperationAdded)
+	// OperationUpdated is for updating an existing requirement
+	OperationUpdated = Operation(mono_models.CommitChangeEditableOperationUpdated)
+	// OperationRemoved is for removing an existing requirement
+	OperationRemoved = Operation(mono_models.CommitChangeEditableOperationRemoved)
+)
+
+// NamespaceMatchable represents regular expression strings used for defining matchable
+// requirements.
+type NamespaceMatchable string
+
+const (
+	// NamespacePlatformMatch is the namespace used for platform requirements
+	NamespacePlatformMatch NamespaceMatchable = `^platform$`
+
+	// NamespaceLanguageMatch is the namespace used for language requirements
+	NamespaceLanguageMatch = `^language$`
+
+	// NamespacePackageMatch is the namespace used for package requirements
+	NamespacePackageMatch = `/package$`
+
+	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
+	NamespacePrePlatformMatch = `^pre-platform-installer$`
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
-func NamespaceMatch(query string, namespace Namespace) bool {
+func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
 	if err != nil {
 		logging.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
 	}
 	return match
+}
+
+// Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
+type Namespace string
+
+// NamespacePackage creates a new package namespace
+func NamespacePackage(language string) Namespace {
+	return Namespace(fmt.Sprintf("language/%s/package", language))
 }
 
 // LatestCommitID returns the latest commit id by owner and project names. It
@@ -100,6 +125,90 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 
 	indexed := makeIndexedCommits(res.Payload)
 	return indexed.countBetween(commitID, latestCID.String())
+}
+
+// AddCommit creates a new commit with a single change
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
+	params := vcsClient.NewAddCommitParams()
+	params.SetCommit(&mono_models.CommitEditable{
+		Changeset: []*mono_models.CommitChangeEditable{&mono_models.CommitChangeEditable{
+			Operation:         string(operation),
+			Namespace:         string(namespace),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		}},
+		Message:        commitMessage,
+		ParentCommitID: parentCommitID,
+	})
+
+	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	if err != nil {
+		logging.Error("AddCommit Error: %s", err.Error())
+		return nil, FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+	}
+	return res.Payload, nil
+}
+
+// UpdateBranchCommit updates the commit that a branch is pointed at
+func UpdateBranchCommit(branchID strfmt.UUID, commitID strfmt.UUID) *failures.Failure {
+	params := vcsClient.NewUpdateBranchParams()
+	params.SetBranchID(branchID)
+	params.SetBranch(&mono_models.BranchEditable{
+		CommitID: &commitID,
+	})
+
+	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
+	if err != nil {
+		return FailUpdateBranch.New(locale.Tr("err_update_branch", err.Error()))
+	}
+	return nil
+}
+
+// CommitPackage commits a single package commit
+func CommitPackage(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+	proj, fail := FetchProjectByName(projectOwner, projectName)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID == nil {
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
+	}
+
+	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
+	if fail != nil {
+		return fail
+	}
+
+	if len(languages) == 0 {
+		return FailNoLanguages.New(locale.T("err_project_no_languages"))
+	}
+
+	var message string
+	switch operation {
+	case OperationAdded:
+		message = "commit_message_add_package"
+	case OperationUpdated:
+		message = "commit_message_updated_package"
+	case OperationRemoved:
+		message = "commit_message_removed_package"
+	}
+
+	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
+		operation, NamespacePackage(languages[0]),
+		packageName, packageVersion)
+	if fail != nil {
+		return fail
+	}
+
+	UpdateBranchCommit(branch.BranchID, commit.CommitID)
+
+	return nil
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id

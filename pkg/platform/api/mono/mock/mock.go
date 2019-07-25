@@ -82,3 +82,7 @@ func (m *Mock) MockGetOrganization() {
 func (m *Mock) MockGetOrganization404() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 404)
 }
+
+func (m *Mock) MockCommit() {
+	m.httpmock.Register("POST", "/vcs/commit")
+}

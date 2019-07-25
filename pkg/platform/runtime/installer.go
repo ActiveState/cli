@@ -149,7 +149,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 	}
 
 	for _, change := range checkpoint {
-		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatform) {
+		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatformMatch) {
 			return FailPrePlatformNotSupported.New("installer_err_runtime_preplatform")
 		}
 	}

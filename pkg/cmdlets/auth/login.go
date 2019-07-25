@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/skratchdot/open-golang/open"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -50,6 +51,9 @@ func AuthenticateWithInput(username string, password string) {
 		secretsapi.InitializeClient()
 		ensureUserKeypair(credentials.Password)
 	}
+
+	// ensure changes are propagated
+	config.Save()
 }
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
