@@ -44,7 +44,7 @@ func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, *failu
 func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, *failures.Failure) {
 	params := keys.NewGetPublicKeyParams()
 	params.UserID = user.UserID
-	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, secretsClient.Auth)
+	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, secretsapi.FailPublicKeyNotFound.New("keypair_err_publickey_not_found", user.Username, user.UserID.String())

@@ -3,7 +3,6 @@ package secrets
 import (
 	"fmt"
 
-	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
@@ -57,7 +56,6 @@ var persistentClient *Client
 type Client struct {
 	*secrets_client.Secrets
 	BaseURI string
-	Auth    runtime.ClientAuthInfoWriter
 }
 
 // GetClient gets the cached (if any) client instance that was initialized using our default settings

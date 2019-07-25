@@ -3,6 +3,9 @@ package secrets
 import (
 	"strconv"
 
+	"github.com/spf13/cobra"
+
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -15,7 +18,6 @@ import (
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 func buildSyncCommand(cmd *Command) *commands.Command {
@@ -62,7 +64,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 			params := secretsapiClient.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID
-			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, secretsClient.Auth)
+			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.Get().ClientAuth())
 
 			if err != nil {
 				switch statusCode := api.ErrorCode(err); statusCode {
