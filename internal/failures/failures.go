@@ -2,8 +2,6 @@ package failures
 
 import (
 	"errors"
-	"fmt"
-	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -171,20 +169,6 @@ func (e *Failure) Handle(description string) {
 
 // Type returns a FailureType that can be used to create your own failure types
 func Type(name string, parents ...*FailureType) *FailureType {
-	pc, file, line, ok := runtime.Caller(1)
-	fun := runtime.FuncForPC(pc)
-
-	if !ok {
-		// This shouldn't ever happen to my knowledge, unless this function were a main function there will always be one
-		// caller up the chain
-		panic("runtime.Caller(1) failing in failures.Type")
-	}
-
-	pkg := strings.Split(filepath.Base(fun.Name()), ".")[0]
-	if !strings.HasPrefix(name+".fail.", pkg) {
-		panic(fmt.Sprintf("Invalid type name: %s, it should be in the format of `%s.fail.<name>`. Called from: %s:%d (%s)", name, pkg, file, line, fun.Name()))
-	}
-
 	user := false
 	for _, typ := range parents {
 		if typ.Matches(FailUser) {
