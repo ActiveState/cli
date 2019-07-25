@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	rt "runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -17,9 +18,11 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/sysinfo"
 )
 
 type InstallerTestSuite struct {
@@ -57,6 +60,13 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
+
+	// Only linux is supported for now, so force it so we can run this test on mac
+	// If we want to skip this on mac it should be skipped through build tags, in
+	// which case this tweak is meaningless and only a convenience for when testing manually
+	if rt.GOOS == "darwin" {
+		model.OS = sysinfo.Linux
+	}
 }
 
 func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
@@ -70,7 +80,7 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
-	fail := suite.installer.InstallFromArchives([]string{path.Join(suite.dataDir, archive)})
+	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
 
