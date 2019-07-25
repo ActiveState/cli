@@ -127,6 +127,7 @@ type Secret struct {
 
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
+	OS          string `yaml:"os,omitempty"`
 	Platform    string `yaml:"platform,omitempty"`
 	Environment string `yaml:"environment,omitempty"`
 }
