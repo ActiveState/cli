@@ -742,7 +742,7 @@ err_commit_count_cannot_find_first:
   other: "Cannot find first commit ({{.V0}}) in indexed"
 err_commit_count_missing_last:
   other: "Missing last commit id"
-err_no_effective_recipe:
+err_recipe_not_found:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_artifacts:
   other: Your project does not seem to produce any artifacts
@@ -814,6 +814,22 @@ scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 unstable_version_warning:
   other: The State Tool is currently in a preview period, we are actively changing and adding features based on developer feedback.
+export_cmd_description:
+  other: Print information based on the provided subcommand
+export_recipe_cmd_description:
+  other: Print json formatted recipe data
+export_recipe_cmd_commitid_arg:
+  other: commitID
+export_recipe_cmd_commitid_arg_description:
+  other: "Sets target commit by ID (default: current commit)"
+export_recipe_flag_pretty:
+  other: Enables export format beautification
+export_recipe_flag_platform:
+  other: Sets target platform
+err_fetching_recipe_data:
+  other: Cannot fetch recipe data
+err_processing_recipe_data:
+  other: Cannot process recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:

@@ -1,8 +1,6 @@
 package mock
 
 import (
-	"runtime"
-
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 )
@@ -24,16 +22,12 @@ func (m *Mock) Close() {
 }
 
 func (m *Mock) MockPlatforms() {
-	if runtime.GOOS == "windows" {
-		m.httpmock.RegisterWithResponse("GET", "/platforms", 200, "platforms-win")
-	} else {
-		// For development we'll sometimes spoof linux on mac, so be agnostic
-		m.httpmock.RegisterWithResponse("GET", "/platforms", 200, "platforms")
-	}
+	m.httpmock.RegisterWithResponse("GET", "/platforms", 200, "platforms")
 }
 
 func (m *Mock) MockOrderRecipes() {
 	m.httpmock.Register("POST", "/orders/00010001-0001-0001-0001-000100010001/recipes")
+	m.httpmock.Register("POST", "/orders/00020002-0002-0002-0002-000200020002/recipes")
 }
 
 func (m *Mock) MockIngredientsByName() {

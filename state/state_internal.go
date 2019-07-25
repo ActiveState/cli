@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"
+	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
@@ -38,6 +39,7 @@ func register() {
 	Command.Append(run.Command)
 	Command.Append(scripts.Command)
 	Command.Append(pull.Command)
+	Command.Append(export.Command)
 	Command.Append(pkg.Command)
 
 	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())

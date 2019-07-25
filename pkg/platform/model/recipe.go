@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -10,25 +12,27 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/sysinfo"
 )
 
+// Fail types for this package
 var (
-	FailOrderRecipes = failures.Type("model.fail.orderrecipes", api.FailUnknown)
-
-	FailNoEffectiveRecipe = failures.Type("model.fail.recipes.noeffective", failures.FailNonFatal)
+	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown)
+	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 )
 
-var OS sysinfo.OsInfo
+// HostPlatform stores a reference to current platform
+var HostPlatform string
 
+// Recipe aliases recipe model
 type Recipe = inventory_models.RecipeResponseRecipesItems0
 
 func init() {
-	OS = sysinfo.OS()
+	HostPlatform = sysinfo.OS().String()
 }
 
-// FetchRecipesForCommit Fetch a list of recipes from a project based off a commitID
+// FetchRecipesForCommit returns a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
 	checkpoint, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
@@ -52,7 +56,45 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	return recipe.Payload.Recipes, nil
 }
 
-func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures.Failure) {
+// RecipeByPlatform filters multiple recipes down to one based on it's platform name
+func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
+	for _, recipe := range recipes {
+		if recipe.PlatformID == nil {
+			continue
+		}
+
+		pf, fail := FetchPlatformByUID(*recipe.PlatformID)
+		if fail != nil {
+			return nil, fail
+		}
+
+		if pf == nil {
+			continue
+		}
+
+		if pf.OsName == nil {
+			continue
+		}
+
+		if *pf.OsName == sysOSToPlatformOS(platform) {
+			return recipe, nil
+		}
+	}
+
+	return nil, FailRecipeNotFound.New(locale.T("err_recipe_not_found"))
+}
+
+// FetchRecipeForCommitAndPlatform returns the available recipe matching the commit id and platform string
+func FetchRecipeForCommitAndPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
+	recipes, fail := FetchRecipesForCommit(pj, commitID)
+	if fail != nil {
+		return nil, fail
+	}
+	return RecipeByPlatform(recipes, platform)
+}
+
+// FetchRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
+func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return nil, fail
@@ -61,38 +103,10 @@ func FetchEffectiveRecipeForProject(pj *mono_models.Project) (*Recipe, *failures
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipes, fail := FetchRecipesForCommit(pj, *branch.CommitID)
-	if fail != nil {
-		return nil, fail
-	}
-	return EffectiveRecipe(recipes)
+	return FetchRecipeForCommitAndPlatform(pj, *branch.CommitID, platform)
 }
 
-func EffectiveRecipe(recipes []*Recipe) (*Recipe, *failures.Failure) {
-	for _, recipe := range recipes {
-		if recipe.PlatformID == nil {
-			continue
-		}
-
-		platform, fail := FetchPlatformByUID(*recipe.PlatformID)
-		if fail != nil {
-			return nil, fail
-		}
-
-		if platform.OsName == nil {
-			continue
-		}
-
-		if (*platform.OsName == inventory_models.PlatformOsNameLinux && OS == sysinfo.Linux) ||
-			(*platform.OsName == inventory_models.PlatformOsNameMacOS && OS == sysinfo.Mac) ||
-			(*platform.OsName == inventory_models.PlatformOsNameWindows && OS == sysinfo.Windows) {
-			return recipe, nil
-		}
-	}
-
-	return nil, FailNoEffectiveRecipe.New(locale.T("err_no_effective_recipe"))
-}
-
+// RecipeToBuildRecipe converts a *Recipe to the related head chef model
 func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *failures.Failure) {
 	b, err := recipe.MarshalBinary()
 	if err != nil {
@@ -106,4 +120,17 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *
 	}
 
 	return buildRecipe, nil
+}
+
+func sysOSToPlatformOS(os string) string {
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
+		return inventory_models.PlatformOsNameLinux
+	case strings.ToLower(sysinfo.Mac.String()):
+		return inventory_models.PlatformOsNameMacOS
+	case strings.ToLower(sysinfo.Windows.String()):
+		return inventory_models.PlatformOsNameWindows
+	default:
+		return ""
+	}
 }
