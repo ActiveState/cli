@@ -40,13 +40,7 @@ steps:
       # Tests appear to be breaking the authentication, so re-authenticate
       state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
-    displayName: Unit Tests
-  - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
-    env: 
-      CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
-    workingDirectory: $(WORKDIR)
-    condition: eq(variables['Agent.OS'],'Linux')
-    displayName: Report to Code Climate
+    displayName: Tests
   - bash: |
       set -e
       
@@ -59,6 +53,12 @@ steps:
       APIENV=prod state run build
     workingDirectory: $(WORKDIR)
     displayName: 'Build'
+  - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
+    env: 
+      CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
+    workingDirectory: $(WORKDIR)
+    condition: eq(variables['Agent.OS'],'Linux')
+    displayName: Report to Code Climate
   - bash: rm public/install.sh
     workingDirectory: $(WORKDIR)
     condition: eq(variables['Agent.OS'],'Windows_NT')
