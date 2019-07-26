@@ -1,4 +1,4 @@
-package integration_test
+package auth_test
 
 import (
 	"fmt"
@@ -7,7 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/test/integration/expect"
+	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/pkg/expect"
 )
 
 var uid uuid.UUID
@@ -22,14 +23,14 @@ func init() {
 	}
 }
 
-type AuthTestSuite struct {
-	Suite
+type AuthIntegrationTestSuite struct {
+	integration.Suite
 	username string
 	password string
 	email    string
 }
 
-func (suite *AuthTestSuite) SetupTest() {
+func (suite *AuthIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
 
 	suite.username = fmt.Sprintf("user-%s", uid.String()[0:8])
@@ -37,13 +38,13 @@ func (suite *AuthTestSuite) SetupTest() {
 	suite.email = fmt.Sprintf("%s@test.tld", suite.username)
 }
 
-func (suite *AuthTestSuite) TestAuth() {
+func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.Signup()
 	suite.Logout()
 	suite.Login()
 }
 
-func (suite *AuthTestSuite) Signup() {
+func (suite *AuthIntegrationTestSuite) Signup() {
 	suite.Spawn("auth", "signup")
 	defer suite.Stop()
 
@@ -61,7 +62,7 @@ func (suite *AuthTestSuite) Signup() {
 	suite.Wait()
 }
 
-func (suite *AuthTestSuite) Logout() {
+func (suite *AuthIntegrationTestSuite) Logout() {
 	suite.Spawn("auth", "logout")
 	defer suite.Stop()
 
@@ -69,7 +70,7 @@ func (suite *AuthTestSuite) Logout() {
 	suite.Wait()
 }
 
-func (suite *AuthTestSuite) Login() {
+func (suite *AuthIntegrationTestSuite) Login() {
 	suite.Spawn("auth")
 	suite.Expect("username:")
 	suite.Send(suite.username)
@@ -84,9 +85,9 @@ func (suite *AuthTestSuite) Login() {
 	suite.Wait()
 }
 
-func TestAuthTestSuite(t *testing.T) {
+func TestAuthIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 
-	//suite.Run(t, new(AuthTestSuite))
-	expect.RunParallel(t, new(AuthTestSuite))
+	//suite.Run(t, new(AuthIntegrationTestSuite))
+	expect.RunParallel(t, new(AuthIntegrationTestSuite))
 }

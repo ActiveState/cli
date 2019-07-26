@@ -9,6 +9,9 @@ import (
 	"sync"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -25,9 +28,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/thoas/go-funk"
 )
 
 var (
@@ -120,6 +120,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	// Don't exit until our subshell has finished
 	if flag.Lookup("test.v") == nil {
+		print.Line(locale.Tr("state_activated", project.Owner(), project.Name()))
 		wg.Wait()
 	}
 

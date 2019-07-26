@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type Process struct {
@@ -109,6 +111,10 @@ func (p *Process) Run() error {
 	}
 
 	return nil
+}
+
+func (p *Process) ExitCode() int {
+	return osutils.CmdExitCode(p.cmd)
 }
 
 type StdReader struct {

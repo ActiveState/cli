@@ -32,10 +32,14 @@ func (s *Suite) AppendEnv(env []string) {
 }
 
 func (s *Suite) Spawn(args ...string) {
+	s.SpawnCustom(s.Executable, args...)
+}
+
+func (s *Suite) SpawnCustom(executable string, args ...string) {
 	wd, _ := os.Getwd()
-	commandLine := fmt.Sprintf("%s %s", s.Executable, strings.Join(args, " "))
+	commandLine := fmt.Sprintf("%s %s", executable, strings.Join(args, " "))
 	fmt.Printf("Spawning '%s' from %s\n", commandLine, wd)
-	s.process = NewProcess(s.Executable, args...)
+	s.process = NewProcess(executable, args...)
 	s.process.SetEnv(s.env)
 	s.processEnded = make(chan bool)
 
@@ -45,11 +49,15 @@ func (s *Suite) Spawn(args ...string) {
 		time.Sleep(10 * time.Millisecond) // Ensure we don't start receiving output before the expect rule has been set
 		err := s.process.Run()
 		if err != nil {
-			s.FailNow("Error while running process", "error: %v, stdout:\n---\n%s\n---\nstderr:\n---\n%s\n---\nstack:\n%s\n",
-				err, s.process.Stdout(), s.process.Stderr(), stack.String())
+			s.FailNow("Error while running process", "error: %v, output:\n---\n%s\n---\nstack:\n%s\n",
+				err, s.process.CombinedOutput(), stack.String())
 		}
 		s.processEnded <- true
 	}()
+}
+
+func (s *Suite) ExitCode() int {
+	return s.process.ExitCode()
 }
 
 func (s *Suite) WaitForInput(timeout ...time.Duration) {
@@ -75,8 +83,12 @@ func (s *Suite) Wait(timeout ...time.Duration) {
 	case <-s.processEnded:
 		return
 	case <-time.After(t):
-		s.FailNow("Timed out while waiting for process to finish", "stdout:\n---\n%s\n---\nstderr:\n---\n%s\n---\n", s.process.Stdout(), s.process.Stderr())
+		s.FailNow("Timed out while waiting for process to finish", "output:\n---\n%s\n---\n", s.process.CombinedOutput())
 	}
+}
+
+func (s *Suite) Output() string {
+	return s.process.CombinedOutput()
 }
 
 func (s *Suite) Expect(value string, timeout ...time.Duration) {
@@ -111,8 +123,8 @@ func (s *Suite) ExpectRe(value *regexp.Regexp, timeout ...time.Duration) {
 		})
 	}, t)
 	if err != nil {
-		s.FailNow("Could not meet expectation", "Expectation: '%s'\nError: %v\nstdout:\n---\n%s\n---\nstderr:\n---\n%s\n---\ncombined:\n---\n%s\n---\n",
-			value.String(), err, s.process.Stdout(), s.process.Stderr(), s.process.CombinedOutput())
+		s.FailNow("Could not meet expectation", "Expectation: '%s'\nError: %v\n---\noutput:\n---\n%s\n---\n",
+			value.String(), err, s.process.CombinedOutput())
 	}
 }
 

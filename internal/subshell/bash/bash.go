@@ -80,6 +80,12 @@ func (v *SubShell) Activate(wg *sync.WaitGroup) error {
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	logging.Debug("Activating shell with command: %s %s", v.Binary(), strings.Join(shellArgs, " "))
 
+	// Go is doing something weird with command execution that won't let us pass an rc file to bash
+	// This is a workaround around that issue. Note setting this on the env var below won't work, it
+	// needs to be set on the parent process
+	// This is only required for integration tests, running the state tool manually doesn't run into this
+	os.Setenv("BASH_ENV", v.rcFile.Name())
+
 	cmd := exec.Command(v.Binary(), shellArgs...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
