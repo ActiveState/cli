@@ -28,6 +28,18 @@ steps:
     displayName: Prepare Code Climate
   - bash: |
       set -e
+      
+      if [[ "$BUILD_SOURCEBRANCHNAME" == "master" ]]; then
+        echo "Building for external use"
+        APIENV=prod BRANCH_OVERRIDE=origin/unstable state run build-external
+      fi
+
+      echo "Building for internal use"
+      APIENV=prod state run build
+    workingDirectory: $(WORKDIR)
+    displayName: Build
+  - bash: |
+      set -e
       state auth --token $(PLATFORM_API_TOKEN)
       state run preprocess
 
@@ -41,18 +53,6 @@ steps:
       state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
     displayName: Tests
-  - bash: |
-      set -e
-      
-      if [[ "$BUILD_SOURCEBRANCHNAME" == "master" ]]; then
-        echo "Building for external use"
-        APIENV=prod BRANCH_OVERRIDE=origin/unstable state run build-external
-      fi
-
-      echo "Building for internal use"
-      APIENV=prod state run build
-    workingDirectory: $(WORKDIR)
-    displayName: 'Build'
   - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)
