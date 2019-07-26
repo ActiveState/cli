@@ -3,19 +3,17 @@ package secrets
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client"
-
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -41,19 +39,29 @@ var (
 	FailUserSecretSave = failures.Type("secrets-api.fail.user_secret.save", FailSave)
 )
 
+// Scope covers what scope a secret belongs to
+type Scope string
+
+var (
+	// ScopeUser is the user scope
+	ScopeUser Scope = "user"
+
+	//ScopeProject is the project scope
+	ScopeProject Scope = "project"
+)
+
 var persistentClient *Client
 
 // Client encapsulates a Secrets Service API client and its configuration
 type Client struct {
 	*secrets_client.Secrets
 	BaseURI string
-	Auth    runtime.ClientAuthInfoWriter
 }
 
 // GetClient gets the cached (if any) client instance that was initialized using our default settings
 func GetClient() *Client {
 	if persistentClient == nil {
-		persistentClient = NewDefaultClient(authentication.Get().BearerToken())
+		persistentClient = NewDefaultClient()
 	}
 	return persistentClient
 }
@@ -66,21 +74,22 @@ func Reset() {
 // NewClient creates a new SecretsAPI client instance using the provided HTTP settings.
 // It also expects to receive the actual Bearer token value that will be passed in each
 // API request in order to authenticate each request.
-func NewClient(schema, host, basePath, bearerToken string) *Client {
+func NewClient(schema, host, basePath string) *Client {
 	logging.Debug("secrets-api scheme=%s host=%s base_path=%s", schema, host, basePath)
+	transportRuntime := httptransport.New(host, basePath, []string{schema})
+	//transportRuntime.SetDebug(true)
 	secretsClient := &Client{
-		Secrets: secrets_client.New(httptransport.New(host, basePath, []string{schema}), strfmt.Default),
+		Secrets: secrets_client.New(transportRuntime, strfmt.Default),
 		BaseURI: fmt.Sprintf("%s://%s%s", schema, host, basePath),
-		Auth:    httptransport.BearerToken(bearerToken),
 	}
 	return secretsClient
 }
 
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
-func NewDefaultClient(bearerToken string) *Client {
+func NewDefaultClient() *Client {
 	apiSetting := api.GetSettings(api.ServiceSecrets)
-	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath, bearerToken)
+	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
 }
 
 // DefaultClient represents a secretsapi Client instance that can be accessed by any package
@@ -94,7 +103,7 @@ var DefaultClient *Client
 // Because this function is dependent on a runtime-value from pkg/platform/api, we are not relying on
 // the init() function for instantiation; this must be called explicitly.
 func InitializeClient() *Client {
-	DefaultClient = NewDefaultClient(authentication.Get().BearerToken())
+	DefaultClient = NewDefaultClient()
 	return DefaultClient
 }
 
@@ -107,7 +116,7 @@ func Get() *Client {
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.
 func (client *Client) AuthenticatedUserID() (strfmt.UUID, *failures.Failure) {
-	resOk, err := client.Authentication.GetWhoami(nil, client.Auth)
+	resOk, err := client.Authentication.GetWhoami(nil, authentication.Get().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return "", api.FailAuth.New("err_api_not_authenticated")
@@ -126,7 +135,7 @@ func (client *Client) Persist() {
 func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, *failures.Failure) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
-	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, client.Auth)
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -138,12 +147,28 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 	return getOk.Payload, nil
 }
 
-func SaveSecretShares(secretsClient *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
+// FetchDefinitions fetchs the secret definitions for a given project.
+func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+	params := secretsapiClient.NewGetDefinitionsParams()
+	params.ProjectID = projectID
+	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.Get().ClientAuth())
+	if err != nil {
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, api.FailAuth.New("err_api_not_authenticated")
+		default:
+			return nil, api.FailUnknown.Wrap(err)
+		}
+	}
+	return getOk.Payload, nil
+}
+
+func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_models.User, shares []*secretsModels.UserSecretShare) *failures.Failure {
 	params := secretsapiClient.NewShareUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID
 	params.UserSecrets = shares
-	_, err := secretsClient.Secrets.Secrets.ShareUserSecrets(params, secretsClient.Auth)
+	_, err := client.Secrets.Secrets.ShareUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		logging.Debug("error sharing user secrets: %v", err)
 		return FailSave.New("secrets_err_save")

@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/stretchr/testify/require"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 )
 
 func TestCreateCommand(t *testing.T) {
@@ -47,20 +46,6 @@ func TestRunCommand(t *testing.T) {
 	cmd1.Execute()
 
 	assert.True(t, ran)
-}
-
-func TestExitError(t *testing.T) {
-	errExpected := errors.New("test")
-
-	var cmd1 = Command{
-		Name: "foo",
-		Run: func(cmd *cobra.Command, args []string) {
-			failures.Handle(errExpected, "Some failure")
-		},
-	}
-
-	err := cmd1.Execute()
-	require.True(t, errExpected == err, fmt.Sprintf("%v should be equal to %v", errExpected, err))
 }
 
 func TestExitCode(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -34,7 +35,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	params.UserSecrets = append(params.UserSecrets, secretChange)
 
-	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, secretsClient.Auth)
+	_, err := secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.Get().ClientAuth())
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
 		return secretsapi.FailSave.New("secrets_err_save")
@@ -105,6 +106,16 @@ func LoadKeypairFromConfigDir() (keypairs.Keypair, *failures.Failure) {
 		return nil, failure
 	}
 	return kp, nil
+}
+
+// DefsByProject fetches the secret definitions for the current user relevant to the given project
+func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+	pjm, fail := model.FetchProjectByName(owner, projectName)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return secretsapi.FetchDefinitions(secretsClient, pjm.ProjectID)
 }
 
 // ByProject fetches the secrets for the current user relevant to the given project

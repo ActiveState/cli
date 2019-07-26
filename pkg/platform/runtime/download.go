@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -41,14 +43,17 @@ var (
 // InitRequester is the requester used for downloaded, exported for testing purposes
 var InitRequester headchef.InitRequester = headchef.InitRequest
 
+// HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
+type HeadChefArtifact = headchef_models.BuildCompletedArtifactsItems0
+
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download([]*url.URL) ([]string, *failures.Failure)
+	Download(artifacts []*HeadChefArtifact) (files map[string]*HeadChefArtifact, fail *failures.Failure)
 
-	// FetchArtifactURLs will fetch artifact
-	FetchArtifactURLs() ([]*url.URL, *failures.Failure)
+	// FetchArtifacts will fetch artifact
+	FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure)
 }
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
@@ -76,14 +81,19 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 		return nil, fail
 	}
 
-	// Fetch recipes for the project (uses the main branch)
-	recipes, fail := model.FetchRecipesForProject(platProject)
+	commitID := strfmt.UUID(r.project.CommitID())
+	var recipes []*model.Recipe
+	if commitID == "" {
+		return nil, FailNoCommit.New(locale.T("err_no_commit"))
+	}
+
+	recipes, fail = model.FetchRecipesForCommit(platProject, commitID)
 	if fail != nil {
 		return nil, fail
 	}
 
 	// Get the effective recipe from the list of recipes, this is the first recipe that matches our current platform
-	effectiveRecipe, fail := model.EffectiveRecipe(recipes)
+	effectiveRecipe, fail := model.RecipeByPlatform(recipes, model.HostPlatform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -104,8 +114,8 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 	return buildRequest, nil
 }
 
-// FetchArtifactURLs will retrieve artifact information from the head-chef (eg language installers)
-func (r *Download) FetchArtifactURLs() ([]*url.URL, *failures.Failure) {
+// FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
+func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	buildRequest, fail := r.fetchBuildRequest()
 	if fail != nil {
 		return nil, fail
@@ -113,7 +123,7 @@ func (r *Download) FetchArtifactURLs() ([]*url.URL, *failures.Failure) {
 
 	done := make(chan bool)
 
-	var artifactURLs []*url.URL
+	var artifacts []*HeadChefArtifact
 
 	request := r.headchefRequester(buildRequest)
 	request.OnBuildCompleted(func(response headchef_models.BuildCompleted) {
@@ -126,16 +136,11 @@ func (r *Download) FetchArtifactURLs() ([]*url.URL, *failures.Failure) {
 		for _, artf := range response.Artifacts {
 			filename := filepath.Base(artf.URI.String())
 			if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
-				artifactURL, err := url.Parse(artf.URI.String())
-				if err != nil {
-					fail = FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
-					return
-				}
-				artifactURLs = append(artifactURLs, artifactURL)
+				artifacts = append(artifacts, artf)
 			}
 		}
 
-		if len(artifactURLs) == 0 {
+		if len(artifacts) == 0 {
 			fail = FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
 		}
 	})
@@ -163,31 +168,36 @@ func (r *Download) FetchArtifactURLs() ([]*url.URL, *failures.Failure) {
 
 	<-done
 
-	if len(artifactURLs) == 0 && fail == nil {
+	if len(artifacts) == 0 && fail == nil {
 		return nil, FailNoResponse.New(locale.T("err_runtime_download_no_response"))
 	}
 
-	return artifactURLs, fail
+	return artifacts, fail
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifactURLs []*url.URL) (filenames []string, fail *failures.Failure) {
-	filenames = []string{}
+func (r *Download) Download(artifacts []*HeadChefArtifact) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
+	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 
-	for _, URL := range artifactURLs {
-		u, fail := model.SignS3URL(URL)
+	for _, artf := range artifacts {
+		artifactURL, err := url.Parse(artf.URI.String())
+		if err != nil {
+			return files, FailArtifactInvalidURL.New(locale.T("err_artifact_invalid_url"))
+		}
+		u, fail := model.SignS3URL(artifactURL)
 		if fail != nil {
-			return filenames, fail
+			return files, fail
 		}
 
+		targetPath := filepath.Join(r.targetDir, filepath.Base(u.Path))
 		entries = append(entries, &download.Entry{
-			Path:     filepath.Join(r.targetDir, filepath.Base(u.Path)),
+			Path:     targetPath,
 			Download: u.String(),
 		})
-		filenames = append(filenames, filepath.Base(u.Path))
+		files[targetPath] = artf
 	}
 
 	downloader := download.New(entries, 1)
-	return filenames, downloader.Download()
+	return files, downloader.Download()
 }

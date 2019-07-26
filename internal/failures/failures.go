@@ -2,8 +2,6 @@ package failures
 
 import (
 	"errors"
-	"fmt"
-	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -36,7 +34,7 @@ var (
 	FailOS = Type("failures.fail.os")
 
 	// FailInput identifies a failure as an input failure
-	FailInput = Type("failures.fail.input", FailUser)
+	FailInput = Type("failures.fail.input")
 
 	// FailUserInput identifies a failure as an input failure
 	FailUserInput = Type("failures.fail.userinput", FailInput, FailUser)
@@ -56,6 +54,9 @@ var (
 	// FailNetwork identifies a failure due to a networking issue
 	FailNetwork = Type("failures.fail.network")
 
+	// FailTemplating identifies a failure due to a templating issue
+	FailTemplating = Type("failures.fail.templating")
+
 	// FailArchiving identifies a failure due to archiving (compressing or decompressing)
 	FailArchiving = Type("failures.fail.archiving")
 
@@ -67,6 +68,10 @@ var (
 
 	// FailInvalidArgument identifies a failure as being due to an argument to a function being invalid.
 	FailInvalidArgument = Type("failures.fail.invalid_arg")
+
+	// FailNonFatal is not supposed to be used directly. It communicates a failure that can safely be ignored.
+	// Failures that inerhit from this type will not be logged to rollbar.
+	FailNonFatal = Type("failures.fail.nonfatal")
 )
 
 var handled error
@@ -102,8 +107,15 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 
 	file, line := trace()
-	logging.Debug("Failure '%s' created: %s (%v). File: %s, Line: %d", f.Name, message, params, file, line)
-	return &Failure{locale.T(message, input), f, file, line, stacktrace.Get(), nil}
+	message = locale.T(message, input)
+
+	var logger logging.Logger = logging.Debug
+	if !f.Matches(FailUser) && !f.Matches(FailNonFatal) {
+		logger = logging.Error
+	}
+	logger("%s. Failure: %s File: %s, Line: %d", message, f.Name, file, line)
+
+	return &Failure{message, f, file, line, stacktrace.Get(), nil}
 }
 
 // Wrap wraps another error
@@ -140,11 +152,6 @@ func (e *Failure) ToError() error {
 	return errors.New(e.Error())
 }
 
-// Log the failure
-func (e *Failure) Log() {
-	logging.Error(fmt.Sprintf("%s: %s", e.Type.Name, e.Message))
-}
-
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 func (e *Failure) Handle(description string) {
@@ -157,27 +164,11 @@ func (e *Failure) Handle(description string) {
 		print.Error(description)
 	}
 
-	e.Log()
-
 	print.Error(e.Error())
 }
 
 // Type returns a FailureType that can be used to create your own failure types
 func Type(name string, parents ...*FailureType) *FailureType {
-	pc, file, line, ok := runtime.Caller(1)
-	fun := runtime.FuncForPC(pc)
-
-	if !ok {
-		// This shouldn't ever happen to my knowledge, unless this function were a main function there will always be one
-		// caller up the chain
-		panic("runtime.Caller(1) failing in failures.Type")
-	}
-
-	pkg := strings.Split(filepath.Base(fun.Name()), ".")[0]
-	if !strings.HasPrefix(name+".fail.", pkg) {
-		panic(fmt.Sprintf("Invalid type name: %s, it should be in the format of `%s.fail.<name>`. Called from: %s:%d (%s)", name, pkg, file, line, fun.Name()))
-	}
-
 	user := false
 	for _, typ := range parents {
 		if typ.Matches(FailUser) {

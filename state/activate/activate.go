@@ -4,18 +4,24 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"path"
 	"path/filepath"
 	"regexp"
-	"sync"
+	"runtime"
+	"syscall"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -24,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -87,7 +94,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
-	var wg sync.WaitGroup
+	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
 	if Args.Namespace != "" {
@@ -98,34 +105,21 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	project := project.Get()
-	print.Info(locale.T("info_activating_state", project))
-	venv := virtualenvironment.Get()
-	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail = venv.Activate()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return
+	// activate should be continually called while returning true
+	// looping here provides a layer of scope to handle printing output
+	var proj *project.Project
+	for {
+		proj = project.Get()
+		print.Info(locale.T("info_activating_state", proj))
+
+		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
+			break
+		}
+
+		print.Info(locale.T("info_reactivating", proj))
 	}
 
-	// Save path to project for future use
-	savePathForNamespace(fmt.Sprintf("%s/%s", project.Owner(), project.Name()), filepath.Dir(project.Source().Path()))
-
-	_, err := subshell.Activate(&wg)
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return
-	}
-
-	// Don't exit until our subshell has finished
-	if flag.Lookup("test.v") == nil {
-		print.Line(locale.Tr("state_activated", project.Owner(), project.Name()))
-		wg.Wait()
-	}
-
-	print.Bold(locale.T("info_deactivated", project))
-
+	print.Bold(locale.T("info_deactivated", proj))
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
@@ -186,6 +180,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		}
 	}
 
+	projectfile.Reset()
 	err := os.Chdir(directory)
 	if err != nil {
 		return failures.FailIO.Wrap(err)
@@ -219,7 +214,7 @@ func getPathsForNamespace(namespace string) []string {
 func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
-		return failures.FailIO.Wrap(err)
+		return failures.FailUserInput.Wrap(err)
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
@@ -227,17 +222,7 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
 
-	pj := projectfile.Project{
-		Project:   projectURL,
-		Languages: []projectfile.Language{},
-	}
-
-	for _, language := range languages {
-		pj.Languages = append(pj.Languages, projectfile.Language{Name: language})
-	}
-
-	pj.SetPath(filepath.Join(directory, constants.ConfigFileName))
-	fail := pj.Save()
+	_, fail := projectfile.Create(projectURL, directory)
 	if fail != nil {
 		return fail
 	}
@@ -282,4 +267,111 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	}
 
 	return nil, nil
+}
+
+// activate will activate the venv and subshell. It is meant to be run in a loop
+// with the return value indicating whether another iteration is warranted.
+func activate(owner, name, srcPath string) bool {
+	venv := virtualenvironment.Get()
+	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+	fail := venv.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
+		return false
+	}
+
+	// Save path to project for future use
+	savePathForNamespace(fmt.Sprintf("%s/%s", owner, name), filepath.Dir(srcPath))
+
+	ignoreWindowsInterrupts()
+
+	subs, err := subshell.Activate()
+	if err != nil {
+		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
+		return false
+	}
+
+	if flag.Lookup("test.v") != nil {
+		return false
+	}
+
+	done := make(chan struct{})
+	defer close(done)
+	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
+
+	hails, fail := hail.Open(done, fname)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
+		return false
+	}
+
+	print.Line(locale.Tr("state_activated", owner, name))
+
+	return listenForReactivation(venv.ActivationID(), hails, subs)
+}
+
+func ignoreWindowsInterrupts() {
+	if runtime.GOOS == "windows" {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT)
+		go func() {
+			for range c {
+			}
+		}()
+	}
+}
+
+type subShell interface {
+	Deactivate() *failures.Failure
+	Failures() <-chan *failures.Failure
+}
+
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
+	for {
+		select {
+		case rcvd, ok := <-rcvs:
+			if !ok {
+				logging.Error("hailing channel closed")
+				return false
+			}
+
+			if rcvd.Fail != nil {
+				logging.Error("error in hailing channel: %s", rcvd.Fail)
+				continue
+			}
+
+			if !idsValid(id, rcvd.Data) {
+				continue
+			}
+
+			// A subshell will have triggered this case; Wait for
+			// output completion before deactivating. The nature of
+			// this issue is unclear at this time.
+			time.Sleep(time.Second)
+
+			if fail := subs.Deactivate(); fail != nil {
+				failures.Handle(fail, locale.T("error_deactivating_subshell"))
+				return false
+			}
+
+			return true
+
+		case fail, ok := <-subs.Failures():
+			if !ok {
+				logging.Error("subshell failure channel closed")
+				return false
+			}
+
+			if fail != nil {
+				failures.Handle(fail, locale.T("error_in_active_subshell"))
+			}
+
+			return false
+		}
+	}
+}
+
+func idsValid(currID string, rcvdID []byte) bool {
+	return currID != "" && len(rcvdID) > 0 && currID == string(rcvdID)
 }

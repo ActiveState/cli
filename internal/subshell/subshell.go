@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
@@ -34,10 +33,13 @@ import (
 // under the same directory as this file
 type SubShell interface {
 	// Activate the given subshell
-	Activate(wg *sync.WaitGroup) error
+	Activate() *failures.Failure
+
+	// Failures returns a channel to receive failures
+	Failures() <-chan *failures.Failure
 
 	// Deactivate the given subshell
-	Deactivate() error
+	Deactivate() *failures.Failure
 
 	// Run a script string, passing the provided command-line arguments, that assumes this shell and returns the exit code
 	Run(script string, args ...string) (int, error)
@@ -73,8 +75,9 @@ type SubShell interface {
 	Quote(value string) string
 }
 
-// Activate the virtual environment
-func Activate(wg *sync.WaitGroup) (SubShell, error) {
+// Activate returns the correct subshell for the current environment after
+// activating the relevant virtual environment
+func Activate() (SubShell, *failures.Failure) {
 	logging.Debug("Activating Subshell")
 
 	// Why another check here? Because some things like events / run script don't take the virtualenv route,
@@ -89,18 +92,12 @@ func Activate(wg *sync.WaitGroup) (SubShell, error) {
 		return nil, fail
 	}
 
-	logging.Debug("Calling Activate")
-	err := subs.Activate(wg)
-	if err != nil {
-		return nil, err
-	}
-
-	return subs, nil
+	return subs, subs.Activate()
 }
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func getRcFile(v SubShell) (*os.File, error) {
+func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../assets/shells")
 	tpl := box.String(v.RcFileTemplate())
 	prj := project.Get()
@@ -144,29 +141,28 @@ func getRcFile(v SubShell) (*os.File, error) {
 	}
 	t, err := template.New("rcfile").Parse(tpl)
 	if err != nil {
-		return nil, err
+		return nil, failures.FailTemplating.Wrap(err)
 	}
 
 	var out bytes.Buffer
 	err = t.Execute(&out, rcData)
 	if err != nil {
-		return nil, err
+		return nil, failures.FailTemplating.Wrap(err)
 	}
 
 	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
-
 	if err != nil {
-		return nil, err
+		return nil, failures.FailOS.Wrap(err)
 	}
 
 	tmpFile.WriteString(out.String())
 	tmpFile.Close()
 
-	return tmpFile, err
+	return tmpFile, nil
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it
-func Get() (SubShell, error) {
+func Get() (SubShell, *failures.Failure) {
 	var T = locale.T
 	binary := os.Getenv("SHELL")
 	if binary == "" {

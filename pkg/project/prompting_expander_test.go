@@ -83,6 +83,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 400, "something-happened"
 	})
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander(false)
@@ -93,7 +94,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 	suite.Zero(expandedValue)
 }
 
-func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName, expectedValue string) {
+func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName string, isUser bool, expectedValue string) {
 	var userChanges []*secretsModels.UserSecretChange
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
@@ -101,20 +102,24 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
 	})
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
-	expanderFn := suite.prepareWorkingExpander(false)
+	expanderFn := suite.prepareWorkingExpander(isUser)
 	expandedValue, failure := expanderFn(secretName, suite.project)
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(failure)
 	suite.Equal(expectedValue, expandedValue)
 
+	_, failure = expanderFn(secretName, suite.project)
+	suite.Require().Nil(failure, "Should not prompt again because it should have stored/cached the secret")
+
 	suite.Require().Len(userChanges, 1)
 
 	change := userChanges[0]
 	suite.Equal(secretName, *change.Name)
-	suite.Equal(false, *change.IsUser)
+	suite.Equal(isUser, *change.IsUser)
 
 	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020003"), change.ProjectID)
 
@@ -125,7 +130,8 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSavesSecret() {
-	suite.assertExpansionSaveSuccess("proj-secret", "more amazing")
+	suite.assertExpansionSaveSuccess("proj-secret", false, "more amazing")
+	suite.assertExpansionSaveSuccess("user-secret", true, "more amazing")
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {

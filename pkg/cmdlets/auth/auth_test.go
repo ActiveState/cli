@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -70,9 +71,14 @@ func TestExecuteNoArgs(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return("baduser", nil)
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
-	execErr := Command.Execute()
 
-	assert.Error(t, execErr, "No failure occurred")
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 

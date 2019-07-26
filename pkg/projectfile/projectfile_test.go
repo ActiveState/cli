@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 func setCwd(t *testing.T, subdir string) {
@@ -91,12 +92,14 @@ version: valueForVersion`)
 func TestConstraintStruct(t *testing.T) {
 	constraint := Constraint{}
 	dat := strings.TrimSpace(`
+os: valueForOS
 platform: valueForPlatform
 environment: valueForEnvironment`)
 
 	err := yaml.Unmarshal([]byte(dat), &constraint)
 	assert.Nil(t, err, "Should not throw an error")
 
+	assert.Equal(t, "valueForOS", constraint.OS, "Os should be set")
 	assert.Equal(t, "valueForPlatform", constraint.Platform, "Platform should be set")
 	assert.Equal(t, "valueForEnvironment", constraint.Environment, "Environment should be set")
 }
@@ -354,7 +357,10 @@ project: https://example.com/xowner/xproject?commitID=123
 	expectedYAML := bytes.Replace(exampleYAML, []byte("123"), []byte("987"), 1) // must be 1
 
 	_, fail := setCommitInYAML(exampleYAML, "")
-	assert.Error(t, fail.ToError())
+	assert.Equal(t, failures.FailDeveloper.Name, fail.Type.Name)
+
+	_, fail = setCommitInYAML([]byte(""), "123")
+	assert.Equal(t, FailSetCommitID.Name, fail.Type.Name)
 
 	out0, fail := setCommitInYAML(exampleYAML, "987")
 	assert.NoError(t, fail.ToError())
@@ -364,4 +370,31 @@ project: https://example.com/xowner/xproject?commitID=123
 	out1, fail := setCommitInYAML(exampleYAMLNoID, "987")
 	assert.NoError(t, fail.ToError())
 	assert.Equal(t, string(expectedYAML), string(out1))
+}
+
+func TestNewProjectfile(t *testing.T) {
+	dir, err := ioutil.TempDir("", "projectfile-test")
+	assert.NoError(t, err, "Should be no error when getting a temp directory")
+	os.Chdir(dir)
+
+	pjFile, fail := Create("https://platform.activestate.com/xowner/xproject", dir)
+	assert.NoError(t, fail.ToError(), "There should be no error when loading from a path")
+	assert.Equal(t, "helloWorld", pjFile.Scripts[0].Name)
+
+	_, fail = Create("https://platform.activestate.com/xowner/xproject", "")
+	assert.Error(t, fail.ToError(), "We don't accept blank paths")
+
+	setCwd(t, "")
+	dir, err = os.Getwd()
+	assert.NoError(t, err, "Should be no error when getting the CWD")
+	_, fail = Create("https://platform.activestate.com/xowner/xproject", dir)
+	assert.Error(t, fail.ToError(), "Cannot create new project if existing as.yaml ...exists")
+}
+
+func TestValidateProjectURL(t *testing.T) {
+	fail := ValidateProjectURL("https://example.com/xowner/xproject")
+	assert.Error(t, fail.ToError(), "This is an invalid project URL, good catch!")
+
+	fail = ValidateProjectURL("https://platform.activestate.com/xowner/xproject")
+	assert.Nil(t, fail, "This is an invalid project URL, good catch!")
 }

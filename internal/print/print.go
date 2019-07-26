@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/ActiveState/go-colortext"
+	ct "github.com/ActiveState/go-colortext"
 )
 
 // Printer holds our main printing logic

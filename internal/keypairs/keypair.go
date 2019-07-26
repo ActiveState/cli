@@ -6,6 +6,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 	FailKeypairParse = failures.Type("keypairs.fail.keypair.parse", FailKeypair)
 
 	// FailKeypairPassphrase indicates a failure with passphrase.
-	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse)
+	FailKeypairPassphrase = failures.Type("keypairs.fail.keypair.passphrase", FailKeypairParse, failures.FailUser)
 
 	// FailKeypairGenerate indicates a failure to generate a keypair.
 	FailKeypairGenerate = failures.Type("keypairs.fail.keypair.generate", FailKeypair)
@@ -137,7 +138,7 @@ func SaveEncodedKeypair(secretsClient *secretsapi.Client, encKeypair *EncodedKey
 		PublicKey:           &encKeypair.EncodedPublicKey,
 	})
 
-	if _, err := secretsClient.Keys.SaveKeypair(params, secretsClient.Auth); err != nil {
+	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.Get().ClientAuth()); err != nil {
 		logging.Error("Saving keypair failed with error: %v", err)
 		return secretsapi.FailKeypairSave.New("keypair_err_save")
 	}

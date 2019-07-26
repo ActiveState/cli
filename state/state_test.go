@@ -3,18 +3,17 @@ package main
 import (
 	"testing"
 
+	"github.com/spf13/pflag"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	funk "github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/constants"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/stretchr/testify/require"
-
-	"github.com/spf13/pflag"
-	funk "github.com/thoas/go-funk"
-
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {
@@ -72,7 +71,7 @@ func TestMainError(t *testing.T) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"--foo"})
 
-	exit = exiter.Exit
+	Command.Exiter = exiter.Exit
 	exitCode := exiter.WaitForExit(main)
 
 	assert.Equal(exitCode, 1, "main didn't exit")

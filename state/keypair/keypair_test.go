@@ -3,13 +3,15 @@ package keypair_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/keypair"
-	"github.com/stretchr/testify/suite"
 )
 
 type KeypairCommandTestSuite struct {
@@ -37,14 +39,19 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgs_AuthFailure() {
 
 	httpmock.RegisterWithCode("GET", "/whoami", 401)
 
-	var execErr error
 	outStr, outErr := osutil.CaptureStderr(func() {
 		cmd.GetCobraCmd().SetArgs([]string{})
-		execErr = cmd.Execute()
-	})
-	suite.Require().NoError(outErr)
-	suite.Error(execErr, "failure occurred")
 
+		ex := exiter.New()
+		cmd.Exiter = ex.Exit
+		exitCode := ex.WaitForExit(func() {
+			cmd.Execute()
+		})
+
+		suite.Equal(1, exitCode, "Exited with code 1")
+	})
+
+	suite.Require().NoError(outErr)
 	suite.Contains(outStr, "You are not authenticated")
 }
 
@@ -75,8 +82,14 @@ func (suite *KeypairCommandTestSuite) TestExecute_NoArgsDump_KeypairNotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 
 	cmd.GetCobraCmd().SetArgs([]string{})
-	execErr := cmd.Execute()
-	suite.Require().Error(execErr, "expected failure")
+
+	ex := exiter.New()
+	cmd.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		cmd.Execute()
+	})
+
+	suite.Equal(1, exitCode, "Exited with code 1")
 	suite.Require().True(failures.IsFailure(failures.Handled()), "is a failure")
 	failure := failures.Handled().(*failures.Failure)
 	suite.True(failure.Type.Matches(secretsapi.FailNotFound), "should be a FailNotFound failure")

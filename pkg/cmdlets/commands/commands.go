@@ -68,6 +68,7 @@ type Command struct {
 	Arguments          []*Argument
 	DisableFlagParsing bool
 	Exiter             func(int)
+	Hidden             bool
 
 	UsageTemplate string
 
@@ -206,7 +207,9 @@ func (c *Command) Register() {
 		if flag.Lookup("test.v") == nil {
 			c.Exiter = os.Exit
 		} else {
-			c.Exiter = func(code int) {}
+			c.Exiter = func(code int) {
+				panic(fmt.Sprintf("Test exited with code %d, you probably want to use testhelpers/exiter.", code))
+			}
 		}
 	}
 
@@ -217,6 +220,7 @@ func (c *Command) Register() {
 		Run:                c.runner,
 		Args:               c.argInputValidator,
 		DisableFlagParsing: c.DisableFlagParsing,
+		Hidden:             c.Hidden,
 	}
 
 	for _, flag := range c.Flags {

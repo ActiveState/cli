@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/google/uuid"
 )
 
 var persisted *VirtualEnvironment
@@ -26,6 +27,7 @@ var OS = rt.GOOS
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	project             *project.Project
+	activationID        string
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	artifactPaths       []string
@@ -41,7 +43,10 @@ func Get() *VirtualEnvironment {
 
 // Init creates an instance of VirtualEnvironment{} with default settings
 func Init() *VirtualEnvironment {
-	return &VirtualEnvironment{project: project.Get()}
+	return &VirtualEnvironment{
+		project:      project.Get(),
+		activationID: uuid.New().String(),
+	}
 }
 
 // Activate the virtual environment
@@ -118,6 +123,7 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
+	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 	return env
 }
@@ -131,4 +137,9 @@ func (v *VirtualEnvironment) WorkingDirectory() string {
 	}
 
 	return wd
+}
+
+// ActivationID returns the unique identifier related to the activated instance.
+func (v *VirtualEnvironment) ActivationID() string {
+	return v.activationID
 }

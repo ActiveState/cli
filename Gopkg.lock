@@ -34,18 +34,6 @@
   revision = "a0329b32eba8111961b25c274deed558a6554f38"
 
 [[projects]]
-  branch = "release-1.4.2"
-  digest = "1:c4dd249a5ee2098329674b29774e26c0cdb01972ddd3425db587ddbd421aadab"
-  name = "github.com/ActiveState/survey"
-  packages = [
-    ".",
-    "core",
-    "terminal",
-  ]
-  pruneopts = ""
-  revision = "8055dd4667473157519d39efb62556f5f7fc1d14"
-
-[[projects]]
   branch = "master"
   digest = "1:baad9598037fdfbca7de9035aa4e0070144b083cfa12ab0b03f191b854861426"
   name = "github.com/ActiveState/sysinfo"
@@ -557,6 +545,14 @@
   version = "v1.1"
 
 [[projects]]
+  digest = "1:246edc359769a0657d6c7b400d03f34f0a5f0ffef70ef6d14e130245906b042b"
+  name = "github.com/rollbar/rollbar-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "0838415a95e06523ce50f5d06aee37713fc99e6a"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:3763511b38744179c12c34edd3a0694bdfe653f5f5a509a02e600c90ce3593f3"
   name = "github.com/sacOO7/go-logger"
@@ -750,6 +746,18 @@
   revision = "4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1"
 
 [[projects]]
+  digest = "1:b935f125caa92836a02da8561e0c300234edac0c8c55cd9d447040719a71493a"
+  name = "gopkg.in/AlecAivazis/survey.v1"
+  packages = [
+    ".",
+    "core",
+    "terminal",
+  ]
+  pruneopts = ""
+  revision = "9f89d9dd66613216993dc300f9f3dbae9c3c9bda"
+  version = "v1.4.2"
+
+[[projects]]
   branch = "v0"
   digest = "1:7875aa52db70d816c8d8553cf7a9bc6f823234c56a749b60fa0e1792deb99a40"
   name = "gopkg.in/inconshreveable/go-update.v0"
@@ -787,8 +795,6 @@
     "github.com/ActiveState/go-colortext",
     "github.com/ActiveState/go-ogle-analytics",
     "github.com/ActiveState/state-required/require",
-    "github.com/ActiveState/survey",
-    "github.com/ActiveState/survey/core",
     "github.com/ActiveState/sysinfo",
     "github.com/Azure/go-ansiterm/winterm",
     "github.com/alecthomas/template",
@@ -799,6 +805,7 @@
     "github.com/dave/jennifer/jen",
     "github.com/denisbrodbeck/machineid",
     "github.com/fatih/color",
+    "github.com/fsnotify/fsnotify",
     "github.com/go-openapi/errors",
     "github.com/go-openapi/runtime",
     "github.com/go-openapi/runtime/client",
@@ -819,6 +826,7 @@
     "github.com/phayes/permbits",
     "github.com/pkg/errors",
     "github.com/posener/wstest",
+    "github.com/rollbar/rollbar-go",
     "github.com/sacOO7/gowebsocket",
     "github.com/shibukawa/configdir",
     "github.com/skratchdot/open-golang/open",
@@ -832,6 +840,9 @@
     "github.com/thoas/go-funk",
     "github.com/vbauerster/mpb",
     "github.com/vbauerster/mpb/decor",
+    "golang.org/x/net/context",
+    "gopkg.in/AlecAivazis/survey.v1",
+    "gopkg.in/AlecAivazis/survey.v1/core",
     "gopkg.in/inconshreveable/go-update.v0",
     "gopkg.in/yaml.v2",
   ]

@@ -134,16 +134,14 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, Flags.Owner, Args.Name)
+
 	// Create the project locally on disk.
-	project := projectfile.Project{
-		Project: projectURL,
-	}
-	project.SetPath(filepath.Join(Flags.Path, constants.ConfigFileName))
-	fail = project.Save()
+	_, fail = projectfile.Create(projectURL, Flags.Path)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_aborted"))
 		exit(1)
 	}
+
 	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": Flags.Path}))
 }
 

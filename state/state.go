@@ -3,16 +3,23 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"runtime"
+	"runtime/debug"
 	"strings"
+	"time"
 
+	"github.com/denisbrodbeck/machineid"
+	"github.com/rollbar/rollbar-go"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/deprecation"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -23,7 +30,8 @@ import (
 	_ "github.com/ActiveState/state-required/require"
 )
 
-var exit = os.Exit
+// FailMainPanic is a failure due to a panic occuring while runnig the main function
+var FailMainPanic = failures.Type("main.fail.panic")
 
 var branchName = constants.BranchName
 
@@ -74,6 +82,24 @@ var Command = &commands.Command{
 
 func main() {
 	logging.Debug("main")
+	Command.Register()
+
+	// Handle panics gracefully
+	defer func() {
+		if r := recover(); r != nil {
+			if fmt.Sprintf("%v", r) == "exiter" {
+				panic(r) // don't capture exiter panics
+			}
+			failures.Handle(FailMainPanic.New("err_main_panic"), "")
+			logging.Error("%v - caught panic", r)
+			logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
+			time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
+			os.Exit(1)
+		}
+	}()
+
+	setupRollbar()
+
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
 	if (flag.Lookup("test.v") == nil && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
@@ -84,7 +110,7 @@ func main() {
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
-	if fail != nil && !fail.Type.Matches(deprecation.FailTimeout) {
+	if fail != nil && !fail.Type.Matches(failures.FailNonFatal) {
 		logging.Error("Could not check for deprecation: %s", fail.Error())
 	}
 	if deprecated != nil {
@@ -107,12 +133,37 @@ func main() {
 
 	if err != nil {
 		fmt.Println(err)
-		exit(1)
+		Command.Exiter(1)
 		return
 	}
 
 	// Write our config to file
 	config.Save()
+}
+
+func setupRollbar() {
+	id, err := machineid.ID()
+	if err != nil {
+		logging.Error("Cannot retrieve machine ID: %s", err.Error())
+		id = "unknown"
+	}
+
+	rollbar.SetToken(constants.RollbarToken)
+	rollbar.SetEnvironment(constants.BranchName)
+	rollbar.SetCodeVersion(constants.RevisionHash)
+	rollbar.SetPerson(id, id, id)
+	rollbar.SetServerRoot("github.com/ActiveState/cli")
+
+	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
+	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.
+	rollbar.SetPlatform("client")
+	rollbar.SetTransform(func(data map[string]interface{}) {
+		// We're not a server, so don't send server info (could contain sensitive info, like hostname)
+		data["server"] = map[string]interface{}{}
+		data["platform_os"] = runtime.GOOS
+	})
+
+	log.SetOutput(os.Stderr)
 }
 
 // Execute the `state` command

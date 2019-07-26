@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -22,13 +23,22 @@ var (
 	FailNoProject = failures.Type("projectfile.fail.noproject")
 
 	// FailParseProject identifies a failure as being due inability to parse file contents
-	FailParseProject = failures.Type("projectfile.fail.parseproject")
+	FailParseProject = failures.Type("projectfile.fail.parseproject", failures.FailUser)
 
 	// FailValidate identifies a failure during validation
 	FailValidate = failures.Type("projectfile.fail.validate")
 
 	// FailInvalidVersion identifies a failure as being due to an invalid version format
 	FailInvalidVersion = failures.Type("projectfile.fail.version")
+
+	// FailSetCommitID identifies a failure as being caused by the commit id not getting set
+	FailSetCommitID = failures.Type("projectfile.fail.setcommitid")
+
+	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
+	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
+
+	// FailProjectExists identifies a failure as being caused by the commit id not getting set
+	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -68,6 +78,9 @@ type Project struct {
 	Owner     string      `yaml:"owner,omitempty"`
 	Name      string      `yaml:"name,omitempty"`
 }
+
+// tracks deprecation warning; remove as soon as possible
+var warned bool
 
 // Platform covers the platform structure of our yaml
 type Platform struct {
@@ -114,6 +127,7 @@ type Secret struct {
 
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
+	OS          string `yaml:"os,omitempty"`
 	Platform    string `yaml:"platform,omitempty"`
 	Environment string `yaml:"environment,omitempty"`
 }
@@ -164,7 +178,10 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 	}
 
 	if project.Project == "" && project.Owner != "" && project.Name != "" {
-		print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+		if !warned {
+			print.Warning(locale.Tr("warn_deprecation_owner_name_fields", project.Owner, project.Name))
+			warned = true
+		}
 		project.Project = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, project.Owner, project.Name)
 	}
 
@@ -256,7 +273,12 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	}
 	commitQryParam := []byte("$1?commitID=" + commitID)
 
-	return setCommitRE.ReplaceAll(data, commitQryParam), nil
+	out := setCommitRE.ReplaceAll(data, commitQryParam)
+	if !strings.Contains(string(out), commitID) {
+		return nil, FailSetCommitID.New("err_set_commit_id")
+	}
+
+	return out, nil
 }
 
 // Returns the path to the project activestate.yaml
@@ -291,6 +313,17 @@ func GetSafe() (*Project, *failures.Failure) {
 		return persistentProject, nil
 	}
 
+	project, fail := GetOnce()
+	if fail != nil {
+		return nil, fail
+	}
+
+	project.Persist()
+	return project, nil
+}
+
+// GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
+func GetOnce() (*Project, *failures.Failure) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, failure := getProjectFilePath()
 	if failure != nil {
@@ -309,8 +342,44 @@ func GetSafe() (*Project, *failures.Failure) {
 		return nil, fail
 	}
 
-	project.Persist()
 	return project, nil
+}
+
+// Create a new activestate.yaml with default content
+func Create(projectURL string, path string) (*Project, *failures.Failure) {
+	if path == "" {
+		return nil, FailNewBlankPath.New(locale.T("err_project_require_path"))
+	}
+	path = filepath.Join(path, constants.ConfigFileName)
+
+	if fileutils.FileExists(path) {
+		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
+	}
+
+	fail := ValidateProjectURL(projectURL)
+	if fail != nil {
+		return nil, fail
+	}
+	match := ProjectURLRe.FindStringSubmatch(projectURL)
+	owner, project := match[1], match[2]
+
+	data := map[string]interface{}{
+		"Project": projectURL,
+		"Content": locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project}),
+	}
+
+	content, fail := loadTemplate(path, data)
+	if fail != nil {
+		return nil, fail
+	}
+
+	fail = fileutils.WriteFile(path, []byte(content.String()))
+	if fail != nil {
+		return nil, fail
+	}
+
+	return Parse(path)
 }
 
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't

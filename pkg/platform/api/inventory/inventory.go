@@ -3,11 +3,12 @@ package inventory
 import (
 	"net/http"
 
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
 )
 
 // persist contains the active API Client connection

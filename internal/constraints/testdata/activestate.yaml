@@ -18,3 +18,4 @@ platforms:
     os: macos
     version: 10.9
     compiler: clang-4
+environments: "itworks"

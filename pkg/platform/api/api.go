@@ -106,23 +106,23 @@ func ErrorCodeFromPayload(err interface{}) int {
 	return int(codeVal.Int())
 }
 
-// ErrorMessageFromPayload tries to retrieve the error message associated with an API error from a Message object
-// referenced as a Payload.
-func ErrorMessageFromPayload(err interface{}) string {
+// ErrorMessageFromPayload tries to retrieve the code associated with an API error from a
+// Message object referenced as a Payload.
+func ErrorMessageFromPayload(err error) string {
 	errVal := reflect.ValueOf(err)
 	payloadVal := reflect.Indirect(errVal).FieldByName("Payload")
 	if !payloadVal.IsValid() {
-		return ""
+		return err.Error()
 	}
 
 	codePtr := reflect.Indirect(payloadVal).FieldByName("Message")
 	if !codePtr.IsValid() {
-		return ""
+		return err.Error()
 	}
 
 	codeVal := reflect.Indirect(codePtr)
 	if !codeVal.IsValid() {
-		return ""
+		return err.Error()
 	}
 	return codeVal.String()
 }

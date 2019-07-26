@@ -13,9 +13,6 @@ import (
 )
 
 var (
-	// FailNoCommit is a failure due to a non-existent commit
-	FailNoCommit = failures.Type("model.fail.nocommit")
-
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
 )
@@ -41,7 +38,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 
 	languages := []string{}
 	for _, requirement := range checkpoint {
-		if NamespaceMatch(requirement.Namespace, NamespaceLanguage) {
+		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
 			languages = append(languages, requirement.Requirement)
 		}
 	}
@@ -58,7 +55,7 @@ func FetchCheckpointForBranch(branch *mono_models.Branch) (Checkpoint, *failures
 	return FetchCheckpointForCommit(*branch.CommitID)
 }
 
-// FetchCheckpointForBranch fetches the checkpoint for the given commit
+// FetchCheckpointForCommit fetches the checkpoint for the given commit
 func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
 	auth := authentication.Get()
 	params := version_control.NewGetCheckpointParams()
@@ -87,7 +84,7 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRe
 	result := []*inventory_models.OrderRequirementsItems0{}
 
 	for _, req := range checkpoint {
-		if NamespaceMatch(req.Namespace, NamespacePlatform) {
+		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
 		result = append(result, &inventory_models.OrderRequirementsItems0{
@@ -105,7 +102,7 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	result := []strfmt.UUID{}
 
 	for _, req := range checkpoint {
-		if !NamespaceMatch(req.Namespace, NamespacePlatform) {
+		if !NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
 		result = append(result, strfmt.UUID(req.Requirement))

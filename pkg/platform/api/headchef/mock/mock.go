@@ -73,14 +73,19 @@ func (r *HeadchefRequesterMock) simulateCompleteBuild() {
 		if r.option(InvalidURL) {
 			u = strfmt.URI("htps;/not-a-url/" + filename)
 		}
+
+		id := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
-			URI: &u,
+			ArtifactID: &id,
+			URI:        &u,
 		})
 
 		// Also include a legacy python, which can be used to mock an artifact with no metadata
+		id2 := strfmt.UUID("00020002-0002-0002-0002-000200020002")
 		u2 := strfmt.URI("http://test.tld/legacy-python" + ext)
 		artifacts = append(artifacts, &headchef_models.BuildCompletedArtifactsItems0{
-			URI: &u2,
+			ArtifactID: &id2,
+			URI:        &u2,
 		})
 	}
 	r.buildCompleted(headchef_models.BuildCompleted{

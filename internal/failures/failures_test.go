@@ -36,12 +36,6 @@ func TestTypeIsSet(t *testing.T) {
 	assert.NotNil(t, err.Type, "Type is set")
 }
 
-func TestLog(t *testing.T) {
-	err := FailCmd.New("hello")
-	err.Log()
-	// ? no panic
-}
-
 func TestHandle(t *testing.T) {
 	err := FailCmd.New("hello")
 	Handle(err, "Description")
@@ -52,15 +46,4 @@ func TestLegacy(t *testing.T) {
 	err := errors.New("hello")
 	Handle(err, "Description")
 	// ? no panic
-}
-
-func TestInvalidType(t *testing.T) {
-	var recovered = false
-	defer func() {
-		if r := recover(); r != nil {
-			recovered = true
-		}
-	}()
-	Type("foo.fail.bar")
-	assert.True(t, recovered, "Should throw a panic because prefix doesnt match package name")
 }

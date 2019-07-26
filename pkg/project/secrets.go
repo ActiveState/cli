@@ -135,7 +135,7 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 	return e.secrets, nil
 }
 
-// FetchSecret retrieves the secret associated with a variable
+// FetchSecret retrieves the given secret
 func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failures.Failure) {
 	if knownValue, exists := e.cachedSecrets[name]; exists {
 		return knownValue, nil
@@ -161,6 +161,27 @@ func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failure
 
 	e.cachedSecrets[name] = string(decrBytes)
 	return e.cachedSecrets[name], nil
+}
+
+// FetchDefinition retrieves the definition associated with a secret
+func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsModels.SecretDefinition, *failures.Failure) {
+	defs, fail := secretsapi.FetchDefinitions(e.secretsClient, e.remoteProject.ProjectID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	scope := secretsapi.ScopeUser
+	if !isUser {
+		scope = secretsapi.ScopeProject
+	}
+
+	for _, def := range defs {
+		if name == *def.Name && string(scope) == *def.Scope {
+			return def, nil
+		}
+	}
+
+	return nil, nil
 }
 
 // FindSecret will find the secret appropriate for the current project
@@ -254,26 +275,49 @@ func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string
 	}
 
 	value, fail := e.FetchSecret(name, e.isUser)
-	if fail != nil && fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
-		if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
-			return "", FailInputSecretValue.New("secrets_err_value_prompt")
-		}
-
-		project, fail := e.Project()
-		if fail != nil {
-			return "", fail
-		}
-		org, fail := e.Organization()
-		if fail != nil {
-			return "", fail
-		}
-
-		fail = secrets.Save(e.secretsClient, keypair, org, project, false, name, value)
-
-		if fail != nil {
-			return "", fail
-		}
+	if fail != nil && !fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
+		return "", fail
+	}
+	if fail == nil {
+		return value, nil
 	}
 
-	return value, fail
+	def, fail := e.FetchDefinition(name, e.isUser)
+	if fail != nil {
+		return "", fail
+	}
+
+	scope := string(secretsapi.ScopeUser)
+	if !e.isUser {
+		scope = string(secretsapi.ScopeProject)
+	}
+	description := locale.T("secret_no_description")
+	if def != nil && def.Description != "" {
+		description = def.Description
+	}
+
+	print.Line(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
+	if value, fail = Prompter.InputSecret(locale.Tr("secret_value_prompt", name)); fail != nil {
+		return "", FailInputSecretValue.New("secrets_err_value_prompt")
+	}
+
+	pj, fail := e.Project()
+	if fail != nil {
+		return "", fail
+	}
+	org, fail := e.Organization()
+	if fail != nil {
+		return "", fail
+	}
+
+	fail = secrets.Save(e.secretsClient, keypair, org, pj, e.isUser, name, value)
+
+	if fail != nil {
+		return "", fail
+	}
+
+	// Cache it so we're not repeatedly prompting for the same secret
+	e.cachedSecrets[name] = value
+
+	return value, nil
 }
