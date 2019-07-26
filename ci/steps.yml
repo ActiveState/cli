@@ -17,7 +17,9 @@ steps:
       echo '##vso[task.prependpath]$(MODPATH)/ci/$(Agent.OS)/bin'
     displayName: Prepare Environment
   - bash: |
+      set -e
       ./public/install.sh -b master -n -t $(BINPATH)
+      state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
     displayName: Install State Tool
   - bash: cc-test-reporter before-build
@@ -39,8 +41,6 @@ steps:
     workingDirectory: $(WORKDIR)
     displayName: Build
   - bash: |
-      set -e
-      state auth --token $(PLATFORM_API_TOKEN)
       state run preprocess
 
       # Run tests and convert output to junit format
