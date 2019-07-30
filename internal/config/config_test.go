@@ -39,9 +39,11 @@ func (suite *ConfigTestSuite) SetupTest() {
 func (suite *ConfigTestSuite) BeforeTest(suiteName, testName string) {
 	dir, err := ioutil.TempDir("", "cli-config-test")
 	suite.Require().NoError(err)
+	cache, err := ioutil.TempDir("", "cli-cache-test")
+	suite.Require().NoError(err)
 
 	viper.Reset()
-	suite.config = config.New(dir)
+	suite.config = config.New(dir, cache)
 	suite.config.Exit = exiter.Exit
 }
 
@@ -54,7 +56,7 @@ func (suite *ConfigTestSuite) TestConfig() {
 }
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg := config.New("")
+	cfg := config.New("", "")
 	suite.Contains(cfg.ConfigPath(), constants.BranchName)
 }
 
@@ -121,7 +123,7 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	}
 
 	viper.Reset()
-	suite.config = config.New("")
+	suite.config = config.New("", "")
 
 	suite.Contains(suite.config.ConfigPath(), os.TempDir())
 
