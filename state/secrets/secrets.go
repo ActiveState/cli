@@ -119,7 +119,7 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 	type secretDefinition struct {
 		Name        string `json:"name,omitempty"`
 		Scope       string `json:"scope,omitempty"`
-		Description string `json:"desc,omitempty"`
+		Description string `json:"description,omitempty"`
 		Value       string `json:"value,omitempty"`
 	}
 
