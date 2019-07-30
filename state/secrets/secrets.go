@@ -116,7 +116,32 @@ func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinitio
 }
 
 func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
-	bs, err := json.Marshal(defs)
+	type secretDefinition struct {
+		Name  string `json:"name,omitempty"`
+		Scope string `json:"scope,omitempty"`
+		Desc  string `json:"desc,omitempty"`
+		Value string `json:"value,omitempty"`
+	}
+
+	ds := make([]secretDefinition, len(defs))
+
+	for i, def := range defs {
+		secretKey := ptrToString(def.Scope) + "." + ptrToString(def.Name)
+
+		_, value, fail := getSecretWithValue(secretKey)
+		if fail != nil {
+			return nil, fail
+		}
+
+		ds[i] = secretDefinition{
+			Name:  ptrToString(def.Name),
+			Scope: ptrToString(def.Scope),
+			Desc:  def.Description,
+			Value: ptrToString(value),
+		}
+	}
+
+	bs, err := json.Marshal(ds)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
@@ -135,4 +160,11 @@ func secretsToRows(defs []*secretsModels.SecretDefinition) ([][]interface{}, *fa
 		rows = append(rows, []interface{}{*def.Name, *def.Scope, description, fmt.Sprintf("%s.%s", *def.Scope, *def.Name)})
 	}
 	return rows, nil
+}
+
+func ptrToString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
