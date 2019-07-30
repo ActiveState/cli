@@ -132,7 +132,7 @@ type Failure struct {
 	Type    *FailureType
 	File    string
 	Line    int
-	Trace   *stacktrace.Stacktrace
+	Trace   stacktrace.Stacktrace
 	err     error
 }
 

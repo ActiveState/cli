@@ -30,7 +30,7 @@ type Frame struct {
 var FrameCap = 20
 
 // String returns a string representation of a stacktrace
-func (t *Stacktrace) String() string {
+func (t Stacktrace) String() string {
 	result := []string{}
 	for _, frame := range t.Frames {
 		result = append(result, fmt.Sprintf(`%s:%s:%d`, frame.Path, frame.Func, frame.Line))
@@ -39,8 +39,8 @@ func (t *Stacktrace) String() string {
 }
 
 // Get returns a stacktrace
-func Get() *Stacktrace {
-	stacktrace := &Stacktrace{}
+func Get() Stacktrace {
+	stacktrace := Stacktrace{}
 	pc := make([]uintptr, FrameCap)
 	n := runtime.Callers(1, pc)
 	if n == 0 {
