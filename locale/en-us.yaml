@@ -526,6 +526,8 @@ secrets_err:
   other: Error managing user's Secrets
 secrets_err_defined:
   other: Failed to obtain defined secrets
+secrets_err_missing_field:
+  other: "Secret is missing required field: {{.V0}}"
 secrets_err_output:
   other: Failed to display secrets output
 secrets_err_no_secrets_found:
