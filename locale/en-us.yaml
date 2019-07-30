@@ -470,6 +470,8 @@ run_listing_scripts:
 
 secrets_cmd_description:
   other: Manage Your Secrets
+secrets_flag_json:
+  other: Changes output to machine-readable JSON
 secrets_get_cmd_description:
   other: Get the value of a secret
 secrets_get_arg_name:
@@ -522,6 +524,10 @@ secrets_value_secret:
   other: <encrypted>
 secrets_err:
   other: Error managing user's Secrets
+secrets_err_defined:
+  other: Failed to obtain defined secrets
+secrets_err_output:
+  other: Failed to display secrets output
 secrets_err_no_secrets_found:
   other: Unable to find any Secrets for User
 secrets_err_encrypting:
