@@ -117,16 +117,25 @@ func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinitio
 
 func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
 	type secretDefinition struct {
-		Name  string `json:"name,omitempty"`
-		Scope string `json:"scope,omitempty"`
-		Desc  string `json:"desc,omitempty"`
-		Value string `json:"value,omitempty"`
+		Name        string `json:"name,omitempty"`
+		Scope       string `json:"scope,omitempty"`
+		Description string `json:"desc,omitempty"`
+		Value       string `json:"value,omitempty"`
 	}
 
 	ds := make([]secretDefinition, len(defs))
 
 	for i, def := range defs {
-		secretKey := ptrToString(def.Scope) + "." + ptrToString(def.Name)
+		name, fail := ptrToString(def.Name, "name")
+		if fail != nil {
+			return nil, fail
+		}
+		scope, fail := ptrToString(def.Scope, "scope")
+		if fail != nil {
+			return nil, fail
+		}
+
+		secretKey := scope + "." + name
 
 		_, value, fail := getSecretWithValue(secretKey)
 		if fail != nil {
@@ -134,10 +143,10 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 		}
 
 		ds[i] = secretDefinition{
-			Name:  ptrToString(def.Name),
-			Scope: ptrToString(def.Scope),
-			Desc:  def.Description,
-			Value: ptrToString(value),
+			Name:        name,
+			Scope:       scope,
+			Description: def.Description,
+			Value:       ptrToStringWithDefault(value, ""),
 		}
 	}
 
@@ -162,9 +171,16 @@ func secretsToRows(defs []*secretsModels.SecretDefinition) ([][]interface{}, *fa
 	return rows, nil
 }
 
-func ptrToString(s *string) string {
+func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
 	if s == nil {
-		return ""
+		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
+	}
+	return *s, nil
+}
+
+func ptrToStringWithDefault(s *string, def string) string {
+	if s == nil {
+		return def
 	}
 	return *s
 }
