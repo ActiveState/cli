@@ -136,12 +136,8 @@ func (v *SubShell) Run(script string, args ...string) (int, error) {
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = v.env
 
-	fail = nil
 	err = runCmd.Run()
-	if err != nil {
-		fail = failures.FailOS.Wrap(err)
-	}
-	return osutils.CmdExitCode(runCmd), fail
+	return osutils.CmdExitCode(runCmd), err
 }
 
 // IsActive - see subshell.SubShell
