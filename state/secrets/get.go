@@ -28,14 +28,10 @@ func buildGetCommand(cmd *Command) *commands.Command {
 
 // ExecuteGet processes the `secrets get` command.
 func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
-	secret, fail := getSecret(cmd.Args.Name)
+	secret, value, fail := getSecretWithValue(cmd.Args.Name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err"))
-	}
-
-	value, fail := secret.ValueOrNil()
-	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err"))
+		return
 	}
 
 	if value == nil {
@@ -45,6 +41,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		}
 		print.Error(locale.Tr(err, cmd.Args.Name))
 		cmd.config.Exiter(1)
+		return
 	}
 
 	print.Line(*value)
