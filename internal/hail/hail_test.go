@@ -73,9 +73,7 @@ func TestOpen(t *testing.T) {
 	require.NoError(t, err)
 	_, err = f.Write(data)
 	require.NoError(t, err)
-	defer func() {
-		assert.NoError(t, f.Close())
-	}()
+	assert.NoError(t, f.Close())
 
 	wg.Wait()
 }
