@@ -34,6 +34,18 @@
   revision = "a0329b32eba8111961b25c274deed558a6554f38"
 
 [[projects]]
+  branch = "ver1"
+  digest = "1:b1640fc13204caba7df782552ba86dcd0932029ed03e7700a0ad6a065d04bca2"
+  name = "github.com/ActiveState/survey"
+  packages = [
+    ".",
+    "core",
+    "terminal",
+  ]
+  pruneopts = ""
+  revision = "fcf53bc6dc3fdaeeb00d1a4c70841306fadb292c"
+
+[[projects]]
   branch = "master"
   digest = "1:baad9598037fdfbca7de9035aa4e0070144b083cfa12ab0b03f191b854861426"
   name = "github.com/ActiveState/sysinfo"
@@ -379,6 +391,14 @@
   packages = ["."]
   pruneopts = ""
   revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
+
+[[projects]]
+  branch = "master"
+  digest = "1:63e7368fcf6b54804076eaec26fd9cf0c4466166b272393db4b93102e1e962df"
+  name = "github.com/kballard/go-shellquote"
+  packages = ["."]
+  pruneopts = ""
+  revision = "95032a82bc518f77982ea72343cc1ade730072f0"
 
 [[projects]]
   branch = "master"
@@ -746,18 +766,6 @@
   revision = "4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1"
 
 [[projects]]
-  digest = "1:b935f125caa92836a02da8561e0c300234edac0c8c55cd9d447040719a71493a"
-  name = "gopkg.in/AlecAivazis/survey.v1"
-  packages = [
-    ".",
-    "core",
-    "terminal",
-  ]
-  pruneopts = ""
-  revision = "9f89d9dd66613216993dc300f9f3dbae9c3c9bda"
-  version = "v1.4.2"
-
-[[projects]]
   branch = "v0"
   digest = "1:7875aa52db70d816c8d8553cf7a9bc6f823234c56a749b60fa0e1792deb99a40"
   name = "gopkg.in/inconshreveable/go-update.v0"
@@ -795,6 +803,8 @@
     "github.com/ActiveState/go-colortext",
     "github.com/ActiveState/go-ogle-analytics",
     "github.com/ActiveState/state-required/require",
+    "github.com/ActiveState/survey",
+    "github.com/ActiveState/survey/core",
     "github.com/ActiveState/sysinfo",
     "github.com/Azure/go-ansiterm/winterm",
     "github.com/alecthomas/template",
@@ -841,8 +851,6 @@
     "github.com/vbauerster/mpb",
     "github.com/vbauerster/mpb/decor",
     "golang.org/x/net/context",
-    "gopkg.in/AlecAivazis/survey.v1",
-    "gopkg.in/AlecAivazis/survey.v1/core",
     "gopkg.in/inconshreveable/go-update.v0",
     "gopkg.in/yaml.v2",
   ]

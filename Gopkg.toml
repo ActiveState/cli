@@ -19,3 +19,7 @@ ignored = ["github.com/dave/jennifer"]
 [[constraint]]
   branch = "master"
   name = "github.com/bndr/gotabulate"
+
+[[constraint]]
+  branch = "ver1"
+  name = "github.com/ActiveState/survey"

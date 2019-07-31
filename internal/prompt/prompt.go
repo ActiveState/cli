@@ -1,9 +1,10 @@
 package prompt
 
 import (
+	"github.com/ActiveState/survey"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests

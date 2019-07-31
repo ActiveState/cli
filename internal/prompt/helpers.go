@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/termsize"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"gopkg.in/AlecAivazis/survey.v1/core"
+	"github.com/ActiveState/survey/core"
 )
 
 func init() {
