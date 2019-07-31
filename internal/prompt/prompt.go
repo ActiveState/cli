@@ -1,19 +1,15 @@
 package prompt
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/tcnksm/go-input"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
 	Input(message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure)
+	InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure)
 	Select(message string, choices []string, defaultResponse string) (string, *failures.Failure)
 	Confirm(message string, defaultChoice bool) (bool, *failures.Failure)
 	InputSecret(message string, flags ...ValidatorFlag) (string, *failures.Failure)
@@ -24,7 +20,7 @@ var FailPromptUnknownValidator = failures.Type("prompt.unknownvalidator")
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
 // on the users input
-type ValidatorFunc = func(ans interface{}) error
+type ValidatorFunc = survey.Validator
 
 // Prompt is our main promptig struct
 type Prompt struct{}
@@ -45,34 +41,28 @@ const (
 	// etc.
 )
 
-func newUI() *input.UI {
-	return &input.UI{
-		Writer: os.Stdout,
-		Reader: os.Stdin,
-	}
-}
-
 // Input prompts the user for input.  The user can specify available validation flags to trigger validation of responses
 func (p *Prompt) Input(message, defaultResponse string, flags ...ValidatorFlag) (string, *failures.Failure) {
+	return p.InputAndValidate(message, defaultResponse, func(val interface{}) error {
+		return nil
+	}, flags...)
+}
+
+// InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
+func (p *Prompt) InputAndValidate(message, defaultResponse string, validator ValidatorFunc, flags ...ValidatorFlag) (string, *failures.Failure) {
 	var response string
-	validators, fail := processValidators(flags)
+	flagValidators, fail := processValidators(flags)
 	if fail != nil {
 		return "", fail
 	}
+	if len(flagValidators) != 0 {
+		validator = wrapValidators(append(flagValidators, validator))
+	}
 
-	response, err := newUI().Ask(formatMessage(message), &input.Options{
+	err := survey.AskOne(&survey.Input{
+		Message: formatMessage(message),
 		Default: defaultResponse,
-		ValidateFunc: func(s string) error {
-			for _, validator := range validators {
-				if err := validator(s); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-		HideOrder: true,
-	})
-
+	}, &response, validator)
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
 	}
@@ -96,29 +86,15 @@ func (p *Prompt) Select(message string, choices []string, defaultChoice string) 
 
 // Confirm prompts user for yes or no response.
 func (p *Prompt) Confirm(message string, defaultChoice bool) (bool, *failures.Failure) {
-	defaultResponse := "Y"
-	if defaultChoice == false {
-		defaultResponse = "n"
-	}
-	response, err := newUI().Ask(formatMessage(message)+" [Y/n]", &input.Options{
-		Default:  defaultResponse,
-		Required: true,
-		ValidateFunc: func(s string) error {
-			if s != "Y" && s != "n" {
-				return fmt.Errorf(locale.T("err_yes_or_no"))
-			}
-
-			return nil
-		},
-		HideOrder: true,
-		Loop:      true,
-	})
-
+	var resp bool
+	err := survey.AskOne(&survey.Confirm{
+		Message: message,
+		Default: defaultChoice,
+	}, &resp, nil)
 	if err != nil {
 		return false, failures.FailUserInput.Wrap(err)
 	}
-
-	return response == "Y", nil
+	return resp, nil
 }
 
 // InputSecret prompts the user for input and obfuscates the text in stdout.
@@ -130,25 +106,12 @@ func (p *Prompt) InputSecret(message string, flags ...ValidatorFlag) (string, *f
 		return "", fail
 	}
 
-	response, err := newUI().Ask(formatMessage(message), &input.Options{
-		Required:    true,
-		Mask:        true,
-		MaskDefault: true,
-		ValidateFunc: func(s string) error {
-			for _, validator := range validators {
-				if err := validator(s); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-		HideOrder: true,
-	})
-
+	err := survey.AskOne(&survey.Password{
+		Message: formatMessage(message),
+	}, &response, wrapValidators(validators))
 	if err != nil {
 		return "", failures.FailUserInput.Wrap(err)
 	}
-
 	return response, nil
 }
 

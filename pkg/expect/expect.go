@@ -39,7 +39,8 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	wd, _ := os.Getwd()
 	commandLine := fmt.Sprintf("%s %s", executable, strings.Join(args, " "))
 	fmt.Printf("Spawning '%s' from %s\n", commandLine, wd)
-	s.process = NewProcess(executable, args, s.env)
+	s.process = NewProcess(executable, args...)
+	s.process.SetEnv(s.env)
 	s.processEnded = make(chan bool)
 
 	stack := stacktrace.Get()
@@ -76,11 +77,6 @@ func (s *Suite) Wait(timeout ...time.Duration) {
 	t := 10 * time.Second
 	if len(timeout) > 0 {
 		t = timeout[0]
-	}
-
-	err := s.process.Quit()
-	if err != nil {
-		s.FailNow("Error closing procss", "Error: %s", err)
 	}
 
 	select {
@@ -136,7 +132,7 @@ func (s *Suite) Send(value string) {
 	// Since we're not running a TTY emulator we need little workarounds like this to ensure stdin is ready
 	time.Sleep(100 * time.Millisecond)
 
-	err := s.process.Write(value + "\r\n")
+	err := s.process.Write(value + "\n")
 	if err != nil {
 		s.FailNow("Could not send data to stdin", "error: %v", err)
 	}

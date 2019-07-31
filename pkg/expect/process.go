@@ -5,19 +5,13 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/iamacarpet/go-winpty"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type Process struct {
-	// Command
-	command string
-	args    []string
-	env     []string
-
 	// Process
-	cmd    *exec.Cmd
-	pty    *os.File
-	winpty *winpty.WinPTY
+	cmd *exec.Cmd
+	pty *os.File
 
 	// Event handlers
 	onOutput func([]byte)
@@ -40,11 +34,9 @@ type Process struct {
 	exited  bool
 }
 
-func NewProcess(name string, args []string, env []string) *Process {
+func NewProcess(name string, args ...string) *Process {
 	p := &Process{
-		command:  name,
-		args:     args,
-		env:      env,
+		cmd:      exec.Command(name, args...),
 		onOutput: func([]byte) {},
 		onStdout: func([]byte) {},
 		onStderr: func([]byte) {},
@@ -53,6 +45,21 @@ func NewProcess(name string, args []string, env []string) *Process {
 	p.setupStdout()
 	p.setupStderr()
 	return p
+}
+
+func (p *Process) setupStderr() {
+	errWriter := NewStdWriter()
+	errWriter.OnWrite(func(data []byte) {
+		p.stderr = p.stderr + string(data)
+		p.combined = p.combined + string(data)
+		p.onOutput(data)
+		p.onStderr(data)
+	})
+	p.cmd.Stderr = errWriter
+}
+
+func (p *Process) SetEnv(env []string) {
+	p.cmd.Env = env
 }
 
 func (p *Process) OnOutput(cb func(output []byte)) {
@@ -78,15 +85,13 @@ func (p *Process) Running() bool { return p.running }
 func (p *Process) Exited() bool { return p.exited }
 
 func (p *Process) Quit() error {
-	p.exited = true
-	p.running = false
-	return p.quit()
+	return p.cmd.Process.Signal(os.Interrupt)
 }
 
 func (p *Process) Exit() error {
 	p.exited = true
 	p.running = false
-	return p.exit()
+	return p.cmd.Process.Kill()
 }
 
 func (p *Process) Run() error {
@@ -101,7 +106,7 @@ func (p *Process) Run() error {
 		p.close()
 	}()
 
-	if err := p.wait(); err != nil {
+	if err := p.cmd.Wait(); err != nil {
 		return err
 	}
 
@@ -109,7 +114,7 @@ func (p *Process) Run() error {
 }
 
 func (p *Process) ExitCode() int {
-	return p.exitCode()
+	return osutils.CmdExitCode(p.cmd)
 }
 
 type StdReader struct {

@@ -937,5 +937,3 @@ err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
-err_yes_or_no:
-  other: Please enter Y (yes) or n (no)

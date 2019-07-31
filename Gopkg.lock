@@ -657,14 +657,6 @@
   version = "v1.2.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:aedf192659743559548e480acabc6fd867de729a0c3d53c9f348ccd939e90a48"
-  name = "github.com/tcnksm/go-input"
-  packages = ["."]
-  pruneopts = ""
-  revision = "548a7d7a8ee8fcb3d013fae6acf857da56165975"
-
-[[projects]]
   digest = "1:72b25d0c1a3938b8f055999f2747f2ca934de1f24fac5a05aea33686179ecd76"
   name = "github.com/thoas/go-funk"
   packages = ["."]
@@ -704,14 +696,6 @@
   packages = ["."]
   pruneopts = ""
   revision = "48954b6210f8d154cb5f8484d3a3e1f83489309e"
-
-[[projects]]
-  branch = "master"
-  digest = "1:086760278d762dbb0e9a26e09b57f04c89178c86467d8d94fae47d64c222f328"
-  name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
-  pruneopts = ""
-  revision = "4def268fd1a49955bfb3dda92fe3db4f924f2285"
 
 [[projects]]
   branch = "master"
@@ -853,7 +837,6 @@
     "github.com/stretchr/testify/mock",
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
-    "github.com/tcnksm/go-input",
     "github.com/thoas/go-funk",
     "github.com/vbauerster/mpb",
     "github.com/vbauerster/mpb/decor",
