@@ -40,19 +40,17 @@ steps:
       APIENV=prod state run build
     workingDirectory: $(WORKDIR)
     displayName: Build
-  - bash: |
+  - script: |
       state run preprocess
-
-      # Run tests and convert output to junit format
-      go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `go list ./... | grep -vE "(secrets-)?api/(client|model)"` | tee go-test.out
+      go test -v -parallel 12 -covermode=atomic -coverprofile=c.out > tee go-test.out
+    workingDirectory: $(WORKDIR)
+    displayName: Tests
+  - bash: |
       go-junit-report < go-test.out > $(Agent.OS)-tests.xml
       cp go-test.out public/$(Agent.OS)-tests.out
       cp $(Agent.OS)-tests.xml public
-
-      # Tests appear to be breaking the authentication, so re-authenticate
-      state auth --token $(PLATFORM_API_TOKEN)
     workingDirectory: $(WORKDIR)
-    displayName: Tests
+    displayName: Convert Tests
   - bash: cc-test-reporter after-build --coverage-input-type gocov --prefix github.com/ActiveState/cli/
     env: 
       CC_TEST_REPORTER_ID: $(CC_TEST_REPORTER_ID)

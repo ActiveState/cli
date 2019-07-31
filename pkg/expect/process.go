@@ -5,13 +5,19 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/iamacarpet/go-winpty"
 )
 
 type Process struct {
+	// Command
+	command string
+	args    []string
+	env     []string
+
 	// Process
-	cmd *exec.Cmd
-	pty *os.File
+	cmd    *exec.Cmd
+	pty    *os.File
+	winpty *winpty.WinPTY
 
 	// Event handlers
 	onOutput func([]byte)
@@ -34,9 +40,11 @@ type Process struct {
 	exited  bool
 }
 
-func NewProcess(name string, args ...string) *Process {
+func NewProcess(name string, args []string, env []string) *Process {
 	p := &Process{
-		cmd:      exec.Command(name, args...),
+		command:  name,
+		args:     args,
+		env:      env,
 		onOutput: func([]byte) {},
 		onStdout: func([]byte) {},
 		onStderr: func([]byte) {},
@@ -45,21 +53,6 @@ func NewProcess(name string, args ...string) *Process {
 	p.setupStdout()
 	p.setupStderr()
 	return p
-}
-
-func (p *Process) setupStderr() {
-	errWriter := NewStdWriter()
-	errWriter.OnWrite(func(data []byte) {
-		p.stderr = p.stderr + string(data)
-		p.combined = p.combined + string(data)
-		p.onOutput(data)
-		p.onStderr(data)
-	})
-	p.cmd.Stderr = errWriter
-}
-
-func (p *Process) SetEnv(env []string) {
-	p.cmd.Env = env
 }
 
 func (p *Process) OnOutput(cb func(output []byte)) {
@@ -85,13 +78,15 @@ func (p *Process) Running() bool { return p.running }
 func (p *Process) Exited() bool { return p.exited }
 
 func (p *Process) Quit() error {
-	return p.cmd.Process.Signal(os.Interrupt)
+	p.exited = true
+	p.running = false
+	return p.quit()
 }
 
 func (p *Process) Exit() error {
 	p.exited = true
 	p.running = false
-	return p.cmd.Process.Kill()
+	return p.exit()
 }
 
 func (p *Process) Run() error {
@@ -106,7 +101,7 @@ func (p *Process) Run() error {
 		p.close()
 	}()
 
-	if err := p.cmd.Wait(); err != nil {
+	if err := p.wait(); err != nil {
 		return err
 	}
 
@@ -114,7 +109,7 @@ func (p *Process) Run() error {
 }
 
 func (p *Process) ExitCode() int {
-	return osutils.CmdExitCode(p.cmd)
+	return p.exitCode()
 }
 
 type StdReader struct {
