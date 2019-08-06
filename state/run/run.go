@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -82,8 +83,19 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
+	lang := script.Language()
+	if lang == scriptfile.Unknown {
+		lang = scriptfile.MakeLanguageByShell(subs.Shell())
+	}
+
+	sf, err := scriptfile.New(lang, scriptBlock)
+	if err != nil {
+		failures.Handle(err, locale.T("error_state_run_setup_scriptfile"))
+		return
+	}
+
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
-	code, err := subs.Run(scriptBlock, scriptArgs...)
+	code, err := subs.Run(sf.FileName(), scriptArgs...)
 	if err != nil || code != 0 {
 		failures.Handle(err, locale.T("error_state_run_error"))
 		Command.Exiter(code)

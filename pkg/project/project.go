@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -518,6 +519,11 @@ func (script *Script) Source() *projectfile.Project { return script.project.proj
 
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
+
+// Language ...
+func (script *Script) Language() scriptfile.Language {
+	return script.script.Language
+}
 
 // Description returns script description
 func (script *Script) Description() string { return script.script.Description }
