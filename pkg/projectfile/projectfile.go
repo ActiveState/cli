@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
 var (
@@ -149,11 +150,12 @@ type Event struct {
 
 // Script covers the script structure, which goes under Project
 type Script struct {
-	Name        string     `yaml:"name"`
-	Description string     `yaml:"description"`
-	Value       string     `yaml:"value"`
-	Standalone  bool       `yaml:"standalone,omitempty"`
-	Constraints Constraint `yaml:"constraints,omitempty"`
+	Name        string              `yaml:"name"`
+	Description string              `yaml:"description"`
+	Value       string              `yaml:"value"`
+	Standalone  bool                `yaml:"standalone,omitempty"`
+	Language    scriptfile.Language `yaml:"language,omitempty"`
+	Constraints Constraint          `yaml:"constraints,omitempty"`
 }
 
 var persistentProject *Project
