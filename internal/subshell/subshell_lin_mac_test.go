@@ -49,11 +49,13 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand")
 	assert.NoError(t, err)
+	tmpfile.WriteString("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
 	tmpfile.Close()
-	os.Remove(tmpfile.Name())
+	os.Chmod(tmpfile.Name(), 0755)
+	defer os.Remove(tmpfile.Name())
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(`echo $ACTIVESTATE_PROJECT`)
+		_, err := subs.Run(tmpfile.Name())
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
@@ -74,11 +76,18 @@ func TestRunCommandError(t *testing.T) {
 	subs, fail := Get()
 	assert.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-command-that-doesnt-exist")
-	assert.Equal(t, 127, code, "Returns exit code 127")
+	code, err := subs.Run("some-file-that-doesnt-exist")
+	assert.Equal(t, 1, code, "Returns exit code 1")
 	assert.Error(t, err, "Returns an error")
 
-	code, err = subs.Run("exit 1")
+	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	assert.NoError(t, err)
+	tmpfile.WriteString("#!/usr/bin/env bash\nexit 1")
+	tmpfile.Close()
+	os.Chmod(tmpfile.Name(), 0755)
+	defer os.Remove(tmpfile.Name())
+
+	code, err = subs.Run(tmpfile.Name())
 	assert.Equal(t, 1, code, "Returns exit code 1")
 	assert.Error(t, err, "Returns an error")
 

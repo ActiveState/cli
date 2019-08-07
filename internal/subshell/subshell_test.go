@@ -6,12 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -72,20 +75,22 @@ func TestRunCommand(t *testing.T) {
 	subs, fail := Get()
 	assert.NoError(t, fail.ToError())
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
+	tmpfile, err := ioutil.TempFile("", "testRunCommand*.bat")
 	assert.NoError(t, err)
-	tmpfile.Close()
-	os.Remove(tmpfile.Name())
-
 	if runtime.GOOS != "windows" {
-		subs.Run(fmt.Sprintf(`echo "Hello"
-touch %s`, tmpfile.Name()))
-	} else {
-		subs.Run(fmt.Sprintf(`echo "Hello"
-copy NUL %s`, tmpfile.Name()))
+		tmpfile.WriteString("#!/usr/bin/env bash\n")
 	}
+	tmpfile.WriteString("echo Hello")
+	tmpfile.Close()
+	os.Chmod(tmpfile.Name(), 0755)
+	defer os.Remove(tmpfile.Name())
 
-	assert.FileExists(t, tmpfile.Name())
+	out, err := osutil.CaptureStdout(func() {
+		_, err := subs.Run(tmpfile.Name())
+		require.NoError(t, err)
+	})
+	require.NoError(t, err)
+	assert.Equal(t, strings.TrimSpace(out), "Hello")
 
 	projectfile.Reset()
 }

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -138,7 +139,22 @@ func (v *SubShell) Deactivate() *failures.Failure {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(name string, args ...string) (int, error) {
-	return sscommon.RunFuncByBinary(v.Binary())(v.env, name, args...)
+	filePath, fail := osutils.BashifyPath(name)
+	if fail != nil {
+		return 1, fail.ToError()
+	}
+
+	quotedArgs := []string{filePath}
+	for _, arg := range args {
+		quotedArgs = append(quotedArgs, v.Quote(arg))
+	}
+
+	runCmd := exec.Command(v.Binary(), "-c", strings.Join(quotedArgs, " "))
+	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	runCmd.Env = v.env
+
+	err := runCmd.Run()
+	return osutils.CmdExitCode(runCmd), err
 }
 
 // IsActive - see subshell.SubShell

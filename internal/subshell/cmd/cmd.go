@@ -101,7 +101,11 @@ func (v *SubShell) Deactivate() *failures.Failure {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(name string, args ...string) (int, error) {
-	return sscommon.RunFuncByBinary(v.Binary())(v.env, name, args...)
+	runCmd := exec.Command(name, args...)
+	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	runCmd.Env = v.env
+	err := runCmd.Run()
+	return osutils.CmdExitCode(runCmd), err
 }
 
 // IsActive - see subshell.SubShell
