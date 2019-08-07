@@ -82,7 +82,7 @@ func TestRunCommandError(t *testing.T) {
 	assert.NoError(t, fail.ToError())
 
 	code, err := subs.Run("some-file-that-doesnt-exist")
-	assert.Equal(t, 1, code, "Returns exit code 1")
+	assert.Equal(t, 128, code, "Returns exit code 128")
 	assert.Error(t, err, "Returns an error")
 
 	tmpfile, err := ioutil.TempFile("", "testRunCommand*.bat")
