@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -90,7 +89,12 @@ func TestRunCommand(t *testing.T) {
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
-	assert.Equal(t, strings.TrimSpace(out), "Hello")
+
+	suffix := "\r\n"
+	if runtime.GOOS != "windows" {
+		suffix = "\n"
+	}
+	assert.Equal(t, "Hello"+suffix, out[len(out)-5-len(suffix):])
 
 	projectfile.Reset()
 }
