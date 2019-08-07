@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +34,7 @@ func TestActivate(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Should activate")
 
 	assert.NotEqual(t, "", subs.Shell(), "Should detect a shell")
+	time.Sleep(time.Millisecond * 100) // hide race condition
 	assert.True(t, subs.IsActive(), "Subshell should be active")
 
 	fail = subs.Deactivate()
