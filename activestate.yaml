@@ -82,7 +82,7 @@ scripts:
     value: python3 scripts/locale-generator.py
   - name: example
     description: This is an example with language
-    language: python3
+    language: python2
     value: |
       print("Hello, World!")
   - name: test
