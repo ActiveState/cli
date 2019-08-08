@@ -61,38 +61,57 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	// Activate the state if needed.
-	if !script.Standalone() && !subshell.IsActivated() {
-		print.Info(locale.T("info_state_run_activating_state"))
-		venv := virtualenvironment.Init()
-		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-		var fail = venv.Activate()
+	lang := script.Language()
+	if lang == scriptfile.Unknown {
+		subs, fail := subshell.Get()
 		if fail != nil {
-			logging.Errorf("Unable to activate state: %s", fail.Error())
-			failures.Handle(fail, locale.T("error_state_run_activate"))
+			failures.Handle(fail, locale.T("error_state_run_no_shell"))
+			return
+		}
+		lang = scriptfile.MakeLanguageByShell(subs.Shell())
+	}
+
+	langExec := lang.Executable()
+	if script.Standalone() && langExec != nil {
+		print.Error(locale.T("error_state_run_standalone_conflict"))
+		return
+	}
+
+	venv := virtualenvironment.Init()
+	// Activate the state if needed.
+	if !script.Standalone() {
+
+		if !subshell.IsActivated() {
+			print.Info(locale.T("info_state_run_activating_state"))
+			venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+			venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+			if fail := venv.Activate(); fail != nil {
+				logging.Errorf("Unable to activate state: %s", fail.Error())
+				failures.Handle(fail, locale.T("error_state_run_activate"))
+				return
+			}
+		}
+
+		if langExec == nil || !venv.HasLanguageByExecutable(*langExec) {
+			print.Error(locale.T("error_state_run_unknown_exec"))
 			return
 		}
 	}
 
-	// Run the script.
-	scriptBlock := project.Expand(script.Value())
 	subs, fail := subshell.Get()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_run_no_shell"))
 		return
 	}
 
-	lang := script.Language()
-	if lang == scriptfile.Unknown {
-		lang = scriptfile.MakeLanguageByShell(subs.Shell())
-	}
-
+	// Run the script.
+	scriptBlock := project.Expand(script.Value())
 	sf, err := scriptfile.New(lang, scriptBlock)
 	if err != nil {
 		failures.Handle(err, locale.T("error_state_run_setup_scriptfile"))
 		return
 	}
+	defer sf.Clean()
 
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	code, err := subs.Run(sf.FileName(), scriptArgs...)

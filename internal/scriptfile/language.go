@@ -3,6 +3,8 @@ package scriptfile
 import (
 	"fmt"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // Language ...
@@ -19,14 +21,23 @@ const (
 	Python3
 )
 
-var lookup = [...]string{
-	"unknown",
-	"bash",
-	"sh",
-	"batch",
-	"perl",
-	"python2",
-	"python3",
+type languageData struct {
+	name string
+	exec *string
+}
+
+var lookup = [...]languageData{
+	{"unknown", ptrToStr("")},
+	{"bash", nil},
+	{"sh", nil},
+	{"batch", nil},
+	{"perl", ptrToStr(constants.ActivePerlExecutable)},
+	{"python2", ptrToStr(constants.ActivePython2Executable)},
+	{"python3", ptrToStr(constants.ActivePython3Executable)},
+}
+
+func ptrToStr(s string) *string {
+	return &s
 }
 
 // MakeLanguageByShell ...
@@ -42,7 +53,7 @@ func MakeLanguageByShell(shell string) Language {
 
 func makeLanguage(name string) Language {
 	for i, v := range lookup {
-		if strings.ToLower(name) == v {
+		if strings.ToLower(name) == v.name {
 			return Language(i)
 		}
 	}
@@ -51,9 +62,17 @@ func makeLanguage(name string) Language {
 
 func (l *Language) String() string {
 	if int(*l) < 0 || int(*l) > len(lookup)-1 {
-		return lookup[0]
+		return lookup[0].name
 	}
-	return lookup[*l]
+	return lookup[*l].name
+}
+
+// Executable ...
+func (l *Language) Executable() *string {
+	if int(*l) < 0 || int(*l) > len(lookup)-1 {
+		return lookup[0].exec
+	}
+	return lookup[*l].exec
 }
 
 // UnmarshalYAML ...

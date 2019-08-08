@@ -1,6 +1,7 @@
 package virtualenvironment
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -126,6 +127,25 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 	return env
+}
+
+// HasLanguageByExecutable ...
+func (v *VirtualEnvironment) HasLanguageByExecutable(exec string) bool {
+	fmt.Println(v.artifactPaths)
+	for _, artifactPath := range v.artifactPaths {
+		meta, fail := runtime.InitMetaData(artifactPath)
+		if fail != nil {
+			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
+			continue
+		}
+
+		fmt.Println(exec)
+		if meta.HasBinaryFile(exec) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // WorkingDirectory returns the working directory to use for the current environment
