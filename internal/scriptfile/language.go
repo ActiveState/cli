@@ -67,11 +67,11 @@ func (l *Language) String() string {
 }
 
 // Executable provides details about the executable related to the language.
-func (l *Language) Executable() Executable {
-	if int(*l) < 0 || int(*l) > len(lookup)-1 {
+func (l Language) Executable() Executable {
+	if int(l) < 0 || int(l) > len(lookup)-1 {
 		return lookup[0].exec
 	}
-	return lookup[*l].exec
+	return lookup[l].exec
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
@@ -102,12 +102,12 @@ type Executable struct {
 }
 
 // Name returns the executables file's name.
-func (e *Executable) Name() string {
+func (e Executable) Name() string {
 	return e.name
 }
 
 // Builtin expresses whether the executable is expected to be provided by the
 // shell environment.
-func (e *Executable) Builtin() bool {
+func (e Executable) Builtin() bool {
 	return e.base
 }
