@@ -1,8 +1,13 @@
 package run
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
+
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -13,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 // Command holds the definition for "state run".
@@ -72,35 +76,37 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	langExec := lang.Executable()
-	if script.Standalone() && langExec != nil {
+	if script.Standalone() && !langExec.Builtin() {
 		print.Error(locale.T("error_state_run_standalone_conflict"))
 		return
 	}
 
-	venv := virtualenvironment.Init()
+	path := os.Getenv("PATH")
+
 	// Activate the state if needed.
-	if !script.Standalone() {
+	if !script.Standalone() && !subshell.IsActivated() {
+		print.Info(locale.T("info_state_run_activating_state"))
+		venv := virtualenvironment.Init()
+		venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
+		venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
 
-		if !subshell.IsActivated() {
-			print.Info(locale.T("info_state_run_activating_state"))
-			venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
-			venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-			if fail := venv.Activate(); fail != nil {
-				logging.Errorf("Unable to activate state: %s", fail.Error())
-				failures.Handle(fail, locale.T("error_state_run_activate"))
-				return
-			}
-		}
-
-		if langExec == nil || !venv.HasLanguageByExecutable(*langExec) {
-			print.Error(locale.T("error_state_run_unknown_exec"))
+		if fail := venv.Activate(); fail != nil {
+			logging.Errorf("Unable to activate state: %s", fail.Error())
+			failures.Handle(fail, locale.T("error_state_run_activate"))
 			return
 		}
+
+		path = venv.GetEnv()["PATH"]
 	}
 
 	subs, fail := subshell.Get()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return
+	}
+
+	if !langExec.Builtin() && !pathProvidesExec(langExec.Name(), path) {
+		print.Error(locale.T("error_state_run_unknown_exec"))
 		return
 	}
 
@@ -120,4 +126,46 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		Command.Exiter(code)
 		return
 	}
+}
+
+func pathProvidesExec(exec, path string) bool {
+	paths := splitPath(path)
+	paths = filterPrefixed(config.CachePath(), paths)
+	paths = applySuffix(exec, paths)
+
+	for _, p := range paths {
+		if isExecutableFile(p) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitPath(path string) []string {
+	return strings.Split(path, string(os.PathListSeparator))
+}
+
+func filterPrefixed(prefix string, paths []string) []string {
+	var ps []string
+	for _, p := range paths {
+		if strings.HasPrefix(p, prefix) {
+			ps = append(ps, p)
+		}
+	}
+	return ps
+}
+
+func applySuffix(suffix string, paths []string) []string {
+	for i, v := range paths {
+		paths[i] = filepath.Join(v, suffix)
+	}
+	return paths
+}
+
+func isExecutableFile(name string) bool {
+	f, err := os.Stat(name)
+	if err != nil { // unlikely unless file does not exist
+		return false
+	}
+	return f.Mode()&0110 != 0
 }

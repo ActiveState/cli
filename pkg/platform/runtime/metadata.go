@@ -102,7 +102,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	}
 
 	// Python
-	if m.HasBinaryFile(constants.ActivePython3Executable) || m.HasBinaryFile(constants.ActivePython2Executable) {
+	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
 		logging.Debug("Detected Python artifact, ensuring backwards compatibility")
 
 		// RelocationTargetBinaries
@@ -126,7 +126,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		}
 
 		//Perl
-	} else if m.HasBinaryFile(constants.ActivePerlExecutable) {
+	} else if m.hasBinaryFile(constants.ActivePerlExecutable) {
 		logging.Debug("Detected Perl artifact, ensuring backwards compatibility")
 
 		// RelocationDir
@@ -151,8 +151,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	return nil
 }
 
-// HasBinaryFile ...
-func (m *MetaData) HasBinaryFile(executable string) bool {
+func (m *MetaData) hasBinaryFile(executable string) bool {
 	for _, dir := range m.BinaryLocations {
 		parent := ""
 		if dir.Relative {
