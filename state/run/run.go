@@ -105,7 +105,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(langExec.Name(), path) {
+	if !langExec.Builtin() && !pathProvidesExec(config.CachePath(), langExec.Name(), path) {
 		print.Error(locale.T("error_state_run_unknown_exec"))
 		return
 	}
@@ -128,9 +128,11 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 }
 
-func pathProvidesExec(exec, path string) bool {
+func pathProvidesExec(filterByPath, exec, path string) bool {
 	paths := splitPath(path)
-	paths = filterPrefixed(config.CachePath(), paths)
+	if filterByPath != "" {
+		paths = filterPrefixed(filterByPath, paths)
+	}
 	paths = applySuffix(exec, paths)
 
 	for _, p := range paths {
