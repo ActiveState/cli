@@ -3,6 +3,7 @@ package scriptfile
 import (
 	"os"
 	"path"
+	"runtime"
 	"testing"
 )
 
@@ -32,6 +33,10 @@ func TestScriptFile(t *testing.T) {
 		})
 
 		t.Run("file executable", func(t *testing.T) {
+			if runtime.GOOS == "windows" { // windows doesn't use permission bits
+				return
+			}
+
 			gt(t.Errorf, int64(0110&info.Mode()), 0)
 		})
 	}()
