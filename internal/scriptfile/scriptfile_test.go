@@ -33,7 +33,8 @@ func TestScriptFile(t *testing.T) {
 		})
 
 		t.Run("file executable", func(t *testing.T) {
-			if runtime.GOOS == "windows" { // windows doesn't use permission bits
+			if runtime.GOOS == "windows" {
+				gt(t.Errorf, int64(0400&info.Mode()), 0)
 				return
 			}
 
