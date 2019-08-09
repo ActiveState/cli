@@ -6,20 +6,6 @@ import (
 	"testing"
 )
 
-type failFunc func(format string, args ...interface{})
-
-func noError(ff failFunc, err error) {
-	if err != nil {
-		ff("unexpected error: %v", err)
-	}
-}
-
-func gt(ff failFunc, a, b int64) {
-	if a <= b {
-		ff("got %v, want > %v", a, b)
-	}
-}
-
 func TestScriptFile(t *testing.T) {
 	sf, err := New(Bash, "echo hello")
 	noError(t.Fatalf, err)
@@ -42,7 +28,7 @@ func TestScriptFile(t *testing.T) {
 		})
 
 		t.Run("file not empty", func(t *testing.T) {
-			gt(t.Errorf, info.Size(), 0)
+			gt(t.Errorf, info.Size(), int64(len("echo hello")))
 		})
 
 		t.Run("file executable", func(t *testing.T) {
@@ -56,4 +42,33 @@ func TestScriptFile(t *testing.T) {
 			t.Errorf("got %v, want not exist error", err)
 		}
 	})
+
+	t.Run("file lacking header", func(t *testing.T) {
+		sf, err = New(Batch, "echo hello")
+		noError(t.Fatalf, err)
+		info, err := os.Stat(sf.FileName())
+		noError(t.Fatalf, err)
+
+		eq(t.Errorf, info.Size(), int64(len("echo hello")))
+	})
+}
+
+type failFunc func(format string, args ...interface{})
+
+func noError(ff failFunc, err error) {
+	if err != nil {
+		ff("unexpected error: %v", err)
+	}
+}
+
+func gt(ff failFunc, a, b int64) {
+	if a <= b {
+		ff("got %v, want > %v", a, b)
+	}
+}
+
+func eq(ff failFunc, a, b int64) {
+	if a != b {
+		ff("got %v, want %v", a, b)
+	}
 }
