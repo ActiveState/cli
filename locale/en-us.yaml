@@ -375,6 +375,12 @@ info_state_run_activating_state:
   other: This script requires an activated state. Activating it now. To bypass this, use the --standalone flag.
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
+error_state_run_standalone_conflict:
+  other: Script is configured as standalone while the language requires state activation. Please unset the standalone value, or use a language native to your shell.
+error_state_run_unknown_exec:
+  other: An executable language interpreter matching the script cannot be found.
+error_state_run_setup_scriptfile:
+  other: Cannot setup runnable on-disk script file.
 info_state_run_running:
   other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
 error_state_run_error:
