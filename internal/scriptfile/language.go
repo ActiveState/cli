@@ -23,17 +23,17 @@ const (
 
 type languageData struct {
 	name string
-	exec *string
+	exec Executable
 }
 
 var lookup = [...]languageData{
-	{"unknown", ptrToStr("")},
-	{"bash", nil},
-	{"sh", nil},
-	{"batch", nil},
-	{"perl", ptrToStr(constants.ActivePerlExecutable)},
-	{"python2", ptrToStr(constants.ActivePython2Executable)},
-	{"python3", ptrToStr(constants.ActivePython3Executable)},
+	{"unknown", Executable{"", false}},
+	{"bash", Executable{"", true}},
+	{"sh", Executable{"", true}},
+	{"batch", Executable{"", true}},
+	{"perl", Executable{constants.ActivePerlExecutable, false}},
+	{"python2", Executable{constants.ActivePython2Executable, false}},
+	{"python3", Executable{constants.ActivePython3Executable, false}},
 }
 
 func ptrToStr(s string) *string {
@@ -68,7 +68,7 @@ func (l *Language) String() string {
 }
 
 // Executable ...
-func (l *Language) Executable() *string {
+func (l *Language) Executable() Executable {
 	if int(*l) < 0 || int(*l) > len(lookup)-1 {
 		return lookup[0].exec
 	}
@@ -94,4 +94,20 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 // MarshalYAML ...
 func (l *Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
+}
+
+// Executable ...
+type Executable struct {
+	name string
+	base bool
+}
+
+// Name ...
+func (e *Executable) Name() string {
+	return e.name
+}
+
+// Builtin ...
+func (e *Executable) Builtin() bool {
+	return e.base
 }
