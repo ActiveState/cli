@@ -3,6 +3,7 @@ package run
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -169,5 +170,10 @@ func isExecutableFile(name string) bool {
 	if err != nil { // unlikely unless file does not exist
 		return false
 	}
+
+	if runtime.GOOS == "windows" {
+		return f.Mode()&0400 != 0
+	}
+
 	return f.Mode()&0110 != 0
 }
