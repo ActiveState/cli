@@ -7,10 +7,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 )
 
-// Language ...
+// Language tracks the languages potentially used for scripts.
 type Language int
 
-// ...
+// Language constants are provided for safety/reference.
 const (
 	Unknown Language = iota
 	Bash
@@ -36,11 +36,9 @@ var lookup = [...]languageData{
 	{"python3", Executable{constants.ActivePython3Executable, false}},
 }
 
-func ptrToStr(s string) *string {
-	return &s
-}
-
-// MakeLanguageByShell ...
+// MakeLanguageByShell returns either bash or cmd based on whether the provided
+// shell name contains "cmd". This should be taken to mean that bash is a sort
+// of default.
 func MakeLanguageByShell(shell string) Language {
 	shell = strings.ToLower(shell)
 
@@ -60,6 +58,7 @@ func makeLanguage(name string) Language {
 	return Unknown
 }
 
+// String implements the fmt.Stringer interface.
 func (l *Language) String() string {
 	if int(*l) < 0 || int(*l) > len(lookup)-1 {
 		return lookup[0].name
@@ -67,7 +66,7 @@ func (l *Language) String() string {
 	return lookup[*l].name
 }
 
-// Executable ...
+// Executable provides details about the executable related to the language.
 func (l *Language) Executable() Executable {
 	if int(*l) < 0 || int(*l) > len(lookup)-1 {
 		return lookup[0].exec
@@ -75,7 +74,7 @@ func (l *Language) Executable() Executable {
 	return lookup[*l].exec
 }
 
-// UnmarshalYAML ...
+// UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
 func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 	var s string
 	if err := f(&s); err != nil {
@@ -91,23 +90,24 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 	return nil
 }
 
-// MarshalYAML ...
+// MarshalYAML implements the go-yaml/yaml.Marshaler interface.
 func (l *Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
 }
 
-// Executable ...
+// Executable contains details about an executable file.
 type Executable struct {
 	name string
 	base bool
 }
 
-// Name ...
+// Name returns the executables file's name.
 func (e *Executable) Name() string {
 	return e.name
 }
 
-// Builtin ...
+// Builtin expresses whether the executable is expected to be provided by the
+// shell environment.
 func (e *Executable) Builtin() bool {
 	return e.base
 }

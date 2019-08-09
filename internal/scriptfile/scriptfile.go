@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-// ScriptFile ...
+// ScriptFile represents an on-disk executable file.
 type ScriptFile struct {
-	lang   Language
-	script string
-	file   string
+	lang Language
+	file string
 }
 
-// New ...
+// New receives a language and script body that are used to construct a runable
+// on-disk file that is tracked by the returned value.
 func New(l Language, script string) (*ScriptFile, error) {
 	file, err := createFile(script, tempFileName(l), fileHeader(l))
 	if err != nil {
@@ -21,20 +21,19 @@ func New(l Language, script string) (*ScriptFile, error) {
 	}
 
 	sf := ScriptFile{
-		lang:   l,
-		script: script,
-		file:   file,
+		lang: l,
+		file: file,
 	}
 
 	return &sf, nil
 }
 
-// Clean ...
+// Clean provides simple/deferable clean up.
 func (sf *ScriptFile) Clean() {
 	os.Remove(sf.file)
 }
 
-// FileName ...
+// FileName returns the on-disk filename of the tracked script file.
 func (sf *ScriptFile) FileName() string {
 	return sf.file
 }
