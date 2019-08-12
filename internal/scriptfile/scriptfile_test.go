@@ -5,78 +5,45 @@ import (
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestScriptFile(t *testing.T) {
-	sf, fail := New(Bash, "echo hello")
-	noError(t.Fatalf, fail.ToError())
-
-	func() { // scope for cleanup
-		defer sf.Clean()
-
-		t.Run("file name has extension", func(t *testing.T) {
-			ext := path.Ext(sf.Filename())
-			gt(t.Errorf, int64(len(ext)), 0)
-		})
-
-		info, err := os.Stat(sf.Filename())
-
-		t.Run("file exists", func(t *testing.T) {
-			if info == nil {
-				t.Fatalf("got %v, want os.FileInfo", info)
-			}
-			noError(t.Fatalf, err)
-		})
-
-		t.Run("file not empty", func(t *testing.T) {
-			gt(t.Errorf, info.Size(), int64(len("echo hello")))
-		})
-
-		t.Run("file executable", func(t *testing.T) {
-			if runtime.GOOS == "windows" {
-				gt(t.Errorf, int64(0400&info.Mode()), 0)
-				return
-			}
-
-			gt(t.Errorf, int64(0110&info.Mode()), 0)
-		})
-	}()
-
-	t.Run("file cleaned up", func(t *testing.T) {
+	func() {
+		sf, fail := New(Bash, "echo hello")
+		require.NoError(t, fail.ToError())
+		sf.Clean()
 		_, err := os.Stat(sf.Filename())
 		if err == nil || !os.IsNotExist(err) {
-			t.Errorf("got %v, want not exist error", err)
+			require.FailNow(t, "file should not exist")
 		}
-	})
+	}()
 
-	t.Run("file lacking header", func(t *testing.T) {
-		sf, fail = New(Batch, "echo hello")
-		noError(t.Fatalf, fail.ToError())
-		defer sf.Clean()
+	sf, fail := New(Bash, "echo hello")
+	require.NoError(t, fail.ToError())
+	defer sf.Clean()
 
-		info, err := os.Stat(sf.Filename())
-		noError(t.Fatalf, err)
+	assert.NotEmpty(t, path.Ext(sf.Filename()))
+	require.FileExists(t, sf.Filename())
 
-		eq(t.Errorf, info.Size(), int64(len("echo hello")))
-	})
-}
+	info, err := os.Stat(sf.Filename())
+	require.NoError(t, err)
+	assert.NotZero(t, info.Size())
 
-type failFunc func(format string, args ...interface{})
-
-func noError(ff failFunc, err error) {
-	if err != nil {
-		ff("unexpected error: %v", err)
+	res := int64(0500 & info.Mode()) // readable/executable by user
+	if runtime.GOOS == "windows" {
+		res = int64(0400 & info.Mode()) // readable by user
 	}
-}
+	assert.NotZero(t, res, "file should be readable/executable")
 
-func gt(ff failFunc, a, b int64) {
-	if a <= b {
-		ff("got %v, want > %v", a, b)
-	}
-}
+	sf, fail = New(Batch, "echo hello")
+	require.NoError(t, fail.ToError())
+	defer sf.Clean()
 
-func eq(ff failFunc, a, b int64) {
-	if a != b {
-		ff("got %v, want %v", a, b)
-	}
+	info, err = os.Stat(sf.Filename())
+	require.NoError(t, err)
+	assert.NotZero(t, info.Size())
+	assert.True(t, info.Size() == int64(len("echo hello")))
 }
