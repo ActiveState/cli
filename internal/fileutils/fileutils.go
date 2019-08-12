@@ -436,3 +436,26 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	}
 	return nil
 }
+
+// CreateTempExecutable sets up an executable file with custom contents using
+// ioutil.TempFile args.
+func CreateTempExecutable(dir, pattern, content string) (string, *failures.Failure) {
+	f, err := ioutil.TempFile(dir, pattern)
+	if err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if _, err = f.WriteString(content); err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err = f.Close(); err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err := os.Chmod(f.Name(), 0700); err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	return f.Name(), nil
+}
