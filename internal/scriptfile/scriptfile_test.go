@@ -15,11 +15,11 @@ func TestScriptFile(t *testing.T) {
 		defer sf.Clean()
 
 		t.Run("file name has extension", func(t *testing.T) {
-			ext := path.Ext(sf.FileName())
+			ext := path.Ext(sf.Filename())
 			gt(t.Errorf, int64(len(ext)), 0)
 		})
 
-		info, err := os.Stat(sf.FileName())
+		info, err := os.Stat(sf.Filename())
 
 		t.Run("file exists", func(t *testing.T) {
 			if info == nil {
@@ -43,7 +43,7 @@ func TestScriptFile(t *testing.T) {
 	}()
 
 	t.Run("file cleaned up", func(t *testing.T) {
-		_, err := os.Stat(sf.FileName())
+		_, err := os.Stat(sf.Filename())
 		if err == nil || !os.IsNotExist(err) {
 			t.Errorf("got %v, want not exist error", err)
 		}
@@ -52,7 +52,7 @@ func TestScriptFile(t *testing.T) {
 	t.Run("file lacking header", func(t *testing.T) {
 		sf, err = New(Batch, "echo hello")
 		noError(t.Fatalf, err)
-		info, err := os.Stat(sf.FileName())
+		info, err := os.Stat(sf.Filename())
 		noError(t.Fatalf, err)
 
 		eq(t.Errorf, info.Size(), int64(len("echo hello")))

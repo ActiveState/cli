@@ -101,13 +101,13 @@ func (v *SubShell) Deactivate() *failures.Failure {
 }
 
 // Run - see subshell.SubShell
-func (v *SubShell) Run(name string, args ...string) (int, error) {
-	filePath, fail := osutils.BashifyPath(name)
+func (v *SubShell) Run(filename string, args ...string) (int, error) {
+	fp, fail := osutils.BashifyPath(filename)
 	if fail != nil {
 		return 1, fail.ToError()
 	}
 
-	quotedArgs := []string{filePath}
+	quotedArgs := []string{fp}
 	for _, arg := range args {
 		quotedArgs = append(quotedArgs, v.Quote(arg))
 	}

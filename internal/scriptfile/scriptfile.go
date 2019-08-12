@@ -15,7 +15,7 @@ type ScriptFile struct {
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
 func New(l Language, script string) (*ScriptFile, error) {
-	file, err := createFile(script, tempFileName(l), fileHeader(l))
+	file, err := createFile(script, tempFilename(l), fileHeader(l))
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +33,8 @@ func (sf *ScriptFile) Clean() {
 	os.Remove(sf.file)
 }
 
-// FileName returns the on-disk filename of the tracked script file.
-func (sf *ScriptFile) FileName() string {
+// Filename returns the on-disk filename of the tracked script file.
+func (sf *ScriptFile) Filename() string {
 	return sf.file
 }
 
@@ -59,7 +59,7 @@ func createFile(script, name, header string) (string, error) {
 	return f.Name(), nil
 }
 
-func tempFileName(l Language) string {
+func tempFilename(l Language) string {
 	namePrefix := "script-*"
 
 	switch l {
