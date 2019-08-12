@@ -2,8 +2,10 @@ package scriptfile
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
+
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 // ScriptFile represents an on-disk executable file.
@@ -14,10 +16,10 @@ type ScriptFile struct {
 
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
-func New(l Language, script string) (*ScriptFile, error) {
-	file, err := createTempExecutable("", tempFilename(l), script+fileHeader(l))
-	if err != nil {
-		return nil, err
+func New(l Language, script string) (*ScriptFile, *failures.Failure) {
+	file, fail := fileutils.CreateTempExecutable("", tempFilename(l), script+fileHeader(l))
+	if fail != nil {
+		return nil, fail
 	}
 
 	sf := ScriptFile{
@@ -36,27 +38,6 @@ func (sf *ScriptFile) Clean() {
 // Filename returns the on-disk filename of the tracked script file.
 func (sf *ScriptFile) Filename() string {
 	return sf.file
-}
-
-func createTempExecutable(dir, pattern, content string) (string, error) {
-	f, err := ioutil.TempFile(dir, pattern)
-	if err != nil {
-		return "", err
-	}
-
-	if _, err = f.WriteString(content); err != nil {
-		return "", err
-	}
-
-	if err = f.Close(); err != nil {
-		return "", err
-	}
-
-	if err := os.Chmod(f.Name(), 0700); err != nil {
-		return "", err
-	}
-
-	return f.Name(), nil
 }
 
 func tempFilename(l Language) string {

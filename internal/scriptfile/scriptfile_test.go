@@ -8,8 +8,8 @@ import (
 )
 
 func TestScriptFile(t *testing.T) {
-	sf, err := New(Bash, "echo hello")
-	noError(t.Fatalf, err)
+	sf, fail := New(Bash, "echo hello")
+	noError(t.Fatalf, fail.ToError())
 
 	func() { // scope for cleanup
 		defer sf.Clean()
@@ -50,8 +50,8 @@ func TestScriptFile(t *testing.T) {
 	})
 
 	t.Run("file lacking header", func(t *testing.T) {
-		sf, err = New(Batch, "echo hello")
-		noError(t.Fatalf, err)
+		sf, fail = New(Batch, "echo hello")
+		noError(t.Fatalf, fail.ToError())
 		info, err := os.Stat(sf.Filename())
 		noError(t.Fatalf, err)
 
