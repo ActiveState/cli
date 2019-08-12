@@ -52,7 +52,7 @@ func createFile(script, name, header string) (string, error) {
 		return "", err
 	}
 
-	if err := os.Chmod(f.Name(), 0755); err != nil {
+	if err := os.Chmod(f.Name(), 0700); err != nil {
 		return "", err
 	}
 
