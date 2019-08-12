@@ -106,7 +106,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if !langExec.Builtin() && !pathProvidesExec(config.CachePath(), langExec.Name(), path) {
+	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
 		print.Error(locale.T("error_state_run_unknown_exec"))
 		return
 	}
@@ -127,6 +127,13 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		Command.Exiter(code)
 		return
 	}
+}
+
+func configCachePath() string {
+	if runtime.GOOS == "darwin" {
+		return ""
+	}
+	return config.CachePath()
 }
 
 func pathProvidesExec(filterByPath, exec, path string) bool {
