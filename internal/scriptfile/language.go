@@ -21,19 +21,46 @@ const (
 	Python3
 )
 
+const (
+	filePatternPrefix = "script-*"
+)
+
 type languageData struct {
 	name string
+	ext  string
+	hdr  bool
 	exec Executable
 }
 
 var lookup = [...]languageData{
-	{"unknown", Executable{"", false}},
-	{"bash", Executable{"", true}},
-	{"sh", Executable{"", true}},
-	{"batch", Executable{"", true}},
-	{"perl", Executable{constants.ActivePerlExecutable, false}},
-	{"python2", Executable{constants.ActivePython2Executable, false}},
-	{"python3", Executable{constants.ActivePython3Executable, false}},
+	{
+		"unknown", ".tmp", false,
+		Executable{"", false},
+	},
+	{
+		"bash", ".tmp", true,
+		Executable{"", true},
+	},
+	{
+		"sh", ".tmp", true,
+		Executable{"", true},
+	},
+	{
+		"batch", ".bat", false,
+		Executable{"", true},
+	},
+	{
+		"perl", ".tmp", true,
+		Executable{constants.ActivePerlExecutable, false},
+	},
+	{
+		"python2", ".tmp", true,
+		Executable{constants.ActivePython2Executable, false},
+	},
+	{
+		"python3", ".tmp", true,
+		Executable{constants.ActivePython3Executable, false},
+	},
 }
 
 // MakeLanguageByShell returns either bash or cmd based on whether the provided
@@ -58,22 +85,37 @@ func makeLanguage(name string) Language {
 	return Unknown
 }
 
-// String implements the fmt.Stringer interface.
-func (l *Language) String() string {
-	i := int(*l)
-	if i < 0 || i > len(lookup)-1 {
-		i = 0
-	}
-	return lookup[i].name
-}
-
-// Executable provides details about the executable related to the Language.
-func (l Language) Executable() Executable {
+func (l Language) data() languageData {
 	i := int(l)
 	if i < 0 || i > len(lookup)-1 {
 		i = 0
 	}
-	return lookup[i].exec
+	return lookup[i]
+}
+
+// String implements the fmt.Stringer interface.
+func (l *Language) String() string {
+	return l.data().name
+}
+
+// Header returns the interpreter directive.
+func (l Language) Header() string {
+	ld := l.data()
+	if ld.hdr {
+		return fmt.Sprintf("#!/usr/bin/env %s\n", ld.name)
+	}
+	return ""
+}
+
+// TempPattern returns the ioutil.TempFile pattern to be used to form the temp
+// file name.
+func (l Language) TempPattern() string {
+	return filePatternPrefix + l.data().ext
+}
+
+// Executable provides details about the executable related to the Language.
+func (l Language) Executable() Executable {
+	return l.data().exec
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.

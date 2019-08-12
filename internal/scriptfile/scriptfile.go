@@ -1,7 +1,6 @@
 package scriptfile
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -17,7 +16,7 @@ type ScriptFile struct {
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
 func New(l Language, script string) (*ScriptFile, *failures.Failure) {
-	file, fail := fileutils.CreateTempExecutable("", tempFilename(l), script+fileHeader(l))
+	file, fail := fileutils.CreateTempExecutable("", l.TempPattern(), l.Header()+script)
 	if fail != nil {
 		return nil, fail
 	}
@@ -38,24 +37,4 @@ func (sf *ScriptFile) Clean() {
 // Filename returns the on-disk filename of the tracked script file.
 func (sf *ScriptFile) Filename() string {
 	return sf.file
-}
-
-func tempFilename(l Language) string {
-	namePrefix := "script-*"
-
-	switch l {
-	case Batch:
-		return namePrefix + ".bat"
-	default:
-		return namePrefix + ".tmp"
-	}
-}
-
-func fileHeader(l Language) string {
-	switch l {
-	case Batch, Unknown:
-		return ""
-	default:
-		return fmt.Sprintf("#!/usr/bin/env %s\n", l.String())
-	}
 }
