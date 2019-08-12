@@ -67,7 +67,7 @@ func (l *Language) String() string {
 	return lookup[i].name
 }
 
-// Executable provides details about the executable related to the language.
+// Executable provides details about the executable related to the Language.
 func (l Language) Executable() Executable {
 	i := int(l)
 	if i < 0 || i > len(lookup)-1 {
@@ -97,7 +97,8 @@ func (l *Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
 }
 
-// Executable contains details about an executable file.
+// Executable contains details about an executable program used to interpret a
+// Language.
 type Executable struct {
 	name string
 	base bool
