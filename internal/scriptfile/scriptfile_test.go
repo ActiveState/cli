@@ -52,6 +52,8 @@ func TestScriptFile(t *testing.T) {
 	t.Run("file lacking header", func(t *testing.T) {
 		sf, fail = New(Batch, "echo hello")
 		noError(t.Fatalf, fail.ToError())
+		defer sf.Clean()
+
 		info, err := os.Stat(sf.Filename())
 		noError(t.Fatalf, err)
 
