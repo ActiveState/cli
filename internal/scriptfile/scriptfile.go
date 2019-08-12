@@ -15,7 +15,7 @@ type ScriptFile struct {
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
 func New(l Language, script string) (*ScriptFile, error) {
-	file, err := createFile(script, tempFilename(l), fileHeader(l))
+	file, err := createTempExecutable("", tempFilename(l), script+fileHeader(l))
 	if err != nil {
 		return nil, err
 	}
@@ -38,13 +38,13 @@ func (sf *ScriptFile) Filename() string {
 	return sf.file
 }
 
-func createFile(script, name, header string) (string, error) {
-	f, err := ioutil.TempFile("", name)
+func createTempExecutable(dir, pattern, content string) (string, error) {
+	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
 		return "", err
 	}
 
-	if _, err = f.WriteString(header + script); err != nil {
+	if _, err = f.WriteString(content); err != nil {
 		return "", err
 	}
 
