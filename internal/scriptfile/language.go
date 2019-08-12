@@ -60,18 +60,20 @@ func makeLanguage(name string) Language {
 
 // String implements the fmt.Stringer interface.
 func (l *Language) String() string {
-	if int(*l) < 0 || int(*l) > len(lookup)-1 {
-		return lookup[0].name
+	i := int(*l)
+	if i < 0 || i > len(lookup)-1 {
+		i = 0
 	}
-	return lookup[*l].name
+	return lookup[i].name
 }
 
 // Executable provides details about the executable related to the language.
 func (l Language) Executable() Executable {
-	if int(l) < 0 || int(l) > len(lookup)-1 {
-		return lookup[0].exec
+	i := int(l)
+	if i < 0 || i > len(lookup)-1 {
+		i = 0
 	}
-	return lookup[l].exec
+	return lookup[i].exec
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
