@@ -282,13 +282,12 @@ func TestExecutable(t *testing.T) {
 }
 
 func TestCreateTempExecutable(t *testing.T) {
-	dir := ""
 	patPrefix := "abc"
 	patSuffix := ".xxx"
 	pattern := patPrefix + "*" + patSuffix
-	content := "this is a test"
+	data := []byte("this is a test")
 
-	name, fail := CreateTempExecutable(dir, pattern, content)
+	name, fail := WriteTempFile("", pattern, data, 0700)
 	require.NoError(t, fail.ToError())
 	require.FileExists(t, name)
 	defer os.Remove(name)
