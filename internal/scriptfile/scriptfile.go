@@ -16,7 +16,8 @@ type ScriptFile struct {
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
 func New(l Language, script string) (*ScriptFile, *failures.Failure) {
-	file, fail := fileutils.CreateTempExecutable("", l.TempPattern(), l.Header()+script)
+	data := []byte(l.Header() + script)
+	file, fail := fileutils.WriteTempFile("", l.TempPattern(), data, 0700)
 	if fail != nil {
 		return nil, fail
 	}
