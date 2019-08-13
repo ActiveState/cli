@@ -18,6 +18,7 @@ var Command = &commands.Command{
 
 func init() {
 	Command.Append(RecipeCommand)
+	Command.Append(JWTCommand)
 }
 
 // Execute the export command.
