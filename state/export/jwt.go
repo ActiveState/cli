@@ -1,6 +1,8 @@
 package export
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -23,7 +25,7 @@ func ExecuteJWT(cmd *cobra.Command, args []string) {
 
 	if !authentication.Get().Authenticated() {
 		print.Error(locale.T("err_command_requires_auth"))
-		return
+		os.Exit(1)
 	}
 
 	print.Line(authentication.Get().BearerToken())
