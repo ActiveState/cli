@@ -130,8 +130,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 }
 
 func configCachePath() string {
-	if runtime.GOOS == "darwin" {
-		return ""
+	if runtime.GOOS == "darwin" { // runtime loading is not yet supported in darwin systems
+		return "" // empty string value will skip path filtering in subsequent logic
 	}
 	return config.CachePath()
 }
