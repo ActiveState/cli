@@ -32,7 +32,6 @@ func TestMakeLanguage(t *testing.T) {
 }
 
 func TestMakeLanguageByShell(t *testing.T) {
-	assert.Equal(t, Batch, MakeLanguageByShell("windows", "else.exe"), "windows strings without 'bash' return batch")
-	assert.Equal(t, Bash, MakeLanguageByShell("windows", "bash.exe"), "windows strings with 'bash' return bash")
-	assert.Equal(t, Bash, MakeLanguageByShell("anything", "else"), "anything else returns bash")
+	assert.Equal(t, Batch, MakeLanguageByShell("cmd.exe"), "strings with 'cmd' return batch")
+	assert.Equal(t, Bash, MakeLanguageByShell("anything_else"), "anything else returns bash")
 }

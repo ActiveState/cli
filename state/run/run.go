@@ -73,7 +73,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 			failures.Handle(fail, locale.T("error_state_run_no_shell"))
 			return
 		}
-		lang = scriptfile.MakeLanguageByShell(runtime.GOOS, subs.Shell())
+		lang = scriptfile.MakeLanguageByShell(subs.Shell())
 	}
 
 	langExec := lang.Executable()
