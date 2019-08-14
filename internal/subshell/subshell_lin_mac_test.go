@@ -4,7 +4,6 @@ package subshell
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -45,17 +45,15 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 
 	subs, fail := Get()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
-	assert.NoError(t, err)
-	tmpfile.WriteString("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
-	defer os.Remove(tmpfile.Name())
+	data := []byte("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
+	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(tmpfile.Name())
+		_, err := subs.Run(filename)
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
@@ -74,22 +72,20 @@ func TestRunCommandError(t *testing.T) {
 	os.Setenv("SHELL", "bash")
 
 	subs, fail := Get()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-file-that-doesnt-exist")
-	assert.Equal(t, 1, code, "Returns exit code 1")
+	code, err := subs.Run("some-command-that-doesnt-exist")
 	assert.Error(t, err, "Returns an error")
-
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
-	assert.NoError(t, err)
-	tmpfile.WriteString("#!/usr/bin/env bash\nexit 1")
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
-	defer os.Remove(tmpfile.Name())
-
-	code, err = subs.Run(tmpfile.Name())
 	assert.Equal(t, 1, code, "Returns exit code 1")
-	assert.Error(t, err, "Returns an error")
+
+	data := []byte("#!/usr/bin/env bash\nexit 2")
+	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(filename)
+
+	code, err = subs.Run(filename)
+	assert.Error(t, err)
+	assert.Equal(t, 2, code, "Returns exit code 2")
 
 	projectfile.Reset()
 }
