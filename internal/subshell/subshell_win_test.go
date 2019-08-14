@@ -51,7 +51,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	require.NoError(t, fail.ToError())
 
 	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
-	filename, fail := fileutils.WriteTempFile("", "test.bat", data, 0700)
+	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(filename)
 
@@ -79,16 +79,16 @@ func TestRunCommandError(t *testing.T) {
 	require.NoError(t, fail.ToError())
 
 	code, err := subs.Run("some-command-that-doesnt-exist")
-	assert.Equal(t, 1, code, "Returns exit code 1")
+	assert.Equal(t, 128, code, "Returns exit code 128")
 	assert.Error(t, err, "Returns an error")
 
-	data := []byte("exit 2")
-	filename, fail := fileutils.WriteTempFile("", "test.bat", data, 0700)
+	data := []byte("exit 1")
+	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(filename)
 
 	code, err = subs.Run(filename)
-	assert.Equal(t, 2, code, "Returns exit code 2")
+	assert.Equal(t, 1, code, "Returns exit code 1")
 	assert.Error(t, err, "Returns an error")
 
 	projectfile.Reset()
