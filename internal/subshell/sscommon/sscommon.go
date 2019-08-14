@@ -80,7 +80,7 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 
 	esc := osutils.NewBashEscaper()
 
-	quotedArgs := esc.Quote(filePath)
+	quotedArgs := filePath
 	for _, arg := range args {
 		quotedArgs += " " + esc.Quote(arg)
 	}
