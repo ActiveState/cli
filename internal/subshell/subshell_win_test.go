@@ -4,7 +4,6 @@ package subshell
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -48,22 +48,19 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Unsetenv("SHELL")
 
 	subs, fail := Get()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand*.bat")
-	assert.NoError(t, err)
-	tmpfile.WriteString("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
-	defer os.Remove(tmpfile.Name())
+	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
+	filename, fail := fileutils.WriteTempFile("", "test.bat", data, 0700)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(tmpfile.Name())
+		_, err := subs.Run(filename)
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
-	assert.Contains(t, out, "--EMPTY--  --EMPTY--",
-		strings.TrimSpace(out),
+	assert.Contains(t, out, "--EMPTY--  --EMPTY--", strings.TrimSpace(out),
 		"Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
 
 	projectfile.Reset()
@@ -79,21 +76,19 @@ func TestRunCommandError(t *testing.T) {
 	os.Unsetenv("SHELL")
 
 	subs, fail := Get()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-file-that-doesnt-exist")
-	assert.Equal(t, 128, code, "Returns exit code 128")
+	code, err := subs.Run("some-command-that-doesnt-exist")
+	assert.Equal(t, 1, code, "Returns exit code 1")
 	assert.Error(t, err, "Returns an error")
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand*.bat")
-	assert.NoError(t, err)
-	tmpfile.WriteString("exit 1")
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
-	defer os.Remove(tmpfile.Name())
+	data := []byte("exit 2")
+	filename, fail := fileutils.WriteTempFile("", "test.bat", data, 0700)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(filename)
 
-	code, err = subs.Run(tmpfile.Name())
-	assert.Equal(t, 1, code, "Returns exit code 1")
+	code, err = subs.Run(filename)
+	assert.Equal(t, 2, code, "Returns exit code 2")
 	assert.Error(t, err, "Returns an error")
 
 	projectfile.Reset()
