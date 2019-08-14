@@ -86,7 +86,9 @@ func TestRunCommand(t *testing.T) {
 		require.NoError(t, err)
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "Hello", strings.TrimSpace(out))
+
+	trimmed := strings.TrimSpace(out)
+	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
 
 	projectfile.Reset()
 }
