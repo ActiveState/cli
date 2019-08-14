@@ -65,12 +65,11 @@ type RunFunc func(env []string, name string, args ...string) (int, error)
 
 // RunFuncByBinary ...
 func RunFuncByBinary(binary string) RunFunc {
-	switch strings.ToLower(binary) {
-	case "bash":
+	bin := strings.ToLower(binary)
+	if strings.Contains(bin, "bash") {
 		return runWithBash
-	default:
-		return runDirect
 	}
+	return runDirect
 }
 
 func runWithBash(env []string, name string, args ...string) (int, error) {
