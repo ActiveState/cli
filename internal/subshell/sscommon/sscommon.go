@@ -81,12 +81,12 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 
 	esc := osutils.NewBashEscaper()
 
-	quotedArgs := []string{"-c", filePath}
+	quotedArgs := esc.Quote(filePath)
 	for _, arg := range args {
-		quotedArgs = append(quotedArgs, esc.Quote(arg))
+		quotedArgs += " " + esc.Quote(arg)
 	}
 
-	return runDirect(env, "bash", quotedArgs...)
+	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
 func runDirect(env []string, name string, args ...string) (int, error) {
