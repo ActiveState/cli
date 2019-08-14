@@ -2,6 +2,7 @@ package scriptfile
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -70,6 +71,10 @@ func MakeLanguageByShell(shell string) Language {
 	shell = strings.ToLower(shell)
 
 	if strings.Contains(shell, "cmd") {
+		return Batch
+	}
+
+	if runtime.GOOS == "windows" && !strings.Contains(shell, "bash") {
 		return Batch
 	}
 
