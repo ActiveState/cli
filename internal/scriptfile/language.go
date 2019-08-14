@@ -66,10 +66,10 @@ var lookup = [...]languageData{
 // MakeLanguageByShell returns either bash or cmd based on whether the provided
 // shell name contains "cmd". This should be taken to mean that bash is a sort
 // of default.
-func MakeLanguageByShell(goos, shell string) Language {
+func MakeLanguageByShell(shell string) Language {
 	shell = strings.ToLower(shell)
 
-	if goos == "windows" && !strings.Contains(shell, "bash") {
+	if strings.Contains(shell, "cmd") {
 		return Batch
 	}
 
