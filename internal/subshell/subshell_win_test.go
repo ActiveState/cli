@@ -78,7 +78,7 @@ func TestRunCommandError(t *testing.T) {
 	subs, fail := Get()
 	require.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-command-that-doesnt-exist")
+	code, err := subs.Run("some-file-that-doesnt-exist")
 	assert.Equal(t, 128, code, "Returns exit code 128")
 	assert.Error(t, err, "Returns an error")
 
