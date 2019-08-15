@@ -1,4 +1,4 @@
-package new
+package activate
 
 import (
 	"io/ioutil"
@@ -60,7 +60,6 @@ func TestNewInEmptyDir(t *testing.T) {
 // just files.
 // Verifies that a project was successfully created in a sub-directory.
 func TestNewInNonEmptyDir(t *testing.T) {
-	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -95,7 +94,6 @@ func TestNewInNonEmptyDir(t *testing.T) {
 // Verifies that a project was NOT created in a sub-directory due to a name
 // conflict.
 func TestNewInNonEmptyDirFail(t *testing.T) {
-	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -131,7 +129,6 @@ func TestNewInNonEmptyDirFail(t *testing.T) {
 // Runs "state new test-name -p tmpdir -o test-owner".
 // Verifies that a project was successfully created in tmpdir.
 func TestNewWithPathToExistingDir(t *testing.T) {
-	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 	err := ioutil.WriteFile(filepath.Join(tmpdir, "foo.txt"), []byte(""), 0666)
@@ -166,7 +163,6 @@ func TestNewWithPathToExistingDir(t *testing.T) {
 // Verifies that a project was successfully created with an owner fetched from
 // the Platform.
 func TestNewWithNoOwner(t *testing.T) {
-	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
@@ -198,7 +194,6 @@ func TestNewWithNoOwner(t *testing.T) {
 // happens to already exist on the Platform.
 // Verifies that a project was NOT created due to a name conflict.
 func TestNewPlatformProjectExists(t *testing.T) {
-	Flags.Path, Flags.Owner, Args.Name = "", "", "" // reset
 	tmpdir, _ := ioutil.TempDir("", "cli-new-test")
 	cwd, _ := os.Getwd()
 
