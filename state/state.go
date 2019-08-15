@@ -33,8 +33,6 @@ import (
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic")
 
-var branchName = constants.BranchName
-
 // T links to locale.T
 var T = locale.T
 
@@ -123,10 +121,6 @@ func main() {
 	}
 
 	register()
-
-	if branchName != constants.StableBranch {
-		print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
-	}
 
 	// This actually runs the command
 	err := Command.Execute()

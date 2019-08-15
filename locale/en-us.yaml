@@ -831,7 +831,7 @@ pull_latest:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
-  other: The State Tool is currently in a preview period, we are actively changing and adding features based on developer feedback.
+  other: The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
