@@ -3,7 +3,7 @@
 package main
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
@@ -21,25 +21,21 @@ import (
 	"github.com/ActiveState/cli/state/update"
 )
 
-// register will register any commands and expanders
-func register() {
-	logging.Debug("register external")
+var registerMessage = "register external"
 
-	secretsapi.InitializeClient()
-
-	Command.Append(activate.Command)
-	Command.Append(events.Command)
-	Command.Append(update.Command)
-	Command.Append(auth.Command)
-	Command.Append(organizations.Command)
-	Command.Append(projects.Command)
-	Command.Append(new.Command)
-	Command.Append(show.Command)
-	Command.Append(run.Command)
-	Command.Append(scripts.Command)
-	Command.Append(pull.Command)
-	Command.Append(export.Command)
-
-	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
-	Command.Append(keypair.Command)
+var commandList = []*commands.Command{
+	activate.Command,
+	events.Command,
+	update.Command,
+	auth.Command,
+	organizations.Command,
+	projects.Command,
+	new.Command,
+	show.Command,
+	run.Command,
+	scripts.Command,
+	pull.Command,
+	export.Command,
+	secrets.NewCommand(secretsapi.Get()).Config(),
+	keypair.Command,
 }

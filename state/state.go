@@ -27,6 +27,7 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	_ "github.com/ActiveState/state-required/require"
 )
 
@@ -139,6 +140,16 @@ func main() {
 
 	// Write our config to file
 	config.Save()
+}
+
+func register() {
+	logging.Debug(registerMessage)
+
+	secretsapi.InitializeClient()
+
+	for _, c := range commandList {
+		Command.Append(c)
+	}
 }
 
 func setupRollbar() {
