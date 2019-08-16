@@ -88,7 +88,7 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if projectNotExists() && len(args) == 0 {
+	if len(args) == 0 && projectNotExists() {
 		NewExecute(cmd, args)
 		return
 	}
