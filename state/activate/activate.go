@@ -45,6 +45,8 @@ var (
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
+var branchName = constants.BranchName
+
 var prompter prompt.Prompter
 
 func init() {
@@ -130,6 +132,10 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 	for {
 		proj = project.Get()
 		print.Info(locale.T("info_activating_state", proj))
+
+		if branchName != constants.StableBranch {
+			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+		}
 
 		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
 			break
