@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/keypair"
-	"github.com/ActiveState/cli/state/new"
 	"github.com/ActiveState/cli/state/organizations"
 	pkg "github.com/ActiveState/cli/state/package"
 	"github.com/ActiveState/cli/state/projects"
@@ -34,7 +33,6 @@ func register() {
 	Command.Append(auth.Command)
 	Command.Append(organizations.Command)
 	Command.Append(projects.Command)
-	Command.Append(new.Command)
 	Command.Append(show.Command)
 	Command.Append(run.Command)
 	Command.Append(scripts.Command)

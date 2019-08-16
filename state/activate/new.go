@@ -1,4 +1,4 @@
-package new
+package activate
 
 import (
 	"flag"
@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
@@ -26,57 +25,8 @@ import (
 
 var exit = os.Exit
 
-// Command is the new command's definition.
-var Command = &commands.Command{
-	Name:        "new",
-	Description: "new_project",
-	Run:         Execute,
-
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "path",
-			Shorthand:   "p",
-			Description: "flag_state_new_path_description",
-			Type:        commands.TypeString,
-			StringVar:   &Flags.Path,
-		},
-		&commands.Flag{
-			Name:        "owner",
-			Shorthand:   "o",
-			Description: "flag_state_new_owner_description",
-			Type:        commands.TypeString,
-			StringVar:   &Flags.Owner,
-		},
-	},
-
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "arg_state_new_name",
-			Description: "arg_state_new_name_description",
-			Variable:    &Args.Name,
-		},
-	},
-}
-
-// Flags hold the flag values passed through the command line.
-var Flags struct {
-	Path  string
-	Owner string
-}
-
-// Args hold the arg values passed through the command line.
-var Args struct {
-	Name string
-}
-
-var prompter prompt.Prompter
-
-func init() {
-	prompter = prompt.New()
-}
-
-// Execute the new command.
-func Execute(cmd *cobra.Command, args []string) {
+// NewExecute the new command.
+func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
 	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
@@ -84,65 +34,48 @@ func Execute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	// If project name was not given, ask for it.
-	if Args.Name == "" {
-		var fail *failures.Failure
-		Args.Name, fail = prompter.Input(locale.T("state_new_prompt_name"), "", prompt.InputRequired)
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_new_aborted"))
-			exit(1)
-		}
+	name, fail := prompter.Input(locale.T("state_new_prompt_name"), "", prompt.InputRequired)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		exit(1)
 	}
 
-	// If owner argument was not given, ask for it.
 	// If the user is not yet authenticated into the ActiveState Platform, it is a
 	// simple prompt. Otherwise, fetch the list of organizations the user belongs
 	// to and present the list to the user for a selection.
-	if Flags.Owner == "" {
-		var fail *failures.Failure
-		Flags.Owner, fail = promptForOwner()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_new_aborted"))
-			exit(1)
-		}
+	owner, fail := promptForOwner()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		exit(1)
 	}
 
 	// Create the project on the platform
-	fail := createPlatformProject()
-	if fail != nil {
+	if fail = createPlatformProject(name, owner); fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_project_add"))
 		exit(1)
 	}
 
-	// If path argument was not given, infer it from the current working directory
-	// and the project name given.
-	// Otherwise, ensure the given path does not already exist.
-	if Flags.Path == "" {
-		var fail *failures.Failure
-		Flags.Path, fail = fetchPath()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_new_aborted"))
-			exit(1)
-		}
+	path, fail := fetchPath(name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		exit(1)
 	}
 
 	// Create the project directory
-	fail = createProjectDir()
-	if fail != nil {
+	if fail = createProjectDir(path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_aborted"))
 		exit(1)
 	}
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, Flags.Owner, Args.Name)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
 
 	// Create the project locally on disk.
-	_, fail = projectfile.Create(projectURL, Flags.Path)
-	if fail != nil {
+	if _, fail = projectfile.Create(projectURL, path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_aborted"))
 		exit(1)
 	}
 
-	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": Flags.Path}))
+	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": path}))
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -158,12 +91,12 @@ func promptForOwner() (string, *failures.Failure) {
 		owners = append(owners, org.Name)
 	}
 	if len(owners) > 1 {
-		return prompter.Select(locale.T("state_new_prompt_owner"), owners, Flags.Owner)
+		return prompter.Select(locale.T("state_new_prompt_owner"), owners, "")
 	}
 	return owners[0], nil // auto-select only option
 }
 
-func fetchPath() (string, *failures.Failure) {
+func fetchPath(projName string) (string, *failures.Failure) {
 	cwd, _ := os.Getwd()
 	files, _ := ioutil.ReadDir(cwd)
 
@@ -175,7 +108,7 @@ func fetchPath() (string, *failures.Failure) {
 
 	// Current working directory has files in it. Use a subdirectory with the
 	// project name as the path for the new project.
-	path := filepath.Join(cwd, Args.Name)
+	path := filepath.Join(cwd, projName)
 	if _, err := os.Stat(path); err == nil {
 		return "", failures.FailIO.New("error_state_new_exists")
 	}
@@ -183,10 +116,10 @@ func fetchPath() (string, *failures.Failure) {
 	return path, nil
 }
 
-func createPlatformProject() *failures.Failure {
+func createPlatformProject(name, owner string) *failures.Failure {
 	addParams := projects.NewAddProjectParams()
-	addParams.SetOrganizationName(Flags.Owner)
-	addParams.SetProject(&mono_models.Project{Name: Args.Name})
+	addParams.SetOrganizationName(owner)
+	addParams.SetProject(&mono_models.Project{Name: name})
 	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
 		return api.FailUnknown.Wrap(err)
@@ -194,16 +127,16 @@ func createPlatformProject() *failures.Failure {
 	return nil
 }
 
-func createProjectDir() *failures.Failure {
-	if _, err := os.Stat(Flags.Path); err == nil {
+func createProjectDir(path string) *failures.Failure {
+	if _, err := os.Stat(path); err == nil {
 		// Directory already exists
-		files, _ := ioutil.ReadDir(Flags.Path)
+		files, _ := ioutil.ReadDir(path)
 		if len(files) == 0 {
 			return nil
 		}
 		return failures.FailIO.New("error_state_new_exists")
 	}
-	if err := os.MkdirAll(Flags.Path, 0755); err != nil {
+	if err := os.MkdirAll(path, 0755); err != nil {
 		return failures.FailIO.New("error_state_new_mkdir")
 	}
 	return nil
