@@ -66,7 +66,6 @@ func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {
 	type scriptRaw struct {
 		Name        string `json:"name,omitempty"`
 		Description string `json:"description,omitempty"`
-		Value       string `json:"value,omitempty"`
 	}
 
 	ss := make([]scriptRaw, len(scripts))
@@ -75,7 +74,6 @@ func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {
 		ss[i] = scriptRaw{
 			Name:        script.Name(),
 			Description: script.Description(),
-			Value:       script.Value(),
 		}
 	}
 
