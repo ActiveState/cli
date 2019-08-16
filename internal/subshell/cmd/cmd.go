@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -101,21 +100,8 @@ func (v *SubShell) Deactivate() *failures.Failure {
 }
 
 // Run - see subshell.SubShell
-func (v *SubShell) Run(script string, args ...string) (int, error) {
-	tmpfile, err := ioutil.TempFile("", "batch-script*.bat")
-	if err != nil {
-		return 1, err
-	}
-
-	tmpfile.WriteString(script)
-	tmpfile.Close()
-	os.Chmod(tmpfile.Name(), 0755)
-
-	runCmd := exec.Command(tmpfile.Name(), args...)
-	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	runCmd.Env = v.env
-	err = runCmd.Run()
-	return osutils.CmdExitCode(runCmd), err
+func (v *SubShell) Run(filename string, args ...string) (int, error) {
+	return sscommon.RunFuncByBinary(v.Binary())(v.env, filename, args...)
 }
 
 // IsActive - see subshell.SubShell

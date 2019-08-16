@@ -347,12 +347,18 @@ run_description:
   other: Run Your Project Scripts
 scripts_description:
   other: Show project scripts 
+scripts_flag_json:
+  other: Changes output to machine-readable JSON
 scripts_col_name:
   other: Name
 scripts_col_description:
   other: Description
 scripts_err:
   other: Error managing user's Scripts
+scripts_no_scripts:
+  other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
+scripts_err_output:
+  other: Failed to display scripts output
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
@@ -369,6 +375,12 @@ info_state_run_activating_state:
   other: This script requires an activated state. Activating it now. To bypass this, use the --standalone flag.
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
+error_state_run_standalone_conflict:
+  other: Script is configured as standalone while the language requires state activation. Please unset the standalone value, or use a language native to your shell.
+error_state_run_unknown_exec:
+  other: An executable language interpreter matching the script cannot be found. Please use a language defined in your project on the platform.
+error_state_run_setup_scriptfile:
+  other: Cannot setup runnable on-disk script file.
 info_state_run_running:
   other: "Running user-defined script: {{.V0}}\nDefined in {{.V1}}"
 error_state_run_error:
@@ -470,6 +482,8 @@ run_listing_scripts:
 
 secrets_cmd_description:
   other: Manage Your Secrets
+secrets_flag_json:
+  other: Changes output to machine-readable JSON
 secrets_get_cmd_description:
   other: Get the value of a secret
 secrets_get_arg_name:
@@ -522,6 +536,12 @@ secrets_value_secret:
   other: <encrypted>
 secrets_err:
   other: Error managing user's Secrets
+secrets_err_defined:
+  other: Failed to obtain defined secrets
+secrets_err_missing_field:
+  other: "Secret is missing required field: {{.V0}}"
+secrets_err_output:
+  other: Failed to display secrets output
 secrets_err_no_secrets_found:
   other: Unable to find any Secrets for User
 secrets_err_encrypting:
@@ -810,14 +830,14 @@ pull_latest:
   other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
-scripts_no_scripts:
-  other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
 unstable_version_warning:
-  other: The State Tool is currently in a preview period, we are actively changing and adding features based on developer feedback.
+  other: The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
   other: Print json formatted recipe data
+export_jwt_cmd_description:
+  other: Print jwt credentials
 export_recipe_cmd_commitid_arg:
   other: commitID
 export_recipe_cmd_commitid_arg_description:

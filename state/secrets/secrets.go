@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -28,18 +30,34 @@ type Command struct {
 		Value           string
 		ShareUserHandle string
 	}
+
+	Flags struct {
+		JSON *bool
+	}
 }
 
 // NewCommand creates a new Keypair command.
 func NewCommand(secretsClient *secretsapi.Client) *Command {
+	var flagJSON bool
+
 	c := Command{
 		secretsClient: secretsClient,
 		config: &commands.Command{
 			Name:        "secrets",
 			Aliases:     []string{"variables", "vars"},
 			Description: "secrets_cmd_description",
+			Flags: []*commands.Flag{
+				{
+					Name:        "json",
+					Description: "secrets_flag_json",
+					Type:        commands.TypeBool,
+					BoolVar:     &flagJSON,
+				},
+			},
 		},
 	}
+
+	c.Flags.JSON = &flagJSON
 	c.config.Run = c.Execute
 
 	c.config.Append(buildGetCommand(&c))
@@ -60,9 +78,27 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}
 
-	rows, failure := cmd.secretRows()
-	if failure != nil {
-		failures.Handle(failure, locale.T("secrets_err"))
+	defs, fail := definedSecrets(cmd.secretsClient)
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err_defined"))
+		return
+	}
+
+	if *cmd.Flags.JSON {
+		data, fail := secretsAsJSON(defs)
+		if fail != nil {
+			failures.Handle(fail, locale.T("secrets_err_output"))
+			return
+		}
+
+		print.Line(string(data))
+		return
+	}
+
+	rows, fail := secretsToRows(defs)
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err_output"))
+		return
 	}
 
 	t := gotabulate.Create(rows)
@@ -72,16 +108,58 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	print.Line(t.Render("simple"))
 }
 
-// secretRows returns the rows used in our output table
-func (cmd *Command) secretRows() ([][]interface{}, *failures.Failure) {
+func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinition, *failures.Failure) {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	defs, fail := secrets.DefsByProject(cmd.secretsClient, prj.Owner(), prj.Name())
-	if fail != nil {
-		return nil, fail
+	return secrets.DefsByProject(secCli, prj.Owner(), prj.Name())
+}
+
+func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
+	type secretDefinition struct {
+		Name        string `json:"name,omitempty"`
+		Scope       string `json:"scope,omitempty"`
+		Description string `json:"description,omitempty"`
+		Value       string `json:"value,omitempty"`
 	}
 
+	ds := make([]secretDefinition, len(defs))
+
+	for i, def := range defs {
+		name, fail := ptrToString(def.Name, "name")
+		if fail != nil {
+			return nil, fail
+		}
+		scope, fail := ptrToString(def.Scope, "scope")
+		if fail != nil {
+			return nil, fail
+		}
+
+		secretKey := scope + "." + name
+
+		_, value, fail := getSecretWithValue(secretKey)
+		if fail != nil {
+			return nil, fail
+		}
+
+		ds[i] = secretDefinition{
+			Name:        name,
+			Scope:       scope,
+			Description: def.Description,
+			Value:       ptrToStringWithDefault(value, ""),
+		}
+	}
+
+	bs, err := json.Marshal(ds)
+	if err != nil {
+		return nil, failures.FailMarshal.Wrap(err)
+	}
+
+	return bs, nil
+}
+
+// secretsToRows returns the rows used in our output table
+func secretsToRows(defs []*secretsModels.SecretDefinition) ([][]interface{}, *failures.Failure) {
 	rows := [][]interface{}{}
 	for _, def := range defs {
 		description := "-"
@@ -91,4 +169,18 @@ func (cmd *Command) secretRows() ([][]interface{}, *failures.Failure) {
 		rows = append(rows, []interface{}{*def.Name, *def.Scope, description, fmt.Sprintf("%s.%s", *def.Scope, *def.Name)})
 	}
 	return rows, nil
+}
+
+func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
+	if s == nil {
+		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
+	}
+	return *s, nil
+}
+
+func ptrToStringWithDefault(s *string, def string) string {
+	if s == nil {
+		return def
+	}
+	return *s
 }

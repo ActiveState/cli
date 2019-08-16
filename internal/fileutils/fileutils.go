@@ -436,3 +436,28 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	}
 	return nil
 }
+
+// WriteTempFile writes data to a temp file.
+func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, *failures.Failure) {
+	f, err := ioutil.TempFile(dir, pattern)
+	if err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if _, err = f.Write(data); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err = f.Close(); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err := os.Chmod(f.Name(), perm); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	return f.Name(), nil
+}

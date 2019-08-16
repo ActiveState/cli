@@ -2,16 +2,19 @@ package subshell
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -61,31 +64,31 @@ func TestRunCommand(t *testing.T) {
 	}
 	pjfile.Persist()
 
+	data := []byte("echo Hello")
 	if runtime.GOOS == "windows" {
 		// Windows supports bash, but for the purpose of this test we only want to test cmd.exe, so ensure
 		// that we run with cmd.exe even if the test is ran from bash
 		os.Unsetenv("SHELL")
 	} else {
+		data = append([]byte("#!/usr/bin/env bash\n"), data...)
 		os.Setenv("SHELL", "bash")
 	}
 
 	subs, fail := Get()
-	assert.NoError(t, fail.ToError())
+	require.NoError(t, fail.ToError())
 
-	tmpfile, err := ioutil.TempFile("", "testRunCommand")
-	assert.NoError(t, err)
-	tmpfile.Close()
-	os.Remove(tmpfile.Name())
+	filename, fail := fileutils.WriteTempFile("", "testRunCommand*.bat", data, 0700)
+	require.NoError(t, fail.ToError())
+	defer os.Remove(filename)
 
-	if runtime.GOOS != "windows" {
-		subs.Run(fmt.Sprintf(`echo "Hello"
-touch %s`, tmpfile.Name()))
-	} else {
-		subs.Run(fmt.Sprintf(`echo "Hello"
-copy NUL %s`, tmpfile.Name()))
-	}
+	out, err := osutil.CaptureStdout(func() {
+		_, err := subs.Run(filename)
+		require.NoError(t, err)
+	})
+	require.NoError(t, err)
 
-	assert.FileExists(t, tmpfile.Name())
+	trimmed := strings.TrimSpace(out)
+	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
 
 	projectfile.Reset()
 }

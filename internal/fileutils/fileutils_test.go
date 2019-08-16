@@ -280,3 +280,29 @@ func TestReadFile(t *testing.T) {
 func TestExecutable(t *testing.T) {
 	assert.True(t, IsExecutable(os.Args[0]), "Can detect that file is executable")
 }
+
+func TestCreateTempExecutable(t *testing.T) {
+	patPrefix := "abc"
+	patSuffix := ".xxx"
+	pattern := patPrefix + "*" + patSuffix
+	data := []byte("this is a test")
+
+	name, fail := WriteTempFile("", pattern, data, 0700)
+	require.NoError(t, fail.ToError())
+	require.FileExists(t, name)
+	defer os.Remove(name)
+
+	assert.True(t, len(name) > len(pattern))
+	assert.Contains(t, name, patPrefix)
+	assert.Contains(t, name, patSuffix)
+
+	info, err := os.Stat(name)
+	require.NoError(t, err)
+	assert.True(t, info.Size() > 0)
+
+	res := int64(0500 & info.Mode()) // readable/executable by user
+	if runtime.GOOS == "windows" {
+		res = int64(0400 & info.Mode()) // readable by user
+	}
+	assert.NotZero(t, res, "file should be readable/executable")
+}

@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
@@ -334,6 +335,22 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 		}
 		timeoutFail()
 	})
+}
+
+func (suite *ActivateTestSuite) TestUnstableWarning() {
+	suite.rMock.MockFullRuntime()
+	defer func() { branchName = constants.BranchName }()
+	branchName = "anything-but-stable"
+
+	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
+	suite.Require().NoError(err, "unable to chdir to testdata dir")
+
+	out, err := osutil.CaptureStderr(func() {
+		Command.Execute()
+	})
+	suite.Require().NoError(err)
+
+	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }
 
 func TestActivateSuite(t *testing.T) {
