@@ -55,7 +55,7 @@ func (suite *ConfigTestSuite) TestConfig() {
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
 	cfg := config.New("")
-	suite.Contains(cfg.ConfigPath(), constants.BranchName)
+	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
 }
 
 func (suite *ConfigTestSuite) TestFilesExist() {
