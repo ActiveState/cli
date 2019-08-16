@@ -9,14 +9,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -142,6 +145,22 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.testExecuteWithNamespace(false)
+}
+
+func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	fail := fileutils.WriteFile(filepath.Join(targetDir, constants.ConfigFileName), []byte{})
+	suite.Require().NoError(fail.ToError())
+
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	stderr := capturer.CaptureStderr(func() {
+		code := ex.WaitForExit(func() {
+			suite.testExecuteWithNamespace(false)
+		})
+		suite.Require().Equal(1, code, "Exits with code 1")
+	})
+	suite.Contains(stderr, locale.Tr("err_namespace_dir_inuse"))
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
