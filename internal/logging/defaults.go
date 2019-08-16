@@ -10,6 +10,7 @@ import (
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
@@ -33,7 +34,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	datadir := config.ConfigPath()
 	filename := filepath.Join(datadir, "log.txt")
 
-	if ctx.Level == "ERROR" {
+	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) {
 		rollbar.Error(fmt.Errorf(message, args...))
 	}
 

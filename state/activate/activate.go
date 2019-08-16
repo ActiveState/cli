@@ -90,6 +90,25 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	if len(args) == 0 && projectNotExists() {
+		NewExecute(cmd, args)
+		return
+	}
+
+	ExistingExecute(cmd, args)
+}
+
+func projectNotExists() bool {
+	if _, fail := project.GetOnce(); fail != nil {
+		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
+			return true
+		}
+	}
+	return false
+}
+
+// ExistingExecute ...
+func ExistingExecute(cmd *cobra.Command, args []string) {
 	updater.PrintUpdateMessage()
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {

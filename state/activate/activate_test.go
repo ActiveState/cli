@@ -20,9 +20,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -88,13 +90,25 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
 	}
+
+	projectfile.Reset()
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
 	suite.rMock.MockFullRuntime()
 
-	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
+
+	authentication.Get().AuthenticateWithToken("")
+
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	err := os.Chdir(dir)
 	suite.Require().NoError(err, "unable to chdir to testdata dir")
+	suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
 
 	Command.Execute()
 
@@ -339,6 +353,14 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 
 func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.rMock.MockFullRuntime()
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
+
+	authentication.Get().AuthenticateWithToken("")
+
 	defer func() { branchName = constants.BranchName }()
 	branchName = "anything-but-stable"
 
