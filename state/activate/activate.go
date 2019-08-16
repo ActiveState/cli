@@ -39,7 +39,7 @@ import (
 
 var (
 	failInvalidNamespace = failures.Type("activate.fail.invalidnamespace", failures.FailUserInput)
-	failTargetDirExists  = failures.Type("activate.fail.direxists", failures.FailUserInput)
+	failTargetDirInUse   = failures.Type("activate.fail.dirinuse", failures.FailUserInput)
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
@@ -243,8 +243,8 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 	}
 	logging.Debug("Using: %s", directory)
 
-	if fileutils.DirExists(directory) {
-		return "", failTargetDirExists.New(locale.Tr("err_namespace_dir_exists"))
+	if fileutils.FileExists(filepath.Join(directory, constants.ConfigFileName)) {
+		return "", failTargetDirInUse.New(locale.Tr("err_namespace_dir_inuse"))
 	}
 
 	return directory, nil
