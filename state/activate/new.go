@@ -29,14 +29,14 @@ var exit = os.Exit
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	name, fail := prompter.Input(locale.T("state_new_prompt_name"), "", prompt.InputRequired)
+	name, fail := prompter.Input(locale.T("state_activate_new_prompt_name"), "", prompt.InputRequired)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
 	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
-		print.Error(locale.T("error_state_new_no_auth"))
+		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
 	}
 
@@ -45,25 +45,25 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	// to and present the list to the user for a selection.
 	owner, fail := promptForOwner()
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
 	// Create the project on the platform
 	if fail = createPlatformProject(name, owner); fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_project_add"))
+		failures.Handle(fail, locale.T("error_state_activate_new_project_add"))
 		exit(1)
 	}
 
 	path, fail := fetchPath(name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
 	// Create the project directory
 	if fail = createProjectDir(path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
@@ -71,11 +71,11 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 	// Create the project locally on disk.
 	if _, fail = projectfile.Create(projectURL, path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
-	print.Line(locale.T("state_new_created", map[string]interface{}{"Dir": path}))
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -84,14 +84,14 @@ func promptForOwner() (string, *failures.Failure) {
 	params.SetMemberOnly(&memberOnly)
 	orgs, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 	if err != nil {
-		return "", api.FailUnknown.New("error_state_new_fetch_organizations")
+		return "", api.FailUnknown.New("error_state_activate_new_fetch_organizations")
 	}
 	owners := []string{}
 	for _, org := range orgs.Payload {
 		owners = append(owners, org.Name)
 	}
 	if len(owners) > 1 {
-		return prompter.Select(locale.T("state_new_prompt_owner"), owners, "")
+		return prompter.Select(locale.T("state_activate_new_prompt_owner"), owners, "")
 	}
 	return owners[0], nil // auto-select only option
 }
@@ -110,7 +110,7 @@ func fetchPath(projName string) (string, *failures.Failure) {
 	// project name as the path for the new project.
 	path := filepath.Join(cwd, projName)
 	if _, err := os.Stat(path); err == nil {
-		return "", failures.FailIO.New("error_state_new_exists")
+		return "", failures.FailIO.New("error_state_activate_new_exists")
 	}
 
 	return path, nil
@@ -134,10 +134,10 @@ func createProjectDir(path string) *failures.Failure {
 		if len(files) == 0 {
 			return nil
 		}
-		return failures.FailIO.New("error_state_new_exists")
+		return failures.FailIO.New("error_state_activate_new_exists")
 	}
 	if err := os.MkdirAll(path, 0755); err != nil {
-		return failures.FailIO.New("error_state_new_mkdir")
+		return failures.FailIO.New("error_state_activate_new_mkdir")
 	}
 	return nil
 }
