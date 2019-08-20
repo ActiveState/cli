@@ -29,14 +29,14 @@ var exit = os.Exit
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
-		print.Error(locale.T("error_state_new_no_auth"))
-		exit(1)
-	}
-
 	name, fail := prompter.Input(locale.T("state_new_prompt_name"), "", prompt.InputRequired)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_new_aborted"))
+		exit(1)
+	}
+
+	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
+		print.Error(locale.T("error_state_new_no_auth"))
 		exit(1)
 	}
 
