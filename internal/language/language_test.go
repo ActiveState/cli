@@ -1,4 +1,4 @@
-package scriptfile
+package language
 
 import (
 	"testing"
@@ -27,11 +27,11 @@ func TestLanguage(t *testing.T) {
 }
 
 func TestMakeLanguage(t *testing.T) {
-	assert.Equal(t, Python3, makeLanguage("python3"), "python3")
-	assert.Equal(t, Unknown, makeLanguage("python4"), "unknown language")
+	assert.Equal(t, Python3, makeByName("python3"), "python3")
+	assert.Equal(t, Unknown, makeByName("python4"), "unknown language")
 }
 
 func TestMakeLanguageByShell(t *testing.T) {
-	assert.Equal(t, Batch, MakeLanguageByShell("cmd.exe"), "strings with 'cmd' return batch")
-	assert.Equal(t, Bash, MakeLanguageByShell("anything_else"), "anything else returns bash")
+	assert.Equal(t, Batch, MakeByShell("cmd.exe"), "strings with 'cmd' return batch")
+	assert.Equal(t, Bash, MakeByShell("anything_else"), "anything else returns bash")
 }

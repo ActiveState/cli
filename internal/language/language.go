@@ -1,4 +1,4 @@
-package scriptfile
+package language
 
 import (
 	"fmt"
@@ -63,10 +63,10 @@ var lookup = [...]languageData{
 	},
 }
 
-// MakeLanguageByShell returns either bash or cmd based on whether the provided
+// MakeByShell returns either bash or cmd based on whether the provided
 // shell name contains "cmd". This should be taken to mean that bash is a sort
 // of default.
-func MakeLanguageByShell(shell string) Language {
+func MakeByShell(shell string) Language {
 	shell = strings.ToLower(shell)
 
 	if strings.Contains(shell, "cmd") {
@@ -76,7 +76,7 @@ func MakeLanguageByShell(shell string) Language {
 	return Bash
 }
 
-func makeLanguage(name string) Language {
+func makeByName(name string) Language {
 	for i, v := range lookup {
 		if strings.ToLower(name) == v.name {
 			return Language(i)
@@ -125,7 +125,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 		return err
 	}
 
-	*l = makeLanguage(s)
+	*l = makeByName(s)
 
 	if len(s) > 0 && *l == Unknown {
 		return fmt.Errorf("cannot unmarshal yaml")
