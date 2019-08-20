@@ -24,6 +24,9 @@ type MetaData struct {
 	// AffectedEnv is an environment variable that we should ensure is not set, as it might conflict with the artifact
 	AffectedEnv string `json:"affected_env"`
 
+	// Env is a key value map containing all the env vars, values can contain the RelocationDir value (which will be replaced)
+	Env map[string]string `json:"env"`
+
 	// BinaryLocations are locations that we should add to the PATH
 	BinaryLocations []MetaDataBinary `json:"binaries_in"`
 
@@ -61,6 +64,10 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 		}
 	} else {
 		metaData = &MetaData{}
+	}
+
+	if metaData.Env == nil {
+		metaData.Env = map[string]string{}
 	}
 
 	metaData.Path = installDir
@@ -120,9 +127,9 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 				return fail
 			}
 		}
-		// AffectedEnv
-		if m.AffectedEnv == "" {
-			m.AffectedEnv = "PYTHONPATH"
+		// Env
+		if _, exists := m.Env["PYTHONPATH"]; !exists {
+			m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
 		}
 
 		//Perl
