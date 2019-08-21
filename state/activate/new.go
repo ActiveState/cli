@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -35,6 +36,12 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
+	lang, fail := promptForLanguage()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
+
 	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
 		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
@@ -50,7 +57,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	// Create the project on the platform
-	if fail = createPlatformProject(name, owner); fail != nil {
+	if fail = createPlatformProject(name, owner, lang); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_project_add"))
 		exit(1)
 	}
@@ -76,6 +83,31 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+}
+
+func promptForLanguage() (language.Language, *failures.Failure) {
+	langs := language.Available()
+
+	var ls []string
+	for _, l := range langs {
+		ls = append(ls, l.Text())
+	}
+	ls = append(ls, locale.T("state_activate_new_language_none"))
+
+	if len(ls) > 1 {
+		sel, fail := prompter.Select(locale.T("state_activate_new_prompt_language"), ls, "")
+		if fail != nil {
+			return language.Unknown, fail
+		}
+
+		for _, l := range langs {
+			if l.Text() == sel {
+				return l, nil
+			}
+		}
+	}
+
+	return language.Unknown, nil
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -116,7 +148,7 @@ func fetchPath(projName string) (string, *failures.Failure) {
 	return path, nil
 }
 
-func createPlatformProject(name, owner string) *failures.Failure {
+func createPlatformProject(name, owner string, lang language.Language) *failures.Failure {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name})
@@ -124,6 +156,7 @@ func createPlatformProject(name, owner string) *failures.Failure {
 	if err != nil {
 		return api.FailUnknown.Wrap(err)
 	}
+
 	return nil
 }
 

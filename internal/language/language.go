@@ -27,6 +27,7 @@ const (
 
 type languageData struct {
 	name string
+	text string
 	ext  string
 	hdr  bool
 	exec Executable
@@ -34,33 +35,46 @@ type languageData struct {
 
 var lookup = [...]languageData{
 	{
-		"unknown", ".tmp", false,
+		"unknown", "Unknown", ".tmp", false,
 		Executable{"", false},
 	},
 	{
-		"bash", ".tmp", true,
+		"bash", "Bash", ".tmp", true,
 		Executable{"", true},
 	},
 	{
-		"sh", ".tmp", true,
+		"sh", "Shell", ".tmp", true,
 		Executable{"", true},
 	},
 	{
-		"batch", ".bat", false,
+		"batch", "Batch", ".bat", false,
 		Executable{"", true},
 	},
 	{
-		"perl", ".tmp", true,
+		"perl", "Perl", ".tmp", true,
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", ".tmp", true,
+		"python2", "Python 2", ".tmp", true,
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"python3", ".tmp", true,
+		"python3", "Python 3", ".tmp", true,
 		Executable{constants.ActivePython3Executable, false},
 	},
+}
+
+// Available ...
+func Available() []Language {
+	var ls []Language
+
+	for _, d := range lookup {
+		if !d.exec.base && d.exec.name != "" {
+			ls = append(ls, makeByName(d.name))
+		}
+	}
+
+	return ls
 }
 
 // MakeByShell returns either bash or cmd based on whether the provided
@@ -96,6 +110,11 @@ func (l Language) data() languageData {
 // String implements the fmt.Stringer interface.
 func (l *Language) String() string {
 	return l.data().name
+}
+
+// Text returns the human-readable value.
+func (l *Language) Text() string {
+	return l.data().text
 }
 
 // Header returns the interpreter directive.
