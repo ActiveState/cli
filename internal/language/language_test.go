@@ -24,6 +24,10 @@ func TestLanguage(t *testing.T) {
 	bs, err := yaml.Marshal(&l)
 	assert.NoError(t, err, "successfully marshal 'batch'")
 	assert.Equal(t, "batch\n", string(bs))
+	assert.Empty(t, l.Header())
+
+	l = Perl
+	assert.Equal(t, "#!/usr/bin/env perl\n", l.Header())
 }
 
 func TestMakeLanguage(t *testing.T) {
@@ -34,4 +38,12 @@ func TestMakeLanguage(t *testing.T) {
 func TestMakeLanguageByShell(t *testing.T) {
 	assert.Equal(t, Batch, MakeByShell("cmd.exe"), "strings with 'cmd' return batch")
 	assert.Equal(t, Bash, MakeByShell("anything_else"), "anything else returns bash")
+}
+
+func TestAvailable(t *testing.T) {
+	langs := Available()
+	for _, l := range langs {
+		assert.False(t, l.Executable().Builtin())
+		assert.NotEmpty(t, l.Executable().Name())
+	}
 }
