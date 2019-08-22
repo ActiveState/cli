@@ -2,8 +2,7 @@
   "added": "2019-02-19T16:58:03.026Z",
   "branches": [
     {
-      "branchID": "string",
-      "commitID": "string",
+      "branchID": "00010001-0001-0001-0001-000100010001",
       "default": true,
       "label": "string",
       "projectID": "string",
