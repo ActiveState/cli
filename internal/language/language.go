@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // Language tracks the languages potentially used for scripts.
@@ -37,7 +38,7 @@ type languageData struct {
 
 var lookup = [...]languageData{
 	{
-		"unknown", "Unknown", ".tmp", false, "", "",
+		"unknown", locale.T("language_name_unknown"), ".tmp", false, "", "",
 		Executable{"", false},
 	},
 	{
