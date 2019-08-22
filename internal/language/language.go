@@ -27,13 +27,13 @@ const (
 )
 
 type languageData struct {
-	name string
-	text string
-	ext  string
-	hdr  bool
-	req  string
-	vers string
-	exec Executable
+	name    string
+	text    string
+	ext     string
+	hdr     bool
+	require string
+	version string
+	exec    Executable
 }
 
 var lookup = [...]languageData{
@@ -137,13 +137,13 @@ func (l Language) TempPattern() string {
 
 // Requirement returns the platform-level string representation.
 func (l Language) Requirement() string {
-	return l.data().req
+	return l.data().require
 }
 
 // RecommendedVersion returns the string representation of the recommended
 // version.
 func (l Language) RecommendedVersion() string {
-	return l.data().vers
+	return l.data().version
 }
 
 // Executable provides details about the executable related to the Language.
