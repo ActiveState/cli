@@ -923,6 +923,10 @@ commit_message_removed_package:
   other: "Removed package: {{.V0}}"
 commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
+commit_message_add_initial:
+  other: Initialize project via the State Tool
+err_branch_not_bare:
+  other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
 package_add:

@@ -20,7 +20,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	authn "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -42,7 +43,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
+	if !authn.Get().Authenticated() && flag.Lookup("test.v") == nil {
 		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
 	}
@@ -114,7 +115,7 @@ func promptForOwner() (string, *failures.Failure) {
 	params := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	params.SetMemberOnly(&memberOnly)
-	orgs, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
+	orgs, err := authn.Client().Organizations.ListOrganizations(params, authn.ClientAuth())
 	if err != nil {
 		return "", api.FailUnknown.New("error_state_activate_new_fetch_organizations")
 	}
@@ -152,12 +153,15 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name})
-	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
+	_, err := authn.Client().Projects.AddProject(addParams, authn.ClientAuth())
 	if err != nil {
+		if perr, ok := err.(*projects.AddProjectBadRequest); ok {
+			fmt.Println(*perr.Payload.Message)
+		}
 		return api.FailUnknown.Wrap(err)
 	}
 
-	return nil
+	return model.CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
 }
 
 func createProjectDir(path string) *failures.Failure {

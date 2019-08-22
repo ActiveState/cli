@@ -30,36 +30,38 @@ type languageData struct {
 	text string
 	ext  string
 	hdr  bool
+	req  string
+	vers string
 	exec Executable
 }
 
 var lookup = [...]languageData{
 	{
-		"unknown", "Unknown", ".tmp", false,
+		"unknown", "Unknown", ".tmp", false, "", "",
 		Executable{"", false},
 	},
 	{
-		"bash", "Bash", ".tmp", true,
+		"bash", "Bash", ".tmp", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"sh", "Shell", ".tmp", true,
+		"sh", "Shell", ".tmp", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"batch", "Batch", ".bat", false,
+		"batch", "Batch", ".bat", false, "", "",
 		Executable{"", true},
 	},
 	{
-		"perl", "Perl", ".tmp", true,
+		"perl", "Perl", ".tmp", true, "perl", "5.28.1",
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", "Python 2", ".tmp", true,
+		"python2", "Python 2", ".tmp", true, "python", "2.7.14",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"python3", "Python 3", ".tmp", true,
+		"python3", "Python 3", ".tmp", true, "python", "3.6.6",
 		Executable{constants.ActivePython3Executable, false},
 	},
 }
@@ -130,6 +132,17 @@ func (l Language) Header() string {
 // file name.
 func (l Language) TempPattern() string {
 	return filePatternPrefix + l.data().ext
+}
+
+// Requirement returns the platform-level string representation.
+func (l Language) Requirement() string {
+	return l.data().req
+}
+
+// RecommendedVersion returns the string representation of the recommended
+// version.
+func (l Language) RecommendedVersion() string {
+	return l.data().vers
 }
 
 // Executable provides details about the executable related to the Language.
