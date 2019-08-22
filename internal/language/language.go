@@ -67,7 +67,8 @@ var lookup = [...]languageData{
 	},
 }
 
-// Available ...
+// Available returns all languages that are not "builtin" and also have a
+// defined executable name.
 func Available() []Language {
 	var ls []Language
 
