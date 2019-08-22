@@ -181,3 +181,10 @@ const PlatformURL = "platform.activestate.com"
 
 // RollbarToken is the token used to talk to rollbar
 const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
+// {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
+// in the platform DB.
+const (
+	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
+	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
+)

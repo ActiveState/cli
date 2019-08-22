@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -247,11 +248,11 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) *fai
 		changes = append(changes, c)
 	}
 
-	hardcodedPlatformIDs := []string{
-		"78977bc8-0f32-519d-80f3-9043f059398c", // win10 64
-		"681d5381-518c-5f4c-b367-df05c8d525e2", // linux 64
+	platformIDs := []string{
+		constants.Win10Bit64UUID,
+		constants.LinuxBit64UUID,
 	}
-	for _, id := range hardcodedPlatformIDs {
+	for _, id := range platformIDs {
 		c := &mono_models.CommitChangeEditable{
 			Operation:         string(OperationAdded),
 			Namespace:         string(NamespacePlatform()),
