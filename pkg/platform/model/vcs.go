@@ -235,7 +235,7 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) *fai
 		return FailUpdateBranch.New(locale.T("err_branch_not_bare"))
 	}
 
-	var cs []*mono_models.CommitChangeEditable
+	var changes []*mono_models.CommitChangeEditable
 
 	if language != "" {
 		c := &mono_models.CommitChangeEditable{
@@ -244,7 +244,7 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) *fai
 			Requirement:       language,
 			VersionConstraint: langVersion,
 		}
-		cs = append(cs, c)
+		changes = append(changes, c)
 	}
 
 	hardcodedPlatformIDs := []string{
@@ -258,13 +258,13 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) *fai
 			Requirement:       id,
 			VersionConstraint: "",
 		}
-		cs = append(cs, c)
+		changes = append(changes, c)
 	}
 
 	msg := locale.T("commit_message_add_initial")
 
 	params := vcsClient.NewAddCommitParams()
-	params.SetCommit(&mono_models.CommitEditable{Changeset: cs, Message: msg})
+	params.SetCommit(&mono_models.CommitEditable{Changeset: changes, Message: msg})
 
 	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
