@@ -217,7 +217,9 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		return fail
 	}
 
-	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	UpdateBranchCommit(branch.BranchID, commit.CommitID)
+
+	return nil
 }
 
 // CommitInitial ...
