@@ -305,6 +305,10 @@ error_state_activate_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
 state_activate_new_created:
   other: Created new project in {{.Dir}}
+state_activate_new_prompt_language:
+  other: Which language would you like to use to manage your State Tool scripts?
+state_activate_new_language_none:
+  other: "None - I'll use shell scripting"
 error_state_activate_new_project_add:
   other: Unable to create new Platform project.
 project_empty:
