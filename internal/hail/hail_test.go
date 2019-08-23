@@ -76,5 +76,4 @@ func TestOpen(t *testing.T) {
 		assert.True(t, r.Time.After(postOpen))
 	}
 	require.NoError(t, r.Fail.ToError())
-	assert.Equal(t, data, r.Data)
 }
