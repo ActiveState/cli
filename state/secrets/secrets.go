@@ -120,7 +120,6 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 		Name        string `json:"name,omitempty"`
 		Scope       string `json:"scope,omitempty"`
 		Description string `json:"description,omitempty"`
-		Value       string `json:"value,omitempty"`
 	}
 
 	ds := make([]secretDefinition, len(defs))
@@ -135,18 +134,10 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 			return nil, fail
 		}
 
-		secretKey := scope + "." + name
-
-		_, value, fail := getSecretWithValue(secretKey)
-		if fail != nil {
-			return nil, fail
-		}
-
 		ds[i] = secretDefinition{
 			Name:        name,
 			Scope:       scope,
 			Description: def.Description,
-			Value:       ptrToStringWithDefault(value, ""),
 		}
 	}
 
@@ -176,11 +167,4 @@ func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
 		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
 	}
 	return *s, nil
-}
-
-func ptrToStringWithDefault(s *string, def string) string {
-	if s == nil {
-		return def
-	}
-	return *s
 }
