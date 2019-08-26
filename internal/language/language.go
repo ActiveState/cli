@@ -1,10 +1,11 @@
-package scriptfile
+package language
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // Language tracks the languages potentially used for scripts.
@@ -26,47 +27,64 @@ const (
 )
 
 type languageData struct {
-	name string
-	ext  string
-	hdr  bool
-	exec Executable
+	name    string
+	text    string
+	ext     string
+	hdr     bool
+	require string
+	version string
+	exec    Executable
 }
 
 var lookup = [...]languageData{
 	{
-		"unknown", ".tmp", false,
+		"unknown", locale.T("language_name_unknown"), ".tmp", false, "", "",
 		Executable{"", false},
 	},
 	{
-		"bash", ".tmp", true,
+		"bash", "Bash", ".tmp", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"sh", ".tmp", true,
+		"sh", "Shell", ".tmp", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"batch", ".bat", false,
+		"batch", "Batch", ".bat", false, "", "",
 		Executable{"", true},
 	},
 	{
-		"perl", ".tmp", true,
+		"perl", "Perl", ".tmp", true, "perl", "5.28.1",
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", ".tmp", true,
+		"python2", "Python 2", ".tmp", true, "python", "2.7.14",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"python3", ".tmp", true,
+		"python3", "Python 3", ".tmp", true, "python", "3.6.6",
 		Executable{constants.ActivePython3Executable, false},
 	},
 }
 
-// MakeLanguageByShell returns either bash or cmd based on whether the provided
+// Available returns all languages that are not "builtin" and also have a
+// defined executable name.
+func Available() []Language {
+	var ls []Language
+
+	for _, d := range lookup {
+		if !d.exec.base && d.exec.name != "" {
+			ls = append(ls, makeByName(d.name))
+		}
+	}
+
+	return ls
+}
+
+// MakeByShell returns either bash or cmd based on whether the provided
 // shell name contains "cmd". This should be taken to mean that bash is a sort
 // of default.
-func MakeLanguageByShell(shell string) Language {
+func MakeByShell(shell string) Language {
 	shell = strings.ToLower(shell)
 
 	if strings.Contains(shell, "cmd") {
@@ -76,7 +94,7 @@ func MakeLanguageByShell(shell string) Language {
 	return Bash
 }
 
-func makeLanguage(name string) Language {
+func makeByName(name string) Language {
 	for i, v := range lookup {
 		if strings.ToLower(name) == v.name {
 			return Language(i)
@@ -98,6 +116,11 @@ func (l *Language) String() string {
 	return l.data().name
 }
 
+// Text returns the human-readable value.
+func (l *Language) Text() string {
+	return l.data().text
+}
+
 // Header returns the interpreter directive.
 func (l Language) Header() string {
 	ld := l.data()
@@ -113,6 +136,17 @@ func (l Language) TempPattern() string {
 	return filePatternPrefix + l.data().ext
 }
 
+// Requirement returns the platform-level string representation.
+func (l Language) Requirement() string {
+	return l.data().require
+}
+
+// RecommendedVersion returns the string representation of the recommended
+// version.
+func (l Language) RecommendedVersion() string {
+	return l.data().version
+}
+
 // Executable provides details about the executable related to the Language.
 func (l Language) Executable() Executable {
 	return l.data().exec
@@ -125,7 +159,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 		return err
 	}
 
-	*l = makeLanguage(s)
+	*l = makeByName(s)
 
 	if len(s) > 0 && *l == Unknown {
 		return fmt.Errorf("cannot unmarshal yaml")

@@ -289,33 +289,27 @@ project_description:
   other: Project Description
 project_err:
   other: Unable to list projects
-new_project:
-  other: Create a new project
-flag_state_new_path_description:
-  other: Path to create a new project in.
-flag_state_new_owner_description:
-  other: Owner of the project being created.
-arg_state_new_name:
-  other: projectName.
-arg_state_new_name_description:
-  other: Name of the new project.
-error_state_new_no_auth:
+error_state_activate_new_no_auth:
   other: Please authenticate by running "state auth" before creating a new project.
-state_new_prompt_name:
+state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
-error_state_new_aborted:
+error_state_activate_new_aborted:
   other: "Unable to create new project: aborted."
-error_state_new_exists:
+error_state_activate_new_exists:
   other: "Unable to create new project: path exists."
-error_state_new_mkdir:
+error_state_activate_new_mkdir:
   other: Unable to create new project directory.
-state_new_prompt_owner:
+state_activate_new_prompt_owner:
   other: "Please provide an owner for the new project:"
-error_state_new_fetch_organizations:
+error_state_activate_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
-state_new_created:
+state_activate_new_created:
   other: Created new project in {{.Dir}}
-error_state_new_project_add:
+state_activate_new_prompt_language:
+  other: Which language would you like to use to manage your State Tool scripts?
+state_activate_new_language_none:
+  other: "None - I'll use shell scripting"
+error_state_activate_new_project_add:
   other: Unable to create new Platform project.
 project_empty:
   other: You have not created any projects yet
@@ -890,6 +884,8 @@ err_projectfile_exists:
   other: A project already exists in the specified directory
 err_project_require_path:
   other: A project path was not supplied
+language_name_unknown:
+  other: Unknown
 sample_yaml:
   other: |
     scripts:
@@ -933,6 +929,10 @@ commit_message_removed_package:
   other: "Removed package: {{.V0}}"
 commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
+commit_message_add_initial:
+  other: Initialize project via the State Tool
+err_branch_not_bare:
+  other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
 package_add:

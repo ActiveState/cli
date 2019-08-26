@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -77,6 +78,16 @@ type Namespace string
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
 	return Namespace(fmt.Sprintf("language/%s/package", language))
+}
+
+// NamespaceLanguage provides the base language namespace.
+func NamespaceLanguage() Namespace {
+	return Namespace("language")
+}
+
+// NamespacePlatform provides the base platform namespace.
+func NamespacePlatform() Namespace {
+	return Namespace("platform")
 }
 
 // LatestCommitID returns the latest commit id by owner and project names. It
@@ -209,6 +220,62 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 	UpdateBranchCommit(branch.BranchID, commit.CommitID)
 
 	return nil
+}
+
+// CommitInitial ...
+func CommitInitial(projectOwner, projectName, language, langVersion string) *failures.Failure {
+	proj, fail := FetchProjectByName(projectOwner, projectName)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID != nil {
+		return FailUpdateBranch.New(locale.T("err_branch_not_bare"))
+	}
+
+	var changes []*mono_models.CommitChangeEditable
+
+	if language != "" {
+		c := &mono_models.CommitChangeEditable{
+			Operation:         string(OperationAdded),
+			Namespace:         string(NamespaceLanguage()),
+			Requirement:       language,
+			VersionConstraint: langVersion,
+		}
+		changes = append(changes, c)
+	}
+
+	platformIDs := []string{
+		constants.Win10Bit64UUID,
+		constants.LinuxBit64UUID,
+	}
+	for _, id := range platformIDs {
+		c := &mono_models.CommitChangeEditable{
+			Operation:         string(OperationAdded),
+			Namespace:         string(NamespacePlatform()),
+			Requirement:       id,
+			VersionConstraint: "",
+		}
+		changes = append(changes, c)
+	}
+
+	msg := locale.T("commit_message_add_initial")
+
+	params := vcsClient.NewAddCommitParams()
+	params.SetCommit(&mono_models.CommitEditable{Changeset: changes, Message: msg})
+
+	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	if err != nil {
+		logging.Error("AddCommit Error: %s", err.Error())
+		return FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+	}
+
+	return UpdateBranchCommit(branch.BranchID, res.Payload.CommitID)
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id

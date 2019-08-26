@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -67,13 +68,13 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	lang := script.Language()
-	if lang == scriptfile.Unknown {
+	if lang == language.Unknown {
 		subs, fail := subshell.Get()
 		if fail != nil {
 			failures.Handle(fail, locale.T("error_state_run_no_shell"))
 			return
 		}
-		lang = scriptfile.MakeLanguageByShell(subs.Shell())
+		lang = language.MakeByShell(subs.Shell())
 	}
 
 	langExec := lang.Executable()

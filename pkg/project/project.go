@@ -8,9 +8,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -521,7 +521,7 @@ func (script *Script) Source() *projectfile.Project { return script.project.proj
 func (script *Script) Name() string { return script.script.Name }
 
 // Language ...
-func (script *Script) Language() scriptfile.Language {
+func (script *Script) Language() language.Language {
 	return script.script.Language
 }
 
