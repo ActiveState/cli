@@ -1,6 +1,7 @@
-package organizations
+package invite
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	pMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -25,6 +27,28 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+}
+
+func TestSelectOrgRole(t *testing.T) {
+	definitions := []struct {
+		stringValue string
+		number      OrgRole
+	}{{"owner", Owner}}
+
+	for _, role := range definitions {
+		t.Run(fmt.Sprintf("expect %s", role.stringValue), func(t *testing.T) {
+			pm := pMock.Init()
+			pm.On(
+				"Select", locale.T("invite_select_org_role", 2), orgRoleChoices, "",
+			).Return(locale.T(fmt.Sprintf("org_role_choice_%s", role.stringValue)), nil)
+			orgRole := selectOrgRole(pm, 2)
+			require.Equal(t, role.number, orgRole, fmt.Sprintf("orgRole should be %s", role.stringValue))
+		})
+	}
+}
+
+func TestSendInvite(t *testing.T) {
+
 }
 
 func TestInvite(t *testing.T) {
