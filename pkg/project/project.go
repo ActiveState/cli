@@ -381,6 +381,10 @@ func (c *Constant) Value() string {
 // SecretScope defines the scope of a secret
 type SecretScope string
 
+func (s *SecretScope) toString() string {
+	return string(*s)
+}
+
 const (
 	// SecretScopeUser defines a secret as being a user secret
 	SecretScopeUser SecretScope = "user"
@@ -432,6 +436,9 @@ func (s *Secret) Description() string { return s.secret.Description }
 
 // IsUser returns whether this secret is user scoped
 func (s *Secret) IsUser() bool { return s.scope == SecretScopeUser }
+
+// Scope returns the scope as a string
+func (s *Secret) Scope() string { return s.scope.toString() }
 
 // IsProject returns whether this secret is project scoped
 func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }

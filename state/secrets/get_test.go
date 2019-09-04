@@ -117,7 +117,6 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
-	suite.Require().False(cc.HasAvailableFlags())
 }
 
 func (suite *SecretsGetCommandTestSuite) TestDecodingFailed() {
