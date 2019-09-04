@@ -1,6 +1,8 @@
 package secrets
 
 import (
+	"encoding/json"
+
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -8,6 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
+
+// Flags holds the flag values passed through the command line
+var Flags struct {
+	JSON bool
+}
 
 func buildGetCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
@@ -23,6 +30,14 @@ func buildGetCommand(cmd *Command) *commands.Command {
 				Required:    true,
 			},
 		},
+		Flags: []*commands.Flag{
+			{
+				Name:        "json",
+				Description: "secrets_flag_json",
+				Type:        commands.TypeBool,
+				BoolVar:     &Flags.JSON,
+			},
+		},
 	}
 }
 
@@ -31,6 +46,11 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	secret, value, fail := getSecretWithValue(cmd.Args.Name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err"))
+		return
+	}
+
+	if Flags.JSON {
+		printJSON(&secretJSONDefinition{secret.Name(), secret.Scope(), secret.Description(), *value})
 		return
 	}
 
@@ -43,6 +63,19 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		cmd.config.Exiter(1)
 		return
 	}
-
 	print.Line(*value)
+
+	return
+}
+
+func printJSON(secretJSON *secretJSONDefinition) {
+	var data []byte
+
+	data, err := json.Marshal(secretJSON)
+	if err != nil {
+		failures.Handle(failures.FailMarshal.Wrap(err), locale.T("secrets_err"))
+	}
+
+	print.Line(string(data))
+	return
 }

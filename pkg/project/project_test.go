@@ -258,12 +258,14 @@ func (suite *ProjectTestSuite) TestSecrets() {
 	suite.Equal("secret-user", userSecret.Description())
 	suite.True(userSecret.IsUser())
 	suite.False(userSecret.IsProject())
+	suite.Equal("user", userSecret.Scope())
 
 	projectSecret := prj.SecretByName("secret", project.SecretScopeProject)
 	suite.Require().NotNil(projectSecret)
 	suite.Equal("secret-project", projectSecret.Description())
 	suite.True(projectSecret.IsProject())
 	suite.False(projectSecret.IsUser())
+	suite.Equal("project", projectSecret.Scope())
 
 	// Value and Save not tested here as they require refactoring so we can test against interfaces (out of scope at this time)
 	// https://www.pivotaltracker.com/story/show/166586988

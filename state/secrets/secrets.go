@@ -36,6 +36,13 @@ type Command struct {
 	}
 }
 
+type secretJSONDefinition struct {
+	Name        string `json:"name,omitempty"`
+	Scope       string `json:"scope,omitempty"`
+	Description string `json:"description,omitempty"`
+	Value       string `json:"value,omitempty"`
+}
+
 // NewCommand creates a new Keypair command.
 func NewCommand(secretsClient *secretsapi.Client) *Command {
 	var flagJSON bool
@@ -116,13 +123,7 @@ func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinitio
 }
 
 func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
-	type secretDefinition struct {
-		Name        string `json:"name,omitempty"`
-		Scope       string `json:"scope,omitempty"`
-		Description string `json:"description,omitempty"`
-	}
-
-	ds := make([]secretDefinition, len(defs))
+	ds := make([]secretJSONDefinition, len(defs))
 
 	for i, def := range defs {
 		name, fail := ptrToString(def.Name, "name")
@@ -134,7 +135,7 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 			return nil, fail
 		}
 
-		ds[i] = secretDefinition{
+		ds[i] = secretJSONDefinition{
 			Name:        name,
 			Scope:       scope,
 			Description: def.Description,
