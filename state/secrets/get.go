@@ -43,18 +43,25 @@ func buildGetCommand(cmd *Command) *commands.Command {
 
 // ExecuteGet processes the `secrets get` command.
 func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
-	secret, value, fail := getSecretWithValue(cmd.Args.Name)
+	secret, valuePtr, fail := getSecretWithValue(cmd.Args.Name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err"))
 		return
 	}
 
+	var value string
+	if valuePtr == nil {
+		value = ""
+	} else {
+		value = *valuePtr
+	}
+
 	if Flags.JSON {
-		printJSON(&secretJSONDefinition{secret.Name(), secret.Scope(), secret.Description(), *value})
+		printJSON(&secretJSONDefinition{secret.Name(), secret.Scope(), secret.Description(), value})
 		return
 	}
 
-	if value == nil {
+	if valuePtr == nil {
 		err := "secrets_err_project_not_defined"
 		if secret.IsUser() {
 			err = "secrets_err_user_not_defined"
@@ -63,7 +70,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		cmd.config.Exiter(1)
 		return
 	}
-	print.Line(*value)
+	print.Line(*valuePtr)
 
 	return
 }
