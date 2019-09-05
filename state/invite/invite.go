@@ -2,7 +2,9 @@ package invite
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -19,6 +21,8 @@ import (
 )
 
 // MaxParallelRequests is the maximum number of invite requests that we want to send in parallel
+// I wonder if this constant should go somewhere else, but it seems very specific to this
+// use case, where we could theoretically invite a lot of users.
 const MaxParallelRequests = 10
 
 // Command is the organization command's definition.
@@ -31,16 +35,22 @@ var Command = &commands.Command{
 	Flags: []*commands.Flag{
 		&commands.Flag{
 			Name:        "organization",
-			Description: "invite members into this organization.  Default value is the organization of the current project",
+			Description: "invite_flag_organization_description",
 			Type:        commands.TypeString,
 			StringVar:   &Args.Organization,
+		},
+		&commands.Flag{
+			Name:        "role",
+			Description: "invite_flag_role_description",
+			Type:        commands.TypeString,
+			StringVar:   &Args.RoleString,
 		},
 	},
 
 	Arguments: []*commands.Argument{
 		&commands.Argument{
 			Name:        "<email1>,[<email2>,..]",
-			Description: "arg_state_invite_emails",
+			Description: "invite_arg_emails",
 			Required:    true,
 			Variable:    &Args.EmailList,
 			Validator:   emailListValidator,
@@ -70,11 +80,15 @@ func emailListValidator(_ *commands.Argument, value string) error {
 	return nil
 }
 
-// Args stores command line argument values for the invite command
-var Args struct {
+// Arguments is a structure for command line parameters and flags
+type Arguments struct {
 	EmailList    string
 	Organization string
+	RoleString   string
 }
+
+// Args stores the command line arguments
+var Args Arguments
 
 // checkInvite returns true if an invitation to the organization is
 // possible/allowed
@@ -89,7 +103,9 @@ var Args struct {
 func checkInvites(organization *mono_models.Organization, numInvites int) bool {
 	// ignore personal organizations
 	if organization.Personal {
-		print.Error(locale.T("invite_personal_org_err"))
+		print.Error(locale.T("invite_personal_org_err", map[string]string{
+			"Organization": organization.Name,
+		}))
 		return false
 	}
 
@@ -99,11 +115,18 @@ func checkInvites(organization *mono_models.Organization, numInvites int) bool {
 		return false
 	}
 
+	fmt.Println("limits", limits)
+	fmt.Println("count", organization.MemberCount)
+
 	requestedMemberCount := organization.MemberCount + int64(numInvites)
 	if limits.UsersLimit != nil && requestedMemberCount > *limits.UsersLimit {
 		memberCountExceededBy := requestedMemberCount - *limits.UsersLimit
 
-		print.Error(locale.T("invite_member_limit_err", memberCountExceededBy, *limits.UsersLimit))
+		print.Error(locale.T("invite_member_limit_err", map[string]string{
+			"Organization": organization.Name,
+			"UserLimit":    strconv.FormatInt(*limits.UsersLimit, 10),
+			"ExceededBy":   strconv.FormatInt(memberCountExceededBy, 10),
+		}))
 		return false
 	}
 	return true
@@ -130,8 +153,17 @@ func init() {
 	}
 }
 
-func selectOrgRole(p prompt.Prompter, numInvites int) OrgRole {
-	selection, fail := p.Select(locale.T("invite_select_org_role", numInvites), orgRoleChoices[:], "")
+func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
+	var inviteString string
+	if len(emails) == 1 {
+		inviteString = emails[0]
+	} else {
+		inviteString = fmt.Sprintf("%d users", len(emails))
+	}
+	selection, fail := p.Select(locale.T("invite_select_org_role", map[string]interface{}{
+		"Invitees":     inviteString,
+		"Organization": orgName,
+	}), orgRoleChoices[:], "")
 	if fail != nil {
 		return None
 	}
@@ -144,12 +176,31 @@ func selectOrgRole(p prompt.Prompter, numInvites int) OrgRole {
 	return None
 }
 
+func selectOrgRole(prompter prompt.Prompter, roleString string, emails []string, orgName string) OrgRole {
+	if roleString == "" {
+		return promptOrgRole(prompter, emails, orgName)
+	}
+
+	switch roleString {
+	case "member":
+		return Member
+	case "owner":
+		return Owner
+	}
+	print.Error("invite_invalid_role_string")
+	return None
+}
+
 func sendInvite(org *mono_models.Organization, orgRole OrgRole, email string) *failures.Failure {
 	// ignore the invitation for now
 	_, fail := model.InviteUserToOrg(org, orgRole == Owner, email)
 	if fail != nil {
 		return fail
 	}
+
+	print.Line(locale.T("invite_invitation_sent", map[string]string{
+		"Email": email,
+	}))
 
 	return nil
 }
@@ -163,9 +214,9 @@ func callInParallel(callback func(arg string) *failures.Failure, args []string) 
 
 	for _, arg := range args {
 		wg.Add(1)
+		semaphoreChan <- struct{}{}
 		go func(argRec string) {
 			defer wg.Done()
-			semaphoreChan <- struct{}{}
 			defer func() {
 				<-semaphoreChan
 			}()
@@ -180,45 +231,26 @@ func callInParallel(callback func(arg string) *failures.Failure, args []string) 
 	wg.Wait()
 	close(errorChan)
 
-	numErrors := 0
+	errCount := 0
+	fails := make([]*failures.Failure, len(errorChan))
 	for fail := range errorChan {
-		failures.Handle(fail, locale.T("invite_org_err"))
-		numErrors++
+		fails[errCount] = fail
+		errCount++
 	}
+	return fails
 }
 
 func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string) bool {
-	var wg sync.WaitGroup
-	// never make more than 10 requests in parallel
-	semaphoreChan := make(chan struct{}, MaxParallelInvites)
-	errorChan := make(chan *failures.Failure, len(emails))
 
-	for _, email := range emails {
-		wg.Add(1)
-		go func(invitee string) {
-			defer wg.Done()
-			semaphoreChan <- struct{}{}
-			defer func() {
-				<-semaphoreChan
-			}()
+	fails := callInParallel(func(email string) *failures.Failure {
+		return sendInvite(org, orgRole, email)
+	}, emails)
 
-			fail := sendInvite(org, orgRole, invitee)
-			if fail != nil {
-				errorChan <- fail
-			}
-			print.Info(locale.T("invite_org_sent", invitee))
-		}(email)
-	}
-
-	wg.Wait()
-	close(errorChan)
-
-	numErrors := 0
-	for fail := range errorChan {
-		failures.Handle(fail, locale.T("invite_org_err"))
-		numErrors++
+	for _, fail := range fails {
+		failures.Handle(fail, locale.T("invite_invitation_err"))
 	}
 	// if at least one invite worked, send reminder to sync secrets
+	numErrors := len(fails)
 	if numErrors < len(emails) {
 		print.Info(locale.T("invite_org_secrets_reminder"))
 	}
@@ -234,24 +266,24 @@ func Execute(cmd *cobra.Command, args []string) {
 	if Args.Organization != "" {
 		orgName = Args.Organization
 	}
-	organization, fail := model.FetchOrgByURLName(orgName)
-	if fail != nil {
-		failures.Handle(fail, locale.T("invite_org_err"))
-		return
-	}
-
 	emails := strings.Split(Args.EmailList, ",")
-
-	if !checkInvites(organization, len(emails)) {
-		return
-	}
-
-	orgRole := selectOrgRole(prompter, len(emails))
-
+	orgRole := selectOrgRole(prompter, Args.RoleString, emails, orgName)
 	// MD-TODO: I think this is the correct behavior: give the user the chance
 	// to cancel the action here.  I don't think that an output will be
 	// necessary here.
 	if orgRole == None {
+		return
+	}
+
+	organization, fail := model.FetchOrgByURLName(orgName)
+	if fail != nil {
+		failures.Handle(fail, locale.T("invite_fetch_org_err", map[string]string{
+			"Organization": orgName,
+		}))
+		return
+	}
+
+	if !checkInvites(organization, len(emails)) {
 		return
 	}
 
