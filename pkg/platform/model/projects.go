@@ -25,7 +25,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	params.ProjectName = projectName
 	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, processProjectErrorResponse(err, orgName, projectName)
+		return nil, processProjectErrorResponse(err, projectName, orgName)
 	}
 	if resOk.Payload.Name == "" || resOk.Payload.OrganizationID.String() == "" {
 		return nil, FailNoValidProject.New("err_invalid_project")
