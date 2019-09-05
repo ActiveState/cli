@@ -322,7 +322,7 @@ err_api_not_authenticated:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project does not exist on the ActiveState Platform
+  other: The requested project {{.V0}} does not exist for the organization {{.V1}}. Please ensure your username is correct and that the project has been created.
 err_api_member_not_found:
   other: Unable to find requested Member
 secrets_expander_err_empty_name:
