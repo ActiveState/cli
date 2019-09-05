@@ -197,8 +197,7 @@ const (
 	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
 )
 
-var (
-	inTest = strings.HasSuffix(os.Args[0], ".test")
-	// InTest returns true when the app is being tested
-	InTest = func() bool { return inTest }
-)
+var inTest = strings.HasSuffix(os.Args[0], ".test")
+
+// InTest returns true when the app is being tested
+func InTest() bool { return inTest }
