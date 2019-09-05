@@ -1,8 +1,6 @@
 package analytics
 
 import (
-	"flag"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	ga "github.com/ActiveState/go-ogle-analytics"
@@ -49,7 +47,7 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) error {
-	if client == nil || flag.Lookup("test.v") != nil {
+	if client == nil || constants.InTest() {
 		return nil
 	}
 
@@ -66,7 +64,7 @@ func EventWithValue(category string, action string, value int64) {
 }
 
 func eventWithValue(category string, action string, value int64) error {
-	if client == nil || flag.Lookup("test.v") != nil {
+	if client == nil || constants.InTest() {
 		return nil
 	}
 

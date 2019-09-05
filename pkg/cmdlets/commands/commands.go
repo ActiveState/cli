@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -204,7 +204,7 @@ func (c *Command) Register() {
 	}
 
 	if c.Exiter == nil {
-		if flag.Lookup("test.v") == nil {
+		if !constants.InTest() {
 			c.Exiter = os.Exit
 		} else {
 			c.Exiter = func(code int) {
