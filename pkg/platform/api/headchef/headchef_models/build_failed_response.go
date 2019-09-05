@@ -12,24 +12,24 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// BuildStartedResponse Build Started Response
+// BuildFailedResponse Build Failed Response
 //
-// A response indicating that a requested build has been started but has yet to complete.
-// swagger:model BuildStartedResponse
-type BuildStartedResponse struct {
-	BuildStarted
+// A response indicating that a build failed.
+// swagger:model BuildFailedResponse
+type BuildFailedResponse struct {
+	BuildFailed
 
 	BuildStatus
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
-func (m *BuildStartedResponse) UnmarshalJSON(raw []byte) error {
+func (m *BuildFailedResponse) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var aO0 BuildStarted
+	var aO0 BuildFailed
 	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-	m.BuildStarted = aO0
+	m.BuildFailed = aO0
 
 	// AO1
 	var aO1 BuildStatus
@@ -42,10 +42,10 @@ func (m *BuildStartedResponse) UnmarshalJSON(raw []byte) error {
 }
 
 // MarshalJSON marshals this object to a JSON structure
-func (m BuildStartedResponse) MarshalJSON() ([]byte, error) {
+func (m BuildFailedResponse) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	aO0, err := swag.WriteJSON(m.BuildStarted)
+	aO0, err := swag.WriteJSON(m.BuildFailed)
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +60,12 @@ func (m BuildStartedResponse) MarshalJSON() ([]byte, error) {
 	return swag.ConcatJSON(_parts...), nil
 }
 
-// Validate validates this build started response
-func (m *BuildStartedResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this build failed response
+func (m *BuildFailedResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with BuildStarted
-	if err := m.BuildStarted.Validate(formats); err != nil {
+	// validation for a type composition with BuildFailed
+	if err := m.BuildFailed.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with BuildStatus
@@ -80,7 +80,7 @@ func (m *BuildStartedResponse) Validate(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *BuildStartedResponse) MarshalBinary() ([]byte, error) {
+func (m *BuildFailedResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -88,8 +88,8 @@ func (m *BuildStartedResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *BuildStartedResponse) UnmarshalBinary(b []byte) error {
-	var res BuildStartedResponse
+func (m *BuildFailedResponse) UnmarshalBinary(b []byte) error {
+	var res BuildFailedResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
