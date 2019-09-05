@@ -40,7 +40,7 @@ func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
 	suite.apiMock.MockGetProject404()
 
 	project, fail := model.FetchProjectByName("string", "string")
-	suite.EqualError(fail.ToError(), locale.T("err_api_project_not_found"))
+	suite.EqualError(fail.ToError(), locale.Tr("err_api_project_not_found", "string", "string"))
 	suite.Nil(project)
 }
 
