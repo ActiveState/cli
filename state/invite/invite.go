@@ -18,8 +18,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// MaxParallelInvites is the maximum number of invite requests that we want to send in parallel
-const MaxParallelInvites = 10
+// MaxParallelRequests is the maximum number of invite requests that we want to send in parallel
+const MaxParallelRequests = 10
 
 // Command is the organization command's definition.
 var Command = &commands.Command{
@@ -152,6 +152,39 @@ func sendInvite(org *mono_models.Organization, orgRole OrgRole, email string) *f
 	}
 
 	return nil
+}
+
+func callInParallel(callback func(arg string) *failures.Failure, args []string) []*failures.Failure {
+
+	var wg sync.WaitGroup
+	// never make more than 10 requests in parallel
+	semaphoreChan := make(chan struct{}, MaxParallelRequests)
+	errorChan := make(chan *failures.Failure, len(args))
+
+	for _, arg := range args {
+		wg.Add(1)
+		go func(argRec string) {
+			defer wg.Done()
+			semaphoreChan <- struct{}{}
+			defer func() {
+				<-semaphoreChan
+			}()
+
+			fail := callback(argRec)
+			if fail != nil {
+				errorChan <- fail
+			}
+		}(arg)
+	}
+
+	wg.Wait()
+	close(errorChan)
+
+	numErrors := 0
+	for fail := range errorChan {
+		failures.Handle(fail, locale.T("invite_org_err"))
+		numErrors++
+	}
 }
 
 func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string) bool {
