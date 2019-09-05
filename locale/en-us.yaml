@@ -281,6 +281,8 @@ organization_name:
   other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
+invite_limit_fetch_err:
+  other: Failed to fetch limits for organization
 project:
   other: Project
 project_name:
@@ -319,6 +321,8 @@ projects_description:
   other: Manage Your Projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
+err_api_forbidden:
+  other: You are not allowed to access or modify the requested resource
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
