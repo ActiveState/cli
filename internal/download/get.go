@@ -9,13 +9,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -25,7 +26,7 @@ var Get func(url string) ([]byte, *failures.Failure)
 var GetWithProgress func(url string, progress *mpb.Progress) ([]byte, *failures.Failure)
 
 func init() {
-	SetMocking(constants.InTest())
+	SetMocking(condition.InTest())
 }
 
 func SetMocking(useMocking bool) {
