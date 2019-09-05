@@ -1,7 +1,6 @@
 package api
 
 import (
-	"flag"
 	"log"
 	"net/url"
 
@@ -75,7 +74,7 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	if flag.Lookup("test.v") != nil {
+	if constants.InTest() {
 		serviceURLStrings = UrlsByEnv["test"]
 	} else {
 		var hasURL bool

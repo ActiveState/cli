@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -346,7 +345,7 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	if flag.Lookup("test.v") != nil {
+	if constants.InTest() {
 		return false
 	}
 

@@ -177,7 +177,7 @@ func createBuildDir() {
 }
 
 func main() {
-	if flag.Lookup("test.v") == nil {
+	if !constants.InTest() {
 		run()
 	}
 }
@@ -193,7 +193,7 @@ func run() {
 	defaultPlatform = fetchPlatform()
 
 	flag.Parse()
-	if flag.NArg() < 1 && flag.Lookup("test.v") == nil {
+	if flag.NArg() < 1 && !constants.InTest() {
 		flag.Usage()
 		printUsage()
 		exit(0)
