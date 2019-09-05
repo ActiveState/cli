@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 )
 
@@ -74,7 +75,7 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	if constants.InTest() {
+	if condition.InTest() {
 		serviceURLStrings = UrlsByEnv["test"]
 	} else {
 		var hasURL bool

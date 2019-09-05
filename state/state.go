@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/deprecation"
@@ -99,7 +100,7 @@ func main() {
 
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
-	if (!constants.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
+	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 

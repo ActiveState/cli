@@ -1,10 +1,5 @@
 package constants
 
-import (
-	"os"
-	"strings"
-)
-
 // VersionNumber holds the current version of our cli
 const VersionNumber = "0.2.2"
 
@@ -193,8 +188,3 @@ const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
 	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
 )
-
-var inTest = strings.HasSuffix(os.Args[0], ".test")
-
-// InTest returns true when the app is being tested
-func InTest() bool { return inTest }

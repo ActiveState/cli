@@ -1,10 +1,12 @@
 package analytics
 
 import (
+	"github.com/denisbrodbeck/machineid"
+
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/denisbrodbeck/machineid"
 )
 
 var client *ga.Client
@@ -47,7 +49,7 @@ func Event(category string, action string) {
 }
 
 func event(category string, action string) error {
-	if client == nil || constants.InTest() {
+	if client == nil || condition.InTest() {
 		return nil
 	}
 
@@ -64,7 +66,7 @@ func EventWithValue(category string, action string, value int64) {
 }
 
 func eventWithValue(category string, action string, value int64) error {
-	if client == nil || constants.InTest() {
+	if client == nil || condition.InTest() {
 		return nil
 	}
 
