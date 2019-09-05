@@ -22,19 +22,9 @@ import (
 // swagger:model buildRequest
 type BuildRequest struct {
 
-	// Build Request UUID Sub Schema
-	//
-	// A unique identifier for a build request.
-	// Required: true
-	// Format: uuid
-	BuildRequestID *strfmt.UUID `json:"build_request_id"`
-
 	// A list of additional command-line parameters to pass to setup-builds.pl. NOTE: this is a temporary feature to expose some camel features before build options are implemented.
 	// Unique: true
 	CamelFlags []string `json:"camel_flags"`
-
-	// If true and a build has already completed for this recipe ID, the recipe will be built again. If false, the results of the previous build will be sent back.
-	ForceRebuild *bool `json:"force_rebuild,omitempty"`
 
 	// format
 	// Required: true
@@ -46,16 +36,12 @@ type BuildRequest struct {
 	Recipe *BuildRequestRecipe `json:"recipe"`
 
 	// requester
-	Requester *BuildRequestRequester `json:"requester,omitempty"`
+	Requester *Requester `json:"requester,omitempty"`
 }
 
 // Validate validates this build request
 func (m *BuildRequest) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateBuildRequestID(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateCamelFlags(formats); err != nil {
 		res = append(res, err)
@@ -76,19 +62,6 @@ func (m *BuildRequest) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *BuildRequest) validateBuildRequestID(formats strfmt.Registry) error {
-
-	if err := validate.Required("build_request_id", "body", m.BuildRequestID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("build_request_id", "body", "uuid", m.BuildRequestID.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -251,6 +224,13 @@ type BuildRequestRecipe struct {
 	// List of build options which are selected for this recipe.
 	BuildOptions []*BuildRequestRecipeBuildOptionsItems0 `json:"build_options"`
 
+	// The name of the image that will be used to build this recipe.
+	Image string `json:"image,omitempty"`
+
+	// The type of image that will be used to build this recipe.
+	// Enum: [Docker WindowsInstance]
+	ImageType string `json:"image_type,omitempty"`
+
 	// Platform ID for the recipe.
 	// Required: true
 	// Format: uuid
@@ -271,6 +251,10 @@ func (m *BuildRequestRecipe) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateBuildOptions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateImageType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -312,6 +296,49 @@ func (m *BuildRequestRecipe) validateBuildOptions(formats strfmt.Registry) error
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var buildRequestRecipeTypeImageTypePropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["Docker","WindowsInstance"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		buildRequestRecipeTypeImageTypePropEnum = append(buildRequestRecipeTypeImageTypePropEnum, v)
+	}
+}
+
+const (
+
+	// BuildRequestRecipeImageTypeDocker captures enum value "Docker"
+	BuildRequestRecipeImageTypeDocker string = "Docker"
+
+	// BuildRequestRecipeImageTypeWindowsInstance captures enum value "WindowsInstance"
+	BuildRequestRecipeImageTypeWindowsInstance string = "WindowsInstance"
+)
+
+// prop value enum
+func (m *BuildRequestRecipe) validateImageTypeEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, buildRequestRecipeTypeImageTypePropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *BuildRequestRecipe) validateImageType(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ImageType) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateImageTypeEnum("recipe"+"."+"image_type", "body", m.ImageType); err != nil {
+		return err
 	}
 
 	return nil
@@ -727,11 +754,11 @@ type BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0 struct {
 func (m *BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0) UnmarshalJSON(raw []byte) error {
 	// AO0
 	var dataAO0 struct {
-		DependencyGenerator []*BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0DependencyGeneratorItems0 `json:"dependency_generator"`
+		DependencyGenerator []*BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0DependencyGeneratorItems0 `json:"dependency_generator,omitempty"`
 
 		Description *string `json:"description"`
 
-		EnumValues []string `json:"enum_values"`
+		EnumValues []string `json:"enum_values,omitempty"`
 
 		Flag *string `json:"flag"`
 
@@ -781,11 +808,11 @@ func (m BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0) MarshalJSO
 	_parts := make([][]byte, 0, 2)
 
 	var dataAO0 struct {
-		DependencyGenerator []*BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0DependencyGeneratorItems0 `json:"dependency_generator"`
+		DependencyGenerator []*BuildRequestRecipeResolvedRequirementsItems0BuildFlagsItems0DependencyGeneratorItems0 `json:"dependency_generator,omitempty"`
 
 		Description *string `json:"description"`
 
-		EnumValues []string `json:"enum_values"`
+		EnumValues []string `json:"enum_values,omitempty"`
 
 		Flag *string `json:"flag"`
 
@@ -1315,7 +1342,7 @@ type BuildRequestRecipeResolvedRequirementsItems0Ingredient struct {
 	// Required: true
 	Name *string `json:"name"`
 
-	// namespace
+	// The namespace is used to disambiguate ingredients across languages. For example, we could have multiple ingredients named "openssl" where one is a C library and the other is a Python library. For now, this is only used for the "pre-platform-installer" namespace.
 	Namespace string `json:"namespace,omitempty"`
 }
 
@@ -1417,7 +1444,7 @@ type BuildRequestRecipeResolvedRequirementsItems0IngredientVersion struct {
 	// Required: true
 	IsStableRelease *bool `json:"is_stable_release"`
 
-	// The packages provided by this ingredient version.
+	// The features provided by this ingredient version.
 	Provides map[string]BuildRequestRecipeResolvedRequirementsItems0IngredientVersionProvidesAnon `json:"provides,omitempty"`
 
 	// The release date for this version of the ingredient.
@@ -2061,14 +2088,17 @@ func (m *BuildRequestRecipeResolvedRequirementsItems0IngredientVersionBuildFlags
 	return nil
 }
 
-// BuildRequestRecipeResolvedRequirementsItems0IngredientVersionProvidesAnon Metadata about the provided packages, keyed by package name.
+// BuildRequestRecipeResolvedRequirementsItems0IngredientVersionProvidesAnon Metadata about the provided features, keyed by feature name.
 // swagger:model BuildRequestRecipeResolvedRequirementsItems0IngredientVersionProvidesAnon
 type BuildRequestRecipeResolvedRequirementsItems0IngredientVersionProvidesAnon struct {
 
-	// Whether this ingredient version is the default provider of this package.
+	// Whether this ingredient version is the default provider of this feature..
 	IsDefault bool `json:"is_default,omitempty"`
 
-	// The version of this package provided by the ingredient version.
+	// The namespace to which the provided feature belongs.
+	Namespace string `json:"namespace,omitempty"`
+
+	// The version of this feature provided by the ingredient version.
 	Version string `json:"version,omitempty"`
 }
 
@@ -2174,9 +2204,11 @@ func (m *BuildRequestRecipeResolvedRequirementsItems0RequirementsItems0) Unmarsh
 	return nil
 }
 
-// BuildRequestRequester Identifying information about who is placing the build request
-// swagger:model BuildRequestRequester
-type BuildRequestRequester struct {
+// Requester Requester
+//
+// Identifying information about who is placing the build request
+// swagger:model Requester
+type Requester struct {
 
 	// The UUID of the platform organization that owns the project being built
 	// Required: true
@@ -2194,8 +2226,8 @@ type BuildRequestRequester struct {
 	UserID *strfmt.UUID `json:"user_id"`
 }
 
-// Validate validates this build request requester
-func (m *BuildRequestRequester) Validate(formats strfmt.Registry) error {
+// Validate validates this requester
+func (m *Requester) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateOrganizationID(formats); err != nil {
@@ -2216,7 +2248,7 @@ func (m *BuildRequestRequester) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *BuildRequestRequester) validateOrganizationID(formats strfmt.Registry) error {
+func (m *Requester) validateOrganizationID(formats strfmt.Registry) error {
 
 	if err := validate.Required("requester"+"."+"organization_id", "body", m.OrganizationID); err != nil {
 		return err
@@ -2229,7 +2261,7 @@ func (m *BuildRequestRequester) validateOrganizationID(formats strfmt.Registry) 
 	return nil
 }
 
-func (m *BuildRequestRequester) validateProjectID(formats strfmt.Registry) error {
+func (m *Requester) validateProjectID(formats strfmt.Registry) error {
 
 	if err := validate.Required("requester"+"."+"project_id", "body", m.ProjectID); err != nil {
 		return err
@@ -2242,7 +2274,7 @@ func (m *BuildRequestRequester) validateProjectID(formats strfmt.Registry) error
 	return nil
 }
 
-func (m *BuildRequestRequester) validateUserID(formats strfmt.Registry) error {
+func (m *Requester) validateUserID(formats strfmt.Registry) error {
 
 	if err := validate.Required("requester"+"."+"user_id", "body", m.UserID); err != nil {
 		return err
@@ -2256,7 +2288,7 @@ func (m *BuildRequestRequester) validateUserID(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *BuildRequestRequester) MarshalBinary() ([]byte, error) {
+func (m *Requester) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2264,8 +2296,8 @@ func (m *BuildRequestRequester) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *BuildRequestRequester) UnmarshalBinary(b []byte) error {
-	var res BuildRequestRequester
+func (m *Requester) UnmarshalBinary(b []byte) error {
+	var res Requester
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

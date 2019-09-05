@@ -61,7 +61,7 @@ scripts:
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/headchef
-      swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
+      swagger generate client -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-inventory-client
     description: Generates the inventory-api client files

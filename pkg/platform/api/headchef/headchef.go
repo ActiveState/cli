@@ -1,22 +1,17 @@
 package headchef
 
 import (
-	"encoding/json"
 	"net/url"
 	"time"
 
-	"github.com/gorilla/websocket"
-
 	"github.com/ActiveState/cli/internal/failures"
-
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/sacOO7/gowebsocket"
+	"github.com/go-openapi/strfmt"
 )
-
-var DefaultDialer *websocket.Dialer
 
 var (
 	FailRequestConnect = failures.Type("headchef.fail.request.connect", failures.FailNetwork)
@@ -30,52 +25,47 @@ var (
 	FailRequestAtDisconnect = failures.Type("headchef.fail.request.atdisconnect")
 
 	FailRequestValidation = failures.Type("headchef.fail.request.validation")
+
+	FailRestAPIError = failures.Type("headchef.fail.restapi.error")
 )
 
 type Requester interface {
 	OnBuildStarted(f RequestBuildStarted)
 	OnBuildFailed(f RequestBuildFailed)
-	OnBuildCompleted(f RequestBuildCompleted)
+	OnBuildEnded(f RequestBuildEnded)
 	OnFailure(f RequestFailure)
 	OnClose(f RequestClose)
 	Start()
 }
 
 type Request struct {
-	socket       gowebsocket.Socket
-	buildRequest *headchef_models.BuildRequest
+	buildRequest *headchef_models.V1BuildRequest
+	client       *headchef_operations.Client
 
-	onBuildStarted   RequestBuildStarted
-	onBuildFailed    RequestBuildFailed
-	onBuildCompleted RequestBuildCompleted
-	onFailure        RequestFailure
-	onClose          RequestClose
+	onBuildStarted RequestBuildStarted
+	onBuildFailed  RequestBuildFailed
+	onBuildEnded   RequestBuildEnded
+	onFailure      RequestFailure
+	onClose        RequestClose
 }
 
 type RequestBuildStarted func()
 type RequestBuildFailed func(message string)
-type RequestBuildCompleted func(headchef_models.BuildCompleted)
+type RequestBuildEnded func(headchef_models.BuildEndedResponse)
 type RequestFailure func(*failures.Failure)
 type RequestClose func()
 
-type InitRequester func(buildRequest *headchef_models.BuildRequest) Requester
+type InitRequester func(buildRequest *headchef_models.V1BuildRequest) Requester
 
-func InitRequest(buildRequest *headchef_models.BuildRequest) Requester {
-	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest, DefaultDialer)
+func InitRequest(buildRequest *headchef_models.V1BuildRequest) Requester {
+	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest)
 }
 
-func NewRequest(u *url.URL, buildRequest *headchef_models.BuildRequest, dialer *websocket.Dialer) Requester {
-	logging.Debug("connecting to head-chef at %s", u.String())
-
-	socket := gowebsocket.New(u.String())
-	if dialer != nil {
-		socket.WebsocketDialer = dialer
+func NewRequest(u *url.URL, buildRequest *headchef_models.V1BuildRequest) Requester {
+	return &Request{
+		buildRequest: buildRequest,
+		client:       headchef_client.Default.HeadchefOperations,
 	}
-	socket.RequestHeader.Set("Origin", constants.HeadChefOrigin)
-
-	request := &Request{socket: socket, buildRequest: buildRequest}
-
-	return request
 }
 
 func (r *Request) OnBuildStarted(f RequestBuildStarted) {
@@ -100,14 +90,14 @@ func (r *Request) triggerBuildFailed(message string) {
 	}
 }
 
-func (r *Request) OnBuildCompleted(f RequestBuildCompleted) {
-	r.onBuildCompleted = f
+func (r *Request) OnBuildEnded(f RequestBuildEnded) {
+	r.onBuildEnded = f
 }
 
-func (r *Request) triggerBuildCompleted(response headchef_models.BuildCompleted) {
-	logging.Debug("BuildCompleted:", response.Message)
-	if r.onBuildCompleted != nil {
-		r.onBuildCompleted(response)
+func (r *Request) triggerBuildEnded(response headchef_models.BuildEndedResponse) {
+	logging.Debug("BuildCompleted:", response)
+	if r.onBuildEnded != nil {
+		r.onBuildEnded(response)
 	}
 }
 
@@ -133,120 +123,78 @@ func (r *Request) triggerClose() {
 	}
 }
 
-func (r *Request) close() {
-	// Work around strange bug where socket.Close() times out on writing the close message.
-	// Oddly the timeout imposed close call works just fine.
-	// I've only encountered this issue in tests, so might be an issue with our testing library
-	r.socket.Conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
-	go r.socket.Close() // run in subroutine so the close doesn't block anything, it's of no consequence
-}
-
-func (r *Request) handleMessage(message string, socket gowebsocket.Socket) {
-	if r.handleValidationError(message) {
-		return
-	}
-
-	if !r.handleStatusMessage(message) {
-		// If neither handleValidationError nor handleStatusMessage handled the message we potentially have a problem
-		// Though it could be nothing (eg. the headchef was updated with new messages that aren't required for backwards compatibility)
-		logging.Warning("Unrecognized message: %s", message)
-	}
-}
-
-func (r *Request) handleValidationError(message string) (handled bool) {
-	validationError := headchef_models.RestAPIValidationError{}
-	err := validationError.UnmarshalJSON([]byte(message))
-	if err == nil && validationError.ValidationErrors != nil {
-		errMsg := message
-		if validationError.Message != nil {
-			errMsg = *validationError.Message
-		}
-		r.triggerFailure(FailRequestValidation.New(errMsg))
-		r.socket.Close()
-		return true
-	}
-
-	return false
-}
-
-func (r *Request) handleStatusMessage(message string) (handled bool) {
-	envelope := headchef_models.StatusMessageEnvelope{}
-	err := envelope.UnmarshalBinary([]byte(message))
-	if err != nil {
-		logging.Error("Could not unmarshal websocket response, error: %v", err)
-		return false
-	}
-	if envelope.Type == nil {
-		return false // this isn't a status message
-	}
-
-	switch *envelope.Type {
-	// Build Started
-	case headchef_models.StatusMessageEnvelopeTypeBuildStarted:
-		r.triggerBuildStarted()
-		return true
-
-	// Build Completed
-	case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
-		response := headchef_models.BuildCompleted{}
-		json, err := json.Marshal(envelope.Body)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-			return true
-		}
-		err = response.UnmarshalBinary(json)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-		} else {
-			r.triggerBuildCompleted(response)
-		}
-		r.close()
-		return true
-
-	// Build Failed
-	case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
-		response := headchef_models.BuildFailed{}
-		json, err := json.Marshal(envelope.Body)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-			return true
-		}
-		err = response.UnmarshalBinary(json)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-		} else {
-			logging.Warning("head-chef build failed with the following errors: %v", response.Errors)
-			r.triggerBuildFailed(response.Message)
-		}
-		r.close()
-		return true
-	}
-
-	return false
-}
-
 func (r *Request) Start() {
-	// Hook up our event handlers
-	r.socket.OnConnectError = func(err error, socket gowebsocket.Socket) {
-		r.triggerFailure(FailRequestConnect.Wrap(err))
-	}
-	r.socket.OnTextMessage = r.handleMessage
-	r.socket.OnDisconnected = func(err error, socket gowebsocket.Socket) {
-		// The error here is useless, because gowebsocket just forwards the close message as an error, regardless of whether
-		// it actually is one
-		r.triggerClose()
-	}
+	max := time.Hour * 12
+	eager := time.Minute * 3
+	shortWait := time.Second * 8
+	longWait := time.Second * 16
 
-	r.socket.OnConnected = func(socket gowebsocket.Socket) {
-		logging.Debug("Connected")
+	logging.Debug("connecting to head-chef")
 
-		// Send our build request
-		bytes, err := r.buildRequest.MarshalBinary()
-		if err != nil {
-			r.triggerFailure(FailRequestMarshal.Wrap(err))
+	defer r.triggerClose()
+
+	var buildUUID *strfmt.UUID
+
+	sbPs := headchef_operations.StartBuildV1Params{
+		BuildRequest: r.buildRequest,
+	}
+	created, accepted, err := r.client.StartBuildV1(&sbPs)
+	switch {
+	case err != nil:
+		r.triggerFailure(FailRestAPIError.Wrap(err))
+		return
+	case accepted != nil:
+		r.triggerBuildStarted()
+		buildUUID = accepted.Payload.BuildRequestID
+	case created != nil:
+		envlp, ok := created.Payload.(*headchef_models.StatusMessageEnvelope)
+		if !ok {
+			logging.Panic("did not receive StatusMessageEnvelope")
 		}
-		r.socket.SendBinary(bytes)
+		switch *envlp.Type {
+		case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
+			r.triggerBuildEnded(created.Payload)
+			return
+		case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
+			r.triggerBuildFailed(string(envlp.Body.([]byte)))
+			return
+		default:
+			logging.Panic("unknown StatusMessageEnvelope type")
+		}
+	default:
+		logging.Panic("no value returned from StartBuildV1")
 	}
 
-	r.socket.Connect()
+	var wait time.Duration
+
+	for start := time.Now(); time.Now().Sub(start) < max; {
+		time.Sleep(wait)
+		wait = shortWait
+		if time.Now().Sub(start) > eager {
+			wait = longWait
+		}
+
+		bsPs := headchef_operations.GetBuildStatusParams{
+			BuildRequestID: *buildUUID,
+		}
+		bsRes, err := r.client.GetBuildStatus(&bsPs)
+		if err != nil {
+			r.triggerFailure(FailRestAPIError.Wrap(err))
+			return
+		}
+		envlp, ok := bsRes.Payload.(*headchef_models.StatusMessageEnvelope)
+		if !ok {
+			logging.Panic("did not receive StatusMessageEnvelope")
+		}
+		switch *envlp.Type {
+		case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
+			r.triggerBuildEnded(bsRes.Payload)
+			return
+		case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
+			r.triggerBuildFailed(string(envlp.Body.([]byte)))
+			return
+		default:
+			logging.Panic("unknown StatusMessageEnvelope type")
+		}
+	}
 }
