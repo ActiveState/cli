@@ -186,9 +186,7 @@ func TestCheckInvites(t *testing.T) {
 		org := getTestOrg(t, true, 1, "testOrg")
 
 		err := checkInvites(org, 1)
-		require.EqualError(t, err.ToError(), locale.T("invite_personal_org_err", map[string]string{
-			"Organization": "testOrg",
-		}))
+		require.EqualError(t, err.ToError(), locale.T("invite_personal_org_err"))
 	})
 
 	t.Run("fail if organization limits cannot be fetched", func(t *testing.T) {

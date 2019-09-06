@@ -81,9 +81,9 @@ var Args Arguments
 func checkInvites(organization *mono_models.Organization, numInvites int) *failures.Failure {
 	// don't allow personal organizations
 	if organization.Personal {
-		return failures.FailUser.New(locale.T("invite_personal_org_err", map[string]string{
-			"Organization": organization.Name,
-		}))
+		return failures.FailUser.New(locale.T(
+			"invite_personal_org_err",
+		))
 	}
 
 	limits, fail := model.FetchOrganizationLimits(organization.Urlname)
