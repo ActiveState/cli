@@ -208,16 +208,14 @@ func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string
 func Execute(cmd *cobra.Command, args []string) {
 	prj := project.Get()
 
-	// MD-TODO: test if we need to QueryEscape the Owner()...
 	var orgName string = prj.Owner()
 	if Args.Organization != "" {
 		orgName = Args.Organization
 	}
 	emails := strings.Split(Args.EmailList, ",")
 	orgRole := selectOrgRole(prompter, Args.RoleString, emails, orgName)
-	// MD-TODO: I think this is the correct behavior: give the user the chance
-	// to cancel the action here.  I don't think that an output will be
-	// necessary here.
+
+	// Errors are handled in selectOrgRole, so we can just return if orgRole is None.
 	if orgRole == None {
 		return
 	}
