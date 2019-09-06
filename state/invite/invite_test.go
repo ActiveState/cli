@@ -49,7 +49,10 @@ func TestSelectOrgRole(t *testing.T) {
 		t.Run(fmt.Sprintf("expect %s(%s)", role.promptValue, role.argValue), func(t *testing.T) {
 			pm := pMock.Init()
 			pm.On(
-				"Select", locale.T("invite_select_org_role", 2), orgRoleChoices, "",
+				"Select", locale.T("invite_select_org_role", map[string]interface{}{
+					"Invitees":     "2 users",
+					"Organization": "testOrg",
+				}), orgRoleChoices, "",
 			).Return(locale.T(fmt.Sprintf("org_role_choice_%s", role.promptValue)), nil)
 			orgRole := selectOrgRole(pm, role.argValue, emails, "testOrg")
 			require.Equal(t, role.number, orgRole, fmt.Sprintf("orgRole should be %v", role.number))

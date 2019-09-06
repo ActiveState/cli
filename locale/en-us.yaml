@@ -290,9 +290,9 @@ invite_description:
 invite_fetch_org_err:
   other: Failed to fetch organization {{.Organization}} from ActivateState platform.  Is the organization name correct?
 invite_flag_organization_description:
-  other: Invite members to this organization. By default members are added to the current project's organization
+  other: "Organization to invite to. If not set, invite to current project's organization"
 invite_flag_role_description:
-  other: "Assign a specific user role to invited members. Choices: 'member', 'owner'. By default, prompt for the role.",
+  other: Set user role to 'member' or 'owner'. If not set, prompt for the role
 invite_arg_emails:
   other: "Email addresses to send the invitations to"
 invite_select_org_role:
@@ -306,9 +306,9 @@ invite_personal_org_err:
 invite_org_err:
   other: Unable to invite user. Please check the organization name.
 invite_org_secrets_reminder:
-  other: |
+  other: "
 
-  You should run 'state secrets sync' once they have accepted their invitation and authenticated with the State Tool.
+You should run 'state secrets sync' once they have accepted their invitation and authenticated with the State Tool."
 invite_member_limit_err:
   other: The organization {{.Organization}} has reached its user limit of {{.UserLimit}}.  The request would exceed the limit by {{.ExceededBy}} users.
 invite_invitation_err:
@@ -317,6 +317,8 @@ invite_invitation_sent:
   other: Invitation sent to {{.Email}}
 invite_invalid_email_args:
   other: "Invalid email address {{.V0}}"
+invite_invalid_role_string:
+  other: "Invalid role name provided: needs to be 'member' or 'owner'"
 invite_limit_fetch_err:
   other: Failed to fetch limits for organization
 project:
