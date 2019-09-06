@@ -1,0 +1,13 @@
+{
+  "organizationID": "11111111-1111-1111-1111-111111111111",
+  "added": "1111-11-11T11:11:11.111Z",
+  "name": "testOrg",
+  "displayName": "testOrg",
+  "URLname": "testOrg",
+  "personal": false,
+  "owner": true,
+  "subscriptionStatus": "active",
+  "tier": "string",
+  "billingDate": "string",
+  "memberCount": 0
+}
