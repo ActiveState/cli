@@ -734,6 +734,8 @@ installer_err_runtime_no_commits:
   other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the state tool. Please make a new project.
+build_status_timeout:
+  other: Build status monitoring has exceeded the timeout
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
