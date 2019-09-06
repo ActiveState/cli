@@ -319,8 +319,6 @@ invite_invalid_email_args:
   other: "Invalid email address {{.V0}}"
 invite_invalid_role_string:
   other: "Invalid role name provided: needs to be 'member' or 'owner'"
-invite_limit_fetch_err:
-  other: Failed to fetch limits for organization
 project:
   other: Project
 project_name:
