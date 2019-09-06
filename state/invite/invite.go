@@ -115,9 +115,6 @@ func checkInvites(organization *mono_models.Organization, numInvites int) bool {
 		return false
 	}
 
-	fmt.Println("limits", limits)
-	fmt.Println("count", organization.MemberCount)
-
 	requestedMemberCount := organization.MemberCount + int64(numInvites)
 	if limits.UsersLimit != nil && requestedMemberCount > *limits.UsersLimit {
 		memberCountExceededBy := requestedMemberCount - *limits.UsersLimit
