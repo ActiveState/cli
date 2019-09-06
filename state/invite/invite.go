@@ -1,9 +1,7 @@
 package invite
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
-	"github.com/thoas/go-funk"
 )
 
 // MaxParallelRequests is the maximum number of invite requests that we want to send in parallel
@@ -51,7 +48,6 @@ var Command = &commands.Command{
 			Description: "invite_arg_emails",
 			Required:    true,
 			Variable:    &Args.EmailList,
-			Validator:   emailListValidator,
 		},
 	},
 }
@@ -60,22 +56,6 @@ var prompter prompt.Prompter
 
 func init() {
 	prompter = prompt.New()
-}
-
-func emailListValidator(_ *commands.Argument, value string) error {
-	emailRe := regexp.MustCompile(
-		"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?" +
-			"(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-	)
-
-	candidates := strings.Split(value, ",")
-	rejectedEmails := funk.FilterString(candidates, func(candidate string) bool {
-		return !emailRe.MatchString(candidate)
-	})
-	if len(rejectedEmails) > 0 {
-		return errors.New(locale.Tr("invite_invalid_email_args", strings.Join(rejectedEmails, ",")))
-	}
-	return nil
 }
 
 // Arguments is a structure for command line parameters and flags
