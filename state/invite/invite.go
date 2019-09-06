@@ -74,10 +74,6 @@ var Args Arguments
 // Checks for
 //  - organization is not personal
 //  - member count is not exceeding limits
-//
-// Note: I would prefer to return an error strings here for easier testing, but
-// failures.Handle() needs to be called and already prints its output.  This
-// could maybe be improved in the future...?
 func checkInvites(organization *mono_models.Organization, numInvites int) *failures.Failure {
 	// don't allow personal organizations
 	if organization.Personal {
