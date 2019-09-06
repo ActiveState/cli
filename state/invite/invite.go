@@ -208,7 +208,7 @@ func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string
 func Execute(cmd *cobra.Command, args []string) {
 	prj := project.Get()
 
-	var orgName string = prj.Owner()
+	orgName := prj.Owner()
 	if Args.Organization != "" {
 		orgName = Args.Organization
 	}
