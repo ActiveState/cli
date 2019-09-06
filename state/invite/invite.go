@@ -159,7 +159,7 @@ func selectOrgRole(prompter prompt.Prompter, roleString string, emails []string,
 	case "owner":
 		return Owner
 	}
-	print.Error("invite_invalid_role_string")
+	print.Error(locale.T("invite_invalid_role_string"))
 	return None
 }
 
