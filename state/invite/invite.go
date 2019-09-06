@@ -192,9 +192,10 @@ func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string
 		return sendInvite(org, orgRole, email)
 	}, emails)
 
-	for _, fail := range fails {
-		failures.Handle(fail, locale.T("invite_invitation_err"))
+	if len(fails) > 0 {
+		failures.Handle(fails[0], locale.T("invite_invitation_err"))
 	}
+
 	// if at least one invite worked, send reminder to sync secrets
 	numErrors := len(fails)
 	if numErrors < len(emails) {
