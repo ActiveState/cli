@@ -3,6 +3,8 @@ package invite
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	pMock "github.com/ActiveState/cli/internal/prompt/mock"
@@ -23,6 +26,11 @@ import (
 
 func setupHTTPMock(t *testing.T) {
 
+	// For some tests we need to have an activestate.yaml file in our working directory
+	root, err := environment.GetRootPath()
+	require.NoError(t, err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	// we login
@@ -31,6 +39,7 @@ func setupHTTPMock(t *testing.T) {
 }
 
 func TestSelectOrgRole(t *testing.T) {
+	fmt.Println("hello")
 	definitions := []struct {
 		argValue    string
 		promptValue string
@@ -61,11 +70,11 @@ func TestSelectOrgRole(t *testing.T) {
 }
 
 func TestInvite(t *testing.T) {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
-
 	setupHTTPMock(t)
 	defer httpmock.DeActivate()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
 
 	// get the organization
 	httpmock.Register("GET", "/organizations/testOrg")
@@ -88,11 +97,11 @@ func TestInvite(t *testing.T) {
 }
 
 func TestInviteUserLimit(t *testing.T) {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrgAtLimit", "foo@bar.com,foo2@bar.com"})
-
 	setupHTTPMock(t)
 	defer httpmock.DeActivate()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrgAtLimit", "foo@bar.com,foo2@bar.com"})
 
 	httpmock.Register("GET", "/organizations/testOrgAtLimit")
 
