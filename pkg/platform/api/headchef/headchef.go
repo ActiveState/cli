@@ -4,13 +4,15 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -32,7 +34,7 @@ var (
 type Requester interface {
 	OnBuildStarted(f RequestBuildStarted)
 	OnBuildFailed(f RequestBuildFailed)
-	OnBuildEnded(f RequestBuildEnded)
+	OnBuildCompleted(f RequestBuildCompleted)
 	OnFailure(f RequestFailure)
 	OnClose(f RequestClose)
 	Start()
@@ -42,16 +44,16 @@ type Request struct {
 	buildRequest *headchef_models.V1BuildRequest
 	client       *headchef_operations.Client
 
-	onBuildStarted RequestBuildStarted
-	onBuildFailed  RequestBuildFailed
-	onBuildEnded   RequestBuildEnded
-	onFailure      RequestFailure
-	onClose        RequestClose
+	onBuildStarted   RequestBuildStarted
+	onBuildFailed    RequestBuildFailed
+	onBuildCompleted RequestBuildCompleted
+	onFailure        RequestFailure
+	onClose          RequestClose
 }
 
 type RequestBuildStarted func()
 type RequestBuildFailed func(message string)
-type RequestBuildEnded func(headchef_models.BuildEndedResponse)
+type RequestBuildCompleted func(headchef_models.BuildCompletedResponse)
 type RequestFailure func(*failures.Failure)
 type RequestClose func()
 
@@ -61,7 +63,7 @@ func InitRequest(buildRequest *headchef_models.V1BuildRequest) Requester {
 	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest)
 }
 
-func NewRequest(u *url.URL, buildRequest *headchef_models.V1BuildRequest) Requester {
+func NewRequest(u *url.URL, buildRequest *headchef_models.V1BuildRequest) *Request {
 	return &Request{
 		buildRequest: buildRequest,
 		client:       headchef_client.Default.HeadchefOperations,
@@ -90,14 +92,14 @@ func (r *Request) triggerBuildFailed(message string) {
 	}
 }
 
-func (r *Request) OnBuildEnded(f RequestBuildEnded) {
-	r.onBuildEnded = f
+func (r *Request) OnBuildCompleted(f RequestBuildCompleted) {
+	r.onBuildCompleted = f
 }
 
-func (r *Request) triggerBuildEnded(response headchef_models.BuildEndedResponse) {
+func (r *Request) triggerBuildCompleted(response headchef_models.BuildCompletedResponse) {
 	logging.Debug("BuildCompleted:", response)
-	if r.onBuildEnded != nil {
-		r.onBuildEnded(response)
+	if r.onBuildCompleted != nil {
+		r.onBuildCompleted(response)
 	}
 }
 
@@ -147,19 +149,15 @@ func (r *Request) Start() {
 		r.triggerBuildStarted()
 		buildUUID = accepted.Payload.BuildRequestID
 	case created != nil:
-		envlp, ok := created.Payload.(*headchef_models.StatusMessageEnvelope)
-		if !ok {
-			logging.Panic("did not receive StatusMessageEnvelope")
-		}
-		switch *envlp.Type {
-		case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
-			r.triggerBuildEnded(created.Payload)
+		switch p := created.Payload.(type) {
+		case headchef_models.BuildCompletedResponse:
+			r.triggerBuildCompleted(p)
 			return
-		case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
-			r.triggerBuildFailed(string(envlp.Body.([]byte)))
+		case headchef_models.BuildFailedResponse:
+			r.triggerBuildFailed(p.Message)
 			return
 		default:
-			logging.Panic("unknown StatusMessageEnvelope type")
+			logging.Panic("unknown BuildEndedResponse payload type")
 		}
 	default:
 		logging.Panic("no value returned from StartBuildV1")
@@ -182,19 +180,19 @@ func (r *Request) Start() {
 			r.triggerFailure(FailRestAPIError.Wrap(err))
 			return
 		}
-		envlp, ok := bsRes.Payload.(*headchef_models.StatusMessageEnvelope)
-		if !ok {
-			logging.Panic("did not receive StatusMessageEnvelope")
-		}
-		switch *envlp.Type {
-		case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
-			r.triggerBuildEnded(bsRes.Payload)
+		switch p := bsRes.Payload.(type) {
+		case headchef_models.BuildStartedResponse:
+			continue
+		case headchef_models.BuildCompletedResponse:
+			r.triggerBuildCompleted(p)
 			return
-		case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
-			r.triggerBuildFailed(string(envlp.Body.([]byte)))
+		case headchef_models.BuildFailedResponse:
+			r.triggerBuildFailed(p.Message)
 			return
 		default:
-			logging.Panic("unknown StatusMessageEnvelope type")
+			logging.Panic("unknown BuildRequestedResponse type")
 		}
 	}
+
+	logging.Error(locale.T("build_status_timeout"))
 }

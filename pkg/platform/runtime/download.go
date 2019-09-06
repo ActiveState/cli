@@ -44,7 +44,7 @@ var (
 var InitRequester headchef.InitRequester = headchef.InitRequest
 
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
-type HeadChefArtifact = headchef_models.BuildCompletedArtifactsItems0
+type HeadChefArtifact = headchef_models.Artifact
 
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
@@ -74,7 +74,7 @@ func NewDownload(project *project.Project, targetDir string, headchefRequester h
 }
 
 // fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
+func (r *Download) fetchBuildRequest() (*headchef_models.V1BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
 	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
@@ -105,7 +105,7 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 	}
 
 	// Wrap it all up in a build request
-	buildRequest, fail := model.BuildRequestForProject(platProject)
+	buildRequest, fail := model.NewBuildRequest(platProject)
 	if fail != nil {
 		return nil, fail
 	}
@@ -126,7 +126,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	var artifacts []*HeadChefArtifact
 
 	request := r.headchefRequester(buildRequest)
-	request.OnBuildCompleted(func(response headchef_models.BuildCompleted) {
+	request.OnBuildCompleted(func(response headchef_models.BuildCompletedResponse) {
 		logging.Debug("Build Completed")
 		if len(response.Artifacts) == 0 {
 			fail = FailNoArtifacts.New(locale.T("err_no_artifacts"))

@@ -107,13 +107,13 @@ func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, 
 }
 
 // RecipeToBuildRecipe converts a *Recipe to the related head chef model
-func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *failures.Failure) {
+func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe, *failures.Failure) {
 	b, err := recipe.MarshalBinary()
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
 
-	buildRecipe := &headchef_models.BuildRequestRecipe{}
+	buildRecipe := &headchef_models.V1BuildRequestRecipe{}
 	err = buildRecipe.UnmarshalBinary(b)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
