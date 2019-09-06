@@ -100,28 +100,8 @@ func checkInvites(organization *mono_models.Organization, numInvites int) *failu
 	return nil
 }
 
-// OrgRole is an enumeration of the roles that user can have in an organization
-type OrgRole int
-
-const (
-	// None means no role selected
-	None OrgRole = iota
-	// Owner of an organization
-	Owner
-	// Member in an organization
-	Member
-)
-
-var orgRoleChoices []string
-
-func init() {
-	orgRoleChoices = []string{
-		locale.T("org_role_choice_owner"),
-		locale.T("org_role_choice_member"),
-	}
-}
-
 func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
+	choices := orgRoleChoices()
 	var inviteString string
 	if len(emails) == 1 {
 		inviteString = emails[0]
@@ -131,14 +111,14 @@ func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
 	selection, fail := p.Select(locale.T("invite_select_org_role", map[string]interface{}{
 		"Invitees":     inviteString,
 		"Organization": orgName,
-	}), orgRoleChoices[:], "")
+	}), choices, "")
 	if fail != nil {
 		return None
 	}
 	switch selection {
-	case orgRoleChoices[0]:
+	case choices[0]:
 		return Owner
-	case orgRoleChoices[1]:
+	case choices[1]:
 		return Member
 	}
 	return None
