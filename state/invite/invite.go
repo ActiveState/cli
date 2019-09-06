@@ -21,8 +21,6 @@ import (
 )
 
 // MaxParallelRequests is the maximum number of invite requests that we want to send in parallel
-// I wonder if this constant should go somewhere else, but it seems very specific to this
-// use case, where we could theoretically invite a lot of users.
 const MaxParallelRequests = 10
 
 // Command is the organization command's definition.
