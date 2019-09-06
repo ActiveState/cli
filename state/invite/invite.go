@@ -106,7 +106,7 @@ func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
 	if len(emails) == 1 {
 		inviteString = emails[0]
 	} else {
-		inviteString = fmt.Sprintf("%d users", len(emails))
+		inviteString = fmt.Sprintf("%d %s", len(emails), locale.T("users_plural"))
 	}
 	selection, fail := p.Select(locale.T("invite_select_org_role", map[string]interface{}{
 		"Invitees":     inviteString,

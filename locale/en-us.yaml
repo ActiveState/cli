@@ -947,6 +947,8 @@ sample_yaml:
           echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
 package_description:
   other: Manage packages used in your project
+users_plural:
+  other: users
 package_add_description:
   other: Add a new package to your project
 package_update_description:
