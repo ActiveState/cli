@@ -179,11 +179,9 @@ func callInParallel(callback func(arg string) *failures.Failure, args []string) 
 	wg.Wait()
 	close(errorChan)
 
-	errCount := 0
-	fails := make([]*failures.Failure, len(errorChan))
+	var fails []*failures.Failure
 	for fail := range errorChan {
-		fails[errCount] = fail
-		errCount++
+		fails = append(fails, fail)
 	}
 	return fails
 }
