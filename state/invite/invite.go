@@ -101,7 +101,7 @@ var Args Arguments
 // failures.Handle() needs to be called and already prints its output.  This
 // could maybe be improved in the future...?
 func checkInvites(organization *mono_models.Organization, numInvites int) bool {
-	// ignore personal organizations
+	// don't allow personal organizations
 	if organization.Personal {
 		print.Error(locale.T("invite_personal_org_err", map[string]string{
 			"Organization": organization.Name,
