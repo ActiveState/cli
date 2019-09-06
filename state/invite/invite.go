@@ -78,33 +78,30 @@ var Args Arguments
 // Note: I would prefer to return an error strings here for easier testing, but
 // failures.Handle() needs to be called and already prints its output.  This
 // could maybe be improved in the future...?
-func checkInvites(organization *mono_models.Organization, numInvites int) bool {
+func checkInvites(organization *mono_models.Organization, numInvites int) *failures.Failure {
 	// don't allow personal organizations
 	if organization.Personal {
-		print.Error(locale.T("invite_personal_org_err", map[string]string{
+		return failures.FailUser.New(locale.T("invite_personal_org_err", map[string]string{
 			"Organization": organization.Name,
 		}))
-		return false
 	}
 
 	limits, fail := model.FetchOrganizationLimits(organization.Urlname)
 	if fail != nil {
-		failures.Handle(fail, locale.T("invite_limit_fetch_err"))
-		return false
+		return failures.FailRuntime.New(locale.T("invite_limit_fetch_err"))
 	}
 
 	requestedMemberCount := organization.MemberCount + int64(numInvites)
 	if limits.UsersLimit != nil && requestedMemberCount > *limits.UsersLimit {
 		memberCountExceededBy := requestedMemberCount - *limits.UsersLimit
 
-		print.Error(locale.T("invite_member_limit_err", map[string]string{
+		return failures.FailUser.New(locale.T("invite_member_limit_err", map[string]string{
 			"Organization": organization.Name,
 			"UserLimit":    strconv.FormatInt(*limits.UsersLimit, 10),
 			"ExceededBy":   strconv.FormatInt(memberCountExceededBy, 10),
 		}))
-		return false
 	}
-	return true
+	return nil
 }
 
 // OrgRole is an enumeration of the roles that user can have in an organization
@@ -258,7 +255,11 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if !checkInvites(organization, len(emails)) {
+	fail = checkInvites(organization, len(emails))
+	if fail != nil {
+		// Here I am just handling an error with an error message that is already
+		// tailored for the user, hence the second argument is ""
+		failures.Handle(fail, "")
 		return
 	}
 

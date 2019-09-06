@@ -39,7 +39,6 @@ func setupHTTPMock(t *testing.T) {
 }
 
 func TestSelectOrgRole(t *testing.T) {
-	fmt.Println("hello")
 	definitions := []struct {
 		argValue    string
 		promptValue string
@@ -113,7 +112,7 @@ func TestInviteUserLimit(t *testing.T) {
 		exitCode := ex.WaitForExit(func() {
 			Command.Execute()
 		})
-		require.Equal(t, -1, exitCode, "Exited with code -1")
+		require.Equal(t, 1, exitCode, "Exited with code 1")
 	})
 	require.NoError(t, outErr)
 
@@ -186,7 +185,10 @@ func TestCheckInvites(t *testing.T) {
 	t.Run("should fail for personal accounts", func(t *testing.T) {
 		org := getTestOrg(t, true, 1, "testOrg")
 
-		require.False(t, checkInvites(org, 1))
+		err := checkInvites(org, 1)
+		require.EqualError(t, err.ToError(), locale.T("invite_personal_org_err", map[string]string{
+			"Organization": "testOrg",
+		}))
 	})
 
 	t.Run("fail if organization limits cannot be fetched", func(t *testing.T) {
@@ -194,23 +196,29 @@ func TestCheckInvites(t *testing.T) {
 		defer httpmock.DeActivate()
 		org := getTestOrg(t, false, 1, "nonExistentTestOrg")
 
-		require.False(t, checkInvites(org, 1))
+		err := checkInvites(org, 1)
+		require.EqualError(t, err.ToError(), locale.T("invite_limit_fetch_err"))
 	})
+
 	t.Run("fail if organization limits are exceeded", func(t *testing.T) {
 		setupHTTPMock(t)
 		defer httpmock.DeActivate()
 		org := getTestOrg(t, false, 49, "testOrg")
 		httpmock.Register("GET", "/organizations/testOrg/limits")
 
-		require.False(t, checkInvites(org, 2))
+		err := checkInvites(org, 2)
+
+		require.Error(t, err.ToError(), "expected error message due to exceeded user limit")
 	})
+
 	t.Run("return true if everything is okay", func(t *testing.T) {
 		setupHTTPMock(t)
 		defer httpmock.DeActivate()
 		org := getTestOrg(t, false, 0, "testOrg")
 		httpmock.Register("GET", "/organizations/testOrg/limits")
 
-		require.True(t, checkInvites(org, 2))
+		err := checkInvites(org, 2)
+		require.NoError(t, err.ToError(), "expected no error")
 	})
 }
 
@@ -223,8 +231,7 @@ func TestAuthError(t *testing.T) {
 	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
 
 	// so we are not allowed to get the testOrg limits
-	httpmock.RegisterWithCode("GET", "/organizations/testOrg", 200)
-	httpmock.RegisterWithCode("GET", "/organizations/testOrg/limits", 401)
+	httpmock.RegisterWithCode("GET", "/organizations/testOrg", 401)
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
 	outStr, outErr := osutil.CaptureStderr(func() {
@@ -236,4 +243,28 @@ func TestAuthError(t *testing.T) {
 	require.NoError(t, outErr)
 
 	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
+}
+
+func TestForbiddenError(t *testing.T) {
+
+	setupHTTPMock(t)
+	defer httpmock.DeActivate()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
+
+	// so we are not allowed to get the testOrg limits
+	httpmock.RegisterWithCode("GET", "/organizations/testOrg", 200)
+	httpmock.RegisterWithCode("GET", "/organizations/testOrg/limits", 403)
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	outStr, outErr := osutil.CaptureStderr(func() {
+		exitCode := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		require.Equal(t, 1, exitCode, "Exited with code 1")
+	})
+	require.NoError(t, outErr)
+
+	assert.Contains(t, outStr, locale.T("invite_limit_fetch_err"))
 }

@@ -300,7 +300,7 @@ invite_select_org_role:
     You are about to invite {{.Invitees}} to the {{.Organization}} organization
     What role should this user be given?
 invite_limit_fetch_err:
-  other: Failed to fetch the organization limits.  Check your connection and the provided organization name
+  other: Failed to fetch the organization limits.  Please check your permissions for this organization.
 invite_personal_org_err:
   other: This project does not belong to any organization and so cannot have any users invited to it. To invite users create an organization
 invite_org_err:
