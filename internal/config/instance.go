@@ -15,6 +15,7 @@ import (
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/sysinfo"
 )
 
 // Instance holds our main config logic
@@ -99,7 +100,8 @@ func (i *Instance) ensureConfigExists() {
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
-	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" {
+	// This is a workaround for docker envs that don't usually have $HOME set
+	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" && sysinfo.OS().String() != "Windows" {
 		var err error
 		i.localPath, err = os.Getwd()
 		if err != nil || flag.Lookup("test.v") != nil {
