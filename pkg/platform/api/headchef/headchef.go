@@ -138,10 +138,10 @@ func (r *Request) Start() {
 
 	var buildUUID *strfmt.UUID
 
-	sbPs := headchef_operations.StartBuildV1Params{
+	startParams := headchef_operations.StartBuildV1Params{
 		BuildRequest: r.buildRequest,
 	}
-	created, accepted, err := r.client.StartBuildV1(&sbPs)
+	created, accepted, err := r.client.StartBuildV1(&startParams)
 	switch {
 	case err != nil:
 		r.triggerFailure(FailRestAPIError.Wrap(err))
@@ -150,12 +150,12 @@ func (r *Request) Start() {
 		r.triggerBuildStarted()
 		buildUUID = accepted.Payload.BuildRequestID
 	case created != nil:
-		switch p := created.Payload.(type) {
+		switch payload := created.Payload.(type) {
 		case headchef_models.BuildCompletedResponse:
-			r.triggerBuildCompleted(p)
+			r.triggerBuildCompleted(payload)
 			return
 		case headchef_models.BuildFailedResponse:
-			r.triggerBuildFailed(p.Message)
+			r.triggerBuildFailed(payload.Message)
 			return
 		default:
 			logging.Panic("unknown BuildEndedResponse payload type")
@@ -172,22 +172,22 @@ func (r *Request) Start() {
 			wait = longWait
 		}
 
-		bsPs := headchef_operations.GetBuildStatusParams{
+		buildStatusParams := headchef_operations.GetBuildStatusParams{
 			BuildRequestID: *buildUUID,
 		}
-		bsRes, err := r.client.GetBuildStatus(&bsPs)
+		buildStatus, err := r.client.GetBuildStatus(&buildStatusParams)
 		if err != nil {
 			r.triggerFailure(FailRestAPIError.Wrap(err))
 			return
 		}
-		switch p := bsRes.Payload.(type) {
+		switch payload := buildStatus.Payload.(type) {
 		case headchef_models.BuildStartedResponse:
 			continue
 		case headchef_models.BuildCompletedResponse:
-			r.triggerBuildCompleted(p)
+			r.triggerBuildCompleted(payload)
 			return
 		case headchef_models.BuildFailedResponse:
-			r.triggerBuildFailed(p.Message)
+			r.triggerBuildFailed(payload.Message)
 			return
 		default:
 			logging.Panic("unknown BuildRequestedResponse type")
