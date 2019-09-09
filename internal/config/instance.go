@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/shibukawa/configdir"
@@ -99,7 +100,9 @@ func (i *Instance) ensureConfigExists() {
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
-	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" {
+	// This is a workaround for docker envs that don't usually have $HOME set
+	_, exists := os.LookupEnv("HOME")
+	if !exists && i.localPath == "" && runtime.GOOS != "windows" {
 		var err error
 		i.localPath, err = os.Getwd()
 		if err != nil || flag.Lookup("test.v") != nil {
