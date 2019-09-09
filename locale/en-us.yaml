@@ -310,7 +310,7 @@ invite_org_secrets_reminder:
 
 You should run 'state secrets sync' once they have accepted their invitation and authenticated with the State Tool."
 invite_member_limit_err:
-  other: The organization {{.Organization}} has reached its user limit of {{.UserLimit}}.  The request would exceed the limit by {{.ExceededBy}} users.
+  other: Only {{.RemainingUsers}} can be added to the organization {{.Organization}} with a limit of {{.UserLimit}}.  The request exceeds the limit by {{.ExceededBy}} users.
 invite_invitation_err:
   other: Invite of new member failed
 invite_invitation_sent:
