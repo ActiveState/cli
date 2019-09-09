@@ -298,7 +298,7 @@ invite_arg_emails:
 invite_select_org_role:
   other: |
     You are about to invite {{.Invitees}} to the {{.Organization}} organization
-    What role should this user be given?
+    What role should the user(s) be given?
 invite_limit_fetch_err:
   other: Failed to fetch the organization limits.  Please check your permissions for this organization.
 invite_personal_org_err:
