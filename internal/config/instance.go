@@ -101,7 +101,8 @@ func (i *Instance) ensureConfigExists() {
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
 	// This is a workaround for docker envs that don't usually have $HOME set
-	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" && sysinfo.OS().String() != "Windows" {
+	_, exists := os.LookupEnv("HOME")
+	if !exists && i.localPath == "" && sysinfo.OS().String() != "Windows" {
 		var err error
 		i.localPath, err = os.Getwd()
 		if err != nil || flag.Lookup("test.v") != nil {
