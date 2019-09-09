@@ -1,7 +1,6 @@
 package invite
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,118 +8,138 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	pMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/pkg/platform/api"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 )
 
-func setupHTTPMock(t *testing.T) {
-
-	// For some tests we need to have an activestate.yaml file in our working directory
-	root, err := environment.GetRootPath()
-	require.NoError(t, err, "Should detect root path")
-	os.Chdir(filepath.Join(root, "test"))
-
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-
-	// we login
-	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+type InviteTestSuite struct {
+	suite.Suite
+	apiMock  *apiMock.Mock
+	authMock *authMock.Mock
+	ex       *exiter.Exiter
 }
 
-func TestSelectOrgRole(t *testing.T) {
+// Run provides suite functionality around golang subtests.
+//
+// It is not in the vendor packaged source for stretchr/testify Suite, but is in v1.3.0.
+// Until we upgrade, we shim it.
+func (s *InviteTestSuite) Run(name string, subtest func()) bool {
+	oldT := s.T()
+	defer s.SetT(oldT)
+	return oldT.Run(name, func(t *testing.T) {
+		s.SetT(t)
+		subtest()
+	})
+}
+
+func (s *InviteTestSuite) BeforeTest(suiteName, testName string) {
+	s.apiMock = apiMock.Init()
+	s.authMock = authMock.Init()
+	// For some tests we need to have an activestate.yaml file in our working directory
+	root, err := environment.GetRootPath()
+	s.Require().NoError(err, "Should detect root path")
+	os.Chdir(filepath.Join(root, "test"))
+
+	// mock that we are logged in
+	s.authMock.MockLoggedin()
+
+	s.ex = exiter.New()
+	Command.Exiter = s.ex.Exit
+
+}
+
+func (s *InviteTestSuite) AfterTest(suiteName, testName string) {
+	s.apiMock.Close()
+	s.authMock.Close()
+}
+
+func (s *InviteTestSuite) TestSelectOrgRole() {
 	definitions := []struct {
 		argValue    string
 		promptValue string
 		number      OrgRole
+		noError     bool
 	}{
-		{"", "owner", Owner},
-		{"", "member", Member},
-		{"owner", "", Owner},
-		{"member", "", Member},
-		{"foo", "", None},
+		{"", "owner", Owner, true},
+		{"", "member", Member, true},
+		{"owner", "", Owner, true},
+		{"member", "", Member, true},
+		{"foo", "", None, false},
 	}
 
 	emails := []string{"foo@bar.com", "foo2@bar.com"}
 
 	for _, role := range definitions {
-		t.Run(fmt.Sprintf("expect %s(%s)", role.promptValue, role.argValue), func(t *testing.T) {
+		s.Run(fmt.Sprintf("expect %s(%s)", role.promptValue, role.argValue), func() {
 			pm := pMock.Init()
 			pm.On(
 				"Select", locale.T("invite_select_org_role", map[string]interface{}{
 					"Invitees":     "2 users",
 					"Organization": "testOrg",
-				}), orgRoleChoices, "",
+				}), orgRoleChoices(), "",
 			).Return(locale.T(fmt.Sprintf("org_role_choice_%s", role.promptValue)), nil)
-			orgRole := selectOrgRole(pm, role.argValue, emails, "testOrg")
-			require.Equal(t, role.number, orgRole, fmt.Sprintf("orgRole should be %v", role.number))
+			orgRole, fail := selectOrgRole(pm, role.argValue, emails, "testOrg")
+			if role.noError {
+				s.NoError(fail.ToError(), "no error expected")
+			} else {
+				s.Error(fail.ToError(), "expected an error")
+			}
+			s.Equal(role.number, orgRole, fmt.Sprintf("orgRole should be %v", role.number))
 		})
 	}
 }
 
-func TestInvite(t *testing.T) {
-	setupHTTPMock(t)
-	defer httpmock.DeActivate()
-
+func (s *InviteTestSuite) TestInvite() {
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
+	Cc.SetArgs([]string{"--role", "member", "--organization", "string", "foo@bar.com"})
 
 	// get the organization
-	httpmock.Register("GET", "/organizations/testOrg")
-	// get the organizations limits
-	httpmock.Register("GET", "/organizations/testOrg/limits")
-
-	// then mock an invite call (NOTE: The url will be encoded as a URL string later...)
-	httpmock.Register("POST", "/organizations/testOrg/invitations/foo@bar.com")
+	s.apiMock.MockGetOrganization()
+	s.apiMock.MockGetOrganizationLimits()
+	s.apiMock.MockInviteUser()
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = Command.Execute()
 	})
 
-	require.NoError(t, outErr)
-	require.NoError(t, execErr)
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	s.NoError(outErr)
+	s.NoError(execErr)
+	s.NoError(failures.Handled(), "No failure occurred")
 
-	assert.Contains(t, outStr, "foo@bar.com")
+	s.Contains(outStr, "foo@bar.com")
 }
 
-func TestInviteUserLimit(t *testing.T) {
-	setupHTTPMock(t)
-	defer httpmock.DeActivate()
-
+func (s *InviteTestSuite) TestInviteUserLimit() {
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrgAtLimit", "foo@bar.com,foo2@bar.com"})
+	Cc.SetArgs([]string{"--role", "member", "--organization", "string", "foo@bar.com,foo2@bar.com"})
 
-	httpmock.Register("GET", "/organizations/testOrgAtLimit")
+	s.apiMock.MockGetOrganization()
+	s.apiMock.MockGetOrganizationLimitsReached()
 
-	httpmock.Register("GET", "/organizations/testOrgAtLimit/limits")
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
 	outStr, outErr := osutil.CaptureStderr(func() {
-		exitCode := ex.WaitForExit(func() {
+		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
-		require.Equal(t, 1, exitCode, "Exited with code 1")
+		s.Equal(1, exitCode, "Exited with code 1")
 	})
-	require.NoError(t, outErr)
+	s.NoError(outErr)
 
 	// Should not be able to invite users without mock
-	assert.Contains(t, outStr, "has reached its user limit")
+	s.Contains(outStr, "The request exceeds the limit")
 }
 
-func TestCallInParallel(t *testing.T) {
+func (s *InviteTestSuite) TestCallInParallel() {
 	responseChan := make(chan string, MaxParallelRequests+1)
 	args := make([]string, MaxParallelRequests+1)
 	for i := range args {
@@ -138,131 +157,107 @@ func TestCallInParallel(t *testing.T) {
 	}, args)
 
 	close(responseChan)
-	require.Len(t, fails, 5, "expected five failures")
-	require.Len(t, responseChan, MaxParallelRequests+1)
+	s.Len(fails, 5, "expected five failures")
+	s.Len(responseChan, MaxParallelRequests+1)
 
 	// last element should always arrive in the end
 	var lastResponse string
 	for response := range responseChan {
 		lastResponse = response
 	}
-	require.Equal(t, strconv.FormatInt(MaxParallelRequests, 10), lastResponse, "expected to receive last send element at end")
+	s.Equal(strconv.FormatInt(MaxParallelRequests, 10), lastResponse, "expected to receive last send element at end")
 }
 
 // getTestOrg returns an Organization with specific attributes that we want to test
-func getTestOrg(t *testing.T, personal bool, memberCount int, orgName string) *mono_models.Organization {
-
-	var testOrg mono_models.Organization
-	var personalString string
-	if personal {
-		personalString = "true"
-	} else {
-		personalString = "false"
+func (s *InviteTestSuite) getTestOrg(personal bool, memberCount int, orgName string) *mono_models.Organization {
+	added, _ := time.Parse(time.RFC1123, "1970-01-01T00:00:00Z")
+	return &mono_models.Organization{
+		Urlname:        orgName,
+		Name:           orgName,
+		Personal:       personal,
+		AddOns:         nil,
+		BillingDate:    nil,
+		MemberCount:    int64(memberCount),
+		Owner:          true,
+		Added:          strfmt.DateTime(added),
+		OrganizationID: "11111111-1111-1111-1111-111111111111",
 	}
-
-	err := json.Unmarshal([]byte(fmt.Sprintf(`{
-           "organizationID": "11111111-1111-1111-1111-111111111111",
-           "added": "1111-11-11T11:11:11.111Z",
-           "name": "%s",
-           "displayName": "%s",
-           "URLname": "%s",
-           "personal": %s,
-           "owner": true,
-           "subscriptionStatus": "active",
-           "tier": "string",
-           "billingDate": "string",
-           "memberCount": %s 
-		}`, orgName, orgName, orgName, personalString, strconv.Itoa(memberCount)),
-	),
-		&testOrg,
-	)
-	require.NoError(t, err, "could not parse test organization")
-	return &testOrg
 }
 
-func TestCheckInvites(t *testing.T) {
+func (s *InviteTestSuite) TestCheckInvites() {
 
-	t.Run("should fail for personal accounts", func(t *testing.T) {
-		org := getTestOrg(t, true, 1, "testOrg")
-
-		err := checkInvites(org, 1)
-		require.EqualError(t, err.ToError(), locale.T("invite_personal_org_err"))
-	})
-
-	t.Run("fail if organization limits cannot be fetched", func(t *testing.T) {
-		setupHTTPMock(t)
-		defer httpmock.DeActivate()
-		org := getTestOrg(t, false, 1, "nonExistentTestOrg")
+	s.Run("should fail for personal accounts", func() {
+		org := s.getTestOrg(true, 1, "string")
 
 		err := checkInvites(org, 1)
-		require.EqualError(t, err.ToError(), locale.T("invite_limit_fetch_err"))
+		s.EqualError(err.ToError(), locale.T("invite_personal_org_err"))
 	})
 
-	t.Run("fail if organization limits are exceeded", func(t *testing.T) {
-		setupHTTPMock(t)
-		defer httpmock.DeActivate()
-		org := getTestOrg(t, false, 49, "testOrg")
-		httpmock.Register("GET", "/organizations/testOrg/limits")
+	s.Run("fail if organization limits cannot be fetched", func() {
+		org := s.getTestOrg(false, 1, "nonExistentTestOrg")
+
+		err := checkInvites(org, 1)
+		s.EqualError(err.ToError(), locale.T("invite_limit_fetch_err"))
+	})
+
+	s.Run("fail if organization limits are exceeded", func() {
+		org := s.getTestOrg(false, 49, "string")
+
+		s.apiMock.MockGetOrganizationLimits()
 
 		err := checkInvites(org, 2)
 
-		require.Error(t, err.ToError(), "expected error message due to exceeded user limit")
+		s.Error(err.ToError(), "expected error message due to exceeded user limit")
 	})
 
-	t.Run("return true if everything is okay", func(t *testing.T) {
-		setupHTTPMock(t)
-		defer httpmock.DeActivate()
-		org := getTestOrg(t, false, 0, "testOrg")
-		httpmock.Register("GET", "/organizations/testOrg/limits")
+	s.Run("return true if everything is okay", func() {
+		org := s.getTestOrg(false, 0, "string")
+
+		s.apiMock.MockGetOrganizationLimits()
 
 		err := checkInvites(org, 2)
-		require.NoError(t, err.ToError(), "expected no error")
+		s.NoError(err.ToError(), "expected no error")
 	})
 }
 
-func TestAuthError(t *testing.T) {
-
-	setupHTTPMock(t)
-	defer httpmock.DeActivate()
+func (s *InviteTestSuite) TestAuthError() {
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
+	Cc.SetArgs([]string{"--role", "member", "--organization", "string", "foo@bar.com"})
 
-	// so we are not allowed to get the testOrg limits
-	httpmock.RegisterWithCode("GET", "/organizations/testOrg", 401)
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
+	// ... so we are not authorized to get the testOrg
+	s.apiMock.MockGetOrganization401()
+
 	outStr, outErr := osutil.CaptureStderr(func() {
-		exitCode := ex.WaitForExit(func() {
+		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
-		require.Equal(t, 1, exitCode, "Exited with code 1")
+		s.Equal(1, exitCode, "Exited with code 1")
 	})
-	require.NoError(t, outErr)
+	s.NoError(outErr)
 
-	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
+	s.Contains(outStr, locale.T("err_api_not_authenticated"))
 }
 
-func TestForbiddenError(t *testing.T) {
-
-	setupHTTPMock(t)
-	defer httpmock.DeActivate()
+func (s *InviteTestSuite) TestForbiddenError() {
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--role", "member", "--organization", "testOrg", "foo@bar.com"})
+	Cc.SetArgs([]string{"--role", "member", "--organization", "string", "foo@bar.com"})
 
-	// so we are not allowed to get the testOrg limits
-	httpmock.RegisterWithCode("GET", "/organizations/testOrg", 200)
-	httpmock.RegisterWithCode("GET", "/organizations/testOrg/limits", 403)
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
+	// we are not allowed to get the testOrg limits
+	s.apiMock.MockGetOrganization()
+	s.apiMock.MockGetOrganizationLimits403()
 	outStr, outErr := osutil.CaptureStderr(func() {
-		exitCode := ex.WaitForExit(func() {
+		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
-		require.Equal(t, 1, exitCode, "Exited with code 1")
+		s.Equal(1, exitCode, "Exited with code 1")
 	})
-	require.NoError(t, outErr)
+	s.NoError(outErr)
 
-	assert.Contains(t, outStr, locale.T("invite_limit_fetch_err"))
+	s.Contains(outStr, locale.T("invite_limit_fetch_err"))
+}
+
+func TestInviteSuite(t *testing.T) {
+	suite.Run(t, new(InviteTestSuite))
 }

@@ -62,10 +62,9 @@ func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
 
 	suite.apiMock.MockInviteUserToOrg()
 
-	invitation, fail := model.InviteUserToOrg(org, true, "string")
+	invitation, fail := model.InviteUserToOrg(org, true, "foo@bar.com")
 	suite.NoError(fail.ToError(), "should have received invitation receipt")
-	suite.Equal("string", invitation.Email)
-	suite.Equal(org, invitation.Organization)
+	suite.Equal("foo@bar.com", invitation.Email)
 
 }
 

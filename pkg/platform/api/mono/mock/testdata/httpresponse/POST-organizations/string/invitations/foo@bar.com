@@ -2,7 +2,7 @@
     {
         "added": "2019-08-30T19:38:03.122Z",
         "changed": "2019-08-30T19:38:03.122Z",
-        "email": "string",
+        "email": "foo@bar.com",
         "invitedBy": "string",
         "organization": {
             "URLname": "string",
