@@ -100,7 +100,7 @@ func checkInvites(organization *mono_models.Organization, numInvites int) *failu
 	return nil
 }
 
-func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
+func promptOrgRole(p prompt.Prompter, emails []string, orgName string) (OrgRole, *failures.Failure) {
 	choices := orgRoleChoices()
 	var inviteString string
 	if len(emails) == 1 {
@@ -113,30 +113,29 @@ func promptOrgRole(p prompt.Prompter, emails []string, orgName string) OrgRole {
 		"Organization": orgName,
 	}), choices, "")
 	if fail != nil {
-		return None
+		return None, fail
 	}
 	switch selection {
 	case choices[0]:
-		return Owner
+		return Owner, nil
 	case choices[1]:
-		return Member
+		return Member, nil
 	}
-	return None
+	return None, failures.FailUserInput.New(locale.T("invite_role_needs_selection"))
 }
 
-func selectOrgRole(prompter prompt.Prompter, roleString string, emails []string, orgName string) OrgRole {
+func selectOrgRole(prompter prompt.Prompter, roleString string, emails []string, orgName string) (OrgRole, *failures.Failure) {
 	if roleString == "" {
 		return promptOrgRole(prompter, emails, orgName)
 	}
 
 	switch roleString {
 	case "member":
-		return Member
+		return Member, nil
 	case "owner":
-		return Owner
+		return Owner, nil
 	}
-	print.Error(locale.T("invite_invalid_role_string"))
-	return None
+	return None, failures.FailUserInput.New("invite_invalid_role_string")
 }
 
 func sendInvite(org *mono_models.Organization, orgRole OrgRole, email string) *failures.Failure {
@@ -186,22 +185,13 @@ func callInParallel(callback func(arg string) *failures.Failure, args []string) 
 	return fails
 }
 
-func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string) bool {
+func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string) []*failures.Failure {
 
 	fails := callInParallel(func(email string) *failures.Failure {
 		return sendInvite(org, orgRole, email)
 	}, emails)
 
-	if len(fails) > 0 {
-		failures.Handle(fails[0], locale.T("invite_invitation_err"))
-	}
-
-	// if at least one invite worked, send reminder to sync secrets
-	numErrors := len(fails)
-	if numErrors < len(emails) {
-		print.Info(locale.T("invite_org_secrets_reminder"))
-	}
-	return numErrors == 0
+	return fails
 }
 
 // Execute the organizations command.
@@ -213,10 +203,11 @@ func Execute(cmd *cobra.Command, args []string) {
 		orgName = Args.Organization
 	}
 	emails := strings.Split(Args.EmailList, ",")
-	orgRole := selectOrgRole(prompter, Args.RoleString, emails, orgName)
+	orgRole, fail := selectOrgRole(prompter, Args.RoleString, emails, orgName)
 
 	// Errors are handled in selectOrgRole, so we can just return if orgRole is None.
-	if orgRole == None {
+	if fail != nil {
+		failures.Handle(fail, locale.T("invite_invalid_role_string"))
 		return
 	}
 
@@ -236,5 +227,12 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	sendInvites(organization, orgRole, emails)
+	fails := sendInvites(organization, orgRole, emails)
+	if len(fails) > 0 {
+		failures.Handle(fails[0], "invite_invitation_err")
+	}
+	// if at least one invitation could be send, remind user to refresh secrets
+	if len(fails) < len(emails) {
+		print.Info(locale.T("invite_org_secrets_reminder"))
+	}
 }
