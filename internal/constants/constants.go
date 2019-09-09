@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 // VersionNumber holds the current version of our cli
 const VersionNumber = "0.2.2"
 
@@ -148,6 +150,9 @@ const HeadChefURLDev = "http://localhost" + HeadChefAPIPath
 
 // HeadChefOrigin is the Origin header to use when making head-chef requests
 const HeadChefOrigin = "http://localhost"
+
+// HeadChefBuildStatusCheckMax is the timeout for checking a single build status
+const HeadChefBuildStatusCheckMax = time.Hour * 8
 
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api"

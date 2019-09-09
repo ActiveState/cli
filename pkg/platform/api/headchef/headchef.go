@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -126,8 +127,8 @@ func (r *Request) triggerClose() {
 }
 
 func (r *Request) Start() {
-	max := time.Hour * 12
-	eager := time.Minute * 3
+	max := constants.HeadChefBuildStatusCheckMax
+	eager := time.Minute * 3 // duration to use short polling wait duration
 	shortWait := time.Second * 8
 	longWait := time.Second * 16
 
@@ -164,7 +165,6 @@ func (r *Request) Start() {
 	}
 
 	var wait time.Duration
-
 	for start := time.Now(); time.Now().Sub(start) < max; {
 		time.Sleep(wait)
 		wait = shortWait
