@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/shibukawa/configdir"
@@ -15,7 +16,6 @@ import (
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/sysinfo"
 )
 
 // Instance holds our main config logic
@@ -102,7 +102,7 @@ func (i *Instance) ensureConfigExists() {
 	// Account for HOME dir not being set, meaning querying global folders will fail
 	// This is a workaround for docker envs that don't usually have $HOME set
 	_, exists := os.LookupEnv("HOME")
-	if !exists && i.localPath == "" && sysinfo.OS().String() != "Windows" {
+	if !exists && i.localPath == "" && runtime.GOOS != "windows" {
 		var err error
 		i.localPath, err = os.Getwd()
 		if err != nil || flag.Lookup("test.v") != nil {
