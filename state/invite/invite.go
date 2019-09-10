@@ -103,7 +103,7 @@ func isInvitationPossible(organization *mono_models.Organization, numInvites int
 }
 
 func promptOrgRole(p prompt.Prompter, emails []string, orgName string) (OrgRole, *failures.Failure) {
-	choices := orgRoleChoices()
+	choices, orgRoleNames := orgRoleChoices()
 	var inviteString string
 	if len(emails) == 1 {
 		inviteString = emails[0]
@@ -117,13 +117,12 @@ func promptOrgRole(p prompt.Prompter, emails []string, orgName string) (OrgRole,
 	if fail != nil {
 		return None, fail
 	}
-	switch selection {
-	case choices[0]:
-		return Owner, nil
-	case choices[1]:
-		return Member, nil
+	res, ok := orgRoleNames[selection]
+	if !ok {
+		return None, failures.FailUserInput.New(locale.T("invite_role_needs_selection"))
 	}
-	return None, failures.FailUserInput.New(locale.T("invite_role_needs_selection"))
+
+	return res, nil
 }
 
 func selectOrgRole(prompter prompt.Prompter, roleString string, emails []string, orgName string) (OrgRole, *failures.Failure) {
