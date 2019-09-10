@@ -84,7 +84,7 @@ func (s *InviteTestSuite) TestSelectOrgRole() {
 			pm := pMock.Init()
 			pm.On(
 				"Select", locale.T("invite_select_org_role", map[string]interface{}{
-					"Invitees":     "2 users",
+					"Invitees":     fmt.Sprintf("2 %s", locale.T("users_plural")),
 					"Organization": "testOrg",
 				}), orgRoleChoices(), "",
 			).Return(locale.T(fmt.Sprintf("org_role_choice_%s", role.promptValue)), nil)
