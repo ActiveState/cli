@@ -22,14 +22,25 @@ func (m *Mock) Close() {
 }
 
 func (m *Mock) MockPlatforms() {
-	m.httpmock.RegisterWithResponse("GET", "/platforms", 200, "platforms")
+	m.httpmock.RegisterWithResponse("GET", "/v1/platforms", 200, "platforms")
 }
 
 func (m *Mock) MockOrderRecipes() {
-	m.httpmock.Register("POST", "/orders/00010001-0001-0001-0001-000100010001/recipes")
-	m.httpmock.Register("POST", "/orders/00020002-0002-0002-0002-000200020002/recipes")
+	m.httpmock.RegisterWithResponse("POST", "/v1/recipes", 200, "recipes")
+	// m.httpmock.RegisterWithResponder("POST", "/v1/recipes", func(req *http.Request) (int, string) {
+	// 	body, err := ioutil.ReadAll(req.Body)
+	// 	if err != nil {
+	// 		panic(fmt.Sprintf("Could not read request body: %v", err))
+	// 	}
+
+	// 	if strings.Contains(string(body), "00020002-0002-0002-0002-000200020002") {
+	// 		return 200, "recipes2"
+	// 	}
+
+	// 	return 200, "recipes"
+	// })
 }
 
 func (m *Mock) MockIngredientsByName() {
-	m.httpmock.RegisterWithResponse("GET", "/ingredients?package_name=artifact", 200, "ingredients_by_name")
+	m.httpmock.RegisterWithResponse("GET", "/v1/namespaces/ingredients", 200, "ingredients_by_name")
 }

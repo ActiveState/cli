@@ -955,3 +955,7 @@ err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
+err_fetch_languages:
+  other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
+err_no_languages:
+  other: "Your project does not have any language configured"

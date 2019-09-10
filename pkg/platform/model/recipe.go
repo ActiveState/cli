@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/sysinfo"
 )
 
@@ -26,7 +27,7 @@ var (
 var HostPlatform string
 
 // Recipe aliases recipe model
-type Recipe = inventory_models.RecipeResponseRecipesItems0
+type Recipe = inventory_models.V1RecipeResponseRecipesItems0
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
@@ -41,14 +42,10 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	client := inventory.Get()
 
-	params := inventory_operations.NewOrderRecipesParams()
-	params.OrderID = commitID
+	params := inventory_operations.NewResolveRecipesParams()
+	params.Order = CheckpointToOrder(commitID, checkpoint)
 
-	order := CheckpointToOrder(checkpoint)
-	order.OrderID = &params.OrderID
-
-	params.Order = order
-	recipe, err := client.OrderRecipes(params)
+	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, FailOrderRecipes.Wrap(err)
 	}
@@ -59,11 +56,11 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 // RecipeByPlatform filters multiple recipes down to one based on it's platform name
 func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
 	for _, recipe := range recipes {
-		if recipe.PlatformID == nil {
+		if recipe.Platform.PlatformID == nil {
 			continue
 		}
 
-		pf, fail := FetchPlatformByUID(*recipe.PlatformID)
+		pf, fail := FetchPlatformByUID(*recipe.Platform.PlatformID)
 		if fail != nil {
 			return nil, fail
 		}
@@ -72,11 +69,11 @@ func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Fa
 			continue
 		}
 
-		if pf.OsName == nil {
+		if pf.OperatingSystem.Name == nil {
 			continue
 		}
 
-		if *pf.OsName == sysOSToPlatformOS(platform) {
+		if *pf.OperatingSystem.Name == sysOSToPlatformOS(platform) {
 			return recipe, nil
 		}
 	}

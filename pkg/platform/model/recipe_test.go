@@ -71,13 +71,13 @@ func (suite *RecipeTestSuite) TestFetchRecipesForCommit() {
 func (suite *RecipeTestSuite) TestFetchRecipeForPlatform() {
 	recipe, fail := model.FetchRecipeForPlatform(suite.mockProject(), model.HostPlatform)
 	suite.Require().NoError(fail.ToError())
-	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.PlatformID, "Returns recipe")
+	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.Platform.PlatformID, "Returns recipe")
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipeForCommitAndPlatform() {
 	recipe, fail := model.FetchRecipeForCommitAndPlatform(suite.mockProject(), "00010001-0001-0001-0001-000100010001", model.HostPlatform)
 	suite.Require().NoError(fail.ToError())
-	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.PlatformID, "Returns recipe")
+	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.Platform.PlatformID, "Returns recipe")
 }
 
 func (suite *RecipeTestSuite) TestRecipeToBuildRecipe() {

@@ -78,6 +78,11 @@ func ClientAuth() runtime.ClientAuthInfoWriter {
 	return Get().ClientAuth()
 }
 
+// ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
+func ClientAuthOptional() runtime.ClientAuthInfoWriter {
+	return Get().ClientAuth()
+}
+
 // Reset clears the cache
 func Reset() {
 	persist = nil

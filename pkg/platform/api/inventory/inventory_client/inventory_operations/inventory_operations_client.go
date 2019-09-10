@@ -25,6 +25,2118 @@ type Client struct {
 }
 
 /*
+AddAuthor Add a new author
+*/
+func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddAuthorParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addAuthor",
+		Method:             "POST",
+		PathPattern:        "/v1/authors",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddAuthorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddAuthorCreated), nil
+
+}
+
+/*
+AddBuildScript Add a new build script
+*/
+func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddBuildScriptParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addBuildScript",
+		Method:             "POST",
+		PathPattern:        "/v1/build-scripts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddBuildScriptReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddBuildScriptCreated), nil
+
+}
+
+/*
+AddCPUArchitecture Add a new CPU architecture
+*/
+func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddCPUArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addCpuArchitecture",
+		Method:             "POST",
+		PathPattern:        "/v1/cpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddCPUArchitectureReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddCPUArchitectureCreated), nil
+
+}
+
+/*
+AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
+*/
+func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCPUExtensionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddCPUArchitectureCPUExtensionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addCpuArchitectureCpuExtension",
+		Method:             "POST",
+		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/extensions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddCPUArchitectureCPUExtensionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddCPUArchitectureCPUExtensionOK), nil
+
+}
+
+/*
+AddCPUArchitectureRevision Add a new revision of this CPU architecture
+*/
+func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddCPUArchitectureRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addCpuArchitectureRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddCPUArchitectureRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddCPUArchitectureRevisionOK), nil
+
+}
+
+/*
+AddCPUExtension Add a new CPU extension
+*/
+func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddCPUExtensionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addCpuExtension",
+		Method:             "POST",
+		PathPattern:        "/v1/cpu-extensions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddCPUExtensionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddCPUExtensionCreated), nil
+
+}
+
+/*
+AddCPUExtensionRevision Add a new revision of this CPU extension
+*/
+func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddCPUExtensionRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addCpuExtensionRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/cpu-extensions/{cpu_extension_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddCPUExtensionRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddCPUExtensionRevisionOK), nil
+
+}
+
+/*
+AddGpuArchitecture Add a new GPU architecture
+*/
+func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddGpuArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addGpuArchitecture",
+		Method:             "POST",
+		PathPattern:        "/v1/gpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddGpuArchitectureReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddGpuArchitectureCreated), nil
+
+}
+
+/*
+AddGpuArchitectureRevision Add a new revision of this GPU architecture
+*/
+func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddGpuArchitectureRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addGpuArchitectureRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddGpuArchitectureRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddGpuArchitectureRevisionOK), nil
+
+}
+
+/*
+AddImage Add a new image
+*/
+func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddImageParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addImage",
+		Method:             "POST",
+		PathPattern:        "/v1/images",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddImageReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddImageCreated), nil
+
+}
+
+/*
+AddImageRevision Add a new revision of this image
+*/
+func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddImageRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addImageRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/images/{image_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddImageRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddImageRevisionOK), nil
+
+}
+
+/*
+AddIngredient Add a new ingredient
+*/
+func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddIngredientParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addIngredient",
+		Method:             "POST",
+		PathPattern:        "/v1/ingredients",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddIngredientReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddIngredientCreated), nil
+
+}
+
+/*
+AddIngredientVersion Add a new version of this ingredient
+*/
+func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddIngredientVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addIngredientVersion",
+		Method:             "POST",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddIngredientVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddIngredientVersionCreated), nil
+
+}
+
+/*
+AddIngredientVersionAuthor Add an author of this ingredient version
+*/
+func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionAuthorOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddIngredientVersionAuthorParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addIngredientVersionAuthor",
+		Method:             "POST",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddIngredientVersionAuthorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddIngredientVersionAuthorOK), nil
+
+}
+
+/*
+AddIngredientVersionRevision Add a new revision of this ingredient version
+*/
+func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddIngredientVersionRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addIngredientVersionRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddIngredientVersionRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddIngredientVersionRevisionOK), nil
+
+}
+
+/*
+AddKernel Add a new kernel
+*/
+func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddKernelParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernel",
+		Method:             "POST",
+		PathPattern:        "/v1/kernels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddKernelReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddKernelCreated), nil
+
+}
+
+/*
+AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
+*/
+func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddKernelCPUArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernelCpuArchitecture",
+		Method:             "POST",
+		PathPattern:        "/v1/kernels/{kernel_id}/cpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddKernelCPUArchitectureReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddKernelCPUArchitectureOK), nil
+
+}
+
+/*
+AddKernelGpuArchitecture Add a GPU architecture that can be used with this kernel
+*/
+func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddKernelGpuArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernelGpuArchitecture",
+		Method:             "POST",
+		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddKernelGpuArchitectureReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddKernelGpuArchitectureOK), nil
+
+}
+
+/*
+AddKernelVersion Add a new version for this kernel
+*/
+func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddKernelVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernelVersion",
+		Method:             "POST",
+		PathPattern:        "/v1/kernels/{kernel_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddKernelVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddKernelVersionCreated), nil
+
+}
+
+/*
+AddKernelVersionRevision Add a new revision of this kernel version
+*/
+func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddKernelVersionRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernelVersionRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddKernelVersionRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddKernelVersionRevisionOK), nil
+
+}
+
+/*
+AddLibc Add a new libc
+*/
+func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddLibcParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addLibc",
+		Method:             "POST",
+		PathPattern:        "/v1/libcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddLibcReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddLibcCreated), nil
+
+}
+
+/*
+AddLibcVersion Add a new version for this libc
+*/
+func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddLibcVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addLibcVersion",
+		Method:             "POST",
+		PathPattern:        "/v1/libcs/{libc_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddLibcVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddLibcVersionCreated), nil
+
+}
+
+/*
+AddLibcVersionRevision Add a new revision of this libc version
+*/
+func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddLibcVersionRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addLibcVersionRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/libcs/{libc_id}/versions/{libc_version_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddLibcVersionRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddLibcVersionRevisionOK), nil
+
+}
+
+/*
+AddNamespace Add a new namespace
+*/
+func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*AddNamespaceCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddNamespaceParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addNamespace",
+		Method:             "POST",
+		PathPattern:        "/v1/namespaces",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddNamespaceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddNamespaceCreated), nil
+
+}
+
+/*
+AddOperatingSystem Add a new operating system
+*/
+func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOperatingSystemParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addOperatingSystem",
+		Method:             "POST",
+		PathPattern:        "/v1/operating-systems",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddOperatingSystemReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddOperatingSystemCreated), nil
+
+}
+
+/*
+AddOperatingSystemKernel Add a kernel that can be used with this operating system
+*/
+func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemKernelOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOperatingSystemKernelParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addOperatingSystemKernel",
+		Method:             "POST",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/kernels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddOperatingSystemKernelReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddOperatingSystemKernelOK), nil
+
+}
+
+/*
+AddOperatingSystemLibc Add a libc that can be used with this operating system
+*/
+func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemLibcOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOperatingSystemLibcParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addOperatingSystemLibc",
+		Method:             "POST",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/libcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddOperatingSystemLibcReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddOperatingSystemLibcOK), nil
+
+}
+
+/*
+AddOperatingSystemVersion Add a new version for this operating system
+*/
+func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOperatingSystemVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addOperatingSystemVersion",
+		Method:             "POST",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddOperatingSystemVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddOperatingSystemVersionCreated), nil
+
+}
+
+/*
+AddOperatingSystemVersionRevision Add a new revision of this operating system version
+*/
+func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionRevisionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOperatingSystemVersionRevisionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addOperatingSystemVersionRevision",
+		Method:             "POST",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddOperatingSystemVersionRevisionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddOperatingSystemVersionRevisionOK), nil
+
+}
+
+/*
+AddPatch Add a new patch
+*/
+func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter) (*AddPatchCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddPatchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addPatch",
+		Method:             "POST",
+		PathPattern:        "/v1/patches",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddPatchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddPatchCreated), nil
+
+}
+
+/*
+AddPlatform Add a new platform
+*/
+func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddPlatformParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addPlatform",
+		Method:             "POST",
+		PathPattern:        "/v1/platforms",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddPlatformReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*AddPlatformCreated), nil
+
+}
+
+/*
+DeleteIngredientVersionAuthor Remove an author from an ingredient version
+*/
+func (a *Client) DeleteIngredientVersionAuthor(params *DeleteIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIngredientVersionAuthorNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteIngredientVersionAuthorParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteIngredientVersionAuthor",
+		Method:             "DELETE",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors/{author_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &DeleteIngredientVersionAuthorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DeleteIngredientVersionAuthorNoContent), nil
+
+}
+
+/*
+GetAuthor Retrieve an author
+*/
+func (a *Client) GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAuthorParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAuthor",
+		Method:             "GET",
+		PathPattern:        "/v1/authors/{author_id_or_email}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetAuthorReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAuthorOK), nil
+
+}
+
+/*
+GetAuthors Retrieve a paged set of authors
+*/
+func (a *Client) GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAuthorsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAuthors",
+		Method:             "GET",
+		PathPattern:        "/v1/authors",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetAuthorsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetAuthorsOK), nil
+
+}
+
+/*
+GetBuildScript Retrieve a single build script
+*/
+func (a *Client) GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBuildScriptParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getBuildScript",
+		Method:             "GET",
+		PathPattern:        "/v1/build-scripts/{build_script_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetBuildScriptReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetBuildScriptOK), nil
+
+}
+
+/*
+GetBuildScripts Retrieve all build scripts
+*/
+func (a *Client) GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetBuildScriptsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getBuildScripts",
+		Method:             "GET",
+		PathPattern:        "/v1/build-scripts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetBuildScriptsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetBuildScriptsOK), nil
+
+}
+
+/*
+GetCPUArchitecture Retrieve a single CPU architecture
+*/
+func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUArchitectureOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCPUArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCpuArchitecture",
+		Method:             "GET",
+		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetCPUArchitectureReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCPUArchitectureOK), nil
+
+}
+
+/*
+GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
+*/
+func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams) (*GetCPUArchitectureCPUExtensionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCPUArchitectureCPUExtensionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCpuArchitectureCpuExtensions",
+		Method:             "GET",
+		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/extensions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetCPUArchitectureCPUExtensionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCPUArchitectureCPUExtensionsOK), nil
+
+}
+
+/*
+GetCPUArchitectures Retrieve all CPU architectures
+*/
+func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPUArchitecturesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCPUArchitecturesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCpuArchitectures",
+		Method:             "GET",
+		PathPattern:        "/v1/cpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetCPUArchitecturesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCPUArchitecturesOK), nil
+
+}
+
+/*
+GetCPUExtension Retrieve a single CPU extension
+*/
+func (a *Client) GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCPUExtensionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCpuExtension",
+		Method:             "GET",
+		PathPattern:        "/v1/cpu-extensions/{cpu_extension_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetCPUExtensionReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCPUExtensionOK), nil
+
+}
+
+/*
+GetCPUExtensions Retrieve all CPU extensions
+*/
+func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetCPUExtensionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getCpuExtensions",
+		Method:             "GET",
+		PathPattern:        "/v1/cpu-extensions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetCPUExtensionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetCPUExtensionsOK), nil
+
+}
+
+/*
+GetGpuArchitecture Retrieve a single GPU architecture
+*/
+func (a *Client) GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetGpuArchitectureParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getGpuArchitecture",
+		Method:             "GET",
+		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetGpuArchitectureReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetGpuArchitectureOK), nil
+
+}
+
+/*
+GetGpuArchitectures Retrieve all GPU architectures
+*/
+func (a *Client) GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetGpuArchitecturesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getGpuArchitectures",
+		Method:             "GET",
+		PathPattern:        "/v1/gpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetGpuArchitecturesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetGpuArchitecturesOK), nil
+
+}
+
+/*
+GetImage Retrieve an image
+*/
+func (a *Client) GetImage(params *GetImageParams) (*GetImageOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetImageParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getImage",
+		Method:             "GET",
+		PathPattern:        "/v1/images/{image_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetImageReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetImageOK), nil
+
+}
+
+/*
+GetImages Retrieve a paged set of images
+*/
+func (a *Client) GetImages(params *GetImagesParams) (*GetImagesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetImagesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getImages",
+		Method:             "GET",
+		PathPattern:        "/v1/images",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetImagesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetImagesOK), nil
+
+}
+
+/*
+GetIngredient Retrieve a single ingredient
+*/
+func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredient",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientOK), nil
+
+}
+
+/*
+GetIngredientVersion Retrieve a single ingredient version
+*/
+func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersion",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientVersionOK), nil
+
+}
+
+/*
+GetIngredientVersionAuthors Retrieve all authors of this ingredient version
+*/
+func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionAuthorsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersionAuthors",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionAuthorsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientVersionAuthorsOK), nil
+
+}
+
+/*
+GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
+*/
+func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionBuildScriptsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersionBuildScripts",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionBuildScriptsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientVersionBuildScriptsOK), nil
+
+}
+
+/*
+GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
+*/
+func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionPatchesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersionPatches",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/patches",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionPatchesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientVersionPatchesOK), nil
+
+}
+
+/*
+GetIngredientVersions Retrieve all versions of this ingredient
+*/
+func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientVersionsOK), nil
+
+}
+
+/*
+GetIngredients Retrieve all ingredients
+*/
+func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredients",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetIngredientsOK), nil
+
+}
+
+/*
+GetKernel Retrieve a single kernel
+*/
+func (a *Client) GetKernel(params *GetKernelParams) (*GetKernelOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernel",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels/{kernel_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelOK), nil
+
+}
+
+/*
+GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
+*/
+func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelCPUArchitecturesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernelCpuArchitectures",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels/{kernel_id}/cpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelCPUArchitecturesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelCPUArchitecturesOK), nil
+
+}
+
+/*
+GetKernelGpuArchitectures Retrieve all GPU architectures that can be used with this kernel
+*/
+func (a *Client) GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelGpuArchitecturesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernelGpuArchitectures",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelGpuArchitecturesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelGpuArchitecturesOK), nil
+
+}
+
+/*
+GetKernelVersion Retrieve a single kernel version
+*/
+func (a *Client) GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernelVersion",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels/{kernel_id}/versions/{kernel_version_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelVersionReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelVersionOK), nil
+
+}
+
+/*
+GetKernelVersions Retrieve all versions of this kernel
+*/
+func (a *Client) GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernelVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels/{kernel_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelVersionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelVersionsOK), nil
+
+}
+
+/*
+GetKernels Retrieve all kernels
+*/
+func (a *Client) GetKernels(params *GetKernelsParams) (*GetKernelsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetKernelsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernels",
+		Method:             "GET",
+		PathPattern:        "/v1/kernels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetKernelsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetKernelsOK), nil
+
+}
+
+/*
+GetLibc Retrieve a single libc
+*/
+func (a *Client) GetLibc(params *GetLibcParams) (*GetLibcOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLibcParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getLibc",
+		Method:             "GET",
+		PathPattern:        "/v1/libcs/{libc_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetLibcReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetLibcOK), nil
+
+}
+
+/*
+GetLibcVersion Retrieve a single libc version
+*/
+func (a *Client) GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLibcVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getLibcVersion",
+		Method:             "GET",
+		PathPattern:        "/v1/libcs/{libc_id}/versions/{libc_version_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetLibcVersionReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetLibcVersionOK), nil
+
+}
+
+/*
+GetLibcVersions Retrieve all versions of this libc
+*/
+func (a *Client) GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLibcVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getLibcVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/libcs/{libc_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetLibcVersionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetLibcVersionsOK), nil
+
+}
+
+/*
+GetLibcs Retrieve all libcs
+*/
+func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLibcsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getLibcs",
+		Method:             "GET",
+		PathPattern:        "/v1/libcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetLibcsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetLibcsOK), nil
+
+}
+
+/*
+GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
+*/
+func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespaceIngredientsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNamespaceIngredients",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces/ingredients",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespaceIngredientsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNamespaceIngredientsOK), nil
+
+}
+
+/*
+GetNamespaces Retrieve all namespaces
+*/
+func (a *Client) GetNamespaces(params *GetNamespacesParams) (*GetNamespacesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespacesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNamespaces",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespacesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNamespacesOK), nil
+
+}
+
+/*
+GetOperatingSystem Retrieve a single operating system
+*/
+func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystem",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemOK), nil
+
+}
+
+/*
+GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
+*/
+func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams) (*GetOperatingSystemKernelsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemKernelsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystemKernels",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/kernels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemKernelsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemKernelsOK), nil
+
+}
+
+/*
+GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
+*/
+func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) (*GetOperatingSystemLibcsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemLibcsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystemLibcs",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/libcs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemLibcsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemLibcsOK), nil
+
+}
+
+/*
+GetOperatingSystemVersion Retrieve a single operating system version
+*/
+func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionParams) (*GetOperatingSystemVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystemVersion",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemVersionReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemVersionOK), nil
+
+}
+
+/*
+GetOperatingSystemVersions Retrieve all versions of this operating system
+*/
+func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams) (*GetOperatingSystemVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystemVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemVersionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemVersionsOK), nil
+
+}
+
+/*
+GetOperatingSystems Retrieve all operating systems
+*/
+func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOperatingSystemsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOperatingSystemsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOperatingSystems",
+		Method:             "GET",
+		PathPattern:        "/v1/operating-systems",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetOperatingSystemsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOperatingSystemsOK), nil
+
+}
+
+/*
+GetPatch Retrieve a single patch
+*/
+func (a *Client) GetPatch(params *GetPatchParams) (*GetPatchOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPatchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getPatch",
+		Method:             "GET",
+		PathPattern:        "/v1/patches/{patch_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetPatchReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetPatchOK), nil
+
+}
+
+/*
+GetPatches Retrieve all patches
+*/
+func (a *Client) GetPatches(params *GetPatchesParams) (*GetPatchesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPatchesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getPatches",
+		Method:             "GET",
+		PathPattern:        "/v1/patches",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetPatchesReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetPatchesOK), nil
+
+}
+
+/*
+GetPlatform Retrieve a single platform
+*/
+func (a *Client) GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPlatformParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getPlatform",
+		Method:             "GET",
+		PathPattern:        "/v1/platforms/{platform_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetPlatformReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetPlatformOK), nil
+
+}
+
+/*
+GetPlatforms Retrieve all platforms
+*/
+func (a *Client) GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetPlatformsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getPlatforms",
+		Method:             "GET",
+		PathPattern:        "/v1/platforms",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetPlatformsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetPlatformsOK), nil
+
+}
+
+/*
 HealthCheck health check API
 */
 func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
@@ -53,210 +2165,6 @@ func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) 
 }
 
 /*
-Ingredient ingredient API
-*/
-func (a *Client) Ingredient(params *IngredientParams) (*IngredientOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewIngredientParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "ingredient",
-		Method:             "GET",
-		PathPattern:        "/ingredients/{ingredient_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &IngredientReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*IngredientOK), nil
-
-}
-
-/*
-IngredientVersions ingredient versions API
-*/
-func (a *Client) IngredientVersions(params *IngredientVersionsParams) (*IngredientVersionsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewIngredientVersionsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "ingredientVersions",
-		Method:             "GET",
-		PathPattern:        "/ingredients/{ingredient_id}/versions",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &IngredientVersionsReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*IngredientVersionsOK), nil
-
-}
-
-/*
-Ingredients ingredients API
-*/
-func (a *Client) Ingredients(params *IngredientsParams) (*IngredientsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewIngredientsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "ingredients",
-		Method:             "GET",
-		PathPattern:        "/ingredients",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &IngredientsReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*IngredientsOK), nil
-
-}
-
-/*
-LanguageIngredients alls ingredients for a language version
-
-Retrieves all ingredients for a given version of a language
-*/
-func (a *Client) LanguageIngredients(params *LanguageIngredientsParams) (*LanguageIngredientsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewLanguageIngredientsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "languageIngredients",
-		Method:             "GET",
-		PathPattern:        "/languages/{name}/{version}/ingredients",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &LanguageIngredientsReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*LanguageIngredientsOK), nil
-
-}
-
-/*
-Languages alls languages
-
-Retrieves all languages
-*/
-func (a *Client) Languages(params *LanguagesParams) (*LanguagesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewLanguagesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "languages",
-		Method:             "GET",
-		PathPattern:        "/languages",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &LanguagesReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*LanguagesOK), nil
-
-}
-
-/*
-OrderRecipes recipes for an order
-
-Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
-*/
-func (a *Client) OrderRecipes(params *OrderRecipesParams) (*OrderRecipesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewOrderRecipesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "orderRecipes",
-		Method:             "POST",
-		PathPattern:        "/orders/{orderId}/recipes",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &OrderRecipesReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*OrderRecipesOK), nil
-
-}
-
-/*
-Platforms alls platforms
-
-Retrieves all platforms
-*/
-func (a *Client) Platforms(params *PlatformsParams) (*PlatformsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewPlatformsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "platforms",
-		Method:             "GET",
-		PathPattern:        "/platforms",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &PlatformsReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*PlatformsOK), nil
-
-}
-
-/*
 ReadinessCheck readiness check API
 */
 func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error) {
@@ -281,6 +2189,182 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK
 		return nil, err
 	}
 	return result.(*ReadinessCheckOK), nil
+
+}
+
+/*
+ResolveRecipes recipes for an order
+
+Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
+*/
+func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewResolveRecipesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "resolveRecipes",
+		Method:             "POST",
+		PathPattern:        "/v1/recipes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &ResolveRecipesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ResolveRecipesOK), nil
+
+}
+
+/*
+UpdateAuthor Update an author
+*/
+func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAuthorOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateAuthorParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateAuthor",
+		Method:             "PUT",
+		PathPattern:        "/v1/authors/{author_id_or_email}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdateAuthorReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdateAuthorOK), nil
+
+}
+
+/*
+UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
+*/
+func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBuildScriptOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateBuildScriptParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateBuildScript",
+		Method:             "PUT",
+		PathPattern:        "/v1/build-scripts/{build_script_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdateBuildScriptReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdateBuildScriptOK), nil
+
+}
+
+/*
+UpdateIngredientVersion Update this ingredient version
+*/
+func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateIngredientVersionParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateIngredientVersion",
+		Method:             "PUT",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdateIngredientVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdateIngredientVersionOK), nil
+
+}
+
+/*
+UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
+*/
+func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdatePatchParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updatePatch",
+		Method:             "PUT",
+		PathPattern:        "/v1/patches/{patch_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdatePatchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdatePatchOK), nil
+
+}
+
+/*
+UpdatePlatform Update the platform end of support date
+*/
+func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdatePlatformParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updatePlatform",
+		Method:             "PUT",
+		PathPattern:        "/v1/platforms/{platform_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdatePlatformReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdatePlatformOK), nil
 
 }
 
