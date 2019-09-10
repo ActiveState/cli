@@ -184,19 +184,19 @@ func (s *InviteTestSuite) getTestOrg(personal bool, memberCount int, orgName str
 	}
 }
 
-func (s *InviteTestSuite) TestCheckInvites() {
+func (s *InviteTestSuite) TestIsInvitationPossible() {
 
 	s.Run("should fail for personal accounts", func() {
 		org := s.getTestOrg(true, 1, "string")
 
-		err := checkInvites(org, 1)
+		err := isInvitationPossible(org, 1)
 		s.EqualError(err.ToError(), locale.T("invite_personal_org_err"))
 	})
 
 	s.Run("fail if organization limits cannot be fetched", func() {
 		org := s.getTestOrg(false, 1, "nonExistentTestOrg")
 
-		err := checkInvites(org, 1)
+		err := isInvitationPossible(org, 1)
 		s.EqualError(err.ToError(), locale.T("invite_limit_fetch_err"))
 	})
 
@@ -205,7 +205,7 @@ func (s *InviteTestSuite) TestCheckInvites() {
 
 		s.apiMock.MockGetOrganizationLimits()
 
-		err := checkInvites(org, 2)
+		err := isInvitationPossible(org, 2)
 
 		s.Error(err.ToError(), "expected error message due to exceeded user limit")
 	})
@@ -215,7 +215,7 @@ func (s *InviteTestSuite) TestCheckInvites() {
 
 		s.apiMock.MockGetOrganizationLimits()
 
-		err := checkInvites(org, 2)
+		err := isInvitationPossible(org, 2)
 		s.NoError(err.ToError(), "expected no error")
 	})
 }
