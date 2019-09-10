@@ -527,7 +527,7 @@ func (script *Script) Source() *projectfile.Project { return script.project.proj
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
-// Language ...
+// Language returns the language of this script
 func (script *Script) Language() language.Language {
 	return script.script.Language
 }
@@ -539,6 +539,11 @@ func (script *Script) Description() string { return script.script.Description }
 func (script *Script) Value() string {
 	value := Expand(script.script.Value)
 	return value
+}
+
+// Raw returns the script value with no secrets or constants expanded
+func (script *Script) Raw() string {
+	return script.script.Value
 }
 
 // Standalone returns if the script is standalone or not
