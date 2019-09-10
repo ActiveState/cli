@@ -21,10 +21,13 @@ var (
 	// FailAuth is the failure type used for failed authentication API requests
 	FailAuth = failures.Type("api.fail.auth", failures.FailUser)
 
+	// FailForbidden is the failure type used when access to a requested resource is forbidden
+	FailForbidden = failures.Type("api.fail.forbidden", failures.FailUser)
+
 	// FailNotFound indicates a failure to find a user's resource.
 	FailNotFound = failures.Type("api.fail.not_found", failures.FailUser)
 
-	// FailOrganizationNotFound is used when a project could not be found
+	// FailOrganizationNotFound is used when an organization could not be found
 	FailOrganizationNotFound = failures.Type("api.fail.organization.not_found", FailNotFound)
 
 	// FailProjectNotFound is used when a project could not be found

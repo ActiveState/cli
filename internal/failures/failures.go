@@ -154,6 +154,8 @@ func (e *Failure) ToError() error {
 
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
+//
+// If description is empty, only the error message is printed
 func (e *Failure) Handle(description string) {
 	logging.Debug("Handling failure, Trace:\n %s", e.Trace.String())
 
@@ -182,6 +184,8 @@ func Type(name string, parents ...*FailureType) *FailureType {
 
 // Handle is what controllers would call to handle an error message, this will take care of calling the underlying
 // handle method or logging the error if this isnt a Failure type
+//
+// If description is empty, only the error message is printed
 func Handle(err error, description string) {
 	handled = err
 
