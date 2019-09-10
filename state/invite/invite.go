@@ -68,13 +68,13 @@ type Arguments struct {
 // Args stores the command line arguments
 var Args Arguments
 
-// checkInvite returns true if an invitation to the organization is
+// isInvitationPossible returns true if an invitation to the organization is
 // possible/allowed
 //
 // Checks for
 //  - organization is not personal
 //  - member count is not exceeding limits
-func checkInvites(organization *mono_models.Organization, numInvites int) *failures.Failure {
+func isInvitationPossible(organization *mono_models.Organization, numInvites int) *failures.Failure {
 	// don't allow personal organizations
 	if organization.Personal {
 		return failures.FailUser.New(locale.T(
@@ -219,7 +219,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fail = checkInvites(organization, len(emails))
+	fail = isInvitationPossible(organization, len(emails))
 	if fail != nil {
 		// Here I am just handling an error with an error message that is already
 		// tailored for the user, hence the second argument is ""

@@ -19,7 +19,6 @@ func FetchOrganizationLimits(orgName string) (*mono_models.Limits, *failures.Fai
 	}
 
 	return res.Payload, nil
-
 }
 
 func processLimitsErrorResponse(err error) *failures.Failure {
