@@ -229,7 +229,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	fails := sendInvites(organization, orgRole, emails)
 	if len(fails) > 0 {
 		failures.Handle(fails[0], "invite_invitation_err")
+		for i := 2; i < len(fails); i++ {
+			print.Error(fails[i].Error())
+		}
 	}
+
 	// if at least one invitation could be send, remind user to refresh secrets
 	if len(fails) < len(emails) {
 		print.Info(locale.T("invite_org_secrets_reminder"))
