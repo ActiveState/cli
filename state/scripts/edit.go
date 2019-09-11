@@ -117,7 +117,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.NewRaw(scriptLanguage(script), scriptBlock)
+	return scriptfile.NewSource(scriptLanguage(script), scriptBlock)
 
 }
 
@@ -191,7 +191,6 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, script *project.Script
 		}
 	}
 
-	// TODO: Ensure we can save with comments
 	return projectFile.Save()
 
 }

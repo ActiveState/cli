@@ -20,10 +20,10 @@ func New(l language.Language, script string) (*ScriptFile, *failures.Failure) {
 	return new(l, []byte(l.Header()+script))
 }
 
-// NewRaw recieves a language and script body that are used to construct an
+// NewSource recieves a language and script body that are used to construct an
 // on-disk file that is tracked by the return value. This file is not guaranteed
 // to be runnable
-func NewRaw(l language.Language, script string) (*ScriptFile, *failures.Failure) {
+func NewSource(l language.Language, script string) (*ScriptFile, *failures.Failure) {
 	return new(l, []byte(script))
 }
 
