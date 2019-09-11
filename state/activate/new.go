@@ -155,7 +155,7 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 	addParams.SetProject(&mono_models.Project{Name: name})
 	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
-		return api.FailUnknown.Wrap(err)
+		return api.FailUnknown.New(api.ErrorMessageFromPayload(err))
 	}
 
 	return model.CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
