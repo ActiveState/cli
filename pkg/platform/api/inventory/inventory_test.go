@@ -3,11 +3,11 @@ package inventory_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	inventoryMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 	defer mock.Close()
 
 	client := inventory.Init()
-	_, err := client.Platforms(inventory_operations.NewPlatformsParams())
+	_, err := client.GetPlatforms(inventory_operations.NewGetPlatformsParams())
 	assert.NoError(t, err)
 }
 

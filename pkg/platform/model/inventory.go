@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -19,29 +20,39 @@ var (
 	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
 )
 
-var platformCache []*inventory_models.Platform
+// IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
+type IngredientAndVersion = inventory_models.V1IngredientAndVersionPagedListIngredientsAndVersionsItems0
+
+// Platforms is a sane version of whatever the hell it is go-swagger thinks it's doing
+type Platform = inventory_models.V1PlatformPagedListPlatformsItems0
+
+var platformCache []*Platform
 
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
-func IngredientByNameAndVersion(name, version string) (*inventory_models.IngredientAndVersions, *failures.Failure) {
+func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, *failures.Failure) {
 	client := inventory.Get()
 
-	params := inventory_operations.NewIngredientsParams()
-	params.SetPackageName(name)
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetQ(&name)
+	params.SetNamespace(language)
 
-	res, err := client.Ingredients(params)
+	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
+	limit := int64(99999)
+	params.SetLimit(&limit)
+
+	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, FailIngredients.Wrap(err)
 	}
 
-	for _, ingredient := range res.Payload {
+	for _, ingredient := range res.Payload.IngredientsAndVersions {
 		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
 			continue
 		}
-		for _, v := range ingredient.Versions {
-			if version == "" || (v.Version != nil && *v.Version == version) {
-				return ingredient, nil
-			}
+		v := ingredient.Version.Version
+		if v != nil && *v == version {
+			return ingredient, nil
 		}
 	}
 
@@ -49,65 +60,70 @@ func IngredientByNameAndVersion(name, version string) (*inventory_models.Ingredi
 }
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingradient name
-func IngredientWithLatestVersion(name string) (*inventory_models.IngredientAndVersions, *inventory_models.IngredientVersion, *failures.Failure) {
+func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
 	client := inventory.Get()
 
-	params := inventory_operations.NewIngredientsParams()
-	params.SetPackageName(name)
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetQ(&name)
+	params.SetNamespace(language)
 
-	res, err := client.Ingredients(params)
+	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
+	limit := int64(99999)
+	params.SetLimit(&limit)
+
+	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, nil, FailIngredients.Wrap(err)
+		return nil, FailIngredients.Wrap(err)
 	}
 
-	var ingredient *inventory_models.IngredientAndVersions
-	var latest *inventory_models.IngredientVersion
-	for _, i := range res.Payload {
+	var ingredient *IngredientAndVersion
+	var latest *IngredientAndVersion
+	for _, i := range res.Payload.IngredientsAndVersions {
 		if i.Ingredient.Name == nil || *i.Ingredient.Name != name {
 			continue
 		}
 		ingredient = i
-		for _, v := range i.Versions {
-			if v.Version == nil {
-				continue
-			}
 
-			switch {
-			case latest == nil || latest.ReleaseDate == nil:
-				// If latest is not valid, just make the current value latest
-				latest = v
+		switch {
+		case latest == nil || latest.Version.ReleaseTimestamp == nil:
+			// If latest is not valid, just make the current value latest
+			latest = i
 
-			case v.ReleaseDate.String() == latest.ReleaseDate.String():
-				// If the release dates equal (or are both nil) just assume that the later entry it the latest
-				latest = v
+		case i.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
+			// If the release dates equal (or are both nil) just assume that the later entry it the latest
+			latest = i
 
-			case v.ReleaseDate != nil && time.Time(*v.ReleaseDate).After(time.Time(*latest.ReleaseDate)):
-				// If the release date is later then this entry is latest
-				latest = v
-			}
+		case i.Version.ReleaseTimestamp != nil && time.Time(*i.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
+			// If the release date is later then this entry is latest
+			latest = i
 		}
+
 		break // We found our ingredient, no need to keep looping
 	}
 
-	return ingredient, latest, nil
+	return ingredient, nil
 }
 
-func FetchPlatforms() ([]*inventory_models.Platform, *failures.Failure) {
+func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	if platformCache == nil {
 		client := inventory.Get()
 
-		response, err := client.Platforms(inventory_operations.NewPlatformsParams())
+		params := inventory_operations.NewGetPlatformsParams()
+		limit := int64(99999)
+		params.SetLimit(&limit)
+
+		response, err := client.GetPlatforms(params)
 		if err != nil {
 			return nil, FailPlatforms.Wrap(err)
 		}
 
-		platformCache = response.Payload
+		platformCache = response.Payload.Platforms
 	}
 
 	return platformCache, nil
 }
 
-func FetchPlatformByUID(uid strfmt.UUID) (*inventory_models.Platform, *failures.Failure) {
+func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
 	platforms, fail := FetchPlatforms()
 	if fail != nil {
 		return nil, fail

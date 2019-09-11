@@ -12,8 +12,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+// FailNoValidProject is a failure for the call api.GetProject
 var FailNoValidProject = failures.Type("model.fail.novalidproject")
 
+// FailNoDefaultBranch is a failure in getting a project's default branch
 var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
 
 // FetchProjectByName fetches a project for an organization.
@@ -23,7 +25,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	params.ProjectName = projectName
 	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, processProjectErrorResponse(err)
+		return nil, processProjectErrorResponse(err, projectName, orgName)
 	}
 	if resOk.Payload.Name == "" || resOk.Payload.OrganizationID.String() == "" {
 		return nil, FailNoValidProject.New("err_invalid_project")
@@ -40,6 +42,20 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, *failure
 		return nil, processProjectErrorResponse(err)
 	}
 	return orgProjects.Payload, nil
+}
+
+// DefaultLanguageForProject fetches the default language belonging to the given project
+func DefaultLanguageForProject(orgName, projectName string) (string, *failures.Failure) {
+	languages, fail := FetchLanguagesForProject(orgName, projectName)
+	if fail != nil {
+		return "", fail
+	}
+
+	if len(languages) == 0 {
+		return "", failures.FailUser.New(locale.T("err_no_languages"))
+	}
+
+	return languages[0], nil
 }
 
 // DefaultBranchForProject retrieves the default branch for the given project
@@ -61,12 +77,12 @@ func ProjectURL(owner, name, commitID string) string {
 	return url
 }
 
-func processProjectErrorResponse(err error) *failures.Failure {
+func processProjectErrorResponse(err error, params ...string) *failures.Failure {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:
 		return api.FailAuth.New("err_api_not_authenticated")
 	case 404:
-		return api.FailProjectNotFound.New("err_api_project_not_found")
+		return api.FailProjectNotFound.New("err_api_project_not_found", params...)
 	default:
 		return api.FailUnknown.Wrap(err)
 	}

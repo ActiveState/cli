@@ -40,7 +40,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 }
 
-func executeAddUpdate(cmd *commands.Command, name, version string, operation model.Operation) {
+func executeAddUpdate(cmd *commands.Command, language, name, version string, operation model.Operation) {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
@@ -57,7 +57,12 @@ func executeAddUpdate(cmd *commands.Command, name, version string, operation mod
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
-	ingredient, fail := model.IngredientByNameAndVersion(name, version)
+	var ingredient *model.IngredientAndVersion
+	if version == "" {
+		ingredient, fail = model.IngredientWithLatestVersion(language, name)
+	} else {
+		ingredient, fail = model.IngredientByNameAndVersion(language, name, version)
+	}
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_ingredient_err"))
 		cmd.Exiter(1)

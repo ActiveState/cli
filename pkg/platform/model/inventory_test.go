@@ -3,10 +3,11 @@ package model_test
 import (
 	"testing"
 
-	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
+
+	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type InventoryTestSuite struct {

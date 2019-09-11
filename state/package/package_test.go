@@ -62,9 +62,9 @@ func (suite *PkgTestSuite) runsCommand(cmdArgs []string, expectExitCode int, exp
 
 	out := capturer.CaptureOutput(func() {
 		code := suite.exiter.WaitForExit(func() {
-			suite.Require().NoError(Cc.Execute())
+			suite.NoError(Cc.Execute())
 		})
-		suite.Require().Equal(expectExitCode, code, fmt.Sprintf("Expects exit code %d", expectExitCode))
+		suite.Equal(expectExitCode, code, fmt.Sprintf("Expects exit code %d", expectExitCode))
 	})
 
 	suite.Contains(out, expectOutput)
