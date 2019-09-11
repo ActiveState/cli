@@ -930,6 +930,13 @@ language_name_unknown:
   other: Unknown
 sample_yaml:
   other: |
+    platforms: 
+      - name: Windows
+        os: windows
+      - name: Macos
+        os: macos
+      - name: Linux
+        os: linux
     scripts:
     # This script uses a secret. Note that you can define your own secrets at
     # https://platform.activestate.com/{{.Owner}}/{{.Project}}/scripts
@@ -939,6 +946,8 @@ sample_yaml:
       # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
       # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
       - name: ACTIVATE
+        constraints: 
+          platform: Macos,Linux 
         value: |
           echo "You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system."
           echo ""
@@ -947,6 +956,17 @@ sample_yaml:
           echo "To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}."
           echo ""
           echo "To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'"
+      - name: ACTIVATE
+        constraints: 
+          platform: Windows 
+        value: |
+          echo You are now in an 'activated state', this will give you a virtual environment to work in that doesn't affect the rest of your system.
+          echo. 
+          echo Your 'activated state' allows you to define scripts, events and constants via the activestate.yaml file at the root of your project directory.
+          echo. 
+          echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
+          echo. 
+          echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
 package_description:
   other: Manage packages used in your project
 users_plural:
