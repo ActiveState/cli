@@ -27,18 +27,6 @@ func (m *Mock) MockPlatforms() {
 
 func (m *Mock) MockOrderRecipes() {
 	m.httpmock.RegisterWithResponse("POST", "/v1/recipes", 200, "recipes")
-	// m.httpmock.RegisterWithResponder("POST", "/v1/recipes", func(req *http.Request) (int, string) {
-	// 	body, err := ioutil.ReadAll(req.Body)
-	// 	if err != nil {
-	// 		panic(fmt.Sprintf("Could not read request body: %v", err))
-	// 	}
-
-	// 	if strings.Contains(string(body), "00020002-0002-0002-0002-000200020002") {
-	// 		return 200, "recipes2"
-	// 	}
-
-	// 	return 200, "recipes"
-	// })
 }
 
 func (m *Mock) MockIngredientsByName() {
