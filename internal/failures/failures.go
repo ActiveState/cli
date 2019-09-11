@@ -45,7 +45,7 @@ var (
 	// FailRuntime identifies a failure as a runtime failure (mainly intended for calls to the runtime package)
 	FailRuntime = Type("failures.fail.runtime")
 
-	// FailVerify identifies a failure as being due to the failure toverify something
+	// FailVerify identifies a failure as being due to the failure to verify something
 	FailVerify = Type("failures.fail.verify")
 
 	// FailNotFound identifies a failure as being due to an item not being found

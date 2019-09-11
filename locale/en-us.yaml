@@ -365,6 +365,8 @@ edit_script_cmd_expand_flag:
   other: Whether or not to expand constants within the script
 edit_script_editor_not_set:
   other: EDITOR environment variable not set
+error_open_not_installed_lin:
+  other: Please install '{{.V0}}' to edit scripts
 error_script_edit_undefined_name:
   other: The script name must be provided
 error_edit_script:

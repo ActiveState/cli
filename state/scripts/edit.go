@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/language"
 
@@ -23,7 +22,6 @@ import (
 const (
 	openCmdLin       = "xdg-open"
 	openCmdMac       = "open"
-	defaultEditorLin = "vi"
 	defaultEditorWin = "notepad"
 )
 
@@ -82,6 +80,36 @@ func ExecuteEdit(cmd *cobra.Command, args []string) {
 
 }
 
+func editScript(script *project.Script) *failures.Failure {
+
+	scriptFile, fail := createScriptFile(script)
+	if fail != nil {
+		return fail
+	}
+	defer scriptFile.Clean()
+
+	prompter := prompt.New()
+	for {
+
+		fail = openEditor(scriptFile.Filename())
+		if fail != nil {
+			return fail
+		}
+
+		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+		if fail != nil {
+			return fail
+		}
+		if doneEditing {
+			break
+		}
+
+	}
+
+	return updateProjectFile(scriptFile, script)
+
+}
+
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
 
 	scriptBlock := script.Raw()
@@ -89,7 +117,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.New(scriptLanguage(script), scriptBlock)
+	return scriptfile.NewRaw(scriptLanguage(script), scriptBlock)
 
 }
 
@@ -100,38 +128,9 @@ func scriptLanguage(script *project.Script) language.Language {
 	return script.Language()
 }
 
-func editScript(script *project.Script) *failures.Failure {
-
-	scriptFile, fail := createScriptFile(script)
-	if fail != nil {
-		return fail
-	}
-	defer scriptFile.Clean()
-
-	fail = openEditor(scriptFile.Filename())
-	if fail != nil {
-		return fail
-	}
-
-	prompter := prompt.New()
-	for {
-		yesDoneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-		if fail != nil {
-			return fail
-		}
-		if yesDoneEditing {
-			break
-		}
-	}
-
-	// TODO: Ensure we can save with comments
-	return updateProjectFile(scriptFile, script)
-
-}
-
 func openEditor(filename string) *failures.Failure {
 
-	editorCmd, fail := getEditorCmd()
+	editorCmd, fail := getOpenCmd()
 	if fail != nil {
 		return fail
 	}
@@ -152,7 +151,7 @@ func openEditor(filename string) *failures.Failure {
 
 }
 
-func getEditorCmd() (string, *failures.Failure) {
+func getOpenCmd() (string, *failures.Failure) {
 
 	if editor := os.Getenv("EDITOR"); editor != "" {
 		return editor, nil
@@ -164,7 +163,7 @@ func getEditorCmd() (string, *failures.Failure) {
 	case "linux":
 		_, err := exec.LookPath(openCmdLin)
 		if err != nil {
-			return defaultEditorLin, nil
+			return "", failures.FailNotFound.New("error_open_not_installed_lin", openCmdLin)
 		}
 		return openCmdLin, nil
 	case "darwin":
@@ -179,24 +178,20 @@ func getEditorCmd() (string, *failures.Failure) {
 
 func updateProjectFile(scriptFile *scriptfile.ScriptFile, script *project.Script) *failures.Failure {
 
-	scriptBytes, fail := fileutils.ReadFile(scriptFile.Filename())
+	updatedScript, fail := fileutils.ReadFile(scriptFile.Filename())
 	if fail != nil {
 		return fail
 	}
-	// TODO: Find a better way to do this
-	updatedScript := strings.Replace(string(scriptBytes), scriptLanguage(script).Header(), "", 1)
 
 	projectFile := project.Get().Source()
 	for i, projectScript := range projectFile.Scripts {
 		if projectScript.Name == EditArgs.Name {
-			projectFile.Scripts[i].Value = updatedScript
+			projectFile.Scripts[i].Value = string(updatedScript)
 			break
 		}
 	}
 
 	// TODO: Ensure we can save with comments
-	// Currently saving the file when a script has a language value
-	// will overwrite the language to our enum (example python3 -> 6)
 	return projectFile.Save()
 
 }

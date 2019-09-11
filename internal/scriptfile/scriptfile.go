@@ -17,7 +17,18 @@ type ScriptFile struct {
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
 func New(l language.Language, script string) (*ScriptFile, *failures.Failure) {
-	data := []byte(l.Header() + script)
+	return new(l, []byte(l.Header()+script))
+}
+
+// NewRaw recieves a language and script body that are used to construct an
+// on-disk file that is tracked by the return value. This file is not guaranteed
+// to be runnable
+func NewRaw(l language.Language, script string) (*ScriptFile, *failures.Failure) {
+	return new(l, []byte(script))
+}
+
+func new(l language.Language, data []byte) (*ScriptFile, *failures.Failure) {
+
 	file, fail := fileutils.WriteTempFile("", l.TempPattern(), data, 0700)
 	if fail != nil {
 		return nil, fail
@@ -29,6 +40,7 @@ func New(l language.Language, script string) (*ScriptFile, *failures.Failure) {
 	}
 
 	return &sf, nil
+
 }
 
 // Clean provides simple/deferable clean up.
