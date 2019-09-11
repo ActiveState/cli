@@ -129,9 +129,10 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 	actual, fail := getOpenCmd()
 	if platform == "linux" && fail != nil {
 		suite.EqualError(fail.ToError(), locale.T("error_open_not_installed_lin"))
+	} else {
+		suite.Require().NoError(fail.ToError(), "could not get open command")
+		suite.Equal(expected, actual)
 	}
-	suite.Require().NoError(fail.ToError(), "could not get open command")
-	suite.Equal(expected, actual)
 
 }
 
