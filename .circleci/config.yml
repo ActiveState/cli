@@ -13,6 +13,7 @@ defaults:
           ./public/install.sh -n -b master
           PATH_ESCAPED=$(echo $PATH | sed -e "s/ /\\\\ /g" | sed -e "s/\([()]\)/\\\\\1/g")
           echo "export PATH=$HOME/.local/bin:${GOROOT}/bin:${GOPATH}/bin:$PATH_ESCAPED" >> $BASH_ENV
+          cat $BASH_ENV
     runTests: &runTests
       run:
         name: Run unit tests
