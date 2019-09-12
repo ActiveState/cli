@@ -1,5 +1,5 @@
 project: https://platform.activestate.com/ActiveState/cli?commitID=abfdee9d-d20c-42a3-a4b0-f07d8794cdd4
-scripts: 
+scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -94,7 +94,7 @@ scripts:
         echo "build/$BUILD_NAME does not exist, you need to run 'state run build' first"
         exit 1
       fi
-      python3 -m unittest discover -s test/integration -p '*_test.py'
+      python3 -m unittest -v discover -s test/integration -p '*_test.py'
   - name: clean
     description: Cleans out the build dir.
     value: |
@@ -105,7 +105,7 @@ scripts:
     value: |
       $scripts.build
       build/state --help
-events: 
+events:
   - name: ACTIVATE
     value: |
       $scripts.SET_ENV
