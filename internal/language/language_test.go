@@ -16,7 +16,6 @@ func TestLanguage(t *testing.T) {
 	err := yaml.Unmarshal([]byte("junk"), &l)
 	assert.Error(t, err, "fail due to bad yaml input")
 
-	l = Perl
 	err = yaml.Unmarshal([]byte("perl"), &l)
 	assert.NoError(t, err, "successfully unmarshal 'perl'")
 	assert.Equal(t, l, Perl)
