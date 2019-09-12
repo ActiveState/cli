@@ -333,8 +333,6 @@ state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
 error_state_activate_new_aborted:
   other: "Unable to create new project: aborted."
-error_state_activate_new_exists:
-  other: "Unable to create new project: path exists."
 error_state_activate_new_mkdir:
   other: Unable to create new project directory.
 state_activate_new_prompt_owner:
@@ -812,6 +810,8 @@ err_artifact_invalid_url:
   other: API Responded with an invalid artifact URL, please contact support
 err_activate_namespace:
   other: Could not activate project for the given namespace
+err_activate_path:
+  other: Could not activate project for the given '--path'
 err_invalid_namespace:
   other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
 err_namespace_dir_inuse:

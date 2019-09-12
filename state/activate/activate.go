@@ -90,7 +90,7 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && projectNotExists() {
+	if len(args) == 0 && Flags.Path == "" && projectNotExists() {
 		NewExecute(cmd, args)
 		return
 	}
@@ -123,6 +123,21 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		if fail != nil {
 			failures.Handle(fail, locale.T("err_activate_namespace"))
 			return
+		}
+	} else if Flags.Path != "" {
+		path := Flags.Path
+		if _, err := os.Stat(filepath.Join(path, constants.ConfigFileName)); err != nil {
+			NewExecute(cmd, args)
+		} else {
+			if err := os.MkdirAll(path, 0755); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+				return
+			}
+
+			if err := os.Chdir(path); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+				return
+			}
 		}
 	}
 
@@ -177,28 +192,33 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	}
 
 	var directory string
-
-	// Change to already checked out project if it exists
-	projectPaths := getPathsForNamespace(namespace)
-	if len(projectPaths) > 0 {
-		confirmedPath, fail := confirmProjectPath(projectPaths)
-		if fail != nil {
-			return fail
+	if Flags.Path != "" {
+		directory = Flags.Path
+	} else {
+		// Change to already checked out project if it exists
+		projectPaths := getPathsForNamespace(namespace)
+		if len(projectPaths) > 0 {
+			confirmedPath, fail := confirmProjectPath(projectPaths)
+			if fail != nil {
+				return fail
+			}
+			if confirmedPath != nil {
+				directory = *confirmedPath
+			}
 		}
-		if confirmedPath != nil {
-			directory = *confirmedPath
+
+		// Otherwise ask the user for the directory
+		if directory == "" {
+			// Determine where to create our project
+			directory, fail = determineProjectPath(namespace)
+			if fail != nil {
+				return fail
+			}
 		}
 	}
 
-	// Otherwise ask the user for the directory
-	if directory == "" {
-		// Determine where to create our project
-		directory, fail = determineProjectPath(namespace)
-		if fail != nil {
-			return fail
-		}
-
-		// Actually create the project
+	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
+		// If not actually create the project
 		fail = createProject(org, name, commitID, languages, directory)
 		if fail != nil {
 			return fail
