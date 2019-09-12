@@ -135,9 +135,9 @@ TMPEXE=$OS-$ARCH$BINARYEXT
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 # Determine a fetch method
-if [ ! -z "`command -v wget`" ]; then
+if [ ! -z "`command wget`" ]; then
   FETCH="wget -nv -O"
-elif [ ! -z "`command -v curl`" ]; then
+elif [ ! -z "`command curl`" ]; then
   FETCH="curl -vsS -o"
 else
   error "Either wget or curl is required to download files"
