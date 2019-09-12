@@ -350,8 +350,8 @@ function install()
 
     # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
 
-    # If we have administrative rights attempt to set PATH system wide.
-    if( -Not (isInRegistry $installDir) -And (isAdmin)){
+    # If we have administrative rights, attempt to set PATH system wide...
+    if( -Not (isAdmin)){
         if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment...`n"
             Write-Host "Adding $installDir to system PATH`n"
@@ -363,9 +363,8 @@ function install()
         } else {
             Write-Host "Manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
         }
-    } 
-    if ( -Not (isAdmin)){
-        Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+
+    # ... without administrative rights,  we tell the user to update the PATH variable manually
     } else {
         Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
