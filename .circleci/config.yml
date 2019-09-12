@@ -75,6 +75,8 @@ jobs:
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
 
+            pwd 
+            ls
             pushd test/integration
             pip3 install -r requirements.txt
             popd
