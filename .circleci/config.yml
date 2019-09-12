@@ -11,7 +11,8 @@ defaults:
           $GOROOT/bin/go get -u github.com/gobuffalo/packr/packr
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
           ./public/install.sh -n -b master
-          echo "export PATH=$HOME/.local/bin:${GOROOT}/bin:${GOPATH}/bin:${PATH}:$PATH" | sed -e "s/ /\\\\ /g" | sed -e "s/\([()]\)/\\\\\1/g" >> $BASH_ENV
+          PATH_ESCAPED=$(echo $PATH | sed -e "s/ /\\\\ /g" | sed -e "s/\([()]\)/\\\\\1/g")
+          echo "export PATH=$HOME/.local/bin:${GOROOT}/bin:${GOPATH}/bin:$PATH" >> $BASH_ENV
     runTests: &runTests
       run:
         name: Run unit tests
