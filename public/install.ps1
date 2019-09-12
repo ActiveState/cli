@@ -219,6 +219,12 @@ function install()
         Write-Host $USAGE
         exit 0
     }
+
+    if ($script:NOPROMPT && $script:ACTIVATE != "" ) {
+        Write-Error "Flags -n and -activate cannot be used together."
+        Write-Host $USAGE
+        exit(1)
+    }
     
     # State tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"

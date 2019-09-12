@@ -137,6 +137,13 @@ while getopts "nb:t:f:?h-:" opt; do
   esac
 done
 
+# state activate currently does not run without user interaction, 
+# so we are bailing if that's being requested...
+if $NOPROMPT && [ -n $ACTIVATE ]; then
+  error "Flags -n and --activate cannot be used together."
+  exit 1
+fi
+
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
