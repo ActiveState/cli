@@ -94,7 +94,7 @@ scripts:
         echo "build/$BUILD_NAME does not exist, you need to run 'state run build' first"
         exit 1
       fi
-      python3 -m unittest -v discover -s test/integration -p '*_test.py'
+      python3 -m unittest discover -s test/integration -p '*_test.py'
   - name: clean
     description: Cleans out the build dir.
     value: |
