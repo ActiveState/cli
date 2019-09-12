@@ -335,6 +335,8 @@ error_state_activate_new_aborted:
   other: "Unable to create new project: aborted."
 error_state_activate_new_mkdir:
   other: Unable to create new project directory.
+error_state_activate_new_no_commit_aborted:
+  other: "Platform project created but cannot activate.  Try 'state activate {{.Owner}}/{{.ProjectName}}': aborted."
 state_activate_new_prompt_owner:
   other: "Please provide an owner for the new project:"
 error_state_activate_new_fetch_organizations:
