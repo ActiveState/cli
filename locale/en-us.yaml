@@ -363,16 +363,18 @@ edit_script_cmd_name_arg_description:
   other: The name of the script to be edited
 edit_script_cmd_expand_flag:
   other: Whether or not to expand constants within the script
-edit_script_editor_not_set:
-  other: EDITOR environment variable not set
+edit_scripts_no_name:
+  other: Could not find script with the given name {{.V0}}
+edit_scripts_project_file_saved:
+  other: Script changes dectect, updating activestate.yaml
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
-error_script_edit_undefined_name:
-  other: The script name must be provided
 error_edit_script:
   other: Failed to edit script
 error_edit_unrecognized_platform:
   other: Could not open script file on this platform {{.V0}}
+error_edit_watcher_channel_closed:
+  other: Watcher channel '{{.V0}}' closed
 prompt_done_editing:
   other: Are you done editing?
 arg_state_run_name:

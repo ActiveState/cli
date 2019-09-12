@@ -112,7 +112,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 	case "darwin":
 		expected = openCmdMac
 	case "windows":
-		expected = defaultEditorWin
+		expected = openCmdWin
 	}
 
 	actual, fail := getOpenCmd()
@@ -124,6 +124,30 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 	}
 }
 
+func (suite *EditTestSuite) TestNewScriptWatcher() {
+	script := suite.project.ScriptByName("hello")
+
+	var fail *failures.Failure
+	suite.scriptFile, fail = createScriptFile(script)
+	suite.Require().NoError(fail.ToError(), "should create file")
+
+	done := make(chan struct{})
+	defer close(done)
+	watcher, fail := newScriptWatcher(suite.scriptFile, done)
+	suite.Require().NoError(fail.ToError(), "unexpected error creatig script watcher")
+
+	go watcher.run()
+
+	done <- struct{}{}
+
+	select {
+	case fail = <-watcher.fails:
+		suite.Require().NoError(fail.ToError(), "should not get error from running watcher")
+	default:
+		// Do nothing, test passed
+	}
+}
+
 func (suite *EditTestSuite) TestUpdateProjectFile() {
 	replace := suite.project.ScriptByName("replace")
 
@@ -132,7 +156,7 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 	suite.Require().NoError(fail.ToError(), "unexpected error creating script file")
 
 	EditArgs.Name = "hello"
-	fail = updateProjectFile(suite.scriptFile, replace)
+	fail = updateProjectFile(suite.scriptFile)
 	suite.Require().NoError(fail.ToError(), "should be able to update script file")
 
 	updatedProject := project.Get()

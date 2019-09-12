@@ -7,6 +7,8 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/print"
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -20,9 +22,17 @@ import (
 
 // The default open command and editors based on platform
 const (
-	openCmdLin       = "xdg-open"
-	openCmdMac       = "open"
-	defaultEditorWin = "notepad"
+	openCmdLin = "xdg-open"
+	openCmdMac = "open"
+	openCmdWin = "start"
+)
+
+var (
+	// FailWatcherRead indicates a failure reading from a watcher channel
+	FailWatcherRead = failures.Type("edit.fail.watcherread")
+
+	// FailWatcherInstance indicates a failure from the active watcher
+	FailWatcherInstance = failures.Type("edit.fail.watcherinstance")
 )
 
 // EditArgs captures values for any arguments used with the edit command
@@ -45,6 +55,7 @@ var EditCommand = &commands.Command{
 			Name:        "edit_script_cmd_name_arg",
 			Description: "edit_script_cmd_name_arg_description",
 			Variable:    &EditArgs.Name,
+			Required:    true,
 		},
 	},
 	Flags: []*commands.Flag{
@@ -60,11 +71,6 @@ var EditCommand = &commands.Command{
 
 // ExecuteEdit runs the edit command
 func ExecuteEdit(cmd *cobra.Command, args []string) {
-	if EditArgs.Name == "" {
-		failures.Handle(failures.FailUserInput.New("error_script_edit_undefined_name"), "")
-		return
-	}
-
 	script := project.Get().ScriptByName(EditArgs.Name)
 	if script == nil {
 		fmt.Println(locale.Tr("edit_scripts_no_name", EditArgs.Name))
@@ -74,7 +80,6 @@ func ExecuteEdit(cmd *cobra.Command, args []string) {
 	fail := editScript(script)
 	if fail != nil {
 		failures.Handle(fail, "error_edit_script")
-		os.Exit(1)
 	}
 }
 
@@ -85,25 +90,34 @@ func editScript(script *project.Script) *failures.Failure {
 	}
 	defer scriptFile.Clean()
 
-	prompter := prompt.New()
-	for {
+	done := make(chan struct{})
+	defer close(done)
+	watcher, fail := newScriptWatcher(scriptFile, done)
+	if fail != nil {
+		return fail
+	}
+	go watcher.run()
 
-		fail = openEditor(scriptFile.Filename())
-		if fail != nil {
-			return fail
-		}
-
-		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-		if fail != nil {
-			return fail
-		}
-		if doneEditing {
-			break
-		}
-
+	fail = openEditor(scriptFile.Filename())
+	if fail != nil {
+		return fail
 	}
 
-	return updateProjectFile(scriptFile, script)
+	prompter := prompt.New()
+	doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+	if fail != nil {
+		return fail
+	}
+	if doneEditing {
+		done <- struct{}{}
+	}
+
+	select {
+	case fail = <-watcher.fails:
+		return fail
+	default:
+		return nil
+	}
 }
 
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
@@ -117,9 +131,17 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 
 func scriptLanguage(script *project.Script) language.Language {
 	if script.Language() == language.Unknown {
-		return language.Sh
+		return defaultScriptLanguage()
 	}
 	return script.Language()
+}
+
+func defaultScriptLanguage() language.Language {
+	platform := runtime.GOOS
+	if platform == "windows" {
+		return language.Batch
+	}
+	return language.Sh
 }
 
 func openEditor(filename string) *failures.Failure {
@@ -134,6 +156,7 @@ func openEditor(filename string) *failures.Failure {
 	// is not from a proper terminal. Hence we have to redirect here
 	subCmd.Stdin = os.Stdin
 	subCmd.Stdout = os.Stdout
+	subCmd.Stderr = os.Stderr
 
 	err := subCmd.Run()
 	if err != nil {
@@ -147,7 +170,6 @@ func getOpenCmd() (string, *failures.Failure) {
 	if editor := os.Getenv("EDITOR"); editor != "" {
 		return editor, nil
 	}
-	fmt.Println(locale.T("edit_script_editor_not_set"))
 
 	platform := runtime.GOOS
 	switch platform {
@@ -160,13 +182,71 @@ func getOpenCmd() (string, *failures.Failure) {
 	case "darwin":
 		return openCmdMac, nil
 	case "windows":
-		return defaultEditorWin, nil
+		return openCmdWin, nil
 	default:
 		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", platform)
 	}
 }
 
-func updateProjectFile(scriptFile *scriptfile.ScriptFile, script *project.Script) *failures.Failure {
+type scriptWatcher struct {
+	watcher    *fsnotify.Watcher
+	scriptFile *scriptfile.ScriptFile
+	done       <-chan struct{}
+	fails      chan *failures.Failure
+}
+
+func newScriptWatcher(scriptFile *scriptfile.ScriptFile, done <-chan struct{}) (*scriptWatcher, *failures.Failure) {
+	fails := make(chan *failures.Failure)
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+
+	err = watcher.Add(scriptFile.Filename())
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+
+	return &scriptWatcher{
+		watcher:    watcher,
+		scriptFile: scriptFile,
+		done:       done,
+		fails:      fails,
+	}, nil
+}
+
+func (sw *scriptWatcher) run() {
+	for {
+		defer sw.watcher.Close()
+		select {
+		case <-sw.done:
+			return
+		case event, ok := <-sw.watcher.Events:
+			if !ok {
+				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed", "events")
+				return
+			}
+			if event.Op&fsnotify.Write == fsnotify.Write {
+				fail := updateProjectFile(sw.scriptFile)
+				if fail != nil {
+					sw.fails <- fail
+					return
+				}
+				print.Line("edit_scripts_project_file_saved")
+			}
+		case err, ok := <-sw.watcher.Errors:
+			if !ok {
+				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed", "errors")
+				return
+			}
+			sw.fails <- FailWatcherInstance.Wrap(err)
+			return
+		}
+	}
+}
+
+func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	updatedScript, fail := fileutils.ReadFile(scriptFile.Filename())
 	if fail != nil {
 		return fail
