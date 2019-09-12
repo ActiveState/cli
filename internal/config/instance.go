@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -135,7 +136,19 @@ func (i *Instance) ensureConfigExists() {
 }
 
 func (i *Instance) ensureCacheExists() {
-	i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
+	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
+	if flag.Lookup("test.v") != nil {
+		tempDir, err := ioutil.TempDir("", "state-cache-tests")
+		if err != nil {
+			log.Panicf("Error while creating temp dir: %v", err)
+		}
+		i.cacheDir = &configdir.Config{
+			Path: tempDir,
+			Type: configdir.Cache,
+		}
+	} else {
+		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
+	}
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)
 	}
