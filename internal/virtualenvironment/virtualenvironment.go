@@ -62,7 +62,6 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		// Only Linux and Windows currently support runtime environments, but we still want to have virtual environments
 		// on mac
 		if failure := v.activateRuntime(); failure != nil {
-			mt.Println("here", failure)
 			return failure
 		}
 	}

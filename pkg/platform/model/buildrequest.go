@@ -26,7 +26,9 @@ func NewBuildRequest(pj *mono_models.Project) (*headchef_models.V1BuildRequest, 
 		return nil, fail
 	}
 
+	format := "raw"
 	return &headchef_models.V1BuildRequest{
 		Requester: requester,
+		Format:    &format,
 	}, nil
 }

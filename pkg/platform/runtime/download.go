@@ -86,7 +86,7 @@ func (r *Download) fetchBuildRequest() (*headchef_models.V1BuildRequest, *failur
 	}
 
 	// Get the effective recipe from the list of recipes, this is the first recipe that matches our current platform
-	effectiveRecipe, fail := model.RecipeByPlatform(recipes, model.HostPlatform)
+	effectiveRecipe, fail := model.RecipeByHostPlatform(recipes, model.HostPlatform)
 	if fail != nil {
 		return nil, fail
 	}

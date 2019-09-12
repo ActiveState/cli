@@ -1,9 +1,10 @@
 package headchef
 
 import (
-	"net/url"
+	"context"
 	"time"
 
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -47,12 +48,17 @@ type Request struct {
 }
 
 func InitRequest() *Request {
-	return NewRequest(api.GetServiceURL(api.ServiceHeadChef))
+	return NewRequest(api.GetSettings(api.ServiceHeadChef))
 }
 
-func NewRequest(u *url.URL) *Request {
+func NewRequest(apiSetting api.Settings) *Request {
+	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
+	transportRuntime.Transport = api.NewUserAgentTripper()
+
+	//transportRuntime.SetDebug(true)
+
 	return &Request{
-		client: headchef_client.Default.HeadchefOperations,
+		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 	}
 }
 
@@ -69,11 +75,17 @@ func (r *Request) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus
 		var buildUUID *strfmt.UUID
 
 		startParams := headchef_operations.StartBuildV1Params{
+			Context:      context.Background(),
 			BuildRequest: buildRequest,
 		}
 		created, accepted, err := r.client.StartBuildV1(&startParams)
 		switch {
 		case err != nil:
+			if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
+				msg := *startErr.Payload.Message
+				buildStatus.RunFail <- FailRestAPIError.New(msg)
+				return
+			}
 			buildStatus.RunFail <- FailRestAPIError.Wrap(err)
 			return
 		case accepted != nil:
@@ -105,6 +117,7 @@ func (r *Request) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus
 			}
 
 			buildStatusParams := headchef_operations.GetBuildStatusParams{
+				Context:        context.Background(),
 				BuildRequestID: *buildUUID,
 			}
 			buildStatusEnvelope, err := r.client.GetBuildStatus(&buildStatusParams)

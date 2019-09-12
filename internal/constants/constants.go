@@ -136,14 +136,14 @@ const RuntimeInstallDirs = "INSTALLDIR,perl"
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "support/metadata.json"
 
-// HeadChefAPIPath is the api path used for the secrets api
-const HeadChefAPIPath = "/sv/head-chef/"
+// HeadChefAPIPath is the api path used for the headchef api
+const HeadChefAPIPath = "/sv/head-chef"
 
 // HeadChefURLProd is the host used for platform api calls when on production
-const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
+const HeadChefURLProd = "https://platform.activestate.com" + HeadChefAPIPath
 
 // HeadChefURLStage is the host used for platform api calls when on staging
-const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
+const HeadChefURLStage = "https://staging.activestate.build" + HeadChefAPIPath
 
 // HeadChefURLDev is the host used for platform api calls when on staging
 const HeadChefURLDev = "http://localhost" + HeadChefAPIPath
@@ -155,7 +155,7 @@ const HeadChefOrigin = "http://localhost"
 const HeadChefBuildStatusCheckMax = time.Hour * 8
 
 // InventoryAPIPath is the api path used for the secrets api
-const InventoryAPIPath = "/sv/inventory-api"
+const InventoryAPIPath = "/sv/inventory-api-v1"
 
 // InventoryURLProd is the host used for platform api calls when on production
 const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
