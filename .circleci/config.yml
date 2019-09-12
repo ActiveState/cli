@@ -47,6 +47,8 @@ defaults:
     storeTestResults: &storeTestResults
       store_test_results:
         path: /tmp/test-results
+orbs:
+  win: circleci/windows@1.0.0
 jobs:
   build-linux:
     environment:
