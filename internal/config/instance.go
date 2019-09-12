@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/ActiveState/cli/internal/fileutils"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -138,12 +139,12 @@ func (i *Instance) ensureConfigExists() {
 func (i *Instance) ensureCacheExists() {
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
 	if flag.Lookup("test.v") != nil {
-		tempDir, err := ioutil.TempDir("", "state-cache-tests")
+		path, err := tempDir("state-cache-tests")
 		if err != nil {
 			log.Panicf("Error while creating temp dir: %v", err)
 		}
 		i.cacheDir = &configdir.Config{
-			Path: tempDir,
+			Path: path
 			Type: configdir.Cache,
 		}
 	} else {
@@ -160,4 +161,19 @@ func (i *Instance) exit(message string, a ...interface{}) {
 		print.Error(stacktrace.Get().String())
 	}
 	i.Exit(1)
+}
+
+// tempDir returns a temp directory path at the topmost directory possible
+// can't use fileutils here as it would cause a cyclic dependency
+func tempDir(prefix string) (string, error) {
+	if runtime.GOOS == "windows" {
+		drive, envExists := os.LookupEnv("SystemDrive")
+		tempDir := filepath.Join(drive, "temp")
+	
+		if envExists && DirExists(tempDir) {
+			return filepath.Join(drive, "temp", prefix + uuid.New().String()[0:8]), nil
+		}
+	}
+
+	return ioutil.TempDir("", prefix)
 }
