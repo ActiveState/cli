@@ -64,7 +64,7 @@ jobs:
       GOROOT: /usr/local/go
       SHELL: bash
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
@@ -101,7 +101,7 @@ jobs:
           name: Install Dependencies
           command: |
             cd /private/tmp
-            curl https://dl.google.com/go/go1.9.5.darwin-amd64.tar.gz -o golang.tar.gz
+            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
 
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
@@ -125,6 +125,4 @@ workflows:
   build:
     jobs:
       - build-linux
-      - build-macos:
-          requires:
-            - build-linux
+      - build-macos
