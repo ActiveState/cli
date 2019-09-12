@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/ActiveState/cli/internal/fileutils"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -144,7 +144,7 @@ func (i *Instance) ensureCacheExists() {
 			log.Panicf("Error while creating temp dir: %v", err)
 		}
 		i.cacheDir = &configdir.Config{
-			Path: path
+			Path: path,
 			Type: configdir.Cache,
 		}
 	} else {
@@ -167,11 +167,8 @@ func (i *Instance) exit(message string, a ...interface{}) {
 // can't use fileutils here as it would cause a cyclic dependency
 func tempDir(prefix string) (string, error) {
 	if runtime.GOOS == "windows" {
-		drive, envExists := os.LookupEnv("SystemDrive")
-		tempDir := filepath.Join(drive, "temp")
-	
-		if envExists && DirExists(tempDir) {
-			return filepath.Join(drive, "temp", prefix + uuid.New().String()[0:8]), nil
+		if drive, envExists := os.LookupEnv("SystemDrive"); envExists {
+			return filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8]), nil
 		}
 	}
 
