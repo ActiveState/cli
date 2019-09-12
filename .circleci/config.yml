@@ -1,7 +1,4 @@
-# Golang CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-go/ for more details
-version: 2
+version: 2.1
 defaults:
   steps:
     prepareEnv: &prepareEnv
@@ -78,6 +75,32 @@ jobs:
       - run:
           name: Authenticate State Tool
           command: ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
+      - <<: *runTests
+      - <<: *buildCli
+      - <<: *runIntegrationTests
+      - <<: *deployBits
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+  build-windows:
+    environment:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: "true"
+      TEST_RESULTS: /tmp/test-results
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    working_directory: /go/src/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            pushd test/integration
+            pip3 install -r requirements.txt
+            popd
+      - <<: *prepareEnv
+      - run:
+          name: Authenticate State Tool
+          command: state auth --token $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
       - <<: *runIntegrationTests
