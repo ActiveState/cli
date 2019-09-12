@@ -63,6 +63,7 @@ jobs:
       SHELL: bash
     docker:
       - image: circleci/golang:1.12
+    resource_class: large
     working_directory: /go/src/github.com/ActiveState/cli
     steps:
       - checkout
@@ -97,6 +98,7 @@ jobs:
       SHELL: bash
     macos:
       xcode: 9.2.0
+    resource_class: large
     working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli
     steps:
       - checkout
