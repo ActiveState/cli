@@ -19,10 +19,8 @@ defaults:
       run:
         name: Run unit tests
         command: |
-          /tmp/cc-test-reporter before-build
           $GOROOT/bin/go test -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          /tmp/cc-test-reporter after-build --coverage-input-type gocov --exit-code $?
           ~/.local/bin/state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run:
@@ -73,9 +71,6 @@ jobs:
             sudo apt-get update
             sudo apt-get install python3 python3-pip
 
-            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-linux-amd64 > /tmp/cc-test-reporter
-            chmod +x /tmp/cc-test-reporter
-
             pushd test/integration
             pip3 install -r requirements.txt
             popd
@@ -109,9 +104,6 @@ jobs:
             curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
             popd
-
-            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
-            chmod +x /tmp/cc-test-reporter
       - <<: *prepareEnv
       - run:
           name: Authenticate State Tool
