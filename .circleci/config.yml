@@ -40,8 +40,7 @@ defaults:
       run:
         name: Run integration tests
         command: |
-          ~/.local/bin/state auth --token $PLATFORM_API_TOKEN 
-          build/state run integration-tests
+          state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -56,6 +55,7 @@ defaults:
 jobs:
   build-linux:
     environment:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: "true"
       TEST_RESULTS: /tmp/test-results
       GOBIN: /go/bin
       GOPATH: /go
