@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -530,6 +531,23 @@ func (script *Script) Name() string { return script.script.Name }
 // Language returns the language of this script
 func (script *Script) Language() language.Language {
 	return script.script.Language
+}
+
+// LanguageSafe returns the language of this script. The returned
+// language is guaranteed to be of a known scripting language
+func (script *Script) LanguageSafe() language.Language {
+	if script.Language() == language.Unknown {
+		return defaultScriptLanguage()
+	}
+	return script.Language()
+}
+
+func defaultScriptLanguage() language.Language {
+	platform := runtime.GOOS
+	if platform == "windows" {
+		return language.Batch
+	}
+	return language.Sh
 }
 
 // Description returns script description

@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -126,22 +125,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.NewSource(scriptLanguage(script), scriptBlock)
-}
-
-func scriptLanguage(script *project.Script) language.Language {
-	if script.Language() == language.Unknown {
-		return defaultScriptLanguage()
-	}
-	return script.Language()
-}
-
-func defaultScriptLanguage() language.Language {
-	platform := runtime.GOOS
-	if platform == "windows" {
-		return language.Batch
-	}
-	return language.Sh
+	return scriptfile.NewSource(script.LanguageSafe(), scriptBlock)
 }
 
 func openEditor(filename string) *failures.Failure {
