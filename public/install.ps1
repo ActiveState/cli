@@ -54,27 +54,6 @@ function notifySettingChange(){
 
 }
 
-function isInRegistry($path){
-    $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
-    $inReg = $False
-    for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $path) {
-            $inReg = $True
-        }
-    }
-    $inReg
-}
-function isOnPath($path){
-    $envpaths = $env:Path.Split(';')
-    $inEnv = $False
-    for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $path) {
-            $inEnv = $True
-        }
-    }
-    $inEnv
-}
-
 function isAdmin
 {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
