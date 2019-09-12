@@ -29,7 +29,6 @@ type EditTestSuite struct {
 }
 
 func (suite *EditTestSuite) BeforeTest(suiteName, testName string) {
-
 	suite.projectFile = &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
@@ -60,11 +59,9 @@ scripts:
 	suite.Require().NoError(fail.ToError(), "unexpected error creating project")
 
 	suite.originalEditor = os.Getenv("EDITOR")
-
 }
 
 func (suite *EditTestSuite) AfterTest(suiteName, testName string) {
-
 	err := os.Remove(suite.projectFile.Path())
 	suite.Require().NoError(err, "unexpected error removing project file")
 
@@ -73,21 +70,17 @@ func (suite *EditTestSuite) AfterTest(suiteName, testName string) {
 	}
 
 	os.Setenv("EDITOR", suite.originalEditor)
-
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile() {
-
 	script := suite.project.ScriptByName("hello")
 
 	var fail *failures.Failure
 	suite.scriptFile, fail = createScriptFile(script)
 	suite.Require().NoError(fail.ToError(), "should create file")
-
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
-
 	script := suite.project.ScriptByName("hello-constant")
 
 	EditFlags.Expand = true
@@ -98,22 +91,18 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 	content, fail := fileutils.ReadFile(suite.scriptFile.Filename())
 	suite.Require().NoError(fail.ToError(), "unexpected error reading file contents")
 	suite.Equal(script.Value(), string(content))
-
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
-
 	expected := "vi"
 	os.Setenv("EDITOR", expected)
 
 	actual, fail := getOpenCmd()
 	suite.Require().NoError(fail.ToError(), "could not get open command")
 	suite.Equal(expected, actual)
-
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
-
 	os.Setenv("EDITOR", "")
 	var expected string
 	platform := runtime.GOOS
@@ -133,11 +122,9 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 		suite.Require().NoError(fail.ToError(), "could not get open command")
 		suite.Equal(expected, actual)
 	}
-
 }
 
 func (suite *EditTestSuite) TestUpdateProjectFile() {
-
 	replace := suite.project.ScriptByName("replace")
 
 	var fail *failures.Failure
@@ -150,7 +137,6 @@ func (suite *EditTestSuite) TestUpdateProjectFile() {
 
 	updatedProject := project.Get()
 	suite.Equal(replace.Value(), updatedProject.ScriptByName("hello").Value())
-
 }
 
 func TestEditSuite(t *testing.T) {

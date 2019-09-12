@@ -60,7 +60,6 @@ var EditCommand = &commands.Command{
 
 // ExecuteEdit runs the edit command
 func ExecuteEdit(cmd *cobra.Command, args []string) {
-
 	if EditArgs.Name == "" {
 		failures.Handle(failures.FailUserInput.New("error_script_edit_undefined_name"), "")
 		return
@@ -77,11 +76,9 @@ func ExecuteEdit(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, "error_edit_script")
 		os.Exit(1)
 	}
-
 }
 
 func editScript(script *project.Script) *failures.Failure {
-
 	scriptFile, fail := createScriptFile(script)
 	if fail != nil {
 		return fail
@@ -107,18 +104,15 @@ func editScript(script *project.Script) *failures.Failure {
 	}
 
 	return updateProjectFile(scriptFile, script)
-
 }
 
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
-
 	scriptBlock := script.Raw()
 	if EditFlags.Expand {
 		scriptBlock = script.Value()
 	}
 
 	return scriptfile.NewSource(scriptLanguage(script), scriptBlock)
-
 }
 
 func scriptLanguage(script *project.Script) language.Language {
@@ -129,7 +123,6 @@ func scriptLanguage(script *project.Script) language.Language {
 }
 
 func openEditor(filename string) *failures.Failure {
-
 	editorCmd, fail := getOpenCmd()
 	if fail != nil {
 		return fail
@@ -148,11 +141,9 @@ func openEditor(filename string) *failures.Failure {
 	}
 
 	return nil
-
 }
 
 func getOpenCmd() (string, *failures.Failure) {
-
 	if editor := os.Getenv("EDITOR"); editor != "" {
 		return editor, nil
 	}
@@ -173,11 +164,9 @@ func getOpenCmd() (string, *failures.Failure) {
 	default:
 		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", platform)
 	}
-
 }
 
 func updateProjectFile(scriptFile *scriptfile.ScriptFile, script *project.Script) *failures.Failure {
-
 	updatedScript, fail := fileutils.ReadFile(scriptFile.Filename())
 	if fail != nil {
 		return fail
@@ -192,5 +181,4 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile, script *project.Script
 	}
 
 	return projectFile.Save()
-
 }

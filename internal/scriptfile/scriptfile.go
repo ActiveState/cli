@@ -28,7 +28,6 @@ func NewSource(l language.Language, script string) (*ScriptFile, *failures.Failu
 }
 
 func new(l language.Language, data []byte) (*ScriptFile, *failures.Failure) {
-
 	file, fail := fileutils.WriteTempFile("", l.TempPattern(), data, 0700)
 	if fail != nil {
 		return nil, fail
@@ -40,7 +39,6 @@ func new(l language.Language, data []byte) (*ScriptFile, *failures.Failure) {
 	}
 
 	return &sf, nil
-
 }
 
 // Clean provides simple/deferable clean up.
