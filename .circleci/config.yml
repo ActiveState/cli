@@ -103,15 +103,14 @@ jobs:
       - run:
           name: Install Dependencies
           command: |
-            cd /private/tmp
+            pushd /private/tmp
             curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
+            popd
 
             curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.6.3-darwin-amd64 > /tmp/cc-test-reporter
             chmod +x /tmp/cc-test-reporter
 
-            pwd 
-            ls
             pushd test/integration
             pip3 install -r requirements.txt
             popd
