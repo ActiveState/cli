@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?commitID=abfdee9d-d20c-42a3-a4b0-f07d8794cdd4
+project: https://platform.activestate.com/ActiveState/cli?commitID=f5691b64-5066-40fc-9528-5dfe59d24a69
 scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
@@ -18,11 +18,6 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
-  - name: install-dependencies
-    value: |
-      pushd test/integration
-      pip3 install -r requirements.txt
-      popd
   - name: build
     description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
