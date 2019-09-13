@@ -133,7 +133,7 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
 func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
 	envMap := v.GetEnv()
-	env := []string{}
+	var env []string
 	for k, v := range envMap {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
