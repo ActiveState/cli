@@ -60,9 +60,6 @@ const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
 // APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
 const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 
-// CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
-const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
-
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 

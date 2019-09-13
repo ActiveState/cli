@@ -3,7 +3,6 @@
 package main
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
@@ -41,8 +40,4 @@ func register() {
 
 	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)
-}
-
-func runProfiling() (cleanUp func(), fail *failures.Failure) {
-	return func() {}, nil
 }
