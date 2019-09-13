@@ -359,7 +359,7 @@ function install()
     if ( "$script:ACTIVATE" -eq "" ) {
         Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
         Write-Host "In order to activate a project, the state tool needs to be installed in your PATH first."
-        Write-Host "To manually activate the project run 'state activate $script:ACTIVATE'"
+        Write-Host "To manually activate the project run 'state activate $script:ACTIVATE' once 'state' is on your PATH"
     }
 }
 
