@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -9,11 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
@@ -59,6 +62,57 @@ scripts:
 	err = Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestEnvIsSet(t *testing.T) {
+	if os.Getenv("CI") == "azure" {
+		// Skip this test on Azure because I'm trying to move this to CircleCI and I'm tired of dealing with Azure
+		// being a DICK. This can be removed once we're on CircleCI
+		return
+	}
+	Args.Name = "" // reset
+	failures.ResetHandled()
+
+	project := &projectfile.Project{}
+	var contents string
+	if runtime.GOOS != "windows" {
+		contents = strings.TrimSpace(`
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+scripts:
+  - name: run
+    value: printenv
+  `)
+	} else {
+		contents = strings.TrimSpace(`
+project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+scripts:
+  - name: run
+    value: cmd.exe /C SET
+  `)
+	}
+	err := yaml.Unmarshal([]byte(contents), project)
+	assert.Nil(t, err, "Unmarshalled YAML")
+	project.Persist()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"run"})
+	os.Setenv("TEST_KEY_EXISTS", "true")
+	os.Setenv(constants.DisableRuntime, "true")
+
+	ex := exiter.New()
+	var exitCode int
+	Command.Exiter = ex.Exit
+	out := capturer.CaptureOutput(func() {
+		exitCode = ex.WaitForExit(func() {
+			err = Command.Execute()
+		})
+	})
+
+	assert.Equal(t, -1, exitCode, fmt.Sprintf("Exited with code %d, output: %s", exitCode, out))
+	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
+	assert.Contains(t, out, "TEST_KEY_EXISTS")
 }
 
 func TestRunNoProjectInheritance(t *testing.T) {

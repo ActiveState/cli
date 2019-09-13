@@ -1,10 +1,13 @@
 package virtualenvironment
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -13,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/google/uuid"
 )
 
 var persisted *VirtualEnvironment
@@ -124,6 +126,27 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
+
+	return env
+}
+
+// GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
+func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
+	envMap := v.GetEnv()
+	var env []string
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	// Append the global env
+	if inheritEnv {
+		for _, value := range os.Environ() {
+			split := strings.Split(value, "=")
+			if _, ok := envMap[split[0]]; !ok {
+				env = append(env, value)
+			}
+		}
+	}
 
 	return env
 }
