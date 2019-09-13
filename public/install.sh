@@ -277,7 +277,9 @@ done
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   info "Installation complete."
   if [ -n "${ACTIVATE}" ]; then
-    # replace the shell with the activated project's shell
+    # switch this shell to interactive mode
+    set -i
+    # replace the shell with the activated project's shell, first we need to set this shell to 
     exec $STATEEXE activate ${ACTIVATE}
   fi
   info "You may now start using the '$STATEEXE' program."
