@@ -18,6 +18,11 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
+  - name: install-dependencies
+    value: |
+      pushd test/integration
+      pip3 install -r requirements.txt
+      popd
   - name: build
     description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
