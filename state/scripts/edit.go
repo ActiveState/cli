@@ -78,7 +78,7 @@ func ExecuteEdit(cmd *cobra.Command, args []string) {
 
 	fail := editScript(script)
 	if fail != nil {
-		failures.Handle(fail, "error_edit_script")
+		failures.Handle(fail, locale.T("error_edit_script"))
 	}
 }
 
@@ -215,6 +215,8 @@ func (sw *scriptWatcher) run() {
 					sw.fails <- fail
 					return
 				}
+				// To ensure confirm dialog and update message are not on the same line
+				print.Line("")
 				print.Line(locale.T("edit_scripts_project_file_saved"))
 			}
 		case err, ok := <-sw.watcher.Errors:
