@@ -219,7 +219,7 @@ function install()
         exit 0
     }
 
-    if ($script:NOPROMPT && $script:ACTIVATE != "" ) {
+    if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
         Write-Error "Flags -n and -activate cannot be set at the same time."
         exit(1)
     }
