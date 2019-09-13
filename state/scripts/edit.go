@@ -215,7 +215,7 @@ func (sw *scriptWatcher) run() {
 					sw.fails <- fail
 					return
 				}
-				print.Line("edit_scripts_project_file_saved")
+				print.Line(locale.T("edit_scripts_project_file_saved"))
 			}
 		case err, ok := <-sw.watcher.Errors:
 			if !ok {
