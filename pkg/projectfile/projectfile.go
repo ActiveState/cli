@@ -151,7 +151,7 @@ type Event struct {
 // Script covers the script structure, which goes under Project
 type Script struct {
 	Name        string            `yaml:"name"`
-	Description string            `yaml:"description"`
+	Description string            `yaml:"description,omitempty"`
 	Value       string            `yaml:"value"`
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`

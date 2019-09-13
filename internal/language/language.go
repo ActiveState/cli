@@ -42,11 +42,11 @@ var lookup = [...]languageData{
 		Executable{"", false},
 	},
 	{
-		"bash", "Bash", ".tmp", true, "", "",
+		"bash", "Bash", ".sh", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"sh", "Shell", ".tmp", true, "", "",
+		"sh", "Shell", ".sh", true, "", "",
 		Executable{"", true},
 	},
 	{
@@ -54,15 +54,15 @@ var lookup = [...]languageData{
 		Executable{"", true},
 	},
 	{
-		"perl", "Perl", ".tmp", true, "perl", "5.28.1",
+		"perl", "Perl", ".pl", true, "perl", "5.28.1",
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", "Python 2", ".tmp", true, "python", "2.7.14",
+		"python2", "Python 2", ".py", true, "python", "2.7.14",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"python3", "Python 3", ".tmp", true, "python", "3.6.6",
+		"python3", "Python 3", ".py", true, "python", "3.6.6",
 		Executable{constants.ActivePython3Executable, false},
 	},
 }
