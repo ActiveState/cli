@@ -1,6 +1,7 @@
 package run
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -93,10 +94,16 @@ scripts:
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
 
+	ex := exiter.New()
+	var exitCode int
+	Command.Exiter = ex.Exit
 	out := capturer.CaptureOutput(func() {
-		err = Command.Execute()
+		exitCode = ex.WaitForExit(func() {
+			err = Command.Execute()
+		})
 	})
 
+	assert.Equal(t, -1, exitCode, fmt.Sprintf("Exited with code %d, output: %s", exitCode, out))
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
