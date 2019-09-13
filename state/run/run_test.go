@@ -81,7 +81,7 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    value: cmd /C SET
+    value: SET
   `)
 	}
 	err := yaml.Unmarshal([]byte(contents), project)
@@ -90,8 +90,9 @@ scripts:
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"run"})
+	os.Setenv("TEST_KEY_EXISTS", "true")
+	os.Setenv(constants.DisableRuntime, "true")
 
-	os.Setenv("TEST_KEY_EXISTS", "TRUE")
 	out := capturer.CaptureOutput(func() {
 		err = Command.Execute()
 	})
