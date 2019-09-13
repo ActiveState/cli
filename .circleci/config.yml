@@ -93,7 +93,7 @@ jobs:
       - run:
           name: Run integration tests
           command: |
-            set PATH=%PATH%;C:\\Users\\circleci\\.local\\bin
+            set PATH=C:\Users\circleci\.local\bin;%PATH%
             echo %PATH%
             where state
             state run integration-tests
