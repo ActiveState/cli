@@ -89,12 +89,11 @@ func editScript(script *project.Script) *failures.Failure {
 	}
 	defer scriptFile.Clean()
 
-	done := make(chan struct{})
-	defer close(done)
-	watcher, fail := newScriptWatcher(scriptFile, done)
+	watcher, fail := newScriptWatcher(scriptFile)
 	if fail != nil {
 		return fail
 	}
+	defer watcher.close()
 	go watcher.run()
 
 	fail = openEditor(scriptFile.Filename())
@@ -103,12 +102,15 @@ func editScript(script *project.Script) *failures.Failure {
 	}
 
 	prompter := prompt.New()
-	doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-	if fail != nil {
-		return fail
-	}
-	if doneEditing {
-		done <- struct{}{}
+	for {
+		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+		if fail != nil {
+			return fail
+		}
+		if doneEditing {
+			watcher.done <- true
+			break
+		}
 	}
 
 	select {
@@ -155,8 +157,7 @@ func getOpenCmd() (string, *failures.Failure) {
 		return editor, nil
 	}
 
-	platform := runtime.GOOS
-	switch platform {
+	switch runtime.GOOS {
 	case "linux":
 		_, err := exec.LookPath(openCmdLin)
 		if err != nil {
@@ -168,20 +169,18 @@ func getOpenCmd() (string, *failures.Failure) {
 	case "windows":
 		return openCmdWin, nil
 	default:
-		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", platform)
+		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", runtime.GOOS)
 	}
 }
 
 type scriptWatcher struct {
 	watcher    *fsnotify.Watcher
 	scriptFile *scriptfile.ScriptFile
-	done       <-chan struct{}
+	done       chan bool
 	fails      chan *failures.Failure
 }
 
-func newScriptWatcher(scriptFile *scriptfile.ScriptFile, done <-chan struct{}) (*scriptWatcher, *failures.Failure) {
-	fails := make(chan *failures.Failure)
-
+func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, *failures.Failure) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, failures.FailOS.Wrap(err)
@@ -195,20 +194,19 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile, done <-chan struct{}) (
 	return &scriptWatcher{
 		watcher:    watcher,
 		scriptFile: scriptFile,
-		done:       done,
-		fails:      fails,
+		done:       make(chan bool),
+		fails:      make(chan *failures.Failure),
 	}, nil
 }
 
 func (sw *scriptWatcher) run() {
 	for {
-		defer sw.watcher.Close()
 		select {
 		case <-sw.done:
 			return
 		case event, ok := <-sw.watcher.Events:
 			if !ok {
-				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed", "events")
+				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed")
 				return
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
@@ -221,13 +219,19 @@ func (sw *scriptWatcher) run() {
 			}
 		case err, ok := <-sw.watcher.Errors:
 			if !ok {
-				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed", "errors")
+				sw.fails <- FailWatcherRead.New("error_edit_watcher_channel_closed")
 				return
 			}
 			sw.fails <- FailWatcherInstance.Wrap(err)
 			return
 		}
 	}
+}
+
+func (sw *scriptWatcher) close() {
+	sw.watcher.Close()
+	close(sw.done)
+	close(sw.fails)
 }
 
 func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {

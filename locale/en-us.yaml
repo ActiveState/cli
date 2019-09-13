@@ -374,7 +374,7 @@ error_edit_script:
 error_edit_unrecognized_platform:
   other: Could not open script file on this platform {{.V0}}
 error_edit_watcher_channel_closed:
-  other: Watcher channel '{{.V0}}' closed
+  other: Encountered error watching scriptfile. Please restart edit command
 prompt_done_editing:
   other: Are you done editing?
 arg_state_run_name:

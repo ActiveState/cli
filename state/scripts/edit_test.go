@@ -131,14 +131,12 @@ func (suite *EditTestSuite) TestNewScriptWatcher() {
 	suite.scriptFile, fail = createScriptFile(script)
 	suite.Require().NoError(fail.ToError(), "should create file")
 
-	done := make(chan struct{})
-	defer close(done)
-	watcher, fail := newScriptWatcher(suite.scriptFile, done)
+	watcher, fail := newScriptWatcher(suite.scriptFile)
 	suite.Require().NoError(fail.ToError(), "unexpected error creatig script watcher")
 
 	go watcher.run()
 
-	done <- struct{}{}
+	watcher.done <- true
 
 	select {
 	case fail = <-watcher.fails:

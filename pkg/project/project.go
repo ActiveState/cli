@@ -543,8 +543,7 @@ func (script *Script) LanguageSafe() language.Language {
 }
 
 func defaultScriptLanguage() language.Language {
-	platform := runtime.GOOS
-	if platform == "windows" {
+	if runtime.GOOS == "windows" {
 		return language.Batch
 	}
 	return language.Sh
