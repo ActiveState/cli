@@ -118,6 +118,8 @@ while getopts "nb:t:f:?h-:" opt; do
         eval "ACTIVATE=\"\${${OPTIND}}\""
         OPTIND=$(( OPTIND + 1 ))
         ;;
+    esac
+    ;;
   b)
     STATEURL=`echo $STATEURL | sed -e "s/unstable/$OPTARG/;"`
     ;;
@@ -139,7 +141,7 @@ done
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
-if $NOPROMPT && [ -n $ACTIVATE ]; then
+if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   error "Flags -n and --activate cannot be used together."
   exit 1
 fi
