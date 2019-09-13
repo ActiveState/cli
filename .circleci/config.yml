@@ -92,7 +92,9 @@ jobs:
       - <<: *buildCli
       - run:
           name: Run integration tests
-          command: state run integration-tests
+          command: |
+            set PATH=%PATH%;C:\Users\circleci\.local\bin
+            state run integration-tests
           shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
