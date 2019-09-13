@@ -294,7 +294,7 @@ activation_warning() {
     echo
     warn "Cannot activate ${ACTIVATE} yet."
     echo "In order to activate a project, the state tool needs to be installed in your PATH first."
-    echo "To manually activate the project run 'state activate ${ACTIVATE}'"
+    echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
   fi
 }
 
