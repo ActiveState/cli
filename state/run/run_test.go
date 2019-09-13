@@ -82,7 +82,7 @@ scripts:
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: run
-    value: SET
+    value: cmd.exe /C SET
   `)
 	}
 	err := yaml.Unmarshal([]byte(contents), project)
