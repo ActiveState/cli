@@ -158,6 +158,8 @@ func callInParallel(callback func(arg string) *failures.Failure, args []string) 
 	var wg sync.WaitGroup
 	// never make more than 10 requests in parallel
 	semaphoreChan := make(chan bool, MaxParallelRequests)
+	defer close(semaphoreChan)
+
 	errorChan := make(chan *failures.Failure, len(args))
 
 	for _, arg := range args {
