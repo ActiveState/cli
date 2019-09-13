@@ -17,7 +17,7 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 		return FailSignalCmd.Wrap(err)
 	}
 
-	sig := syscall.SIGTERM
+	sig = syscall.SIGTERM
 	if err := syscall.Kill(cmd.Process.Pid, sig); err != nil {
 		return FailSignalCmd.Wrap(err)
 	}
