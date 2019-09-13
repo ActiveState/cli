@@ -156,7 +156,6 @@ function isValidFolder([string] $path)
 # stateToolPathIsSet returns true if the state tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
-    Write-Host "existing $existing"
     $existing -eq $installDirectory
 }
 
