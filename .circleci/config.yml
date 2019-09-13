@@ -17,6 +17,7 @@ defaults:
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
 
+          state auth --token $PLATFORM_API_TOKEN
           state run install-dependencies
     runTests: &runTests
       run:
@@ -69,9 +70,6 @@ jobs:
     steps:
       - checkout
       - <<: *prepareEnv
-      - run:
-          name: Authenticate State Tool
-          command: ~/.local/bin/state auth --token $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
       - <<: *runIntegrationTests
@@ -91,9 +89,6 @@ jobs:
     steps:
       - checkout
       - <<: *prepareEnv
-      - run:
-          name: Authenticate State Tool
-          command: state auth --token $PLATFORM_API_TOKEN
       - <<: *runTests
       - <<: *buildCli
       - run:
