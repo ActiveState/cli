@@ -88,13 +88,7 @@ scripts:
   - name: integration-tests
     description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
     standalone: true
-    value: |
-      $scripts.SET_ENV
-      if [ ! -f "build/$BUILD_NAME" ]; then
-        echo "build/$BUILD_NAME does not exist, you need to run 'state run build' first"
-        exit 1
-      fi
-      python3 -m unittest discover -s test/integration -p '*_test.py'
+    value: python3 -m unittest discover -s test/integration -p '*_test.py'
   - name: clean
     description: Cleans out the build dir.
     value: |
