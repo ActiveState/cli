@@ -142,7 +142,7 @@ done
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
 if $NOPROMPT && [ -n "$ACTIVATE" ]; then
-  error "Flags -n and --activate cannot be used together."
+  error "Flags -n and --activate cannot be set at the same time."
   exit 1
 fi
 

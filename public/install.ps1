@@ -221,7 +221,7 @@ function install()
     }
 
     if ($script:NOPROMPT && $script:ACTIVATE != "" ) {
-        Write-Error "Flags -n and -activate cannot be used together."
+        Write-Error "Flags -n and -activate cannot be set at the same time."
         Write-Host $USAGE
         exit(1)
     }
