@@ -85,6 +85,12 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	path := os.Getenv("PATH")
 
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return
+	}
+
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
@@ -98,13 +104,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 			return
 		}
 
+		subs.SetEnv(venv.GetEnvSlice(true))
 		path = venv.GetEnv()["PATH"]
-	}
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_no_shell"))
-		return
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
