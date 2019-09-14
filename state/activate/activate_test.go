@@ -143,6 +143,39 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	return pjfile
 }
 
+func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+	defer httpmock.DeActivate()
+
+	cwd, err := os.Getwd()
+	suite.Require().NoError(err)
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir), ProjectNamespace})
+	err = Command.Execute()
+	suite.Require().NoError(err)
+	Cc.SetArgs(nil)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(suite.dir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+
+	// Activate existing project
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})
+	err = Command.Execute()
+	suite.Require().NoError(err)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+	err = os.Chdir(cwd)
+	suite.Require().NoError(err, "unable to chdir to testdata dir")
+}
+
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.testExecuteWithNamespace(false)
 }
@@ -374,6 +407,46 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }
+
+// func (suite *ActivateTestSuite) setupMock() {
+// 	httpmock.Register("POST", "/login")
+// 	httpmock.Register("GET", "/organizations")
+// 	httpmock.Register("POST", "organizations/test-owner/projects")
+// 	httpmock.Register("GET", "organizations/test-owner/projects/test-name")
+// 	httpmock.Register("POST", "vcs/commit")
+// 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+// 	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+// 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
+// 	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+// }
+
+// func (suite *ActivateTestSuite) TestPathFlagExistingEmptyDir() {
+// 	suite.rMock.MockFullRuntime()
+// 	suite.authMock.MockLoggedin()
+
+// 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+// 	defer httpmock.DeActivate()
+// 	suite.setupMock()
+
+// 	Cc := Command.GetCobraCmd()
+// 	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})
+// 	err := Command.Execute()
+// 	suite.Require().NoError(err)
+
+// 	suite.Equal(true, true, "Execute didn't panic")
+// 	suite.NoError(failures.Handled(), "No failure occurred")
+
+// 	configFile := filepath.Join(suite.dir, constants.ConfigFileName)
+// 	suite.FileExists(configFile)
+// 	pjfile, fail := projectfile.Parse(configFile)
+// 	suite.Require().NoError(fail.ToError())
+// 	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+// }
+// func (suite *ActivateTestSuite) TestPathFlagNewDirNotExisting() {
+// }
+
+// func (suite *ActivateTestSuite) TestPathFlagExitingProject() {
+// }
 
 func TestActivateSuite(t *testing.T) {
 	suite.Run(t, new(ActivateTestSuite))
