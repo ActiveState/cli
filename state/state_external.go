@@ -43,6 +43,6 @@ func register() {
 	Command.Append(keypair.Command)
 }
 
-func runProfiling() (cleanUp func(), fail *failures.Failure) {
+func runCPUProfiling() (cleanUp func(), fail *failures.Failure) {
 	return func() {}, nil
 }

@@ -96,11 +96,14 @@ func main() {
 		}
 	}()
 
-	cleanUpProfiling, fail := runProfiling() // only those set by envvars
-	if fail != nil {
-		failures.Handle(fail, "profiling_setup_failed")
+	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
+		cleanUpCPUProf, fail := runCPUProfiling()
+		if fail != nil {
+			failures.Handle(fail, "cpu_profiling_setup_failed")
+			os.Exit(1)
+		}
+		defer cleanUpCPUProf()
 	}
-	defer cleanUpProfiling()
 
 	setupRollbar()
 
