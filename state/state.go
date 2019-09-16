@@ -96,6 +96,12 @@ func main() {
 		}
 	}()
 
+	cleanUpProfiling, fail := runProfiling() // only those set by envvars
+	if fail != nil {
+		failures.Handle(fail, "profiling_setup_failed")
+	}
+	defer cleanUpProfiling()
+
 	setupRollbar()
 
 	// Don't auto-update if we're 'state update'ing
