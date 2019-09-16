@@ -838,6 +838,8 @@ err_artifact_invalid_url:
   other: API Responded with an invalid artifact URL, please contact support
 err_activate_namespace:
   other: Could not activate project for the given namespace
+err_activate_create_project:
+  other: Could not create new project on the ActiveState platform
 err_activate_query_exists:
   other: Could not query if project exists on the ActiveState platform
 err_invalid_namespace:

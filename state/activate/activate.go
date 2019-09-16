@@ -130,7 +130,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 
 	fail = promptCreateProject(cmd, args)
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_query_exists"))
+		failures.Handle(fail, locale.T("err_activate_create_project"))
 	}
 
 	// activate should be continually called while returning true
@@ -304,20 +304,20 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 	proj := project.Get()
 	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		if !api.FailProjectNotFound.Matches(fail.Type) {
-			failures.Handle(fail, locale.T("err_activate_query_exists"))
-		} else {
-			return fail
-		}
+	if fail == nil {
+		return nil
 	}
 
-	create, fail := prompter.Confirm(locale.Tr("state_activate_prompt_create_project", proj.Name(), proj.Owner()), false)
-	if fail != nil {
+	if api.FailProjectNotFound.Matches(fail.Type) {
+		create, fail := prompter.Confirm(locale.Tr("state_activate_prompt_create_project", proj.Name(), proj.Owner()), false)
+		if fail != nil {
+			return fail
+		}
+		if create {
+			NewExecute(cmd, args)
+		}
+	} else {
 		return fail
-	}
-	if create {
-		NewExecute(cmd, args)
 	}
 
 	return nil
