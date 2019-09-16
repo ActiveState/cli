@@ -90,7 +90,7 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && Flags.Path == "" && projectNotExists() {
+	if len(args) == 0 && projectNotExists() {
 		NewExecute(cmd, args)
 		return
 	}
@@ -99,6 +99,25 @@ func Execute(cmd *cobra.Command, args []string) {
 }
 
 func projectNotExists() bool {
+	logging.Debug("projectNotExists")
+	if Flags.Path != "" {
+		cwd, err := os.Getwd()
+		logging.Debug("cwd: %s", cwd)
+
+		if err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+		if err := os.Chdir(Flags.Path); err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+		defer func() {
+			logging.Debug("moving back to origin dir")
+			if err := os.Chdir(cwd); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+			}
+		}()
+	}
+
 	if _, fail := project.GetOnce(); fail != nil {
 		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
 			return true
@@ -123,21 +142,6 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		if fail != nil {
 			failures.Handle(fail, locale.T("err_activate_namespace"))
 			return
-		}
-	} else if Flags.Path != "" {
-		path := Flags.Path
-		if _, err := os.Stat(filepath.Join(path, constants.ConfigFileName)); err != nil {
-			NewExecute(cmd, args)
-		} else {
-			if err := os.MkdirAll(path, 0755); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
-				return
-			}
-
-			if err := os.Chdir(path); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
-				return
-			}
 		}
 	}
 
