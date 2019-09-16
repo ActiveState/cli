@@ -73,7 +73,7 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-
+	Flags.Path = ""
 	Args.Namespace = ""
 
 	failures.ResetHandled()
