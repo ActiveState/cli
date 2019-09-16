@@ -90,8 +90,6 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 	err := os.Chdir(path)
 	if err != nil {
-		print.Warning("98")
-
 		failures.Handle(err, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
