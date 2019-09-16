@@ -381,7 +381,14 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 }
 
 func (suite *ActivateTestSuite) TestUnstableWarning() {
-	suite.authMock.MockLoggedin()
+	suite.rMock.MockFullRuntime()
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
+
+	authentication.Get().AuthenticateWithToken("")
 
 	defer func() { branchName = constants.BranchName }()
 	branchName = "anything-but-stable"
