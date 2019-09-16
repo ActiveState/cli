@@ -15,19 +15,17 @@ var (
 // CPU runs the CPU profiler. Be sure to run the cleanup func.
 func CPU(file string) (cleanUp func(), fail *failures.Failure) {
 	if file == "" {
-		return func() {}, nil
+		return func() {}, FailSetupCPUProfiling.New("must provide file name")
 	}
 
 	f, err := os.Create(file)
 	if err != nil {
 		return func() {}, FailSetupCPUProfiling.Wrap(err)
 	}
+
 	if err = pprof.StartCPUProfile(f); err != nil {
 		return func() {}, FailSetupCPUProfiling.Wrap(err)
 	}
 
-	fn := func() {
-		pprof.StopCPUProfile()
-	}
-	return fn, nil
+	return pprof.StopCPUProfile, nil
 }
