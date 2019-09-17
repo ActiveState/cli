@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -402,6 +404,27 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Require().NoError(err)
 
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
+func (suite *ActivateTestSuite) TestPromptCreateProject() {
+	projectFile := &projectfile.Project{}
+	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.Require().NoError(err, "unexpected error marshalling yaml")
+
+	projectFile.SetPath(filepath.Join(suite.dir, constants.ConfigFileName))
+	projectFile.Save()
+	suite.Require().NoError(err, "should be able to save in suite dir")
+	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
+
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockGetProject404()
+
+	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
+
+	err = Command.Execute()
+	suite.Require().NoError(err)
 }
 
 func TestActivateSuite(t *testing.T) {
