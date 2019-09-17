@@ -92,8 +92,11 @@ jobs:
       - <<: *buildCli
       - run:
           name: Run integration tests
+          environment:
+            SHELL: cmd.exe
+          working_directory: C:\go\src\github.com\ActiveState\cli
           # circleci's cmd.exe integration does not accept multi line input
-          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set VERBOSE=true && set SHELL=cmd.exe && state run integration-tests
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && state run integration-tests
           shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
