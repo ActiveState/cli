@@ -3,9 +3,7 @@ package activate
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -133,26 +131,6 @@ func promptForOwner() (string, *failures.Failure) {
 	return owners[0], nil // auto-select only option
 }
 
-func fetchPath(projName string) (string, *failures.Failure) {
-	cwd, _ := os.Getwd()
-	files, _ := ioutil.ReadDir(cwd)
-
-	if len(files) == 0 {
-		// Current working directory is devoid of files. Use it as the path for
-		// the new project.
-		return cwd, nil
-	}
-
-	// Current working directory has files in it. Use a subdirectory with the
-	// project name as the path for the new project.
-	path := filepath.Join(cwd, projName)
-	if _, err := os.Stat(path); err == nil {
-		return "", failures.FailIO.New("error_state_activate_new_exists")
-	}
-
-	return path, nil
-}
-
 func createPlatformProject(name, owner string, lang language.Language) *failures.Failure {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
@@ -166,16 +144,10 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 }
 
 func createProjectDir(path string) *failures.Failure {
-	if _, err := os.Stat(path); err == nil {
-		// Directory already exists
-		files, _ := ioutil.ReadDir(path)
-		if len(files) == 0 {
-			return nil
+	if _, err := os.Stat(path); err != nil {
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return failures.FailIO.New("error_state_activate_new_mkdir")
 		}
-		return failures.FailIO.New("error_state_activate_new_exists")
-	}
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return failures.FailIO.New("error_state_activate_new_mkdir")
 	}
 	return nil
 }
