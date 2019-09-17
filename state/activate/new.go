@@ -75,7 +75,9 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	var commitID string
 	commitID, fail = latestCommitID(owner, name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
+			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+
 		exit(1)
 	}
 
@@ -83,8 +85,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 	// Create the project locally on disk.
 	if _, fail = projectfile.Create(projectURL, path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
-			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
