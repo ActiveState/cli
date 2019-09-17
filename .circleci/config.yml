@@ -93,7 +93,7 @@ jobs:
       - run:
           name: Run integration tests
           # circleci's cmd.exe integration does not accept multi line input
-          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && echo %PATH% && where state && state --version && state run integration-tests
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set VERBOSE=true && echo %PATH% && where state && state --version && state run integration-tests
           shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
