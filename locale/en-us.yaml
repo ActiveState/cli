@@ -393,8 +393,32 @@ scripts_err:
   other: Error managing user's Scripts
 scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
+scripts_no_name:
+  other: No script with name {{.V0}}
 scripts_err_output:
   other: Failed to display scripts output
+edit_description:
+  other: Edit a given script
+edit_script_cmd_name_arg:
+  other: name
+edit_script_cmd_name_arg_description:
+  other: The name of the script to be edited
+edit_script_cmd_expand_flag:
+  other: Whether or not to expand constants within the script
+edit_scripts_no_name:
+  other: Could not find script with the given name {{.V0}}
+edit_scripts_project_file_saved:
+  other: Script changes dectect, updating activestate.yaml. Press (Y/y) when done editing
+error_open_not_installed_lin:
+  other: Please install '{{.V0}}' to edit scripts
+error_edit_script:
+  other: Failed to edit script
+error_edit_unrecognized_platform:
+  other: Could not open script file on this platform {{.V0}}
+error_edit_watcher_channel_closed:
+  other: Encountered error watching scriptfile. Please restart edit command
+prompt_done_editing:
+  other: Are you done editing?
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
@@ -912,6 +936,8 @@ err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
 warn_deprecation_owner_name_fields:
   other: "DEPRECATION WARNING: Your project is using 'owner' and 'name' fields, these should be replaced with a single project field, eg. 'project: https://platform.activestate.com/{{.V0}}/{{.V1}}'"
+cpu_profiling_setup_failed:
+  other: CPU profiling setup failed
 err_main_panic:
   other: |
     An unexpected error occurred while running the State tool

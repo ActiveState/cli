@@ -96,6 +96,15 @@ func main() {
 		}
 	}()
 
+	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
+		cleanUpCPUProf, fail := runCPUProfiling()
+		if fail != nil {
+			failures.Handle(fail, "cpu_profiling_setup_failed")
+			os.Exit(1)
+		}
+		defer cleanUpCPUProf()
+	}
+
 	setupRollbar()
 
 	// Don't auto-update if we're 'state update'ing
