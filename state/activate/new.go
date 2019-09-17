@@ -74,7 +74,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 	var commitID string
 	commitID, fail = latestCommitID(owner, name)
-	if fail != nil {
+	if fail != nil || commitID == "" {
 		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
 			map[string]interface{}{"Owner": owner, "ProjectName": name}))
 
@@ -104,12 +104,11 @@ func latestCommitID(owner, project string) (string, *failures.Failure) {
 		return "", fail
 	}
 
-	var id string
 	if cid != nil {
-		id = cid.String()
+		return cid.String(), nil
 	}
 
-	return id, nil
+	return "", nil
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {
