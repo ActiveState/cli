@@ -3,7 +3,9 @@ package activate
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -61,9 +63,10 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	path, _ := os.Getwd()
-	if Flags.Path != "" {
-		path = Flags.Path
+	path, fail := fetchPath(name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
 	}
 
 	// Create the project directory
@@ -72,16 +75,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	var commitID string
-	commitID, fail = latestCommitID(owner, name)
-	if fail != nil || commitID == "" {
-		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
-			map[string]interface{}{"Owner": owner, "ProjectName": name}))
-
-		exit(1)
-	}
-
-	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, commitID)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
 
 	// Create the project locally on disk.
 	if _, fail = projectfile.Create(projectURL, path); fail != nil {
@@ -89,26 +83,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	err := os.Chdir(path)
-	if err != nil {
-		failures.Handle(err, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
-
 	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
-}
-
-func latestCommitID(owner, project string) (string, *failures.Failure) {
-	cid, fail := model.LatestCommitID(owner, project)
-	if fail != nil {
-		return "", fail
-	}
-
-	if cid != nil {
-		return cid.String(), nil
-	}
-
-	return "", nil
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {
@@ -154,6 +129,26 @@ func promptForOwner() (string, *failures.Failure) {
 	return owners[0], nil // auto-select only option
 }
 
+func fetchPath(projName string) (string, *failures.Failure) {
+	cwd, _ := os.Getwd()
+	files, _ := ioutil.ReadDir(cwd)
+
+	if len(files) == 0 {
+		// Current working directory is devoid of files. Use it as the path for
+		// the new project.
+		return cwd, nil
+	}
+
+	// Current working directory has files in it. Use a subdirectory with the
+	// project name as the path for the new project.
+	path := filepath.Join(cwd, projName)
+	if _, err := os.Stat(path); err == nil {
+		return "", failures.FailIO.New("error_state_activate_new_exists")
+	}
+
+	return path, nil
+}
+
 func createPlatformProject(name, owner string, lang language.Language) *failures.Failure {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
@@ -167,10 +162,16 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 }
 
 func createProjectDir(path string) *failures.Failure {
-	if _, err := os.Stat(path); err != nil {
-		if err := os.MkdirAll(path, 0755); err != nil {
-			return failures.FailIO.New("error_state_activate_new_mkdir")
+	if _, err := os.Stat(path); err == nil {
+		// Directory already exists
+		files, _ := ioutil.ReadDir(path)
+		if len(files) == 0 {
+			return nil
 		}
+		return failures.FailIO.New("error_state_activate_new_exists")
+	}
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return failures.FailIO.New("error_state_activate_new_mkdir")
 	}
 	return nil
 }
