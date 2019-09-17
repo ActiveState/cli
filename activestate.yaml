@@ -87,7 +87,7 @@ scripts:
     standalone: true
   - name: integration-tests
     description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
-    value: pwd && ls && python3 -m unittest discover -s test/integration -p '*_test.py'
+    value: cwd && dir && python3 -m unittest discover -s test/integration -p '*_test.py'
   - name: clean
     description: Cleans out the build dir.
     value: |
