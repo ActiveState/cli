@@ -87,13 +87,6 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
-			map[string]interface{}{"Owner": owner, "ProjectName": name}))
-
-		exit(1)
-	}
-
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
 
 	// Create the project locally on disk.
