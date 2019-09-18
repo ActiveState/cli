@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddKernelCPUArchitectureParams creates a new AddKernelCPUArchitectureParams object
@@ -63,7 +65,7 @@ for the add kernel Cpu architecture operation typically these are written to a h
 type AddKernelCPUArchitectureParams struct {
 
 	/*CPUArchitectureID*/
-	CPUArchitectureID AddKernelCPUArchitectureBody
+	CPUArchitectureID *inventory_models.AddKernelCPUArchitectureParamsBody
 	/*KernelID*/
 	KernelID strfmt.UUID
 
@@ -106,13 +108,13 @@ func (o *AddKernelCPUArchitectureParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithCPUArchitectureID adds the cPUArchitectureID to the add kernel Cpu architecture params
-func (o *AddKernelCPUArchitectureParams) WithCPUArchitectureID(cPUArchitectureID AddKernelCPUArchitectureBody) *AddKernelCPUArchitectureParams {
+func (o *AddKernelCPUArchitectureParams) WithCPUArchitectureID(cPUArchitectureID *inventory_models.AddKernelCPUArchitectureParamsBody) *AddKernelCPUArchitectureParams {
 	o.SetCPUArchitectureID(cPUArchitectureID)
 	return o
 }
 
 // SetCPUArchitectureID adds the cpuArchitectureId to the add kernel Cpu architecture params
-func (o *AddKernelCPUArchitectureParams) SetCPUArchitectureID(cPUArchitectureID AddKernelCPUArchitectureBody) {
+func (o *AddKernelCPUArchitectureParams) SetCPUArchitectureID(cPUArchitectureID *inventory_models.AddKernelCPUArchitectureParamsBody) {
 	o.CPUArchitectureID = cPUArchitectureID
 }
 
@@ -135,8 +137,10 @@ func (o *AddKernelCPUArchitectureParams) WriteToRequest(r runtime.ClientRequest,
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.CPUArchitectureID); err != nil {
-		return err
+	if o.CPUArchitectureID != nil {
+		if err := r.SetBodyParam(o.CPUArchitectureID); err != nil {
+			return err
+		}
 	}
 
 	// path param kernel_id

@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddKernelCPUArchitectureDefault) readResponse(response runtime.ClientRe
 		return err
 	}
 
-	return nil
-}
-
-/*AddKernelCPUArchitectureBody add kernel CPU architecture body
-swagger:model AddKernelCPUArchitectureBody
-*/
-type AddKernelCPUArchitectureBody struct {
-
-	// The ID of the CPU architecture that can be used with this kernel
-	// Required: true
-	// Format: uuid
-	CPUArchitectureID *strfmt.UUID `json:"cpu_architecture_id"`
-}
-
-// Validate validates this add kernel CPU architecture body
-func (o *AddKernelCPUArchitectureBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateCPUArchitectureID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddKernelCPUArchitectureBody) validateCPUArchitectureID(formats strfmt.Registry) error {
-
-	if err := validate.Required("cpu_architecture_id"+"."+"cpu_architecture_id", "body", o.CPUArchitectureID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("cpu_architecture_id"+"."+"cpu_architecture_id", "body", "uuid", o.CPUArchitectureID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddKernelCPUArchitectureBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddKernelCPUArchitectureBody) UnmarshalBinary(b []byte) error {
-	var res AddKernelCPUArchitectureBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1OperatingSystem Operating System
@@ -18,54 +17,26 @@ import (
 // The full operating system data model
 // swagger:model v1OperatingSystem
 type V1OperatingSystem struct {
+	V1OperatingSystemAllOf0
 
-	// links
-	// Required: true
-	Links *V1OperatingSystemAO0Links `json:"links"`
-
-	// operating system id
-	// Required: true
-	// Format: uuid
-	OperatingSystemID *strfmt.UUID `json:"operating_system_id"`
-
-	// Whether an implementation of libc is considered a core feature of the OS. This is generally true for *nix OSes and false for others.
-	// Required: true
-	HasLibc *bool `json:"has_libc"`
-
-	// The name of the operating system (excluding any version information). This should be more specific than just an OS class (e.g. 'Red Star OS' rather than just 'Linux')
-	// Required: true
-	Name *string `json:"name"`
+	V1OperatingSystemAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1OperatingSystem) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var dataAO0 struct {
-		Links *V1OperatingSystemAO0Links `json:"links"`
-
-		OperatingSystemID *strfmt.UUID `json:"operating_system_id"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
+	var aO0 V1OperatingSystemAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-
-	m.Links = dataAO0.Links
-
-	m.OperatingSystemID = dataAO0.OperatingSystemID
+	m.V1OperatingSystemAllOf0 = aO0
 
 	// AO1
-	var dataAO1 struct {
-		HasLibc *bool `json:"has_libc"`
-
-		Name *string `json:"name"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
+	var aO1 V1OperatingSystemAllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-
-	m.HasLibc = dataAO1.HasLibc
-
-	m.Name = dataAO1.Name
+	m.V1OperatingSystemAllOf1 = aO1
 
 	return nil
 }
@@ -74,37 +45,17 @@ func (m *V1OperatingSystem) UnmarshalJSON(raw []byte) error {
 func (m V1OperatingSystem) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	var dataAO0 struct {
-		Links *V1OperatingSystemAO0Links `json:"links"`
-
-		OperatingSystemID *strfmt.UUID `json:"operating_system_id"`
+	aO0, err := swag.WriteJSON(m.V1OperatingSystemAllOf0)
+	if err != nil {
+		return nil, err
 	}
+	_parts = append(_parts, aO0)
 
-	dataAO0.Links = m.Links
-
-	dataAO0.OperatingSystemID = m.OperatingSystemID
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
+	aO1, err := swag.WriteJSON(m.V1OperatingSystemAllOf1)
+	if err != nil {
+		return nil, err
 	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		HasLibc *bool `json:"has_libc"`
-
-		Name *string `json:"name"`
-	}
-
-	dataAO1.HasLibc = m.HasLibc
-
-	dataAO1.Name = m.Name
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
+	_parts = append(_parts, aO1)
 
 	return swag.ConcatJSON(_parts...), nil
 }
@@ -113,74 +64,18 @@ func (m V1OperatingSystem) MarshalJSON() ([]byte, error) {
 func (m *V1OperatingSystem) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLinks(formats); err != nil {
+	// validation for a type composition with V1OperatingSystemAllOf0
+	if err := m.V1OperatingSystemAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateOperatingSystemID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateHasLibc(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateName(formats); err != nil {
+	// validation for a type composition with V1OperatingSystemAllOf1
+	if err := m.V1OperatingSystemAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1OperatingSystem) validateLinks(formats strfmt.Registry) error {
-
-	if err := validate.Required("links", "body", m.Links); err != nil {
-		return err
-	}
-
-	if m.Links != nil {
-		if err := m.Links.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *V1OperatingSystem) validateOperatingSystemID(formats strfmt.Registry) error {
-
-	if err := validate.Required("operating_system_id", "body", m.OperatingSystemID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("operating_system_id", "body", "uuid", m.OperatingSystemID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1OperatingSystem) validateHasLibc(formats strfmt.Registry) error {
-
-	if err := validate.Required("has_libc", "body", m.HasLibc); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1OperatingSystem) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -195,63 +90,6 @@ func (m *V1OperatingSystem) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *V1OperatingSystem) UnmarshalBinary(b []byte) error {
 	var res V1OperatingSystem
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1OperatingSystemAO0Links Self Link
-//
-// A self link
-// swagger:model V1OperatingSystemAO0Links
-type V1OperatingSystemAO0Links struct {
-
-	// The URI of this resource
-	// Required: true
-	// Format: uri
-	Self *strfmt.URI `json:"self"`
-}
-
-// Validate validates this v1 operating system a o0 links
-func (m *V1OperatingSystemAO0Links) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateSelf(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1OperatingSystemAO0Links) validateSelf(formats strfmt.Registry) error {
-
-	if err := validate.Required("links"+"."+"self", "body", m.Self); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("links"+"."+"self", "body", "uri", m.Self.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1OperatingSystemAO0Links) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1OperatingSystemAO0Links) UnmarshalBinary(b []byte) error {
-	var res V1OperatingSystemAO0Links
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

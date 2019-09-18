@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddKernelGpuArchitectureParams creates a new AddKernelGpuArchitectureParams object
@@ -63,7 +65,7 @@ for the add kernel gpu architecture operation typically these are written to a h
 type AddKernelGpuArchitectureParams struct {
 
 	/*GpuArchitectureID*/
-	GpuArchitectureID AddKernelGpuArchitectureBody
+	GpuArchitectureID *inventory_models.AddKernelGpuArchitectureParamsBody
 	/*KernelID*/
 	KernelID strfmt.UUID
 
@@ -106,13 +108,13 @@ func (o *AddKernelGpuArchitectureParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithGpuArchitectureID adds the gpuArchitectureID to the add kernel gpu architecture params
-func (o *AddKernelGpuArchitectureParams) WithGpuArchitectureID(gpuArchitectureID AddKernelGpuArchitectureBody) *AddKernelGpuArchitectureParams {
+func (o *AddKernelGpuArchitectureParams) WithGpuArchitectureID(gpuArchitectureID *inventory_models.AddKernelGpuArchitectureParamsBody) *AddKernelGpuArchitectureParams {
 	o.SetGpuArchitectureID(gpuArchitectureID)
 	return o
 }
 
 // SetGpuArchitectureID adds the gpuArchitectureId to the add kernel gpu architecture params
-func (o *AddKernelGpuArchitectureParams) SetGpuArchitectureID(gpuArchitectureID AddKernelGpuArchitectureBody) {
+func (o *AddKernelGpuArchitectureParams) SetGpuArchitectureID(gpuArchitectureID *inventory_models.AddKernelGpuArchitectureParamsBody) {
 	o.GpuArchitectureID = gpuArchitectureID
 }
 
@@ -135,8 +137,10 @@ func (o *AddKernelGpuArchitectureParams) WriteToRequest(r runtime.ClientRequest,
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.GpuArchitectureID); err != nil {
-		return err
+	if o.GpuArchitectureID != nil {
+		if err := r.SetBodyParam(o.GpuArchitectureID); err != nil {
+			return err
+		}
 	}
 
 	// path param kernel_id

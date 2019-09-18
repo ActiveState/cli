@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewUpdatePlatformParams creates a new UpdatePlatformParams object
@@ -65,7 +67,7 @@ type UpdatePlatformParams struct {
 	/*PlatformID*/
 	PlatformID strfmt.UUID
 	/*PlatformUpdate*/
-	PlatformUpdate UpdatePlatformBody
+	PlatformUpdate *inventory_models.UpdatePlatformParamsBody
 
 	timeout    time.Duration
 	Context    context.Context
@@ -117,13 +119,13 @@ func (o *UpdatePlatformParams) SetPlatformID(platformID strfmt.UUID) {
 }
 
 // WithPlatformUpdate adds the platformUpdate to the update platform params
-func (o *UpdatePlatformParams) WithPlatformUpdate(platformUpdate UpdatePlatformBody) *UpdatePlatformParams {
+func (o *UpdatePlatformParams) WithPlatformUpdate(platformUpdate *inventory_models.UpdatePlatformParamsBody) *UpdatePlatformParams {
 	o.SetPlatformUpdate(platformUpdate)
 	return o
 }
 
 // SetPlatformUpdate adds the platformUpdate to the update platform params
-func (o *UpdatePlatformParams) SetPlatformUpdate(platformUpdate UpdatePlatformBody) {
+func (o *UpdatePlatformParams) SetPlatformUpdate(platformUpdate *inventory_models.UpdatePlatformParamsBody) {
 	o.PlatformUpdate = platformUpdate
 }
 
@@ -140,8 +142,10 @@ func (o *UpdatePlatformParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 
-	if err := r.SetBodyParam(o.PlatformUpdate); err != nil {
-		return err
+	if o.PlatformUpdate != nil {
+		if err := r.SetBodyParam(o.PlatformUpdate); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

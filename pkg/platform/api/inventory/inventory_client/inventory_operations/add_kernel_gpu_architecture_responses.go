@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddKernelGpuArchitectureDefault) readResponse(response runtime.ClientRe
 		return err
 	}
 
-	return nil
-}
-
-/*AddKernelGpuArchitectureBody add kernel gpu architecture body
-swagger:model AddKernelGpuArchitectureBody
-*/
-type AddKernelGpuArchitectureBody struct {
-
-	// The ID of the GPU architecture that can be used with this kernel
-	// Required: true
-	// Format: uuid
-	GpuArchitectureID *strfmt.UUID `json:"gpu_architecture_id"`
-}
-
-// Validate validates this add kernel gpu architecture body
-func (o *AddKernelGpuArchitectureBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateGpuArchitectureID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddKernelGpuArchitectureBody) validateGpuArchitectureID(formats strfmt.Registry) error {
-
-	if err := validate.Required("gpu_architecture_id"+"."+"gpu_architecture_id", "body", o.GpuArchitectureID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("gpu_architecture_id"+"."+"gpu_architecture_id", "body", "uuid", o.GpuArchitectureID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddKernelGpuArchitectureBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddKernelGpuArchitectureBody) UnmarshalBinary(b []byte) error {
-	var res AddKernelGpuArchitectureBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

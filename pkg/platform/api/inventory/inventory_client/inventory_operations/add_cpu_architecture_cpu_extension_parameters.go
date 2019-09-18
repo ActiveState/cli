@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddCPUArchitectureCPUExtensionParams creates a new AddCPUArchitectureCPUExtensionParams object
@@ -65,7 +67,7 @@ type AddCPUArchitectureCPUExtensionParams struct {
 	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
 	/*CPUExtensionID*/
-	CPUExtensionID AddCPUArchitectureCPUExtensionBody
+	CPUExtensionID *inventory_models.AddCPUArchitectureCPUExtensionParamsBody
 
 	timeout    time.Duration
 	Context    context.Context
@@ -117,13 +119,13 @@ func (o *AddCPUArchitectureCPUExtensionParams) SetCPUArchitectureID(cPUArchitect
 }
 
 // WithCPUExtensionID adds the cPUExtensionID to the add Cpu architecture Cpu extension params
-func (o *AddCPUArchitectureCPUExtensionParams) WithCPUExtensionID(cPUExtensionID AddCPUArchitectureCPUExtensionBody) *AddCPUArchitectureCPUExtensionParams {
+func (o *AddCPUArchitectureCPUExtensionParams) WithCPUExtensionID(cPUExtensionID *inventory_models.AddCPUArchitectureCPUExtensionParamsBody) *AddCPUArchitectureCPUExtensionParams {
 	o.SetCPUExtensionID(cPUExtensionID)
 	return o
 }
 
 // SetCPUExtensionID adds the cpuExtensionId to the add Cpu architecture Cpu extension params
-func (o *AddCPUArchitectureCPUExtensionParams) SetCPUExtensionID(cPUExtensionID AddCPUArchitectureCPUExtensionBody) {
+func (o *AddCPUArchitectureCPUExtensionParams) SetCPUExtensionID(cPUExtensionID *inventory_models.AddCPUArchitectureCPUExtensionParamsBody) {
 	o.CPUExtensionID = cPUExtensionID
 }
 
@@ -140,8 +142,10 @@ func (o *AddCPUArchitectureCPUExtensionParams) WriteToRequest(r runtime.ClientRe
 		return err
 	}
 
-	if err := r.SetBodyParam(o.CPUExtensionID); err != nil {
-		return err
+	if o.CPUExtensionID != nil {
+		if err := r.SetBodyParam(o.CPUExtensionID); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

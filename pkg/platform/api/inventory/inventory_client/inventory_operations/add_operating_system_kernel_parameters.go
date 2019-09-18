@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddOperatingSystemKernelParams creates a new AddOperatingSystemKernelParams object
@@ -63,7 +65,7 @@ for the add operating system kernel operation typically these are written to a h
 type AddOperatingSystemKernelParams struct {
 
 	/*KernelID*/
-	KernelID AddOperatingSystemKernelBody
+	KernelID *inventory_models.AddOperatingSystemKernelParamsBody
 	/*OperatingSystemID*/
 	OperatingSystemID strfmt.UUID
 
@@ -106,13 +108,13 @@ func (o *AddOperatingSystemKernelParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithKernelID adds the kernelID to the add operating system kernel params
-func (o *AddOperatingSystemKernelParams) WithKernelID(kernelID AddOperatingSystemKernelBody) *AddOperatingSystemKernelParams {
+func (o *AddOperatingSystemKernelParams) WithKernelID(kernelID *inventory_models.AddOperatingSystemKernelParamsBody) *AddOperatingSystemKernelParams {
 	o.SetKernelID(kernelID)
 	return o
 }
 
 // SetKernelID adds the kernelId to the add operating system kernel params
-func (o *AddOperatingSystemKernelParams) SetKernelID(kernelID AddOperatingSystemKernelBody) {
+func (o *AddOperatingSystemKernelParams) SetKernelID(kernelID *inventory_models.AddOperatingSystemKernelParamsBody) {
 	o.KernelID = kernelID
 }
 
@@ -135,8 +137,10 @@ func (o *AddOperatingSystemKernelParams) WriteToRequest(r runtime.ClientRequest,
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.KernelID); err != nil {
-		return err
+	if o.KernelID != nil {
+		if err := r.SetBodyParam(o.KernelID); err != nil {
+			return err
+		}
 	}
 
 	// path param operating_system_id

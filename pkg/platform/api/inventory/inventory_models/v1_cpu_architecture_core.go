@@ -6,14 +6,10 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"encoding/json"
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1CPUArchitectureCore CPU Architecture Core
@@ -21,52 +17,26 @@ import (
 // The properties of a CPU architecture needed to create a new one
 // swagger:model v1CpuArchitectureCore
 type V1CPUArchitectureCore struct {
+	V1CPUArchitectureCoreAllOf0
 
-	// bit width
-	// Enum: [32 64]
-	BitWidth string `json:"bit_width,omitempty"`
-
-	// The name of the CPU architecture
-	// Required: true
-	Name *string `json:"name"`
-
-	// Whether this revision should be considered 'stable'. When a new stable revision is created, it supercedes any existing stable revision and becomes the default revision of the revisioned resource going forward.
-	IsStableRevision *bool `json:"is_stable_revision,omitempty"`
-
-	// provided features
-	// Required: true
-	ProvidedFeatures []*V1CPUArchitectureCoreProvidedFeaturesItems0 `json:"provided_features"`
+	V1CPUArchitectureCoreAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1CPUArchitectureCore) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var dataAO0 struct {
-		BitWidth string `json:"bit_width,omitempty"`
-
-		Name *string `json:"name"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
+	var aO0 V1CPUArchitectureCoreAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-
-	m.BitWidth = dataAO0.BitWidth
-
-	m.Name = dataAO0.Name
+	m.V1CPUArchitectureCoreAllOf0 = aO0
 
 	// AO1
-	var dataAO1 struct {
-		IsStableRevision *bool `json:"is_stable_revision,omitempty"`
-
-		ProvidedFeatures []*V1CPUArchitectureCoreProvidedFeaturesItems0 `json:"provided_features"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
+	var aO1 V1CPUArchitectureCoreAllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-
-	m.IsStableRevision = dataAO1.IsStableRevision
-
-	m.ProvidedFeatures = dataAO1.ProvidedFeatures
+	m.V1CPUArchitectureCoreAllOf1 = aO1
 
 	return nil
 }
@@ -75,37 +45,17 @@ func (m *V1CPUArchitectureCore) UnmarshalJSON(raw []byte) error {
 func (m V1CPUArchitectureCore) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	var dataAO0 struct {
-		BitWidth string `json:"bit_width,omitempty"`
-
-		Name *string `json:"name"`
+	aO0, err := swag.WriteJSON(m.V1CPUArchitectureCoreAllOf0)
+	if err != nil {
+		return nil, err
 	}
+	_parts = append(_parts, aO0)
 
-	dataAO0.BitWidth = m.BitWidth
-
-	dataAO0.Name = m.Name
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
+	aO1, err := swag.WriteJSON(m.V1CPUArchitectureCoreAllOf1)
+	if err != nil {
+		return nil, err
 	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		IsStableRevision *bool `json:"is_stable_revision,omitempty"`
-
-		ProvidedFeatures []*V1CPUArchitectureCoreProvidedFeaturesItems0 `json:"provided_features"`
-	}
-
-	dataAO1.IsStableRevision = m.IsStableRevision
-
-	dataAO1.ProvidedFeatures = m.ProvidedFeatures
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
+	_parts = append(_parts, aO1)
 
 	return swag.ConcatJSON(_parts...), nil
 }
@@ -114,89 +64,18 @@ func (m V1CPUArchitectureCore) MarshalJSON() ([]byte, error) {
 func (m *V1CPUArchitectureCore) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBitWidth(formats); err != nil {
+	// validation for a type composition with V1CPUArchitectureCoreAllOf0
+	if err := m.V1CPUArchitectureCoreAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateName(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateProvidedFeatures(formats); err != nil {
+	// validation for a type composition with V1CPUArchitectureCoreAllOf1
+	if err := m.V1CPUArchitectureCoreAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-var v1CpuArchitectureCoreTypeBitWidthPropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["32","64"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		v1CpuArchitectureCoreTypeBitWidthPropEnum = append(v1CpuArchitectureCoreTypeBitWidthPropEnum, v)
-	}
-}
-
-// property enum
-func (m *V1CPUArchitectureCore) validateBitWidthEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, v1CpuArchitectureCoreTypeBitWidthPropEnum); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *V1CPUArchitectureCore) validateBitWidth(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.BitWidth) { // not required
-		return nil
-	}
-
-	// value enum
-	if err := m.validateBitWidthEnum("bit_width", "body", m.BitWidth); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCore) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCore) validateProvidedFeatures(formats strfmt.Registry) error {
-
-	if err := validate.Required("provided_features", "body", m.ProvidedFeatures); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.ProvidedFeatures); i++ {
-		if swag.IsZero(m.ProvidedFeatures[i]) { // not required
-			continue
-		}
-
-		if m.ProvidedFeatures[i] != nil {
-			if err := m.ProvidedFeatures[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("provided_features" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 
@@ -211,226 +90,6 @@ func (m *V1CPUArchitectureCore) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *V1CPUArchitectureCore) UnmarshalBinary(b []byte) error {
 	var res V1CPUArchitectureCore
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1CPUArchitectureCoreProvidedFeaturesItems0 Provided Feature
-//
-// A feature that is provided by a revisioned resource
-// swagger:model V1CPUArchitectureCoreProvidedFeaturesItems0
-type V1CPUArchitectureCoreProvidedFeaturesItems0 struct {
-
-	// feature
-	// Required: true
-	Feature *string `json:"feature"`
-
-	// If this is true then it means that we assigned a version to this feature ourselves rather than getting it directly from metadata in the source ingredient.
-	IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
-
-	// Whether the provider of this feature is the default provider. There can only be one default provider per feature namespace, name, and version.
-	// Required: true
-	IsDefaultProvider *bool `json:"is_default_provider"`
-
-	// namespace
-	// Required: true
-	Namespace *string `json:"namespace"`
-
-	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
-	// Required: true
-	// Min Length: 1
-	SortableVersion []string `json:"sortable_version"`
-
-	// The canonical version string for the resource. Should be as specific as possible (e.g. '10.9.6' of macOS instead of just '10.9'). May contain non-numeric version segments and other formatting characters if necessary.
-	// Required: true
-	Version *string `json:"version"`
-}
-
-// UnmarshalJSON unmarshals this object from a JSON structure
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) UnmarshalJSON(raw []byte) error {
-	// AO0
-	var dataAO0 struct {
-		Feature *string `json:"feature"`
-
-		IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
-
-		IsDefaultProvider *bool `json:"is_default_provider"`
-
-		Namespace *string `json:"namespace"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
-		return err
-	}
-
-	m.Feature = dataAO0.Feature
-
-	m.IsActivestateVersion = dataAO0.IsActivestateVersion
-
-	m.IsDefaultProvider = dataAO0.IsDefaultProvider
-
-	m.Namespace = dataAO0.Namespace
-
-	// AO1
-	var dataAO1 struct {
-		SortableVersion []string `json:"sortable_version"`
-
-		Version *string `json:"version"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
-		return err
-	}
-
-	m.SortableVersion = dataAO1.SortableVersion
-
-	m.Version = dataAO1.Version
-
-	return nil
-}
-
-// MarshalJSON marshals this object to a JSON structure
-func (m V1CPUArchitectureCoreProvidedFeaturesItems0) MarshalJSON() ([]byte, error) {
-	_parts := make([][]byte, 0, 2)
-
-	var dataAO0 struct {
-		Feature *string `json:"feature"`
-
-		IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
-
-		IsDefaultProvider *bool `json:"is_default_provider"`
-
-		Namespace *string `json:"namespace"`
-	}
-
-	dataAO0.Feature = m.Feature
-
-	dataAO0.IsActivestateVersion = m.IsActivestateVersion
-
-	dataAO0.IsDefaultProvider = m.IsDefaultProvider
-
-	dataAO0.Namespace = m.Namespace
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
-	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		SortableVersion []string `json:"sortable_version"`
-
-		Version *string `json:"version"`
-	}
-
-	dataAO1.SortableVersion = m.SortableVersion
-
-	dataAO1.Version = m.Version
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
-
-	return swag.ConcatJSON(_parts...), nil
-}
-
-// Validate validates this v1 CPU architecture core provided features items0
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateFeature(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateIsDefaultProvider(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateNamespace(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSortableVersion(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateVersion(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) validateFeature(formats strfmt.Registry) error {
-
-	if err := validate.Required("feature", "body", m.Feature); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) validateIsDefaultProvider(formats strfmt.Registry) error {
-
-	if err := validate.Required("is_default_provider", "body", m.IsDefaultProvider); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) validateNamespace(formats strfmt.Registry) error {
-
-	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) validateSortableVersion(formats strfmt.Registry) error {
-
-	if err := validate.Required("sortable_version", "body", m.SortableVersion); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.SortableVersion); i++ {
-
-		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", string(m.SortableVersion[i]), 1); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) validateVersion(formats strfmt.Registry) error {
-
-	if err := validate.Required("version", "body", m.Version); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1CPUArchitectureCoreProvidedFeaturesItems0) UnmarshalBinary(b []byte) error {
-	var res V1CPUArchitectureCoreProvidedFeaturesItems0
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

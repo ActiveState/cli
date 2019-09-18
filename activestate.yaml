@@ -68,7 +68,7 @@ scripts:
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/inventory
-      swagger generate client -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
     description: Generates all api clients

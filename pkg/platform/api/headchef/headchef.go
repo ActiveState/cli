@@ -2,6 +2,7 @@ package headchef
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -79,6 +80,7 @@ func (r *Request) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus
 			BuildRequest: buildRequest,
 		}
 		created, accepted, err := r.client.StartBuildV1(&startParams)
+		fmt.Println(created, accepted, err)
 		switch {
 		case err != nil:
 			if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {

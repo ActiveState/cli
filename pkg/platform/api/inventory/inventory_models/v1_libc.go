@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1Libc Libc
@@ -18,46 +17,26 @@ import (
 // The full libc data model
 // swagger:model v1Libc
 type V1Libc struct {
+	V1LibcAllOf0
 
-	// libc id
-	// Required: true
-	// Format: uuid
-	LibcID *strfmt.UUID `json:"libc_id"`
-
-	// links
-	// Required: true
-	Links *V1LibcAO0Links `json:"links"`
-
-	// The name of the libc (excluding any version information)
-	// Required: true
-	Name *string `json:"name"`
+	V1LibcAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1Libc) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var dataAO0 struct {
-		LibcID *strfmt.UUID `json:"libc_id"`
-
-		Links *V1LibcAO0Links `json:"links"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
+	var aO0 V1LibcAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-
-	m.LibcID = dataAO0.LibcID
-
-	m.Links = dataAO0.Links
+	m.V1LibcAllOf0 = aO0
 
 	// AO1
-	var dataAO1 struct {
-		Name *string `json:"name"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
+	var aO1 V1LibcAllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-
-	m.Name = dataAO1.Name
+	m.V1LibcAllOf1 = aO1
 
 	return nil
 }
@@ -66,33 +45,17 @@ func (m *V1Libc) UnmarshalJSON(raw []byte) error {
 func (m V1Libc) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	var dataAO0 struct {
-		LibcID *strfmt.UUID `json:"libc_id"`
-
-		Links *V1LibcAO0Links `json:"links"`
+	aO0, err := swag.WriteJSON(m.V1LibcAllOf0)
+	if err != nil {
+		return nil, err
 	}
+	_parts = append(_parts, aO0)
 
-	dataAO0.LibcID = m.LibcID
-
-	dataAO0.Links = m.Links
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
+	aO1, err := swag.WriteJSON(m.V1LibcAllOf1)
+	if err != nil {
+		return nil, err
 	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		Name *string `json:"name"`
-	}
-
-	dataAO1.Name = m.Name
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
+	_parts = append(_parts, aO1)
 
 	return swag.ConcatJSON(_parts...), nil
 }
@@ -101,61 +64,18 @@ func (m V1Libc) MarshalJSON() ([]byte, error) {
 func (m *V1Libc) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateLibcID(formats); err != nil {
+	// validation for a type composition with V1LibcAllOf0
+	if err := m.V1LibcAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateLinks(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateName(formats); err != nil {
+	// validation for a type composition with V1LibcAllOf1
+	if err := m.V1LibcAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1Libc) validateLibcID(formats strfmt.Registry) error {
-
-	if err := validate.Required("libc_id", "body", m.LibcID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("libc_id", "body", "uuid", m.LibcID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Libc) validateLinks(formats strfmt.Registry) error {
-
-	if err := validate.Required("links", "body", m.Links); err != nil {
-		return err
-	}
-
-	if m.Links != nil {
-		if err := m.Links.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *V1Libc) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -170,63 +90,6 @@ func (m *V1Libc) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *V1Libc) UnmarshalBinary(b []byte) error {
 	var res V1Libc
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1LibcAO0Links Self Link
-//
-// A self link
-// swagger:model V1LibcAO0Links
-type V1LibcAO0Links struct {
-
-	// The URI of this resource
-	// Required: true
-	// Format: uri
-	Self *strfmt.URI `json:"self"`
-}
-
-// Validate validates this v1 libc a o0 links
-func (m *V1LibcAO0Links) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateSelf(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1LibcAO0Links) validateSelf(formats strfmt.Registry) error {
-
-	if err := validate.Required("links"+"."+"self", "body", m.Self); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("links"+"."+"self", "body", "uri", m.Self.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1LibcAO0Links) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1LibcAO0Links) UnmarshalBinary(b []byte) error {
-	var res V1LibcAO0Links
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddIngredientVersionAuthorParams creates a new AddIngredientVersionAuthorParams object
@@ -63,7 +65,7 @@ for the add ingredient version author operation typically these are written to a
 type AddIngredientVersionAuthorParams struct {
 
 	/*AuthorID*/
-	AuthorID AddIngredientVersionAuthorBody
+	AuthorID *inventory_models.AddIngredientVersionAuthorParamsBody
 	/*IngredientID*/
 	IngredientID strfmt.UUID
 	/*IngredientVersionID*/
@@ -108,13 +110,13 @@ func (o *AddIngredientVersionAuthorParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithAuthorID adds the authorID to the add ingredient version author params
-func (o *AddIngredientVersionAuthorParams) WithAuthorID(authorID AddIngredientVersionAuthorBody) *AddIngredientVersionAuthorParams {
+func (o *AddIngredientVersionAuthorParams) WithAuthorID(authorID *inventory_models.AddIngredientVersionAuthorParamsBody) *AddIngredientVersionAuthorParams {
 	o.SetAuthorID(authorID)
 	return o
 }
 
 // SetAuthorID adds the authorId to the add ingredient version author params
-func (o *AddIngredientVersionAuthorParams) SetAuthorID(authorID AddIngredientVersionAuthorBody) {
+func (o *AddIngredientVersionAuthorParams) SetAuthorID(authorID *inventory_models.AddIngredientVersionAuthorParamsBody) {
 	o.AuthorID = authorID
 }
 
@@ -148,8 +150,10 @@ func (o *AddIngredientVersionAuthorParams) WriteToRequest(r runtime.ClientReques
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.AuthorID); err != nil {
-		return err
+	if o.AuthorID != nil {
+		if err := r.SetBodyParam(o.AuthorID); err != nil {
+			return err
+		}
 	}
 
 	// path param ingredient_id

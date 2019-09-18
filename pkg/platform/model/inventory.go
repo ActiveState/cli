@@ -21,10 +21,10 @@ var (
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
-type IngredientAndVersion = inventory_models.V1IngredientAndVersionPagedListIngredientsAndVersionsItems0
+type IngredientAndVersion = inventory_models.V1IngredientAndVersionPagedListIngredientsAndVersionsItems
 
 // Platforms is a sane version of whatever the hell it is go-swagger thinks it's doing
-type Platform = inventory_models.V1PlatformPagedListPlatformsItems0
+type Platform = inventory_models.V1PlatformPagedListPlatformsItems
 
 var platformCache []*Platform
 

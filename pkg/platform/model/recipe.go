@@ -1,8 +1,6 @@
 package model
 
 import (
-	"bytes"
-	"regexp"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -29,7 +27,7 @@ var (
 var HostPlatform string
 
 // Recipe aliases recipe model
-type Recipe = inventory_models.V1RecipeResponseRecipesItems0
+type Recipe = inventory_models.V1RecipeResponseRecipesItems
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
@@ -110,17 +108,12 @@ func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, 
 	return FetchRecipeForCommitAndHostPlatform(pj, *branch.CommitID, platform)
 }
 
-var targetNullInJSON = regexp.MustCompile(`\"\w*\" ?: ?null,?`) // targets `"key":null,`
-
 // RecipeToBuildRecipe converts a *Recipe to the related head chef model
 func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe, *failures.Failure) {
 	b, err := recipe.MarshalBinary()
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
-
-	b = targetNullInJSON.ReplaceAll(b, []byte{})
-	b = bytes.ReplaceAll(b, []byte{',', '}'}, []byte{'}'}) // cleans up leftover `,}`
 
 	buildRecipe := &headchef_models.V1BuildRequestRecipe{}
 	err = buildRecipe.UnmarshalBinary(b)

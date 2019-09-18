@@ -6,13 +6,10 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1Author Author
@@ -20,73 +17,26 @@ import (
 // An author
 // swagger:model v1Author
 type V1Author struct {
+	V1AuthorAllOf0
 
-	// The UUID for this author
-	// Required: true
-	// Format: uuid
-	AuthorID *strfmt.UUID `json:"author_id"`
-
-	// The timestamp of this author's creation
-	// Required: true
-	// Format: date-time
-	CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-	// links
-	// Required: true
-	Links *V1AuthorAO0Links `json:"links"`
-
-	// The author's email address
-	// Required: true
-	// Format: email
-	Email *strfmt.Email `json:"email"`
-
-	// The author's name
-	// Required: true
-	Name *string `json:"name"`
-
-	// The author's websites
-	// Required: true
-	// Unique: true
-	Websites []strfmt.URI `json:"websites"`
+	V1AuthorAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1Author) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var dataAO0 struct {
-		AuthorID *strfmt.UUID `json:"author_id"`
-
-		CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-		Links *V1AuthorAO0Links `json:"links"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
+	var aO0 V1AuthorAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-
-	m.AuthorID = dataAO0.AuthorID
-
-	m.CreationTimestamp = dataAO0.CreationTimestamp
-
-	m.Links = dataAO0.Links
+	m.V1AuthorAllOf0 = aO0
 
 	// AO1
-	var dataAO1 struct {
-		Email *strfmt.Email `json:"email"`
-
-		Name *string `json:"name"`
-
-		Websites []strfmt.URI `json:"websites"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
+	var aO1 V1AuthorAllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-
-	m.Email = dataAO1.Email
-
-	m.Name = dataAO1.Name
-
-	m.Websites = dataAO1.Websites
+	m.V1AuthorAllOf1 = aO1
 
 	return nil
 }
@@ -95,45 +45,17 @@ func (m *V1Author) UnmarshalJSON(raw []byte) error {
 func (m V1Author) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	var dataAO0 struct {
-		AuthorID *strfmt.UUID `json:"author_id"`
-
-		CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-		Links *V1AuthorAO0Links `json:"links"`
+	aO0, err := swag.WriteJSON(m.V1AuthorAllOf0)
+	if err != nil {
+		return nil, err
 	}
+	_parts = append(_parts, aO0)
 
-	dataAO0.AuthorID = m.AuthorID
-
-	dataAO0.CreationTimestamp = m.CreationTimestamp
-
-	dataAO0.Links = m.Links
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
+	aO1, err := swag.WriteJSON(m.V1AuthorAllOf1)
+	if err != nil {
+		return nil, err
 	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		Email *strfmt.Email `json:"email"`
-
-		Name *string `json:"name"`
-
-		Websites []strfmt.URI `json:"websites"`
-	}
-
-	dataAO1.Email = m.Email
-
-	dataAO1.Name = m.Name
-
-	dataAO1.Websites = m.Websites
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
+	_parts = append(_parts, aO1)
 
 	return swag.ConcatJSON(_parts...), nil
 }
@@ -142,120 +64,18 @@ func (m V1Author) MarshalJSON() ([]byte, error) {
 func (m *V1Author) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAuthorID(formats); err != nil {
+	// validation for a type composition with V1AuthorAllOf0
+	if err := m.V1AuthorAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateCreationTimestamp(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLinks(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateEmail(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateName(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateWebsites(formats); err != nil {
+	// validation for a type composition with V1AuthorAllOf1
+	if err := m.V1AuthorAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1Author) validateAuthorID(formats strfmt.Registry) error {
-
-	if err := validate.Required("author_id", "body", m.AuthorID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("author_id", "body", "uuid", m.AuthorID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Author) validateCreationTimestamp(formats strfmt.Registry) error {
-
-	if err := validate.Required("creation_timestamp", "body", m.CreationTimestamp); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("creation_timestamp", "body", "date-time", m.CreationTimestamp.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Author) validateLinks(formats strfmt.Registry) error {
-
-	if err := validate.Required("links", "body", m.Links); err != nil {
-		return err
-	}
-
-	if m.Links != nil {
-		if err := m.Links.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *V1Author) validateEmail(formats strfmt.Registry) error {
-
-	if err := validate.Required("email", "body", m.Email); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("email", "body", "email", m.Email.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Author) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1Author) validateWebsites(formats strfmt.Registry) error {
-
-	if err := validate.Required("websites", "body", m.Websites); err != nil {
-		return err
-	}
-
-	if err := validate.UniqueItems("websites", "body", m.Websites); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.Websites); i++ {
-
-		if err := validate.FormatOf("websites"+"."+strconv.Itoa(i), "body", "uri", m.Websites[i].String(), formats); err != nil {
-			return err
-		}
-
-	}
-
 	return nil
 }
 
@@ -270,63 +90,6 @@ func (m *V1Author) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *V1Author) UnmarshalBinary(b []byte) error {
 	var res V1Author
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1AuthorAO0Links Self Link
-//
-// A self link
-// swagger:model V1AuthorAO0Links
-type V1AuthorAO0Links struct {
-
-	// The URI of this resource
-	// Required: true
-	// Format: uri
-	Self *strfmt.URI `json:"self"`
-}
-
-// Validate validates this v1 author a o0 links
-func (m *V1AuthorAO0Links) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateSelf(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1AuthorAO0Links) validateSelf(formats strfmt.Registry) error {
-
-	if err := validate.Required("links"+"."+"self", "body", m.Self); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("links"+"."+"self", "body", "uri", m.Self.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1AuthorAO0Links) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1AuthorAO0Links) UnmarshalBinary(b []byte) error {
-	var res V1AuthorAO0Links
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

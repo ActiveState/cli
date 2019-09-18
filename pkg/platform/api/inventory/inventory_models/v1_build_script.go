@@ -6,14 +6,10 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"encoding/json"
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1BuildScript Build Script
@@ -21,71 +17,26 @@ import (
 // A short piece of scripting code that can be used to build an ingredient. This model contains all build script properties and is returned from read requests
 // swagger:model v1BuildScript
 type V1BuildScript struct {
+	V1BuildScriptAllOf0
 
-	// build script id
-	// Required: true
-	// Format: uuid
-	BuildScriptID *strfmt.UUID `json:"build_script_id"`
-
-	// creation timestamp
-	// Required: true
-	// Format: date-time
-	CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-	// links
-	// Required: true
-	Links *V1BuildScriptAO0Links `json:"links"`
-
-	// The features that must already be present in the recipe for this build script to be used. For example, can be used to create build scripts that only work on specific operating systems.
-	Conditions []*V1BuildScriptConditionsItems0 `json:"conditions"`
-
-	// The scripting language that the build script is written in
-	// Required: true
-	// Enum: [bash perl python]
-	Language *string `json:"language"`
-
-	// The build script itself
-	// Required: true
-	Script *string `json:"script"`
+	V1BuildScriptAllOf1
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
 func (m *V1BuildScript) UnmarshalJSON(raw []byte) error {
 	// AO0
-	var dataAO0 struct {
-		BuildScriptID *strfmt.UUID `json:"build_script_id"`
-
-		CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-		Links *V1BuildScriptAO0Links `json:"links"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO0); err != nil {
+	var aO0 V1BuildScriptAllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
 		return err
 	}
-
-	m.BuildScriptID = dataAO0.BuildScriptID
-
-	m.CreationTimestamp = dataAO0.CreationTimestamp
-
-	m.Links = dataAO0.Links
+	m.V1BuildScriptAllOf0 = aO0
 
 	// AO1
-	var dataAO1 struct {
-		Conditions []*V1BuildScriptConditionsItems0 `json:"conditions,omitempty"`
-
-		Language *string `json:"language"`
-
-		Script *string `json:"script"`
-	}
-	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
+	var aO1 V1BuildScriptAllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-
-	m.Conditions = dataAO1.Conditions
-
-	m.Language = dataAO1.Language
-
-	m.Script = dataAO1.Script
+	m.V1BuildScriptAllOf1 = aO1
 
 	return nil
 }
@@ -94,45 +45,17 @@ func (m *V1BuildScript) UnmarshalJSON(raw []byte) error {
 func (m V1BuildScript) MarshalJSON() ([]byte, error) {
 	_parts := make([][]byte, 0, 2)
 
-	var dataAO0 struct {
-		BuildScriptID *strfmt.UUID `json:"build_script_id"`
-
-		CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
-
-		Links *V1BuildScriptAO0Links `json:"links"`
+	aO0, err := swag.WriteJSON(m.V1BuildScriptAllOf0)
+	if err != nil {
+		return nil, err
 	}
+	_parts = append(_parts, aO0)
 
-	dataAO0.BuildScriptID = m.BuildScriptID
-
-	dataAO0.CreationTimestamp = m.CreationTimestamp
-
-	dataAO0.Links = m.Links
-
-	jsonDataAO0, errAO0 := swag.WriteJSON(dataAO0)
-	if errAO0 != nil {
-		return nil, errAO0
+	aO1, err := swag.WriteJSON(m.V1BuildScriptAllOf1)
+	if err != nil {
+		return nil, err
 	}
-	_parts = append(_parts, jsonDataAO0)
-
-	var dataAO1 struct {
-		Conditions []*V1BuildScriptConditionsItems0 `json:"conditions,omitempty"`
-
-		Language *string `json:"language"`
-
-		Script *string `json:"script"`
-	}
-
-	dataAO1.Conditions = m.Conditions
-
-	dataAO1.Language = m.Language
-
-	dataAO1.Script = m.Script
-
-	jsonDataAO1, errAO1 := swag.WriteJSON(dataAO1)
-	if errAO1 != nil {
-		return nil, errAO1
-	}
-	_parts = append(_parts, jsonDataAO1)
+	_parts = append(_parts, aO1)
 
 	return swag.ConcatJSON(_parts...), nil
 }
@@ -141,145 +64,18 @@ func (m V1BuildScript) MarshalJSON() ([]byte, error) {
 func (m *V1BuildScript) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBuildScriptID(formats); err != nil {
+	// validation for a type composition with V1BuildScriptAllOf0
+	if err := m.V1BuildScriptAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateCreationTimestamp(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLinks(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateConditions(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLanguage(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateScript(formats); err != nil {
+	// validation for a type composition with V1BuildScriptAllOf1
+	if err := m.V1BuildScriptAllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1BuildScript) validateBuildScriptID(formats strfmt.Registry) error {
-
-	if err := validate.Required("build_script_id", "body", m.BuildScriptID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("build_script_id", "body", "uuid", m.BuildScriptID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScript) validateCreationTimestamp(formats strfmt.Registry) error {
-
-	if err := validate.Required("creation_timestamp", "body", m.CreationTimestamp); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("creation_timestamp", "body", "date-time", m.CreationTimestamp.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScript) validateLinks(formats strfmt.Registry) error {
-
-	if err := validate.Required("links", "body", m.Links); err != nil {
-		return err
-	}
-
-	if m.Links != nil {
-		if err := m.Links.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *V1BuildScript) validateConditions(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Conditions) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.Conditions); i++ {
-		if swag.IsZero(m.Conditions[i]) { // not required
-			continue
-		}
-
-		if m.Conditions[i] != nil {
-			if err := m.Conditions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-var v1BuildScriptTypeLanguagePropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["bash","perl","python"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		v1BuildScriptTypeLanguagePropEnum = append(v1BuildScriptTypeLanguagePropEnum, v)
-	}
-}
-
-// property enum
-func (m *V1BuildScript) validateLanguageEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, v1BuildScriptTypeLanguagePropEnum); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *V1BuildScript) validateLanguage(formats strfmt.Registry) error {
-
-	if err := validate.Required("language", "body", m.Language); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateLanguageEnum("language", "body", *m.Language); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScript) validateScript(formats strfmt.Registry) error {
-
-	if err := validate.Required("script", "body", m.Script); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -294,311 +90,6 @@ func (m *V1BuildScript) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *V1BuildScript) UnmarshalBinary(b []byte) error {
 	var res V1BuildScript
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1BuildScriptAO0Links Self Link
-//
-// A self link
-// swagger:model V1BuildScriptAO0Links
-type V1BuildScriptAO0Links struct {
-
-	// The URI of this resource
-	// Required: true
-	// Format: uri
-	Self *strfmt.URI `json:"self"`
-}
-
-// Validate validates this v1 build script a o0 links
-func (m *V1BuildScriptAO0Links) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateSelf(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1BuildScriptAO0Links) validateSelf(formats strfmt.Registry) error {
-
-	if err := validate.Required("links"+"."+"self", "body", m.Self); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("links"+"."+"self", "body", "uri", m.Self.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1BuildScriptAO0Links) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1BuildScriptAO0Links) UnmarshalBinary(b []byte) error {
-	var res V1BuildScriptAO0Links
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1BuildScriptConditionsItems0 Condition Sub Schema
-//
-// A feature that must be present in a recipe for the containing entity to apply. If nothing in the recipe matches this condition, the containing entity is disable/cannot be used.
-// swagger:model V1BuildScriptConditionsItems0
-type V1BuildScriptConditionsItems0 struct {
-
-	// What feature must be present for the containing entity to apply
-	// Required: true
-	Feature *string `json:"feature"`
-
-	// The namespace the conditional feature is contained in
-	// Required: true
-	Namespace *string `json:"namespace"`
-
-	// Requirements Sub Schema
-	//
-	// The version constraints that an ingredient version's requirement or condition puts on a feature
-	// Required: true
-	// Min Length: 1
-	Requirements []*V1BuildScriptConditionsItems0RequirementsItems0 `json:"requirements"`
-}
-
-// Validate validates this v1 build script conditions items0
-func (m *V1BuildScriptConditionsItems0) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateFeature(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateNamespace(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRequirements(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0) validateFeature(formats strfmt.Registry) error {
-
-	if err := validate.Required("feature", "body", m.Feature); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0) validateNamespace(formats strfmt.Registry) error {
-
-	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0) validateRequirements(formats strfmt.Registry) error {
-
-	if err := validate.Required("requirements", "body", m.Requirements); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.Requirements); i++ {
-		if swag.IsZero(m.Requirements[i]) { // not required
-			continue
-		}
-
-		if m.Requirements[i] != nil {
-			if err := m.Requirements[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("requirements" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1BuildScriptConditionsItems0) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1BuildScriptConditionsItems0) UnmarshalBinary(b []byte) error {
-	var res V1BuildScriptConditionsItems0
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// V1BuildScriptConditionsItems0RequirementsItems0 v1 build script conditions items0 requirements items0
-// swagger:model V1BuildScriptConditionsItems0RequirementsItems0
-type V1BuildScriptConditionsItems0RequirementsItems0 struct {
-
-	// The operator used to compare the sortable_version against a given provided feature to determine if it meets the requirement
-	// Required: true
-	// Enum: [eq gt gte lt lte ne]
-	Comparator *string `json:"comparator"`
-
-	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
-	// Min Length: 1
-	SortableVersion []string `json:"sortable_version"`
-
-	// The required version in its original form.
-	// Min Length: 1
-	Version *string `json:"version,omitempty"`
-}
-
-// Validate validates this v1 build script conditions items0 requirements items0
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateComparator(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSortableVersion(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateVersion(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-var v1BuildScriptConditionsItems0RequirementsItems0TypeComparatorPropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["eq","gt","gte","lt","lte","ne"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		v1BuildScriptConditionsItems0RequirementsItems0TypeComparatorPropEnum = append(v1BuildScriptConditionsItems0RequirementsItems0TypeComparatorPropEnum, v)
-	}
-}
-
-const (
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorEq captures enum value "eq"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorEq string = "eq"
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorGt captures enum value "gt"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorGt string = "gt"
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorGte captures enum value "gte"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorGte string = "gte"
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorLt captures enum value "lt"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorLt string = "lt"
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorLte captures enum value "lte"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorLte string = "lte"
-
-	// V1BuildScriptConditionsItems0RequirementsItems0ComparatorNe captures enum value "ne"
-	V1BuildScriptConditionsItems0RequirementsItems0ComparatorNe string = "ne"
-)
-
-// prop value enum
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) validateComparatorEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, v1BuildScriptConditionsItems0RequirementsItems0TypeComparatorPropEnum); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) validateComparator(formats strfmt.Registry) error {
-
-	if err := validate.Required("comparator", "body", m.Comparator); err != nil {
-		return err
-	}
-
-	// value enum
-	if err := m.validateComparatorEnum("comparator", "body", *m.Comparator); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) validateSortableVersion(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.SortableVersion) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.SortableVersion); i++ {
-
-		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", string(m.SortableVersion[i]), 1); err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) validateVersion(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Version) { // not required
-		return nil
-	}
-
-	if err := validate.MinLength("version", "body", string(*m.Version), 1); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *V1BuildScriptConditionsItems0RequirementsItems0) UnmarshalBinary(b []byte) error {
-	var res V1BuildScriptConditionsItems0RequirementsItems0
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

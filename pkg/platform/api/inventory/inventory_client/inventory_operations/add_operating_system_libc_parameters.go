@@ -16,6 +16,8 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 
 	strfmt "github.com/go-openapi/strfmt"
+
+	inventory_models "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
 // NewAddOperatingSystemLibcParams creates a new AddOperatingSystemLibcParams object
@@ -63,7 +65,7 @@ for the add operating system libc operation typically these are written to a htt
 type AddOperatingSystemLibcParams struct {
 
 	/*LibcID*/
-	LibcID AddOperatingSystemLibcBody
+	LibcID *inventory_models.AddOperatingSystemLibcParamsBody
 	/*OperatingSystemID*/
 	OperatingSystemID strfmt.UUID
 
@@ -106,13 +108,13 @@ func (o *AddOperatingSystemLibcParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithLibcID adds the libcID to the add operating system libc params
-func (o *AddOperatingSystemLibcParams) WithLibcID(libcID AddOperatingSystemLibcBody) *AddOperatingSystemLibcParams {
+func (o *AddOperatingSystemLibcParams) WithLibcID(libcID *inventory_models.AddOperatingSystemLibcParamsBody) *AddOperatingSystemLibcParams {
 	o.SetLibcID(libcID)
 	return o
 }
 
 // SetLibcID adds the libcId to the add operating system libc params
-func (o *AddOperatingSystemLibcParams) SetLibcID(libcID AddOperatingSystemLibcBody) {
+func (o *AddOperatingSystemLibcParams) SetLibcID(libcID *inventory_models.AddOperatingSystemLibcParamsBody) {
 	o.LibcID = libcID
 }
 
@@ -135,8 +137,10 @@ func (o *AddOperatingSystemLibcParams) WriteToRequest(r runtime.ClientRequest, r
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.LibcID); err != nil {
-		return err
+	if o.LibcID != nil {
+		if err := r.SetBodyParam(o.LibcID); err != nil {
+			return err
+		}
 	}
 
 	// path param operating_system_id

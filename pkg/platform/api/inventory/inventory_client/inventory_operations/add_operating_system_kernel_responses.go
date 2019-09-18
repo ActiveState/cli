@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddOperatingSystemKernelDefault) readResponse(response runtime.ClientRe
 		return err
 	}
 
-	return nil
-}
-
-/*AddOperatingSystemKernelBody add operating system kernel body
-swagger:model AddOperatingSystemKernelBody
-*/
-type AddOperatingSystemKernelBody struct {
-
-	// The ID of the kernel that can be used with this operating system
-	// Required: true
-	// Format: uuid
-	KernelID *strfmt.UUID `json:"kernel_id"`
-}
-
-// Validate validates this add operating system kernel body
-func (o *AddOperatingSystemKernelBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateKernelID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddOperatingSystemKernelBody) validateKernelID(formats strfmt.Registry) error {
-
-	if err := validate.Required("kernel_id"+"."+"kernel_id", "body", o.KernelID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("kernel_id"+"."+"kernel_id", "body", "uuid", o.KernelID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddOperatingSystemKernelBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddOperatingSystemKernelBody) UnmarshalBinary(b []byte) error {
-	var res AddOperatingSystemKernelBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

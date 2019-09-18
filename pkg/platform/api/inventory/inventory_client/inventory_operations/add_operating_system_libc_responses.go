@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddOperatingSystemLibcDefault) readResponse(response runtime.ClientResp
 		return err
 	}
 
-	return nil
-}
-
-/*AddOperatingSystemLibcBody add operating system libc body
-swagger:model AddOperatingSystemLibcBody
-*/
-type AddOperatingSystemLibcBody struct {
-
-	// The ID of the libc that can be used with this operating system
-	// Required: true
-	// Format: uuid
-	LibcID *strfmt.UUID `json:"libc_id"`
-}
-
-// Validate validates this add operating system libc body
-func (o *AddOperatingSystemLibcBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateLibcID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddOperatingSystemLibcBody) validateLibcID(formats strfmt.Registry) error {
-
-	if err := validate.Required("libc_id"+"."+"libc_id", "body", o.LibcID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("libc_id"+"."+"libc_id", "body", "uuid", o.LibcID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddOperatingSystemLibcBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddOperatingSystemLibcBody) UnmarshalBinary(b []byte) error {
-	var res AddOperatingSystemLibcBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

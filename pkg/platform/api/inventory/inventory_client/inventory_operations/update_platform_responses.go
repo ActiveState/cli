@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *UpdatePlatformDefault) readResponse(response runtime.ClientResponse, co
 		return err
 	}
 
-	return nil
-}
-
-/*UpdatePlatformBody update platform body
-swagger:model UpdatePlatformBody
-*/
-type UpdatePlatformBody struct {
-
-	// end of support date
-	// Required: true
-	// Format: date
-	EndOfSupportDate *strfmt.Date `json:"end_of_support_date"`
-}
-
-// Validate validates this update platform body
-func (o *UpdatePlatformBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateEndOfSupportDate(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *UpdatePlatformBody) validateEndOfSupportDate(formats strfmt.Registry) error {
-
-	if err := validate.Required("platform_update"+"."+"end_of_support_date", "body", o.EndOfSupportDate); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("platform_update"+"."+"end_of_support_date", "body", "date", o.EndOfSupportDate.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *UpdatePlatformBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *UpdatePlatformBody) UnmarshalBinary(b []byte) error {
-	var res UpdatePlatformBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

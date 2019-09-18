@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddCPUArchitectureCPUExtensionDefault) readResponse(response runtime.Cl
 		return err
 	}
 
-	return nil
-}
-
-/*AddCPUArchitectureCPUExtensionBody add CPU architecture CPU extension body
-swagger:model AddCPUArchitectureCPUExtensionBody
-*/
-type AddCPUArchitectureCPUExtensionBody struct {
-
-	// The ID of the CPU extension that can be used with this architecture
-	// Required: true
-	// Format: uuid
-	CPUExtensionID *strfmt.UUID `json:"cpu_extension_id"`
-}
-
-// Validate validates this add CPU architecture CPU extension body
-func (o *AddCPUArchitectureCPUExtensionBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateCPUExtensionID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddCPUArchitectureCPUExtensionBody) validateCPUExtensionID(formats strfmt.Registry) error {
-
-	if err := validate.Required("cpu_extension_id"+"."+"cpu_extension_id", "body", o.CPUExtensionID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("cpu_extension_id"+"."+"cpu_extension_id", "body", "uuid", o.CPUExtensionID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddCPUArchitectureCPUExtensionBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddCPUArchitectureCPUExtensionBody) UnmarshalBinary(b []byte) error {
-	var res AddCPUArchitectureCPUExtensionBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

@@ -97,8 +97,8 @@ func CheckpointToOrder(commitID strfmt.UUID, checkpoint Checkpoint) *inventory_m
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
-func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems0 {
-	result := []*inventory_models.V1OrderRequirementsItems0{}
+func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
+	result := []*inventory_models.V1OrderRequirementsItems{}
 
 	for _, req := range checkpoint {
 		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
@@ -106,10 +106,10 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1Order
 		}
 
 		eq := "eq"
-		result = append(result, &inventory_models.V1OrderRequirementsItems0{
+		result = append(result, &inventory_models.V1OrderRequirementsItems{
 			Feature:   &req.Requirement,
 			Namespace: &req.Namespace,
-			VersionRequirements: []*inventory_models.V1OrderRequirementsItems0VersionRequirementsItems0{{
+			VersionRequirements: []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
 				Comparator: &eq,
 				Version:    &req.VersionConstraint,
 			}},

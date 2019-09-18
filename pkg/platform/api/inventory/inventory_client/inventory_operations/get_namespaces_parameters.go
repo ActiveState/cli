@@ -88,8 +88,6 @@ type GetNamespacesParams struct {
 
 	*/
 	Limit *int64
-	/*Namespace*/
-	Namespace *string
 	/*Page
 	  The page number returned
 
@@ -145,17 +143,6 @@ func (o *GetNamespacesParams) SetLimit(limit *int64) {
 	o.Limit = limit
 }
 
-// WithNamespace adds the namespace to the get namespaces params
-func (o *GetNamespacesParams) WithNamespace(namespace *string) *GetNamespacesParams {
-	o.SetNamespace(namespace)
-	return o
-}
-
-// SetNamespace adds the namespace to the get namespaces params
-func (o *GetNamespacesParams) SetNamespace(namespace *string) {
-	o.Namespace = namespace
-}
-
 // WithPage adds the page to the get namespaces params
 func (o *GetNamespacesParams) WithPage(page *int64) *GetNamespacesParams {
 	o.SetPage(page)
@@ -185,22 +172,6 @@ func (o *GetNamespacesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	if o.Namespace != nil {
-
-		// query param namespace
-		var qrNamespace string
-		if o.Namespace != nil {
-			qrNamespace = *o.Namespace
-		}
-		qNamespace := qrNamespace
-		if qNamespace != "" {
-			if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 				return err
 			}
 		}

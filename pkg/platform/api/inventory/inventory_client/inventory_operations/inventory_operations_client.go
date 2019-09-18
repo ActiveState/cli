@@ -1800,6 +1800,34 @@ func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
 }
 
 /*
+GetNamespace Retrieve a single namespace
+*/
+func (a *Client) GetNamespace(params *GetNamespaceParams) (*GetNamespaceOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespaceParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNamespace",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces/{namespace}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespaceReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNamespaceOK), nil
+
+}
+
+/*
 GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
 */
 func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error) {
@@ -1811,7 +1839,7 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getNamespaceIngredients",
 		Method:             "GET",
-		PathPattern:        "/v1/namespaces/ingredients",
+		PathPattern:        "/v1/namespaces/{namespace}/ingredients",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},

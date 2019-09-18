@@ -9,10 +9,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 
 	strfmt "github.com/go-openapi/strfmt"
 
@@ -147,61 +144,5 @@ func (o *AddIngredientVersionAuthorDefault) readResponse(response runtime.Client
 		return err
 	}
 
-	return nil
-}
-
-/*AddIngredientVersionAuthorBody add ingredient version author body
-swagger:model AddIngredientVersionAuthorBody
-*/
-type AddIngredientVersionAuthorBody struct {
-
-	// The ID of the author of this ingredient version
-	// Required: true
-	// Format: uuid
-	AuthorID *strfmt.UUID `json:"author_id"`
-}
-
-// Validate validates this add ingredient version author body
-func (o *AddIngredientVersionAuthorBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateAuthorID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *AddIngredientVersionAuthorBody) validateAuthorID(formats strfmt.Registry) error {
-
-	if err := validate.Required("author_id"+"."+"author_id", "body", o.AuthorID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("author_id"+"."+"author_id", "body", "uuid", o.AuthorID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *AddIngredientVersionAuthorBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *AddIngredientVersionAuthorBody) UnmarshalBinary(b []byte) error {
-	var res AddIngredientVersionAuthorBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }
