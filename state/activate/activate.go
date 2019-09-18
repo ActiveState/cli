@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -100,30 +101,9 @@ func Execute(cmd *cobra.Command, args []string) {
 }
 
 func projectExists(path string) bool {
-	logging.Debug("projectExists")
-	if path != "" {
-		cwd, err := os.Getwd()
-		logging.Debug("cwd: %s", cwd)
-
-		if err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
-		}
-
-		if err := os.Chdir(path); err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
-		}
-		defer func() {
-			logging.Debug("moving back to origin dir")
-			if err := os.Chdir(cwd); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
-			}
-		}()
-	}
-
-	if _, fail := project.GetOnce(); fail != nil {
-		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
-			return false
-		}
+	prj := getProjectFileByPath(path)
+	if prj == nil {
+		return false
 	}
 	return true
 }
@@ -235,6 +215,11 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		if fail != nil {
 			return fail
 		}
+	} else {
+		prj := getProjectFileByPath(directory)
+		if !strings.Contains(prj.URL(), namespace) {
+			return failTargetDirInUse.New(locale.Tr("err_namespace_and_project_do_not_match"))
+		}
 	}
 
 	projectfile.Reset()
@@ -243,6 +228,34 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 	return nil
+}
+
+func getProjectFileByPath(path string) *project.Project {
+	if path != "" {
+		cwd, err := os.Getwd()
+
+		if err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+
+		if err := os.Chdir(path); err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+		defer func() {
+			logging.Debug("moving back to origin dir")
+			if err := os.Chdir(cwd); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+			}
+		}()
+	}
+
+	prj, fail := project.GetOnce()
+	if fail != nil {
+		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
+			return nil
+		}
+	}
+	return prj
 }
 
 // savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this
