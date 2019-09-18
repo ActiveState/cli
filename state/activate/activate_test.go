@@ -174,6 +174,26 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatchy() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockVcsGetCheckpoint()
+
+	//Override what MockFullRuntime setup for retrieving a project
+	httpmock.Register("GET", "/organizations/no/projects/match")
+
+	Cc := Command.GetCobraCmd()
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", dir), "no/match"})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, exitCode, "Should fail do to non matching namespaces in as.yaml")
+	Cc.SetArgs(nil)
+}
+
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.testExecuteWithNamespace(false)
 }
