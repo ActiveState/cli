@@ -6,6 +6,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/model"
+
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 
@@ -67,6 +72,18 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 	c.Flags.JSON = &flagJSON
 	c.config.Run = c.Execute
 
+	cobraCommand := c.config.GetCobraCmd()
+	cobraCommand.PersistentPreRun = func(_ *cobra.Command, _ []string) {
+		allowed, fail := canAccessSecrets()
+		if fail != nil {
+			failures.Handle(fail, locale.T("secrets_err_access"))
+		}
+		if !allowed {
+			print.Warning(locale.T("secrets_warning_no_access"))
+			c.config.Exiter(1)
+		}
+	}
+
 	c.config.Append(buildGetCommand(&c))
 	c.config.Append(buildSetCommand(&c))
 	c.config.Append(buildSyncCommand(&c))
@@ -113,6 +130,43 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
 	t.SetAlign("left")
 	print.Line(t.Render("simple"))
+}
+
+func canAccessSecrets() (bool, *failures.Failure) {
+	if isProjectOwner() {
+		return true, nil
+	}
+
+	return isOrgMember()
+}
+
+func isProjectOwner() bool {
+	project := project.Get()
+	auth := authentication.Get()
+	if project.Owner() != auth.WhoAmI() {
+		return false
+	}
+	return true
+}
+
+func isOrgMember() (bool, *failures.Failure) {
+	project := project.Get()
+	org, fail := model.FetchOrgByURLName(project.Owner())
+	if fail != nil {
+		return false, fail
+	}
+
+	auth := authentication.Get()
+	_, fail = model.FetchOrgMember(org, auth.WhoAmI())
+	fmt.Println(fail)
+	if fail != nil {
+		if api.FailNotFound.Matches(fail.Type) {
+			return false, nil
+		}
+		return false, fail
+	}
+
+	return true, nil
 }
 
 func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinition, *failures.Failure) {

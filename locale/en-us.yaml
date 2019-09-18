@@ -600,6 +600,10 @@ secrets_err:
   other: Error managing user's Secrets
 secrets_err_defined:
   other: Failed to obtain defined secrets
+secrets_err_access:
+  other: Could not check if you have access to secrets. You will not be able to access any secrets for this project. Please try running the command again.
+secrets_warning_no_access:
+  other: You are not authorized to view secrets for this project
 secrets_err_missing_field:
   other: "Secret is missing required field: {{.V0}}"
 secrets_err_output:
