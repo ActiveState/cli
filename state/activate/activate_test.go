@@ -174,7 +174,7 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatchy() {
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
 	suite.rMock.MockFullRuntime()
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockVcsGetCheckpoint()
