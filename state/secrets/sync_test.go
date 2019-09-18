@@ -71,10 +71,10 @@ func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
 func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
-	firstCall := true
+	called := false
 	suite.platformMock.RegisterWithResponderBody("GET", "/organizations/ActiveState", func(req *http.Request) (int, string) {
-		if firstCall {
-			firstCall = false
+		if !called {
+			called = true
 			return 200, `{"URLname": "ActiveState", "added": "2018-05-08T14:53:26.729Z", "name": "ActiveState", "organizationID": "00010001-0001-0001-0001-000100010001", "personal": true}`
 		}
 		return 401, `{"code": 401, "message": "unauthenticated for invalid credentials"}`
