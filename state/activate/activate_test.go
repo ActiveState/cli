@@ -377,7 +377,7 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }
 
-func (suite *ActivateTestSuite) TestPromptCreateProject() {
+func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
 
@@ -394,8 +394,11 @@ func (suite *ActivateTestSuite) TestPromptCreateProject() {
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
 
-	err = Command.Execute()
-	suite.Require().NoError(err)
+	Command.Execute()
+
+	suite.Require().Error(failures.Handled())
+	suite.Require().Equal(failures.Handled().Error(), locale.T("err_must_create_project"))
+
 }
 
 func TestActivateSuite(t *testing.T) {

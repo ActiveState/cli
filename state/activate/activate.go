@@ -131,6 +131,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 	fail = promptCreateProject(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
+		exit(0)
 	}
 
 	// activate should be continually called while returning true
@@ -315,6 +316,8 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 		}
 		if create {
 			NewExecute(cmd, args)
+		} else {
+			return failures.FailUserInput.New(locale.T("err_must_create_project"))
 		}
 	} else {
 		return fail

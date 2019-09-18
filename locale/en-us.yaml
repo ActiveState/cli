@@ -846,6 +846,8 @@ err_namespace_dir_inuse:
   other: "Target directory already contains an activestate.yaml"
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
+err_must_create_project:
+  other: "You must create the project to activate it."
 activate_namespace_existing:
   other: "You already have this project checked out, which one would you like to activate?"
 activate_select_optout:
