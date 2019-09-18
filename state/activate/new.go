@@ -70,10 +70,8 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	var path string
-	if Flags.Path != "" {
-		path = Flags.Path
-	} else {
+	path := Flags.Path
+	if path == "" {
 		path, fail = fetchPath(name)
 		if fail != nil {
 			failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
