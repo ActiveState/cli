@@ -77,14 +77,20 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 	var commitID string
 	commitID, fail = latestCommitID(owner, name)
-	if fail != nil || commitID == "" {
+	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
 			map[string]interface{}{"Owner": owner, "ProjectName": name}))
 
 		exit(1)
 	}
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, commitID)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
+	if commitID == "" {
+		print.Warning(locale.T("error_state_activate_new_no_commit_aborted",
+			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+	} else {
+		projectURL = projectURL + fmt.Sprintf("?commitID=%s", commitID)
+	}
 
 	// Create the project locally on disk.
 	if _, fail = projectfile.Create(projectURL, path); fail != nil {
