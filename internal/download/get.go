@@ -2,10 +2,10 @@ package download
 
 import (
 	"bytes"
-	"flag"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -26,9 +26,10 @@ var Get func(url string) ([]byte, *failures.Failure)
 var GetWithProgress func(url string, progress *mpb.Progress) ([]byte, *failures.Failure)
 
 func init() {
-	SetMocking(flag.Lookup("test.v") != nil)
+	SetMocking(strings.HasSuffix(os.Args[0], ".test"))
 }
 
+// SetMocking sets the correct Get methods for testing
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet
