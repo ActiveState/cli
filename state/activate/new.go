@@ -83,12 +83,16 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	var commitID string
-	commitID, fail = latestCommitID(owner, name)
+	cid, fail := model.LatestCommitID(owner, name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
 			map[string]interface{}{"Owner": owner, "ProjectName": name}))
 
 		exit(1)
+	}
+
+	if cid != nil {
+		commitID = cid.String()
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
@@ -106,19 +110,6 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
-}
-
-func latestCommitID(owner, project string) (string, *failures.Failure) {
-	cid, fail := model.LatestCommitID(owner, project)
-	if fail != nil {
-		return "", fail
-	}
-
-	if cid != nil {
-		return cid.String(), nil
-	}
-
-	return "", nil
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {
