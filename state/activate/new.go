@@ -33,7 +33,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
 	var defaultName string
-	if projectExists() {
+	if projectExists(Flags.Path) {
 		proj := project.Get()
 		defaultName = proj.Name()
 	}

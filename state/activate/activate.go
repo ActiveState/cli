@@ -91,7 +91,7 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && !projectExists() {
+	if len(args) == 0 && !projectExists(Flags.Path) {
 		NewExecute(cmd, args)
 		return
 	}
@@ -99,25 +99,23 @@ func Execute(cmd *cobra.Command, args []string) {
 	ExistingExecute(cmd, args)
 }
 
-func projectExists() bool {
+func projectExists(path string) bool {
 	logging.Debug("projectExists")
-	if Flags.Path != "" {
-		cwd, err := os.Getwd()
-		logging.Debug("cwd: %s", cwd)
+	cwd, err := os.Getwd()
+	logging.Debug("cwd: %s", cwd)
 
-		if err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
-		}
-		if err := os.Chdir(Flags.Path); err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
-		}
-		defer func() {
-			logging.Debug("moving back to origin dir")
-			if err := os.Chdir(cwd); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
-			}
-		}()
+	if err != nil {
+		failures.Handle(err, locale.T("err_activate_path"))
 	}
+	if err := os.Chdir(path); err != nil {
+		failures.Handle(err, locale.T("err_activate_path"))
+	}
+	defer func() {
+		logging.Debug("moving back to origin dir")
+		if err := os.Chdir(cwd); err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+	}()
 
 	if _, fail := project.GetOnce(); fail != nil {
 		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
