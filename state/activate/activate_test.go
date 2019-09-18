@@ -179,7 +179,7 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockVcsGetCheckpoint()
 
-	//Override what MockFullRuntime setup for retrieving a project
+	// Override what MockFullRuntime setup for retrieving a project
 	httpmock.Register("GET", "/organizations/no/projects/match")
 
 	Cc := Command.GetCobraCmd()
