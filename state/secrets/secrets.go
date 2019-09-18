@@ -72,7 +72,6 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		allowed, fail := access.Secrets()
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_access"))
-			c.config.Exiter(1)
 		}
 		if !allowed {
 			print.Warning(locale.T("secrets_warning_no_access"))

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -45,7 +46,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock.MockLoggedin()
 }
 
-func (suite *SecretsAccessTestSuite) TestExecute_NoAccess() {
+func (suite *SecretsAccessTestSuite) TestExecuteNoAccess() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
@@ -58,6 +59,23 @@ func (suite *SecretsAccessTestSuite) TestExecute_NoAccess() {
 		cmd.Config().Execute()
 	})
 	suite.Equal(1, exitCode, "expected exit code to match")
+}
+
+func (suite *SecretsAccessTestSuite) TestExecuteAccessError() {
+	cmd := secrets.NewCommand(suite.secretsClient)
+
+	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 401)
+
+	ex := exiter.New()
+	cmd.Config().Exiter = ex.Exit
+
+	exitCode := ex.WaitForExit(func() {
+		cmd.Config().Execute()
+	})
+	suite.Equal(1, exitCode, "expected exit code to match")
+
+	failure := failures.Handled().(*failures.Failure)
+	suite.Equalf(api.FailAuth, failure.Type, "unexpected failure type: %v", failure.Type)
 }
 
 func TestSecretsAccessTestSuite(t *testing.T) {
