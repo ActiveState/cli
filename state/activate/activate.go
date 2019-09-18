@@ -101,21 +101,24 @@ func Execute(cmd *cobra.Command, args []string) {
 
 func projectExists(path string) bool {
 	logging.Debug("projectExists")
-	cwd, err := os.Getwd()
-	logging.Debug("cwd: %s", cwd)
+	if path != "" {
+		cwd, err := os.Getwd()
+		logging.Debug("cwd: %s", cwd)
 
-	if err != nil {
-		failures.Handle(err, locale.T("err_activate_path"))
-	}
-	if err := os.Chdir(path); err != nil {
-		failures.Handle(err, locale.T("err_activate_path"))
-	}
-	defer func() {
-		logging.Debug("moving back to origin dir")
-		if err := os.Chdir(cwd); err != nil {
+		if err != nil {
 			failures.Handle(err, locale.T("err_activate_path"))
 		}
-	}()
+
+		if err := os.Chdir(path); err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+		defer func() {
+			logging.Debug("moving back to origin dir")
+			if err := os.Chdir(cwd); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+			}
+		}()
+	}
 
 	if _, fail := project.GetOnce(); fail != nil {
 		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
