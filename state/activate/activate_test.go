@@ -78,7 +78,6 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 	Args.Namespace = ""
 
-	failures.ResetHandled()
 }
 
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
@@ -94,6 +93,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	}
 
 	projectfile.Reset()
+	failures.ResetHandled()
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
