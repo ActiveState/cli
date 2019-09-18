@@ -423,8 +423,12 @@ func (suite *ActivateTestSuite) TestPromptCreateProject() {
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
 
-	err = Command.Execute()
-	suite.Require().NoError(err)
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, exitCode, "Should fail due to no runtime/commitid")
 }
 
 func TestActivateSuite(t *testing.T) {
