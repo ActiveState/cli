@@ -9,15 +9,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type SecretsTestSuite struct {
@@ -30,10 +27,6 @@ type SecretsTestSuite struct {
 }
 
 func (suite *SecretsTestSuite) BeforeTest(suiteName, testName string) {
-	locale.Set("en-US")
-	failures.ResetHandled()
-	projectfile.Reset()
-
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
 	err = os.Chdir(filepath.Join(root, "pkg", "cmdlets", "access", "testdata"))

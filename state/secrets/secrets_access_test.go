@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -31,10 +29,6 @@ type SecretsAccessTestSuite struct {
 }
 
 func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
-	locale.Set("en-US")
-	failures.ResetHandled()
-	projectfile.Reset()
-
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
 	err = os.Chdir(filepath.Join(root, "state", "secrets", "testdata", "access"))
