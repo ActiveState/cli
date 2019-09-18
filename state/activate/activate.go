@@ -184,29 +184,9 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	}
 
 	var directory string
-	if Flags.Path != "" {
-		directory = Flags.Path
-	} else {
-		// Change to already checked out project if it exists
-		projectPaths := getPathsForNamespace(namespace)
-		if len(projectPaths) > 0 {
-			confirmedPath, fail := confirmProjectPath(projectPaths)
-			if fail != nil {
-				return fail
-			}
-			if confirmedPath != nil {
-				directory = *confirmedPath
-			}
-		}
-
-		// Otherwise ask the user for the directory
-		if directory == "" {
-			// Determine where to create our project
-			directory, fail = determineProjectPath(namespace)
-			if fail != nil {
-				return fail
-			}
-		}
+	directory, fail = getDirByNameSpace(Flags.Path, namespace)
+	if fail != nil {
+		return fail
 	}
 
 	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
@@ -228,6 +208,24 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 	return nil
+}
+
+func getDirByNameSpace(path string, namespace string) (string, *failures.Failure) {
+	if Flags.Path != "" {
+		return Flags.Path, nil
+	}
+	// Change to already checked out project if it exists
+	projectPaths := getPathsForNamespace(namespace)
+	if len(projectPaths) > 0 {
+		confirmedPath, fail := confirmProjectPath(projectPaths)
+		if fail != nil {
+			return "", fail
+		}
+		if confirmedPath != nil {
+			return *confirmedPath, nil
+		}
+	}
+	return determineProjectPath(namespace)
 }
 
 func getProjectFileByPath(path string) *project.Project {
