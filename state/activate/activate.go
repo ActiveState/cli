@@ -108,7 +108,7 @@ func projectExists() bool {
 	return true
 }
 
-// ExistingExecute activates a project based on the namepsace in the
+// ExistingExecute activates a project based on the namespace in the
 // arguments or the existing project file
 func ExistingExecute(cmd *cobra.Command, args []string) {
 	updater.PrintUpdateMessage()

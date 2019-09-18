@@ -13,12 +13,15 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
+	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/decor"
 
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -60,14 +63,15 @@ var (
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	downloadDir       string
-	cacheDir          string
-	installDirs       []string
-	runtimeDownloader Downloader
-	onDownload        func()
-	onInstall         func()
-	archiver          archiver.Archiver
-	unarchiver        archiver.Unarchiver
+	downloadDir        string
+	cacheDir           string
+	installDirs        []string
+	runtimeDownloader  Downloader
+	onDownload         func()
+	onInstall          func()
+	archiver           archiver.Archiver
+	unarchiver         archiver.Unarchiver
+	progressUnarchiver ProgressUnarchiver
 }
 
 // InitInstaller creates a new RuntimeInstaller
@@ -76,6 +80,7 @@ func InitInstaller() (*Installer, *failures.Failure) {
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
+	logging.Debug("downloadDir: %s, cache path: %s", downloadDir, config.CachePath())
 	return NewInstaller(downloadDir, config.CachePath(), InitDownload(downloadDir))
 }
 
@@ -83,11 +88,12 @@ func InitInstaller() (*Installer, *failures.Failure) {
 // exists as a directory or can be created.
 func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		downloadDir:       downloadDir,
-		cacheDir:          cacheDir,
-		runtimeDownloader: downloader,
-		archiver:          Archiver(),
-		unarchiver:        Unarchiver(),
+		downloadDir:        downloadDir,
+		cacheDir:           cacheDir,
+		runtimeDownloader:  downloader,
+		archiver:           Archiver(),
+		unarchiver:         Unarchiver(),
+		progressUnarchiver: UnarchiverWithProgress(),
 	}
 
 	return installer, nil
@@ -237,6 +243,15 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 }
 
 func (installer *Installer) unpackArchive(archivePath string, installDir string) *failures.Failure {
+	progress := mpb.New()
+	bar := progress.AddBar(int64(len(m.entries)),
+		mpb.PrependDecorators(
+			decor.StaticName(locale.T("total"), 20, 0),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(5, 0),
+		))
+
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
 			return fail
@@ -256,7 +271,8 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-	err := installer.unarchiver.Unarchive(archivePath, tmpRuntimeDir)
+
+	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, callback)
 	logging.Debug("Done")
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
@@ -300,7 +316,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 }
 
 // OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(f func()) {
+func (installer *Installer) OnDownload(archiveStream func()) {
 	installer.onDownload = f
 }
 

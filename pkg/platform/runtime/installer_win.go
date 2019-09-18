@@ -6,6 +6,12 @@ import (
 	"github.com/ActiveState/archiver"
 )
 
+var _ archiver.Reader = &ArchiveReader{}
+
+type ArchiveReader struct {
+	archiver.Zip
+}
+
 // InstallerExtension is used to identify whether an artifact is one that we should care about
 const InstallerExtension = ".zip"
 
@@ -17,4 +23,9 @@ func Archiver() archiver.Archiver {
 // Unarchiver returns the unarchiver to use
 func Unarchiver() archiver.Unarchiver {
 	return archiver.DefaultZip
+}
+
+// Reader returns the archive reader to use
+func Reader() archiver.Reader {
+	return ArchiveReader
 }
