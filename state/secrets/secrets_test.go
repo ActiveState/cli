@@ -1,7 +1,6 @@
 package secrets_test
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,8 +51,6 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
 }
@@ -69,6 +66,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
 	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		return 200, "definitions/00020002-0002-0002-0002-000200020002"
 	})
@@ -86,9 +84,6 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Contains(strings.TrimSpace(outStr), "proj-secret-description")
 	suite.Contains(strings.TrimSpace(outStr), "user-secret")
 	suite.Contains(strings.TrimSpace(outStr), "user-secret-description")
-
-	fmt.Println(outStr)
-	fmt.Println(outErr)
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {
