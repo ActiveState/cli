@@ -72,8 +72,7 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 	c.Flags.JSON = &flagJSON
 	c.config.Run = c.Execute
 
-	cobraCommand := c.config.GetCobraCmd()
-	cobraCommand.PersistentPreRun = func(_ *cobra.Command, _ []string) {
+	c.config.GetCobraCmd().PersistentPreRun = func(_ *cobra.Command, _ []string) {
 		allowed, fail := canAccessSecrets()
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_access"))
