@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -50,7 +50,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
+	if !authentication.Get().Authenticated() && !condition.InTest() {
 		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
 	}

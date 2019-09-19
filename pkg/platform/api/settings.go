@@ -1,10 +1,10 @@
 package api
 
 import (
-	"flag"
 	"log"
 	"net/url"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 )
 
@@ -77,7 +77,7 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		serviceURLStrings = UrlsByEnv["test"]
 	} else {
 		var hasURL bool
