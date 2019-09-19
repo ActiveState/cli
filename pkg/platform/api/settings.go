@@ -1,10 +1,9 @@
 package api
 
 import (
+	"flag"
 	"log"
 	"net/url"
-	"os"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 )
@@ -78,7 +77,7 @@ func init() {
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	if strings.HasSuffix(os.Args[0], ".test") {
+	if flag.Lookup("test.v") != nil {
 		serviceURLStrings = UrlsByEnv["test"]
 	} else {
 		var hasURL bool
