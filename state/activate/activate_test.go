@@ -174,12 +174,12 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.NoError(failures.Handled(), "No failure occurred")
 }
 
-func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatchy() {
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
 	suite.rMock.MockFullRuntime()
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockVcsGetCheckpoint()
 
-	//Override what MockFullRuntime setup for retrieving a project
+	// Override what MockFullRuntime setup for retrieving a project
 	httpmock.Register("GET", "/organizations/no/projects/match")
 
 	Cc := Command.GetCobraCmd()
