@@ -99,7 +99,8 @@ func (suite *ConfigTestSuite) testNoHomeRunner() {
 		"PATH=" + os.Getenv("PATH"),
 		"GOPATH=" + os.Getenv("GOPATH"),
 		"USERPROFILE=" + os.Getenv("USERPROFILE"), // Permission error trying to use C:\Windows, ref: https://golang.org/pkg/os/#TempDir
-		"SystemRoot=" + os.Getenv("SystemRoot"),   // Ref: https://bugs.python.org/msg248951
+		"APPDATA=" + os.Getenv("APPDATA"),
+		"SystemRoot=" + os.Getenv("SystemRoot"), // Ref: https://bugs.python.org/msg248951
 		"GOFLAGS=" + os.Getenv("GOFLAGS"),
 		"GOCACHE=" + goCache,
 		"TESTNOHOME=TRUE",

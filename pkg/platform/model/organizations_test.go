@@ -54,6 +54,34 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName_404() {
 	suite.Nil(org)
 }
 
+func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
+	suite.apiMock.MockGetOrganization()
+
+	org, fail := model.FetchOrgByURLName("string")
+	suite.NoError(fail.ToError(), "should have received org")
+
+	suite.apiMock.MockInviteUserToOrg()
+
+	invitation, fail := model.InviteUserToOrg(org, true, "foo@bar.com")
+	suite.NoError(fail.ToError(), "should have received invitation receipt")
+	suite.Equal("foo@bar.com", invitation.Email)
+
+}
+
+func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg404() {
+	suite.apiMock.MockGetOrganization()
+
+	org, fail := model.FetchOrgByURLName("string")
+	suite.NoError(fail.ToError(), "should have received org")
+
+	suite.apiMock.MockInviteUserToOrg404()
+
+	invitation, fail := model.InviteUserToOrg(org, true, "string")
+	suite.EqualError(fail, locale.T("err_api_org_not_found"))
+	suite.Nil(invitation)
+
+}
+
 func TestOrganizationsTestSuite(t *testing.T) {
 	suite.Run(t, new(OrganizationsTestSuite))
 }
