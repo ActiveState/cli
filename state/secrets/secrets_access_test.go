@@ -24,7 +24,6 @@ type SecretsAccessTestSuite struct {
 	projectFile *projectfile.Project
 
 	secretsClient *secretsapi.Client
-	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
 	authMock      *authMock.Mock
 }
@@ -39,7 +38,6 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
 
-	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.authMock = authMock.Init()
