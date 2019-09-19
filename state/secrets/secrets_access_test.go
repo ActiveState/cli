@@ -1,9 +1,12 @@
 package secrets_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/locale"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -15,6 +18,7 @@ import (
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/secrets"
+	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,33 +48,33 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock.MockLoggedin()
 }
 
-func (suite *SecretsAccessTestSuite) TestExecuteNoAccess() {
+func (suite *SecretsAccessTestSuite) runCommand(expectedExitCode int, expectedOutput string) {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
+	ex := exiter.New()
+	cmd.Config().Exiter = ex.Exit
+
+	out := capturer.CaptureOutput(func() {
+		code := ex.WaitForExit(func() {
+			suite.NoError(cmd.Config().Execute())
+		})
+		suite.Equal(expectedExitCode, code, fmt.Sprintf("Expects exit code %d", expectedExitCode))
+	})
+
+	suite.Contains(out, expectedOutput)
+}
+
+func (suite *SecretsAccessTestSuite) TestExecuteNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
-	ex := exiter.New()
-	cmd.Config().Exiter = ex.Exit
-
-	exitCode := ex.WaitForExit(func() {
-		cmd.Config().Execute()
-	})
-	suite.Equal(1, exitCode, "expected exit code to match")
+	suite.runCommand(1, locale.T("secrets_warning_no_access"))
 }
 
 func (suite *SecretsAccessTestSuite) TestExecuteAccessError() {
-	cmd := secrets.NewCommand(suite.secretsClient)
-
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 401)
 
-	ex := exiter.New()
-	cmd.Config().Exiter = ex.Exit
-
-	exitCode := ex.WaitForExit(func() {
-		cmd.Config().Execute()
-	})
-	suite.Equal(1, exitCode, "expected exit code to match")
+	suite.runCommand(1, locale.T("secrets_err_access"))
 
 	failure := failures.Handled().(*failures.Failure)
 	suite.Equalf(api.FailAuth, failure.Type, "unexpected failure type: %v", failure.Type)
