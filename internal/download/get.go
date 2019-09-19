@@ -29,6 +29,7 @@ func init() {
 	SetMocking(condition.InTest())
 }
 
+// SetMocking sets the correct Get methods for testing
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet

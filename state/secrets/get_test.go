@@ -55,6 +55,9 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/members", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
+
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 }

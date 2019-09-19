@@ -35,6 +35,7 @@ type Settings struct {
 
 type urlsByService map[Service]string
 
+// UrlsByEnv represents the service URLs categorized by different environments
 var UrlsByEnv = map[string]urlsByService{
 	"prod": {
 		ServiceMono:      constants.MonoURLProd,
@@ -72,6 +73,7 @@ func init() {
 	DetectServiceURLs()
 }
 
+// DetectServiceURLs updates the available service URLs based on environment
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
