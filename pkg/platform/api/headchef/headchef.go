@@ -2,13 +2,10 @@ package headchef
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -56,7 +53,7 @@ func NewRequest(apiSetting api.Settings) *Request {
 	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
-	//transportRuntime.SetDebug(true)
+	transportRuntime.SetDebug(true)
 
 	return &Request{
 		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
@@ -64,86 +61,66 @@ func NewRequest(apiSetting api.Settings) *Request {
 }
 
 func (r *Request) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
-	max := constants.HeadChefBuildStatusCheckMax
-	eager := time.Minute * 3 // duration to use short polling wait duration
-	shortWait := time.Second * 8
-	longWait := time.Second * 16
 	buildStatus := NewBuildStatus()
 
-	go func() {
-		defer buildStatus.Close()
-
-		var buildUUID *strfmt.UUID
-
-		startParams := headchef_operations.StartBuildV1Params{
-			Context:      context.Background(),
-			BuildRequest: buildRequest,
-		}
-		created, accepted, err := r.client.StartBuildV1(&startParams)
-		fmt.Println(created, accepted, err)
-		switch {
-		case err != nil:
-			if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
-				msg := *startErr.Payload.Message
-				buildStatus.RunFail <- FailRestAPIError.New(msg)
-				return
-			}
-			buildStatus.RunFail <- FailRestAPIError.Wrap(err)
-			return
-		case accepted != nil:
-			buildStatus.Started <- struct{}{}
-			buildUUID = accepted.Payload.BuildRequestID
-		case created != nil:
-			switch payload := created.Payload.(type) {
-			case headchef_models.BuildCompletedResponse:
-				buildStatus.Completed <- payload
-				return
-			case headchef_models.BuildFailedResponse:
-				buildStatus.Failed <- payload.Message
-				return
-			default:
-				buildStatus.RunFail <- FailRestAPIError.New("unknown BuildEndedResponse payload type") // l10n
-				return
-			}
-		default:
-			buildStatus.RunFail <- FailRestAPIError.New("no value returned from StartBuildV1") // l10n
-			return
-		}
-
-		var wait time.Duration
-		for start := time.Now(); time.Now().Sub(start) < max; {
-			time.Sleep(wait)
-			wait = shortWait
-			if time.Now().Sub(start) > eager {
-				wait = longWait
-			}
-
-			buildStatusParams := headchef_operations.GetBuildStatusParams{
-				Context:        context.Background(),
-				BuildRequestID: *buildUUID,
-			}
-			buildStatusEnvelope, err := r.client.GetBuildStatus(&buildStatusParams)
-			if err != nil {
-				buildStatus.RunFail <- FailRestAPIError.Wrap(err)
-				return
-			}
-			switch payload := buildStatusEnvelope.Payload.(type) {
-			case headchef_models.BuildStartedResponse:
-				continue
-			case headchef_models.BuildCompletedResponse:
-				buildStatus.Completed <- payload
-				return
-			case headchef_models.BuildFailedResponse:
-				buildStatus.Failed <- payload.Message
-				return
-			default:
-				buildStatus.RunFail <- FailRestAPIError.New("unknown BuildRequestedResponse type") // l10n
-				return
-			}
-		}
-
-		buildStatus.RunFail <- FailRestAPIError.New(locale.T("build_status_timeout"))
-	}()
+	go r.run(buildRequest, buildStatus)
 
 	return buildStatus
+}
+
+func (r *Request) run(buildRequest *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
+	defer buildStatus.Close()
+
+	startParams := headchef_operations.StartBuildV1Params{
+		Context:      context.Background(),
+		BuildRequest: buildRequest,
+	}
+	created, accepted, err := r.client.StartBuildV1(&startParams)
+
+	switch {
+	case err != nil:
+		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
+			msg := *startErr.Payload.Message
+			buildStatus.RunFail <- FailRestAPIError.New(msg)
+			return
+		}
+		buildStatus.RunFail <- FailRestAPIError.Wrap(err)
+		return
+	case accepted != nil:
+		buildStatus.RunFail <- FailRestAPIError.New(locale.T("build_status_in_progress"))
+	case created != nil:
+		switch payload := created.Payload.(type) {
+		case headchef_models.BuildCompletedResponse:
+			buildStatus.Completed <- payload
+			return
+		case headchef_models.BuildFailedResponse:
+			buildStatus.Failed <- payload.Message
+			return
+		// Go swagger is NUTS, it cannot generate BuildFailedResponse
+		case map[string]interface{}:
+			buildStatus.Failed <- payload["message"].(string)
+		case headchef_models.BuildEndedResponse:
+			if p, ok := payload.(headchef_models.BuildFailedResponse); ok {
+				buildStatus.Failed <- p.Message
+			}
+			buildStatus.Failed <- locale.T("build_status_unknown_end")
+			return
+		case headchef_models.BuildStartedResponse:
+		case headchef_models.BuildStarted:
+			buildStatus.Failed <- locale.T("build_status_in_progress")
+			return
+		case headchef_models.RestAPIError:
+			if payload.Message == nil {
+				buildStatus.Failed <- locale.T("build_status_unknown_error")
+			} else {
+				buildStatus.Failed <- *payload.Message
+			}
+		default:
+			buildStatus.Failed <- locale.T("build_status_unknown_status")
+			return
+		}
+	default:
+		buildStatus.RunFail <- FailRestAPIError.New(locale.T("build_status_noresponse"))
+		return
+	}
 }
