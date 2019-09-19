@@ -127,7 +127,14 @@ func (installer *Installer) Install() *failures.Failure {
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
-	progress := mpb.New()
+	cancel := make(chan struct{})
+	progress := mpb.New(mpb.WithCancel(cancel))
+	// By closing the cancel channel at the end of this route,
+	// we never need to be concerned that `progress.Wait()` will block forever
+	defer func() {
+		close(cancel)
+		progress.Wait()
+	}()
 
 	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
@@ -139,7 +146,6 @@ func (installer *Installer) Install() *failures.Failure {
 		return fail
 	}
 
-	progress.Wait()
 	return nil
 }
 
