@@ -72,7 +72,7 @@ type Installer struct {
 	onInstall          func()
 	archiver           archiver.Archiver
 	unarchiver         archiver.Unarchiver
-	progressUnarchiver ProgressUnarchiver
+	progressUnarchiver progress.Unarchiver
 }
 
 // InitInstaller creates a new RuntimeInstaller

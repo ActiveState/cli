@@ -80,7 +80,7 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
-	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)))
+	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)), nil)
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
 

@@ -21,7 +21,7 @@ func TestDownload(t *testing.T) {
 		})
 	}
 
-	manager := New(entries, 5)
+	manager := New(entries, 5, nil)
 	fail := manager.Download()
 	assert.NoError(t, fail.ToError(), "Should download files")
 

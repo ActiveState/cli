@@ -21,16 +21,19 @@ type FileSizeTask func(FileSizeCallback) error
 func ReportProgressDynamically(taskFunc FileSizeTask, progress *mpb.Progress, initialGuess int64) error {
 
 	var total int64
-	bar := progress.AddBar(initialGuess,
-		mpb.BarRemoveOnComplete(),
-		mpb.BarDynamicTotal(),
-		mpb.BarAutoIncrTotal(18, 2048),
-		mpb.PrependDecorators(
-			decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(5, 0),
-		))
+	var bar *mpb.Bar
+	if progress != nil {
+		bar = progress.AddBar(initialGuess,
+			mpb.BarRemoveOnComplete(),
+			mpb.BarDynamicTotal(),
+			mpb.BarAutoIncrTotal(18, 2048),
+			mpb.PrependDecorators(
+				decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
+			),
+			mpb.AppendDecorators(
+				decor.Percentage(5, 0),
+			))
+	}
 
 	max := func(x, y int64) int64 {
 		if x < y {
@@ -41,8 +44,10 @@ func ReportProgressDynamically(taskFunc FileSizeTask, progress *mpb.Progress, in
 
 	updateCallback := func(fileSize int64) {
 		total += fileSize
-		bar.SetTotal(max(100*1024, total+2048), false)
-		bar.IncrBy(int(fileSize))
+		if bar != nil {
+			bar.SetTotal(max(100*1024, total+2048), false)
+			bar.IncrBy(int(fileSize))
+		}
 	}
 
 	err := taskFunc(updateCallback)

@@ -82,14 +82,14 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoOptions))
 	artfs, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	files, fail := r.Download(artfs)
+	files, fail := r.Download(artfs, nil)
 	suite.Require().NoError(fail.ToError())
 
 	suite.Implements((*runtime.Downloader)(nil), r)
 	suite.Contains(files, filepath.Join(suite.dir, "python"+runtime.InstallerExtension))
 	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+runtime.InstallerExtension))
 
-	for file, _ := range files {
+	for file := range files {
 		suite.FileExists(file)
 	}
 }
@@ -114,7 +114,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidURL))
 	files, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	_, fail = r.Download(files)
+	_, fail = r.Download(files, nil)
 	suite.Require().Error(fail.ToError())
 
 	suite.Equal(model.FailSignS3URL.Name, fail.Type.Name)
