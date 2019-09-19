@@ -160,7 +160,12 @@ function isStateToolInstallationOnPath($installDirectory) {
 }
 
 function getExistingOnPath(){
-    (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
+    $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
+    if ($path -eq $null) {
+        ""
+    } else {
+       (Resolve-Path (split-path -Path $path -Parent)).Path
+    }
 }
 
 function getDefaultInstallDir() {
