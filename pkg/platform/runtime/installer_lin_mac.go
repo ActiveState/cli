@@ -20,7 +20,7 @@ var _ ProgressUnarchiver = &TarGzArchiveReader{}
 
 // ProgressUnarchiver is an interface for an unarchiver with feedback about unpacking progress
 type ProgressUnarchiver interface {
-	UnarchiveWithProgress(string, string, func()) error
+	UnarchiveWithProgress(string, string, func(int64)) error
 }
 
 // TarGzArchiveReader is an extension of an TarGz archiver implementing an unarchive method with
@@ -42,15 +42,75 @@ func mkdir(dirPath string) error {
 	return nil
 }
 
+/*
+// addTopLevelFolder scans the files contained inside
+// the tarball named sourceArchive and returns a modified
+// destination if all the files do not share the same
+// top-level folder.
+func (t *TarGzArchiveReader) addTopLevelFolder(sourceArchive, destination string) (string, error) {
+	file, err := os.Open(sourceArchive)
+	if err != nil {
+		return "", fmt.Errorf("opening source archive: %v", err)
+	}
+	defer file.Close()
+
+	// if the reader is to be wrapped, ensure we do that now
+	// or we will not be able to read the archive successfully
+	reader := io.Reader(file)
+	if t.readerWrapFn != nil {
+		reader, err = t.readerWrapFn(reader)
+		if err != nil {
+			return "", fmt.Errorf("wrapping reader: %v", err)
+		}
+	}
+	if t.cleanupWrapFn != nil {
+		defer t.cleanupWrapFn()
+	}
+
+	tr := tar.NewReader(reader)
+
+	var files []string
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("scanning tarball's file listing: %v", err)
+		}
+		files = append(files, hdr.Name)
+	}
+
+	if multipleTopLevels(files) {
+		destination = filepath.Join(destination, folderNameFromFileName(sourceArchive))
+	}
+
+	return destination, nil
+}
+*/
+
 // UnarchiveWithProgress unpacks the files from the source directory into the destination directory
 // After a file is unpacked, the progressIncrement callback is called
-func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, progressIncrement func()) error {
+func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, progressIncrement func(int64)) error {
 	if !fileExists(destination) && ar.MkdirAll {
 		err := mkdir(destination)
 		if err != nil {
 			return fmt.Errorf("preparing destination: %v", err)
 		}
 	}
+
+	/*
+		// if the files in the archive do not all share a common
+		// root, then make sure we extract to a single subfolder
+		// rather than potentially littering the destination...
+		if ar.ImplicitTopLevelFolder {
+			var err error
+			destination, err = ar.addTopLevelFolder(source, destination)
+			if err != nil {
+				return fmt.Errorf("scanning source archive: %v", err)
+			}
+		}
+	*/
 
 	archiveStream, err := os.Open(source)
 	if err != nil {
@@ -73,7 +133,7 @@ func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, 
 	defer ar.Close()
 
 	for {
-		f, err := ar.Read()
+		f, err := ar.untarNext(destination)
 		if err == io.EOF {
 			break
 		}
@@ -83,7 +143,7 @@ func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, 
 
 		// calling the increment callback
 		logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
-		progressIncrement()
+		progressIncrement(f.Size())
 	}
 	return nil
 }
@@ -140,16 +200,16 @@ func writeNewHardLink(fpath string, target string) error {
 	return nil
 }
 
-func (ar *TarGzArchiveReader) untarNext(to string) error {
+func (ar *TarGzArchiveReader) untarNext(to string) (archiver.File, error) {
 	f, err := ar.Read()
 	if err != nil {
-		return err // don't wrap error; calling loop must break on io.EOF
+		return f, err // don't wrap error; calling loop must break on io.EOF
 	}
 	header, ok := f.Header.(*tar.Header)
 	if !ok {
-		return fmt.Errorf("expected header to be *tar.Header but was %T", f.Header)
+		return f, fmt.Errorf("expected header to be *tar.Header but was %T", f.Header)
 	}
-	return ar.untarFile(f, filepath.Join(to, header.Name))
+	return f, ar.untarFile(f, filepath.Join(to, header.Name))
 }
 
 func (ar *TarGzArchiveReader) untarFile(f archiver.File, to string) error {

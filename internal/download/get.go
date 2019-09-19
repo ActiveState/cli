@@ -29,6 +29,7 @@ func init() {
 	SetMocking(flag.Lookup("test.v") != nil)
 }
 
+// SetMocking mocks the GetWithProgress function
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet
@@ -86,7 +87,7 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 	src := resp.Body
 	var dst bytes.Buffer
 
-	if progress != nil {
+	if bar != nil {
 		src = bar.ProxyReader(resp.Body)
 	}
 
@@ -95,7 +96,7 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 		return nil, failures.FailInput.Wrap(err)
 	}
 
-	if progress != nil {
+	if bar != nil {
 		if !bar.Completed() {
 			// Failsafe, so we don't get blocked by a progressbar
 			bar.IncrBy(total)

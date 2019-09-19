@@ -126,13 +126,20 @@ func (installer *Installer) Install() *failures.Failure {
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
+	progress := mpb.New()
 
-	archives, fail := installer.runtimeDownloader.Download(downloadArtfs)
+	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
 		return fail
 	}
 
-	return installer.InstallFromArchives(archives)
+	fail = installer.InstallFromArchives(archives, progress)
+	if fail != nil {
+		return fail
+	}
+
+	progress.Wait()
+	return nil
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
@@ -179,14 +186,29 @@ func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *f
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *mpb.Progress) *failures.Failure {
 	if installer.onInstall != nil {
 		installer.onInstall()
 	}
 
+	var bar *mpb.Bar
+	if progress != nil {
+		bar = progress.AddBar(int64(len(archives)),
+			mpb.PrependDecorators(
+				decor.StaticName(locale.T("total"), 20, 0),
+			),
+			mpb.AppendDecorators(
+				decor.Percentage(5, 0),
+			),
+		)
+	}
+
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf); fail != nil {
+		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {
 			return fail
+		}
+		if bar != nil {
+			bar.Increment()
 		}
 	}
 
@@ -194,7 +216,7 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, progress *mpb.Progress) *failures.Failure {
 	var installDir string
 	var fail *failures.Failure
 	if installDir, fail = installer.installDir(artf); fail != nil {
@@ -206,7 +228,9 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	if fail := installer.unpackArchive(archivePath, installDir); fail != nil {
+	if fail := installer.unpackArchive(
+		archivePath, installDir, progress,
+	); fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
@@ -242,16 +266,49 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 	return installDir, nil
 }
 
-func (installer *Installer) unpackArchive(archivePath string, installDir string) *failures.Failure {
-	progress := mpb.New()
-	bar := progress.AddBar(int64(len(m.entries)),
+func reportProgressDynamically(doFunc func(func(int64)) error, progress *mpb.Progress, initialGuess int64) error {
+
+	var total int64
+	bar := progress.AddBar(initialGuess,
+		mpb.BarRemoveOnComplete(),
+		mpb.BarDynamicTotal(),
+		mpb.BarAutoIncrTotal(18, 2048),
 		mpb.PrependDecorators(
-			decor.StaticName(locale.T("total"), 20, 0),
+			decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
 		),
 		mpb.AppendDecorators(
 			decor.Percentage(5, 0),
 		))
 
+	max := func(x, y int64) int64 {
+		if x < y {
+			return y
+		}
+		return x
+	}
+
+	updateCallback := func(fileSize int64) {
+		total += fileSize
+		bar.SetTotal(max(100*1024, total+2048), false)
+		bar.IncrBy(int(fileSize))
+	}
+
+	err := doFunc(updateCallback)
+
+	if bar != nil {
+		// after the archiving is finished, update the total
+		bar.SetTotal(total, true)
+
+		// Failsafe, so we do not get blocked by a progressbar
+		if !bar.Completed() {
+			bar.IncrBy(int(bar.Total()))
+		}
+	}
+	return err
+}
+
+func (installer *Installer) unpackArchive(archivePath string, installDir string, progress *mpb.Progress) *failures.Failure {
+	// initial guess
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
 			return fail
@@ -271,9 +328,10 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
+	err := reportProgressDynamically(func(progressCallback func(int64)) error {
+		return installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, progressCallback)
 
-	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, callback)
-	logging.Debug("Done")
+	}, progress, 100*1024)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
@@ -316,7 +374,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 }
 
 // OnDownload registers a function to be called when a download occurs
-func (installer *Installer) OnDownload(archiveStream func()) {
+func (installer *Installer) OnDownload(f func()) {
 	installer.onDownload = f
 }
 
