@@ -339,7 +339,7 @@ function install()
     # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
 
     # If we have administrative rights, attempt to set PATH system wide...
-    if( -Not (isAdmin)){
+    if(isAdmin){
         if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment...`n"
             Write-Host "Adding $installDir to system PATH`n"
