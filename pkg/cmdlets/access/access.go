@@ -35,7 +35,7 @@ func isOrgMember() (bool, *failures.Failure) {
 	}
 
 	auth := authentication.Get()
-	_, fail = model.FetchOrgMember(org, auth.WhoAmI())
+	_, fail = model.FetchOrgMember(org.Name, auth.WhoAmI())
 	if fail != nil {
 		if api.FailNotFound.Matches(fail.Type) {
 			return false, nil
