@@ -1,7 +1,6 @@
 package download
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -31,7 +30,7 @@ func TestDownload(t *testing.T) {
 
 			var progress *mpb.Progress
 			if td.UseMpb {
-				progress = mpb.New(mpb.WithOutput(ioutil.Discard))
+				progress = mpb.New()
 			}
 
 			var entries []*Entry

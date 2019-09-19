@@ -1,9 +1,7 @@
 package progress
 
 import (
-	"bytes"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,10 +49,8 @@ func TestReportProgressDynamically(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 
 			var progress *mpb.Progress
-			var buf *bytes.Buffer
 			if tt.UseMpb {
-				buf = new(bytes.Buffer)
-				progress = mpb.New(mpb.WithOutput(buf))
+				progress = mpb.New()
 			}
 
 			mt := mockTask{Error: nil}
@@ -64,10 +60,6 @@ func TestReportProgressDynamically(t *testing.T) {
 
 			if tt.UseMpb {
 				progress.Wait()
-				output := strings.TrimSpace(buf.String())
-				expectedTotal := "39.1KiB"
-
-				assert.Equal(t, expectedTotal, output[0:len(expectedTotal)])
 			}
 		})
 	}
