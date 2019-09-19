@@ -4,13 +4,8 @@ package runtime
 
 import (
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/progress"
 )
-
-var _ archiver.Reader = &ArchiveReader{}
-
-type ArchiveReader struct {
-	archiver.Zip
-}
 
 // InstallerExtension is used to identify whether an artifact is one that we should care about
 const InstallerExtension = ".zip"
@@ -25,7 +20,7 @@ func Unarchiver() archiver.Unarchiver {
 	return archiver.DefaultZip
 }
 
-// Reader returns the archive reader to use
-func Reader() archiver.Reader {
-	return ArchiveReader
+// UnarchiverWithProgress returns the ProgressUnarchiver to use
+func UnarchiverWithProgress() *progress.ZipArchiveReader {
+	return &progress.ZipArchiveReader{*archiver.DefaultZip}
 }
