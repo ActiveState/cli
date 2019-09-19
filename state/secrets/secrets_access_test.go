@@ -72,7 +72,7 @@ func (suite *SecretsAccessTestSuite) TestExecuteNoAccess() {
 }
 
 func (suite *SecretsAccessTestSuite) TestExecuteAccessError() {
-	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 401)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 401)
 
 	suite.runCommand(1, locale.T("secrets_err_access"))
 

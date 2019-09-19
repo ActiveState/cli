@@ -29,13 +29,8 @@ func isProjectOwner() bool {
 
 func isOrgMember() (bool, *failures.Failure) {
 	project := project.Get()
-	org, fail := model.FetchOrgByURLName(project.Owner())
-	if fail != nil {
-		return false, fail
-	}
-
 	auth := authentication.Get()
-	_, fail = model.FetchOrgMember(org.Name, auth.WhoAmI())
+	_, fail := model.FetchOrgMember(project.Owner(), auth.WhoAmI())
 	if fail != nil {
 		if api.FailNotFound.Matches(fail.Type) {
 			return false, nil
