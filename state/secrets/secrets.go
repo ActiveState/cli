@@ -67,23 +67,24 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 
 	c.Flags.JSON = &flagJSON
 	c.config.Run = c.Execute
-
-	c.config.GetCobraCmd().PersistentPreRun = func(_ *cobra.Command, _ []string) {
-		allowed, fail := access.Secrets()
-		if fail != nil {
-			failures.Handle(fail, locale.T("secrets_err_access"))
-		}
-		if !allowed {
-			print.Warning(locale.T("secrets_warning_no_access"))
-			c.config.Exiter(1)
-		}
-	}
+	c.config.PersistentPreRun = c.checkSecretsAccess
 
 	c.config.Append(buildGetCommand(&c))
 	c.config.Append(buildSetCommand(&c))
 	c.config.Append(buildSyncCommand(&c))
 
 	return &c
+}
+
+func (cmd *Command) checkSecretsAccess(_ *cobra.Command, _ []string) {
+	allowed, fail := access.Secrets()
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err_access"))
+	}
+	if !allowed {
+		print.Warning(locale.T("secrets_warning_no_access"))
+		cmd.config.Exiter(1)
+	}
 }
 
 // Config returns the underlying commands.Command definition.

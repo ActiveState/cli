@@ -63,6 +63,7 @@ type Command struct {
 	Name               string
 	Description        string
 	Run                func(cmd *cobra.Command, args []string)
+	PersistentPreRun   func(cmd *cobra.Command, args []string)
 	Aliases            []string
 	Flags              []*Flag
 	Arguments          []*Argument
@@ -218,6 +219,7 @@ func (c *Command) Register() {
 		Aliases:            c.Aliases,
 		Short:              T(c.Description),
 		Run:                c.runner,
+		PersistentPreRun:   c.PersistentPreRun,
 		Args:               c.argInputValidator,
 		DisableFlagParsing: c.DisableFlagParsing,
 		Hidden:             c.Hidden,
