@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -266,48 +267,7 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 	return installDir, nil
 }
 
-func reportProgressDynamically(doFunc func(func(int64)) error, progress *mpb.Progress, initialGuess int64) error {
-
-	var total int64
-	bar := progress.AddBar(initialGuess,
-		mpb.BarRemoveOnComplete(),
-		mpb.BarDynamicTotal(),
-		mpb.BarAutoIncrTotal(18, 2048),
-		mpb.PrependDecorators(
-			decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(5, 0),
-		))
-
-	max := func(x, y int64) int64 {
-		if x < y {
-			return y
-		}
-		return x
-	}
-
-	updateCallback := func(fileSize int64) {
-		total += fileSize
-		bar.SetTotal(max(100*1024, total+2048), false)
-		bar.IncrBy(int(fileSize))
-	}
-
-	err := doFunc(updateCallback)
-
-	if bar != nil {
-		// after the archiving is finished, update the total
-		bar.SetTotal(total, true)
-
-		// Failsafe, so we do not get blocked by a progressbar
-		if !bar.Completed() {
-			bar.IncrBy(int(bar.Total()))
-		}
-	}
-	return err
-}
-
-func (installer *Installer) unpackArchive(archivePath string, installDir string, progress *mpb.Progress) *failures.Failure {
+func (installer *Installer) unpackArchive(archivePath string, installDir string, p *mpb.Progress) *failures.Failure {
 	// initial guess
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
@@ -328,10 +288,10 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-	err := reportProgressDynamically(func(progressCallback func(int64)) error {
+	err := progress.ReportProgressDynamically(func(progressCallback progress.FileSizeCallback) error {
 		return installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, progressCallback)
 
-	}, progress, 100*1024)
+	}, p, 100*1024)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
