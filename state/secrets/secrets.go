@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
+	"github.com/ActiveState/cli/pkg/cmdlets/access"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -34,6 +35,13 @@ type Command struct {
 	Flags struct {
 		JSON *bool
 	}
+}
+
+type secretJSONDefinition struct {
+	Name        string `json:"name,omitempty"`
+	Scope       string `json:"scope,omitempty"`
+	Description string `json:"description,omitempty"`
+	Value       string `json:"value,omitempty"`
 }
 
 // NewCommand creates a new Keypair command.
@@ -59,12 +67,24 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 
 	c.Flags.JSON = &flagJSON
 	c.config.Run = c.Execute
+	c.config.PersistentPreRun = c.checkSecretsAccess
 
 	c.config.Append(buildGetCommand(&c))
 	c.config.Append(buildSetCommand(&c))
 	c.config.Append(buildSyncCommand(&c))
 
 	return &c
+}
+
+func (cmd *Command) checkSecretsAccess(_ *cobra.Command, _ []string) {
+	allowed, fail := access.Secrets()
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err_access"))
+	}
+	if !allowed {
+		print.Warning(locale.T("secrets_warning_no_access"))
+		cmd.config.Exiter(1)
+	}
 }
 
 // Config returns the underlying commands.Command definition.
@@ -116,14 +136,7 @@ func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinitio
 }
 
 func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
-	type secretDefinition struct {
-		Name        string `json:"name,omitempty"`
-		Scope       string `json:"scope,omitempty"`
-		Description string `json:"description,omitempty"`
-		Value       string `json:"value,omitempty"`
-	}
-
-	ds := make([]secretDefinition, len(defs))
+	ds := make([]secretJSONDefinition, len(defs))
 
 	for i, def := range defs {
 		name, fail := ptrToString(def.Name, "name")
@@ -135,18 +148,10 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 			return nil, fail
 		}
 
-		secretKey := scope + "." + name
-
-		_, value, fail := getSecretWithValue(secretKey)
-		if fail != nil {
-			return nil, fail
-		}
-
-		ds[i] = secretDefinition{
+		ds[i] = secretJSONDefinition{
 			Name:        name,
 			Scope:       scope,
 			Description: def.Description,
-			Value:       ptrToStringWithDefault(value, ""),
 		}
 	}
 
@@ -176,11 +181,4 @@ func ptrToString(s *string, fieldName string) (string, *failures.Failure) {
 		return "", failures.FailVerify.New("secrets_err_missing_field", fieldName)
 	}
 	return *s, nil
-}
-
-func ptrToStringWithDefault(s *string, def string) string {
-	if s == nil {
-		return def
-	}
-	return *s
 }

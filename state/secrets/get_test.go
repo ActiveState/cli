@@ -55,6 +55,9 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	suite.secretsMock = httpmock.Activate(secretsClient.BaseURI)
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/members", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
+
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 }
@@ -117,7 +120,6 @@ func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")
-	suite.Require().False(cc.HasAvailableFlags())
 }
 
 func (suite *SecretsGetCommandTestSuite) TestDecodingFailed() {

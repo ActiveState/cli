@@ -72,6 +72,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
+	suite.platformMock.Register("GET", "/organizations/ActiveState/members")
 
 	var exitCode int
 	ex := exiter.New()

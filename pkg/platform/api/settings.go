@@ -1,10 +1,10 @@
 package api
 
 import (
-	"flag"
 	"log"
 	"net/url"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 )
 
@@ -35,6 +35,7 @@ type Settings struct {
 
 type urlsByService map[Service]string
 
+// UrlsByEnv represents the service URLs categorized by different environments
 var UrlsByEnv = map[string]urlsByService{
 	"prod": {
 		ServiceMono:      constants.MonoURLProd,
@@ -72,10 +73,11 @@ func init() {
 	DetectServiceURLs()
 }
 
+// DetectServiceURLs updates the available service URLs based on environment
 func DetectServiceURLs() {
 	serviceURLStrings := urlsByService{}
 
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		serviceURLStrings = UrlsByEnv["test"]
 	} else {
 		var hasURL bool

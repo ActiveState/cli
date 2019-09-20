@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -67,13 +68,13 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	lang := script.Language()
-	if lang == scriptfile.Unknown {
+	if lang == language.Unknown {
 		subs, fail := subshell.Get()
 		if fail != nil {
 			failures.Handle(fail, locale.T("error_state_run_no_shell"))
 			return
 		}
-		lang = scriptfile.MakeLanguageByShell(subs.Shell())
+		lang = language.MakeByShell(subs.Shell())
 	}
 
 	langExec := lang.Executable()
@@ -83,6 +84,12 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	path := os.Getenv("PATH")
+
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return
+	}
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
@@ -97,13 +104,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 			return
 		}
 
+		subs.SetEnv(venv.GetEnvSlice(true))
 		path = venv.GetEnv()["PATH"]
-	}
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_no_shell"))
-		return
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {

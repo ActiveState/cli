@@ -5,21 +5,28 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -85,13 +92,25 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
 	}
+
+	projectfile.Reset()
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
 	suite.rMock.MockFullRuntime()
 
-	err := os.Chdir(filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata"))
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
+
+	authentication.Get().AuthenticateWithToken("")
+
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	err := os.Chdir(dir)
 	suite.Require().NoError(err, "unable to chdir to testdata dir")
+	suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
 
 	Command.Execute()
 
@@ -128,6 +147,22 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
 	suite.testExecuteWithNamespace(false)
+}
+
+func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	fail := fileutils.WriteFile(filepath.Join(targetDir, constants.ConfigFileName), []byte{})
+	suite.Require().NoError(fail.ToError())
+
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	stderr := capturer.CaptureStderr(func() {
+		code := ex.WaitForExit(func() {
+			suite.testExecuteWithNamespace(false)
+		})
+		suite.Require().Equal(1, code, "Exits with code 1")
+	})
+	suite.Contains(stderr, locale.Tr("err_namespace_dir_inuse"))
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
@@ -320,6 +355,14 @@ func (suite *ActivateTestSuite) TestListenForReactivation() {
 
 func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.rMock.MockFullRuntime()
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
+
+	authentication.Get().AuthenticateWithToken("")
+
 	defer func() { branchName = constants.BranchName }()
 	branchName = "anything-but-stable"
 
@@ -332,6 +375,27 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Require().NoError(err)
 
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
+func (suite *ActivateTestSuite) TestPromptCreateProject() {
+	projectFile := &projectfile.Project{}
+	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.Require().NoError(err, "unexpected error marshalling yaml")
+
+	projectFile.SetPath(filepath.Join(suite.dir, constants.ConfigFileName))
+	projectFile.Save()
+	suite.Require().NoError(err, "should be able to save in suite dir")
+	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
+
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockGetProject404()
+
+	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
+
+	err = Command.Execute()
+	suite.Require().NoError(err)
 }
 
 func TestActivateSuite(t *testing.T) {

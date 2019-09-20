@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,6 +16,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -39,7 +40,7 @@ import (
 
 var (
 	failInvalidNamespace = failures.Type("activate.fail.invalidnamespace", failures.FailUserInput)
-	failTargetDirExists  = failures.Type("activate.fail.direxists", failures.FailUserInput)
+	failTargetDirInUse   = failures.Type("activate.fail.dirinuse", failures.FailUserInput)
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
@@ -90,6 +91,26 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	if len(args) == 0 && !projectExists() {
+		NewExecute(cmd, args)
+		return
+	}
+
+	ExistingExecute(cmd, args)
+}
+
+func projectExists() bool {
+	if _, fail := project.GetOnce(); fail != nil {
+		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
+			return false
+		}
+	}
+	return true
+}
+
+// ExistingExecute activates a project based on the namepsace in the
+// arguments or the existing project file
+func ExistingExecute(cmd *cobra.Command, args []string) {
 	updater.PrintUpdateMessage()
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
@@ -105,6 +126,11 @@ func Execute(cmd *cobra.Command, args []string) {
 			failures.Handle(fail, locale.T("err_activate_namespace"))
 			return
 		}
+	}
+
+	fail = promptCreateProject(cmd, args)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_create_project"))
 	}
 
 	// activate should be continually called while returning true
@@ -249,8 +275,8 @@ func determineProjectPath(namespace string) (string, *failures.Failure) {
 	}
 	logging.Debug("Using: %s", directory)
 
-	if fileutils.DirExists(directory) {
-		return "", failTargetDirExists.New(locale.Tr("err_namespace_dir_exists"))
+	if fileutils.FileExists(filepath.Join(directory, constants.ConfigFileName)) {
+		return "", failTargetDirInUse.New(locale.Tr("err_namespace_dir_inuse"))
 	}
 
 	return directory, nil
@@ -273,6 +299,28 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	}
 
 	return nil, nil
+}
+
+func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
+	proj := project.Get()
+	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if fail == nil {
+		return nil
+	}
+
+	if api.FailProjectNotFound.Matches(fail.Type) {
+		create, fail := prompter.Confirm(locale.Tr("state_activate_prompt_create_project", proj.Name(), proj.Owner()), false)
+		if fail != nil {
+			return fail
+		}
+		if create {
+			NewExecute(cmd, args)
+		}
+	} else {
+		return fail
+	}
+
+	return nil
 }
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
@@ -298,7 +346,7 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		return false
 	}
 

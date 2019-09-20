@@ -1,17 +1,18 @@
 package config
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
@@ -99,10 +100,12 @@ func (i *Instance) ensureConfigExists() {
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
-	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" {
+	// This is a workaround for docker envs that don't usually have $HOME set
+	_, exists := os.LookupEnv("HOME")
+	if !exists && i.localPath == "" && runtime.GOOS != "windows" {
 		var err error
 		i.localPath, err = os.Getwd()
-		if err != nil || flag.Lookup("test.v") != nil {
+		if err != nil || condition.InTest() {
 			// Use temp dir if we can't get the working directory OR we're in a test (we don't want to write to our src directory)
 			i.localPath, err = ioutil.TempDir("", "cli-config-test")
 		}
@@ -140,7 +143,7 @@ func (i *Instance) ensureCacheExists() {
 
 func (i *Instance) exit(message string, a ...interface{}) {
 	print.Error(message, a...)
-	if funk.Contains(os.Args, "-v") || flag.Lookup("test.v") != nil {
+	if funk.Contains(os.Args, "-v") || condition.InTest() {
 		print.Error(stacktrace.Get().String())
 	}
 	i.Exit(1)

@@ -3,6 +3,7 @@ package virtualenvironment
 import (
 	"bytes"
 	"html/template"
+	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -156,6 +157,27 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
+
+	return env
+}
+
+// GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
+func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
+	envMap := v.GetEnv()
+	var env []string
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	// Append the global env
+	if inheritEnv {
+		for _, value := range os.Environ() {
+			split := strings.Split(value, "=")
+			if _, ok := envMap[split[0]]; !ok {
+				env = append(env, value)
+			}
+		}
+	}
 
 	return env
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/suite"
 )
@@ -185,19 +186,27 @@ func (suite *ProjectTestSuite) TestScripts() {
 	script := scripts[0]
 	name := script.Name()
 	value := script.Value()
+	raw := script.Raw()
+	safe := script.LanguageSafe()
 	standalone := script.Standalone()
 
 	if runtime.GOOS == "linux" {
 		suite.Equal("foo", name, "Names should match (Linux)")
 		suite.Equal("foo Linux", value, "Value should match (Linux)")
+		suite.Equal("foo $platform.name", raw, "Raw value should match (Linux)")
+		suite.Equal(language.Sh, safe, "Safe language should match (Linux)")
 		suite.True(standalone, "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		suite.Equal("bar", name, "Name should match (Windows)")
 		suite.Equal("bar Windows", value, "Value should match (Windows)")
+		suite.Equal("bar $platform.name", raw, "Raw value should match (Windows)")
+		suite.Equal(language.Batch, safe, "Safe language should match (Windows)")
 		suite.True(standalone, "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		suite.Equal("baz", name, "Names should match (OSX)")
 		suite.Equal("baz OSX", value, "Value should match (OSX)")
+		suite.Equal("baz $platform.name", raw, "Raw value should match (OSX)")
+		suite.Equal(language.Sh, safe, "Language should match (OSX)")
 		suite.True(standalone, "Standalone value should match (OSX)")
 	}
 }
@@ -258,12 +267,14 @@ func (suite *ProjectTestSuite) TestSecrets() {
 	suite.Equal("secret-user", userSecret.Description())
 	suite.True(userSecret.IsUser())
 	suite.False(userSecret.IsProject())
+	suite.Equal("user", userSecret.Scope())
 
 	projectSecret := prj.SecretByName("secret", project.SecretScopeProject)
 	suite.Require().NotNil(projectSecret)
 	suite.Equal("secret-project", projectSecret.Description())
 	suite.True(projectSecret.IsProject())
 	suite.False(projectSecret.IsUser())
+	suite.Equal("project", projectSecret.Scope())
 
 	// Value and Save not tested here as they require refactoring so we can test against interfaces (out of scope at this time)
 	// https://www.pivotaltracker.com/story/show/166586988

@@ -6,12 +6,13 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestScriptFile(t *testing.T) {
-	sf, fail := New(Bash, "echo hello")
+	sf, fail := New(language.Bash, "echo hello")
 	require.NoError(t, fail.ToError())
 	require.FileExists(t, sf.Filename())
 	sf.Clean()
@@ -21,7 +22,7 @@ func TestScriptFile(t *testing.T) {
 		require.FailNow(t, "file should not exist")
 	}
 
-	sf, fail = New(Bash, "echo hello")
+	sf, fail = New(language.Bash, "echo hello")
 	require.NoError(t, fail.ToError())
 	defer sf.Clean()
 	assert.NotEmpty(t, path.Ext(sf.Filename()))
@@ -35,7 +36,7 @@ func TestScriptFile(t *testing.T) {
 	}
 	assert.NotZero(t, res, "file should be readable/executable")
 
-	sf, fail = New(Batch, "echo hello")
+	sf, fail = New(language.Batch, "echo hello")
 	require.NoError(t, fail.ToError())
 	defer sf.Clean()
 
@@ -43,4 +44,11 @@ func TestScriptFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotZero(t, info.Size())
 	assert.True(t, info.Size() == int64(len("echo hello")))
+}
+
+func TestNewSource(t *testing.T) {
+	sf, fail := NewSource(language.Bash, "echo hello")
+	require.NoError(t, fail.ToError())
+	require.FileExists(t, sf.Filename())
+	sf.Clean()
 }
