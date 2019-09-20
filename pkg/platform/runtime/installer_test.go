@@ -12,12 +12,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/vbauerster/mpb"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
@@ -80,7 +82,9 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
-	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)), nil)
+	prg := progress.New(mpb.WithOutput(ioutil.Discard))
+	defer prg.Close()
+	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)), prg)
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
 
@@ -126,24 +130,19 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
-	onInstallCalled := false
 
 	suite.installer.OnDownload(func() { onDownloadCalled = true })
-	suite.installer.OnInstall(func() { onInstallCalled = true })
 
 	fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.True(onDownloadCalled, "OnDownload is triggered")
-	suite.True(onInstallCalled, "OnInstall is triggered")
 
 	onDownloadCalled = false
-	onInstallCalled = false
 	fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.False(onDownloadCalled, "OnDownload is not triggered, because we already downloaded it")
-	suite.False(onInstallCalled, "OnInstall is not triggered, because we already installed it")
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
