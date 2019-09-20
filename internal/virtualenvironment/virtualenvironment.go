@@ -1,6 +1,8 @@
 package virtualenvironment
 
 import (
+	"bytes"
+	"html/template"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -98,6 +100,12 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
+	pjfile := projectfile.Get()
+
+	// Dirty hack for internal mac use-case. Mocking this via artifact would be too costly for the value we'd get.
+	if rt.GOOS == "darwin" {
+		env["PYTHONPATH"] = filepath.Dir(pjfile.Path())
+	}
 
 	for _, artifactPath := range v.artifactPaths {
 		meta, fail := runtime.InitMetaData(artifactPath)
@@ -106,9 +114,33 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			continue
 		}
 
+		// Unset AffectedEnv
 		if meta.AffectedEnv != "" {
 			env[meta.AffectedEnv] = ""
 		}
+
+		// Set up env according to artifact meta
+		templateMeta := struct {
+			RelocationDir string
+			ProjectDir    string
+		}{"", filepath.Dir(pjfile.Path())}
+		for k, v := range meta.Env {
+			templateMeta.RelocationDir = meta.RelocationDir
+			valueTemplate, err := template.New(k).Parse(v)
+			if err != nil {
+				logging.Error("Skipping artifact with invalid value: %s:%s, error: %v", k, v, err)
+				continue
+			}
+			var realValue bytes.Buffer
+			err = valueTemplate.Execute(&realValue, templateMeta)
+			if err != nil {
+				logging.Error("Skipping artifact whose value could not be parsed: %s:%s, error: %v", k, v, err)
+				continue
+			}
+			env[k] = realValue.String()
+		}
+
+		// Set up PATH according to binary locations
 		for _, v := range meta.BinaryLocations {
 			path := v.Path
 			if v.Relative {
@@ -123,7 +155,6 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 		}
 	}
 
-	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
