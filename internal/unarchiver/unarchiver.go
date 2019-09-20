@@ -1,4 +1,4 @@
-package progress
+package unarchiver
 
 import (
 	"fmt"
@@ -6,11 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/ActiveState/cli/internal/progress"
 )
 
 // Unarchiver is an interface for an unarchiver with feedback about unpacking progress
 type Unarchiver interface {
-	UnarchiveWithProgress(string, string, func(int64)) error
+	UnarchiveWithProgress(source, destination string, fn progress.FileSizeCallback) error
 }
 
 // the following files are just copied from the ActiveState/archiver repository

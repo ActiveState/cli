@@ -4,7 +4,7 @@ package runtime
 
 import (
 	"github.com/ActiveState/archiver"
-	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
 // InstallerExtension is used to identify whether an artifact is one that we should care about
@@ -21,6 +21,6 @@ func Unarchiver() archiver.Unarchiver {
 }
 
 // UnarchiverWithProgress returns the ProgressUnarchiver to use
-func UnarchiverWithProgress() *progress.TarGzArchiveReader {
-	return &progress.TarGzArchiveReader{*archiver.DefaultTarGz}
+func UnarchiverWithProgress() unarchiver.Unarchiver {
+	return &unarchiver.TarGzArchive{*archiver.DefaultTarGz}
 }

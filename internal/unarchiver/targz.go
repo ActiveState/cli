@@ -1,4 +1,4 @@
-package progress
+package unarchiver
 
 import (
 	"archive/tar"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
 )
 
 /*
@@ -18,17 +19,17 @@ import (
 */
 
 // ensure that it implements the ProgressUnarchiver interface
-var _ Unarchiver = &TarGzArchiveReader{}
+var _ Unarchiver = &TarGzArchive{}
 
-// TarGzArchiveReader is an extension of an TarGz archiver implementing an unarchive method with
+// TarGzArchive is an extension of an TarGz archiver implementing an unarchive method with
 // progress feedback
-type TarGzArchiveReader struct {
+type TarGzArchive struct {
 	archiver.TarGz
 }
 
 // UnarchiveWithProgress unpacks the files from the source directory into the destination directory
-// After a file is unpacked, the progressIncrement callback is called
-func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, progressIncrement func(int64)) error {
+// After a file is unpacked, the callback is called
+func (ar *TarGzArchive) UnarchiveWithProgress(source, destination string, fn progress.FileSizeCallback) error {
 	if !fileExists(destination) && ar.MkdirAll {
 		err := mkdir(destination)
 		if err != nil {
@@ -61,12 +62,12 @@ func (ar *TarGzArchiveReader) UnarchiveWithProgress(source, destination string, 
 
 		// calling the increment callback
 		logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
-		progressIncrement(f.Size())
+		fn(int(f.Size()))
 	}
 	return nil
 }
 
-func (ar *TarGzArchiveReader) untarNext(to string) (archiver.File, error) {
+func (ar *TarGzArchive) untarNext(to string) (archiver.File, error) {
 	f, err := ar.Read()
 	if err != nil {
 		return f, err // don't wrap error; calling loop must break on io.EOF
@@ -78,7 +79,7 @@ func (ar *TarGzArchiveReader) untarNext(to string) (archiver.File, error) {
 	return f, ar.untarFile(f, filepath.Join(to, header.Name))
 }
 
-func (ar *TarGzArchiveReader) untarFile(f archiver.File, to string) error {
+func (ar *TarGzArchive) untarFile(f archiver.File, to string) error {
 	// do not overwrite existing files, if configured
 	if !f.IsDir() && !ar.OverwriteExisting && fileExists(to) {
 		return fmt.Errorf("file already exists: %s", to)

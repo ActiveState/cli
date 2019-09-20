@@ -1,4 +1,4 @@
-package progress
+package unarchiver
 
 import (
 	"archive/zip"
@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/progress"
 )
 
 /*
@@ -16,18 +17,18 @@ import (
 */
 
 // ensure that it implements the ProgressUnarchiver interface
-var _ Unarchiver = &TarGzArchiveReader{}
+var _ Unarchiver = &ZipArchive{}
 
-// ZipArchiveReader is an extension of an Zip archiver implementing an unarchive method with
+// ZipArchive is an extension of an Zip archiver implementing an unarchive method with
 // progress feedback
-type ZipArchiveReader struct {
+type ZipArchive struct {
 	archiver.Zip
 }
 
 // UnarchiveWithProgress unpacks the .zip file at source to destination.
 // Destination will be treated as a folder name.
-// progressIncrement will be called after each unpacked file with the size of that file in bytes
-func (z *ZipArchiveReader) UnarchiveWithProgress(source, destination string, progressIncrement func(int64)) error {
+// callback `fn` will be called after each unpacked file with the size of that file in bytes
+func (z *ZipArchive) UnarchiveWithProgress(source, destination string, fn progress.FileSizeCallback) error {
 	if !fileExists(destination) && z.MkdirAll {
 		err := mkdir(destination)
 		if err != nil {
@@ -60,13 +61,13 @@ func (z *ZipArchiveReader) UnarchiveWithProgress(source, destination string, pro
 		if err != nil {
 			return fmt.Errorf("reading file in zip archive: %v", err)
 		}
-		progressIncrement(f.Size())
+		fn(int(f.Size()))
 	}
 
 	return nil
 }
 
-func (z *ZipArchiveReader) extractNext(to string) (archiver.File, error) {
+func (z *ZipArchive) extractNext(to string) (archiver.File, error) {
 	f, err := z.Read()
 	if err != nil {
 		return f, err // don't wrap error; calling loop must break on io.EOF
@@ -79,7 +80,7 @@ func (z *ZipArchiveReader) extractNext(to string) (archiver.File, error) {
 	return f, z.extractFile(f, filepath.Join(to, header.Name))
 }
 
-func (z *ZipArchiveReader) extractFile(f archiver.File, to string) error {
+func (z *ZipArchive) extractFile(f archiver.File, to string) error {
 	// if a directory, no content; simply make the directory and return
 	if f.IsDir() {
 		return mkdir(to)

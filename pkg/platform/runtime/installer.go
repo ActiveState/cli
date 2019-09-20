@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -72,7 +73,7 @@ type Installer struct {
 	onInstall          func()
 	archiver           archiver.Archiver
 	unarchiver         archiver.Unarchiver
-	progressUnarchiver progress.Unarchiver
+	progressUnarchiver unarchiver.Unarchiver // an unarchiver that can report its progress
 }
 
 // InitInstaller creates a new RuntimeInstaller
