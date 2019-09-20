@@ -13,8 +13,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
 
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/config"
@@ -128,14 +126,8 @@ func (installer *Installer) Install() *failures.Failure {
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
-	cancel := make(chan struct{})
-	progress := mpb.New(mpb.WithCancel(cancel))
-	// By closing the cancel channel at the end of this route,
-	// we never need to be concerned that `progress.Wait()` will block forever
-	defer func() {
-		close(cancel)
-		progress.Wait()
-	}()
+	progress := progress.New()
+	defer progress.Close()
 
 	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
@@ -194,37 +186,21 @@ func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *f
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *mpb.Progress) *failures.Failure {
-	if installer.onInstall != nil {
-		installer.onInstall()
-	}
-
-	var bar *mpb.Bar
-	if progress != nil {
-		bar = progress.AddBar(int64(len(archives)),
-			mpb.PrependDecorators(
-				decor.StaticName(locale.T("total"), 20, 0),
-			),
-			mpb.AppendDecorators(
-				decor.Percentage(5, 0),
-			),
-		)
-	}
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *progress.Progress) *failures.Failure {
+	bar := progress.GetNewTotalbar(locale.T("installing"), len(archives), false)
 
 	for archivePath, artf := range archives {
 		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {
 			return fail
 		}
-		if bar != nil {
-			bar.Increment()
-		}
+		bar.Increment()
 	}
 
 	return nil
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, progress *mpb.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, progress *progress.Progress) *failures.Failure {
 	var installDir string
 	var fail *failures.Failure
 	if installDir, fail = installer.installDir(artf); fail != nil {
@@ -274,7 +250,7 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 	return installDir, nil
 }
 
-func (installer *Installer) unpackArchive(archivePath string, installDir string, p *mpb.Progress) *failures.Failure {
+func (installer *Installer) unpackArchive(archivePath string, installDir string, p *progress.Progress) *failures.Failure {
 	// initial guess
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
@@ -295,13 +271,15 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-	err := progress.ReportProgressDynamically(func(progressCallback progress.FileSizeCallback) error {
-		return installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, progressCallback)
 
-	}, p, 100*1024)
+	bar := p.AddDynamicByteProgressbar(20*1024, 2048)
+	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, bar.IncrBy)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
+
+	// As we are using a dynamic bar, we have to set it to complete explicitly
+	bar.Complete()
 
 	// Detect the install dir
 	tmpInstallDir := ""

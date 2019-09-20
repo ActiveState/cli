@@ -11,19 +11,18 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
 )
 
 // Get takes a URL and returns the contents as bytes
 var Get func(url string) ([]byte, *failures.Failure)
 
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress *mpb.Progress) ([]byte, *failures.Failure)
+var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
 
 func init() {
 	SetMocking(flag.Lookup("test.v") != nil)
@@ -45,7 +44,7 @@ func httpGet(url string) ([]byte, *failures.Failure) {
 	return httpGetWithProgress(url, nil)
 }
 
-func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.Failure) {
+func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
 	logging.Debug("Retrieving url: %s", url)
 	resp, err := http.Get(url)
 	if err != nil {
@@ -68,15 +67,7 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 		}
 	}
 
-	var bar *mpb.Bar
-	if progress != nil {
-		bar = progress.AddBar(int64(total),
-			mpb.BarRemoveOnComplete(),
-			mpb.PrependDecorators(
-				decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
-			),
-			mpb.AppendDecorators(decor.Percentage(5, 0)))
-	}
+	bar := progress.AddByteProgressBar(int64(total))
 
 	resp, err = http.Get(url)
 	if err != nil {
@@ -87,26 +78,22 @@ func httpGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.
 	src := resp.Body
 	var dst bytes.Buffer
 
-	if bar != nil {
-		src = bar.ProxyReader(resp.Body)
-	}
+	src = bar.ProxyReader(resp.Body)
 
 	_, err = io.Copy(&dst, src)
 	if err != nil {
 		return nil, failures.FailInput.Wrap(err)
 	}
 
-	if bar != nil {
-		if !bar.Completed() {
-			// Failsafe, so we don't get blocked by a progressbar
-			bar.IncrBy(total)
-		}
+	if !bar.Completed() {
+		// Failsafe, so we don't get blocked by a progressbar
+		bar.IncrBy(total)
 	}
 
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress *mpb.Progress) ([]byte, *failures.Failure) {
+func _testHTTPGetWithProgress(url string, progress *progress.Progress) ([]byte, *failures.Failure) {
 	return _testHTTPGet(url)
 }
 

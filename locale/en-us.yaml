@@ -353,6 +353,10 @@ error_state_activate_new_project_add:
   other: Unable to create new Platform project.
 project_empty:
   other: You have not created any projects yet
+downloading:
+  other: Downloading
+installing:
+  other: Installing
 total:
   other: Total
 projects_description:

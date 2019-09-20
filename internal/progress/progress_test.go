@@ -1,7 +1,8 @@
 package progress
 
 import (
-	"fmt"
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,48 +21,28 @@ func (mt *mockTask) mockFileSizeTask(cb FileSizeCallback) error {
 }
 
 // Test
-func TestReportProgressDynamically(t *testing.T) {
+func TestDynamicProgressbar(t *testing.T) {
 
-	cases := []struct {
-		Name   string
-		Error  error
-		UseMpb bool
-	}{
+	buf := new(bytes.Buffer)
+	func() {
+		progress := New(mpb.WithOutput(buf))
+		defer progress.Close()
 
-		{
-			Name:   "with progressbar",
-			Error:  nil,
-			UseMpb: true,
-		},
-		{
-			Name:   "with progressbar and error",
-			Error:  fmt.Errorf("test error"),
-			UseMpb: true,
-		},
-		{
-			Name:   "without progressbar",
-			Error:  nil,
-			UseMpb: false,
-		},
+		mt := mockTask{Error: nil}
+		bar := progress.AddDynamicByteProgressbar(0, 2048)
+
+		err := mt.mockFileSizeTask(bar.IncrBy)
+
+		assert.NoError(t, err, "expected no error")
+
+	}()
+
+	output := strings.TrimSpace(buf.String())
+	expectedTotal := "39.1KiB"
+
+	if len(output) >= len(expectedTotal) {
+		assert.Equal(t, expectedTotal, output[0:len(expectedTotal)])
+	} else {
+		assert.False(t, true)
 	}
-
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-
-			var progress *mpb.Progress
-			if tt.UseMpb {
-				progress = mpb.New()
-			}
-
-			mt := mockTask{Error: nil}
-			err := ReportProgressDynamically(mt.mockFileSizeTask, progress, 0)
-
-			assert.NoError(t, err, "expected no error")
-
-			if tt.UseMpb {
-				progress.Wait()
-			}
-		})
-	}
-
 }
