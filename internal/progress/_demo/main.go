@@ -1,3 +1,7 @@
+/*
+Package main demonstrates the progress bar display of the artifacts
+download and installation without downloading any actual artifacts.
+*/
 package main
 
 import (
