@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/access"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -133,6 +134,12 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 	}
 
+	allowed, fail := access.Secrets()
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_secrets_access"))
+		return
+	}
+
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -142,6 +149,10 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 
 		if branchName != constants.StableBranch {
 			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+		}
+
+		if !allowed {
+			print.Warning(locale.T("secrets_access_warning"))
 		}
 
 		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {

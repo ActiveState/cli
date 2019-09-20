@@ -844,6 +844,8 @@ err_activate_namespace:
   other: Could not activate project for the given namespace
 err_activate_create_project:
   other: Could not create new project
+err_activate_secrets_access:
+  other: Could not confirm if you are a project owner. This must be done to access project secrets
 err_invalid_namespace:
   other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
 err_namespace_dir_inuse:
@@ -900,6 +902,8 @@ err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 unstable_version_warning:
   other: The State Tool is currently in beta, we are actively changing and adding features based on developer feedback.
+secrets_access_warning:
+  other: You are not an owner of this project. You will not be able to access secrets
 export_cmd_description:
   other: Print information based on the provided subcommand
 export_recipe_cmd_description:
