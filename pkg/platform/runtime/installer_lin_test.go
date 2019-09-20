@@ -151,6 +151,7 @@ func (suite *InstallerLinuxTestSuite) TestRelocate() {
 				Relative: true,
 			},
 		},
+		Env: map[string]string{},
 	}
 
 	metaData.MakeBackwardsCompatible()
