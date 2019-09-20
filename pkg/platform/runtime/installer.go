@@ -323,11 +323,6 @@ func (installer *Installer) OnDownload(f func()) {
 	installer.onDownload = f
 }
 
-// OnInstall registers a function to be called when an install occurs
-func (installer *Installer) OnInstall(f func()) {
-	installer.onInstall = f
-}
-
 // Relocate will look through all of the files in this installation and replace any
 // character sequence in those files containing the given prefix.
 func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
