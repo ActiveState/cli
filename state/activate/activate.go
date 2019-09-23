@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -18,6 +17,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -382,7 +382,7 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		return false
 	}
 
