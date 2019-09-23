@@ -394,7 +394,12 @@ func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
 
-	Command.Execute()
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	code := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, code, "Exits with code 1")
 
 	suite.Require().Error(failures.Handled())
 	suite.Require().Equal(failures.Handled().Error(), locale.T("err_must_create_project"))
