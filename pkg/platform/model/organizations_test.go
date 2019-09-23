@@ -54,6 +54,29 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName_404() {
 	suite.Nil(org)
 }
 
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember() {
+	suite.apiMock.MockGetOrganizationMembers()
+
+	member, fail := model.FetchOrgMember("string", "test")
+	suite.NoError(fail.ToError(), "should be able to fetch member with no issue")
+	suite.NotNil(member)
+}
+
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_404() {
+	suite.apiMock.MockGetOrganizationMembers401()
+
+	_, fail := model.FetchOrgMember("string", "test")
+	suite.EqualError(fail, locale.T("err_api_not_authenticated"))
+}
+
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_NotFound() {
+	suite.apiMock.MockGetOrganizationMembers()
+
+	member, fail := model.FetchOrgMember("string", "not_test")
+	suite.EqualError(fail, locale.T("err_api_member_not_found"))
+	suite.Nil(member)
+}
+
 func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
 	suite.apiMock.MockGetOrganization()
 

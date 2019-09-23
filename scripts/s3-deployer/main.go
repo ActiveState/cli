@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/ActiveState/cli/internal/condition"
 )
 
 const awsProfileName = "default"
@@ -23,7 +24,7 @@ var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 var sess *session.Session
 
 func main() {
-	if flag.Lookup("test.v") == nil {
+	if !condition.InTest() {
 		if len(os.Args) != 5 {
 			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
 		}

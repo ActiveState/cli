@@ -2,19 +2,19 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"github.com/ActiveState/cli/internal/constants/preprocess"
-
 	"github.com/dave/jennifer/jen"
+
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants/preprocess"
 )
 
 func main() {
-	if flag.Lookup("test.v") == nil {
+	if !condition.InTest() {
 		run(os.Args)
 	}
 }
