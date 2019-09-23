@@ -1,8 +1,11 @@
 package activate
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -22,7 +25,33 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
-	httpmock.Register("GET", "organizations/test-owner/projects/test-name")
+	i := 0 // This is used to track how many times we've called for the org project mock
+	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
+		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
+		if code != 200 {
+			responseFile = fmt.Sprintf("%s-%d", responseFile, code)
+		}
+		ext := ".json"
+		if filepath.Ext(responseFile) != "" {
+			ext = ""
+		}
+		responseFile = filepath.Join(responsePath, responseFile) + ext
+
+		return responseFile
+	}
+	responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
+	request := "organizations/test-owner/projects/test-name"
+	pathToFileWithCommit := "organizations/test-owner/projects/test-name-commit"
+	method := "GET"
+	code := 200
+	httpmock.RegisterWithResponderBody(method, request, code, func(req *http.Request) (int, string) {
+		responseFile := getResponseFile(method, code, pathToFileWithCommit, responsePath)
+		if i <= 0 {
+			i++
+			responseFile = getResponseFile(method, code, request, responsePath)
+		}
+		return 200, string(fileutils.ReadFileUnsafe(responseFile))
+	})
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
 
