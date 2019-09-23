@@ -426,7 +426,7 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }
 
-func (suite *ActivateTestSuite) TestPromptCreateProject() {
+func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
 
@@ -445,10 +445,14 @@ func (suite *ActivateTestSuite) TestPromptCreateProject() {
 
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
+	code := ex.WaitForExit(func() {
 		Command.Execute()
 	})
-	suite.Require().Equal(1, exitCode, "Should fail due to no runtime/commitid")
+	suite.Require().Equal(1, code, "Exits with code 1")
+
+	suite.Require().Error(failures.Handled())
+	suite.Require().Equal(failures.Handled().Error(), locale.T("err_must_create_project"))
+
 }
 
 func TestActivateSuite(t *testing.T) {
