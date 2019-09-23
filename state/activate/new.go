@@ -28,10 +28,40 @@ import (
 
 var exit = os.Exit
 
+type projectStruct struct {
+	name,
+	owner,
+	path,
+	project string
+}
+
 // NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
+	proj := projectCreatePrompts()
+	path, fail := fetchPath(proj.name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
 
+	// Create the project locally on disk.
+	if _, fail = projectfile.Create(proj.project, proj.path); fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
+
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+}
+
+// CopyExecute creates a new project from an existing activestate.yaml
+func CopyExecute(cmd *cobra.Command, args []string) {
+	projFile := project.Get().Source()
+	projFile.Project = projectCreatePrompts().project
+	projFile.Save()
+}
+
+func projectCreatePrompts() projectStruct {
 	var defaultName string
 	if projectExists() {
 		proj := project.Get()
@@ -77,7 +107,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	// Create the project directory
-	if fail = createProjectDir(path); fail != nil {
+	if fail := createProjectDir(path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
@@ -98,14 +128,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	} else {
 		projectURL = projectURL + fmt.Sprintf("?commitID=%s", commitID)
 	}
-
-	// Create the project locally on disk.
-	if _, fail = projectfile.Create(projectURL, path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
-
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	return projectStruct{name: name, owner: owner, path: path, project: projectURL}
 }
 
 func latestCommitID(owner, project string) (string, *failures.Failure) {

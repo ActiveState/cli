@@ -314,7 +314,7 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 			return fail
 		}
 		if create {
-			NewExecute(cmd, args)
+			CopyExecute(cmd, args)
 		}
 	} else {
 		return fail
