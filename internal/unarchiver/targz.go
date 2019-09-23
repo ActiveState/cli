@@ -2,6 +2,7 @@ package unarchiver
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +26,46 @@ var _ Unarchiver = &TarGzArchive{}
 // progress feedback
 type TarGzArchive struct {
 	archiver.TarGz
+	inputStreamWrapper func(io.Reader) *io.Reader
+}
+
+// NewTarGz initializes a new TarGzArchiver
+func NewTarGz() *TarGzArchive {
+	return &TarGzArchive{*archiver.DefaultTarGz, func(r io.Reader) *io.Reader { return &r }}
+}
+
+// SetInputStreamWrapper sets a new wrapper function for the io Reader used during unpacking
+func (ar *TarGzArchive) SetInputStreamWrapper(f func(io.Reader) *io.Reader) {
+	ar.inputStreamWrapper = f
+}
+
+// GetExtractedSize returns the size of the extracted summed up files in the archive
+func (ar *TarGzArchive) GetExtractedSize(source string) (int, error) {
+	archiveStream, err := os.Open(source)
+	if err != nil {
+		return 0, err
+	}
+	defer archiveStream.Close()
+	var size int
+	buf := make([]byte, 10*1024)
+
+	gzr, err := gzip.NewReader(archiveStream)
+	if err != nil {
+		return 0, err
+	}
+	defer gzr.Close()
+
+	for {
+		nread, err := gzr.Read(buf)
+		if err == io.EOF {
+			return size, nil
+		}
+		if err != nil {
+			return 0, err
+		}
+		size += nread
+	}
+
 }
 
 // UnarchiveWithProgress unpacks the files from the source directory into the destination directory
@@ -37,14 +78,16 @@ func (ar *TarGzArchive) UnarchiveWithProgress(source, destination string, fn pro
 		}
 	}
 
-	archiveStream, err := os.Open(source)
+	archiveFile, err := os.Open(source)
 	if err != nil {
 		return err
 	}
-	defer archiveStream.Close()
+	defer archiveFile.Close()
+
+	wrappedStream := ar.inputStreamWrapper(archiveFile)
 
 	// read one file at a time from the archive
-	err = ar.Open(archiveStream, 0)
+	err = ar.Open(*wrappedStream, 0)
 	if err != nil {
 		return err
 	}

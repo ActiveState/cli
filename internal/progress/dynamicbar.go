@@ -1,6 +1,8 @@
 package progress
 
 import (
+	"io"
+
 	"github.com/vbauerster/mpb/v4"
 )
 
@@ -32,4 +34,13 @@ func (db *DynamicBar) Complete() {
 	if !db.bar.Completed() {
 		db.bar.IncrBy(int(db.bar.Total()))
 	}
+}
+
+// ProxyReader wraps a Reader with functionality that automatically updates
+// the bar with progress about how many bytes have been read from the underlying
+// reader so far.
+func (db *DynamicBar) ProxyReader(r io.Reader) *io.Reader {
+	var o io.Reader
+	o = db.bar.ProxyReader(r)
+	return &o
 }

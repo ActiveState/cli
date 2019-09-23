@@ -23,6 +23,20 @@ var _ Unarchiver = &ZipArchive{}
 // progress feedback
 type ZipArchive struct {
 	archiver.Zip
+	inputStreamWrapper func(io.Reader) *io.Reader
+}
+
+// NewZip initializes a new ZipArchive
+func NewZip() *ZipArchive {
+	return &ZipArchive{
+		*archiver.DefaultZip,
+		func(r io.Reader) *io.Reader { return &r },
+	}
+}
+
+// SetInputStreamWrapper sets a new wrapper function for the io Reader used during unpacking
+func (z *ZipArchive) SetInputStreamWrapper(f func(io.Reader) *io.Reader) {
+	z.inputStreamWrapper = f
 }
 
 // UnarchiveWithProgress unpacks the .zip file at source to destination.
@@ -47,7 +61,9 @@ func (z *ZipArchive) UnarchiveWithProgress(source, destination string, fn progre
 		return fmt.Errorf("statting source file: %v", err)
 	}
 
-	err = z.Open(file, fileInfo.Size())
+	archiveStream := z.inputStreamWrapper(file)
+
+	err = z.Open(*archiveStream, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("opening zip archive for reading: %v", err)
 	}

@@ -22,5 +22,5 @@ func Unarchiver() archiver.Unarchiver {
 
 // UnarchiverWithProgress returns the ProgressUnarchiver to use
 func UnarchiverWithProgress() unarchiver.Unarchiver {
-	return &unarchiver.TarGzArchive{*archiver.DefaultTarGz}
+	return unarchiver.NewTarGz()
 }
