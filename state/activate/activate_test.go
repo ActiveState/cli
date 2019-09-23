@@ -255,8 +255,6 @@ func (suite *ActivateTestSuite) TestActivateSecretsAccessError() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
-	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 	httpmock.RegisterWithCode("GET", "/organizations/ActiveState/members", 401)
 
 	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
@@ -281,11 +279,10 @@ func (suite *ActivateTestSuite) TestActivateSecretsNoAccess() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
-	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
-	httpmock.Register("GET", "/organizations/ActiveState/members")
+	httpmock.Register("GET", "organizations/AccessOrg/projects/CodeIntel")
+	httpmock.Register("GET", "/organizations/AccessOrg/members")
 
-	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "access")
 	err := os.Chdir(dir)
 	suite.Require().NoError(err, "unable to chdir to testdata dir")
 	suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
