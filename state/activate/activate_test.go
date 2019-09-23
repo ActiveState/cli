@@ -104,7 +104,6 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
-	httpmock.Register("GET", "/organizations/ActiveState/members")
 
 	authentication.Get().AuthenticateWithToken("")
 
@@ -121,7 +120,6 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetOrganizationMembers()
 
 	if !withLang {
 		suite.apiMock.MockGetProjectNoLanguage()
@@ -171,7 +169,6 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
 	suite.apiMock.MockGetProjectNoLanguage()
 	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
-	suite.apiMock.MockGetOrganizationMembers()
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
@@ -247,32 +244,6 @@ func makeLFRParams() lfrParams {
 		rcvs: make(chan *hail.Received, 1),
 		subs: newMockSubShell(),
 	}
-}
-
-func (suite *ActivateTestSuite) TestActivateSecretsAccessError() {
-	suite.rMock.MockFullRuntime()
-
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
-	httpmock.RegisterWithCode("GET", "/organizations/ActiveState/members", 401)
-
-	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
-	err := os.Chdir(dir)
-	suite.Require().NoError(err, "unable to chdir to testdata dir")
-	suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	out := capturer.CaptureOutput(func() {
-		code := ex.WaitForExit(func() {
-			suite.NoError(Command.Execute())
-		})
-		suite.Equal(1, code, fmt.Sprintf("Expects exit code %d", 1))
-	})
-	suite.Contains(out, locale.T("err_activate_secrets_access"))
-	suite.Contains(out, locale.T("secrets_access_warning"))
 }
 
 func (suite *ActivateTestSuite) TestListenForReactivation() {
@@ -389,7 +360,6 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
-	httpmock.Register("GET", "/organizations/ActiveState/members")
 
 	authentication.Get().AuthenticateWithToken("")
 
@@ -420,7 +390,6 @@ func (suite *ActivateTestSuite) TestPromptCreateProject() {
 	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
 
 	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetOrganizationMembers()
 	suite.apiMock.MockGetProject404()
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)

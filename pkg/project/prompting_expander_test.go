@@ -58,6 +58,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.platformMock.Register("POST", "/login")
+	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
 	authentication.Get().AuthenticateWithToken("")
 }
 
