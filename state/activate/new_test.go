@@ -87,16 +87,17 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 
 	authentication.Get().AuthenticateWithToken("")
 
-	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
+	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
 	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
 
 	projPathOriginal := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", constants.ConfigFileName)
-	fail := fileutils.CopyFile(projPathOriginal, suite.dir)
+	newPath := filepath.Join(suite.dir, constants.ConfigFileName)
+	fail := fileutils.CopyFile(projPathOriginal, newPath)
 	suite.NoError(fail.ToError(), "Should not fail to copy file")
 	os.Chdir(suite.dir)
-	
+
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
 	suite.NoError(failures.Handled(), "No failure occurred")
@@ -105,5 +106,7 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.NoError(err, "Project was created")
 	prj, fail := project.GetOnce()
 	suite.NoError(fail.ToError(), "Should retrieve project")
-	suite.Equal(,prj.URL)
+	newURL := "https://platform.activestate.com/test-owner/test-name"
+	suite.Equal(newURL, prj.URL())
+	suite.Equal("master", prj.Version())
 }
