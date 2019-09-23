@@ -255,6 +255,7 @@ func (suite *ActivateTestSuite) TestActivateSecretsAccessError() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
+	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 	httpmock.RegisterWithCode("GET", "/organizations/ActiveState/members", 401)
 
 	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
@@ -271,27 +272,6 @@ func (suite *ActivateTestSuite) TestActivateSecretsAccessError() {
 		suite.Equal(1, code, fmt.Sprintf("Expects exit code %d", 1))
 	})
 	suite.Contains(out, locale.T("err_activate_secrets_access"))
-}
-
-func (suite *ActivateTestSuite) TestActivateSecretsNoAccess() {
-	suite.rMock.MockFullRuntime()
-
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.Register("GET", "organizations/AccessOrg/projects/CodeIntel")
-	httpmock.Register("GET", "/organizations/AccessOrg/members")
-
-	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "access")
-	err := os.Chdir(dir)
-	suite.Require().NoError(err, "unable to chdir to testdata dir")
-	suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	out := capturer.CaptureOutput(func() {
-		suite.NoError(Command.Execute())
-	})
 	suite.Contains(out, locale.T("secrets_access_warning"))
 }
 

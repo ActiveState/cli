@@ -137,7 +137,6 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 	allowed, fail := access.Secrets()
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_secrets_access"))
-		return
 	}
 
 	// activate should be continually called while returning true
