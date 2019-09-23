@@ -33,7 +33,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
 	var defaultName string
-	if projectExists() {
+	if projectExists(Flags.Path) {
 		proj := project.Get()
 		defaultName = proj.Name()
 	}
@@ -70,10 +70,13 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	path, fail := fetchPath(name)
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+	path := Flags.Path
+	if path == "" {
+		path, fail = fetchPath(name)
+		if fail != nil {
+			failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+			exit(1)
+		}
 	}
 
 	// Create the project directory
@@ -87,6 +90,12 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	// Create the project locally on disk.
 	if _, fail = projectfile.Create(projectURL, path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
+
+	err := os.Chdir(path)
+	if err != nil {
+		failures.Handle(err, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 

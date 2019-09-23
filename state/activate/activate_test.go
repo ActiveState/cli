@@ -75,7 +75,7 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-
+	Flags.Path = ""
 	Args.Namespace = ""
 
 	failures.ResetHandled()
@@ -143,6 +143,55 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.Require().NoError(fail.ToError())
 	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 	return pjfile
+}
+
+func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir), ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+	Cc.SetArgs(nil)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(suite.dir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+
+	// Activate existing project
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})
+	err = Command.Execute()
+	suite.Require().NoError(err)
+	Cc.SetArgs(nil)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+}
+
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockVcsGetCheckpoint()
+
+	// Override what MockFullRuntime setup for retrieving a project
+	httpmock.Register("GET", "/organizations/no/projects/match")
+
+	Cc := Command.GetCobraCmd()
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", dir), "no/match"})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, exitCode, "Should fail do to non matching namespaces in as.yaml")
+	Cc.SetArgs(nil)
 }
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
