@@ -26,6 +26,25 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
+	setupProjectMock()
+	httpmock.Register("POST", "vcs/commit")
+	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+
+	authentication.Get().AuthenticateWithToken("")
+
+	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+
+	err := Command.Execute()
+	suite.NoError(err, "Executed without error")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	_, err = os.Stat(filepath.Join(suite.dir, constants.ConfigFileName))
+	suite.NoError(err, "Project was created")
+}
+
+func setupProjectMock() {
 	orgProjMockCalled := false //  The project response changes once the project is created so we need
 	// too provide a different response after the first call to this mock
 	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
@@ -54,21 +73,6 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 		}
 		return 200, string(fileutils.ReadFileUnsafe(responseFile))
 	})
-	httpmock.Register("POST", "vcs/commit")
-	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
-
-	authentication.Get().AuthenticateWithToken("")
-
-	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
-	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
-
-	err := Command.Execute()
-	suite.NoError(err, "Executed without error")
-	suite.NoError(failures.Handled(), "No failure occurred")
-
-	_, err = os.Stat(filepath.Join(suite.dir, constants.ConfigFileName))
-	suite.NoError(err, "Project was created")
 }
 
 func (suite *ActivateTestSuite) TestActivateCopy() {
