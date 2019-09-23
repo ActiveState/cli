@@ -1,12 +1,12 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -20,16 +20,23 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var exit = os.Exit
 
-// NewExecute the new command.
+// NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 
-	name, fail := prompter.Input(locale.T("state_activate_new_prompt_name"), "", prompt.InputRequired)
+	var defaultName string
+	if projectExists(Flags.Path) {
+		proj := project.Get()
+		defaultName = proj.Name()
+	}
+
+	name, fail := prompter.Input(locale.T("state_activate_new_prompt_name"), defaultName, prompt.InputRequired)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
@@ -41,7 +48,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		exit(1)
 	}
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
+	if !authentication.Get().Authenticated() && !condition.InTest() {
 		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
 	}

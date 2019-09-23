@@ -49,8 +49,8 @@ func FetchOrgMembers(urlName string) ([]*mono_models.Member, *failures.Failure) 
 }
 
 // FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
-func FetchOrgMember(org *mono_models.Organization, name string) (*mono_models.Member, *failures.Failure) {
-	members, failure := FetchOrgMembers(org.Urlname)
+func FetchOrgMember(orgName, name string) (*mono_models.Member, *failures.Failure) {
+	members, failure := FetchOrgMembers(orgName)
 	if failure != nil {
 		return nil, failure
 	}

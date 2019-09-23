@@ -45,3 +45,10 @@ func TestScriptFile(t *testing.T) {
 	assert.NotZero(t, info.Size())
 	assert.True(t, info.Size() == int64(len("echo hello")))
 }
+
+func TestNewSource(t *testing.T) {
+	sf, fail := NewSource(language.Bash, "echo hello")
+	require.NoError(t, fail.ToError())
+	require.FileExists(t, sf.Filename())
+	sf.Clean()
+}

@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -170,6 +172,26 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 
 	suite.Equal(true, true, "Execute didn't panic")
 	suite.NoError(failures.Handled(), "No failure occurred")
+}
+
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockVcsGetCheckpoint()
+
+	// Override what MockFullRuntime setup for retrieving a project
+	httpmock.Register("GET", "/organizations/no/projects/match")
+
+	Cc := Command.GetCobraCmd()
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", dir), "no/match"})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, exitCode, "Should fail do to non matching namespaces in as.yaml")
+	Cc.SetArgs(nil)
 }
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
@@ -402,6 +424,35 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Require().NoError(err)
 
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
+func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
+	projectFile := &projectfile.Project{}
+	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.Require().NoError(err, "unexpected error marshalling yaml")
+
+	projectFile.SetPath(filepath.Join(suite.dir, constants.ConfigFileName))
+	projectFile.Save()
+	suite.Require().NoError(err, "should be able to save in suite dir")
+	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
+
+	suite.authMock.MockLoggedin()
+	suite.apiMock.MockGetProject404()
+
+	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
+
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	code := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, code, "Exits with code 1")
+
+	suite.Require().Error(failures.Handled())
+	suite.Require().Equal(failures.Handled().Error(), locale.T("err_must_create_project"))
+
 }
 
 func TestActivateSuite(t *testing.T) {

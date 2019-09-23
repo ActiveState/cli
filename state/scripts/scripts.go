@@ -35,6 +35,10 @@ var Command = &commands.Command{
 	},
 }
 
+func init() {
+	Command.Append(EditCommand)
+}
+
 // Execute the scripts command.
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
