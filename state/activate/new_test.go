@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func (suite *ActivateTestSuite) TestActivateNew() {
@@ -25,7 +26,8 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
-	i := 0 // This is used to track how many times we've called for the org project mock
+	orgProjMockCalled := false //  The project response changes once the project is created so we need
+	// too provide a different response after the first call to this mock
 	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
 		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
 		if code != 200 {
@@ -46,8 +48,8 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	code := 200
 	httpmock.RegisterWithResponderBody(method, request, code, func(req *http.Request) (int, string) {
 		responseFile := getResponseFile(method, code, pathToFileWithCommit, responsePath)
-		if i <= 0 {
-			i++
+		if !orgProjMockCalled {
+			orgProjMockCalled = true
 			responseFile = getResponseFile(method, code, request, responsePath)
 		}
 		return 200, string(fileutils.ReadFileUnsafe(responseFile))
