@@ -8,10 +8,15 @@ import (
 )
 
 func stop(cmd *exec.Cmd) *failures.Failure {
-	sig := syscall.SIGTERM
-
 	// may panic if process no longer exists
 	defer failures.Recover()
+
+	sig := syscall.SIGHUP
+	if err := cmd.Process.Signal(sig); err != nil {
+		return FailSignalCmd.Wrap(err)
+	}
+
+	sig = syscall.SIGTERM
 	if err := cmd.Process.Signal(sig); err != nil {
 		return FailSignalCmd.Wrap(err)
 	}

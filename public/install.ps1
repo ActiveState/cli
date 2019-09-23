@@ -20,6 +20,7 @@ param (
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
         [string]
         $f = "state.exe"
+    ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
 $script:NOPROMPT = $n
@@ -27,6 +28,7 @@ $script:TARGET = ($t).Trim()
 $script:STATEEXE = ($f).Trim()
 $script:STATE = $f.Substring(0, $f.IndexOf("."))
 $script:BRANCH = ($b).Trim()
+$script:ACTIVATE =($activate).Trim()
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
@@ -50,27 +52,6 @@ function notifySettingChange(){
     # notify all windows of environment block change
     [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result);
 
-}
-
-function isInRegistry($path){
-    $regpaths = (Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path.Split(';')
-    $inReg = $False
-    for ($i = 0; $i -lt $regpaths.Count; $i++) {
-        if ($regpaths[$i] -eq $path) {
-            $inReg = $True
-        }
-    }
-    $inReg
-}
-function isOnPath($path){
-    $envpaths = $env:Path.Split(';')
-    $inEnv = $False
-    for ($i = 0; $i -lt $envpaths.Count; $i++) {
-        if ($envpaths[$i] -eq $path) {
-            $inEnv = $True
-        }
-    }
-    $inEnv
 }
 
 function isAdmin
@@ -172,8 +153,19 @@ function isValidFolder([string] $path)
     return checkPermsRecur $path
 }
 
+# stateToolPathIsSet returns true if the state tool's installation directory is in the current PATH
+function isStateToolInstallationOnPath($installDirectory) {
+    $existing = getExistingOnPath
+    $existing -eq $installDirectory
+}
+
 function getExistingOnPath(){
-    (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
+    $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
+    if ($path -eq $null) {
+        ""
+    } else {
+       (Resolve-Path (split-path -Path $path -Parent)).Path
+    }
 }
 
 function getDefaultInstallDir() {
@@ -220,14 +212,21 @@ function install()
     $USAGE="install.ps1 [flags]
     
     Flags:
-    -b <branch>   Default 'unstable'.  Specify an alternative branch to install from (eg. master)
-    -n               Don't prompt for anything, just install and override any existing executables
-    -t               Install target dir
-    -f               Binary filename to use
-    -h               Shows usage information (what you're currently reading)"
+    -b <branch>          Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+    -n                   Don't prompt for anything, just install and override any existing executables
+    -t <dir>             Install target dir
+    -f <file>            Default 'state.exe'.  Binary filename to use
+    -activate <project>  Activate a project when state tools is correctly installed
+    -h                   Show usage information (what you're currently reading)"
+
     if ($h) {
         Write-Host $USAGE
         exit 0
+    }
+
+    if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
+        Write-Error "Flags -n and -activate cannot be set at the same time."
+        exit(1)
     }
     
     # State tool binary base dir
@@ -325,7 +324,22 @@ function install()
 
     # Path setup
     $newPath = "$installDir;$env:Path"
-    if( -Not (isInRegistry $installDir) -And (isAdmin)){
+    # Check if installation is in $PATH, if not, update SYSTEM or USER settings
+    if (isStateToolInstallationOnPath $installDir) {
+        Write-Host "`nInstallation complete." -ForegroundColor Yellow
+        Write-Host "You may now start using the '$script:STATEEXE' program."
+        if ( $script:ACTIVATE -ne "" ) {
+            # This creates an interactive sub-shell.
+            Write-Host "`nActivating project $script:ACTIVATE`n" -ForegroundColor Yellow
+            &$script:STATEEXE activate $script:ACTIVATE
+        }
+        exit(0)
+    }
+
+    # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
+
+    # If we have administrative rights, attempt to set PATH system wide...
+    if(isAdmin){
         if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment...`n"
             Write-Host "Adding $installDir to system PATH`n"
@@ -337,13 +351,19 @@ function install()
         } else {
             Write-Host "Manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
         }
-    } 
-    if ( -Not (isAdmin)){
-        Write-Host "Please run this installer in a terminal with admin privileges or manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+
+    # ... without administrative rights,  we tell the user to update the PATH variable manually
     } else {
         Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
     Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
+
+    # Print a warning that we cannot automatically activate a requested project.
+    if ( "$script:ACTIVATE" -eq "" ) {
+        Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
+        Write-Host "In order to activate a project, the state tool needs to be installed in your PATH first."
+        Write-Host "To manually activate the project run 'state activate $script:ACTIVATE' once 'state' is on your PATH"
+    }
 }
 
 install

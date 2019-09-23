@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -63,6 +63,7 @@ type Command struct {
 	Name               string
 	Description        string
 	Run                func(cmd *cobra.Command, args []string)
+	PersistentPreRun   func(cmd *cobra.Command, args []string)
 	Aliases            []string
 	Flags              []*Flag
 	Arguments          []*Argument
@@ -204,7 +205,7 @@ func (c *Command) Register() {
 	}
 
 	if c.Exiter == nil {
-		if flag.Lookup("test.v") == nil {
+		if !condition.InTest() {
 			c.Exiter = os.Exit
 		} else {
 			c.Exiter = func(code int) {
@@ -218,6 +219,7 @@ func (c *Command) Register() {
 		Aliases:            c.Aliases,
 		Short:              T(c.Description),
 		Run:                c.runner,
+		PersistentPreRun:   c.PersistentPreRun,
 		Args:               c.argInputValidator,
 		DisableFlagParsing: c.DisableFlagParsing,
 		Hidden:             c.Hidden,

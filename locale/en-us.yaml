@@ -329,6 +329,8 @@ project_err:
   other: Unable to list projects
 error_state_activate_new_no_auth:
   other: Please authenticate by running "state auth" before creating a new project.
+state_activate_prompt_create_project:
+  other: The project {{.V0}} does not exist under {{.V1}}. Would you like to create it now?
 state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
 error_state_activate_new_aborted:
@@ -393,8 +395,32 @@ scripts_err:
   other: Error managing user's Scripts
 scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
+scripts_no_name:
+  other: No script with name {{.V0}}
 scripts_err_output:
   other: Failed to display scripts output
+edit_description:
+  other: Edit a given script
+edit_script_cmd_name_arg:
+  other: name
+edit_script_cmd_name_arg_description:
+  other: The name of the script to be edited
+edit_script_cmd_expand_flag:
+  other: Whether or not to expand constants within the script
+edit_scripts_no_name:
+  other: Could not find script with the given name {{.V0}}
+edit_scripts_project_file_saved:
+  other: Script changes dectect, updating activestate.yaml. Press (Y/y) when done editing
+error_open_not_installed_lin:
+  other: Please install '{{.V0}}' to edit scripts
+error_edit_script:
+  other: Failed to edit script
+error_edit_unrecognized_platform:
+  other: Could not open script file on this platform {{.V0}}
+error_edit_watcher_channel_closed:
+  other: Encountered error watching scriptfile. Please restart edit command
+prompt_done_editing:
+  other: Are you done editing?
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
@@ -574,6 +600,10 @@ secrets_err:
   other: Error managing user's Secrets
 secrets_err_defined:
   other: Failed to obtain defined secrets
+secrets_err_access:
+  other: Unable to check access to project secrets. You will not be able to access any secrets for this project
+secrets_warning_no_access:
+  other: You are not authorized to view secrets for this project
 secrets_err_missing_field:
   other: "Secret is missing required field: {{.V0}}"
 secrets_err_output:
@@ -812,6 +842,8 @@ err_artifact_invalid_url:
   other: API Responded with an invalid artifact URL, please contact support
 err_activate_namespace:
   other: Could not activate project for the given namespace
+err_activate_create_project:
+  other: Could not create new project
 err_invalid_namespace:
   other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
 err_namespace_dir_inuse:
@@ -910,6 +942,8 @@ err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
 warn_deprecation_owner_name_fields:
   other: "DEPRECATION WARNING: Your project is using 'owner' and 'name' fields, these should be replaced with a single project field, eg. 'project: https://platform.activestate.com/{{.V0}}/{{.V1}}'"
+cpu_profiling_setup_failed:
+  other: CPU profiling setup failed
 err_main_panic:
   other: |
     An unexpected error occurred while running the State tool

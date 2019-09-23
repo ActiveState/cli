@@ -3,12 +3,18 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
+	"github.com/ActiveState/cli/state/internal/profile"
 	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/organizations"
@@ -44,4 +50,24 @@ func register() {
 
 	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)
+}
+
+func runCPUProfiling() (cleanUp func(), fail *failures.Failure) {
+	timeString := time.Now().Format("20060102-150405.000")
+	timeString = strings.Replace(timeString, ".", "-", 1)
+	cpuProfFile := fmt.Sprintf("cpu_%s.prof", timeString)
+
+	cleanUpCPU, fail := profile.CPU(cpuProfFile)
+	if fail != nil {
+		return nil, fail
+	}
+
+	logging.Debug(fmt.Sprintf("profiling cpu (%s)", cpuProfFile))
+
+	cleanUp = func() {
+		logging.Debug("cleaning up cpu profiling")
+		cleanUpCPU()
+	}
+
+	return cleanUp, nil
 }

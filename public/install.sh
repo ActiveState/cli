@@ -9,11 +9,12 @@ USAGE=`cat <<EOF
 install.sh [flags]
 
 Flags:
- -b <branch>      Specify an alternative branch to install from (eg. master)
- -n               Don't prompt for anything, just install and override any existing executables
- -t               Target directory
- -f               Filename to use
- -h               Shows usage information (what you're currently reading)
+ -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+ -n                    Don't prompt for anything, just install and override any existing executables
+ -t <dir>              Install target directory
+ -f <file>             Default 'state'.  Binary filename to use
+ --activate <project>  Activate a project when state tools is correctly installed
+ -h                    Show usage information (what you're currently reading)
 EOF
 `
 
@@ -25,6 +26,8 @@ STATEEXE="state"
 STATEID="ActiveStateCLI"
 # Optional target directory
 TARGET=""
+# Optionally download and activate a project after install in the current directory
+ACTIVATE=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -106,8 +109,17 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:f:?h" opt; do
+while getopts "nb:t:f:?h-:" opt; do
   case $opt in
+  -)  # parse long options
+    case ${OPTARG} in
+      activate)
+        # zsh compliant indirection, gathering the next command line argument
+        eval "ACTIVATE=\"\${${OPTIND}}\""
+        OPTIND=$(( OPTIND + 1 ))
+        ;;
+    esac
+    ;;
   b)
     STATEURL=`echo $STATEURL | sed -e "s/unstable/$OPTARG/;"`
     ;;
@@ -126,6 +138,13 @@ while getopts "nb:t:f:?h" opt; do
     ;;
   esac
 done
+
+# state activate currently does not run without user interaction, 
+# so we are bailing if that's being requested...
+if $NOPROMPT && [ -n "$ACTIVATE" ]; then
+  error "Flags -n and --activate cannot be set at the same time."
+  exit 1
+fi
 
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH.json
@@ -257,22 +276,44 @@ done
 # permitted to.
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   info "Installation complete."
+  if [ -n "${ACTIVATE}" ]; then
+    # switch this shell to interactive mode
+    set -i
+    # control flow of this script ends with this line: replace the shell with the activated project's shell
+    exec $STATEEXE activate ${ACTIVATE}
+  fi
   info "You may now start using the '$STATEEXE' program."
   exit 0
 fi
+
+# Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
+
+# Prints a warning if an activation was requested and state tool is not in the PATH
+activation_warning() {
+  if [ -n "$ACTIVATE" ]; then
+    echo
+    warn "Cannot activate ${ACTIVATE} yet."
+    echo "In order to activate a project, the state tool needs to be installed in your PATH first."
+    echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
+  fi
+}
+
 profile="`info $HOME`/.profile"
 if [ ! -w "$profile" ]; then
   info "Installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
+  activation_warning
   exit 0
 fi
+
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
 RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
 if [ "$RESPONSE" != "y" ]; then
   info "Installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
+  activation_warning
   exit 0
 fi
 info "Updating environment..."
@@ -288,3 +329,5 @@ fi
 info "Installation complete."
 echo "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
+
+activation_warning
