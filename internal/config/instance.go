@@ -138,7 +138,7 @@ func (i *Instance) ensureConfigExists() {
 
 func (i *Instance) ensureCacheExists() {
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		path, err := tempDir("state-cache-tests")
 		if err != nil {
 			log.Panicf("Error while creating temp dir: %v", err)
