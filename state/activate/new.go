@@ -112,7 +112,6 @@ func projectCreatePrompts() projectStruct {
 		exit(1)
 	}
 
-	var commitID string
 	cid, fail := model.LatestCommitID(owner, name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
@@ -121,16 +120,12 @@ func projectCreatePrompts() projectStruct {
 		exit(1)
 	}
 
-	if cid != nil {
-		commitID = cid.String()
-	}
-
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
-	if commitID == "" {
+	if cid == nil || cid.String() == "" {
 		print.Warning(locale.T("error_state_activate_new_no_commit_aborted",
 			map[string]interface{}{"Owner": owner, "ProjectName": name}))
 	} else {
-		projectURL = projectURL + fmt.Sprintf("?commitID=%s", commitID)
+		projectURL = projectURL + fmt.Sprintf("?commitID=%s", cid.String())
 	}
 	return projectStruct{name: name, owner: owner, path: path, project: projectURL}
 }
