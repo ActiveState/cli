@@ -230,6 +230,8 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 
 func getProjectFileByPath(path string) *project.Project {
 	if path != "" {
+		// CWD is used to return to the directory before retrieving the as.yaml
+		// file was initiated.
 		cwd, err := os.Getwd()
 
 		if err != nil {
