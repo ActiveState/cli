@@ -22,7 +22,7 @@ var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.nopr
 // FailInputSecretValue is used when error arises from user providing a secret value.
 var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
 
-// FailExpandNoAccess ise used when the currently authorized user does not have access to project secrets
+// FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
 var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess")
 
 func init() {
