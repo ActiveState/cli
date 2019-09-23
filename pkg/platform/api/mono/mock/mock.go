@@ -99,6 +99,18 @@ func (m *Mock) MockGetOrganization401() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 401)
 }
 
+// MockGetOrganizationMembers register a mock returning the members of the specific
+// organization "string"
+func (m *Mock) MockGetOrganizationMembers() {
+	httpmock.RegisterWithCode("GET", "/organizations/string/members", 200)
+}
+
+// MockGetOrganizationMembers401 register a mock for an organization's members requuest when
+// we are not authenticated
+func (m *Mock) MockGetOrganizationMembers401() {
+	httpmock.RegisterWithCode("GET", "/organizations/string/members", 401)
+}
+
 // MockGetOrganizationLimits registers a mock returning the limits for an organization
 func (m *Mock) MockGetOrganizationLimits() {
 	httpmock.RegisterWithCode("GET", "/organizations/string/limits", 200)

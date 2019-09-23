@@ -1,7 +1,6 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -63,7 +63,7 @@ func CopyExecute(cmd *cobra.Command, args []string) {
 
 func projectCreatePrompts() projectStruct {
 	var defaultName string
-	if projectExists() {
+	if projectExists(Flags.Path) {
 		proj := project.Get()
 		defaultName = proj.Name()
 	}
@@ -80,7 +80,7 @@ func projectCreatePrompts() projectStruct {
 		exit(1)
 	}
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
+	if !authentication.Get().Authenticated() && !condition.InTest() {
 		print.Error(locale.T("error_state_activate_new_no_auth"))
 		exit(1)
 	}
@@ -100,10 +100,13 @@ func projectCreatePrompts() projectStruct {
 		exit(1)
 	}
 
-	path, fail := fetchPath(name)
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+	path := Flags.Path
+	if path == "" {
+		path, fail = fetchPath(name)
+		if fail != nil {
+			failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+			exit(1)
+		}
 	}
 
 	// Create the project directory
