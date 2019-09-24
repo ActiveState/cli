@@ -1,7 +1,6 @@
 package run
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -93,7 +92,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	// Activate the state if needed.
-	fmt.Printf("Standalone: %v, Activated: %v", script.Standalone(), subshell.IsActivated())
 	if !script.Standalone() && !subshell.IsActivated() {
 		print.Info(locale.T("info_state_run_activating_state"))
 		venv := virtualenvironment.Init()

@@ -119,13 +119,7 @@ jobs:
             tar -xzf golang.tar.gz
             popd
       - <<: *prepareEnv
-      - run:
-          name: Authenticate State Tool
-          command: state auth --token $PLATFORM_API_TOKEN
-      - run:
-          name: Run unit tests
-          command: |
-            state run test
+      - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
       # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
