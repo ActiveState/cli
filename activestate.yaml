@@ -39,9 +39,18 @@ scripts:
       eval go install $CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    constraints:
+      os: linux,macos
     value: |
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+  - name: deploy-updates
+    description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    constraints:
+      os: windows
+    value: |
+      go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
