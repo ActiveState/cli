@@ -627,7 +627,7 @@ secrets_expand_err_undefined:
 secrets_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
 secrets_expand_err_no_access:
-  other: Could not obtain value for secret '{{.V0}}'. You are not a member of this project and therefore cannot access secrets
+  other: You are not a member of organization '{{.V0}}' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
   other: "Invalid 'store' property used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
 secrets_err_invalid_share:

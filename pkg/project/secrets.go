@@ -190,12 +190,13 @@ func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsMode
 
 // FindSecret will find the secret appropriate for the current project
 func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, *failures.Failure) {
-	allowed, fail := access.Secrets(e.project.Owner())
+	owner := e.project.Owner()
+	allowed, fail := access.Secrets(owner)
 	if fail != nil {
 		return nil, fail
 	}
 	if !allowed {
-		return nil, FailExpandNoAccess.New("secrets_expand_err_no_access", name)
+		return nil, FailExpandNoAccess.New("secrets_expand_err_no_access", owner)
 	}
 
 	secrets, fail := e.Secrets()

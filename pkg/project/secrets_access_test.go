@@ -51,11 +51,10 @@ func (suite *SecretsAccessTestSuite) TestFindSecretNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
-	secretName := "does.not.matter"
-	_, fail := suite.expander.FindSecret(secretName, false)
+	_, fail := suite.expander.FindSecret("does.not.matter", false)
 	fmt.Println(fail)
 	suite.Require().Error(fail.ToError(), "should get an error when we do not have access")
-	suite.Equal(fail.Error(), locale.Tr("secrets_expand_err_no_access", secretName))
+	suite.Equal(fail.Error(), locale.Tr("secrets_expand_err_no_access", "AccessOrg"))
 }
 
 func (suite *SecretsAccessTestSuite) TestFindSecretAccessError() {
