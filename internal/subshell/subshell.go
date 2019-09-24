@@ -236,6 +236,7 @@ func IsActivated() bool {
 		if p == nil {
 			return false
 		}
+		fmt.Printf("Parent executable: %s", p.Executable())
 		if strings.HasPrefix(p.Executable(), constants.CommandName) {
 			return true
 		}
