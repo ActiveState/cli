@@ -28,7 +28,7 @@ type SecretsTestSuite struct {
 func (suite *SecretsTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
-	err = os.Chdir(filepath.Join(root, "pkg", "cmdlets", "access", "testdata"))
+	err = os.Chdir(filepath.Join(root, "internal", "access", "testdata"))
 	suite.Require().NoError(err, "Should chdir")
 
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
@@ -51,7 +51,7 @@ func (suite *SecretsTestSuite) TestSecretsNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
-	hasAccess, fail := Secrets()
+	hasAccess, fail := Secrets("AccessOrg")
 	suite.Require().NoError(fail.ToError(), "unexepected error checking for secret access")
 	suite.Equal(false, hasAccess, "should not have access to secrets")
 }
