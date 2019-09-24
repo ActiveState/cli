@@ -26,10 +26,40 @@ import (
 
 var exit = os.Exit
 
+type projectStruct struct {
+	name,
+	owner,
+	path,
+	project string
+}
+
 // NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
+	proj := projectCreatePrompts()
+	path, fail := fetchPath(proj.name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
 
+	// Create the project locally on disk.
+	if _, fail = projectfile.Create(proj.project, proj.path); fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
+
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+}
+
+// CopyExecute creates a new project from an existing activestate.yaml
+func CopyExecute(cmd *cobra.Command, args []string) {
+	projFile := project.Get().Source()
+	projFile.Project = projectCreatePrompts().project
+	projFile.Save()
+}
+
+func projectCreatePrompts() projectStruct {
 	var defaultName string
 	if projectExists(Flags.Path) {
 		proj := project.Get()
@@ -79,20 +109,27 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	}
 
 	// Create the project directory
-	if fail = createProjectDir(path); fail != nil {
+	if fail := createProjectDir(path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		exit(1)
+	}
+
+	cid, fail := model.LatestCommitID(owner, name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_no_commit_aborted",
+			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+
 		exit(1)
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
-
-	// Create the project locally on disk.
-	if _, fail = projectfile.Create(projectURL, path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+	if cid == nil || cid.String() == "" {
+		print.Warning(locale.T("error_state_activate_new_no_commit_aborted",
+			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+	} else {
+		projectURL = projectURL + fmt.Sprintf("?commitID=%s", cid.String())
 	}
-
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	return projectStruct{name: name, owner: owner, path: path, project: projectURL}
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {

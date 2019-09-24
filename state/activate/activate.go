@@ -353,7 +353,7 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 			return fail
 		}
 		if create {
-			NewExecute(cmd, args)
+			CopyExecute(cmd, args)
 		} else {
 			return failures.FailUserInput.New(locale.T("err_must_create_project"))
 		}
