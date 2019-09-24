@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
@@ -30,13 +31,20 @@ func setup() {
 		return
 	}
 
-	client.ClientID(id)
-	client.CustomDimensionMap(map[string]string{
+	customDimensionMap := map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
 		"2": constants.Version,
 		"3": constants.BranchName,
-	})
+	}
+
+	userID := authentication.Get().UserID()
+	if userID != nil {
+		customDimensionMap["4"] = userID.String()
+	}
+
+	client.ClientID(id)
+	client.CustomDimensionMap(customDimensionMap)
 
 	if id == "unknown" {
 		Event("error", "unknown machine id")

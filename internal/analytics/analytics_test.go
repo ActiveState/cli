@@ -3,22 +3,38 @@ package analytics
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/stretchr/testify/suite"
 )
 
 const CatTest = "tests"
 
-func TestSetup(t *testing.T) {
+type AnalyticsTestSuite struct {
+	suite.Suite
+
+	authMock *authMock.Mock
+}
+
+func (suite *AnalyticsTestSuite) BeforeTest(suiteName, testName string) {
+	suite.authMock = authMock.Init()
+	suite.authMock.MockLoggedin()
+}
+
+func (suite *AnalyticsTestSuite) TestSetup() {
 	setup()
-	assert.NotNil(t, client, "Client is set")
+	suite.Require().NotNil(client, "Client is set")
 }
 
-func TestEvent(t *testing.T) {
+func (suite *AnalyticsTestSuite) TestEvent() {
 	err := event(CatTest, "TestEvent")
-	assert.NoError(t, err, "Should send event without causing an error")
+	suite.Require().NoError(err, "Should send event without causing an error")
 }
 
-func TestEventWithValue(t *testing.T) {
+func (suite *AnalyticsTestSuite) TestEventWithValue() {
 	err := eventWithValue(CatTest, "TestEventWithValue", 1)
-	assert.NoError(t, err, "Should send event with value without causing an error")
+	suite.Require().NoError(err, "Should send event with value without causing an error")
+}
+
+func TestAnalyticsTestSuite(t *testing.T) {
+	suite.Run(t, new(AnalyticsTestSuite))
 }
