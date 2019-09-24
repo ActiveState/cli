@@ -100,10 +100,9 @@ func prepareFile(p string) *s3.PutObjectInput {
 
 	defer file.Close()
 	var key string
-	key = awsBucketPrefix + p
-	key = strings.Replace(key, sourcePath, "", 1)
-	key = strings.Replace(key, path.Join(getRootPath(), "public"), "", 1)
-	key = path.Clean(key)
+	key = normalizePath(awsBucketPrefix + p)
+	key = strings.Replace(key, normalizePath(sourcePath), "", 1)
+	key = strings.Replace(key, normalizePath(path.Join(getRootPath(), "public")), "", 1)
 	fmt.Printf(" \\- Destination: %s\n", key)
 
 	params := &s3.PutObjectInput{
@@ -127,6 +126,10 @@ func uploadFile(params *s3.PutObjectInput) {
 			awsBucketName, *params.Key, err.Error())
 		os.Exit(1)
 	}
+}
+
+func normalizePath(p string) string {
+	return path.Join(strings.Split(p, "\\")...)
 }
 
 func getRootPath() string {
