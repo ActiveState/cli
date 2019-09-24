@@ -37,19 +37,14 @@ type projectStruct struct {
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 	proj := projectCreatePrompts()
-	path, fail := fetchPath(proj.name)
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
 
 	// Create the project locally on disk.
-	if _, fail = projectfile.Create(proj.project, proj.path); fail != nil {
+	if _, fail := projectfile.Create(proj.project, proj.path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": proj.path}))
 }
 
 // CopyExecute creates a new project from an existing activestate.yaml
