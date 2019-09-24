@@ -226,7 +226,7 @@ func (installer *Installer) InstallDirs() []string {
 }
 
 func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failures.Failure) {
-	installDir := filepath.Join(installer.cacheDir, uniqueHash(artf.ArtifactID.String()))
+	installDir := filepath.Join(installer.cacheDir, shortHash(artf.ArtifactID.String()))
 
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
@@ -365,15 +365,15 @@ func removeInstallDir(installDir string) {
 	}
 }
 
-// uniqueHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
+// shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
 //
 // For example:
-//   uniqueHash("ActiveState-TestProject-python2")
+//   shortHash("ActiveState-TestProject-python2")
 // 	 => e784c7e0
 //
 // This is useful for creating a shortened namespace for language installations.
-func uniqueHash(data ...string) string {
+func shortHash(data ...string) string {
 	h := sha1.New()
-	io.WriteString(h, strings.Join(data, "")+constants.BranchName) // embed branch name in hash
+	io.WriteString(h, strings.Join(data, ""))
 	return fmt.Sprintf("%x", h.Sum(nil)[:4])
 }

@@ -147,6 +147,11 @@ func (i *Instance) ensureCacheExists() {
 			Path: path,
 			Type: configdir.Cache,
 		}
+	} else if path := os.Getenv(C.CacheEnvVarName); path != "" {
+		i.cacheDir = &configdir.Config{
+			Path: path,
+			Type: configdir.Cache,
+		}
 	} else {
 		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	}
