@@ -335,8 +335,6 @@ state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
 error_state_activate_new_aborted:
   other: "Unable to create new project: aborted."
-error_state_activate_new_mkdir:
-  other: Unable to create new project directory.
 error_state_activate_new_no_commit_aborted:
   other: "Platform project created but cannot activate.  Try 'state activate {{.Owner}}/{{.ProjectName}}'."
 state_activate_new_prompt_owner:

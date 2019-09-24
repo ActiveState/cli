@@ -184,8 +184,11 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 
 func createProjectDir(path string) *failures.Failure {
 	if _, err := os.Stat(path); err != nil {
+		if !os.IsNotExist(err) {
+			return failures.FailOS.Wrap(err)
+		}
 		if err := os.MkdirAll(path, 0755); err != nil {
-			return failures.FailIO.New("error_state_activate_new_mkdir")
+			return failures.FailOS.Wrap(err)
 		}
 	}
 	return nil
