@@ -3,6 +3,7 @@ package project
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/access"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,6 +21,9 @@ var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.nopr
 
 // FailInputSecretValue is used when error arises from user providing a secret value.
 var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
+
+// FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
+var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess")
 
 func init() {
 	RegisterExpander("secrets.user", NewSecretPromptingExpander(secretsapi.Get(), true))
@@ -186,6 +190,15 @@ func (e *SecretExpander) FetchDefinition(name string, isUser bool) (*secretsMode
 
 // FindSecret will find the secret appropriate for the current project
 func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.UserSecret, *failures.Failure) {
+	owner := e.project.Owner()
+	allowed, fail := access.Secrets(owner)
+	if fail != nil {
+		return nil, fail
+	}
+	if !allowed {
+		return nil, FailExpandNoAccess.New("secrets_expand_err_no_access", owner)
+	}
+
 	secrets, fail := e.Secrets()
 	if fail != nil {
 		return nil, fail

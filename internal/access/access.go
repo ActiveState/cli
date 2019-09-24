@@ -5,32 +5,29 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Secrets determines whether the authorized user has access
 // to the current project's secrets
-func Secrets() (bool, *failures.Failure) {
-	if isProjectOwner() {
+func Secrets(orgName string) (bool, *failures.Failure) {
+	if isProjectOwner(orgName) {
 		return true, nil
 	}
 
-	return isOrgMember()
+	return isOrgMember(orgName)
 }
 
-func isProjectOwner() bool {
-	project := project.Get()
+func isProjectOwner(orgName string) bool {
 	auth := authentication.Get()
-	if project.Owner() != auth.WhoAmI() {
+	if orgName != auth.WhoAmI() {
 		return false
 	}
 	return true
 }
 
-func isOrgMember() (bool, *failures.Failure) {
-	project := project.Get()
+func isOrgMember(orgName string) (bool, *failures.Failure) {
 	auth := authentication.Get()
-	_, fail := model.FetchOrgMember(project.Owner(), auth.WhoAmI())
+	_, fail := model.FetchOrgMember(orgName, auth.WhoAmI())
 	if fail != nil {
 		if api.FailNotFound.Matches(fail.Type) {
 			return false, nil

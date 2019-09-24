@@ -9,12 +9,12 @@ import (
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/access"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
-	"github.com/ActiveState/cli/pkg/cmdlets/access"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -77,7 +77,7 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 }
 
 func (cmd *Command) checkSecretsAccess(_ *cobra.Command, _ []string) {
-	allowed, fail := access.Secrets()
+	allowed, fail := access.Secrets(project.Get().Owner())
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err_access"))
 	}
