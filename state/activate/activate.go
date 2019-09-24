@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -91,7 +92,7 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && !projectExists() {
+	if len(args) == 0 && !projectExists(Flags.Path) {
 		NewExecute(cmd, args)
 		return
 	}
@@ -99,11 +100,10 @@ func Execute(cmd *cobra.Command, args []string) {
 	ExistingExecute(cmd, args)
 }
 
-func projectExists() bool {
-	if _, fail := project.GetOnce(); fail != nil {
-		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
-			return false
-		}
+func projectExists(path string) bool {
+	prj := getProjectFileByPath(path)
+	if prj == nil {
+		return false
 	}
 	return true
 }
@@ -131,6 +131,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 	fail = promptCreateProject(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
+		return
 	}
 
 	// activate should be continually called while returning true
@@ -184,31 +185,21 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	}
 
 	var directory string
-
-	// Change to already checked out project if it exists
-	projectPaths := getPathsForNamespace(namespace)
-	if len(projectPaths) > 0 {
-		confirmedPath, fail := confirmProjectPath(projectPaths)
-		if fail != nil {
-			return fail
-		}
-		if confirmedPath != nil {
-			directory = *confirmedPath
-		}
+	directory, fail = getDirByNameSpace(Flags.Path, namespace)
+	if fail != nil {
+		return fail
 	}
 
-	// Otherwise ask the user for the directory
-	if directory == "" {
-		// Determine where to create our project
-		directory, fail = determineProjectPath(namespace)
-		if fail != nil {
-			return fail
-		}
-
-		// Actually create the project
+	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
+		// If not actually create the project
 		fail = createProject(org, name, commitID, languages, directory)
 		if fail != nil {
 			return fail
+		}
+	} else {
+		prj := getProjectFileByPath(directory)
+		if !strings.Contains(prj.URL(), namespace) {
+			return failTargetDirInUse.New(locale.Tr("err_namespace_and_project_do_not_match"))
 		}
 	}
 
@@ -218,6 +209,54 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 	return nil
+}
+
+func getDirByNameSpace(path string, namespace string) (string, *failures.Failure) {
+	if Flags.Path != "" {
+		return Flags.Path, nil
+	}
+	// Change to already checked out project if it exists
+	projectPaths := getPathsForNamespace(namespace)
+	if len(projectPaths) > 0 {
+		confirmedPath, fail := confirmProjectPath(projectPaths)
+		if fail != nil {
+			return "", fail
+		}
+		if confirmedPath != nil {
+			return *confirmedPath, nil
+		}
+	}
+	return determineProjectPath(namespace)
+}
+
+func getProjectFileByPath(path string) *project.Project {
+	if path != "" {
+		// CWD is used to return to the directory before retrieving the as.yaml
+		// file was initiated.
+		cwd, err := os.Getwd()
+
+		if err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+
+		if err := os.Chdir(path); err != nil {
+			failures.Handle(err, locale.T("err_activate_path"))
+		}
+		defer func() {
+			logging.Debug("moving back to origin dir")
+			if err := os.Chdir(cwd); err != nil {
+				failures.Handle(err, locale.T("err_activate_path"))
+			}
+		}()
+	}
+
+	prj, fail := project.GetOnce()
+	if fail != nil {
+		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
+			return nil
+		}
+	}
+	return prj
 }
 
 // savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this
@@ -314,7 +353,9 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 			return fail
 		}
 		if create {
-			NewExecute(cmd, args)
+			CopyExecute(cmd, args)
+		} else {
+			return failures.FailUserInput.New(locale.T("err_must_create_project"))
 		}
 	} else {
 		return fail
