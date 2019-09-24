@@ -24,7 +24,7 @@ defaults:
         command: |
           $GOROOT/bin/go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
-          ~/.local/bin/state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
+          state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
     buildCli: &buildCli
       run:
         name: Build the CLI
