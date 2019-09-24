@@ -90,11 +90,11 @@ jobs:
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
-      #- run:
-      #    name: Run integration tests
-      #    # circleci's cmd.exe integration does not accept multi line input
-      #    command: Start-Process -Verb RunAs cmd.exe -Args '/c', 'set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\go\src\github.com\ActiveState\cli && state run integration-tests'
-      #    shell: powershell.exe
+      - run:
+          name: Run integration tests
+          # circleci's cmd.exe integration does not accept multi line input
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\go\src\github.com\ActiveState\cli && state run integration-tests
+          shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
