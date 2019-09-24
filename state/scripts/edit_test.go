@@ -7,17 +7,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/scriptfile"
-
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"gopkg.in/yaml.v2"
 )
 
 type EditTestSuite struct {
@@ -117,7 +115,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 
 	actual, fail := getOpenCmd()
 	if platform == "linux" && fail != nil {
-		suite.EqualError(fail.ToError(), locale.T("error_open_not_installed_lin"))
+		suite.EqualError(fail.ToError(), locale.Tr("error_open_not_installed_lin", openCmdLin))
 	} else {
 		suite.Require().NoError(fail.ToError(), "could not get open command")
 		suite.Equal(expected, actual)
