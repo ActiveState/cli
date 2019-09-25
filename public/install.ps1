@@ -359,7 +359,7 @@ function install()
     Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
 
     # Print a warning that we cannot automatically activate a requested project.
-    if ( "$script:ACTIVATE" -eq "" ) {
+    if ( "$script:ACTIVATE" -ne "" ) {
         Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
         Write-Host "In order to activate a project, the state tool needs to be installed in your PATH first."
         Write-Host "To manually activate the project run 'state activate $script:ACTIVATE' once 'state' is on your PATH"
