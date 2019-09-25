@@ -157,7 +157,7 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 if [ ! -z "`command -v wget`" ]; then
   FETCH="wget -nv -O"
 elif [ ! -z "`command -v curl`" ]; then
-  FETCH="curl -vsS -o"
+  FETCH="curl -sS -o"
 else
   error "Either wget or curl is required to download files"
   exit 1
