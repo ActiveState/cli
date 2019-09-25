@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -126,14 +128,21 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			if err == nil {
 				yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 				if fail != nil {
-					failures.Handle(fail, locale.T("err_auth_failed"))
+					failures.Handle(fail, locale.T("err_auth_signup_failed"))
 					return
 				}
 				if yesSignup {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
-				failures.Handle(err, locale.T("err_auth_failed"))
+				switch err.(type) {
+				case *users.UniqueUsernameConflict:
+					failures.Handle(errors.New(locale.T("err_auth_invalid_password")), locale.T("err_auth_failed"))
+					return
+				default:
+					failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
+					return
+				}
 			}
 			return
 		}
