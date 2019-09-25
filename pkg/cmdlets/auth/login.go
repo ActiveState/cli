@@ -145,7 +145,6 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 					return
 				}
 			}
-			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
 			return
 		}
 		if fail.Type.Matches(authentication.FailAuthNeedToken) {
