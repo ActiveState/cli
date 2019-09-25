@@ -9,8 +9,11 @@ defaults:
           GOFLAGSTMP=$GOFLAGS
           GOFLAGS=""
 
+          # Don't run from project dir as that will pull in deps we don't need
+          pushd ~
           $GOROOT/bin/go get github.com/jstemmer/go-junit-report
           $GOROOT/bin/go get github.com/gobuffalo/packr/packr
+          popd
 
           GOFLAGS=$GOFLAGSTMP
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
