@@ -135,8 +135,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
-				// The error message is not helpful to the user so we log it here instead
-				logging.Error(err.Error())
+				logging.Error("Error when checking for unique username: %v", err)
 				switch err.(type) {
 				case *users.UniqueUsernameConflict:
 					failures.Handle(errors.New(locale.T("err_auth_failed")), locale.T("err_auth_invalid_password"))
@@ -144,11 +143,9 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 				case *users.UniqueUsernameBadRequest:
 					failures.Handle(errors.New(locale.T("err_auth_failed")), locale.T("err_auth_username_check"))
 					return
-				default:
-					failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
-					return
 				}
 			}
+			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
 			return
 		}
 		if fail.Type.Matches(authentication.FailAuthNeedToken) {
