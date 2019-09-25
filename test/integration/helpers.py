@@ -37,9 +37,15 @@ class IntegrationTest(unittest.TestCase):
         self.cwd = None
         self.child = None
 
-        self.env = os.environ.copy()
+        env = os.environ.copy()
+        for k in os.environ.copy():
+            if "ACTIVESTATE" in k:
+                del env[k]
+        self.env = env
+
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
+        self.env["ACTIVESTATE_CLI_CACHEDIR"] = self.get_temp_path()
 
         self.test_dir = test_dir
         self.project_dir = project_dir
@@ -101,9 +107,7 @@ class IntegrationTest(unittest.TestCase):
         self.set_config(tempfile.mkdtemp())
 
     def clear_cache(self):
-        cache_dir = os.path.expanduser("~/.cache/activestate")
-        if is_windows:
-            cache_dir = os.path.join(os.getenv("LOCALAPPDATA"),"activestate")
+        cache_dir = self.env["ACTIVESTATE_CLI_CACHEDIR"]
         if os.path.isdir(cache_dir):
             shutil.rmtree(cache_dir)
 

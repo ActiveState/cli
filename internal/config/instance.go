@@ -3,11 +3,13 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -135,7 +137,24 @@ func (i *Instance) ensureConfigExists() {
 }
 
 func (i *Instance) ensureCacheExists() {
-	i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
+	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
+	if condition.InTest() {
+		path, err := tempDir("state-cache-tests")
+		if err != nil {
+			log.Panicf("Error while creating temp dir: %v", err)
+		}
+		i.cacheDir = &configdir.Config{
+			Path: path,
+			Type: configdir.Cache,
+		}
+	} else if path := os.Getenv(C.CacheEnvVarName); path != "" {
+		i.cacheDir = &configdir.Config{
+			Path: path,
+			Type: configdir.Cache,
+		}
+	} else {
+		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
+	}
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)
 	}
@@ -147,4 +166,16 @@ func (i *Instance) exit(message string, a ...interface{}) {
 		print.Error(stacktrace.Get().String())
 	}
 	i.Exit(1)
+}
+
+// tempDir returns a temp directory path at the topmost directory possible
+// can't use fileutils here as it would cause a cyclic dependency
+func tempDir(prefix string) (string, error) {
+	if runtime.GOOS == "windows" {
+		if drive, envExists := os.LookupEnv("SystemDrive"); envExists {
+			return filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8]), nil
+		}
+	}
+
+	return ioutil.TempDir("", prefix)
 }
