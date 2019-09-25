@@ -140,7 +140,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 					failures.Handle(errors.New(locale.T("err_auth_invalid_password")), locale.T("err_auth_failed"))
 					return
 				default:
-					failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
+					failures.Handle(errors.New(locale.T("err_auth_username_check")), locale.T("err_auth_failed"))
 					return
 				}
 			}
