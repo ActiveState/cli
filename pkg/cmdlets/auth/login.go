@@ -128,24 +128,19 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
 			if err == nil {
 				yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 				if fail != nil {
-					failures.Handle(fail, locale.T("err_auth_failed"))
+					failures.Handle(fail, locale.T("err_auth_signup_failed"))
 					return
 				}
 				if yesSignup {
 					signupFromLogin(credentials.Username, credentials.Password)
 				}
 			} else {
-				// The error message is not helpful to the user so we log it here instead
-				logging.Error(err.Error())
 				switch err.(type) {
 				case *users.UniqueUsernameConflict:
-					failures.Handle(errors.New(locale.T("err_auth_failed")), locale.T("err_auth_invalid_password"))
-					return
-				case *users.UniqueUsernameBadRequest:
-					failures.Handle(errors.New(locale.T("err_auth_failed")), locale.T("err_auth_username_check"))
+					failures.Handle(errors.New(locale.T("err_auth_invalid_password")), locale.T("err_auth_failed"))
 					return
 				default:
-					failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+					failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
 					return
 				}
 			}

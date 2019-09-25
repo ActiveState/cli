@@ -242,7 +242,11 @@ err_prompt_unkown:
 prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
 err_auth_failed:
-  other: Authentication failed, invalid password
+  other: Authentication failed
+err_auth_invalid_password:
+  other: Invalid password
+err_auth_signup_failed:
+  other: Could not authenticate, signup failed
 err_auth_failed_unknown_cause:
   other: Authentication failed due to an unknown cause, check the error log for more information
 auth_err_password_prompt:
