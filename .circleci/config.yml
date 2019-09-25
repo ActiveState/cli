@@ -94,7 +94,7 @@ jobs:
     executor:
       name: win/vs2019
       shell: bash.exe
-    working_directory: /c/workdir/github.com/ActiveState/cli
+    working_directory: /workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - <<: *prepareEnv
