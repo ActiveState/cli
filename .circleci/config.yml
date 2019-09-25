@@ -18,7 +18,7 @@ defaults:
           source $BASH_ENV
 
           state auth --token $PLATFORM_API_TOKEN
-          ${$GOROOT/bin/go version
+          $GOROOT/bin/go version
     runTests: &runTests
       run:
         name: Run unit tests
@@ -66,7 +66,7 @@ jobs:
     docker:
       - image: circleci/golang:1.12
     resource_class: large
-    working_directory: /workdir/github.com/ActiveState/cli
+    working_directory: /home/circleci/workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - <<: *prepareEnv
