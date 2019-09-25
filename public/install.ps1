@@ -337,48 +337,48 @@ function install()
     if (isStateToolInstallationOnPath $installDir) {
         Write-Host "`nInstallation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
-        activateIfRequested()
+        activateIfRequested
         exit(0)
     }
 
     $envTarget = [EnvironmentVariableTarget]::User
+    $envTargetName = "user"
     if (isAdmin) {
         $envTarget = [EnvironmentVariableTarget]::Machine
+	$envTargetName = "system"
     }
 
     # If -activate flag is set: always set path, if -n flag is set never set path, otherwise ask
-    if ( $script:ACTIVATE -eq "" -Or (
+    if ( $script:ACTIVATE -ne "" -Or (
             -Not $script:NOPROMPT -And (
                 promptYN $("Allow '"+$installPath+"' to be appended to your PATH?")
                 )
             )
        ) {
         Write-Host "Updating environment...`n"
-        Write-Host "Adding $installDir to system PATH`n"
+        Write-Host "Adding $installDir to $envTargetName PATH`n"
         # This only sets it in the registry and it will NOT be accessible in the current session
         [Environment]::SetEnvironmentVariable(
             'Path',
             [Environment]::GetEnvironmentVariable(
-                'Path', [EnvironmentVariableTarget]::Machine) + ";" + installPath,
+                'Path', [EnvironmentVariableTarget]::Machine) + ";" + $installDir,
             $envTarget)
 
         notifySettingChange
 
         # NOTE: This exits the script if an activation is requested.
-        $env:Path += ";" + installPath
-        activateIfRequested()
+        $env:Path += ";" + $installDir
+        activateIfRequested
     } else {
-        Write-Host "Manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
+	Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
     }
 
     # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
     if (IsAdmin) {
         Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
-    Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
-
     # Print a warning that we cannot automatically activate a requested project.
-    if ( "$script:ACTIVATE" -eq "" ) {
+    if ( "$script:ACTIVATE" -ne "" ) {
         Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
         Write-Host "In order to activate a project, the state tool needs to be installed in your PATH first."
         Write-Host "To manually activate the project run 'state activate $script:ACTIVATE' once 'state' is on your PATH"
