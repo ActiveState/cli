@@ -3,8 +3,8 @@ scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      CLI_BUILDFLAGS='-ldflags="-s -w"'
       CLI_PKGS=./state
+      GOFLAGS='-mod=vendor -ldflags="-s -w"'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
@@ -18,25 +18,26 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      go mod vendor
   - name: build
     description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
-      eval go build -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      eval go build -o ./build/$BUILD_NAME $CLI_PKGS
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: build-external
     description: Builds the project for external use (limiting its feature-set). Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
-      eval go build -tags external -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      eval go build -tags external -o ./build/$BUILD_NAME $CLI_PKGS
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
       $scripts.preprocess
-      eval go install $CLI_BUILDFLAGS $CLI_PKGS
+      eval go install $CLI_PKGS
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     constraints:
