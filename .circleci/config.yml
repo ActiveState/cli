@@ -94,7 +94,7 @@ jobs:
     executor:
       name: win/vs2019
       shell: bash.exe
-    working_directory: /workdir/github.com/ActiveState/cli
+    working_directory: /c/workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - <<: *prepareEnv
@@ -103,7 +103,7 @@ jobs:
       - run:
           name: Run integration tests
           # circleci's cmd.exe integration does not accept multi line input
-          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\go\src\github.com\ActiveState\cli && state run integration-tests
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\workdir\github.com\ActiveState\cli && state run integration-tests
           shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
