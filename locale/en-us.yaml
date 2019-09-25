@@ -243,8 +243,6 @@ prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
 err_auth_failed:
   other: Authentication failed
-err_auth_invalid_password:
-  other: Invalid password
 err_auth_signup_failed:
   other: Could not authenticate, signup failed
 err_auth_username_check:

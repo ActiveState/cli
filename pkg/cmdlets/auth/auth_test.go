@@ -82,30 +82,6 @@ func TestExecuteNoArgs(t *testing.T) {
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 
-func TestExecuteLoginBadPassword(t *testing.T) {
-	setup(t)
-	user := setupUser()
-	pmock := promptMock.Init()
-	authlet.Prompter = pmock
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithCode("POST", "/login", 401)
-	httpmock.RegisterWithCode("GET", "/users/uniqueUsername/test", 409)
-
-	pmock.OnMethod("Input").Once().Return(user.Username, nil)
-	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
-
-	assert.Equal(t, 1, exitCode, "Exited with code 1")
-	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
-}
-
 func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	setup(t)
 	user := setupUser()
