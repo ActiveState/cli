@@ -64,6 +64,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.platformMock.Register("POST", "/login")
+	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
 	authentication.Get().AuthenticateWithToken("")
 }
 

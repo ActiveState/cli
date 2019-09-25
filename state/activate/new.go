@@ -2,9 +2,7 @@ package activate
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -39,19 +37,14 @@ type projectStruct struct {
 func NewExecute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
 	proj := projectCreatePrompts()
-	path, fail := fetchPath(proj.name)
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
 
 	// Create the project locally on disk.
-	if _, fail = projectfile.Create(proj.project, proj.path); fail != nil {
+	if _, fail := projectfile.Create(proj.project, proj.path); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
 		exit(1)
 	}
 
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": proj.path}))
 }
 
 // CopyExecute creates a new project from an existing activestate.yaml
@@ -102,9 +95,10 @@ func projectCreatePrompts() projectStruct {
 
 	path := Flags.Path
 	if path == "" {
-		path, fail = fetchPath(name)
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			failures.Handle(err, locale.T("error_state_activate_new_aborted"))
 			exit(1)
 		}
 	}
@@ -176,26 +170,6 @@ func promptForOwner() (string, *failures.Failure) {
 	return owners[0], nil // auto-select only option
 }
 
-func fetchPath(projName string) (string, *failures.Failure) {
-	cwd, _ := os.Getwd()
-	files, _ := ioutil.ReadDir(cwd)
-
-	if len(files) == 0 {
-		// Current working directory is devoid of files. Use it as the path for
-		// the new project.
-		return cwd, nil
-	}
-
-	// Current working directory has files in it. Use a subdirectory with the
-	// project name as the path for the new project.
-	path := filepath.Join(cwd, projName)
-	if _, err := os.Stat(path); err == nil {
-		return "", failures.FailIO.New("error_state_activate_new_exists")
-	}
-
-	return path, nil
-}
-
 func createPlatformProject(name, owner string, lang language.Language) *failures.Failure {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
@@ -209,16 +183,13 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 }
 
 func createProjectDir(path string) *failures.Failure {
-	if _, err := os.Stat(path); err == nil {
-		// Directory already exists
-		files, _ := ioutil.ReadDir(path)
-		if len(files) == 0 {
-			return nil
+	if _, err := os.Stat(path); err != nil {
+		if !os.IsNotExist(err) {
+			return failures.FailOS.Wrap(err)
 		}
-		return failures.FailIO.New("error_state_activate_new_exists")
-	}
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return failures.FailIO.New("error_state_activate_new_mkdir")
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return failures.FailOS.Wrap(err)
+		}
 	}
 	return nil
 }

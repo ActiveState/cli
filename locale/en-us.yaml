@@ -335,10 +335,6 @@ state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
 error_state_activate_new_aborted:
   other: "Unable to create new project: aborted."
-error_state_activate_new_exists:
-  other: "Unable to create new project: path exists."
-error_state_activate_new_mkdir:
-  other: Unable to create new project directory.
 error_state_activate_new_no_commit_aborted:
   other: "Platform project created but cannot activate.  Try 'state activate {{.Owner}}/{{.ProjectName}}'."
 state_activate_new_prompt_owner:
@@ -632,6 +628,8 @@ secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
   other: "unable to obtain value for variable `{{.V0}}`"
+secrets_expand_err_no_access:
+  other: You are not a member of organization '{{.V0}}' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
   other: "Invalid 'store' property used for variable, value used: {{.V0}}, should be one of: {{.V1}}"
 secrets_err_invalid_share:
