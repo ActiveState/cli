@@ -2,7 +2,6 @@ package download
 
 import (
 	"bytes"
-	"flag"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -25,10 +25,10 @@ var Get func(url string) ([]byte, *failures.Failure)
 var GetWithProgress func(url string, progress *progress.Progress) ([]byte, *failures.Failure)
 
 func init() {
-	SetMocking(flag.Lookup("test.v") != nil)
+	SetMocking(condition.InTest())
 }
 
-// SetMocking mocks the GetWithProgress function
+// SetMocking sets the correct Get methods for testing
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet

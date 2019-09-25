@@ -66,6 +66,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
 	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		return 200, "definitions/00020002-0002-0002-0002-000200020002"
 	})

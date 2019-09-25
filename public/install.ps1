@@ -160,7 +160,12 @@ function isStateToolInstallationOnPath($installDirectory) {
 }
 
 function getExistingOnPath(){
-    (Resolve-Path (split-path -Path (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source -Parent)).Path
+    $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
+    if ($path -eq $null) {
+        ""
+    } else {
+       (Resolve-Path (split-path -Path $path -Parent)).Path
+    }
 }
 
 function getDefaultInstallDir() {
@@ -334,7 +339,7 @@ function install()
     # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
 
     # If we have administrative rights, attempt to set PATH system wide...
-    if( -Not (isAdmin)){
+    if(isAdmin){
         if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
             Write-Host "Updating environment...`n"
             Write-Host "Adding $installDir to system PATH`n"

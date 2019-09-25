@@ -28,4 +28,5 @@ languages:
 	fail := venv.Activate()
 	assert.NoError(t, fail.ToError(), "Should activate")
 	assert.Empty(t, venv.artifactPaths, "Should not pull in artifacts because these are only supported on linux")
+	assert.Equal(t, ".", venv.GetEnv()["PYTHONPATH"], "Sets pythonpath")
 }
