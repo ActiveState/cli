@@ -94,7 +94,6 @@ var Args struct {
 func Execute(cmd *cobra.Command, args []string) {
 	if len(args) == 0 && !projectExists(Flags.Path) {
 		NewExecute(cmd, args)
-		return
 	}
 
 	ExistingExecute(cmd, args)

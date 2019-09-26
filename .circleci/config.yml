@@ -6,9 +6,16 @@ defaults:
         name: Prepare Environment
         command: |
           mkdir -p $TEST_RESULTS
+          GOFLAGSTMP=$GOFLAGS
+          GOFLAGS=""
 
+          # Don't run from project dir as that will pull in deps we don't need
+          pushd ~
           $GOROOT/bin/go get github.com/jstemmer/go-junit-report
-          $GOROOT/bin/go get -u github.com/gobuffalo/packr/packr
+          $GOROOT/bin/go get github.com/gobuffalo/packr/packr
+          popd
+
+          GOFLAGS=$GOFLAGSTMP
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
 
           ./public/install.sh -n -b master
@@ -18,6 +25,7 @@ defaults:
           source $BASH_ENV
 
           state auth --token $PLATFORM_API_TOKEN
+          $GOROOT/bin/go version
     runTests: &runTests
       run:
         name: Run unit tests
@@ -61,11 +69,12 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /usr/local/go
+      GOFLAGS: -mod=vendor
       SHELL: bash
     docker:
       - image: circleci/golang:1.12
     resource_class: large
-    working_directory: /go/src/github.com/ActiveState/cli
+    working_directory: /home/circleci/workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - <<: *prepareEnv
@@ -80,11 +89,12 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /c/go
+      GOFLAGS: -mod=vendor
       TEST_RESULTS: /tmp/test-results
     executor:
       name: win/vs2019
       shell: bash.exe
-    working_directory: /go/src/github.com/ActiveState/cli
+    working_directory: /workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - <<: *prepareEnv
@@ -93,7 +103,7 @@ jobs:
       - run:
           name: Run integration tests
           # circleci's cmd.exe integration does not accept multi line input
-          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\go\src\github.com\ActiveState\cli && state run integration-tests
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\workdir\github.com\ActiveState\cli && state run integration-tests
           shell: cmd.exe
       - <<: *deployBits
       - <<: *storeArtifacts
@@ -104,11 +114,12 @@ jobs:
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
+      GOFLAGS: -mod=vendor
       SHELL: bash
     macos:
       xcode: 9.2.0
     resource_class: large
-    working_directory: /private/tmp/gohome/src/github.com/ActiveState/cli
+    working_directory: /private/tmp/workdir/github.com/ActiveState/cli
     steps:
       - checkout
       - run:
