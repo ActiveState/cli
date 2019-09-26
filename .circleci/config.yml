@@ -94,7 +94,7 @@ jobs:
       GOPATH: /go
       GOROOT: /c/go
       GOFLAGS: -mod=vendor
-      TEST_RESULTS: /tmp/test-results
+      TEST_RESULTS: /c/tmp/test-results
     executor:
       name: win/vs2019
       shell: bash.exe
