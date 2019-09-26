@@ -31,9 +31,10 @@ defaults:
         name: Run unit tests
         command: |
           set +e
-          $GOROOT/bin/go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` | tee ${TEST_RESULTS}/go-test.out
+          $GOROOT/bin/go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... > out
           EXITCODE=$?
           set -e 
+          echo out | grep -v api` | tee ${TEST_RESULTS}/go-test.out
           $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
           state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
           exit $EXITCODE
@@ -146,7 +147,7 @@ jobs:
       - <<: *storeTestResults
 workflows:
   version: 2
-  build:
+  CI-test-build-deploy:
     jobs:
       - build-linux
       - build-windows
