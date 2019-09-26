@@ -9,8 +9,8 @@ github.com/ActiveState/state-required/require
 # github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e
 github.com/ActiveState/sysinfo
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-github.com/Azure/go-ansiterm/winterm
 github.com/Azure/go-ansiterm
+github.com/Azure/go-ansiterm/winterm
 # github.com/PuerkitoBio/purell v1.1.0
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
@@ -22,31 +22,31 @@ github.com/alecthomas/template/parse
 github.com/asaskevich/govalidator
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
-github.com/aws/aws-sdk-go/aws/session
-github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/aws/awserr
-github.com/aws/aws-sdk-go/aws/credentials
-github.com/aws/aws-sdk-go/aws/endpoints
-github.com/aws/aws-sdk-go/aws/client
-github.com/aws/aws-sdk-go/aws/corehandlers
-github.com/aws/aws-sdk-go/aws/credentials/stscreds
-github.com/aws/aws-sdk-go/aws/defaults
-github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/aws/awsutil
+github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/aws/client/metadata
-github.com/aws/aws-sdk-go/aws/signer/v4
-github.com/aws/aws-sdk-go/private/protocol
-github.com/aws/aws-sdk-go/private/protocol/restxml
-github.com/aws/aws-sdk-go/internal/shareddefaults
-github.com/aws/aws-sdk-go/internal/sdkrand
-github.com/aws/aws-sdk-go/service/sts
+github.com/aws/aws-sdk-go/aws/corehandlers
+github.com/aws/aws-sdk-go/aws/credentials
 github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds
 github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
+github.com/aws/aws-sdk-go/aws/credentials/stscreds
+github.com/aws/aws-sdk-go/aws/defaults
 github.com/aws/aws-sdk-go/aws/ec2metadata
-github.com/aws/aws-sdk-go/private/protocol/rest
+github.com/aws/aws-sdk-go/aws/endpoints
+github.com/aws/aws-sdk-go/aws/request
+github.com/aws/aws-sdk-go/aws/session
+github.com/aws/aws-sdk-go/aws/signer/v4
+github.com/aws/aws-sdk-go/internal/sdkrand
+github.com/aws/aws-sdk-go/internal/shareddefaults
+github.com/aws/aws-sdk-go/private/protocol
 github.com/aws/aws-sdk-go/private/protocol/query
-github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
+github.com/aws/aws-sdk-go/private/protocol/rest
+github.com/aws/aws-sdk-go/private/protocol/restxml
+github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
+github.com/aws/aws-sdk-go/service/s3
+github.com/aws/aws-sdk-go/service/sts
 # github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 github.com/bndr/gotabulate
 # github.com/dave/jennifer v0.18.0
@@ -56,12 +56,12 @@ github.com/davecgh/go-spew/spew
 # github.com/denisbrodbeck/machineid v0.8.0
 github.com/denisbrodbeck/machineid
 # github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76
+github.com/dsnet/compress
 github.com/dsnet/compress/bzip2
 github.com/dsnet/compress/bzip2/internal/sais
 github.com/dsnet/compress/internal
 github.com/dsnet/compress/internal/errors
 github.com/dsnet/compress/internal/prefix
-github.com/dsnet/compress
 # github.com/fatih/color v1.5.0
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.7
@@ -79,8 +79,8 @@ github.com/go-openapi/jsonreference
 # github.com/go-openapi/loads v0.0.0-20171207192234-2a2b323bab96
 github.com/go-openapi/loads
 # github.com/go-openapi/runtime v0.0.0-20180420041453-f12926f16ac2
-github.com/go-openapi/runtime/client
 github.com/go-openapi/runtime
+github.com/go-openapi/runtime/client
 github.com/go-openapi/runtime/logger
 github.com/go-openapi/runtime/middleware
 github.com/go-openapi/runtime/middleware/denco
@@ -107,13 +107,13 @@ github.com/gorilla/websocket
 github.com/hashicorp/go-version
 # github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb
 github.com/hashicorp/hcl
-github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/ast
 github.com/hashicorp/hcl/hcl/parser
-github.com/hashicorp/hcl/hcl/token
-github.com/hashicorp/hcl/json/parser
+github.com/hashicorp/hcl/hcl/printer
 github.com/hashicorp/hcl/hcl/scanner
 github.com/hashicorp/hcl/hcl/strconv
+github.com/hashicorp/hcl/hcl/token
+github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
 # github.com/inconshreveable/mousetrap v1.0.0
@@ -128,12 +128,14 @@ github.com/kami-zh/go-capturer
 github.com/kardianos/osext
 # github.com/kr/binarydist v0.0.0-20160721043806-3035450ff8b9
 github.com/kr/binarydist
+# github.com/machinebox/graphql v0.2.2
+github.com/machinebox/graphql
 # github.com/magiconair/properties v1.7.4
 github.com/magiconair/properties
 # github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57
+github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-github.com/mailru/easyjson/buffer
 # github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 github.com/mash/go-tempfile-suffix
 # github.com/mattn/go-colorable v0.0.9
@@ -194,21 +196,21 @@ github.com/spf13/viper
 # github.com/stretchr/objx v0.1.1
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.2.1
-github.com/stretchr/testify/mock
 github.com/stretchr/testify/assert
-github.com/stretchr/testify/suite
+github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
+github.com/stretchr/testify/suite
 # github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 github.com/thoas/go-funk
 # github.com/ulikunitz/xz v0.5.4
 github.com/ulikunitz/xz
+github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
-github.com/ulikunitz/xz/internal/hash
 # github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
 github.com/vbauerster/mpb
-github.com/vbauerster/mpb/decor
 github.com/vbauerster/mpb/cwriter
+github.com/vbauerster/mpb/decor
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
 # golang.org/x/net v0.0.0-20190311183353-d8887717615a
@@ -216,15 +218,15 @@ golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
 # golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
-golang.org/x/sys/windows/registry
-golang.org/x/sys/windows
 golang.org/x/sys/unix
+golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
 # golang.org/x/text v0.3.0
+golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-golang.org/x/text/secure/bidirule
-golang.org/x/text/unicode/bidi
 # gopkg.in/AlecAivazis/survey.v1 v1.4.2
 gopkg.in/AlecAivazis/survey.v1
 gopkg.in/AlecAivazis/survey.v1/core
