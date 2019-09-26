@@ -360,8 +360,8 @@ function install()
         # This only sets it in the registry and it will NOT be accessible in the current session
         [Environment]::SetEnvironmentVariable(
             'Path',
-            [Environment]::GetEnvironmentVariable(
-                'Path', [EnvironmentVariableTarget]::Machine) + ";" + $installDir,
+            $installDir + ";" + [Environment]::GetEnvironmentVariable(
+                'Path', [EnvironmentVariableTarget]::Machine),
             $envTarget)
 
         notifySettingChange
