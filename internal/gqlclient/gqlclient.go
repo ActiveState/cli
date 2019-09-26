@@ -35,7 +35,9 @@ func (c *GQLClient) Run(req *Request, resp interface{}) error {
 	ctx := req.ctx
 	if ctx == nil {
 		ctx = context.Background()
-		ctx, cancel := context.WithTimeout(ctx, c.timeout)
+		var cancel context.CancelFunc
+
+		ctx, cancel = context.WithTimeout(ctx, c.timeout)
 		defer cancel()
 	}
 

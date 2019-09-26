@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/gqlclient"
 )
@@ -29,7 +30,8 @@ func newProvider(isTest bool, endpoint string, hdr gqlclient.Header) provider {
 	case true:
 		return newGQLMock()
 	default:
-		return &gqlClient{gqlclient.New(endpoint, hdr)}
+		timeout := time.Second * 16
+		return &gqlClient{gqlclient.New(endpoint, hdr, timeout)}
 	}
 }
 
