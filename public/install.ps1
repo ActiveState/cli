@@ -351,7 +351,7 @@ function install()
     # If -activate flag is set: always set path, if -n flag is set never set path, otherwise ask
     if ( $script:ACTIVATE -ne "" -Or (
             -Not $script:NOPROMPT -And (
-                promptYN $("Allow '"+$installPath+"' to be appended to your PATH?")
+                promptYN $("Allow '"+$installPath+"' to be prepended to your PATH?")
                 )
             )
        ) {
@@ -367,7 +367,7 @@ function install()
         notifySettingChange
 
         # NOTE: This exits the script if an activation is requested.
-        $env:Path += ";" + $installDir
+        $env:Path = $installDir + ";" + $env:Path
         activateIfRequested
     } else {
 	Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
