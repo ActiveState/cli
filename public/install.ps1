@@ -345,7 +345,7 @@ function install()
     $envTargetName = "user"
     if (isAdmin) {
         $envTarget = [EnvironmentVariableTarget]::Machine
-	$envTargetName = "system"
+	    $envTargetName = "system"
     }
 
     # If -activate flag is set: always set path, if -n flag is set never set path, otherwise ask
