@@ -16,6 +16,8 @@ import (
 )
 
 func TestInit(t *testing.T) {
+	assert.True(t, false, "Test if failures are being caught by CI")
+
 	setupCwd(t, false)
 	assert := assert.New(t)
 
