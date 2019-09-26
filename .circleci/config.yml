@@ -30,7 +30,8 @@ defaults:
       run:
         name: Run unit tests
         command: |
-          set +e
+          # We have to get a little creative here because we don't want to exit before the test results have been reported
+          set +e 
           $GOROOT/bin/go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` > out
           EXITCODE=$?
           set -e 

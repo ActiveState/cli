@@ -16,9 +16,6 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	assert.True(t, false, "Test if failures are being caught by CI")
-	panic("Test to see if panics bubble through on windows")
-
 	setupCwd(t, false)
 	assert := assert.New(t)
 
