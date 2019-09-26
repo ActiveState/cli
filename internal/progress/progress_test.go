@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/v4"
 )
 
 type mockTask struct {

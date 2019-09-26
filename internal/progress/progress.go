@@ -2,8 +2,10 @@
 package progress
 
 import (
-	"github.com/vbauerster/mpb"
-	"github.com/vbauerster/mpb/decor"
+	"context"
+
+	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v4/decor"
 )
 
 // FileSizeCallback can be called by a task to report that a sub-task of length `fileSize` (in bytes) has been finished

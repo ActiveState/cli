@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/v4"
 )
 
 // Manager is our main download manager, it takes care of processing the downloads and communicating progress

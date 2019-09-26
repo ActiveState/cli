@@ -1,7 +1,7 @@
 package progress
 
 import (
-	"github.com/vbauerster/mpb"
+	"github.com/vbauerster/mpb/v4"
 )
 
 // DynamicBar is a helper struct for a progress bar with unknown total
