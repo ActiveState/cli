@@ -153,17 +153,15 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials) error {
+func promptSignup(credentials *mono_models.Credentials) {
 	yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_auth_signup_failed"))
-		return nil
+		return
 	}
 	if yesSignup {
 		signupFromLogin(credentials.Username, credentials.Password)
 	}
-
-	return nil
 }
 
 func promptToken(credentials *mono_models.Credentials) {
