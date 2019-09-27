@@ -3,6 +3,8 @@ package project
 import (
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/fileutils"
+
 	"github.com/ActiveState/cli/internal/rxutils"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -159,15 +161,28 @@ func EventExpander(name string, meta string, isFunction bool, project *Project) 
 
 // ScriptExpander expands scripts defined in the project-file.
 func ScriptExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
-	projectFile := project.Source()
-	var value string
-	for _, script := range projectFile.Scripts {
-		if script.Name == name && !constraints.IsConstrained(script.Constraints) {
-			value = script.Value
-			break
-		}
+	script := project.ScriptByName(name)
+	if script == nil {
+		return "", nil
 	}
-	return value, nil
+
+	if meta == "path" && isFunction {
+		return scriptPath(script)
+	}
+	return script.Value(), nil
+}
+
+func scriptPath(script *Script) (string, *failures.Failure) {
+	language := script.LanguageSafe()
+	pattern := "*.script." + language.Ext()
+	value := []byte(language.Header() + "\n" + script.Value())
+
+	filename, fail := fileutils.WriteTempFile("", pattern, value, 0700)
+	if fail != nil {
+		return "", fail
+	}
+
+	return filename, nil
 }
 
 // ConstantExpander expands constants defined in the project-file.

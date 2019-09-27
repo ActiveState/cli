@@ -6,6 +6,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/stretchr/testify/require"
+
+	"github.com/ActiveState/cli/internal/language"
+
 	"github.com/stretchr/testify/assert"
 	yaml "gopkg.in/yaml.v2"
 
@@ -42,6 +47,11 @@ scripts:
     value: make test
   - name: recursive
     value: $scripts.recursive
+  - name: pythonScript
+    language: Python3
+    value: scriptValue
+  - name: scriptPath
+    value: $scripts.pythonScript.path()
 `)
 
 	err := yaml.Unmarshal([]byte(contents), pjFile)
@@ -182,4 +192,17 @@ scripts:
 	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
 	assert.Equal(t, "- bar -", expanded)
 	projectfile.Reset()
+}
+
+func TestExpandScriptPath(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded := project.ExpandFromProject("$scripts.scriptPath", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
+	assert.True(t, strings.HasSuffix(expanded, language.Python3.Ext()), fmt.Sprintf("%s should have suffix %s", expanded, language.Python3.Ext()))
+
+	contents, fail := fileutils.ReadFile(expanded)
+	require.NoError(t, fail.ToError())
+	assert.Contains(t, string(contents), language.Python3.Header(), "Has Python3 header")
+	assert.Contains(t, string(contents), "scriptValue", "Contains intended script value")
 }

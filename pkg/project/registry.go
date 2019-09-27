@@ -7,11 +7,15 @@ import (
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
-var expanderRegistry = map[string]ExpanderFunc{
-	"platform":  PlatformExpander,
-	"events":    EventExpander,
-	"scripts":   ScriptExpander,
-	"constants": ConstantExpander,
+var expanderRegistry = map[string]ExpanderFunc{}
+
+func init() {
+	expanderRegistry = map[string]ExpanderFunc{
+		"platform":  PlatformExpander,
+		"events":    EventExpander,
+		"scripts":   ScriptExpander,
+		"constants": ConstantExpander,
+	}
 }
 
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
