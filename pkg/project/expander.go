@@ -87,9 +87,6 @@ func limitExpandFromProject(depth int, s string, p *Project) string {
 			isFunction = true
 		}
 
-		_ = meta
-		_ = isFunction
-
 		var value string
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
