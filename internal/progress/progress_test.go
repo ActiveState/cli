@@ -2,47 +2,57 @@ package progress
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vbauerster/mpb/v4"
 )
 
-type mockTask struct {
-	Error error
+type devZero struct {
+	count int
 }
 
-func (mt *mockTask) mockFileSizeTask(cb FileSizeCallback) error {
-	cb(10000)
-	cb(20000)
-	cb(10000)
-	return mt.Error
+func (dz *devZero) Read(b []byte) (int, error) {
+	dz.count++
+
+	if dz.count == 3 {
+		return 0, io.EOF
+	}
+	return len(b), nil
 }
 
 // Test
-func TestDynamicProgressbar(t *testing.T) {
+func TestUnpackBar(t *testing.T) {
 
 	buf := new(bytes.Buffer)
+	readBuf := make([]byte, 10)
 	func() {
 		progress := New(mpb.WithOutput(buf))
 		defer progress.Close()
 
-		mt := mockTask{Error: nil}
-		bar := progress.AddDynamicByteProgressbar(0, 2048)
-
-		err := mt.mockFileSizeTask(bar.IncrBy)
-
-		assert.NoError(t, err, "expected no error")
-
+		bar := progress.AddUnpackBar(30)
+		dz := &devZero{}
+		wrapped := *bar.ProxyReader(dz)
+		_, err := wrapped.Read(readBuf[:])
+		assert.NoError(t, err)
+		_, err = wrapped.Read(readBuf[:])
+		assert.NoError(t, err)
+		time.Sleep(100 * time.Millisecond)
+		_, err = wrapped.Read(readBuf[:])
+		assert.EqualError(t, err, "EOF")
+		time.Sleep(100 * time.Millisecond)
+		bar.Complete()
 	}()
 
 	output := strings.TrimSpace(buf.String())
-	expectedTotal := "39.1KiB"
+	fmt.Printf("output: %s\n", output)
+	expectedTotal := "100 %"
 
-	if len(output) >= len(expectedTotal) {
-		assert.Equal(t, expectedTotal, output[0:len(expectedTotal)])
-	} else {
-		assert.False(t, true)
+	if strings.Count(output, expectedTotal) == 0 {
+		t.Errorf("expected output bar output %s to be at 100 %%", output)
 	}
 }
