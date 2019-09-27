@@ -3,7 +3,7 @@ package project
 import (
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/scriptfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
 
@@ -164,22 +164,10 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 	}
 
 	if meta == "path" && isFunction {
-		return scriptPath(script)
+		sf, fail := scriptfile.New(script.LanguageSafe(), script.Value())
+		return sf.Filename(), fail
 	}
-	return script.Value(), nil
-}
-
-func scriptPath(script *Script) (string, *failures.Failure) {
-	language := script.LanguageSafe()
-	pattern := "*.script." + language.Ext()
-	value := []byte(language.Header() + "\n" + script.Value())
-
-	filename, fail := fileutils.WriteTempFile("", pattern, value, 0700)
-	if fail != nil {
-		return "", fail
-	}
-
-	return filename, nil
+	return script.Raw(), nil
 }
 
 // ConstantExpander expands constants defined in the project-file.
