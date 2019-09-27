@@ -180,6 +180,17 @@ function getDefaultInstallDir() {
     }
 }
 
+function activateIfRequested() {
+    if ( $script:ACTIVATE -ne "" ) {
+        # This creates an interactive sub-shell.
+        Write-Host "`nActivating project $script:ACTIVATE`n" -ForegroundColor Yellow
+        &$script:STATEEXE activate $script:ACTIVATE
+
+        # We should be done after activating the project
+        exit(0)
+    }
+}
+
 function promptInstallDir()
 {   
     $installDir = ""
@@ -322,42 +333,50 @@ function install()
     }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
-    # Path setup
-    $newPath = "$installDir;$env:Path"
     # Check if installation is in $PATH, if not, update SYSTEM or USER settings
     if (isStateToolInstallationOnPath $installDir) {
         Write-Host "`nInstallation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
-        if ( $script:ACTIVATE -ne "" ) {
-            # This creates an interactive sub-shell.
-            Write-Host "`nActivating project $script:ACTIVATE`n" -ForegroundColor Yellow
-            &$script:STATEEXE activate $script:ACTIVATE
-        }
+        activateIfRequested
         exit(0)
     }
 
-    # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
+    $envTarget = [EnvironmentVariableTarget]::User
+    $envTargetName = "user"
+    if (isAdmin) {
+        $envTarget = [EnvironmentVariableTarget]::Machine
+	    $envTargetName = "system"
+    }
 
-    # If we have administrative rights, attempt to set PATH system wide...
-    if(isAdmin){
-        if ( -Not $script:NOPROMPT -And (promptYN $("Allow '"+$installPath+"' to be appended to your PATH?"))) {
-            Write-Host "Updating environment...`n"
-            Write-Host "Adding $installDir to system PATH`n"
-            # This only sets it in the registry and it will NOT be accessible in the current session
-            Set-ItemProperty -Path "Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment" -Name PATH -Value $newPath
-            notifySettingChange
-            $msg="To start using the State tool please open a new command prompt with no admin rights.  Please close the current command shell unless you need to perform further task as an administrator.  It is not recommended to run commands as an administrator that do not require it.`n"
-            Write-Host $msg
-        } else {
-            Write-Host "Manually add '$installDir' to your PATH system preferences`n" -ForegroundColor Yellow
-        }
+    # If -activate flag is set: always set path, if -n flag is set never set path, otherwise ask
+    if ( $script:ACTIVATE -ne "" -Or (
+            -Not $script:NOPROMPT -And (
+                promptYN $("Allow '"+$installPath+"' to be prepended to your PATH?")
+                )
+            )
+       ) {
+        Write-Host "Updating environment...`n"
+        Write-Host "Adding $installDir to $envTargetName PATH`n"
+        # This only sets it in the registry and it will NOT be accessible in the current session
+        [Environment]::SetEnvironmentVariable(
+            'Path',
+            $installDir + ";" + [Environment]::GetEnvironmentVariable(
+                'Path', [EnvironmentVariableTarget]::Machine),
+            $envTarget)
 
-    # ... without administrative rights,  we tell the user to update the PATH variable manually
+        notifySettingChange
+
+        # NOTE: This exits the script if an activation is requested.
+        $env:Path = $installDir + ";" + $env:Path
+        activateIfRequested
     } else {
+	Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
+    }
+
+    # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
+    if (IsAdmin) {
         Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
-    Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
-
     # Print a warning that we cannot automatically activate a requested project.
     if ( "$script:ACTIVATE" -ne "" ) {
         Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
@@ -367,4 +386,4 @@ function install()
 }
 
 install
-Write-Host "Installation complete"
+Write-Host "Installation complete" -ForegroundColor Yellow
