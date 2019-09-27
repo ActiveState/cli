@@ -21,6 +21,6 @@ func Unarchiver() archiver.Unarchiver {
 }
 
 // UnarchiverWithProgress returns the ProgressUnarchiver to use
-func UnarchiverWithProgress() *unarchiver.ZipArchive {
+func UnarchiverWithProgress() unarchiver.Unarchiver {
 	return unarchiver.NewZip()
 }
