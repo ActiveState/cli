@@ -195,8 +195,8 @@ github.com/spf13/viper
 github.com/stretchr/objx
 # github.com/stretchr/testify v1.2.1
 github.com/stretchr/testify/mock
-github.com/stretchr/testify/assert
 github.com/stretchr/testify/suite
+github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 github.com/thoas/go-funk

@@ -121,6 +121,11 @@ func (l *Language) Text() string {
 	return l.data().text
 }
 
+// Ext return the file extension for the language.
+func (l Language) Ext() string {
+	return l.data().ext
+}
+
 // Header returns the interpreter directive.
 func (l Language) Header() string {
 	ld := l.data()

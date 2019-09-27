@@ -74,32 +74,36 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 }
 
-func (suite *SecretsExpanderTestSuite) prepareWorkingExpander(isUser bool) project.ExpanderFunc {
+func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return project.NewSecretQuietExpander(suite.secretsClient, isUser)
+	return project.NewSecretQuietExpander(suite.secretsClient)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType) {
-	value, fail := suite.prepareWorkingExpander(false)(secretName, suite.project)
+	value, fail := suite.prepareWorkingExpander()(project.ProjectCategory, secretName, false, suite.project)
 	suite.Require().Error(fail.ToError())
 	suite.Equal(expectedFailureType.Name, fail.Type.Name, "unexpected failure type")
 	suite.Zero(value)
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string, expectedExpansionValue string, isUser bool) {
-	value, failure := suite.prepareWorkingExpander(isUser)(secretName, suite.project)
+	category := project.ProjectCategory
+	if isUser {
+		category = project.UserCategory
+	}
+	value, failure := suite.prepareWorkingExpander()(category, secretName, false, suite.project)
 	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(failure)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, false)
-	value, failure := expanderFn("undefined-secret", suite.project)
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
+	value, failure := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Truef(failure.Type.Matches(keypairs.FailLoadNotFound), "unexpected failure type: %v", failure.Type)
 	suite.Zero(value)
 }

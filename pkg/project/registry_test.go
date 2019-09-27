@@ -9,13 +9,13 @@ import (
 )
 
 func TestRegisterExpander_RequiresNonBlankName(t *testing.T) {
-	failure := project.RegisterExpander("", func(n string, p *project.Project) (string, *failures.Failure) {
+	failure := project.RegisterExpander("", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
 		return "", nil
 	})
 	assert.True(t, failure.Type.Matches(project.FailExpanderBadName))
 	assert.False(t, project.IsRegistered(""))
 
-	failure = project.RegisterExpander(" \n \t\f ", func(n string, p *project.Project) (string, *failures.Failure) {
+	failure = project.RegisterExpander(" \n \t\f ", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
 		return "", nil
 	})
 	assert.True(t, failure.Type.Matches(project.FailExpanderBadName))
@@ -30,7 +30,7 @@ func TestRegisterExpander_FuncCannotBeNil(t *testing.T) {
 
 func TestRegisterExpander(t *testing.T) {
 	assert.False(t, project.IsRegistered("lobsters"))
-	failure := project.RegisterExpander("lobsters", func(n string, p *project.Project) (string, *failures.Failure) {
+	failure := project.RegisterExpander("lobsters", func(n string, _ string, _ bool, p *project.Project) (string, *failures.Failure) {
 		return "", nil
 	})
 	assert.Nil(t, failure)

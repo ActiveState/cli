@@ -24,6 +24,7 @@ type ProjectTestSuite struct {
 
 func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
+	projectfile.Reset()
 
 	// support test projectfile access
 	root, err := environment.GetRootPath()
