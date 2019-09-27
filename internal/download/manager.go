@@ -33,7 +33,7 @@ func (m *Manager) Download() *failures.Failure {
 	jobs := make(chan *Entry, len(m.entries))
 	done := make(chan bool, m.WorkerCount)
 
-	bar := m.progress.GetTotalBar(locale.T("downloading"), len(m.entries))
+	bar := m.progress.AddTotalBar(locale.T("downloading"), len(m.entries))
 
 	for w := 1; w <= m.WorkerCount; w++ {
 		// we can't know ahead of time how many jobs each worker will take, so approximate it

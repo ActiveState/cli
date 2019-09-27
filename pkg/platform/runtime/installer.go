@@ -187,7 +187,7 @@ func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *f
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
 func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *progress.Progress) *failures.Failure {
-	bar := progress.GetTotalBar(locale.T("installing"), len(archives))
+	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
 
 	for archivePath, artf := range archives {
 		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {

@@ -40,7 +40,7 @@ func NewUnpackBar(bytesToRead int64, p *Progress) *UnpackBar {
 
 // Complete completes the progress to 100% and should be called after all files are written to disc
 func (upb *UnpackBar) Complete() {
-	upb.bar.SetTotal(upb.total, true)
+	upb.bar.SetCurrent(upb.total)
 }
 
 // ProxyReader wraps a Reader with functionality that automatically updates

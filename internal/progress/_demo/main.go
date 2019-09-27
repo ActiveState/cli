@@ -56,6 +56,7 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 	defer os.RemoveAll(dir)
 
 	tgz.UnarchiveWithProgress(tgzTestPath, dir, p)
+	time.Sleep(100 * time.Millisecond)
 
 	return nil
 }
@@ -68,16 +69,16 @@ func main() {
 	}
 }
 
-func progressRun() (elapsed time.Duration, err error) {
+func progressRun() (err error) {
 
 	if !fileutils.FileExists(tgzTestPath) {
-		return 0, fmt.Errorf("Expected a tarball called 'test.tar.gz' in directory")
+		return fmt.Errorf("Expected a tarball called 'test.tar.gz' in directory")
 	}
 
 	p := progress.New( /*mpb.WithOutput(ioutil.Discard) */ )
 	defer p.Close()
 
-	totalBar1 := p.GetTotalBar("downloading", 2)
+	totalBar1 := p.AddTotalBar("downloading", 1)
 	downloadBar := p.AddByteProgressBar(100)
 
 	dz1 := downloadBar.ProxyReader(&devZero{})
@@ -85,24 +86,22 @@ func progressRun() (elapsed time.Duration, err error) {
 	for pos != 100 {
 		b := make([]byte, 10)
 		off, _ := dz1.Read(b)
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		pos += off
 	}
 
 	totalBar1.Increment()
-	totalBar1.Increment()
 
-	totalBar2 := p.GetTotalBar("installing", 2)
+	totalBar2 := p.AddTotalBar("installing", 1)
 
 	err = tarGzDownloadBarHeuristic(p)
 
 	totalBar2.Increment()
-	totalBar2.Increment()
-	return elapsed, nil
+	time.Sleep(200 * time.Millisecond)
+	return nil
 }
 
 func run() error {
-	elapsed, err := progressRun()
-	fmt.Printf("extra time spent unpacking: %s\n", elapsed)
+	err := progressRun()
 	return err
 }

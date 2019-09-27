@@ -1,5 +1,5 @@
 // Package progress includes helper functions to report progress for a task
-// The idea is that you always start with a TotalBar (`p.GetTotalBar`) counting eg.,
+// The idea is that you always start with a TotalBar (`p.AddTotalBar`) counting eg.,
 // the number of downloads or installations.
 // For each actual task you can add a separate progress bar once it is running
 // Currently, the following task based progrss bars are supported:
@@ -37,6 +37,7 @@ func New(options ...mpb.ContainerOption) *Progress {
 	return &Progress{
 		progress: mpb.NewWithContext(ctx, options...),
 		cancel:   cancel,
+		totalBar: nil,
 	}
 }
 
@@ -46,11 +47,12 @@ func (p *Progress) Close() {
 	p.progress.Wait()
 }
 
-// GetTotalBar returns the top bar, that is supposed to report the total progress (of the current sub-task)
+// AddTotalBar returns the top bar, that is supposed to report the total progress (of the current sub-task)
 // The `name` is prepended, and for the last total bar, the `remove` flag should be set to `false` otherwise
 // always `true`.
-func (p *Progress) GetTotalBar(name string, numElements int) *mpb.Bar {
+func (p *Progress) AddTotalBar(name string, numElements int) *mpb.Bar {
 	options := []mpb.BarOption{
+		mpb.BarClearOnComplete(),
 		mpb.PrependDecorators(
 			decor.Name(name, decor.WCSyncSpaceR),
 			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
@@ -61,17 +63,7 @@ func (p *Progress) GetTotalBar(name string, numElements int) *mpb.Bar {
 		),
 	}
 
-	// if p.totalBar is set, we are replacing a previous one.
-	if p.totalBar != nil {
-		options = append(
-			options,
-			mpb.BarParkTo(p.totalBar),
-			mpb.BarClearOnComplete(),
-		)
-	}
-
-	p.totalBar = p.progress.AddBar(int64(numElements), options...)
-	return p.totalBar
+	return p.progress.AddBar(int64(numElements), options...)
 }
 
 // AddByteProgressBar adds a progressbar counting the progress in bytes
