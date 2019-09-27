@@ -37,7 +37,7 @@ type Command struct {
 	}
 }
 
-type secretJSONDefinition struct {
+type SecretExport struct {
 	Name        string `json:"name,omitempty"`
 	Scope       string `json:"scope,omitempty"`
 	Description string `json:"description,omitempty"`
@@ -136,7 +136,7 @@ func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinitio
 }
 
 func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
-	ds := make([]secretJSONDefinition, len(defs))
+	ds := make([]SecretExport, len(defs))
 
 	for i, def := range defs {
 		name, fail := ptrToString(def.Name, "name")
@@ -148,7 +148,7 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 			return nil, fail
 		}
 
-		ds[i] = secretJSONDefinition{
+		ds[i] = SecretExport{
 			Name:        name,
 			Scope:       scope,
 			Description: def.Description,
