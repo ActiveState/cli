@@ -88,12 +88,12 @@ func TestExpandProjectConstant(t *testing.T) {
 func TestExpandProjectSecret(t *testing.T) {
 	pj := loadProject(t)
 
-	project.RegisterExpander("secrets.user", func(string, *project.Project) (string, *failures.Failure) {
-		return "user-proj-value", nil
-	})
-
-	project.RegisterExpander("secrets.project", func(string, *project.Project) (string, *failures.Failure) {
-		return "proj-value", nil
+	project.RegisterExpander("secrets", func(category string, meta string, isFunction bool, pj *project.Project) (string, *failures.Failure) {
+		if category == project.ProjectCategory {
+			return "proj-value", nil
+		} else {
+			return "user-proj-value", nil
+		}
 	})
 
 	expanded := project.ExpandFromProject("$ $secrets.user.user-proj-secret", pj)
