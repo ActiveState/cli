@@ -187,7 +187,7 @@ func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *f
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
 func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *progress.Progress) *failures.Failure {
-	bar := progress.GetNewTotalbar(locale.T("installing"), len(archives), false)
+	bar := progress.GetTotalBar(locale.T("installing"), len(archives))
 
 	for archivePath, artf := range archives {
 		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {
@@ -271,15 +271,11 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-
-	bar := p.AddDynamicByteProgressbar(20*1024, 2048)
-	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, bar.IncrBy)
+	// Unarchiving with progress adds a progress bar to p and completes when all files are written
+	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p)
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
-
-	// As we are using a dynamic bar, we have to set it to complete explicitly
-	bar.Complete()
 
 	// Detect the install dir
 	tmpInstallDir := ""

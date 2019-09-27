@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/archiver"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
 )
 
 /*
@@ -19,24 +17,18 @@ import (
   reporting its progress.
 */
 
-// ensure that it implements the ProgressUnarchiver interface
-var _ Unarchiver = &TarGzArchive{}
+// ensure that it implements the SingleUnarchiver interface
+var _ SingleUnarchiver = &TarGzArchive{}
 
 // TarGzArchive is an extension of an TarGz archiver implementing an unarchive method with
 // progress feedback
 type TarGzArchive struct {
 	archiver.TarGz
-	inputStreamWrapper func(io.Reader) *io.Reader
 }
 
 // NewTarGz initializes a new TarGzArchiver
-func NewTarGz() *TarGzArchive {
-	return &TarGzArchive{*archiver.DefaultTarGz, func(r io.Reader) *io.Reader { return &r }}
-}
-
-// SetInputStreamWrapper sets a new wrapper function for the io Reader used during unpacking
-func (ar *TarGzArchive) SetInputStreamWrapper(f func(io.Reader) *io.Reader) {
-	ar.inputStreamWrapper = f
+func NewTarGz() Unarchiver {
+	return Unarchiver{&TarGzArchive{*archiver.DefaultTarGz}}
 }
 
 // GetExtractedSize returns the size of the extracted summed up files in the archive
@@ -68,50 +60,9 @@ func (ar *TarGzArchive) GetExtractedSize(source string) (int, error) {
 
 }
 
-// UnarchiveWithProgress unpacks the files from the source directory into the destination directory
-// After a file is unpacked, the callback is called
-func (ar *TarGzArchive) UnarchiveWithProgress(source, destination string, fn progress.FileSizeCallback) error {
-	if !fileExists(destination) && ar.MkdirAll {
-		err := mkdir(destination)
-		if err != nil {
-			return fmt.Errorf("preparing destination: %v", err)
-		}
-	}
-
-	archiveFile, err := os.Open(source)
-	if err != nil {
-		return err
-	}
-	defer archiveFile.Close()
-
-	wrappedStream := ar.inputStreamWrapper(archiveFile)
-
-	// read one file at a time from the archive
-	err = ar.Open(*wrappedStream, 0)
-	if err != nil {
-		return err
-	}
-	// note: that this is obviously not thread-safe
-	defer ar.Close()
-
-	for {
-		f, err := ar.untarNext(destination)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-
-		// calling the increment callback
-		logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
-		fn(int(f.Size()))
-	}
-	return nil
-}
-
-func (ar *TarGzArchive) untarNext(to string) (archiver.File, error) {
-	f, err := ar.Read()
+// ExtractNext extracts the next file to destination
+func (ar *TarGzArchive) ExtractNext(destination string) (f archiver.File, err error) {
+	f, err = ar.Read()
 	if err != nil {
 		return f, err // don't wrap error; calling loop must break on io.EOF
 	}
@@ -119,7 +70,7 @@ func (ar *TarGzArchive) untarNext(to string) (archiver.File, error) {
 	if !ok {
 		return f, fmt.Errorf("expected header to be *tar.Header but was %T", f.Header)
 	}
-	return f, ar.untarFile(f, filepath.Join(to, header.Name))
+	return f, ar.untarFile(f, filepath.Join(destination, header.Name))
 }
 
 func (ar *TarGzArchive) untarFile(f archiver.File, to string) error {

@@ -3,12 +3,9 @@ package unarchiver
 import (
 	"archive/zip"
 	"fmt"
-	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/archiver"
-	"github.com/ActiveState/cli/internal/progress"
 )
 
 /*
@@ -16,75 +13,23 @@ import (
   reporting its progress.
 */
 
-// ensure that it implements the ProgressUnarchiver interface
-var _ Unarchiver = &ZipArchive{}
+// ensure that it implements the SingleUnarchiver interface
+var _ SingleUnarchiver = &ZipArchive{}
 
 // ZipArchive is an extension of an Zip archiver implementing an unarchive method with
 // progress feedback
 type ZipArchive struct {
 	archiver.Zip
-	inputStreamWrapper func(io.Reader) *io.Reader
 }
 
 // NewZip initializes a new ZipArchive
-func NewZip() *ZipArchive {
-	return &ZipArchive{
-		*archiver.DefaultZip,
-		func(r io.Reader) *io.Reader { return &r },
-	}
+func NewZip() *Unarchiver {
+	return &Unarchiver{&ZipArchive{*archiver.DefaultZip}}
 }
 
-// SetInputStreamWrapper sets a new wrapper function for the io Reader used during unpacking
-func (z *ZipArchive) SetInputStreamWrapper(f func(io.Reader) *io.Reader) {
-	z.inputStreamWrapper = f
-}
-
-// UnarchiveWithProgress unpacks the .zip file at source to destination.
-// Destination will be treated as a folder name.
-// callback `fn` will be called after each unpacked file with the size of that file in bytes
-func (z *ZipArchive) UnarchiveWithProgress(source, destination string, fn progress.FileSizeCallback) error {
-	if !fileExists(destination) && z.MkdirAll {
-		err := mkdir(destination)
-		if err != nil {
-			return fmt.Errorf("preparing destination: %v", err)
-		}
-	}
-
-	file, err := os.Open(source)
-	if err != nil {
-		return fmt.Errorf("opening source file: %v", err)
-	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("statting source file: %v", err)
-	}
-
-	archiveStream := z.inputStreamWrapper(file)
-
-	err = z.Open(*archiveStream, fileInfo.Size())
-	if err != nil {
-		return fmt.Errorf("opening zip archive for reading: %v", err)
-	}
-	defer z.Close()
-
-	for {
-		f, err := z.extractNext(destination)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("reading file in zip archive: %v", err)
-		}
-		fn(int(f.Size()))
-	}
-
-	return nil
-}
-
-func (z *ZipArchive) extractNext(to string) (archiver.File, error) {
-	f, err := z.Read()
+// ExtractNext extracts the next file to destination
+func (z *ZipArchive) ExtractNext(destination string) (f archiver.File, err error) {
+	f, err = z.Read()
 	if err != nil {
 		return f, err // don't wrap error; calling loop must break on io.EOF
 	}
@@ -93,7 +38,7 @@ func (z *ZipArchive) extractNext(to string) (archiver.File, error) {
 	if !ok {
 		return f, fmt.Errorf("expected header to be zip.FileHeader but was %T", f.Header)
 	}
-	return f, z.extractFile(f, filepath.Join(to, header.Name))
+	return f, z.extractFile(f, filepath.Join(destination, header.Name))
 }
 
 func (z *ZipArchive) extractFile(f archiver.File, to string) error {

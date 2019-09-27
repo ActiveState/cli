@@ -1,4 +1,10 @@
 // Package progress includes helper functions to report progress for a task
+// The idea is that you always start with a TotalBar (`p.GetTotalBar`) counting eg.,
+// the number of downloads or installations.
+// For each actual task you can add a separate progress bar once it is running
+// Currently, the following task based progrss bars are supported:
+// - a progress bar usually used for downloads, counting the number of bytes processed
+// - a special progress bar used for unpacking an archive, where only the number of bytes to be read are known.
 package progress
 
 import (
@@ -20,47 +26,48 @@ type FileSizeTask func(FileSizeCallback) error
 // This simplifies testing and demo-ing of new progress bar functionality.
 type Progress struct {
 	progress *mpb.Progress
-	cancel   chan struct{} // triggered on Close to ensure that the progress bar unblocks
-	totalBar *mpb.Bar      // a bar at the top that can report the current total progress
+	cancel   context.CancelFunc // triggered on Close to ensure that the progress bar unblocks
+	totalBar *mpb.Bar           // a bar at the top that can report the current total progress
 }
 
 // New creates a new Progress struct
 // mpb.BarOptions are forwarded
-func New(options ...mpb.ProgressOption) *Progress {
-	cancel := make(chan struct{})
-	options = append(options, mpb.WithCancel(cancel))
+func New(options ...mpb.ContainerOption) *Progress {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Progress{
-		progress: mpb.New(options...),
+		progress: mpb.NewWithContext(ctx, options...),
 		cancel:   cancel,
 	}
 }
 
 // Close needs to be called after the Progress struct is not needed anymore
 func (p *Progress) Close() {
-	close(p.cancel)
+	p.cancel()
 	p.progress.Wait()
 }
 
-// GetNewTotalbar returns the top bar, that is supposed to report the total progress (of the current sub-task)
+// GetTotalBar returns the top bar, that is supposed to report the total progress (of the current sub-task)
 // The `name` is prepended, and for the last total bar, the `remove` flag should be set to `false` otherwise
 // always `true`.
-func (p *Progress) GetNewTotalbar(name string, numElements int, remove bool) *mpb.Bar {
+func (p *Progress) GetTotalBar(name string, numElements int) *mpb.Bar {
 	options := []mpb.BarOption{
 		mpb.PrependDecorators(
-			decor.StaticName(name, 20, 0),
+			decor.Name(name, decor.WCSyncSpaceR),
+			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
 			// decor.CountersNoUnit("%d / %d", 20, decor.DwidthSync),
 		),
 		mpb.AppendDecorators(
-			decor.Percentage(5, 0),
+			decor.OnComplete(decor.Percentage(decor.WC{W: 5}), ""),
 		),
 	}
 
+	// if p.totalBar is set, we are replacing a previous one.
 	if p.totalBar != nil {
-		options = append(options, mpb.BarReplaceOnComplete(p.totalBar))
-	}
-
-	if remove {
-		options = append(options, mpb.BarRemoveOnComplete())
+		options = append(
+			options,
+			mpb.BarParkTo(p.totalBar),
+			mpb.BarClearOnComplete(),
+		)
 	}
 
 	p.totalBar = p.progress.AddBar(int64(numElements), options...)
@@ -72,29 +79,17 @@ func (p *Progress) AddByteProgressBar(totalBytes int64) *mpb.Bar {
 	return p.progress.AddBar(totalBytes,
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(
-			decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
+			// synchronize the width with the two total bar decorations
+			decor.Merge(
+				decor.Counters(decor.UnitKiB, "%.1f / %.1f", decor.WCSyncSpace),
+				decor.WCSyncSpace,
+			),
 		),
-		mpb.AppendDecorators(decor.Percentage(5, 0)))
+		mpb.AppendDecorators(decor.Percentage(decor.WC{W: 5})))
 }
 
-// AddDynamicByteProgressbar adds a progressbar with unknown total
-// `initialGuess` is the initial guess of a total
-// `offset` is the offset in bytes by which the total will be updated any time
-// we reach the old total, but were not done yet.
-func (p *Progress) AddDynamicByteProgressbar(initialGuess, offset int) *DynamicBar {
-	return &DynamicBar{bar: p.progress.AddBar(int64(initialGuess),
-		mpb.BarRemoveOnComplete(),
-		mpb.BarDynamicTotal(),
-		mpb.BarAutoIncrTotal(18, int64(offset)),
-		mpb.PrependDecorators(
-			decor.CountersKibiByte("%6.1f / %6.1f", 20, 0),
-		),
-		mpb.AppendDecorators(
-			decor.Percentage(5, 0),
-		)),
-		initialGuess: initialGuess,
-		total:        0,
-		offset:       offset,
-	}
+// AddUnpackBar adds a progressbar for unpacking an archiving.
+func (p *Progress) AddUnpackBar(bytesToRead int64) *UnpackBar {
+	return NewUnpackBar(bytesToRead, p)
 
 }
