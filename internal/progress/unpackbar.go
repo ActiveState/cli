@@ -2,6 +2,7 @@ package progress
 
 import (
 	"io"
+	"time"
 
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
@@ -46,8 +47,6 @@ func (upb *UnpackBar) Complete() {
 // ProxyReader wraps a Reader with functionality that automatically updates
 // the bar with progress about how many bytes have been read from the underlying
 // reader so far.
-func (upb *UnpackBar) ProxyReader(r io.Reader) *io.Reader {
-	var o io.Reader
-	o = upb.bar.ProxyReader(r)
-	return &o
+func (upb *UnpackBar) ProxyReader(r io.ReadCloser) *proxyReader {
+	return &proxyReader {ReadCloser: r, bar: upb.bar, iT: time.Now()}
 }

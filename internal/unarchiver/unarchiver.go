@@ -62,7 +62,7 @@ func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progr
 	impl := ua.impl
 
 	// read one file at a time from the archive
-	err = impl.Open(*wrappedStream, archiveSizeIn)
+	err = impl.Open(wrappedStream, archiveSizeIn)
 	if err != nil {
 		return err
 	}

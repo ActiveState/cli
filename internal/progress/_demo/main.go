@@ -43,6 +43,10 @@ func (dz *devZero) Read(b []byte) (int, error) {
 	return len(b), nil
 }
 
+func (dz *devZero) Close() error {
+	return nil
+}
+
 const tgzTestPath string = "test.tar.gz"
 
 func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {

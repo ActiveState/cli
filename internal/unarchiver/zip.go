@@ -23,8 +23,8 @@ type ZipArchive struct {
 }
 
 // NewZip initializes a new ZipArchive
-func NewZip() *Unarchiver {
-	return &Unarchiver{&ZipArchive{*archiver.DefaultZip}}
+func NewZip() Unarchiver {
+	return Unarchiver{&ZipArchive{*archiver.DefaultZip}}
 }
 
 // ExtractNext extracts the next file to destination

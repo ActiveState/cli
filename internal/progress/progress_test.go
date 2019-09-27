@@ -25,6 +25,10 @@ func (dz *devZero) Read(b []byte) (int, error) {
 	return len(b), nil
 }
 
+func (dz *devZero) Close() error {
+	return nil
+}
+
 // Test
 func TestUnpackBar(t *testing.T) {
 
