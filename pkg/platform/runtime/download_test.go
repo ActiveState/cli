@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -73,7 +72,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 		model.HostPlatform = sysinfo.Linux.String()
 	}
 
-	suite.prg = progress.New(mpb.WithOutput(ioutil.Discard))
+	suite.prg = progress.New(progress.WithMutedOutput())
 }
 
 func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {

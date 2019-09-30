@@ -79,7 +79,7 @@ func progressRun() (err error) {
 		return fmt.Errorf("Expected a tarball called 'test.tar.gz' in directory")
 	}
 
-	p := progress.New( /*mpb.WithOutput(ioutil.Discard) */ )
+	p := progress.New(nil /* progress.WithMutedOutput() */)
 	defer p.Close()
 
 	totalBar1 := p.AddTotalBar("downloading", 1)

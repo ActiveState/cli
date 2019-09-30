@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -68,7 +67,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
-	suite.prg = progress.New(mpb.WithOutput(ioutil.Discard))
+	suite.prg = progress.New(progress.WithMutedOutput())
 }
 
 func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {

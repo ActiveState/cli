@@ -124,7 +124,7 @@ func (installer *Installer) Install() *failures.Failure {
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
-	progress := progress.New()
+	progress := progress.New(nil)
 	defer progress.Close()
 
 	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)

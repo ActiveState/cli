@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/vbauerster/mpb/v4"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -82,7 +81,7 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
-	prg := progress.New(mpb.WithOutput(ioutil.Discard))
+	prg := progress.New(progress.WithMutedOutput())
 	defer prg.Close()
 	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)), prg)
 	suite.Require().NoError(fail.ToError())

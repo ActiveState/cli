@@ -8,6 +8,7 @@
 package progress
 
 import (
+	"bytes"
 	"context"
 
 	"github.com/vbauerster/mpb/v4"
@@ -30,10 +31,40 @@ type Progress struct {
 	totalBar *mpb.Bar           // a bar at the top that can report the current total progress
 }
 
+// OutputOption configures how to handle the progress bar output
+type OutputOption struct {
+	buf   *bytes.Buffer // write output to a buffer
+	muted bool          // mute output completely
+}
+
+// WithBufferedOutput configures the output to be written to a buffer
+func WithBufferedOutput(b *bytes.Buffer) *OutputOption {
+	return &OutputOption{buf: b}
+}
+
+// WithMutedOutput configures the progress bar output to be muted
+func WithMutedOutput() *OutputOption {
+	return &OutputOption{muted: true}
+}
+
+func parseOutputOption(outputOption *OutputOption) []mpb.ContainerOption {
+	if outputOption == nil {
+		return []mpb.ContainerOption{}
+	}
+	if outputOption.muted {
+		return []mpb.ContainerOption{mpb.WithOutput(nil)}
+	}
+	if outputOption.buf != nil {
+		return []mpb.ContainerOption{mpb.WithOutput(outputOption.buf)}
+	}
+	return []mpb.ContainerOption{}
+}
+
 // New creates a new Progress struct
-// mpb.BarOptions are forwarded
-func New(options ...mpb.ContainerOption) *Progress {
+// mpb.ContainerOptions are forwarded
+func New(outputOption *OutputOption) *Progress {
 	ctx, cancel := context.WithCancel(context.Background())
+	options := parseOutputOption(outputOption)
 	return &Progress{
 		progress: mpb.NewWithContext(ctx, options...),
 		cancel:   cancel,

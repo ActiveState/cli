@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vbauerster/mpb/v4"
 )
 
 type devZero struct {
@@ -35,7 +34,7 @@ func TestUnpackBar(t *testing.T) {
 	buf := new(bytes.Buffer)
 	readBuf := make([]byte, 10)
 	func() {
-		progress := New(mpb.WithOutput(buf))
+		progress := New(WithBufferedOutput(buf))
 		defer progress.Close()
 
 		bar := progress.AddUnpackBar(30)
