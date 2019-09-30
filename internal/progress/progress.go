@@ -68,7 +68,6 @@ func New(outputOption *OutputOption) *Progress {
 	return &Progress{
 		progress: mpb.NewWithContext(ctx, options...),
 		cancel:   cancel,
-		totalBar: nil,
 	}
 }
 
