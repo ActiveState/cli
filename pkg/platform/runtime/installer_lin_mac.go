@@ -15,11 +15,6 @@ func Archiver() archiver.Archiver {
 	return archiver.DefaultTarGz
 }
 
-// Unarchiver returns the unarchiver to use
-func Unarchiver() archiver.Unarchiver {
-	return archiver.DefaultTarGz
-}
-
 // UnarchiverWithProgress returns the ProgressUnarchiver to use
 func UnarchiverWithProgress() unarchiver.Unarchiver {
 	return unarchiver.NewTarGz()

@@ -70,7 +70,6 @@ type Installer struct {
 	onDownload         func()
 	onInstall          func()
 	archiver           archiver.Archiver
-	unarchiver         archiver.Unarchiver
 	progressUnarchiver unarchiver.Unarchiver // an unarchiver that can report its progress
 }
 
@@ -92,7 +91,6 @@ func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*
 		cacheDir:           cacheDir,
 		runtimeDownloader:  downloader,
 		archiver:           Archiver(),
-		unarchiver:         Unarchiver(),
 		progressUnarchiver: UnarchiverWithProgress(),
 	}
 
