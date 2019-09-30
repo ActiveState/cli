@@ -81,7 +81,7 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archive string, executable string) {
-	prg := progress.New(progress.WithMutedOutput())
+	prg := progress.New(progress.WithOutput(nil))
 	defer prg.Close()
 	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, archive)), prg)
 	suite.Require().NoError(fail.ToError())

@@ -72,7 +72,7 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 		model.HostPlatform = sysinfo.Linux.String()
 	}
 
-	suite.prg = progress.New(progress.WithMutedOutput())
+	suite.prg = progress.New(progress.WithOutput(nil))
 }
 
 func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {

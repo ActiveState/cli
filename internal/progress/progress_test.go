@@ -34,7 +34,7 @@ func TestUnpackBar(t *testing.T) {
 	buf := new(bytes.Buffer)
 	readBuf := make([]byte, 10)
 	func() {
-		progress := New(WithBufferedOutput(buf))
+		progress := New(WithOutput(buf))
 		defer progress.Close()
 
 		bar := progress.AddUnpackBar(30)

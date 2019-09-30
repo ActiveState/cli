@@ -67,7 +67,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
-	suite.prg = progress.New(progress.WithMutedOutput())
+	suite.prg = progress.New(progress.WithOutput(nil))
 }
 
 func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {

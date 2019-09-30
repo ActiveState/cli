@@ -12,7 +12,7 @@ import (
 
 func TestDownload(t *testing.T) {
 
-	p := progress.New(progress.WithMutedOutput())
+	p := progress.New(progress.WithOutput(nil))
 	defer p.Close()
 
 	var entries []*Entry
