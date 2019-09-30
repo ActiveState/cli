@@ -210,9 +210,8 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	if fail := installer.unpackArchive(
-		archivePath, installDir, progress,
-	); fail != nil {
+	fail = installer.unpackArchive(archivePath, installDir, progress)
+	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
