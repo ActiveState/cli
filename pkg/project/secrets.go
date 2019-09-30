@@ -42,29 +42,37 @@ func init() {
 	})
 }
 
+// SecretAccess is used to track secrets that were requested
+type SecretAccess struct {
+	IsUser bool
+	Name   string
+}
+
 // SecretExpander takes care of expanding secrets
 type SecretExpander struct {
-	secretsClient *secretsapi.Client
-	keypair       keypairs.Keypair
-	organization  *mono_models.Organization
-	remoteProject *mono_models.Project
-	projectFile   *projectfile.Project
-	project       *Project
-	secrets       []*secretsModels.UserSecret
-	cachedSecrets map[string]string
+	secretsClient   *secretsapi.Client
+	keypair         keypairs.Keypair
+	organization    *mono_models.Organization
+	remoteProject   *mono_models.Project
+	projectFile     *projectfile.Project
+	project         *Project
+	secrets         []*secretsModels.UserSecret
+	secretsAccessed []*SecretAccess
+	cachedSecrets   map[string]string
 }
 
 // NewSecretExpander returns a new instance of SecretExpander
-func NewSecretExpander(secretsClient *secretsapi.Client) *SecretExpander {
+func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
+		project:       prj,
 	}
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
 func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient)
+	secretsExpander := NewSecretExpander(secretsClient, nil)
 	return secretsExpander.Expand
 }
 
@@ -72,7 +80,7 @@ func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
 func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient)
+	secretsExpander := NewSecretExpander(secretsClient, nil)
 	return secretsExpander.ExpandWithPrompt
 }
 
@@ -207,6 +215,11 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 		return nil, fail
 	}
 
+	if e.secretsAccessed == nil {
+		e.secretsAccessed = []*SecretAccess{}
+	}
+	e.secretsAccessed = append(e.secretsAccessed, &SecretAccess{isUser, name})
+
 	projectID := project.ProjectID.String()
 	variableRequiresUser := isUser
 	variableRequiresProject := true
@@ -230,6 +243,11 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 	}
 
 	return nil, nil
+}
+
+// SecretsAccessed returns all secrets that were accessed since initialization
+func (e *SecretExpander) SecretsAccessed() []*SecretAccess {
+	return e.secretsAccessed
 }
 
 // SecretFunc defines what our expander functions will be returning
@@ -259,6 +277,7 @@ func (e *SecretExpander) Expand(category string, name string, isFunction bool, p
 	if fail != nil {
 		return "", fail
 	}
+
 	if userSecret == nil {
 		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
 	}
@@ -297,6 +316,7 @@ func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFuncti
 	if fail != nil && !fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
 		return "", fail
 	}
+
 	if fail == nil {
 		return value, nil
 	}

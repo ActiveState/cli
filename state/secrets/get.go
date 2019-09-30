@@ -57,7 +57,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	}
 
 	if Flags.JSON {
-		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), value})
+		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 		return
 	}
 
