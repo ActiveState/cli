@@ -78,10 +78,16 @@ func (p *Progress) Close() {
 	p.progress.Wait()
 }
 
+// TotalBar is an alias of mpb.Bar currently
+type TotalBar = mpb.Bar
+
+// ByteProgressBar is an alias of mpb.Bar currently
+type ByteProgressBar = mpb.Bar
+
 // AddTotalBar returns the top bar, that is supposed to report the total progress (of the current sub-task)
 // The `name` is prepended, and for the last total bar, the `remove` flag should be set to `false` otherwise
 // always `true`.
-func (p *Progress) AddTotalBar(name string, numElements int) *mpb.Bar {
+func (p *Progress) AddTotalBar(name string, numElements int) *TotalBar {
 	options := []mpb.BarOption{
 		mpb.BarClearOnComplete(),
 		mpb.PrependDecorators(
@@ -98,7 +104,7 @@ func (p *Progress) AddTotalBar(name string, numElements int) *mpb.Bar {
 }
 
 // AddByteProgressBar adds a progressbar counting the progress in bytes
-func (p *Progress) AddByteProgressBar(totalBytes int64) *mpb.Bar {
+func (p *Progress) AddByteProgressBar(totalBytes int64) *ByteProgressBar {
 	return p.progress.AddBar(totalBytes,
 		mpb.BarRemoveOnComplete(),
 		mpb.PrependDecorators(

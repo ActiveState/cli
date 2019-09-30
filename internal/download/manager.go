@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/vbauerster/mpb/v4"
 )
 
 // Manager is our main download manager, it takes care of processing the downloads and communicating progress
@@ -37,7 +36,7 @@ func (m *Manager) Download() *failures.Failure {
 
 	for w := 1; w <= m.WorkerCount; w++ {
 		// we can't know ahead of time how many jobs each worker will take, so approximate it
-		go func(jobs <-chan *Entry, bar *mpb.Bar) {
+		go func(jobs <-chan *Entry, bar *progress.TotalBar) {
 			for entry := range jobs {
 				m.Job(entry)
 				if bar != nil {
