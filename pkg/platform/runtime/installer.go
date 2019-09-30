@@ -270,6 +270,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	logging.Debug("Unarchiving %s", archivePath)
 	// Unarchiving with progress adds a progress bar to p and completes when all files are written
 	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p)
+	logging.Debug("Done unpacking")
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
