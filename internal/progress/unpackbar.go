@@ -44,9 +44,9 @@ func (upb *UnpackBar) Complete() {
 	upb.bar.SetCurrent(upb.total)
 }
 
-// ProxyReader wraps a Reader with functionality that automatically updates
+// NewProxyReader wraps a Reader with functionality that automatically updates
 // the bar with progress about how many bytes have been read from the underlying
 // reader so far.
-func (upb *UnpackBar) ProxyReader(r io.ReadCloser) *proxyReader {
-	return &proxyReader {ReadCloser: r, bar: upb.bar, iT: time.Now()}
+func (upb *UnpackBar) NewProxyReader(r io.ReadCloser) *proxyReader {
+	return &proxyReader{ReadCloser: r, bar: upb.bar, iT: time.Now()}
 }
