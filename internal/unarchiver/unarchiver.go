@@ -56,7 +56,7 @@ func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progr
 	pb := p.AddUnpackBar(archiveSizeIn)
 
 	// and wrap the stream, such that we automatically report progress while reading bytes
-	wrappedStream := pb.ProxyReader(archiveFile)
+	wrappedStream := pb.NewProxyReader(archiveFile)
 
 	// impl is the actual implementation of the unarchiver (tar.gz or zip)
 	impl := ua.impl
