@@ -92,7 +92,27 @@ func (suite *EditTestSuite) TestCreateScriptFile_Expand() {
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
-	expected := "vi"
+	expected := "debug"
+	if runtime.GOOS == "windows" {
+		expected = "debug.exe"
+	}
+
+	f, err := os.OpenFile(expected, os.O_CREATE|os.O_EXCL, 0700)
+	suite.NoError(err, "Should be able to create executable file")
+	defer os.Remove(f.Name())
+
+	err = f.Close()
+	suite.NoError(err, "Could no close file")
+
+	originalPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", originalPath)
+
+	wd, err := os.Getwd()
+	suite.NoError(err, "Could not get current working directory")
+
+	err = os.Setenv("PATH", wd)
+	suite.NoError(err, "Could not set PATH")
+
 	os.Setenv("EDITOR", expected)
 
 	actual, fail := getOpenCmd()
