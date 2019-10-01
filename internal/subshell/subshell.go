@@ -119,14 +119,16 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 
 		_, err := exec.LookPath(cmd.Name())
 		if err == nil {
+			// Do not overwrite commands that are already in use and
+			// keep track of those commands to warn to user
 			inuse = append(inuse, cmd.Name())
+			continue
 		}
 
 		scripts[cmd.Name()] = cmd.Name()
 		scripts[explicitName] = cmd.Name()
 	}
 
-	// If we have at least one script that's already in use then we should print a warning
 	if len(inuse) > 0 {
 		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), prj.NormalizedName(), explicitName))
 	}
