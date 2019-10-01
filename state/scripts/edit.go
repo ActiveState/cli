@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
@@ -21,9 +22,9 @@ import (
 
 // The default open command and editors based on platform
 const (
-	openCmdLin = "xdg-open"
-	openCmdMac = "open"
-	openCmdWin = "start"
+	openCmdLin       = "xdg-open"
+	openCmdMac       = "open"
+	defaultEditorWin = "notepad"
 )
 
 var (
@@ -153,7 +154,8 @@ func openEditor(filename string) *failures.Failure {
 }
 
 func getOpenCmd() (string, *failures.Failure) {
-	if editor := os.Getenv("EDITOR"); editor != "" {
+	editor := getEditor()
+	if editor != "" {
 		return editor, nil
 	}
 
@@ -167,10 +169,35 @@ func getOpenCmd() (string, *failures.Failure) {
 	case "darwin":
 		return openCmdMac, nil
 	case "windows":
-		return openCmdWin, nil
+		return defaultEditorWin, nil
 	default:
 		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", runtime.GOOS)
 	}
+}
+
+func getEditor() string {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		return ""
+	}
+
+	if strings.Contains(editor, string(os.PathSeparator)) {
+		_, err := os.Stat(editor)
+		if err != nil {
+			// TODO: log error
+			fmt.Println(err)
+			return ""
+		}
+		return editor
+	}
+
+	_, err := exec.LookPath(editor)
+	if err != nil {
+		// TODO: log error
+		fmt.Println(err)
+		return ""
+	}
+	return editor
 }
 
 type scriptWatcher struct {

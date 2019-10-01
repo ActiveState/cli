@@ -110,7 +110,7 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
 	case "darwin":
 		expected = openCmdMac
 	case "windows":
-		expected = openCmdWin
+		expected = defaultEditorWin
 	}
 
 	actual, fail := getOpenCmd()
