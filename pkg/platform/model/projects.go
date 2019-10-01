@@ -13,7 +13,6 @@ import (
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/go-openapi/strfmt"
 )
 
 type ProjectProvider interface {
@@ -41,31 +40,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		return nil, FailNoValidProject.Wrap(err)
 	}
 
-	return gqlProjectRespToMonoProject(proj)
-}
-
-func gqlProjectRespToMonoProject(pr *gql.ProjectResp) (*mono_models.Project, *failures.Failure) {
-	p := mono_models.Project{
-		Added:       strfmt.DateTime{},
-		Branches:    nil,
-		CreatedBy:   nil,
-		Description: nil,
-		ForkedFrom: &mono_models.ProjectForkedFrom{
-			Organization: "",
-			Project:      "",
-		},
-		Languages:      nil,
-		LastEdited:     strfmt.DateTime{},
-		Managed:        false,
-		Name:           "",
-		OrganizationID: "",
-		Platforms:      nil,
-		Private:        false,
-		ProjectID:      "",
-		RepoURL:        nil,
-	}
-
-	return &p, nil
+	return proj.ToMonoProject()
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
