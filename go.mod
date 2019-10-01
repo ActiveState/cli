@@ -80,9 +80,10 @@ require (
 	github.com/stretchr/testify v1.2.1
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
-	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
+	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0 // indirect
+	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20190311183353-d8887717615a
+	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa

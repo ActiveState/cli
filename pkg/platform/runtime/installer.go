@@ -19,7 +19,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -60,14 +63,14 @@ var (
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	downloadDir       string
-	cacheDir          string
-	installDirs       []string
-	runtimeDownloader Downloader
-	onDownload        func()
-	onInstall         func()
-	archiver          archiver.Archiver
-	unarchiver        archiver.Unarchiver
+	downloadDir        string
+	cacheDir           string
+	installDirs        []string
+	runtimeDownloader  Downloader
+	onDownload         func()
+	onInstall          func()
+	archiver           archiver.Archiver
+	progressUnarchiver unarchiver.Unarchiver // an unarchiver that can report its progress
 }
 
 // InitInstaller creates a new RuntimeInstaller
@@ -76,6 +79,7 @@ func InitInstaller() (*Installer, *failures.Failure) {
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
+	logging.Debug("downloadDir: %s, cache path: %s", downloadDir, config.CachePath())
 	return NewInstaller(downloadDir, config.CachePath(), InitDownload(downloadDir))
 }
 
@@ -83,11 +87,11 @@ func InitInstaller() (*Installer, *failures.Failure) {
 // exists as a directory or can be created.
 func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		downloadDir:       downloadDir,
-		cacheDir:          cacheDir,
-		runtimeDownloader: downloader,
-		archiver:          Archiver(),
-		unarchiver:        Unarchiver(),
+		downloadDir:        downloadDir,
+		cacheDir:           cacheDir,
+		runtimeDownloader:  downloader,
+		archiver:           Archiver(),
+		progressUnarchiver: UnarchiverWithProgress(),
 	}
 
 	return installer, nil
@@ -120,13 +124,20 @@ func (installer *Installer) Install() *failures.Failure {
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
+	progress := progress.New(nil)
+	defer progress.Close()
 
-	archives, fail := installer.runtimeDownloader.Download(downloadArtfs)
+	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
 		return fail
 	}
 
-	return installer.InstallFromArchives(archives)
+	fail = installer.InstallFromArchives(archives, progress)
+	if fail != nil {
+		return fail
+	}
+
+	return nil
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
@@ -173,22 +184,21 @@ func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *f
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact) *failures.Failure {
-	if installer.onInstall != nil {
-		installer.onInstall()
-	}
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *progress.Progress) *failures.Failure {
+	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
 
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf); fail != nil {
+		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {
 			return fail
 		}
+		bar.Increment()
 	}
 
 	return nil
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact) *failures.Failure {
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, progress *progress.Progress) *failures.Failure {
 	var installDir string
 	var fail *failures.Failure
 	if installDir, fail = installer.installDir(artf); fail != nil {
@@ -200,7 +210,8 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	if fail := installer.unpackArchive(archivePath, installDir); fail != nil {
+	fail = installer.unpackArchive(archivePath, installDir, progress)
+	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
@@ -236,7 +247,8 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 	return installDir, nil
 }
 
-func (installer *Installer) unpackArchive(archivePath string, installDir string) *failures.Failure {
+func (installer *Installer) unpackArchive(archivePath string, installDir string, p *progress.Progress) *failures.Failure {
+	// initial guess
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
 			return fail
@@ -256,8 +268,9 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-	err := installer.unarchiver.Unarchive(archivePath, tmpRuntimeDir)
-	logging.Debug("Done")
+	// Unarchiving with progress adds a progress bar to p and completes when all files are written
+	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p)
+	logging.Debug("Done unpacking")
 	if err != nil {
 		return FailArchiveInvalid.Wrap(err)
 	}
@@ -302,11 +315,6 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string)
 // OnDownload registers a function to be called when a download occurs
 func (installer *Installer) OnDownload(f func()) {
 	installer.onDownload = f
-}
-
-// OnInstall registers a function to be called when an install occurs
-func (installer *Installer) OnInstall(f func()) {
-	installer.onInstall = f
 }
 
 // Relocate will look through all of the files in this installation and replace any

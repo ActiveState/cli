@@ -15,6 +15,8 @@ github.com/Azure/go-ansiterm
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/VividCortex/ewma v1.1.1
+github.com/VividCortex/ewma
 # github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
@@ -205,17 +207,20 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
 github.com/ulikunitz/xz/internal/hash
-# github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0
-github.com/vbauerster/mpb
-github.com/vbauerster/mpb/decor
-github.com/vbauerster/mpb/cwriter
+# github.com/vbauerster/mpb/v4 v4.9.4
+github.com/vbauerster/mpb/v4
+github.com/vbauerster/mpb/v4/decor
+github.com/vbauerster/mpb/v4/cwriter
+github.com/vbauerster/mpb/v4/internal
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
-# golang.org/x/net v0.0.0-20190311183353-d8887717615a
+# golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
-# golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
+# golang.org/x/sys v0.0.0-20190904154756-749cb33beabd
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows
 golang.org/x/sys/unix

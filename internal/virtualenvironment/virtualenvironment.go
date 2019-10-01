@@ -87,7 +87,6 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	}
 
 	installer.OnDownload(v.onDownloadArtifacts)
-	installer.OnInstall(v.onInstallArtifacts)
 	if fail := installer.Install(); fail != nil {
 		return fail
 	}
