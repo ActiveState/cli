@@ -84,7 +84,7 @@ func TestActivateCmdExists(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assert.Equal(t, locale.Tr("warn_script_name_in_use", "debug", "project", "project_debug"), strings.TrimSuffix(out, "\n"), "output should match")
+	assert.Equal(t, locale.Tr("warn_script_name_in_use", "debug", "debug", "project", "project_debug"), strings.TrimSuffix(out, "\n"), "output should match")
 }
 
 func TestActivateFailures(t *testing.T) {

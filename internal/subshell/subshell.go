@@ -130,7 +130,7 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 	}
 
 	if len(inuse) > 0 {
-		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), prj.NormalizedName(), explicitName))
+		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
 	}
 
 	rcData := map[string]interface{}{
