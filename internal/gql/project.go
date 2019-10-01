@@ -1,4 +1,4 @@
-package dbm
+package gql
 
 type Organization struct {
 	DisplayName string `json:"display_name"`
@@ -22,4 +22,8 @@ type ProjectsResp struct {
 
 type ProjectResp struct {
 	Project *Project `json:"project"`
+}
+
+type ProjectClient interface {
+	ProjectByOrgAndName(org, name string) (*ProjectResp, error)
 }

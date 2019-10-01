@@ -3,11 +3,11 @@ package projdb
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/dbm"
+	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
 )
 
-func NewProvider(isTest bool, endpoint string, hdr gqlclient.Header) (dbm.ProjectProvider, error) {
+func NewProjectClient(isTest bool, endpoint string, hdr gqlclient.Header) (gql.ProjectClient, error) {
 	switch isTest {
 	case true:
 		return NewMock(), nil
@@ -30,18 +30,18 @@ func New(endpoint string, hdr gqlclient.Header, timeout time.Duration) (*ProjDB,
 }
 
 type Mock struct {
-	ProjectsResp *dbm.ProjectsResp
+	ProjectsResp *gql.ProjectsResp
 }
 
 func NewMock() *Mock {
 	return &Mock{
-		ProjectsResp: &dbm.ProjectsResp{
-			Projects: []*dbm.Project{&dbm.Project{}},
+		ProjectsResp: &gql.ProjectsResp{
+			Projects: []*gql.Project{&gql.Project{}},
 		},
 	}
 }
 
-func (db *ProjDB) ProjectByOrgAndName(org, name string) (*dbm.ProjectResp, error) {
+func (db *ProjDB) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
 	req := db.gc.NewRequest(`
 query {
   projects(where: {name: {_eq: "xxample"}, organization: {url_name: {_eq: "davedx"}}}, limit: 1) {
@@ -64,11 +64,11 @@ query {
 }
 `)
 
-	var resp dbm.ProjectResp
+	var resp gql.ProjectResp
 	err := db.gc.Run(req, &resp)
 	return &resp, err
 }
 
-func (mk *Mock) ProjectByOrgAndName(org, name string) (*dbm.ProjectResp, error) {
-	return &dbm.ProjectResp{mk.ProjectsResp.Projects[0]}, nil
+func (mk *Mock) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
+	return &gql.ProjectResp{Project: mk.ProjectsResp.Projects[0]}, nil
 }

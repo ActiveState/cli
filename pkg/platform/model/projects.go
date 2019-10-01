@@ -5,19 +5,23 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/dbm"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/gql"
+	"github.com/ActiveState/cli/internal/gqldb/projdb"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model/internal/projdb"
 	"github.com/go-openapi/strfmt"
 )
 
-var sin = func() dbm.ProjectProvider {
-	p, err := projdb.NewProvider(condition.InTest(), "", nil)
+type ProjectProvider interface {
+	gql.ProjectClient
+}
+
+var sin = func() ProjectProvider {
+	p, err := projdb.NewProjectClient(condition.InTest(), "", nil)
 	if err != nil {
 		panic(err)
 	}
@@ -37,10 +41,10 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		return nil, FailNoValidProject.Wrap(err)
 	}
 
-	return dbmProjectToMonoProject(proj.Project)
+	return gqlProjectRespToMonoProject(proj)
 }
 
-func dbmProjectToMonoProject(dp *dbm.Project) (*mono_models.Project, *failures.Failure) {
+func gqlProjectRespToMonoProject(pr *gql.ProjectResp) (*mono_models.Project, *failures.Failure) {
 	p := mono_models.Project{
 		Added:       strfmt.DateTime{},
 		Branches:    nil,
