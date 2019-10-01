@@ -166,7 +166,7 @@ func filterSecrets(secrectDefs []*secretsModels.SecretDefinition, filter string)
 
 	oldExpander := project.RegisteredExpander("secrets")
 	if oldExpander != nil {
-		defer project.RegisterExpander("secrets", *oldExpander)
+		defer project.RegisterExpander("secrets", oldExpander)
 	}
 
 	expander := project.NewSecretExpander(secretsapi.Get(), prj)
