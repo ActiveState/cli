@@ -3,14 +3,26 @@ package model
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/dbm"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model/internal/projdb"
+	"github.com/go-openapi/strfmt"
 )
+
+var sin = func() dbm.ProjectProvider {
+	p, err := projdb.NewProvider(condition.InTest(), "", nil)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}()
 
 // FailNoValidProject is a failure for the call api.GetProject
 var FailNoValidProject = failures.Type("model.fail.novalidproject")
@@ -20,17 +32,36 @@ var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
-	params := clientProjects.NewGetProjectParams()
-	params.OrganizationName = orgName
-	params.ProjectName = projectName
-	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
+	proj, err := sin.ProjectByOrgAndName(orgName, projectName)
 	if err != nil {
-		return nil, processProjectErrorResponse(err, projectName, orgName)
+		return nil, FailNoValidProject.Wrap(err)
 	}
-	if resOk.Payload.Name == "" || resOk.Payload.OrganizationID.String() == "" {
-		return nil, FailNoValidProject.New("err_invalid_project")
+
+	return dbmProjectToMonoProject(proj.Project)
+}
+
+func dbmProjectToMonoProject(dp *dbm.Project) (*mono_models.Project, *failures.Failure) {
+	p := mono_models.Project{
+		Added:       strfmt.DateTime{},
+		Branches:    nil,
+		CreatedBy:   nil,
+		Description: nil,
+		ForkedFrom: &mono_models.ProjectForkedFrom{
+			Organization: "",
+			Project:      "",
+		},
+		Languages:      nil,
+		LastEdited:     strfmt.DateTime{},
+		Managed:        false,
+		Name:           "",
+		OrganizationID: "",
+		Platforms:      nil,
+		Private:        false,
+		ProjectID:      "",
+		RepoURL:        nil,
 	}
-	return resOk.Payload, nil
+
+	return &p, nil
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
