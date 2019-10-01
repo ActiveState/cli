@@ -55,20 +55,20 @@ func TestActivateCmdExists(t *testing.T) {
 	}
 
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_EXCL, 0700)
-	assert.NoError(t, err, "OpenFile failed")
+	assert.NoError(t, err, "Should be able to create executable file")
 	defer os.Remove(f.Name())
 
 	err = f.Close()
-	assert.NoError(t, err, "close failed")
+	assert.NoError(t, err, "Could no close file")
 
 	originalPath := os.Getenv("PATH")
 	defer os.Setenv("PATH", originalPath)
 
 	wd, err := os.Getwd()
-	assert.NoError(t, err, "Getwd failed")
+	assert.NoError(t, err, "Could not get current working directory")
 
 	err = os.Setenv("PATH", wd)
-	assert.NoError(t, err, "Setenv failed")
+	assert.NoError(t, err, "Could not set PATH")
 
 	out, err := osutil.CaptureStdout(func() {
 		subs, fail := Activate()
@@ -84,9 +84,7 @@ func TestActivateCmdExists(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	expected := strings.TrimSpace(locale.Tr("warn_script_name_in_use", "debug", "project", "project_debug"))
-	actual := strings.TrimSpace(out)
-	assert.Equal(t, expected, actual, "output should match")
+	assert.Equal(t, locale.Tr("warn_script_name_in_use", "debug", "project", "project_debug"), strings.TrimSuffix(out, "\n"), "output should match")
 }
 
 func TestActivateFailures(t *testing.T) {
