@@ -33,9 +33,9 @@ func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure 
 }
 
 // RegisteredExpander returns the expander registered for the given handle
-func RegisteredExpander(handle string) *ExpanderFunc {
+func RegisteredExpander(handle string) ExpanderFunc {
 	if expander, ok := expanderRegistry[handle]; ok {
-		return &expander
+		return expander
 	}
 	return nil
 }
