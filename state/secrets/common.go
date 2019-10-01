@@ -29,3 +29,17 @@ func getSecret(namespace string) (*project.Secret, *failures.Failure) {
 
 	return project.Get().InitSecret(secretName, secretScope), nil
 }
+
+func getSecretWithValue(name string) (*project.Secret, *string, *failures.Failure) {
+	secret, fail := getSecret(name)
+	if fail != nil {
+		return nil, nil, fail
+	}
+
+	val, fail := secret.ValueOrNil()
+	if fail != nil {
+		return nil, nil, fail
+	}
+
+	return secret, val, nil
+}

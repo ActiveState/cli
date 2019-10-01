@@ -127,10 +127,13 @@ func doSignup(input *signupInput) {
 		return
 	}
 
-	AuthenticateWithCredentials(&mono_models.Credentials{
+	fail := AuthenticateWithCredentials(&mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
 	})
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+	}
 
 	print.Line(locale.T("signup_success", map[string]string{
 		"Email": addUserOK.Payload.User.Email,

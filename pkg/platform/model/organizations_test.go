@@ -54,6 +54,57 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName_404() {
 	suite.Nil(org)
 }
 
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember() {
+	suite.apiMock.MockGetOrganizationMembers()
+
+	member, fail := model.FetchOrgMember("string", "test")
+	suite.NoError(fail.ToError(), "should be able to fetch member with no issue")
+	suite.NotNil(member)
+}
+
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_404() {
+	suite.apiMock.MockGetOrganizationMembers401()
+
+	_, fail := model.FetchOrgMember("string", "test")
+	suite.EqualError(fail, locale.T("err_api_not_authenticated"))
+}
+
+func (suite *OrganizationsTestSuite) TestOrganization_FetchOrgMember_NotFound() {
+	suite.apiMock.MockGetOrganizationMembers()
+
+	member, fail := model.FetchOrgMember("string", "not_test")
+	suite.EqualError(fail, locale.T("err_api_member_not_found"))
+	suite.Nil(member)
+}
+
+func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg() {
+	suite.apiMock.MockGetOrganization()
+
+	org, fail := model.FetchOrgByURLName("string")
+	suite.NoError(fail.ToError(), "should have received org")
+
+	suite.apiMock.MockInviteUserToOrg()
+
+	invitation, fail := model.InviteUserToOrg(org, true, "foo@bar.com")
+	suite.NoError(fail.ToError(), "should have received invitation receipt")
+	suite.Equal("foo@bar.com", invitation.Email)
+
+}
+
+func (suite *OrganizationsTestSuite) TestOrganizations_InviteUserToOrg404() {
+	suite.apiMock.MockGetOrganization()
+
+	org, fail := model.FetchOrgByURLName("string")
+	suite.NoError(fail.ToError(), "should have received org")
+
+	suite.apiMock.MockInviteUserToOrg404()
+
+	invitation, fail := model.InviteUserToOrg(org, true, "string")
+	suite.EqualError(fail, locale.T("err_api_org_not_found"))
+	suite.Nil(invitation)
+
+}
+
 func TestOrganizationsTestSuite(t *testing.T) {
 	suite.Run(t, new(OrganizationsTestSuite))
 }

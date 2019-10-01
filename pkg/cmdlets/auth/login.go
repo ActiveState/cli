@@ -45,7 +45,21 @@ func AuthenticateWithInput(username string, password string) {
 		return
 	}
 
-	AuthenticateWithCredentials(credentials)
+	fail := AuthenticateWithCredentials(credentials)
+	if fail != nil {
+		switch fail.Type {
+		case authentication.FailAuthUnauthorized:
+			if !uniqueUsername(credentials) {
+				failures.Handle(fail, locale.T("err_auth_failed"))
+				return
+			}
+			promptSignup(credentials)
+		case authentication.FailAuthNeedToken:
+			promptToken(credentials)
+		default:
+			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+		}
+	}
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
@@ -111,50 +125,59 @@ func promptForLogin(credentials *mono_models.Credentials) *failures.Failure {
 	return nil
 }
 
-// AuthenticateWithCredentials wil lauthenticate using the given credentials, it's main purpose is to communicate
-// any failures to the end-user
-func AuthenticateWithCredentials(credentials *mono_models.Credentials) {
+// AuthenticateWithCredentials will attempt authenticate using the given credentials
+func AuthenticateWithCredentials(credentials *mono_models.Credentials) *failures.Failure {
 	auth := authentication.Get()
 	fail := auth.AuthenticateWithModel(credentials)
-
-	// Error checking
 	if fail != nil {
-		if fail.Type.Matches(authentication.FailAuthUnauthorized) {
-			params := users.NewUniqueUsernameParams()
-			params.SetUsername(credentials.Username)
-			_, err := mono.Get().Users.UniqueUsername(params)
-			if err == nil {
-				yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
-				if fail != nil {
-					failures.Handle(fail, locale.T("err_auth_failed"))
-					return
-				}
-				if yesSignup {
-					signupFromLogin(credentials.Username, credentials.Password)
-				}
-			} else {
-				failures.Handle(err, locale.T("err_auth_failed"))
-			}
-			return
-		}
-		if fail.Type.Matches(authentication.FailAuthNeedToken) {
-			credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
-			if fail != nil {
-				failures.Handle(fail, locale.T("err_auth_fail_totp"))
-				return
-			}
-			if credentials.Totp == "" {
-				print.Line(locale.T("login_cancelled"))
-				return
-			}
-			AuthenticateWithCredentials(credentials)
-			return
-		}
-		failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
-		return
+		return fail
 	}
 
 	print.Line(locale.T("login_success_welcome_back", map[string]string{
 		"Name": auth.WhoAmI(),
 	}))
+
+	return nil
+}
+
+func uniqueUsername(credentials *mono_models.Credentials) bool {
+	params := users.NewUniqueUsernameParams()
+	params.SetUsername(credentials.Username)
+	_, err := mono.Get().Users.UniqueUsername(params)
+	if err != nil {
+		// This error is not useful to the user so we do not return it and log instead
+		logging.Error("Error when checking for unique username: %v", err)
+		return false
+	}
+
+	return true
+}
+
+func promptSignup(credentials *mono_models.Credentials) {
+	yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_auth_signup_failed"))
+		return
+	}
+	if yesSignup {
+		signupFromLogin(credentials.Username, credentials.Password)
+	}
+}
+
+func promptToken(credentials *mono_models.Credentials) {
+	var fail *failures.Failure
+	credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_auth_fail_totp"))
+		return
+	}
+	if credentials.Totp == "" {
+		print.Line(locale.T("login_cancelled"))
+		return
+	}
+
+	fail = AuthenticateWithCredentials(credentials)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_ath_failed_unknown_cause"))
+	}
 }

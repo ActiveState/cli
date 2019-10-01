@@ -3,9 +3,11 @@ package sscommon
 import (
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 var (
@@ -56,4 +58,43 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 // Stop signals the provided command to terminate.
 func Stop(cmd *exec.Cmd) *failures.Failure {
 	return stop(cmd)
+}
+
+// RunFunc ...
+type RunFunc func(env []string, name string, args ...string) (int, error)
+
+// RunFuncByBinary ...
+func RunFuncByBinary(binary string) RunFunc {
+	bin := strings.ToLower(binary)
+	if strings.Contains(bin, "bash") {
+		return runWithBash
+	}
+	return runDirect
+}
+
+func runWithBash(env []string, name string, args ...string) (int, error) {
+	filePath, fail := osutils.BashifyPath(name)
+	if fail != nil {
+		return 1, fail.ToError()
+	}
+
+	esc := osutils.NewBashEscaper()
+
+	quotedArgs := filePath
+	for _, arg := range args {
+		quotedArgs += " " + esc.Quote(arg)
+	}
+
+	return runDirect(env, "bash", "-c", quotedArgs)
+}
+
+func runDirect(env []string, name string, args ...string) (int, error) {
+	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
+
+	runCmd := exec.Command(name, args...)
+	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	runCmd.Env = env
+
+	err := runCmd.Run()
+	return osutils.CmdExitCode(runCmd), err
 }

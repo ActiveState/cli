@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 )
 
 func setCwd(t *testing.T, subdir string) {
@@ -134,6 +135,7 @@ func TestScriptStruct(t *testing.T) {
 	script := Script{}
 	dat := strings.TrimSpace(`
 name: valueForName
+language: bash
 value: valueForScript
 standalone: true`)
 
@@ -141,6 +143,7 @@ standalone: true`)
 	assert.Nil(t, err, "Should not throw an error")
 
 	assert.Equal(t, "valueForName", script.Name, "Name should be set")
+	assert.Equal(t, language.Bash, script.Language, "Language should match")
 	assert.Equal(t, "valueForScript", script.Value, "Script should be set")
 	assert.True(t, script.Standalone, "Standalone should be set")
 }

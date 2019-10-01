@@ -1,10 +1,15 @@
 package virtualenvironment
 
 import (
+	"bytes"
+	"html/template"
+	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -13,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/google/uuid"
 )
 
 var persisted *VirtualEnvironment
@@ -96,6 +100,12 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
+	pjfile := projectfile.Get()
+
+	// Dirty hack for internal mac use-case. Mocking this via artifact would be too costly for the value we'd get.
+	if rt.GOOS == "darwin" {
+		env["PYTHONPATH"] = filepath.Dir(pjfile.Path())
+	}
 
 	for _, artifactPath := range v.artifactPaths {
 		meta, fail := runtime.InitMetaData(artifactPath)
@@ -104,9 +114,33 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			continue
 		}
 
+		// Unset AffectedEnv
 		if meta.AffectedEnv != "" {
 			env[meta.AffectedEnv] = ""
 		}
+
+		// Set up env according to artifact meta
+		templateMeta := struct {
+			RelocationDir string
+			ProjectDir    string
+		}{"", filepath.Dir(pjfile.Path())}
+		for k, v := range meta.Env {
+			templateMeta.RelocationDir = meta.RelocationDir
+			valueTemplate, err := template.New(k).Parse(v)
+			if err != nil {
+				logging.Error("Skipping artifact with invalid value: %s:%s, error: %v", k, v, err)
+				continue
+			}
+			var realValue bytes.Buffer
+			err = valueTemplate.Execute(&realValue, templateMeta)
+			if err != nil {
+				logging.Error("Skipping artifact whose value could not be parsed: %s:%s, error: %v", k, v, err)
+				continue
+			}
+			env[k] = realValue.String()
+		}
+
+		// Set up PATH according to binary locations
 		for _, v := range meta.BinaryLocations {
 			path := v.Path
 			if v.Relative {
@@ -121,9 +155,29 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 		}
 	}
 
-	pjfile := projectfile.Get()
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
+
+	return env
+}
+
+// GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
+func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
+	envMap := v.GetEnv()
+	var env []string
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	// Append the global env
+	if inheritEnv {
+		for _, value := range os.Environ() {
+			split := strings.Split(value, "=")
+			if _, ok := envMap[split[0]]; !ok {
+				env = append(env, value)
+			}
+		}
+	}
 
 	return env
 }

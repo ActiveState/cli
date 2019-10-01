@@ -1,11 +1,11 @@
 package print
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
 
+	"github.com/ActiveState/cli/internal/condition"
 	ct "github.com/ActiveState/go-colortext"
 )
 
@@ -22,12 +22,12 @@ func New(output io.Writer, plain bool) *Printer {
 
 // Stderr returns a new printer that uses stderr
 func Stderr() *Printer {
-	return New(os.Stderr, flag.Lookup("test.v") != nil)
+	return New(os.Stderr, condition.InTest())
 }
 
 // Stdout returns a new printer that uses stdout, you can probably just use the methods exposed on this package instead
 func Stdout() *Printer {
-	return New(os.Stdout, flag.Lookup("test.v") != nil)
+	return New(os.Stdout, condition.InTest())
 }
 
 // Line prints a formatted message and ends with a line break

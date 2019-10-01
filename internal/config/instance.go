@@ -1,17 +1,20 @@
 package config
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
@@ -105,10 +108,12 @@ func (i *Instance) ensureConfigExists() {
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
-	if _, exists := os.LookupEnv("HOME"); !exists && i.localPath == "" {
+	// This is a workaround for docker envs that don't usually have $HOME set
+	_, exists := os.LookupEnv("HOME")
+	if !exists && i.localPath == "" && runtime.GOOS != "windows" {
 		var err error
 		i.localPath, err = os.Getwd()
-		if err != nil || flag.Lookup("test.v") != nil {
+		if err != nil || condition.InTest() {
 			// Use temp dir if we can't get the working directory OR we're in a test (we don't want to write to our src directory)
 			i.localPath, err = ioutil.TempDir("", "cli-config-test")
 		}
@@ -138,13 +143,24 @@ func (i *Instance) ensureConfigExists() {
 }
 
 func (i *Instance) ensureCacheExists() {
-	if i.cachePath != "" {
-		if err := os.MkdirAll(i.cachePath, 0755); err != nil {
-			i.exit("Can't create hardcoded cache directory: %s", err)
+	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
+	if condition.InTest() {
+		path, err := tempDir("state-cache-tests")
+		if err != nil {
+			log.Panicf("Error while creating temp dir: %v", err)
 		}
-		return
+		i.cacheDir = &configdir.Config{
+			Path: path,
+			Type: configdir.Cache,
+		}
+	} else if path := os.Getenv(C.CacheEnvVarName); path != "" {
+		i.cacheDir = &configdir.Config{
+			Path: path,
+			Type: configdir.Cache,
+		}
+	} else {
+		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	}
-	i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)
 	}
@@ -152,8 +168,20 @@ func (i *Instance) ensureCacheExists() {
 
 func (i *Instance) exit(message string, a ...interface{}) {
 	print.Error(message, a...)
-	if funk.Contains(os.Args, "-v") || flag.Lookup("test.v") != nil {
+	if funk.Contains(os.Args, "-v") || condition.InTest() {
 		print.Error(stacktrace.Get().String())
 	}
 	i.Exit(1)
+}
+
+// tempDir returns a temp directory path at the topmost directory possible
+// can't use fileutils here as it would cause a cyclic dependency
+func tempDir(prefix string) (string, error) {
+	if runtime.GOOS == "windows" {
+		if drive, envExists := os.LookupEnv("SystemDrive"); envExists {
+			return filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8]), nil
+		}
+	}
+
+	return ioutil.TempDir("", prefix)
 }

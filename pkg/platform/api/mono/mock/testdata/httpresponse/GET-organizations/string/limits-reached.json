@@ -1,0 +1,8 @@
+{
+  "usersLimit": 49,
+  "nodesLimit": 100,
+  "nodesLimitOverride": 0,
+  "nodesLimitBase": 0,
+  "securityAndComplianceEnabled": true,
+  "securityAndComplianceOverride": true
+}

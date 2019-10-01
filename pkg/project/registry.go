@@ -7,11 +7,15 @@ import (
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
-var expanderRegistry = map[string]ExpanderFunc{
-	"platform":  PlatformExpander,
-	"events":    EventExpander,
-	"scripts":   ScriptExpander,
-	"constants": ConstantExpander,
+var expanderRegistry = map[string]ExpanderFunc{}
+
+func init() {
+	expanderRegistry = map[string]ExpanderFunc{
+		"platform":  PlatformExpander,
+		"events":    EventExpander,
+		"scripts":   ScriptExpander,
+		"constants": ConstantExpander,
+	}
 }
 
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
@@ -25,6 +29,14 @@ func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure 
 		return FailExpanderNoFunc.New("secrets_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
+	return nil
+}
+
+// RegisteredExpander returns the expander registered for the given handle
+func RegisteredExpander(handle string) ExpanderFunc {
+	if expander, ok := expanderRegistry[handle]; ok {
+		return expander
+	}
 	return nil
 }
 

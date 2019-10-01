@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
-	"sync"
 	"testing"
 	"time"
 
@@ -49,33 +48,32 @@ func TestOpen(t *testing.T) {
 	}()
 	postOpen := time.Now()
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
 	data := []byte("some data")
 
+	ready := make(chan struct{})
 	go func() {
-		defer wg.Done()
+		f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
+		require.NoError(t, err)
+		_, err = f.Write(data)
+		require.NoError(t, err)
+		assert.NoError(t, f.Close())
+		close(ready)
+	}()
 
-		r := <-rcvs
+	<-ready
 
-		// windows test env has poor time resolution
-		if runtime.GOOS == "windows" {
-			return
-		}
+	var r *Received
+	select {
+	case r = <-rcvs:
+	case <-time.After(time.Second):
+		assert.FailNow(t, "should not block")
+	}
+
+	// windows test env has poor time resolution
+	if runtime.GOOS != "windows" {
 		assert.True(t, r.Open.After(start))
 		assert.True(t, postOpen.After(r.Open))
 		assert.True(t, r.Time.After(postOpen))
-		assert.Equal(t, data, r.Data)
-	}()
-
-	f, err := os.OpenFile(file, os.O_TRUNC|os.O_WRONLY, 0660)
-	require.NoError(t, err)
-	_, err = f.Write(data)
-	require.NoError(t, err)
-	defer func() {
-		assert.NoError(t, f.Close())
-	}()
-
-	wg.Wait()
+	}
+	require.NoError(t, r.Fail.ToError())
 }

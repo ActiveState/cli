@@ -1,10 +1,10 @@
 package config
 
 import (
-	"flag"
 	"io/ioutil"
 	"os"
 
+	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
 )
@@ -14,7 +14,7 @@ var exit = os.Exit
 
 func init() {
 	localPath := os.Getenv(C.ConfigEnvVarName)
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		var err error
 		localPath, err = ioutil.TempDir("", "cli-config")
 		if err != nil {

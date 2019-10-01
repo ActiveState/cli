@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/deprecation"
@@ -32,8 +32,6 @@ import (
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic")
-
-var branchName = constants.BranchName
 
 // T links to locale.T
 var T = locale.T
@@ -98,11 +96,20 @@ func main() {
 		}
 	}()
 
+	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
+		cleanUpCPUProf, fail := runCPUProfiling()
+		if fail != nil {
+			failures.Handle(fail, "cpu_profiling_setup_failed")
+			os.Exit(1)
+		}
+		defer cleanUpCPUProf()
+	}
+
 	setupRollbar()
 
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
-	if (flag.Lookup("test.v") == nil && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
+	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
@@ -123,10 +130,6 @@ func main() {
 	}
 
 	register()
-
-	if branchName != constants.StableBranch {
-		print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
-	}
 
 	// This actually runs the command
 	err := Command.Execute()

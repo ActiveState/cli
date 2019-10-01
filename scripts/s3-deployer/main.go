@@ -2,11 +2,11 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
+	"github.com/ActiveState/cli/internal/condition"
 )
 
 const awsProfileName = "default"
@@ -23,7 +25,7 @@ var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 var sess *session.Session
 
 func main() {
-	if flag.Lookup("test.v") == nil {
+	if !condition.InTest() {
 		if len(os.Args) != 5 {
 			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
 		}
@@ -71,20 +73,20 @@ func getFileList() []string {
 	fmt.Printf("Getting list of files\n")
 	fileList := []string{}
 	os.MkdirAll(sourcePath, os.ModePerm)
-	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
-		if isDirectory(path) {
+	filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
+		if isDirectory(p) {
 			return nil
 		}
-		fileList = append(fileList, path)
+		fileList = append(fileList, p)
 		return nil
 	})
 	return fileList
 }
 
-func prepareFile(path string) *s3.PutObjectInput {
-	fmt.Printf("Uploading %s\n", path)
+func prepareFile(p string) *s3.PutObjectInput {
+	fmt.Printf("Uploading %s\n", p)
 
-	file, err := os.Open(path)
+	file, err := os.Open(p)
 	if err != nil {
 		fmt.Println("Failed to open file", file, err)
 		os.Exit(1)
@@ -98,9 +100,9 @@ func prepareFile(path string) *s3.PutObjectInput {
 
 	defer file.Close()
 	var key string
-	key = awsBucketPrefix + path
-	key = strings.Replace(key, sourcePath, "", 1)
-	key = strings.Replace(key, filepath.Join(getRootPath(), "public"), "", 1)
+	key = normalizePath(awsBucketPrefix + p)
+	key = strings.Replace(key, normalizePath(sourcePath), "", 1)
+	key = strings.Replace(key, normalizePath(path.Join(getRootPath(), "public")), "", 1)
 	fmt.Printf(" \\- Destination: %s\n", key)
 
 	params := &s3.PutObjectInput{
@@ -126,6 +128,10 @@ func uploadFile(params *s3.PutObjectInput) {
 	}
 }
 
+func normalizePath(p string) string {
+	return path.Join(strings.Split(p, "\\")...)
+}
+
 func getRootPath() string {
 	pathsep := string(os.PathSeparator)
 
@@ -134,7 +140,7 @@ func getRootPath() string {
 		panic("Could not call Caller(0)")
 	}
 
-	abs := filepath.Dir(file)
+	abs := path.Dir(file)
 
 	// When tests are ran with coverage the location of this file is changed to a temp file, and we have to
 	// adjust accordingly
@@ -143,7 +149,7 @@ func getRootPath() string {
 	}
 
 	var err error
-	abs, err = filepath.Abs(filepath.Join(abs, "..", ".."))
+	abs, err = filepath.Abs(path.Join(abs, "..", ".."))
 
 	if err != nil {
 		return ""
@@ -152,8 +158,8 @@ func getRootPath() string {
 	return abs + pathsep
 }
 
-func isDirectory(path string) bool {
-	fd, err := os.Stat(path)
+func isDirectory(p string) bool {
+	fd, err := os.Stat(p)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)

@@ -1,10 +1,11 @@
-project: https://platform.activestate.com/ActiveState/cli?commitID=c333a724-e425-4ab0-b054-7b0f3dd7bf27
-scripts: 
+project: https://platform.activestate.com/ActiveState/cli?commitID=f5691b64-5066-40fc-9528-5dfe59d24a69
+scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      CLI_BUILDFLAGS='-ldflags="-s -w"'
       CLI_PKGS=./state
+      CLI_BUILDFLAGS='-ldflags="-s -w"'
+      GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
@@ -18,6 +19,7 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      go mod vendor
   - name: build
     description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
@@ -39,9 +41,18 @@ scripts:
       eval go install $CLI_BUILDFLAGS $CLI_PKGS
   - name: deploy-updates
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    constraints:
+      os: linux,macos
     value: |
       go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
       go run scripts/s3-deployer/main.go public/install.sh ca-central-1 cli-update update/state/install.sh
+  - name: deploy-updates
+    description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
+    constraints:
+      os: windows
+    value: |
+      go run scripts/s3-deployer/main.go public/update ca-central-1 cli-update update/state
+      go run scripts/s3-deployer/main.go public/install.ps1 ca-central-1 cli-update update/state/install.ps1
   - name: generate-api-client
     description: Generates the mono-api client files
     value: |
@@ -87,14 +98,7 @@ scripts:
     standalone: true
   - name: integration-tests
     description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
-    standalone: true
-    value: |
-      $scripts.SET_ENV
-      if [ ! -f "build/$BUILD_NAME" ]; then
-        echo "build/$BUILD_NAME does not exist, you need to run 'state run build' first"
-        exit 1
-      fi
-      python3 -m unittest discover -s test/integration -p '*_test.py'
+    value: cd test/integration && python3 -m unittest discover -p "*_test.py"
   - name: clean
     description: Cleans out the build dir.
     value: |
@@ -105,7 +109,7 @@ scripts:
     value: |
       $scripts.build
       build/state --help
-events: 
+events:
   - name: ACTIVATE
     value: |
       $scripts.SET_ENV

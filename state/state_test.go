@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	funk "github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/constants"
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -87,16 +86,6 @@ func TestExecute(t *testing.T) {
 	Execute(Cc, []string{"--help"})
 
 	assert.Equal(true, true, "Execute didn't panic")
-}
-
-func TestUnstableWarning(t *testing.T) {
-	setupCwd(t, false)
-	defer func() { branchName = constants.BranchName }()
-	branchName = "anything-but-stable"
-	out, err := osutil.CaptureStderr(main)
-	require.NoError(t, err)
-
-	assert.Contains(t, out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
 }
 
 func TestDeprecated(t *testing.T) {

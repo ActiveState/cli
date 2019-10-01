@@ -1,0 +1,155 @@
+version: 2.1
+defaults:
+  steps:
+    prepareEnv: &prepareEnv
+      run:
+        name: Prepare Environment
+        command: |
+          mkdir -p $TEST_RESULTS
+          GOFLAGSTMP=$GOFLAGS
+          GOFLAGS=""
+
+          # Don't run from project dir as that will pull in deps we don't need
+          pushd ~
+          $GOROOT/bin/go get github.com/jstemmer/go-junit-report
+          $GOROOT/bin/go get github.com/gobuffalo/packr/packr
+          popd
+
+          GOFLAGS=$GOFLAGSTMP
+          $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
+
+          ./public/install.sh -n -b master
+
+          echo "export PATH=\$HOME/.local/bin:\$GOROOT/bin:\$GOPATH/bin:\$PATH" >> $BASH_ENV
+          echo "export PS1='> '" >> $BASH_ENV
+          source $BASH_ENV
+
+          state auth --token $PLATFORM_API_TOKEN
+          $GOROOT/bin/go version
+    runTests: &runTests
+      run:
+        name: Run unit tests
+        command: |
+          # We have to get a little creative here because we don't want to exit before the test results have been reported
+          set +e 
+          $GOROOT/bin/go test -v -parallel 12 -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api` > out
+          EXITCODE=$?
+          set -e 
+          cat out | tee ${TEST_RESULTS}/go-test.out
+          $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
+          state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
+          exit $EXITCODE
+    buildCli: &buildCli
+      run:
+        name: Build the CLI
+        command: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$BRANCH" == "master" ]]; then
+            echo "Building for external use"
+            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+          fi
+
+          echo "Building for internal use"
+          APIENV=prod state run build
+    runIntegrationTests: &runIntegrationTests
+      run:
+        name: Run integration tests
+        command: state run integration-tests
+    deployBits: &deployBits
+      run:
+        name: Deploy bits
+        command: state run deploy-updates
+    storeArtifacts: &storeArtifacts
+      store_artifacts:
+        path: /tmp/test-results
+        destination: raw-test-output
+    storeTestResults: &storeTestResults
+      store_test_results:
+        path: /tmp/test-results
+orbs:
+  win: circleci/windows@1.0.0
+jobs:
+  build-linux:
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      GOBIN: /go/bin
+      GOPATH: /go
+      GOROOT: /usr/local/go
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+    docker:
+      - image: circleci/golang:1.12
+    resource_class: large
+    working_directory: /home/circleci/workdir/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *buildCli
+      - <<: *runIntegrationTests
+      - <<: *deployBits
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+  build-windows:
+    environment:
+      GOBIN: /go/bin
+      GOPATH: /go
+      GOROOT: /c/go
+      GOFLAGS: -mod=vendor
+      TEST_RESULTS: /c/tmp/test-results
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    working_directory: /workdir/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *buildCli
+      - run:
+          name: Run integration tests
+          # circleci's cmd.exe integration does not accept multi line input
+          command: set PATH=C:\Users\circleci\.local\bin;%PATH% && set SHELL=cmd.exe && cd C:\workdir\github.com\ActiveState\cli && state run integration-tests
+          shell: cmd.exe
+      - <<: *deployBits
+      - store_artifacts:
+          path: C:\tmp\test-results
+          destination: raw-test-output
+      - store_test_results:
+          path: C:\tmp\test-results
+  build-macos:
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      GOPATH: /private/tmp/gohome
+      GOBIN: /private/tmp/gohome/bin
+      GOROOT: /private/tmp/go
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+    macos:
+      xcode: 9.2.0
+    resource_class: large
+    working_directory: /private/tmp/workdir/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            pushd /private/tmp
+            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
+            tar -xzf golang.tar.gz
+            popd
+      - <<: *prepareEnv
+      - <<: *runTests
+      - <<: *buildCli
+      - <<: *deployBits
+      # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
+      #- <<: *runIntegrationTests
+      - <<: *storeArtifacts
+      - <<: *storeTestResults
+workflows:
+  version: 2
+  CI-test-build-deploy:
+    jobs:
+      - build-linux
+      - build-windows
+      - build-macos
