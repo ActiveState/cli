@@ -731,9 +731,9 @@ warn_script_name_in_use:
      
       - {{.V0}}
     
-    This may cause conflicts, ideally these conflicts should be resolved by renaming these scripts in your activestate.yaml.
+    These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
     
-    Note that you can also access scripts by prefixing their script with your project name ({{.V1}}), eg. `{{.V2}}`
+    Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
 
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
