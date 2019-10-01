@@ -1,6 +1,7 @@
 package secrets_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -70,6 +71,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		return 200, "definitions/00020002-0002-0002-0002-000200020002"
 	})
+	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
@@ -84,6 +86,58 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.Contains(strings.TrimSpace(outStr), "proj-secret-description")
 	suite.Contains(strings.TrimSpace(outStr), "user-secret")
 	suite.Contains(strings.TrimSpace(outStr), "user-secret-description")
+}
+
+func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
+	cmd := secrets.NewCommand(suite.secretsClient)
+
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
+		return 200, "definitions/00020002-0002-0002-0002-000200020002"
+	})
+	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
+
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		cmd.Config().GetCobraCmd().SetArgs([]string{"--filter-usedby", "scripts.secret-indirect"})
+		execErr = cmd.Config().Execute()
+	})
+	suite.Require().NoError(outErr)
+	suite.Require().NoError(execErr)
+	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
+
+	suite.Contains(strings.TrimSpace(outStr), "proj-secret")
+	suite.Contains(strings.TrimSpace(outStr), "proj-secret-description")
+	suite.Contains(strings.TrimSpace(outStr), "Defined")
+	suite.NotContains(strings.TrimSpace(outStr), "user-secret")
+}
+
+func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
+	cmd := secrets.NewCommand(suite.secretsClient)
+
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
+		return 200, "definitions/00020002-0002-0002-0002-000200020002"
+	})
+	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
+
+	var execErr error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		cmd.Config().GetCobraCmd().SetArgs([]string{"--json"})
+		execErr = cmd.Config().Execute()
+	})
+	suite.Require().NoError(outErr)
+	suite.Require().NoError(execErr)
+	suite.Require().Nil(failures.Handled(), "unexpected failure occurred")
+
+	secretsJson := []secrets.SecretExport{}
+	err := json.Unmarshal([]byte(outStr), &secretsJson)
+	suite.Require().NoError(err)
+	suite.Len(secretsJson, 2)
 }
 
 func Test_VariablesCommand_TestSuite(t *testing.T) {

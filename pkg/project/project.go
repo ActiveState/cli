@@ -446,7 +446,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient())
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil)
 
 	category := ProjectCategory
 	if s.IsUser() {

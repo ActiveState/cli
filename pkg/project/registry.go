@@ -32,6 +32,14 @@ func RegisterExpander(handle string, expanderFn ExpanderFunc) *failures.Failure 
 	return nil
 }
 
+// RegisteredExpander returns the expander registered for the given handle
+func RegisteredExpander(handle string) ExpanderFunc {
+	if expander, ok := expanderRegistry[handle]; ok {
+		return expander
+	}
+	return nil
+}
+
 // IsRegistered returns true if an Expander Func is registered for a given handle/name.
 func IsRegistered(handle string) bool {
 	_, ok := expanderRegistry[handle]
