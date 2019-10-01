@@ -215,9 +215,6 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 		return nil, fail
 	}
 
-	if e.secretsAccessed == nil {
-		e.secretsAccessed = []*SecretAccess{}
-	}
 	e.secretsAccessed = append(e.secretsAccessed, &SecretAccess{isUser, name})
 
 	projectID := project.ProjectID.String()
