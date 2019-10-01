@@ -120,7 +120,7 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 		_, err := exec.LookPath(cmd.Name())
 		if err == nil {
 			// Do not overwrite commands that are already in use and
-			// keep track of those commands to warn to user
+			// keep track of those commands to warn to the user
 			inuse = append(inuse, cmd.Name())
 			continue
 		}
