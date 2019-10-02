@@ -51,6 +51,14 @@ type ProjectResp struct {
 	Project *Project `json:"project"`
 }
 
+func (psr *ProjectsResp) FirstToProjectResp() (*ProjectResp, error) {
+	if psr.Projects == nil || len(psr.Projects) == 0 {
+		return nil, ErrNoValueAvailable
+	}
+
+	return &ProjectResp{Project: psr.Projects[0]}, nil
+}
+
 type ProjectClient interface {
 	ProjectByOrgAndName(org, name string) (*ProjectResp, error)
 }

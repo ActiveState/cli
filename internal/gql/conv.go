@@ -29,14 +29,6 @@ func (b *Branch) ToMonoBranch() *mono_models.Branch {
 	}
 }
 
-func (psr *ProjectsResp) FirstToProjectResp() (*ProjectResp, error) {
-	if psr.Projects == nil || len(psr.Projects) == 0 {
-		return nil, ErrNoValueAvailable
-	}
-
-	return &ProjectResp{Project: psr.Projects[0]}, nil
-}
-
 func (pr *ProjectResp) ToMonoProject() (*mono_models.Project, error) {
 	if pr == nil {
 		return nil, ErrNoValueAvailable
