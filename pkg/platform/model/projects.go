@@ -2,11 +2,13 @@ package model
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/gql"
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/gqldb/projdb"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -19,8 +21,22 @@ type ProjectProvider interface {
 	gql.ProjectClient
 }
 
-var sin = func() ProjectProvider {
-	p, err := projdb.NewProjectClient(condition.InTest(), "", nil)
+var prv = func() ProjectProvider {
+	if condition.InTest() {
+		return projdb.NewMock()
+	}
+
+	endpoint := constants.GraphqlURLStage
+	if constants.APIEnv == "prod" {
+		endpoint = constants.GraphqlURLProd
+	}
+
+	timeout := time.Second * 16
+
+	gc := gqlclient.New(endpoint, nil, timeout)
+	fmt.Println(endpoint)
+
+	p, err := projdb.New(gc)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +56,7 @@ var (
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
-	proj, err := sin.ProjectByOrgAndName(orgName, projectName)
+	proj, err := prv.ProjectByOrgAndName(orgName, projectName)
 	if err != nil {
 		return nil, FailNoValidProject.Wrap(err)
 	}

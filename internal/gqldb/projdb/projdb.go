@@ -1,29 +1,20 @@
 package projdb
 
 import (
-	"time"
+	"encoding/json"
+	"fmt"
 
 	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
 )
 
-func NewProjectClient(isTest bool, endpoint string, hdr gqlclient.Header) (gql.ProjectClient, error) {
-	switch isTest {
-	case true:
-		return NewMock(), nil
-	default:
-		timeout := time.Second * 16
-		return New(endpoint, hdr, timeout)
-	}
-}
-
 type ProjDB struct {
 	gc *gqlclient.GQLClient
 }
 
-func New(endpoint string, hdr gqlclient.Header, timeout time.Duration) (*ProjDB, error) {
+func New(gc *gqlclient.GQLClient) (*ProjDB, error) {
 	db := ProjDB{
-		gc: gqlclient.New(endpoint, hdr, timeout),
+		gc: gc,
 	}
 
 	return &db, nil
@@ -78,9 +69,12 @@ query ($org: String, $name: String) {
 	req.Var("name", name)
 
 	var resp gql.ProjectsResp
-	if err := db.gc.Run(req, &resp); err != nil {
+	var raw json.RawMessage
+	if err := db.gc.Run(req, &raw); err != nil {
 		return nil, err
 	}
+
+	fmt.Println(string(raw))
 
 	return resp.FirstToProjectResp()
 }

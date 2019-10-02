@@ -107,29 +107,45 @@ const UnstableBranch = "unstable"
 // ExperimentalBranch is the branch used for experimental builds
 const ExperimentalBranch = "master"
 
+const urlProd = "https://platform.activestate.com"
+const urlStage = "https://pr1745.activestate.build"
+const urlDev = "http://localhost"
+
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"
 
 // MonoURLProd is the host used for platform api calls when on production
-const MonoURLProd = "https://platform.activestate.com" + MonoAPIPath
+const MonoURLProd = urlProd + MonoAPIPath
 
 // MonoURLStage is the host used for platform api calls when on staging
-const MonoURLStage = "https://staging.activestate.build" + MonoAPIPath
+const MonoURLStage = urlStage + MonoAPIPath
 
 // MonoURLDev is the host used for platform api calls when on staging
-const MonoURLDev = "http://localhost" + MonoAPIPath
+const MonoURLDev = urlDev + MonoAPIPath
+
+// GraphqlAPIPath is the path used for the platform graphql api
+const GraphqlAPIPath = "/graphql/v1/graphql"
+
+// GraphqlURLProd is the endpoint used for platform graphql api calls when on production
+const GraphqlURLProd = urlProd + GraphqlAPIPath
+
+// GraphqlURLStage is the endpoint used for platform graphql api calls when on staging
+const GraphqlURLStage = urlStage + GraphqlAPIPath
+
+// GraphqlURLDev is the endpoint used for platform graphql api calls when on staging
+const GraphqlURLDev = urlDev + GraphqlAPIPath
 
 // SecretsAPIPath is the api path used for the secrets api
 const SecretsAPIPath = "/api/secrets/v1"
 
 // SecretsURLProd is the host used for secrets api calls when on production
-const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
+const SecretsURLProd = urlProd + SecretsAPIPath
 
 // SecretsURLStage is the host used for secrets api calls when on staging
-const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
+const SecretsURLStage = urlStage + SecretsAPIPath
 
 // SecretsURLDev is the host used for secrets api calls when on dev
-const SecretsURLDev = "http://localhost" + SecretsAPIPath
+const SecretsURLDev = urlDev + SecretsAPIPath
 
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
 const ActivePythonDistsDir = "python"
