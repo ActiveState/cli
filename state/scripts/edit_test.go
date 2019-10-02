@@ -142,8 +142,8 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("platform is not Windows, skipping test")
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("the test for file extensions is only relevant for Windows")
 	}
 
 	wd, err := os.Getwd()
