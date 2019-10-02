@@ -200,22 +200,21 @@ func NewPlatformProject() {
 	fail := validateFlagsGroup()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_invalid_flags"))
-		exit(1)
+		return
 	}
 
 	lang, fail := validateLanguage()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_invalid_language"))
-		exit(1)
+		return
 	}
 
 	if fail = createPlatformProject(Flags.Project, Flags.Owner, lang); fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_new_project_add"))
-		exit(1)
+		return
 	}
 
-	print.Line(locale.Tr("state_activate_new_platform_project"),
-		map[string]interface{}{"Owner": Flags.Owner, "Project": Flags.Project})
+	print.Line(locale.Tr("state_activate_new_platform_project"), Flags.Owner, Flags.Project)
 }
 
 func validateFlagsGroup() *failures.Failure {
@@ -223,7 +222,7 @@ func validateFlagsGroup() *failures.Failure {
 		return failures.FailUserInput.New(locale.T("error_state_activate_owner_flag_not_set"))
 	}
 	if Flags.Project == "" {
-		return failures.FailUserInput.New(locale.T("error_state_activate_name_flag_not_set"))
+		return failures.FailUserInput.New(locale.T("error_state_activate_project_flag_not_set"))
 	}
 	if Flags.Language == "" {
 		return failures.FailUserInput.New(locale.T("error_state_activate_language_flag_not_set"))

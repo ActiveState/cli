@@ -340,7 +340,7 @@ error_state_activate_new_fetch_organizations:
 state_activate_new_created:
   other: Created new project in {{.Dir}}
 state_activate_new_platform_project:
-  other: New platform project succesfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
+  other: New platform project succesfully created as {{.V0}}/{{.V1}}. To activate your new project run 'state activate {{.V0}}/{{.V1}}'
 state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
@@ -353,7 +353,7 @@ error_state_activate_new_invalid_language:
   other: The language provided is not valid
 error_state_activate_owner_flag_not_set:
   other: The '--owner' flag is not set. This flag must be set in order to use the '--new' flag
-error_state_activate_name_flag_not_set:
+error_state_activate_project_flag_not_set:
   other: The '--project' flag is not set. This flag must be set in order to use the '--new' flag
 error_state_activate_language_flag_not_set:
   other: The '--language' flag is not set. This flag must be set in order to use the '--new' flag
