@@ -43,32 +43,50 @@ func NewMock() *Mock {
 
 func (db *ProjDB) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
 	req := db.gc.NewRequest(`
-query {
-  projects(where: {name: {_eq: "xxample"}, organization: {url_name: {_eq: "davedx"}}}, limit: 1) {
-    organization {
-      deleted
-      display_name
-      url_name
-    }
+query ($org: String, $name: String) {
+  projects(where: {name: {_eq: $name}, organization: {url_name: {_eq: $org}}}, limit: 1) {
     branches {
+      branch_id
       commit_id
       main
       project_id
       tracking_type
       tracks
+      label
     }
     description
     languages
     name
+    added
+    created_by
+    forked_from
+    forked_project {
+      name
+      organization {
+        url_name
+      }
+    }
+    changed
+    managed
+    organization_id
+    platforms
+    private
+    project_id
+    repo_url
   }
 }
 `)
+	req.Var("org", org)
+	req.Var("name", name)
 
-	var resp gql.ProjectResp
-	err := db.gc.Run(req, &resp)
-	return &resp, err
+	var resp gql.ProjectsResp
+	if err := db.gc.Run(req, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp.FirstToProjectResp()
 }
 
 func (mk *Mock) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
-	return &gql.ProjectResp{Project: mk.ProjectsResp.Projects[0]}, nil
+	return mk.ProjectsResp.FirstToProjectResp()
 }
