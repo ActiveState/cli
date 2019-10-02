@@ -423,6 +423,8 @@ error_edit_script:
   other: Failed to edit script
 error_edit_unrecognized_platform:
   other: Could not open script file on this platform {{.V0}}
+error_edit_windows_invalid_editor:
+  other: Editor path must contain a file extension
 error_edit_watcher_channel_closed:
   other: Encountered error watching scriptfile. Please restart edit command
 prompt_done_editing:

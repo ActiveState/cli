@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -182,21 +184,28 @@ func getEditor() string {
 	}
 
 	if strings.Contains(editor, string(os.PathSeparator)) {
-		_, err := os.Stat(editor)
-		if err != nil {
-			// TODO: log error
-			fmt.Println(err)
+		if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
+			print.Error(locale.T("err_edit_windows_invalid_editor"))
 			return ""
 		}
+
+		_, err := os.Stat(editor)
+		if err != nil {
+			fmt.Println(err)
+			logging.Error("Error trying to stat editor: ", err)
+			return ""
+		}
+
 		return editor
 	}
 
 	_, err := exec.LookPath(editor)
 	if err != nil {
-		// TODO: log error
 		fmt.Println(err)
+		logging.Error("Error looking for editor executable path: ", err)
 		return ""
 	}
+
 	return editor
 }
 
