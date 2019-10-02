@@ -19,7 +19,6 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
-      go mod vendor
   - name: build
     description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
