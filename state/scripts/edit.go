@@ -191,7 +191,6 @@ func getEditor() string {
 
 		_, err := os.Stat(editor)
 		if err != nil {
-			fmt.Println(err)
 			logging.Error("Error trying to stat editor: ", err)
 			return ""
 		}
@@ -201,7 +200,6 @@ func getEditor() string {
 
 	_, err := exec.LookPath(editor)
 	if err != nil {
-		fmt.Println(err)
 		logging.Error("Error looking for editor executable path: ", err)
 		return ""
 	}
