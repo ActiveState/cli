@@ -55,7 +55,6 @@ query ($org: String, $name: String) {
       label
     }
     description
-    languages
     name
     added
     created_by
@@ -69,7 +68,6 @@ query ($org: String, $name: String) {
     changed
     managed
     organization_id
-    platforms
     private
     project_id
     repo_url

@@ -27,11 +27,16 @@ var sin = func() ProjectProvider {
 	return p
 }()
 
-// FailNoValidProject is a failure for the call api.GetProject
-var FailNoValidProject = failures.Type("model.fail.novalidproject")
+var (
+	// FailNoValidProject is a failure for the call api.GetProject
+	FailNoValidProject = failures.Type("model.fail.novalidproject")
 
-// FailNoDefaultBranch is a failure in getting a project's default branch
-var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
+	// FailNoDefaultBranch is a failure in getting a project's default branch
+	FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
+
+	// FailCannotConvertModel is a failure to convert a new model to an existing model
+	FailCannotConvertModel = failures.Type("model.fail.cannotconvertmodel")
+)
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
@@ -40,7 +45,12 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		return nil, FailNoValidProject.Wrap(err)
 	}
 
-	return proj.ToMonoProject()
+	mp, err := proj.ToMonoProject()
+	if err != nil {
+		return nil, FailCannotConvertModel.Wrap(err)
+	}
+
+	return mp, nil
 }
 
 // FetchOrganizationProjects fetches the projects for an organization

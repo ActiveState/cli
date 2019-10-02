@@ -30,7 +30,6 @@ type ForkedProject struct {
 type Project struct {
 	Branches       Branches       `json:"branches"`
 	Description    *string        `json:"description"`
-	Languages      interface{}    `json:"languages"` // graphql type: _varchar
 	Name           string         `json:"name"`
 	Added          time.Time      `json:"added"`
 	CreatedBy      *strfmt.UUID   `json:"created_by"`
@@ -39,7 +38,6 @@ type Project struct {
 	Changed        time.Time      `json:"changed"`
 	Managed        bool           `json:"managed"`
 	OrganizationID strfmt.UUID    `json:"organization_id"`
-	Platforms      interface{}    `json:"platforms"` // graphql type: _varchar
 	Private        bool           `json:"private"`
 	ProjectID      strfmt.UUID    `json:"project_id"`
 	RepoURL        *string        `json:"repo_url"`
