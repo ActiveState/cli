@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -35,6 +34,9 @@ var (
 
 	// FailWatcherInstance indicates a failure from the active watcher
 	FailWatcherInstance = failures.Type("edit.fail.watcherinstance")
+
+	// FailInvalidEditor indicates the EDITOR variable is not correctly set
+	FailInvalidEditor = failures.Type("edit.fail.invalideditor")
 )
 
 // EditArgs captures values for any arguments used with the edit command
@@ -156,9 +158,9 @@ func openEditor(filename string) *failures.Failure {
 }
 
 func getOpenCmd() (string, *failures.Failure) {
-	editor := getEditor()
+	editor := os.Getenv("EDITOR")
 	if editor != "" {
-		return editor, nil
+		return verifyEditor(editor)
 	}
 
 	switch runtime.GOOS {
@@ -177,34 +179,30 @@ func getOpenCmd() (string, *failures.Failure) {
 	}
 }
 
-func getEditor() string {
-	editor := os.Getenv("EDITOR")
-	if editor == "" {
-		return ""
-	}
-
+func verifyEditor(editor string) (string, *failures.Failure) {
 	if strings.Contains(editor, string(os.PathSeparator)) {
-		if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
-			print.Error(locale.T("err_edit_windows_invalid_editor"))
-			return ""
-		}
-
-		_, err := os.Stat(editor)
-		if err != nil {
-			logging.Error("Error trying to stat editor: ", err)
-			return ""
-		}
-
-		return editor
+		return verifyPathEditor(editor)
 	}
 
 	_, err := exec.LookPath(editor)
 	if err != nil {
-		logging.Error("Error looking for editor executable path: ", err)
-		return ""
+		return "", FailInvalidEditor.Wrap(err)
 	}
 
-	return editor
+	return editor, nil
+}
+
+func verifyPathEditor(editor string) (string, *failures.Failure) {
+	if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
+		return "", FailInvalidEditor.New("error_edit_windows_invalid_editor")
+	}
+
+	_, err := os.Stat(editor)
+	if err != nil {
+		return "", FailInvalidEditor.Wrap(err)
+	}
+
+	return editor, nil
 }
 
 type scriptWatcher struct {

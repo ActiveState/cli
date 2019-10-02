@@ -98,26 +98,61 @@ func (suite *EditTestSuite) TestGetOpenCmd_EditorSet() {
 	}
 
 	f, err := os.OpenFile(expected, os.O_CREATE|os.O_EXCL, 0700)
-	suite.NoError(err, "Should be able to create executable file")
+	suite.NoError(err, "should be able to create executable file")
 	defer os.Remove(f.Name())
 
 	err = f.Close()
-	suite.NoError(err, "Could no close file")
+	suite.NoError(err, "could no close file")
 
 	originalPath := os.Getenv("PATH")
 	defer os.Setenv("PATH", originalPath)
 
 	wd, err := os.Getwd()
-	suite.NoError(err, "Could not get current working directory")
+	suite.NoError(err, "could not get current working directory")
 
 	err = os.Setenv("PATH", wd)
-	suite.NoError(err, "Could not set PATH")
+	suite.NoError(err, "could not set PATH")
 
 	os.Setenv("EDITOR", expected)
 
 	actual, fail := getOpenCmd()
 	suite.Require().NoError(fail.ToError(), "could not get open command")
 	suite.Equal(expected, actual)
+}
+
+func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NotInPath() {
+	os.Setenv("EDITOR", "NotInPath")
+
+	_, fail := getOpenCmd()
+	suite.Require().Error(fail, "should get failure when editor is not in PATH")
+}
+
+func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_InvalidFilepath() {
+	wd, err := os.Getwd()
+	suite.NoError(err, "could not get current working directory")
+
+	executeable := "someExecutable"
+	if runtime.GOOS == "windows" {
+		executeable = "someExecutable.exe"
+	}
+	os.Setenv("EDITOR", filepath.Join(wd, executeable))
+
+	_, fail := getOpenCmd()
+	suite.Require().Error(fail, "should get failure when editor in path does not exist")
+}
+
+func (suite *EditTestSuite) TestGetOpenCmd_EditorSet_NoExtensionWindows() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("platform is not Windows, skipping test")
+	}
+
+	wd, err := os.Getwd()
+	suite.NoError(err, "could not get current working director")
+
+	os.Setenv("EDITOR", filepath.Join(wd, "executable"))
+
+	_, fail := getOpenCmd()
+	suite.Require().Error(fail, "should get failure when editor path does not have extension")
 }
 
 func (suite *EditTestSuite) TestGetOpenCmd_EditorNotSet() {
