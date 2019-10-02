@@ -151,5 +151,5 @@ workflows:
   CI-test-build-deploy:
     jobs:
       - build-linux
-      - build-windows
+      #- build-windows
       - build-macos
