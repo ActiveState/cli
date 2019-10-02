@@ -69,8 +69,35 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Path,
 		},
+		&commands.Flag{
+			Name:        "new",
+			Shorthand:   "",
+			Description: "flag_state_activate_new_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.New,
+		},
+		&commands.Flag{
+			Name:        "owner",
+			Shorthand:   "",
+			Description: "flag_state_activate_owner_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Owner,
+		},
+		&commands.Flag{
+			Name:        "project",
+			Shorthand:   "",
+			Description: "flag_state_activate_project_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Project,
+		},
+		&commands.Flag{
+			Name:        "language",
+			Shorthand:   "",
+			Description: "flag_state_activate_language_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Language,
+		},
 	},
-
 	Arguments: []*commands.Argument{
 		&commands.Argument{
 			Name:        "arg_state_activate_namespace",
@@ -82,7 +109,11 @@ var Command = &commands.Command{
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Path string
+	Path     string
+	New      bool
+	Owner    string
+	Project  string
+	Language string
 }
 
 // Args hold the arg values passed through the command line
@@ -92,11 +123,14 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && !projectExists(Flags.Path) {
+	switch {
+	case Flags.New:
+		NewPlatformProject()
+	case len(args) == 0 && !projectExists(Flags.Path):
 		NewExecute(cmd, args)
+	default:
+		ExistingExecute(cmd, args)
 	}
-
-	ExistingExecute(cmd, args)
 }
 
 func projectExists(path string) bool {

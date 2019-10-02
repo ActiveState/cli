@@ -86,26 +86,18 @@ flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
   other: Where to install the project
-flag_state_activate_branch_description:
-  other: Clone this specific branch
-flag_state_activate_cd_description:
-  other: Whether or not to change into the project directory once created
-info_state_activate_uri:
-  other: Activating URI '{{.URI}}' into directory '{{.Dir}}'
-info_state_activate_branch:
-  other: "Checkout out branch: {{.Branch}}"
-error_cannot_checkout_branch:
-  other: Cannot checkout branch
+flag_state_activate_new_description:
+  other: Create a new project on the platform. Requires 'org', 'name', and 'language' flags to be set
+flag_state_activate_owner_description:
+  other: The owner to create the project under
+flag_state_activate_project_description:
+  other: The project name to be used
+flag_state_activate_language_description:
+  other: The language for the new project
 error_state_activate:
   other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
-error_state_activate_config_exists:
-  other: Config file '{{.ConfigFile}}' not found in repository root. This file is needed to complete the activation process.
-info_state_activate_cd:
-  other: Changing into directory '{{.Dir}}'
 error_unsupported_shell:
   other: "You are using an unsupported shell: {{.Shell}}"
-error_cannot_clone_uri:
-  other: "Unable to clone the following URI: {{.URI}}"
 error_could_not_activate_subshell:
   other: Could not activate a new subshell
 error_unable_to_monitor_pulls:
@@ -347,12 +339,26 @@ error_state_activate_new_fetch_organizations:
   other: "Unable to create new project: cannot determine potential owners."
 state_activate_new_created:
   other: Created new project in {{.Dir}}
+state_activate_new_platform_project:
+  other: New platform project succesfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
 state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
   other: "None - I'll use shell scripting"
 error_state_activate_new_project_add:
   other: Unable to create new Platform project.
+error_state_activate_new_invalid_flags:
+  other: Missing required flags to create a new project
+error_state_activate_new_invalid_language:
+  other: The language provided is not valid
+error_state_activate_owner_flag_not_set:
+  other: The '--owner' flag is not set. This flag must be set in order to use the '--new' flag
+error_state_activate_name_flag_not_set:
+  other: The '--project' flag is not set. This flag must be set in order to use the '--new' flag
+error_state_activate_language_flag_not_set:
+  other: The '--language' flag is not set. This flag must be set in order to use the '--new' flag
+error_state_activate_language_flag_invalid:
+  other: The provided language does not match any of the known languages
 project_empty:
   other: You have not created any projects yet
 downloading:

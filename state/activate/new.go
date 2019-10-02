@@ -193,3 +193,51 @@ func createProjectDir(path string) *failures.Failure {
 	}
 	return nil
 }
+
+// NewPlatformProject will attempt to create a new project on the platform without
+// prompting the user by relying on command line flags
+func NewPlatformProject() {
+	fail := validateFlagsGroup()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_invalid_flags"))
+		exit(1)
+	}
+
+	lang, fail := validateLanguage()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_invalid_language"))
+		exit(1)
+	}
+
+	if fail = createPlatformProject(Flags.Project, Flags.Owner, lang); fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_project_add"))
+		exit(1)
+	}
+
+	print.Line(locale.Tr("state_activate_new_platform_project"),
+		map[string]interface{}{"Owner": Flags.Owner, "Project": Flags.Project})
+}
+
+func validateFlagsGroup() *failures.Failure {
+	if Flags.Owner == "" {
+		return failures.FailUserInput.New(locale.T("error_state_activate_owner_flag_not_set"))
+	}
+	if Flags.Project == "" {
+		return failures.FailUserInput.New(locale.T("error_state_activate_name_flag_not_set"))
+	}
+	if Flags.Language == "" {
+		return failures.FailUserInput.New(locale.T("error_state_activate_language_flag_not_set"))
+	}
+
+	return nil
+}
+
+func validateLanguage() (language.Language, *failures.Failure) {
+	for _, lang := range language.Available() {
+		if Flags.Language == lang.String() {
+			return lang, nil
+		}
+	}
+
+	return language.Unknown, failures.FailUserInput.New(locale.T("error_state_activate_language_flag_invalid"))
+}
