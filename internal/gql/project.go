@@ -1,8 +1,6 @@
 package gql
 
 import (
-	"time"
-
 	"github.com/go-openapi/strfmt"
 )
 
@@ -31,11 +29,11 @@ type Project struct {
 	Branches       Branches       `json:"branches"`
 	Description    *string        `json:"description"`
 	Name           string         `json:"name"`
-	Added          time.Time      `json:"added"`
+	Added          Time           `json:"added"`
 	CreatedBy      *strfmt.UUID   `json:"created_by"`
 	ForkedFrom     *strfmt.UUID   `json:"forked_from"`
 	ForkedProject  *ForkedProject `json:"forked_project"`
-	Changed        time.Time      `json:"changed"`
+	Changed        Time           `json:"changed"`
 	Managed        bool           `json:"managed"`
 	OrganizationID strfmt.UUID    `json:"organization_id"`
 	Private        bool           `json:"private"`

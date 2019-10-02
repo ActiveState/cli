@@ -1,9 +1,6 @@
 package projdb
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
 )
@@ -69,12 +66,9 @@ query ($org: String, $name: String) {
 	req.Var("name", name)
 
 	var resp gql.ProjectsResp
-	var raw json.RawMessage
-	if err := db.gc.Run(req, &raw); err != nil {
+	if err := db.gc.Run(req, &resp); err != nil {
 		return nil, err
 	}
-
-	fmt.Println(string(raw))
 
 	return resp.FirstToProjectResp()
 }
