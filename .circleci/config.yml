@@ -150,6 +150,6 @@ workflows:
   version: 2
   CI-test-build-deploy:
     jobs:
-      #- build-linux
+      - build-linux
       #- build-windows
-      #- build-macos
+      - build-macos
