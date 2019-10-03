@@ -28,11 +28,12 @@ import (
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-const ProjectNamespace = "string/string"
+const ProjectNamespace = "example-org/example-proj"
 
 type ActivateTestSuite struct {
 	suite.Suite
@@ -122,7 +123,6 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.rMock.MockFullRuntime()
 
 	if !withLang {
-		suite.apiMock.MockGetProjectNoLanguage()
 		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
 	}
 
@@ -141,7 +141,7 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00020002-0002-0002-0002-000200020002", pjfile.Project, "Project field should have been populated properly.")
 	return pjfile
 }
 
@@ -162,7 +162,7 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00020002-0002-0002-0002-000200020002", pjfile.Project, "Project field should have been populated properly.")
 
 	// Activate existing project
 	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})
@@ -216,7 +216,6 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetProjectNoLanguage()
 	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
@@ -258,10 +257,9 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject404()
 
-	fail := activateFromNamespace(ProjectNamespace)
-	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
+	fail := activateFromNamespace(ProjectNamespace + "junk")
+	suite.Equal(model.FailNoValidProject.Name, fail.Type.Name)
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it
@@ -428,7 +426,7 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 
 func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 	projectFile := &projectfile.Project{}
-	contents := strings.TrimSpace(`project: "https://platform.activestate.com/string/string"`)
+	contents := strings.TrimSpace(`project: "https://platform.activestate.com/bad-org/bad-proj"`)
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	suite.Require().NoError(err, "unexpected error marshalling yaml")
@@ -439,7 +437,6 @@ func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
 
 	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject404()
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
 
@@ -451,7 +448,7 @@ func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
 	suite.Require().Equal(1, code, "Exits with code 1")
 
 	suite.Require().Error(failures.Handled())
-	suite.Require().Equal(failures.Handled().Error(), locale.T("err_must_create_project"))
+	suite.Require().Equal(locale.T("err_must_create_project"), failures.Handled().Error())
 
 }
 

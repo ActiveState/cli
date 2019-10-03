@@ -49,12 +49,12 @@ type ProjectResp struct {
 	Project *Project `json:"project"`
 }
 
-func (psr *ProjectsResp) FirstToProjectResp() (*ProjectResp, error) {
-	if psr.Projects == nil || len(psr.Projects) == 0 {
+func (psr *ProjectsResp) ProjectToProjectResp(index int) (*ProjectResp, error) {
+	if psr.Projects == nil || index < 0 || len(psr.Projects) < index+1 {
 		return nil, ErrNoValueAvailable
 	}
 
-	return &ProjectResp{Project: psr.Projects[0]}, nil
+	return &ProjectResp{Project: psr.Projects[index]}, nil
 }
 
 type ProjectClient interface {

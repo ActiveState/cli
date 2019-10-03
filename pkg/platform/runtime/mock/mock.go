@@ -42,7 +42,6 @@ func (m *Mock) MockFullRuntime() {
 	m.authMock.MockLoggedin()
 	m.apiMock.MockVcsGetCheckpoint()
 	m.apiMock.MockSignS3URI()
-	m.apiMock.MockGetProject()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
 

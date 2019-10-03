@@ -91,7 +91,7 @@ func (suite *RecipeCommandTestSuite) runRecipeCommandTest(code int, args ...stri
 	cc := Command.GetCobraCmd()
 	cc.SetArgs(append([]string{"recipe"}, args...))
 
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	projectURL := fmt.Sprintf("https://%s/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}

@@ -25,16 +25,16 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
+	httpmock.Register("POST", "organizations/sample-org/projects")
 	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
-	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+	httpmock.Register("PUT", "vcs/branch/00090009-0009-0009-0009-000900090009")
 
 	authentication.Get().AuthenticateWithToken("")
 
-	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("example-proj", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+	suite.promptMock.OnMethod("Select").Once().Return("sample-org", nil)
 
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
@@ -61,8 +61,8 @@ func setupProjectMock() {
 		return responseFile
 	}
 	responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
-	request := "organizations/test-owner/projects/test-name"
-	pathToFileWithCommit := "organizations/test-owner/projects/test-name-commit"
+	request := "organizations/sample-org/projects/example-proj"
+	pathToFileWithCommit := "organizations/sample-org/projects/example-proj-commit"
 	method := "GET"
 	code := 200
 	httpmock.RegisterWithResponderBody(method, request, code, func(req *http.Request) (int, string) {
@@ -83,19 +83,18 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
+	httpmock.Register("POST", "organizations/example-org/projects")
 	httpmock.RegisterWithCode("GET", "organizations/ActiveState/projects/CodeIntel", 404)
 	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
-	suite.apiMock.MockGetProject404()
 
 	authentication.Get().AuthenticateWithToken("")
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("example-proj", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("example-org", nil)
 
 	projPathOriginal := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", constants.ConfigFileName)
 	newPath := filepath.Join(suite.dir, constants.ConfigFileName)
@@ -111,7 +110,7 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.NoError(err, "Project was created")
 	prj, fail := project.GetOnce()
 	suite.NoError(fail.ToError(), "Should retrieve project")
-	newURL := "https://platform.activestate.com/test-owner/test-name?commitID=00010001-0001-0001-0001-000100010001"
+	newURL := "https://platform.activestate.com/ActiveState/CodeIntel?commitID=00010001-0001-0001-0001-000100010001"
 	suite.Equal(newURL, prj.URL())
 	suite.Equal("master", prj.Version())
 }
