@@ -36,7 +36,7 @@ func TestActivateRuntimeEnvironment(t *testing.T) {
 
 	project := projectfile.Project{}
 	dat := strings.TrimSpace(`
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001"
 languages:
     - name: Python3`)
 	yaml.Unmarshal([]byte(dat), &project)
@@ -68,7 +68,7 @@ func TestSkipActivateRuntimeEnvironment(t *testing.T) {
 
 	project := projectfile.Project{}
 	dat := strings.TrimSpace(`
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001"
 languages:
     - name: Python3`)
 	yaml.Unmarshal([]byte(dat), &project)
