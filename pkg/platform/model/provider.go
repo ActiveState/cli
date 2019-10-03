@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -34,7 +33,6 @@ var prv = func() ProjectProvider {
 	timeout := time.Second * 16
 
 	gc := gqlclient.New(endpoint, nil, timeout)
-	fmt.Println(endpoint)
 
 	p, err := projdb.New(gc)
 	if err != nil {
