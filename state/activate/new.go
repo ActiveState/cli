@@ -214,7 +214,7 @@ func NewPlatformProject() {
 		return
 	}
 
-	print.Line(locale.Tr("state_activate_new_platform_project"), Flags.Owner, Flags.Project)
+	print.Line(locale.T("state_activate_new_platform_project", map[string]string{"Owner": Flags.Owner, "Project": Flags.Project}))
 }
 
 func validateFlagsGroup() *failures.Failure {
