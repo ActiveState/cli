@@ -32,7 +32,7 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	UpdateCommand.Exiter = suite.exiter.Exit
 	RemoveCommand.Exiter = suite.exiter.Exit
 
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	projectURL := fmt.Sprintf("https://%s/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
