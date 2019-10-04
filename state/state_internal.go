@@ -28,6 +28,11 @@ import (
 	"github.com/ActiveState/cli/state/update"
 )
 
+func (c *StateCommand) Children() []captain.Commander {
+	return []captain.Commander{
+		activate.Command.GetCobraCmd(),
+	}
+}
 // register will register any commands and expanders
 func register() {
 	logging.Debug("register")

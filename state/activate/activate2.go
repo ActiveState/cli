@@ -1,65 +1,70 @@
 package activate
 
-import "github.com/ActiveState/cli/pkg/cmdlets/commands"
+import (
+	"github.com/ActiveState/cli/internal/captain"
+	"github.com/spf13/cobra"
+)
 
 type ActivateCommand struct {
-	meta      commands.Meta
-	locale    commands.Locale
-	flags     []*commands.Flag
-	arguments []*commands.Argument
-	options   []commands.Option
+	meta      captain.Meta
+	locale    captain.Locale
+	flags     []*captain.Flag
+	arguments []*captain.Argument
+	options   []captain.Option
 }
 
-func NewActivateCommand() commands.Commander {
+func NewActivateCommand() captain.Commander {
 	return &ActivateCommand{
-		meta: commands.Meta{
+		meta: captain.Meta{
 			Name: "activate",
 		},
-		locale: commands.Locale{
+		locale: captain.Locale{
 			Description: "activate_project",
 		},
-		flags: []*commands.Flag{
-			&commands.Flag{
+		flags: []*captain.Flag{
+			&captain.Flag{
 				Name:        "path",
 				Shorthand:   "",
 				Description: "flag_state_activate_path_description",
-				Type:        commands.TypeString,
-				StringVar:   &Flags.Path,
+				Type:        captain.TypeString,
 			},
 		},
-		arguments: []*commands.Argument{
-			&commands.Argument{
+		arguments: []*captain.Argument{
+			&captain.Argument{
 				Name:        "arg_state_activate_namespace",
 				Description: "arg_state_activate_namespace_description",
-				Variable:    &Args.Namespace,
 			},
 		},
-		options: []commands.Option{
-			commands.OptionHidden(),
+		options: []captain.Option{
+			captain.OptionHidden(),
 		},
 	}
 }
 
-func (cmd *ActivateCommand) Execute() error {
+func (c *ActivateCommand) Execute(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (cmd *ActivateCommand) Meta() commands.Meta {
-	return cmd.meta
+func (c *ActivateCommand) Meta() captain.Meta {
+	return c.meta
 }
 
-func (cmd *ActivateCommand) Locale() commands.Locale {
-	return cmd.locale
+func (c *ActivateCommand) Locale() captain.Locale {
+	return c.locale
 }
 
-func (cmd *ActivateCommand) Flags() []*commands.Flag {
-	return cmd.flags
+func (c *ActivateCommand) Flags() []*captain.Flag {
+	return c.flags
 }
 
-func (cmd *ActivateCommand) Arguments() []*commands.Argument {
-	return cmd.arguments
+func (c *ActivateCommand) Arguments() []*captain.Argument {
+	return c.arguments
 }
 
-func (cmd *ActivateCommand) Options() []commands.Option {
-	return cmd.options
+func (c *ActivateCommand) Options() []captain.Option {
+	return c.options
+}
+
+func (c *ActivateCommand) Children() []captain.Commander {
+	return []captain.Commander{}
 }

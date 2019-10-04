@@ -14,7 +14,6 @@ import (
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -76,17 +75,6 @@ func main() {
 		}
 	}
 
-	cmd := NewStateCommand()
-	commander, err := captain.New(cmd)
-	if err != nil {
-		print.Error(err.Error())
-		os.Exit(1)
-	}
-	err = commander.Execute()
-	if err != nil {
-		print.Error(err.Error())
-		os.Exit(1)
-	}
 }
 
 func handlePanics() {
