@@ -23,11 +23,11 @@ import (
 var forceFileExt string
 
 // forwardAndExit will forward the call to the appropriate state tool version if necessary
-func forwardAndExit(args []string) {
+func forwardAndExit(args []string, exiter func(int)) {
 	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_version_parse"))
-		Command.Exiter(1)
+		exiter(1)
 	}
 	if versionInfo == nil {
 		return
@@ -38,12 +38,12 @@ func forwardAndExit(args []string) {
 
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
-	ensureForwardExists(binary, versionInfo)
+	ensureForwardExists(binary, versionInfo, exiter)
 
-	execForwardAndExit(binary, args)
+	execForwardAndExit(binary, args, exiter)
 }
 
-func execForwardAndExit(binary string, args []string) {
+func execForwardAndExit(binary string, args []string, exiter func(int)) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
@@ -51,7 +51,7 @@ func execForwardAndExit(binary string, args []string) {
 		logging.Error("Forwarding command resulted in error: %v", err)
 		print.Error(locale.Tr("forward_fail_with_error", err.Error()))
 	}
-	Command.Exiter(code)
+	exiter(code)
 }
 
 func shouldForward(versionInfo *projectfile.VersionInfo) bool {
@@ -69,7 +69,7 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, exiter func(int)) {
 	if fileutils.FileExists(binary) {
 		return
 	}
@@ -86,7 +86,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 	info, err := up.Info()
 	if err != nil {
 		failures.Handle(err, locale.T("forward_fail_download"))
-		Command.Exiter(1)
+		exiter(1)
 	}
 
 	if info != nil {
@@ -94,7 +94,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 		err = up.Download(binary)
 		if err != nil {
 			failures.Handle(err, locale.T("forward_fail_download"))
-			Command.Exiter(1)
+			exiter(1)
 		}
 
 		permissions, _ := permbits.Stat(binary)
@@ -102,7 +102,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 		err = permbits.Chmod(binary, permissions)
 		if err != nil {
 			failures.Handle(err, locale.T("forward_fail_perm"))
-			Command.Exiter(1)
+			exiter(1)
 		}
 	}
 }

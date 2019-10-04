@@ -12,9 +12,9 @@ import (
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
-	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,76 +26,25 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
+
+	// commands
 	_ "github.com/ActiveState/state-required/require"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic")
 
-// T links to locale.T
-var T = locale.T
-
-// Flags hold the flag values passed through the command line
-var Flags struct {
-	Locale  string
-	Verbose bool
-	Version bool
-}
-
-// Command holds our main command definition
-var Command = &commands.Command{
-	Name:        "state",
-	Description: "state_description",
-	Run:         Execute,
-
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "locale",
-			Shorthand:   "l",
-			Description: "flag_state_locale_description",
-			Type:        commands.TypeString,
-			Persist:     true,
-			StringVar:   &Flags.Locale,
-		},
-		&commands.Flag{
-			Name:        "verbose",
-			Shorthand:   "v",
-			Description: "flag_state_verbose_description",
-			Type:        commands.TypeBool,
-			Persist:     true,
-			OnUse:       onVerboseFlag,
-			BoolVar:     &Flags.Verbose,
-		},
-		&commands.Flag{
-			Name:        "version",
-			Description: "flag_state_version_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.Version,
-		},
-	},
-
-	UsageTemplate: "usage_tpl",
-}
-
 func main() {
 	logging.Debug("main")
-	Command.Register()
+	setupRollbar()
+
+	// Write our config to file
+	defer config.Save()
 
 	// Handle panics gracefully
-	defer func() {
-		if r := recover(); r != nil {
-			if fmt.Sprintf("%v", r) == "exiter" {
-				panic(r) // don't capture exiter panics
-			}
-			failures.Handle(FailMainPanic.New("err_main_panic"), "")
-			logging.Error("%v - caught panic", r)
-			logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
-			time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
-			os.Exit(1)
-		}
-	}()
+	defer handlePanics()
 
+	// setup profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanUpCPUProf, fail := runCPUProfiling()
 		if fail != nil {
@@ -105,15 +54,13 @@ func main() {
 		defer cleanUpCPUProf()
 	}
 
-	setupRollbar()
-
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
 	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
 		relaunch() // will not return
 	}
 
-	forwardAndExit(os.Args) // exits only if it forwards
+	forwardAndExit(os.Args, os.Exit) // exits only if it forwards
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
@@ -129,19 +76,30 @@ func main() {
 		}
 	}
 
-	register()
-
-	// This actually runs the command
-	err := Command.Execute()
-
+	cmd := NewStateCommand()
+	commander, err := captain.New(cmd)
 	if err != nil {
-		fmt.Println(err)
-		Command.Exiter(1)
-		return
+		print.Error(err.Error())
+		os.Exit(1)
 	}
+	err = commander.Execute()
+	if err != nil {
+		print.Error(err.Error())
+		os.Exit(1)
+	}
+}
 
-	// Write our config to file
-	config.Save()
+func handlePanics() {
+	if r := recover(); r != nil {
+		if fmt.Sprintf("%v", r) == "exiter" {
+			panic(r) // don't capture exiter panics
+		}
+		failures.Handle(FailMainPanic.New("err_main_panic"), "")
+		logging.Error("%v - caught panic", r)
+		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
+		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
+		os.Exit(1)
+	}
 }
 
 func setupRollbar() {
@@ -167,28 +125,6 @@ func setupRollbar() {
 	})
 
 	log.SetOutput(os.Stderr)
-}
-
-// Execute the `state` command
-func Execute(cmd *cobra.Command, args []string) {
-	logging.Debug("Execute")
-
-	if Flags.Version {
-		print.Info(locale.T("version_info", map[string]interface{}{
-			"Version":  constants.Version,
-			"Branch":   constants.BranchName,
-			"Revision": constants.RevisionHash,
-			"Date":     constants.Date}))
-		return
-	}
-
-	cmd.Usage()
-}
-
-func onVerboseFlag() {
-	if Flags.Verbose {
-		logging.CurrentHandler().SetVerbose(true)
-	}
 }
 
 // When an update was found and applied, re-launch the update with the current
