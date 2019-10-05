@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/pflag"
 )
 
+type CobraCommander interface {
+	GetCobraCmd() *cobra.Command
+}
+
 type Executor func(cmd *Command, args []string) error
 
 type Command struct {
@@ -27,8 +31,11 @@ func NewCommand(name string, flags []*Flag, args []*Argument, executor Executor)
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
-			panic(fmt.Sprintf("Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
-				arg, args[len(args)-1]))
+			msg := fmt.Sprintf(
+				"Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
+				arg, args[len(args)-1],
+			)
+			panic(msg)
 		}
 	}
 
@@ -107,9 +114,15 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) SetChildren(children []*Command) {
+func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
 		c.cobra.AddCommand(child.cobra)
+	}
+}
+
+func (c *Command) AddCobraCommanderChildren(children ...CobraCommander) {
+	for _, child := range children {
+		c.cobra.AddCommand(child.GetCobraCmd())
 	}
 }
 

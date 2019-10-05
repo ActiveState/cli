@@ -7,34 +7,31 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 )
 
-type StateOptions struct {
+type Options struct {
 	Locale  string
-	Verbose bool
 	Version bool
 }
 
-func NewStateOptions() *StateOptions {
-	return &StateOptions{}
+func NewOptions() *Options {
+	return &Options{}
 }
 
-type StateRunner struct {
-	opts *StateOptions
+type State struct {
+	opts *Options
 }
 
-func NewStateRunner(opts *StateOptions) *StateRunner {
-	sc := StateRunner{
+func New(opts *Options) *State {
+	return &State{
 		opts: opts,
 	}
-
-	return &sc
 }
 
-// Execute the `state` command
-func (c *StateRunner) Execute(usageFunc func() error) error {
-	return execute(c.opts, usageFunc)
+// Run state logic
+func (s *State) Run(usageFunc func() error) error {
+	return execute(s.opts, usageFunc)
 }
 
-func execute(opts *StateOptions, usageFunc func() error) error {
+func execute(opts *Options, usageFunc func() error) error {
 	logging.Debug("Execute")
 
 	if opts.Version {
@@ -48,18 +45,3 @@ func execute(opts *StateOptions, usageFunc func() error) error {
 
 	return usageFunc()
 }
-
-/*
-func (c *StateRunner) onVerboseFlag() {
-	if c.flagVerbose {
-		logging.CurrentHandler().SetVerbose(true)
-	}
-}
-
-RunE: func(cmd *captain.Command, args []string) error {
-	if opts.Verbose {
-		logging.CurrentH
-	}
-	sc := cmd.NewStateRunner(opts)
-	sc.Execute(cmd.Usage)
-}*/

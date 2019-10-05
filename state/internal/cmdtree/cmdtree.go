@@ -1,34 +1,48 @@
-package main
+package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/state/internal/commands/state"
 )
 
 type CmdTree struct {
 	cmd *captain.Command
 }
 
-func NewCmdTree() *CmdTree {
+func New() *CmdTree {
 	stateCmd := newStateCommand()
-	{
+	/*{
 		activateCmd := newActivateCommand()
-		stateCmd.SetChildren([]*captain.Command{activateCmd})
+		cmd.SetChildren([]*captain.Command{activateCmd})
 		{
 			activateCmd.SetChildren([]*captain.Command{})
 		}
-	}
+	}*/
+
+	applyLegacyChildren(stateCmd)
 
 	return &CmdTree{
 		cmd: stateCmd,
 	}
 }
 
+type globalOptions struct {
+	Verbose bool
+}
+
+func newGlobalOptions() *globalOptions {
+	return &globalOptions{}
+}
+
 func newStateCommand() *captain.Command {
-	opts := &StateOptions{}
-	stateRunner := NewStateRunner(opts)
-	stateCmd := captain.NewCommand(
+	globals := newGlobalOptions()
+	opts := state.NewOptions()
+
+	cmd := state.New(opts)
+
+	return captain.NewCommand(
 		"state",
 		[]*captain.Flag{
 			{
@@ -48,7 +62,7 @@ func newStateCommand() *captain.Command {
 				OnUse: func() {
 					logging.CurrentHandler().SetVerbose(true)
 				},
-				BoolVar: &opts.Verbose,
+				BoolVar: &globals.Verbose,
 			},
 			{
 				Name:        "version",
@@ -58,13 +72,14 @@ func newStateCommand() *captain.Command {
 			},
 		},
 		[]*captain.Argument{},
-		func(cmd *captain.Command, args []string) error { return stateRunner.Execute(cmd.Usage) },
-	)
-	return stateCmd
-}
+		func(ccmd *captain.Command, args []string) error {
+			if globals.Verbose {
+				logging.CurrentHandler().SetVerbose(true)
+			}
 
-func newActivateCommand() *captain.Command {
-	return nil
+			return cmd.Run(ccmd.Usage)
+		},
+	)
 }
 
 func (ct *CmdTree) Run() error {
