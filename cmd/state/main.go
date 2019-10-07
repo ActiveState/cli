@@ -57,12 +57,12 @@ func runAndExit(args []string, exiter func(int)) {
 	}
 
 	// Don't auto-update if we're 'state update'ing
-	manualUpdate := funk.Contains(os.Args, "update")
+	manualUpdate := funk.Contains(args, "update")
 	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
 		relaunch(exiter) // will not return
 	}
 
-	forwardAndExit(os.Args, exiter) // exits only if it forwards
+	forwardAndExit(args, exiter) // exits only if it forwards
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
@@ -79,9 +79,8 @@ func runAndExit(args []string, exiter func(int)) {
 	}
 
 	cmds := cmdtree.New()
-
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err := cmds.Execute(args); err != nil || failures.Handled() != nil {
+	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
 		logging.Error("Error happened while running cmdtree: %w", err)
 		exiter(1)
 		//Command.Exiter(1)
