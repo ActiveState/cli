@@ -61,7 +61,7 @@ func (c *Command) Usage() error {
 func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
-	c.cobra.SetArgs([]string{})
+	c.cobra.SetArgs(nil)
 	return err
 }
 
