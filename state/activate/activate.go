@@ -124,9 +124,7 @@ var Args struct {
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	switch {
-	case Flags.New:
-		NewExecute(cmd, args)
-	case len(args) == 0 && !projectExists(Flags.Path):
+	case len(args) == 0 && !projectExists(Flags.Path), Flags.New:
 		NewExecute(cmd, args)
 	default:
 		ExistingExecute(cmd, args)
