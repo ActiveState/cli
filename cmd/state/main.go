@@ -10,12 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/profile"
-
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -25,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
 )
@@ -78,7 +78,7 @@ func runAndExit(args []string, exiter func(int)) {
 		}
 	}
 
-	cmds := New()
+	cmds := cmdtree.New()
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
 	if err := cmds.Execute(args); err != nil || failures.Handled() != nil {

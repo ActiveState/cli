@@ -1,6 +1,6 @@
 // +build !external
 
-package main
+package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
