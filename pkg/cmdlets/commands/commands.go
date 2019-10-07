@@ -77,34 +77,6 @@ type Command struct {
 	parentCmds []*Command
 }
 
-type Commander interface {
-	Execute() error
-	Meta() Meta
-	Locale() Locale
-	Flags() []*Flag
-	Arguments() []*Argument
-	Options() []Option
-}
-
-type Meta struct {
-	Name    string
-	Aliases []string
-}
-
-type Locale struct {
-	Description   string
-	UsageTemplate string
-}
-
-type Option func(c *cobra.Command) error
-
-func OptionHidden() Option {
-	return func(c *cobra.Command) error {
-		c.Hidden = true
-		return nil
-	}
-}
-
 // GetCobraCmd returns the cobra.Command that this struct is wrapping
 func (c *Command) GetCobraCmd() *cobra.Command {
 	c.Register()
