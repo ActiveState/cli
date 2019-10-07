@@ -3,109 +3,62 @@ package main
 import (
 	"testing"
 
-	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	funk "github.com/thoas/go-funk"
-
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/kami-zh/go-capturer"
+
+	"github.com/stretchr/testify/suite"
 )
 
-func TestInit(t *testing.T) {
-	setupCwd(t, false)
-	assert := assert.New(t)
+type MainTestSuite struct {
+	suite.Suite
+}
 
-	Cc := Command.GetCobraCmd()
-	pflags := Cc.PersistentFlags()
-	var flags []string
-
-	pflags.VisitAll(func(pf *pflag.Flag) {
-		flags = append(flags, pf.Name)
+func (suite *MainTestSuite) TestPanicCaught() {
+	exitCode := -1
+	exiter := func(code int) {
+		if exitCode == -1 {
+			// The first call to exit is cause we're running cobra with `go test` args
+			// the second is called from the panic defer, which shouldn't panic again
+			exitCode = code
+			panic("Exit")
+		}
+	}
+	out := capturer.CaptureOutput(func() {
+		runAndExit([]string{"IdontExist"}, exiter)
 	})
-
-	assert.Equal(funk.Contains(flags, "locale"), true, "locale pflag is set")
+	suite.Contains(out, locale.T("err_main_panic"))
+	suite.Contains(out, `unknown command "IdontExist"`)
+	suite.Equal(1, exitCode)
 }
 
-func TestMainFn(t *testing.T) {
-	setupCwd(t, false)
-	assert := assert.New(t)
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--help"})
-
-	main()
-
-	assert.Equal(true, true, "main didn't panic")
-}
-
-func TestMainFnVerbose(t *testing.T) {
-	setupCwd(t, false)
-	assert := assert.New(t)
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--verbose"})
-
-	Flags.Verbose = true
-	defer func() {
-		Flags.Verbose = false
-	}()
-	onVerboseFlag()
-	out, err := osutil.CaptureStderr(func() {
-		logging.Debug("AM I VERBOSE?")
-	})
-	require.NoError(t, err)
-
-	assert.Equal(true, true, "main didn't panic")
-	assert.Contains(out, "AM I VERBOSE?")
-}
-
-func TestMainError(t *testing.T) {
-	setupCwd(t, false)
-	assert := assert.New(t)
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--foo"})
-
-	Command.Exiter = exiter.Exit
-	exitCode := exiter.WaitForExit(main)
-
-	assert.Equal(exitCode, 1, "main didn't exit")
-}
-
-func TestExecute(t *testing.T) {
-	setupCwd(t, false)
-	assert := assert.New(t)
-
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{})
-
-	Execute(Cc, []string{"--help"})
-
-	assert.Equal(true, true, "Execute didn't panic")
-}
-
-func TestDeprecated(t *testing.T) {
-	setupCwd(t, false)
+func (suite *MainTestSuite) TestDeprecated() {
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockDeprecated()
 
-	out, err := osutil.CaptureStdout(main)
-	require.NoError(t, err)
-	require.Contains(t, out, locale.Tr("warn_deprecation", "")[0:50])
+	ex := exiter.New()
+	out, code := ex.Capture(func() {
+		runAndExit([]string{}, ex.Exit)
+	})
+	suite.Require().Equal(0, code)
+	suite.Require().Contains(out, locale.Tr("warn_deprecation", "")[0:50])
 }
 
-func TestExpired(t *testing.T) {
-	setupCwd(t, false)
+func (suite *MainTestSuite) TestExpired() {
 	mock := depMock.Init()
 	defer mock.Close()
 	mock.MockExpired()
 
-	out, err := osutil.CaptureStderr(main)
-	require.NoError(t, err)
-	require.Contains(t, out, locale.Tr("err_deprecation", "")[0:50])
+	ex := exiter.New()
+	out, code := ex.Capture(func() {
+		runAndExit([]string{}, ex.Exit)
+	})
+	suite.Require().Equal(0, code)
+	suite.Require().Contains(out, locale.Tr("err_deprecation", "")[0:50])
+}
+
+func TestMainTestSuite(t *testing.T) {
+	suite.Run(t, new(MainTestSuite))
 }

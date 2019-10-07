@@ -58,8 +58,11 @@ func (c *Command) Usage() error {
 	return c.cobra.Usage()
 }
 
-func (c *Command) Execute() error {
-	return c.cobra.Execute()
+func (c *Command) Execute(args []string) error {
+	c.cobra.SetArgs(args)
+	err := c.cobra.Execute()
+	c.cobra.SetArgs([]string{})
+	return err
 }
 
 func (c *Command) SetAliases(aliases []string) {

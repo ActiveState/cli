@@ -33,10 +33,10 @@ import (
 var FailMainPanic = failures.Type("main.fail.panic")
 
 func main() {
-	runAndExit(os.Exit)
+	runAndExit(os.Args, os.Exit)
 }
 
-func runAndExit(exiter func(int)) {
+func runAndExit(args []string, exiter func(int)) {
 	logging.Debug("main")
 	setupRollbar()
 
@@ -44,14 +44,14 @@ func runAndExit(exiter func(int)) {
 	defer config.Save()
 
 	// Handle panics gracefully
-	defer handlePanics()
+	defer handlePanics(exiter)
 
 	// setup profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
 			failures.Handle(fail, "cpu_profiling_setup_failed")
-			os.Exit(1)
+			exiter(1)
 		}
 		defer cleanUpCPUProf()
 	}
@@ -59,10 +59,10 @@ func runAndExit(exiter func(int)) {
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(os.Args, "update")
 	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
-		relaunch() // will not return
+		relaunch(exiter) // will not return
 	}
 
-	forwardAndExit(os.Args, os.Exit) // exits only if it forwards
+	forwardAndExit(os.Args, exiter) // exits only if it forwards
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
@@ -81,14 +81,17 @@ func runAndExit(exiter func(int)) {
 	cmds := New()
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err := cmds.Run(); err != nil || failures.Handled() != nil {
-		os.Exit(1)
+	if err := cmds.Execute(args); err != nil || failures.Handled() != nil {
+		logging.Error("Error happened while running cmdtree: %w", err)
+		exiter(1)
 		//Command.Exiter(1)
 		return
 	}
+
+	exiter(0)
 }
 
-func handlePanics() {
+func handlePanics(exiter func(int)) {
 	if r := recover(); r != nil {
 		if fmt.Sprintf("%v", r) == "exiter" {
 			panic(r) // don't capture exiter panics
@@ -97,7 +100,7 @@ func handlePanics() {
 		logging.Error("%v - caught panic", r)
 		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
-		os.Exit(1)
+		exiter(1)
 	}
 }
 
@@ -129,7 +132,7 @@ func setupRollbar() {
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 // This function will never return to its caller.
-func relaunch() {
+func relaunch(func(int)) {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()

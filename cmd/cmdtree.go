@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/ActiveState/cli/cmd/state"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/cmd/state"
 )
 
 type CmdTree struct {
@@ -85,6 +85,6 @@ func newStateCommand() *captain.Command {
 	return cmd
 }
 
-func (ct *CmdTree) Run() error {
-	return ct.cmd.Execute()
+func (ct *CmdTree) Execute(args []string) error {
+	return ct.cmd.Execute(args)
 }
