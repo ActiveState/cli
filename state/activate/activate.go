@@ -165,25 +165,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// activate should be continually called while returning true
-	// looping here provides a layer of scope to handle printing output
-	var proj *project.Project
-	for {
-		proj = project.Get()
-		print.Info(locale.T("info_activating_state", proj))
-
-		if branchName != constants.StableBranch {
-			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
-		}
-
-		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
-			break
-		}
-
-		print.Info(locale.T("info_reactivating", proj))
-	}
-
-	print.Bold(locale.T("info_deactivated", proj))
+	activateProject()
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
@@ -265,18 +247,17 @@ func getProjectFileByPath(path string) *project.Project {
 		// CWD is used to return to the directory before retrieving the as.yaml
 		// file was initiated.
 		cwd, err := os.Getwd()
-
 		if err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
+			failures.Handle(err, locale.Tr("err_activate_path", path))
 		}
 
 		if err := os.Chdir(path); err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
+			failures.Handle(err, locale.Tr("err_activate_path", path))
 		}
 		defer func() {
 			logging.Debug("moving back to origin dir")
 			if err := os.Chdir(cwd); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
+				failures.Handle(err, locale.Tr("err_activate_path", path))
 			}
 		}()
 	}
@@ -288,6 +269,28 @@ func getProjectFileByPath(path string) *project.Project {
 		}
 	}
 	return prj
+}
+
+func activateProject() {
+	// activate should be continually called while returning true
+	// looping here provides a layer of scope to handle printing output
+	var proj *project.Project
+	for {
+		proj = project.Get()
+		print.Info(locale.T("info_activating_state", proj))
+
+		if branchName != constants.StableBranch {
+			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+		}
+
+		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
+			break
+		}
+
+		print.Info(locale.T("info_reactivating", proj))
+	}
+
+	print.Bold(locale.T("info_deactivated", proj))
 }
 
 // savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this

@@ -339,6 +339,8 @@ error_state_activate_copy_prompts:
   other: Invalid input value for copy project
 error_state_activate_copy_project_url:
   other: Could not get project URL
+err_activate_path:
+  other: Could not get project file with given path '{{.V0}}'
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:

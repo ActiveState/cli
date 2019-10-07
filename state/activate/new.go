@@ -60,6 +60,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	activateProject()
 }
 
 // CopyExecute creates a new project from an existing activestate.yaml
