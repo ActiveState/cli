@@ -1,10 +1,10 @@
-package cmdtree
+package main
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/state/internal/commands/state"
+	"github.com/ActiveState/cli/cmd/state"
 )
 
 type CmdTree struct {
@@ -40,9 +40,8 @@ func newStateCommand() *captain.Command {
 	globals := newGlobalOptions()
 	opts := state.NewOptions()
 
-	cmd := state.New(opts)
-
-	return captain.NewCommand(
+	runner := state.New(opts)
+	cmd := captain.NewCommand(
 		"state",
 		[]*captain.Flag{
 			{
@@ -77,9 +76,13 @@ func newStateCommand() *captain.Command {
 				logging.CurrentHandler().SetVerbose(true)
 			}
 
-			return cmd.Run(ccmd.Usage)
+			return runner.Run(ccmd.Usage)
 		},
 	)
+
+	cmd.SetUsageTemplate("usage_tpl")
+
+	return cmd
 }
 
 func (ct *CmdTree) Run() error {

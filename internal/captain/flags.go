@@ -1,5 +1,7 @@
 package captain
 
+import "github.com/ActiveState/cli/internal/failures"
+
 type FlagType int
 
 // Note we only support the types that we currently have need for. You can add more as needed. Check the pflag docs
@@ -29,4 +31,27 @@ type Flag struct {
 	IntValue    int
 	BoolVar     *bool
 	BoolValue   bool
+}
+
+func (c *Command) setFlags(flags []*Flag) error {
+	c.flags = flags
+	for _, flag := range flags {
+		flagSetter := c.cobra.Flags
+		if flag.Persist {
+			flagSetter = c.cobra.PersistentFlags
+		}
+
+		switch flag.Type {
+		case TypeString:
+			flagSetter().StringVarP(flag.StringVar, flag.Name, flag.Shorthand, flag.StringValue, flag.Description)
+		case TypeInt:
+			flagSetter().IntVarP(flag.IntVar, flag.Name, flag.Shorthand, flag.IntValue, flag.Description)
+		case TypeBool:
+			flagSetter().BoolVarP(flag.BoolVar, flag.Name, flag.Shorthand, flag.BoolValue, flag.Description)
+		default:
+			return failures.FailInput.New("Unknown type:" + string(flag.Type))
+		}
+	}
+
+	return nil
 }

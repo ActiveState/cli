@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
+
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
@@ -25,16 +27,16 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/state/internal/cmdtree"
-
-	// commands
-	_ "github.com/ActiveState/state-required/require"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic")
 
 func main() {
+	runAndExit(os.Exit)
+}
+
+func runAndExit(exiter func(int)) {
 	logging.Debug("main")
 	setupRollbar()
 
@@ -46,7 +48,7 @@ func main() {
 
 	// setup profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
-		cleanUpCPUProf, fail := runCPUProfiling()
+		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
 			failures.Handle(fail, "cpu_profiling_setup_failed")
 			os.Exit(1)
@@ -76,10 +78,11 @@ func main() {
 		}
 	}
 
-	cmds := cmdtree.New()
+	cmds := New()
 
-	if err := cmds.Run(); err != nil {
-		fmt.Println(err)
+	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
+	if err := cmds.Run(); err != nil || failures.Handled() != nil {
+		os.Exit(1)
 		//Command.Exiter(1)
 		return
 	}

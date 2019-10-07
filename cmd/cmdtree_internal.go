@@ -1,6 +1,6 @@
-// +build external
+// +build !external
 
-package cmdtree
+package main
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
@@ -10,8 +10,10 @@ import (
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
+	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/organizations"
+	pkg "github.com/ActiveState/cli/state/package"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/run"
@@ -23,11 +25,11 @@ import (
 
 // applyLegacyChildren will register any commands and expanders
 func applyLegacyChildren(cmd *captain.Command) {
-	logging.Debug("register external")
+	logging.Debug("register")
 
 	secretsapi.InitializeClient()
 
-	cmd.AddCobraCommanderChildren(
+	cmd.AddLegacyChildren(
 		activate.Command,
 		events.Command,
 		update.Command,
@@ -39,6 +41,8 @@ func applyLegacyChildren(cmd *captain.Command) {
 		scripts.Command,
 		pull.Command,
 		export.Command,
+		invite.Command,
+		pkg.Command,
 		secrets.NewCommand(secretsapi.Get()).Config(),
 		keypair.Command,
 	)

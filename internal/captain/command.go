@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-type CobraCommander interface {
+type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
 }
 
@@ -50,6 +49,8 @@ func NewCommand(name string, flags []*Flag, args []*Argument, executor Executor)
 		RunE: cmd.runner,
 	}
 
+	cmd.setFlags(flags)
+
 	return cmd
 }
 
@@ -87,29 +88,6 @@ func (c *Command) SetUsageTemplate(usageTemplate string) {
 	}))
 }
 
-func (c *Command) SetFlags(flags []*Flag) error {
-	c.flags = flags
-	for _, flag := range flags {
-		flagSetter := c.cobra.Flags
-		if flag.Persist {
-			flagSetter = c.cobra.PersistentFlags
-		}
-
-		switch flag.Type {
-		case TypeString:
-			flagSetter().StringVarP(flag.StringVar, flag.Name, flag.Shorthand, flag.StringValue, flag.Description)
-		case TypeInt:
-			flagSetter().IntVarP(flag.IntVar, flag.Name, flag.Shorthand, flag.IntValue, flag.Description)
-		case TypeBool:
-			flagSetter().BoolVarP(flag.BoolVar, flag.Name, flag.Shorthand, flag.BoolValue, flag.Description)
-		default:
-			return failures.FailInput.New("Unknown type:" + string(flag.Type))
-		}
-	}
-
-	return nil
-}
-
 func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
@@ -120,7 +98,7 @@ func (c *Command) AddChildren(children ...*Command) {
 	}
 }
 
-func (c *Command) AddCobraCommanderChildren(children ...CobraCommander) {
+func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	for _, child := range children {
 		c.cobra.AddCommand(child.GetCobraCmd())
 	}

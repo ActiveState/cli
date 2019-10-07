@@ -40,7 +40,7 @@ Examples:[[BR]]
 [[end]]
 
 [[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
-[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]][[BR]]
+[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
   [[rpad .Name .NamePadding ]] [[.Short]]
 [[end]][[end]][[end]]
 

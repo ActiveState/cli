@@ -42,6 +42,5 @@ func execute(opts *Options, usageFunc func() error) error {
 			"Date":     constants.Date}))
 		return nil
 	}
-
 	return usageFunc()
 }

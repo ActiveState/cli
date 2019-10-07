@@ -3,7 +3,7 @@ scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      CLI_PKGS=./state
+      CLI_PKGS=./cmd
       CLI_BUILDFLAGS='-ldflags="-s -w"'
       GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
