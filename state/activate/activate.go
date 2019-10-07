@@ -125,7 +125,7 @@ var Args struct {
 func Execute(cmd *cobra.Command, args []string) {
 	switch {
 	case Flags.New:
-		NewPlatformProject()
+		NewExecute(cmd, args)
 	case len(args) == 0 && !projectExists(Flags.Path):
 		NewExecute(cmd, args)
 	default:

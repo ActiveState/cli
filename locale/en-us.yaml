@@ -329,8 +329,18 @@ state_activate_prompt_create_project:
   other: The project {{.V0}} does not exist under {{.V1}}. Would you like to create it now?
 state_activate_new_prompt_name:
   other: "Please provide a name for the new project:"
-error_state_activate_new_aborted:
-  other: "Unable to create new project: aborted."
+error_state_activate_new_flags:
+  other: Flags do not contain value project values
+error_state_activate_new_prompt:
+  other: Invalid input value for new project
+error_state_activate_new_create:
+  other: Could not create new project
+error_state_activate_copy_prompts:
+  other: Invalid input value for copy project
+error_state_activate_copy_project_url:
+  other: Could not get project URL
+error_state_activate_copy_save:
+  other: Error saving project file
 error_state_activate_new_no_commit_aborted:
   other: "Platform project created but cannot activate.  Try 'state activate {{.Owner}}/{{.ProjectName}}'."
 state_activate_new_prompt_owner:
@@ -345,12 +355,6 @@ state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
   other: "None - I'll use shell scripting"
-error_state_activate_new_project_add:
-  other: Unable to create new Platform project.
-error_state_activate_new_invalid_flags:
-  other: Missing required flags to create a new project
-error_state_activate_new_invalid_language:
-  other: The language provided is not valid
 error_state_activate_owner_flag_not_set:
   other: The '--owner' flag is not set. This flag must be set in order to use the '--new' flag
 error_state_activate_project_flag_not_set:
