@@ -110,47 +110,20 @@ const ExperimentalBranch = "master"
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"
 
-// MonoURLProd is the host used for platform api calls when on production
-const MonoURLProd = "https://platform.activestate.com" + MonoAPIPath
-
-// MonoURLStage is the host used for platform api calls when on staging
-const MonoURLStage = "https://staging.activestate.build" + MonoAPIPath
-
-// MonoURLDev is the host used for platform api calls when on staging
-const MonoURLDev = "http://localhost" + MonoAPIPath
+// DefaultAPIHost is the host used for platform api calls when on production
+const DefaultAPIHost = "platform.activestate.com"
 
 // SecretsAPIPath is the api path used for the secrets api
 const SecretsAPIPath = "/api/secrets/v1"
 
-// SecretsURLProd is the host used for secrets api calls when on production
-const SecretsURLProd = "https://platform.activestate.com" + SecretsAPIPath
-
-// SecretsURLStage is the host used for secrets api calls when on staging
-const SecretsURLStage = "https://staging.activestate.build" + SecretsAPIPath
-
-// SecretsURLDev is the host used for secrets api calls when on dev
-const SecretsURLDev = "http://localhost" + SecretsAPIPath
-
-// ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
-const ActivePythonDistsDir = "python"
-
-// RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
-const RuntimeInstallDirs = "INSTALLDIR,perl"
-
-// RuntimeMetaFile is the json file that holds meta information about our runtime
-const RuntimeMetaFile = "support/metadata.json"
+// SecretsURL is the host used for secrets api calls when on production
+const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
 
 // HeadChefAPIPath is the api path used for the secrets api
 const HeadChefAPIPath = "/sv/head-chef/"
 
-// HeadChefURLProd is the host used for platform api calls when on production
-const HeadChefURLProd = "wss://platform.activestate.com" + HeadChefAPIPath
-
-// HeadChefURLStage is the host used for platform api calls when on staging
-const HeadChefURLStage = "wss://staging.activestate.build" + HeadChefAPIPath
-
-// HeadChefURLDev is the host used for platform api calls when on staging
-const HeadChefURLDev = "http://localhost" + HeadChefAPIPath
+// HeadChefURL is the host used for platform api calls when on production
+const HeadChefURL = "wss://platform.activestate.com" + HeadChefAPIPath
 
 // HeadChefOrigin is the Origin header to use when making head-chef requests
 const HeadChefOrigin = "http://localhost"
@@ -159,13 +132,7 @@ const HeadChefOrigin = "http://localhost"
 const InventoryAPIPath = "/sv/inventory-api"
 
 // InventoryURLProd is the host used for platform api calls when on production
-const InventoryURLProd = "https://platform.activestate.com" + InventoryAPIPath
-
-// InventoryURLStage is the host used for platform api calls when on staging
-const InventoryURLStage = "https://staging.activestate.build" + InventoryAPIPath
-
-// InventoryURLDev is the host used for platform api calls when on staging
-const InventoryURLDev = "http://localhost" + InventoryAPIPath
+const InventoryURL = "https://platform.activestate.com" + InventoryAPIPath
 
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
 const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
@@ -194,3 +161,12 @@ const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
 	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
 )
+
+// ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.
+const ActivePythonDistsDir = "python"
+
+// RuntimeInstallDirs represents the directory within a distribution archive where the distribution exists.
+const RuntimeInstallDirs = "INSTALLDIR,perl"
+
+// RuntimeMetaFile is the json file that holds meta information about our runtime
+const RuntimeMetaFile = "support/metadata.json"
