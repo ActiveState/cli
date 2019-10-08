@@ -7,7 +7,7 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
-	github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e
+	github.com/ActiveState/sysinfo v0.0.0-20190228211309-dee9e420eb1c
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
