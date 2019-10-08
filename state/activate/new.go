@@ -40,18 +40,10 @@ func NewExecute(cmd *cobra.Command, args []string) {
 	)
 	logging.Debug("Execute")
 
-	if Flags.New {
-		projectInfo, fail = newProjectFromFlags()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_activate_new_flags"))
-			return
-		}
-	} else {
-		projectInfo, fail = newProjectFromPrompts()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_activate_new_prompt"))
-			return
-		}
+	projectInfo, fail = newProjectInfo()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_prompt"))
+		return
 	}
 
 	fail = createNewProject(projectInfo)
@@ -67,7 +59,7 @@ func NewExecute(cmd *cobra.Command, args []string) {
 func CopyExecute(cmd *cobra.Command, args []string) {
 	projFile := project.Get().Source()
 
-	projectInfo, fail := newProjectFromPrompts()
+	projectInfo, fail := newProjectInfo()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_activate_copy_prompts"))
 		return
@@ -86,26 +78,28 @@ func CopyExecute(cmd *cobra.Command, args []string) {
 	}
 }
 
-func newProjectFromPrompts() (*projectStruct, *failures.Failure) {
-	var (
-		defaultName string
-		fail        *failures.Failure
-	)
-
+func newProjectInfo() (*projectStruct, *failures.Failure) {
 	projectInfo := new(projectStruct)
-	if projectExists(Flags.Path) {
-		proj := project.Get()
-		defaultName = proj.Name()
+
+	var fail *failures.Failure
+	projectInfo.name = Flags.Project
+	if projectInfo.name == "" {
+		projectInfo.name, fail = promptForProjectName()
+		if fail != nil {
+			return nil, fail
+		}
 	}
 
-	projectInfo.name, fail = prompter.Input(locale.T("state_activate_new_prompt_name"), defaultName, prompt.InputRequired)
-	if fail != nil {
-		return nil, fail
-	}
-
-	projectInfo.language, fail = promptForLanguage()
-	if fail != nil {
-		return nil, fail
+	if Flags.Language == "" {
+		projectInfo.language, fail = promptForLanguage()
+		if fail != nil {
+			return nil, fail
+		}
+	} else {
+		projectInfo.language, fail = getLanguageFromFlags()
+		if fail != nil {
+			return nil, fail
+		}
 	}
 
 	if !authentication.Get().Authenticated() && !condition.InTest() {
@@ -115,12 +109,25 @@ func newProjectFromPrompts() (*projectStruct, *failures.Failure) {
 	// If the user is not yet authenticated into the ActiveState Platform, it is a
 	// simple prompt. Otherwise, fetch the list of organizations the user belongs
 	// to and present the list to the user for a selection.
-	projectInfo.owner, fail = promptForOwner()
-	if fail != nil {
-		return nil, fail
+	projectInfo.owner = Flags.Owner
+	if projectInfo.owner == "" {
+		projectInfo.owner, fail = promptForOwner()
+		if fail != nil {
+			return nil, fail
+		}
 	}
 
 	return projectInfo, nil
+}
+
+func promptForProjectName() (string, *failures.Failure) {
+	var defaultName string
+	if projectExists(Flags.Path) {
+		proj := project.Get()
+		defaultName = proj.Name()
+	}
+
+	return prompter.Input(locale.T("state_activate_new_prompt_name"), defaultName, prompt.InputRequired)
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {
@@ -176,7 +183,6 @@ func createNewProject(projectInfo *projectStruct) *failures.Failure {
 		return fail
 	}
 
-	// Create the project directory
 	if fail := createProjectDir(path); fail != nil {
 		return fail
 	}
@@ -186,7 +192,6 @@ func createNewProject(projectInfo *projectStruct) *failures.Failure {
 		return fail
 	}
 
-	// Create the project locally on disk.
 	if _, fail := projectfile.Create(projectURL, path); fail != nil {
 		return fail
 	}
@@ -247,41 +252,6 @@ func getProjectURL(owner, name string) (string, *failures.Failure) {
 	}
 
 	return projectURL, nil
-}
-
-// newProjectFromFlags will attempt to create a new project without prompting the
-// user by relying on command line flags
-func newProjectFromFlags() (*projectStruct, *failures.Failure) {
-	fail := validateNewFlags()
-	if fail != nil {
-		return nil, fail
-	}
-
-	projectInfo := &projectStruct{
-		name:  Flags.Project,
-		owner: Flags.Owner,
-	}
-
-	projectInfo.language, fail = getLanguageFromFlags()
-	if fail != nil {
-		return nil, fail
-	}
-
-	return projectInfo, nil
-}
-
-func validateNewFlags() *failures.Failure {
-	if Flags.Owner == "" {
-		return failures.FailUserInput.New(locale.T("error_state_activate_owner_flag_not_set"))
-	}
-	if Flags.Project == "" {
-		return failures.FailUserInput.New(locale.T("error_state_activate_project_flag_not_set"))
-	}
-	if Flags.Language == "" {
-		return failures.FailUserInput.New(locale.T("error_state_activate_language_flag_not_set"))
-	}
-
-	return nil
 }
 
 func getLanguageFromFlags() (language.Language, *failures.Failure) {

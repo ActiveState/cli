@@ -11,13 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/kami-zh/go-capturer"
 )
 
 func (suite *ActivateTestSuite) TestActivateNew() {
@@ -136,64 +133,4 @@ func (suite *ActivateTestSuite) TestNewPlatformProject() {
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
 	suite.NoError(failures.Handled(), "No failure occurred")
-}
-
-func (suite *ActivateTestSuite) TestNewPlatformProject_MissingOwner() {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--new", "--project", "test-name", "--language", "python3"})
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	stderr := capturer.CaptureStderr(func() {
-		code := ex.WaitForExit(func() {
-			Command.Execute()
-		})
-		suite.Require().Equal(1, code, "Exits with code 1")
-	})
-	suite.Contains(stderr, locale.T("error_state_activate_owner_flag_not_set"))
-}
-
-func (suite *ActivateTestSuite) TestNewPlatformProject_MissingProject() {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--new", "--owner", "test-owner", "--language", "python3"})
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	stderr := capturer.CaptureStderr(func() {
-		code := ex.WaitForExit(func() {
-			Command.Execute()
-		})
-		suite.Require().Equal(1, code, "Exits with code 1")
-	})
-	suite.Contains(stderr, locale.T("error_state_activate_project_flag_not_set"))
-}
-
-func (suite *ActivateTestSuite) TestNewPlatformProject_MissingLanguage() {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--new", "--project", "test-name", "--owner", "test-owner"})
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	stderr := capturer.CaptureStderr(func() {
-		code := ex.WaitForExit(func() {
-			Command.Execute()
-		})
-		suite.Require().Equal(1, code, "Exits with code 1")
-	})
-	suite.Contains(stderr, locale.T("error_state_activate_language_flag_not_set"))
-}
-
-func (suite *ActivateTestSuite) TestNewPlatformProject_UnknownLanguage() {
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--new", "--project", "test-name", "--owner", "test-owner", "--language", "unknown"})
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	stderr := capturer.CaptureStderr(func() {
-		code := ex.WaitForExit(func() {
-			Command.Execute()
-		})
-		suite.Require().Equal(1, code, "Exits with code 1")
-	})
-	suite.Contains(stderr, locale.T("error_state_activate_language_flag_invalid"))
 }

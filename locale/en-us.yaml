@@ -87,7 +87,7 @@ flag_state_version_description:
 flag_state_activate_path_description:
   other: Where to install the project
 flag_state_activate_new_description:
-  other: Create a new project on the platform. Requires 'org', 'name', and 'language' flags to be set
+  other: Create a new project on the platform
 flag_state_activate_owner_description:
   other: The owner to create the project under
 flag_state_activate_project_description:
