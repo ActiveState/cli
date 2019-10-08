@@ -6,8 +6,8 @@ github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:l
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
 github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8 h1:zMXhP3KSuO3+6Vq2duhqEjnpd5Ct3xyGd16wffmhBkg=
 github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8/go.mod h1:RG4eNKvmn9ZUEGBg/c+lvZdE8iZE4rM54zb7wGwJvIY=
-github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e h1:Cd9/nj/O5C6EraR6cq6ukIRnaxCYnsHOhIEFQ64aa4M=
-github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e/go.mod h1:9L5BiOyziWNetyh7lkwxKIoWz3czZu8N0nepnmG1tPo=
+github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a h1:w0rnPskgd7shZuKf6h/2LjMqZmAvG2HCAN6Chg/kJ8A=
+github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a/go.mod h1:9L5BiOyziWNetyh7lkwxKIoWz3czZu8N0nepnmG1tPo=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
@@ -165,9 +165,6 @@ github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de h1:e96987R6uGe5Rr9oA
 github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de/go.mod h1:mlR+dHGb+4YgXkf13rkQTuzrneeHANxOm6+ZnEV9HsA=
 github.com/ulikunitz/xz v0.5.4 h1:zATC2OoZ8H1TZll3FpbX+ikwmadbO699PE06cIkm9oU=
 github.com/ulikunitz/xz v0.5.4/go.mod h1:2bypXElzHzzJZwzH67Y6wb67pO62Rzfn7BSiF4ABRW8=
-github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0 h1:WjCP8MkUnjBW6rWPgqR6Aw3tUsqMbxCSMwfEpt6+9SM=
-github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0/go.mod h1:zAHG26FUhVKETRu+MWqYXcI70POlC6N8up9p1dID7SU=
-github.com/vbauerster/mpb v3.4.0+incompatible h1:mfiiYw87ARaeRW6x5gWwYRUawxaW1tLAD8IceomUCNw=
 github.com/vbauerster/mpb/v4 v4.9.4 h1:aGaMDanOSnCZxjaAp09+eSlu3v9Eekpj2oBJ7j+ULL4=
 github.com/vbauerster/mpb/v4 v4.9.4/go.mod h1:xMKSr3w3dixpCH9v7svY4wF3mmhuyWYuYtkpy8T5FOk=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofmx9yWTog9BfvIu0q41lo=
