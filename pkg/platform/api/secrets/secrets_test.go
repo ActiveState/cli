@@ -21,7 +21,7 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	apiSetting := api.GetSettings(api.ServiceSecrets)
 	client := secretsapi.NewDefaultClient()
 	require.NotNil(client)
-	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
+	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Scheme, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
 
 	rt, isRuntime := client.Transport.(*httptransport.Runtime)
 	require.True(isRuntime, "client.Transport is a Runtime")
@@ -42,7 +42,7 @@ func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
 
 	client := secretsapi.Get()
 	require.NotNil(client)
-	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Schema, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
+	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Scheme, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
 
 	rt, isRuntime := client.Transport.(*httptransport.Runtime)
 	require.True(isRuntime, "client.Transport is a Runtime")

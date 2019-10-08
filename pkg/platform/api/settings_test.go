@@ -10,10 +10,10 @@ import (
 
 func TestGetServiceURL(t *testing.T) {
 	u := api.GetServiceURL(api.ServiceMono)
-	assert.Equal(t, "https://testing.tld"+constants.MonoAPIPath, u.String(), "Returns the expected service url")
+	assert.Equal(t, "https://platform.testing.tld"+constants.MonoAPIPath, u.String(), "Returns the expected service url")
 }
 
 func TestGetSettings(t *testing.T) {
 	s := api.GetSettings(api.ServiceMono)
-	assert.Equal(t, "testing.tld", s.Host)
+	assert.Equal(t, "platform.testing.tld", s.Host)
 }
