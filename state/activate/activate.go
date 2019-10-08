@@ -123,6 +123,12 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
+	updater.PrintUpdateMessage()
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+	}
+
 	switch {
 	case len(args) == 0 && !projectExists(Flags.Path), Flags.New:
 		NewExecute(cmd, args)
@@ -142,12 +148,6 @@ func projectExists(path string) bool {
 // ExistingExecute activates a project based on the namespace in the
 // arguments or the existing project file
 func ExistingExecute(cmd *cobra.Command, args []string) {
-	updater.PrintUpdateMessage()
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_auth_required"))
-	}
-
 	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
@@ -159,7 +159,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail = promptCreateProject(cmd, args)
+	fail := promptCreateProject(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 		return

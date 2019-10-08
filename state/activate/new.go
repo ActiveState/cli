@@ -6,12 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -34,11 +32,8 @@ type projectStruct struct {
 
 // NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
-	var (
-		projectInfo *projectStruct
-		fail        *failures.Failure
-	)
-	logging.Debug("Execute")
+	projectInfo := new(projectStruct)
+	var fail *failures.Failure
 
 	projectInfo, fail = newProjectInfo()
 	if fail != nil {
@@ -80,8 +75,8 @@ func CopyExecute(cmd *cobra.Command, args []string) {
 
 func newProjectInfo() (*projectStruct, *failures.Failure) {
 	projectInfo := new(projectStruct)
-
 	var fail *failures.Failure
+
 	projectInfo.name = Flags.Project
 	if projectInfo.name == "" {
 		projectInfo.name, fail = promptForProjectName()
@@ -100,10 +95,6 @@ func newProjectInfo() (*projectStruct, *failures.Failure) {
 		if fail != nil {
 			return nil, fail
 		}
-	}
-
-	if !authentication.Get().Authenticated() && !condition.InTest() {
-		return nil, failures.FailUser.New(locale.T("error_state_activate_new_no_auth"))
 	}
 
 	// If the user is not yet authenticated into the ActiveState Platform, it is a
