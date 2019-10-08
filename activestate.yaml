@@ -20,14 +20,14 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
-    description: Builds the project.
+    description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
       eval go build -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set).
+    description: Builds the project for external use (limiting its feature-set). Note by default this targets the staging environment, to target prod use `APIENV=prod`.
     value: |
       $scripts.preprocess
       eval go build -tags external -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
@@ -96,7 +96,7 @@ scripts:
       ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "api/.*?(client|model)"`
     standalone: true
   - name: integration-tests
-    description: Runs integration tests.
+    description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
     value: cd test/integration && python3 -m unittest discover -p "*_test.py"
   - name: clean
     description: Cleans out the build dir.

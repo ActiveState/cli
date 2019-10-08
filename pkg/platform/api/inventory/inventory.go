@@ -23,7 +23,7 @@ func Init() *inventory_operations.Client {
 
 // New initializes a new api client
 func New(apiSetting api.Settings) *inventory_operations.Client {
-	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Scheme})
+	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
 	//transportRuntime.SetDebug(true)

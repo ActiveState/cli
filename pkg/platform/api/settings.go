@@ -1,13 +1,11 @@
 package api
 
 import (
+	"log"
 	"net/url"
-
-	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Service records available api services
@@ -29,65 +27,90 @@ const (
 
 // Settings encapsulates settings needed for an API endpoint
 type Settings struct {
-	Scheme   string
+	Schema   string
 	Host     string
 	BasePath string
+	URL      *url.URL
 }
 
-var urlsByService = map[Service]Settings{
-	ServiceMono: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.MonoAPIPath,
+type urlsByService map[Service]string
+
+// UrlsByEnv represents the service URLs categorized by different environments
+var UrlsByEnv = map[string]urlsByService{
+	"prod": {
+		ServiceMono:      constants.MonoURLProd,
+		ServiceSecrets:   constants.SecretsURLProd,
+		ServiceHeadChef:  constants.HeadChefURLProd,
+		ServiceInventory: constants.InventoryURLProd,
 	},
-	ServiceSecrets: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.SecretsAPIPath,
+	"stage": {
+		ServiceMono:      constants.MonoURLStage,
+		ServiceSecrets:   constants.SecretsURLStage,
+		ServiceHeadChef:  constants.HeadChefURLStage,
+		ServiceInventory: constants.InventoryURLStage,
 	},
-	ServiceHeadChef: {
-		Scheme:   "wss",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.HeadChefAPIPath,
+	"dev": {
+		ServiceMono:      constants.MonoURLDev,
+		ServiceSecrets:   constants.SecretsURLDev,
+		ServiceHeadChef:  constants.HeadChefURLDev,
+		ServiceInventory: constants.InventoryURLDev,
 	},
-	ServiceInventory: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.InventoryAPIPath,
+	"test": {
+		ServiceMono:      "https://testing.tld" + constants.MonoAPIPath,
+		ServiceSecrets:   "https://secrets.testing.tld" + constants.SecretsAPIPath,
+		ServiceHeadChef:  "https://headchef.testing.tld" + constants.HeadChefAPIPath,
+		ServiceInventory: "https://inventory.testing.tld" + constants.InventoryAPIPath,
 	},
+}
+
+var serviceURLs = map[Service]*url.URL{}
+
+// init determines the name of the API environment to use. It prefers a custom
+// APIEnv env variable if available. If not defined or no setting found for the provided
+// custom value, then the apiEnvName determines if this is test, prod, or stage based on
+// a few factors. The default is always stage.
+func init() {
+	DetectServiceURLs()
+}
+
+// DetectServiceURLs updates the available service URLs based on environment
+func DetectServiceURLs() {
+	serviceURLStrings := urlsByService{}
+
+	if condition.InTest() {
+		serviceURLStrings = UrlsByEnv["test"]
+	} else {
+		var hasURL bool
+		if serviceURLStrings, hasURL = UrlsByEnv[constants.APIEnv]; !hasURL {
+			if constants.BranchName == "prod" {
+				serviceURLStrings = UrlsByEnv["prod"]
+			} else {
+				serviceURLStrings = UrlsByEnv["stage"]
+			}
+		}
+	}
+
+	for sv, urlStr := range serviceURLStrings {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			log.Panicf("Invalid URL format: %s", urlStr)
+		}
+		serviceURLs[sv] = u
+	}
 }
 
 // GetServiceURL returns the URL for the given service
 func GetServiceURL(service Service) *url.URL {
-	settings := GetSettings(service)
-	return &url.URL{
-		Scheme: settings.Scheme,
-		Host:   settings.Host,
-		Path:   settings.BasePath,
+	serviceURL, ok := serviceURLs[service]
+	if !ok {
+		log.Panicf("API Service does not exist: %v", service)
 	}
+
+	return serviceURL
 }
 
 // GetSettings returns the environmental settings for the specified service
 func GetSettings(service Service) Settings {
-	settings := urlsByService[service]
-	if condition.InTest() {
-		settings.Host = string(service) + ".testing.tld"
-	} else if host := getProjectHost(); host != nil {
-		settings.Host = *host
-	}
-	return settings
-}
-
-func getProjectHost() *string {
-	pj, fail := projectfile.GetOnce()
-	if fail != nil {
-		return nil
-	}
-	url, err := url.Parse(pj.Project)
-	if err != nil {
-		logging.Error("Could not parse project url: %s", pj.Project)
-		return nil
-	}
-
-	return &url.Host
+	u := GetServiceURL(service)
+	return Settings{u.Scheme, u.Host, u.Path, u}
 }

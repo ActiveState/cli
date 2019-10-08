@@ -89,7 +89,7 @@ func NewClient(schema, host, basePath string) *Client {
 // a provided Bearer-token value.
 func NewDefaultClient() *Client {
 	apiSetting := api.GetSettings(api.ServiceSecrets)
-	return NewClient(apiSetting.Scheme, apiSetting.Host, apiSetting.BasePath)
+	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
 }
 
 // DefaultClient represents a secretsapi Client instance that can be accessed by any package

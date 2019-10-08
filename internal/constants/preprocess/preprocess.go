@@ -25,8 +25,9 @@ func init() {
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, buildNumber) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
+	Constants["APIEnv"] = func() string { return strings.TrimSpace(os.Getenv("APIENV")) }
 	Constants["UserAgent"] = func() string {
-		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
+		return fmt.Sprintf("%s/%s; %s; %s", constants.CommandName, Constants["Version"](), branchName, Constants["APIEnv"]())
 	}
 	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
 }
