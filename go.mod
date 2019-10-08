@@ -7,7 +7,7 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
-	github.com/ActiveState/sysinfo v0.0.0-20190228211309-dee9e420eb1c
+	github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
@@ -80,7 +80,6 @@ require (
 	github.com/stretchr/testify v1.2.1
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
-	github.com/vbauerster/mpb v0.0.0-20180430145959-2369fd78a2e0 // indirect
 	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
