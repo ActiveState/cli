@@ -27,6 +27,7 @@ var exit = os.Exit
 type projectStruct struct {
 	name     string
 	owner    string
+	path     string
 	language language.Language
 }
 
@@ -76,6 +77,11 @@ func CopyExecute(cmd *cobra.Command, args []string) {
 func newProjectInfo() (*projectStruct, *failures.Failure) {
 	projectInfo := new(projectStruct)
 	var fail *failures.Failure
+
+	projectInfo.path, fail = getProjectPath()
+	if fail != nil {
+		return nil, fail
+	}
 
 	projectInfo.name = Flags.Project
 	if projectInfo.name == "" {
@@ -165,16 +171,12 @@ func promptForOwner() (string, *failures.Failure) {
 }
 
 func createNewProject(projectInfo *projectStruct) *failures.Failure {
-	if fail := createPlatformProject(projectInfo.name, projectInfo.owner, projectInfo.language); fail != nil {
-		return fail
-	}
-
-	path, fail := getProjectPath()
+	fail := createPlatformProject(projectInfo.name, projectInfo.owner, projectInfo.language)
 	if fail != nil {
 		return fail
 	}
 
-	if fail := createProjectDir(path); fail != nil {
+	if fail := createProjectDir(projectInfo.path); fail != nil {
 		return fail
 	}
 
@@ -183,11 +185,12 @@ func createNewProject(projectInfo *projectStruct) *failures.Failure {
 		return fail
 	}
 
-	if _, fail := projectfile.Create(projectURL, path); fail != nil {
+	_, fail = projectfile.Create(projectURL, projectInfo.path)
+	if fail != nil {
 		return fail
 	}
 
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": projectInfo.path}))
 	return nil
 }
 
