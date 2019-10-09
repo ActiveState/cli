@@ -46,11 +46,11 @@ defaults:
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+            BRANCH_OVERRIDE=unstable state run build-external
           fi
 
           echo "Building for internal use"
-          APIENV=prod state run build
+          state run build
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
