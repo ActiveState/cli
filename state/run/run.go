@@ -67,13 +67,14 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return
+	}
+
 	lang := script.Language()
 	if lang == language.Unknown {
-		subs, fail := subshell.Get()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_run_no_shell"))
-			return
-		}
 		lang = language.MakeByShell(subs.Shell())
 	}
 
@@ -84,12 +85,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	path := os.Getenv("PATH")
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_no_shell"))
-		return
-	}
 
 	// Activate the state if needed.
 	if !script.Standalone() && !subshell.IsActivated() {
