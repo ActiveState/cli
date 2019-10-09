@@ -58,7 +58,11 @@ defaults:
     deployBits: &deployBits
       run:
         name: Deploy bits
-        command: state run deploy-updates
+        command: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$BRANCH" == "master" ]]; then
+            state run deploy-updates
+          fi
     storeArtifacts: &storeArtifacts
       store_artifacts:
         path: /tmp/test-results
