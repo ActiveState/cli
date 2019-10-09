@@ -27,55 +27,41 @@ const (
 	ServiceInventory = "inventory"
 )
 
-// Settings encapsulates settings needed for an API endpoint
-type Settings struct {
-	Scheme   string
-	Host     string
-	BasePath string
-}
-
-var urlsByService = map[Service]Settings{
+var urlsByService = map[Service]*url.URL{
 	ServiceMono: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.MonoAPIPath,
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.MonoAPIPath,
 	},
 	ServiceSecrets: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.SecretsAPIPath,
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.SecretsAPIPath,
 	},
 	ServiceHeadChef: {
-		Scheme:   "wss",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.HeadChefAPIPath,
+		Scheme: "wss",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.HeadChefAPIPath,
 	},
 	ServiceInventory: {
-		Scheme:   "https",
-		Host:     constants.DefaultAPIHost,
-		BasePath: constants.InventoryAPIPath,
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.InventoryAPIPath,
 	},
 }
 
 // GetServiceURL returns the URL for the given service
 func GetServiceURL(service Service) *url.URL {
-	settings := GetSettings(service)
-	return &url.URL{
-		Scheme: settings.Scheme,
-		Host:   settings.Host,
-		Path:   settings.BasePath,
+	serviceURL, validService := urlsByService[service]
+	if !validService {
+		logging.Panic("Invalid service: %s", string(service))
 	}
-}
-
-// GetSettings returns the environmental settings for the specified service
-func GetSettings(service Service) Settings {
-	settings := urlsByService[service]
 	if condition.InTest() {
-		settings.Host = string(service) + ".testing.tld"
+		serviceURL.Host = string(service) + ".testing.tld"
 	} else if host := getProjectHost(); host != nil {
-		settings.Host = *host
+		serviceURL.Host = *host
 	}
-	return settings
+	return serviceURL
 }
 
 func getProjectHost() *string {

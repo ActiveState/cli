@@ -18,15 +18,15 @@ func TestSecretsAPI_NewClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	apiSetting := api.GetSettings(api.ServiceSecrets)
+	serviceURL := api.GetServiceURL(api.ServiceSecrets)
 	client := secretsapi.NewDefaultClient()
 	require.NotNil(client)
-	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Scheme, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
+	assert.Equal(fmt.Sprintf("%s://%s%s", serviceURL.Scheme, serviceURL.Host, serviceURL.Path), client.BaseURI)
 
 	rt, isRuntime := client.Transport.(*httptransport.Runtime)
 	require.True(isRuntime, "client.Transport is a Runtime")
-	assert.Equal(apiSetting.Host, rt.Host)
-	assert.Equal(apiSetting.BasePath, rt.BasePath)
+	assert.Equal(serviceURL.Host, rt.Host)
+	assert.Equal(serviceURL.Path, rt.BasePath)
 
 	// validate that the client.Auth writer sets the bearer token using the one we provided
 	mockClientRequest := new(MockClientRequest)
@@ -37,17 +37,17 @@ func TestSecretsAPI_InitializeClient_Success(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	apiSetting := api.GetSettings(api.ServiceSecrets)
+	serviceURL := api.GetServiceURL(api.ServiceSecrets)
 	secretsapi.InitializeClient()
 
 	client := secretsapi.Get()
 	require.NotNil(client)
-	assert.Equal(fmt.Sprintf("%s://%s%s", apiSetting.Scheme, apiSetting.Host, apiSetting.BasePath), client.BaseURI)
+	assert.Equal(fmt.Sprintf("%s://%s%s", serviceURL.Scheme, serviceURL.Host, serviceURL.Path), client.BaseURI)
 
 	rt, isRuntime := client.Transport.(*httptransport.Runtime)
 	require.True(isRuntime, "client.Transport is a Runtime")
-	assert.Equal(apiSetting.Host, rt.Host)
-	assert.Equal(apiSetting.BasePath, rt.BasePath)
+	assert.Equal(serviceURL.Host, rt.Host)
+	assert.Equal(serviceURL.Path, rt.BasePath)
 
 	// validate that the client.Auth writer sets the bearer token using the one we provided
 	mockClientRequest := new(MockClientRequest)
