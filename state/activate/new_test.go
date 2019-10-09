@@ -85,7 +85,11 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/test-owner/projects")
 	httpmock.RegisterWithCode("GET", "organizations/ActiveState/projects/CodeIntel", 404)
-	setupProjectMock()
+	httpmock.RegisterWithResponderBody("GET", "/organizations/test-owner/projects/test-name", 200, func(req *http.Request) (int, string) {
+		responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
+		responseFile := filepath.Join(responsePath, "GET-organizations/test-owner/projects/test-name-commit.json")
+		return 200, string(fileutils.ReadFileUnsafe(responseFile))
+	})
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
 	suite.apiMock.MockGetProject404()
@@ -111,7 +115,7 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.NoError(err, "Project was created")
 	prj, fail := project.GetOnce()
 	suite.NoError(fail.ToError(), "Should retrieve project")
-	newURL := "https://platform.activestate.com/test-owner/test-name"
+	newURL := "https://platform.activestate.com/test-owner/test-name?commitID=00010001-0001-0001-0001-000100010001"
 	suite.Equal(newURL, prj.URL())
 	suite.Equal("master", prj.Version())
 }
