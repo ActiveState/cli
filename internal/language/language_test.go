@@ -3,6 +3,8 @@ package language
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )
@@ -33,6 +35,19 @@ func TestLanguage(t *testing.T) {
 func TestMakeLanguage(t *testing.T) {
 	assert.Equal(t, Python3, makeByName("python3"), "python3")
 	assert.Equal(t, Unknown, makeByName("python4"), "unknown language")
+}
+
+func TestUnmarshal(t *testing.T) {
+	var unmarshal Language
+	yaml.Unmarshal([]byte(`python3`), &unmarshal)
+	assert.Equal(t, Python3, unmarshal)
+}
+
+func TestMarshal(t *testing.T) {
+	var marshal = Python3
+	out, err := yaml.Marshal(marshal)
+	require.NoError(t, err)
+	assert.Contains(t, string(out), Python3.data().name)
 }
 
 func TestMakeLanguageByShell(t *testing.T) {
