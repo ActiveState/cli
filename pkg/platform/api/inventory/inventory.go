@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"net/http"
+	"net/url"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -18,12 +19,12 @@ var transport http.RoundTripper
 
 // Init will create a new API client using default settings
 func Init() *inventory_operations.Client {
-	return New(api.GetSettings(api.ServiceInventory))
+	return New(api.GetServiceURL(api.ServiceInventory))
 }
 
 // New initializes a new api client
-func New(apiSetting api.Settings) *inventory_operations.Client {
-	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
+func New(serviceURL *url.URL) *inventory_operations.Client {
+	transportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
 	//transportRuntime.SetDebug(true)
