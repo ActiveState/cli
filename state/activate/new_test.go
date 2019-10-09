@@ -46,7 +46,7 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 
 func setupProjectMock() {
 	orgProjMockCalled := false //  The project response changes once the project is created so we need
-	// too provide a different response after the first call to this mock
+	// to provide a different response after the first call to this mock
 	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
 		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
 		if code != 200 {
@@ -111,7 +111,26 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.NoError(err, "Project was created")
 	prj, fail := project.GetOnce()
 	suite.NoError(fail.ToError(), "Should retrieve project")
-	newURL := "https://platform.activestate.com/test-owner/test-name?commitID=00010001-0001-0001-0001-000100010001"
+	newURL := "https://platform.activestate.com/test-owner/test-name"
 	suite.Equal(newURL, prj.URL())
 	suite.Equal("master", prj.Version())
+}
+
+func (suite *ActivateTestSuite) TestNewPlatformProject() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "organizations/test-owner/projects")
+	setupProjectMock()
+	httpmock.Register("POST", "vcs/commit")
+	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--new", "--project", "test-name", "--owner", "test-owner", "--language", "python3"})
+	err := Command.Execute()
+	suite.NoError(err, "Executed without error")
+	suite.NoError(failures.Handled(), "No failure occurred")
 }
