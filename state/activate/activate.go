@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/git"
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -127,17 +128,28 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail = promptCreateProject(cmd, args)
+	fail = promptCreateProjectIfNecessary(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 		return
 	}
 
+	// TODO: If projectfile exists, don't clone as there will be a conflict.
+	// OR clone to a folder within the working directory of the project?
+	wd, err := os.Getwd()
+	if err != nil {
+		failures.Handle(err, locale.T("TODO:"))
+	}
+	proj := project.Get()
+	fail = git.CloneProjectRepo(proj.Owner(), proj.Name(), wd)
+	if fail != nil {
+		failures.Handle(fail, locale.T("TODO:"))
+		return
+	}
+
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
-	var proj *project.Project
 	for {
-		proj = project.Get()
 		print.Info(locale.T("info_activating_state", proj))
 
 		if branchName != constants.StableBranch {
@@ -339,7 +351,7 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	return nil, nil
 }
 
-func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
+func promptCreateProjectIfNecessary(cmd *cobra.Command, args []string) *failures.Failure {
 	proj := project.Get()
 	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
 	if fail == nil {
