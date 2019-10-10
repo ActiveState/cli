@@ -111,6 +111,10 @@ scripts:
 events:
   - name: ACTIVATE
     value: |
+      if ! type "go" &> /dev/null; then
+        echo "go is not installed. Please install Go version 1.11 or above."
+        exit 1
+      fi
       $scripts.SET_ENV
       $scripts.preprocess
       git config core.hooksPath .githooks
