@@ -132,7 +132,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.NewSource(script.LanguageSafe(), scriptBlock)
+	return scriptfile.NewAsSourceWithName(script.LanguageSafe(), script.Name(), scriptBlock)
 }
 
 func openEditor(filename string) *failures.Failure {

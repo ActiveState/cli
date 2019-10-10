@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+// FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
 var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
 
 // nullByte represents the null-terminator byte
@@ -442,6 +443,37 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
 		return "", failures.FailOS.Wrap(err)
+	}
+
+	if _, err = f.Write(data); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err = f.Close(); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	if err := os.Chmod(f.Name(), perm); err != nil {
+		os.Remove(f.Name())
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	return f.Name(), nil
+}
+
+// WriteTempFileWithName writes data to a temporary file with the given name at the given directory. If the
+// directory is empty, the system's temmporary directory is used
+func WriteTempFileWithName(dir, name string, data []byte, perm os.FileMode) (string, *failures.Failure) {
+	tempDir, err := ioutil.TempDir(dir, "")
+	if err != nil {
+		return "", failures.FailOS.Wrap(err)
+	}
+
+	f, err := os.OpenFile(filepath.Join(tempDir, name), os.O_RDWR|os.O_CREATE, FileMode)
+	if err != nil {
+		return "", failures.FailIO.Wrap(err)
 	}
 
 	if _, err = f.Write(data); err != nil {

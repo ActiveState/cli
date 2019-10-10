@@ -46,8 +46,8 @@ func TestScriptFile(t *testing.T) {
 	assert.True(t, info.Size() == int64(len("echo hello")))
 }
 
-func TestNewSource(t *testing.T) {
-	sf, fail := NewSource(language.Bash, "echo hello")
+func TestNewAsSourceWithName(t *testing.T) {
+	sf, fail := NewAsSourceWithName(language.Bash, "hello", "echo hello")
 	require.NoError(t, fail.ToError())
 	require.FileExists(t, sf.Filename())
 	sf.Clean()
