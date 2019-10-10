@@ -70,21 +70,21 @@ func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string
 
 func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander(isUser bool) project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProj", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
+	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00040004-0004-0004-0004-000400040004/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
 	return project.NewSecretPromptingExpander(suite.secretsClient, isUser)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
-	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
+	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00040004-0004-0004-0004-000400040004/user_secrets", func(req *http.Request) (int, string) {
 		return 400, "something-happened"
 	})
-	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00050005-0005-0005-0005-000500050005", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander(false)
@@ -98,12 +98,12 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName string, isUser bool, expectedValue string) {
 	var userChanges []*secretsModels.UserSecretChange
 	var bodyErr error
-	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
+	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00040004-0004-0004-0004-000400040004/user_secrets", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
 		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
 	})
-	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00050005-0005-0005-0005-000500050005", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander(isUser)
@@ -122,7 +122,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 	suite.Equal(secretName, *change.Name)
 	suite.Equal(isUser, *change.IsUser)
 
-	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020003"), change.ProjectID)
+	suite.Equal(strfmt.UUID("00050005-0005-0005-0005-000500050005"), change.ProjectID)
 
 	kp, _ := keypairs.LoadWithDefaults()
 	decryptedBytes, failure := kp.DecodeAndDecrypt(*change.Value)

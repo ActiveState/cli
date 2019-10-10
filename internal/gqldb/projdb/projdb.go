@@ -135,6 +135,16 @@ func NewProjectsRespMock(orgData TextToID) *gql.ProjectsResp {
 				OrganizationID: orgData.ID("ActiveState"),
 				ProjectID:      MakeStrfmtUUID(4),
 			},
+			&gql.Project{
+				Branches:       MakeBranchesMock(16, MakeStrfmtUUID(5)),
+				Description:    PtrToString("the SecretProj project of SecretOrg"),
+				Name:           "SecretProj",
+				Added:          gql.Time{Time: time.Now().Add(-time.Hour * 24 * 1)},
+				CreatedBy:      NewStrfmtUUID(4),
+				Changed:        gql.Time{Time: time.Now().Add(-time.Hour * 12)},
+				OrganizationID: orgData.ID("SecretOrg"),
+				ProjectID:      MakeStrfmtUUID(5),
+			},
 		},
 	}
 }
@@ -144,6 +154,7 @@ func MakeOrgDataMock() TextToID {
 		"example-org": MakeStrfmtUUID(1),
 		"sample-org":  MakeStrfmtUUID(2),
 		"ActiveState": MakeStrfmtUUID(3),
+		"SecretOrg":   MakeStrfmtUUID(4),
 	}
 }
 

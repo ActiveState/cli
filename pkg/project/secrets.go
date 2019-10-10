@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/access"
@@ -225,6 +226,7 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 		// to match the new data structure. Story: https://www.pivotaltracker.com/story/show/166272717
 		shareMatches := variableRequiresUser == secretRequiresUser
 		storeMatches := variableRequiresProject == secretRequiresProject
+		fmt.Println(name, *userSecret.Name, projectMatches, shareMatches, storeMatches)
 
 		if nameMatches && projectMatches && shareMatches && storeMatches {
 			return userSecret, nil

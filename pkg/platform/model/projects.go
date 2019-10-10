@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -25,6 +26,7 @@ var (
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
+	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 	proj, err := prv.ProjectByOrgAndName(orgName, projectName)
 	if err != nil {
 		return nil, FailNoValidProject.Wrap(err)
