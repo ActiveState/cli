@@ -204,7 +204,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return fail
 	}
 
-	if fileutils.FileExists(filepath.Join(directory, constants.ConfigFileName)) {
+	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
 		if project.RepoURL != nil {
 			fail = cloneProjectRepo(org, name, directory, commitID)
 			if fail != nil {
