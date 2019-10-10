@@ -127,7 +127,7 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.apiMock.MockGetProjectNoRepo()
 
 	if !withLang {
-		suite.apiMock.MockGetProjectNoRepo()
+		suite.apiMock.MockGetProjectNoRepoNoLanguage()
 		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
 	}
 
@@ -222,7 +222,7 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetProjectNoRepo()
+	suite.apiMock.MockGetProjectNoRepoNoLanguage()
 	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)

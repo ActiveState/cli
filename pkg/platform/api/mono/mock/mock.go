@@ -79,6 +79,11 @@ func (m *Mock) MockGetProjectNoRepo() {
 	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo.json")
 }
 
+// MockGetProjectNoRepoNoLanguage returns a mock returning a project with no repo or language association
+func (m *Mock) MockGetProjectNoRepoNoLanguage() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo-no-language.json")
+}
+
 // MockGetProjectDiffCommit registers a mock returning a project with a commit history
 func (m *Mock) MockGetProjectDiffCommit() {
 	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
