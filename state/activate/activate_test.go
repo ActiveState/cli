@@ -124,6 +124,7 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoRepo()
 
 	if !withLang {
 		suite.apiMock.MockGetProjectNoRepo()
