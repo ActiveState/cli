@@ -72,6 +72,20 @@ func (suite *GitTestSuite) TestMoveFiles() {
 	suite.NoError(err, "file should be moved")
 }
 
+func (suite *GitTestSuite) TestMoveFilesDirInUse() {
+	temp, err := ioutil.TempDir("", "TestMoveFiles")
+	suite.NoError(err, "should be able to create another temp directory")
+	defer os.RemoveAll(temp)
+
+	anotherDir := filepath.Join(temp, "anotherDir")
+	err = os.MkdirAll(anotherDir, 0755)
+	suite.NoError(err, "should be able to create another temp directory")
+
+	fail := moveFiles(suite.dir, anotherDir)
+	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
+	suite.EqualError(fail, expected.Error())
+}
+
 func TestGitTestSuite(t *testing.T) {
 	suite.Run(t, new(GitTestSuite))
 }

@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	// FailTargetDirNotEmpty indicates that the target directory for cloning
+	// FailTargetDirInUse indicates that the target directory for cloning
 	// this git repository is not empty
-	FailTargetDirNotEmpty = failures.Type("git.fail.dirnotempty")
+	FailTargetDirInUse = failures.Type("git.fail.dirinuse")
 
 	// FailProjectURLMismatch indicates that the project url does not match
 	// that of the URL in the cloned repository's activestate.yaml
@@ -30,8 +30,6 @@ var (
 
 // CloneProjectRepo will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-// TODO: Is this function doing too much? ie. Should it just clone and leave the rest
-// to other methods?
 func CloneProjectRepo(owner, name, path string) *failures.Failure {
 	if condition.InTest() {
 		return nil
@@ -50,8 +48,6 @@ func CloneProjectRepo(owner, name, path string) *failures.Failure {
 
 	print.Info(locale.Tr("git_cloning_project", owner, name))
 	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
-		// TODO: Inspect and clean RepoURL to ensure we can only
-		// clone public projects (ie. use HTTPS)
 		URL:      project.RepoURL.String(),
 		Progress: os.Stdout,
 	})
@@ -94,11 +90,13 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 }
 
 func moveFiles(src, dest string) *failures.Failure {
-	if !fileutils.DirExists(dest) {
-		err := os.MkdirAll(dest, 0755)
-		if err != nil {
-			return failures.FailUserInput.Wrap(err)
-		}
+	if fileutils.DirExists(dest) {
+		return FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
+	}
+
+	err := os.MkdirAll(dest, 0755)
+	if err != nil {
+		return failures.FailUserInput.Wrap(err)
 	}
 
 	return fileutils.MoveAllFiles(src, dest)
