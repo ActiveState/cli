@@ -70,6 +70,9 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		return 200, "definitions/00020002-0002-0002-0002-000200020002"
 	})
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00040004-0004-0004-0004-000400040004", func(req *http.Request) (int, string) {
+		return 200, "definitions/00040004-0004-0004-0004-000400040004"
+	})
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {

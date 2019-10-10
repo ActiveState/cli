@@ -72,8 +72,8 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
-	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
+	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProj", 200)
+	suite.secretsMock.RegisterWithCode("GET", "/organizations/00040004-0004-0004-0004-000400040004/user_secrets", 200)
 }
 
 func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType, expectedExitCode int) {
@@ -90,7 +90,9 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 	})
 	suite.Equal(expectedExitCode, exitCode, "expected exit code to match")
 
-	failure := failures.Handled().(*failures.Failure)
+	handled := failures.Handled()
+	failure, ok := handled.(*failures.Failure)
+	suite.Require().Truef(ok, "got %v, wanted failure", handled)
 	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)
 }
 
