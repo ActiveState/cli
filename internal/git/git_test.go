@@ -16,7 +16,8 @@ import (
 
 type GitTestSuite struct {
 	suite.Suite
-	dir string
+	dir        string
+	anotherDir string
 }
 
 func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
@@ -29,12 +30,20 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	_, fail := projectfile.Create(projectURL, suite.dir)
 	suite.NoError(fail.ToError(), "should be able to create a projectfile")
 
-	_, fail = fileutils.Touch(filepath.Join(suite.dir, "test-file"))
+	tempFile, fail := fileutils.Touch(filepath.Join(suite.dir, "test-file"))
 	suite.NoError(fail.ToError(), "should be able to create a temp file")
+	defer tempFile.Close()
+
+	suite.anotherDir, err = ioutil.TempDir("", "TestMoveFiles")
+	suite.NoError(err, "should be able to create another temp directory")
 }
 
 func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 	err := os.RemoveAll(suite.dir)
+	if err != nil {
+		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
+	}
+	err = os.RemoveAll(suite.anotherDir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
 	}
@@ -57,15 +66,11 @@ func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
 }
 
 func (suite *GitTestSuite) TestMoveFiles() {
-	temp, err := ioutil.TempDir("", "TestMoveFiles")
-	suite.NoError(err, "should be able to create another temp directory")
-	defer os.RemoveAll(temp)
-
-	anotherDir := filepath.Join(temp, "anotherDir")
+	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
 	fail := moveFiles(suite.dir, anotherDir)
 	suite.NoError(fail.ToError(), "should be able to move files wihout error")
 
-	_, err = os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
+	_, err := os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
 	suite.NoError(err, "file should be moved")
 
 	_, err = os.Stat(filepath.Join(anotherDir, "test-file"))
@@ -73,12 +78,8 @@ func (suite *GitTestSuite) TestMoveFiles() {
 }
 
 func (suite *GitTestSuite) TestMoveFilesDirInUse() {
-	temp, err := ioutil.TempDir("", "TestMoveFiles")
-	suite.NoError(err, "should be able to create another temp directory")
-	defer os.RemoveAll(temp)
-
-	anotherDir := filepath.Join(temp, "anotherDir")
-	err = os.MkdirAll(anotherDir, 0755)
+	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
+	err := os.MkdirAll(anotherDir, 0755)
 	suite.NoError(err, "should be able to create another temp directory")
 
 	fail := moveFiles(suite.dir, anotherDir)
