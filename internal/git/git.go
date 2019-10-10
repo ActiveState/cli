@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"gopkg.in/src-d/go-git.v4"
@@ -47,6 +48,7 @@ func CloneProjectRepo(owner, name, path string) *failures.Failure {
 	}
 	defer os.RemoveAll(tempDir)
 
+	print.Info(locale.Tr("git_cloning_project", owner, name))
 	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 		// TODO: Inspect and clean RepoURL to ensure we can only
 		// clone public projects (ie. use HTTPS)
