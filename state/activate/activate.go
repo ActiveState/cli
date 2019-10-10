@@ -166,20 +166,6 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	// TODO: If projectfile exists, don't clone as there will be a conflict.
-	// OR clone to a folder within the working directory of the project?
-	wd, err := os.Getwd()
-	if err != nil {
-		failures.Handle(err, locale.T("TODO:"))
-	}
-
-	proj := project.Get()
-	fail = git.CloneProjectRepo(proj.Owner(), proj.Name(), wd)
-	if fail != nil {
-		failures.Handle(fail, locale.T("TODO:"))
-		return
-	}
-
 	activateProject()
 }
 
@@ -218,11 +204,17 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return fail
 	}
 
-	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
-		// If not actually create the project
-		fail = createProject(org, name, commitID, languages, directory)
-		if fail != nil {
-			return fail
+	if fileutils.FileExists(filepath.Join(directory, constants.ConfigFileName)) {
+		if project.RepoURL != nil {
+			fail = cloneProjectRepo(org, name, directory, commitID)
+			if fail != nil {
+				return fail
+			}
+		} else {
+			fail = createProject(org, name, commitID, languages, directory)
+			if fail != nil {
+				return fail
+			}
 		}
 	} else {
 		prj := getProjectFileByPath(directory)
@@ -255,6 +247,25 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 		}
 	}
 	return determineProjectPath(namespace)
+}
+
+func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := git.CloneProjectRepo(org, name, directory)
+	if fail != nil {
+		return fail
+	}
+	_, err := os.Stat(filepath.Join(directory, constants.ConfigFileName))
+	if os.IsNotExist(err) {
+		fail = createProjectFile(org, name, directory, commitID)
+		if fail != nil {
+			return fail
+		}
+	}
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
 }
 
 func getProjectFileByPath(path string) *project.Project {
@@ -337,6 +348,10 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		return failures.FailUserInput.Wrap(err)
 	}
 
+	return createProjectFile(org, project, directory, commitID)
+}
+
+func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *failures.Failure {
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
 	if commitID != nil {
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)

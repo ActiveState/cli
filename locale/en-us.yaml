@@ -998,6 +998,8 @@ err_projectfile_exists:
   other: A project already exists in the specified directory
 err_project_require_path:
   other: A project path was not supplied
+error_git_project_url_mistmatch:
+  other: The project URL in the cloned activestate.yaml does not match the platfom project you wish to clone
 language_name_unknown:
   other: Unknown
 sample_yaml:
