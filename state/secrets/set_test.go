@@ -23,6 +23,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/state/secrets"
 )
 
@@ -48,6 +49,8 @@ func (suite *VarSetCommandTestSuite) SetupSuite() {
 func (suite *VarSetCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 
+	updateProjectMock()
+
 	// support test projectfile access
 	srcProjectFile := filepath.Join(suite.testdataDir, constants.ConfigFileName)
 	dstProjectFile := filepath.Join(suite.configDir, constants.ConfigFileName)
@@ -69,6 +72,7 @@ func (suite *VarSetCommandTestSuite) BeforeTest(suiteName, testName string) {
 func (suite *VarSetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	model.ResetProviderMock()
 }
 
 func (suite *VarSetCommandTestSuite) TestCommandConfig() {

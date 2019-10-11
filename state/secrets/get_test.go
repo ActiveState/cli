@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -38,6 +39,8 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 	locale.Set("en-US")
 	failures.ResetHandled()
 
+	updateProjectMock()
+
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "unmarshalling custom project yaml")
 	projectFile.Persist()
@@ -66,6 +69,7 @@ func (suite *SecretsGetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	model.ResetProviderMock()
 }
 
 func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {

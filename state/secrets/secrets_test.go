@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/secrets"
 )
@@ -34,6 +36,8 @@ type VariablesCommandTestSuite struct {
 func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 	projectfile.Reset()
+
+	updateProjectMock()
 
 	err := osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 	suite.Require().NoError(err, "issue creating local private key")
@@ -55,10 +59,45 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock.MockLoggedin()
 }
 
+func updateProjectMock() {
+	mp := model.ProjectProviderMock()
+
+	secretOrgOldID := mp.OrgData.ID("SecretOrg")
+	mp.OrgData["SecretOrg"] = strfmt.UUID("00010001-0001-0001-0001-000100010002")
+	for _, proj := range mp.ProjectsResp.Projects {
+		if proj.OrganizationID == secretOrgOldID {
+			proj.OrganizationID = mp.OrgData.ID("SecretOrg")
+		}
+	}
+
+	for _, proj := range mp.ProjectsResp.Projects {
+		secretProj := proj.Name == "SecretProject" && proj.OrganizationID == mp.OrgData.ID("SecretOrg")
+		intelProj := proj.Name == "CodeIntel" && proj.OrganizationID == mp.OrgData.ID("ActiveState")
+
+		if secretProj {
+			proj.ProjectID = strfmt.UUID("00020002-0002-0002-0002-000200020003")
+		}
+
+		if intelProj {
+			proj.ProjectID = strfmt.UUID("00020002-0002-0002-0002-000200020002")
+		}
+
+		if secretProj || intelProj {
+			proj.Branches = proj.Branches[0:1]
+
+			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
+			proj.Branches[0].CommitID = &cid
+			isMain := true
+			proj.Branches[0].Main = &isMain
+		}
+	}
+}
+
 func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	httpmock.DeActivate()
 	suite.authMock.Close()
+	model.ResetProviderMock()
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
