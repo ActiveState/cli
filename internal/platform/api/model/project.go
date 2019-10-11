@@ -1,4 +1,4 @@
-package gql
+package model
 
 import (
 	"github.com/go-openapi/strfmt"
@@ -39,24 +39,4 @@ type Project struct {
 	Private        bool           `json:"private"`
 	ProjectID      strfmt.UUID    `json:"project_id"`
 	RepoURL        *string        `json:"repo_url"`
-}
-
-type ProjectsResp struct {
-	Projects []*Project `json:"projects"`
-}
-
-type ProjectResp struct {
-	Project *Project `json:"project"`
-}
-
-func (psr *ProjectsResp) ProjectToProjectResp(index int) (*ProjectResp, error) {
-	if psr.Projects == nil || index < 0 || len(psr.Projects) < index+1 {
-		return nil, ErrNoValueAvailable
-	}
-
-	return &ProjectResp{Project: psr.Projects[index]}, nil
-}
-
-type ProjectClient interface {
-	ProjectByOrgAndName(org, name string) (*ProjectResp, error)
 }

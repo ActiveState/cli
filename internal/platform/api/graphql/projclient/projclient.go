@@ -1,36 +1,36 @@
-package projdb
+package projclient
 
 import (
-	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/platform/api/client"
 )
 
-type ProjDB struct {
+type ProjClient struct {
 	gc *gqlclient.GQLClient
 }
 
-func New(gc *gqlclient.GQLClient) (*ProjDB, error) {
-	db := ProjDB{
+func New(gc *gqlclient.GQLClient) (*ProjClient, error) {
+	pc := ProjClient{
 		gc: gc,
 	}
 
-	return &db, nil
+	return &pc, nil
 }
 
 type Mock struct {
-	ProjectsResp *gql.ProjectsResp
+	ProjectsResp *client.ProjectsResp
 	OrgData      TextToID
 }
 
-func NewMock(pr *gql.ProjectsResp, orgData TextToID) *Mock {
+func NewMock(pr *client.ProjectsResp, orgData TextToID) *Mock {
 	return &Mock{
 		ProjectsResp: pr,
 		OrgData:      orgData,
 	}
 }
 
-func (db *ProjDB) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
-	req := db.gc.NewRequest(`
+func (pc *ProjClient) ProjectByOrgAndName(org, name string) (*client.ProjectResp, error) {
+	req := pc.gc.NewRequest(`
 query ($org: String, $name: String) {
   projects(where: {name: {_eq: $name}, organization: {url_name: {_eq: $org}}}, limit: 1) {
     branches {
@@ -65,15 +65,15 @@ query ($org: String, $name: String) {
 	req.Var("org", org)
 	req.Var("name", name)
 
-	var resp gql.ProjectsResp
-	if err := db.gc.Run(req, &resp); err != nil {
+	var resp client.ProjectsResp
+	if err := pc.gc.Run(req, &resp); err != nil {
 		return nil, err
 	}
 
 	return resp.ProjectToProjectResp(0)
 }
 
-func (mk *Mock) ProjectByOrgAndName(org, name string) (*gql.ProjectResp, error) {
+func (mk *Mock) ProjectByOrgAndName(org, name string) (*client.ProjectResp, error) {
 	orgID, ok := mk.OrgData[org]
 	if !ok {
 		return mk.ProjectsResp.ProjectToProjectResp(-1)

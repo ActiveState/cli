@@ -1,4 +1,4 @@
-package gql
+package model
 
 import (
 	"time"
@@ -32,13 +32,7 @@ func (b *Branch) ToMonoBranch() *mono_models.Branch {
 	}
 }
 
-func (pr *ProjectResp) ToMonoProject() (*mono_models.Project, error) {
-	if pr == nil {
-		return nil, ErrNoValueAvailable
-	}
-
-	p := pr.Project
-
+func (p *Project) ToMonoProject() (*mono_models.Project, error) {
 	for _, b := range p.Branches {
 		if b.ProjectID == nil {
 			return nil, ErrMissingBranchProjectID

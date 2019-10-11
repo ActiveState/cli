@@ -1,4 +1,4 @@
-package gql
+package model
 
 import (
 	"errors"
@@ -10,7 +10,6 @@ const (
 )
 
 var (
-	ErrNoValueAvailable       = errors.New("no value available")
 	ErrMissingBranchProjectID = errors.New("missing branch proj id")
 )
 
