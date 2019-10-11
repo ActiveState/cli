@@ -80,7 +80,6 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander(isUser bool) project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
