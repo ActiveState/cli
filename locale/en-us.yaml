@@ -1003,7 +1003,7 @@ error_git_project_url_mistmatch:
 error_git_target_dir_exists:
   other: Target directory for cloning is already in use
 git_cloning_project:
-  other: Cloning the git respitory associated with '{{.V0}}/{{.V1}}'
+  other: Cloning the git respsitory associated with '{{.V0}}/{{.V1}}'
 language_name_unknown:
   other: Unknown
 sample_yaml:
