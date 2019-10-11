@@ -110,7 +110,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	// Run the script.
 	scriptBlock := project.Expand(script.Value())
-	sf, fail := scriptfile.New(lang, scriptBlock)
+	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_run_setup_scriptfile"))
 		return

@@ -17,23 +17,18 @@ type ScriptFile struct {
 
 // New receives a language and script body that are used to construct a runable
 // on-disk file that is tracked by the returned value.
-func New(l language.Language, script string) (*ScriptFile, *failures.Failure) {
-	file, fail := fileutils.WriteTempFile("", l.TempPattern(), []byte(l.Header()+script), 0700)
-	if fail != nil {
-		return nil, fail
-	}
-
-	sf := ScriptFile{
-		lang: l,
-		file: file,
-	}
-
-	return &sf, nil
+func New(l language.Language, name, script string) (*ScriptFile, *failures.Failure) {
+	return new(l, name, []byte(l.Header()+script))
 }
 
-// NewAsSourceWithName returns a language and script body that are used to construct
-// an on-disk file named with the give name and the script's language extension.
-func NewAsSourceWithName(l language.Language, name, script string) (*ScriptFile, *failures.Failure) {
+// NewAsSource recieves a language and script body that are used to construct an
+// on-disk file that is tracked by the return value. This file is not guaranteed
+// to be runnable
+func NewAsSource(l language.Language, name, script string) (*ScriptFile, *failures.Failure) {
+	return new(l, name, []byte(script))
+}
+
+func new(l language.Language, name string, script []byte) (*ScriptFile, *failures.Failure) {
 	file, fail := fileutils.WriteTempFileWithName("", fmt.Sprintf("%s%s", name, l.Ext()), []byte(script), 0700)
 	if fail != nil {
 		return nil, fail
