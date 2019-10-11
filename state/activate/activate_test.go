@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
@@ -54,6 +55,8 @@ func (suite *ActivateTestSuite) SetupSuite() {
 }
 
 func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
+	updateProjectMock()
+
 	suite.authMock = authMock.Init()
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
@@ -82,6 +85,24 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 }
 
+func updateProjectMock() {
+	mp := model.ProjectProviderMock()
+
+	for _, proj := range mp.ProjectsResp.Projects {
+		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("example-org") {
+			proj.Branches = proj.Branches[0:1]
+
+			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
+			isMain := true
+			proj.Branches[0].CommitID = &cid
+			proj.Branches[0].Main = &isMain
+		}
+		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("sample-org") {
+			proj.Branches[0].BranchID = strfmt.UUID("00010001-0001-0001-0001-000100010003")
+		}
+	}
+}
+
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	os.Chdir(suite.origDir)
 
@@ -95,6 +116,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	}
 
 	projectfile.Reset()
+	model.ResetProviderMock()
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
@@ -141,7 +163,7 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00020002-0002-0002-0002-000200020002", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 	return pjfile
 }
 
@@ -162,7 +184,7 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00020002-0002-0002-0002-000200020002", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 
 	// Activate existing project
 	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})

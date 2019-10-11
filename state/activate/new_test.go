@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -14,8 +15,22 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
+
+func addCommitIDToBranch(bid, cid strfmt.UUID) {
+	mp := model.ProjectProviderMock()
+
+	for _, p := range mp.ProjectsResp.Projects {
+		for _, b := range p.Branches {
+			if b.BranchID == bid {
+				b.CommitID = &cid
+			}
+		}
+	}
+}
 
 func (suite *ActivateTestSuite) TestActivateNew() {
 	suite.rMock.MockFullRuntime()
@@ -23,12 +38,19 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
+	//ppm := model.ProjectProviderMock()
+	//for _, proj := range ppm.ProjectsResp
+
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/sample-org/projects")
 	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
-	httpmock.Register("PUT", "vcs/branch/00090009-0009-0009-0009-000900090009")
+	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010003", 0, func(req *http.Request) (int, string) {
+		addCommitIDToBranch(strfmt.UUID(path.Base(req.URL.Path)), "00020002-0002-0002-0002-000200020002")
+		return 200, ""
+	})
 
 	authentication.Get().AuthenticateWithToken("")
 

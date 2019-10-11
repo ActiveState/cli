@@ -178,7 +178,6 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 	if err != nil {
 		return api.FailUnknown.New(api.ErrorMessageFromPayload(err))
 	}
-	defer model.AddCommitIDToBranch("00090009-0009-0009-0009-000900090009", 2)
 
 	return model.CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
 }

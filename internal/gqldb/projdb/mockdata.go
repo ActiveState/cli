@@ -122,7 +122,9 @@ func MakeBranchesMock(n, qty, main int, projID strfmt.UUID) gql.Branches {
 }
 
 func MakeBranchesBareMock(n int, projID strfmt.UUID) gql.Branches {
-	return MakeBranchesMock(n, 1, 1, projID)
+	bs := MakeBranchesMock(n, 1, 1, projID)
+	bs[0].CommitID = nil
+	return bs
 }
 
 func PtrToString(s string) *string {
