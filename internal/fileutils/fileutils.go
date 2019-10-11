@@ -472,7 +472,7 @@ func WriteTempFileWithName(dir, name string, data []byte, perm os.FileMode) (str
 	}
 
 	tempFileDir, _ := filepath.Split(tempFile)
-	updatedTempFilePath := path.Join(tempFileDir, name)
+	updatedTempFilePath := filepath.Join(tempFileDir, name)
 	err := os.Rename(tempFile, updatedTempFilePath)
 	if err != nil {
 		return "", failures.FailOS.Wrap(err)
