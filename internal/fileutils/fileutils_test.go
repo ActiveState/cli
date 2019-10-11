@@ -319,7 +319,9 @@ func TestWriteTempFileWithName(t *testing.T) {
 	defer os.Remove(name)
 
 	path := strings.Split(fileName, string(os.PathSeparator))
-	assert.Equal(t, fmt.Sprintf("%s%s", name, lang.Ext()), path[len(path)-1], "Filepath should end with name.extension")
+	expected := fmt.Sprintf("%s%s", name, lang.Ext())
+	actual := strings.TrimPrefix(path[len(path)-1], string(os.PathSeparator))
+	assert.Equal(t, expected, actual, "Filepath should end with name.extension")
 
 	info, err := os.Stat(fileName)
 	require.NoError(t, err)
