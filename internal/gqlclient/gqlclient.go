@@ -13,13 +13,18 @@ type graphqlRequest = graphql.Request
 
 type graphqlClient = graphql.Client
 
-type GQLClient struct {
-	*graphqlClient
-	common  Header
-	timeout time.Duration
+type BearerTokenProvider interface {
+	BearerToken() string
 }
 
-func New(url string, common Header, timeout time.Duration) *GQLClient {
+type GQLClient struct {
+	*graphqlClient
+	common   Header
+	tokenPrv BearerTokenProvider
+	timeout  time.Duration
+}
+
+func New(url string, common Header, btp BearerTokenProvider, timeout time.Duration) *GQLClient {
 	if timeout == 0 {
 		timeout = time.Second * 60
 	}
@@ -27,6 +32,7 @@ func New(url string, common Header, timeout time.Duration) *GQLClient {
 	return &GQLClient{
 		graphqlClient: graphql.NewClient(url),
 		common:        common,
+		tokenPrv:      btp,
 		timeout:       timeout,
 	}
 }
@@ -39,6 +45,11 @@ func (c *GQLClient) Run(req *Request, resp interface{}) error {
 
 		ctx, cancel = context.WithTimeout(ctx, c.timeout)
 		defer cancel()
+	}
+
+	bt := c.tokenPrv.BearerToken()
+	if bt != "" {
+		req.Header.Set("Authorization", "Bearer "+bt)
 	}
 
 	return c.graphqlClient.Run(ctx, req.graphqlRequest, resp)
@@ -63,6 +74,6 @@ func (c *GQLClient) NewRequest(qry string) *Request {
 	return &req
 }
 
-func (req *Request) Context(ctx context.Context) {
+func (req *Request) SetContext(ctx context.Context) {
 	req.ctx = ctx
 }

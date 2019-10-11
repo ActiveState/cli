@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/gqldb/projdb"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type ProjectProvider interface {
@@ -26,7 +27,7 @@ var prv = func() ProjectProvider {
 
 	timeout := time.Second * 16
 
-	gc := gqlclient.New(endpoint, nil, timeout)
+	gc := gqlclient.New(endpoint, nil, authentication.Get(), timeout)
 
 	p, err := projdb.New(gc)
 	if err != nil {
