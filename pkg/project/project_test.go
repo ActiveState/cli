@@ -6,7 +6,9 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -29,6 +31,8 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err, "Should detect root path")
 
+	updateProjectMock()
+
 	suite.testdataDir = filepath.Join(root, "pkg", "project", "testdata")
 	err = os.Chdir(suite.testdataDir)
 	suite.Require().NoError(err, "Should change dir without issue.")
@@ -38,6 +42,28 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().Nil(fail, "Should retrieve projectfile without issue.")
 	suite.project, fail = project.GetSafe()
 	suite.Require().Nil(fail, "Should retrieve project without issue.")
+}
+
+func updateProjectMock() {
+	mp := model.ProjectProviderMock()
+
+	mp.OrgData["SecretOrg"] = "00010001-0001-0001-0001-000100010002"
+
+	for _, proj := range mp.ProjectsResp.Projects {
+		if proj.Name == "SecretProject" {
+			proj.ProjectID = strfmt.UUID("00020002-0002-0002-0002-000200020003")
+			for _, b := range proj.Branches {
+				b.ProjectID = &proj.ProjectID
+			}
+			uid := strfmt.UUID("00000000-0000-0000-0000-000000000000")
+			proj.CreatedBy = &uid
+			proj.OrganizationID = mp.OrgData.ID("SecretOrg")
+		}
+	}
+}
+
+func (suite *ProjectTestSuite) AfterTest(suiteName, testName string) {
+	model.ResetProviderMock()
 }
 
 func (suite *ProjectTestSuite) TestGet() {

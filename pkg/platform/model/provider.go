@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/gqldb/projdb"
-	"github.com/go-openapi/strfmt"
 )
 
 type ProjectProvider interface {
@@ -17,12 +16,7 @@ type ProjectProvider interface {
 
 var prv = func() ProjectProvider {
 	if condition.InTest() {
-		orgData := projdb.MakeOrgDataMock()
-
-		return projdb.NewMock(
-			projdb.NewProjectsRespMock(orgData),
-			orgData,
-		)
+		return defaultProjectProviderMock()
 	}
 
 	endpoint := constants.GraphqlURLStage
@@ -41,18 +35,28 @@ var prv = func() ProjectProvider {
 	return p
 }()
 
-func AddCommitIDToBranch(id strfmt.UUID, n uint8) {
-	mp, ok := prv.(*projdb.Mock)
-	if !ok {
-		panic("should only ever be run during a test")
+func ResetProviderMock() {
+	prv = defaultProjectProviderMock()
+}
+
+func defaultProjectProviderMock() *projdb.Mock {
+	orgData := projdb.MakeOrgDataDefaultMock()
+
+	return projdb.NewMock(
+		projdb.NewProjectsRespDefaultMock(orgData),
+		orgData,
+	)
+}
+
+func ProjectProviderMock() *projdb.Mock {
+	if !condition.InTest() {
+		panic("no")
 	}
 
-	for _, p := range mp.ProjectsResp.Projects {
-		for _, b := range p.Branches {
-			if b.BranchID == id {
-				cid := projdb.MakeStrfmtUUID(n)
-				b.CommitID = &cid
-			}
-		}
+	mp, ok := prv.(*projdb.Mock)
+	if !ok {
+		panic("should be available as *projdb.Mock - only during tests")
 	}
+
+	return mp
 }
