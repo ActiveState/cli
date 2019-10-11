@@ -126,7 +126,6 @@ func (suite *ActivateTestSuite) TestExecute() {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 
 	authentication.Get().AuthenticateWithToken("")
 
@@ -200,9 +199,6 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
 	suite.rMock.MockFullRuntime()
 	suite.authMock.MockLoggedin()
 	suite.apiMock.MockVcsGetCheckpoint()
-
-	// Override what MockFullRuntime setup for retrieving a project
-	httpmock.Register("GET", "/organizations/no/projects/match")
 
 	Cc := Command.GetCobraCmd()
 	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
@@ -428,7 +424,6 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 
 	authentication.Get().AuthenticateWithToken("")
 

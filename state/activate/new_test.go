@@ -105,8 +105,6 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/example-org/projects")
-	httpmock.RegisterWithCode("GET", "organizations/ActiveState/projects/CodeIntel", 404)
 	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
