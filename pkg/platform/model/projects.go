@@ -32,7 +32,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		return nil, FailNoValidProject.Wrap(err)
 	}
 
-	mp, err := proj.ToMonoProject()
+	mp, err := proj.Project.ToMonoProject()
 	if err != nil {
 		return nil, FailCannotConvertModel.Wrap(err)
 	}

@@ -5,14 +5,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/gql"
 	"github.com/ActiveState/cli/internal/gqlclient"
-	"github.com/ActiveState/cli/internal/gqldb/projdb"
+	"github.com/ActiveState/cli/internal/platform/api/client"
+	"github.com/ActiveState/cli/internal/platform/api/graphql/projclient"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type ProjectProvider interface {
-	gql.ProjectClient
+	client.ProjectProvider
 }
 
 var prv = func() ProjectProvider {
@@ -29,7 +29,7 @@ var prv = func() ProjectProvider {
 
 	gc := gqlclient.New(endpoint, nil, authentication.Get(), timeout)
 
-	p, err := projdb.New(gc)
+	p, err := projclient.New(gc)
 	if err != nil {
 		panic(err)
 	}
@@ -40,23 +40,23 @@ func ResetProviderMock() {
 	prv = defaultProjectProviderMock()
 }
 
-func defaultProjectProviderMock() *projdb.Mock {
-	orgData := projdb.MakeOrgDataDefaultMock()
+func defaultProjectProviderMock() *projclient.Mock {
+	orgData := projclient.MakeOrgDataDefaultMock()
 
-	return projdb.NewMock(
-		projdb.NewProjectsRespDefaultMock(orgData),
+	return projclient.NewMock(
+		projclient.NewProjectsRespDefaultMock(orgData),
 		orgData,
 	)
 }
 
-func ProjectProviderMock() *projdb.Mock {
+func ProjectProviderMock() *projclient.Mock {
 	if !condition.InTest() {
 		panic("no")
 	}
 
-	mp, ok := prv.(*projdb.Mock)
+	mp, ok := prv.(*projclient.Mock)
 	if !ok {
-		panic("should be available as *projdb.Mock - only during tests")
+		panic("should be available as *projclient.Mock - only during tests")
 	}
 
 	return mp
