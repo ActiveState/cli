@@ -76,7 +76,6 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 }
 

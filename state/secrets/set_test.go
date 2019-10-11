@@ -90,7 +90,6 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	var userChanges []*secrets_models.UserSecretChange
