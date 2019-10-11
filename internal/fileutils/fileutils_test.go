@@ -9,14 +9,12 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/language"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -299,31 +297,6 @@ func TestCreateTempExecutable(t *testing.T) {
 	assert.Contains(t, name, patSuffix)
 
 	info, err := os.Stat(name)
-	require.NoError(t, err)
-	assert.True(t, info.Size() > 0)
-
-	res := int64(0500 & info.Mode()) // readable/executable by user
-	if runtime.GOOS == "windows" {
-		res = int64(0400 & info.Mode()) // readable by user
-	}
-	assert.NotZero(t, res, "file should be readable/executable")
-}
-
-func TestWriteTempFileWithName(t *testing.T) {
-	name := "test-file"
-	lang := language.Python3
-	data := []byte("print(\"Hello Test\")")
-
-	fileName, fail := WriteTempFileWithName("", fmt.Sprintf("%s%s", name, lang.Ext()), data, 0700)
-	assert.NoError(t, fail.ToError(), "Expected no error when writing temp file")
-	defer os.Remove(name)
-
-	path := strings.Split(fileName, string(os.PathSeparator))
-	expected := fmt.Sprintf("%s%s", name, lang.Ext())
-	actual := path[len(path)-1]
-	assert.Equal(t, expected, actual, "Filepath should end with name.extension")
-
-	info, err := os.Stat(fileName)
 	require.NoError(t, err)
 	assert.True(t, info.Size() > 0)
 

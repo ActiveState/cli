@@ -462,21 +462,3 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 
 	return f.Name(), nil
 }
-
-// WriteTempFileWithName writes data to a temporary file with the given name at the given directory. If the
-// directory is empty, the system's temmporary directory is used
-func WriteTempFileWithName(dir, name string, data []byte, perm os.FileMode) (string, *failures.Failure) {
-	tempFile, fail := WriteTempFile(dir, name, data, perm)
-	if fail != nil {
-		return "", fail
-	}
-
-	tempFileDir, _ := filepath.Split(tempFile)
-	updatedTempFilePath := filepath.Join(tempFileDir, name)
-	err := os.Rename(tempFile, updatedTempFilePath)
-	if err != nil {
-		return "", failures.FailOS.Wrap(err)
-	}
-
-	return updatedTempFilePath, nil
-}
