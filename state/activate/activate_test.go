@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	repoMock "github.com/ActiveState/cli/pkg/cmdlets/git/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -40,6 +41,7 @@ type ActivateTestSuite struct {
 	apiMock    *apiMock.Mock
 	rMock      *rMock.Mock
 	promptMock *promptMock.Mock
+	repoMock   *repoMock.Mock
 	dir        string
 	origDir    string
 }
@@ -57,7 +59,9 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
 	suite.promptMock = promptMock.Init()
+	suite.repoMock = repoMock.Init()
 	prompter = suite.promptMock
+	repo = suite.repoMock
 
 	var err error
 
@@ -92,6 +96,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.apiMock.Close()
 	suite.rMock.Close()
 	suite.promptMock.Close()
+	suite.repoMock.Close()
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
@@ -268,6 +273,29 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 
 	fail := activateFromNamespace(ProjectNamespace)
 	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
+}
+
+func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
+	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProject()
+
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
+	suite.repoMock.OnMethod("CloneProjectRepo").Return(nil)
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(targetDir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/string/string", pjfile.Project, "Project field should have been populated properly.")
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it

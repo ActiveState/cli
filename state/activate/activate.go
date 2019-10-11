@@ -50,10 +50,14 @@ const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
 var branchName = constants.BranchName
 
-var prompter prompt.Prompter
+var (
+	prompter prompt.Prompter
+	repo     git.Repository
+)
 
 func init() {
 	prompter = prompt.New()
+	repo = git.NewRepo()
 }
 
 // Command holds our main command definition
@@ -250,7 +254,7 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 }
 
 func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
-	fail := git.CloneProjectRepo(org, name, directory)
+	fail := repo.CloneProjectRepo(org, name, directory)
 	if fail != nil {
 		return fail
 	}

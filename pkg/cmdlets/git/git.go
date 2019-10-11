@@ -5,15 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -28,13 +27,22 @@ var (
 	FailProjectURLMismatch = failures.Type("git.fail.projecturlmismatch")
 )
 
+// Repository is the interface used to represent a version control system repository
+type Repository interface {
+	CloneProjectRepo(owner, name, path string) *failures.Failure
+}
+
+// NewRepo returns a new repository
+func NewRepo() Repository {
+	return &gitRepo{}
+}
+
+type gitRepo struct {
+}
+
 // CloneProjectRepo will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func CloneProjectRepo(owner, name, path string) *failures.Failure {
-	if condition.InTest() {
-		return nil
-	}
-
+func (r *gitRepo) CloneProjectRepo(owner, name, path string) *failures.Failure {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
 		return fail
@@ -77,12 +85,17 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
-	project, fail := projectfile.Parse(projectFilePath)
+	projectFile, fail := projectfile.Parse(projectFilePath)
 	if fail != nil {
 		return fail
 	}
 
-	if !strings.Contains(project.Project, fmt.Sprintf("%s/%s", owner, name)) {
+	proj, fail := project.New(projectFile)
+	if fail != nil {
+		return fail
+	}
+
+	if !(proj.Owner() == owner) || !(proj.Name() == name) {
 		return FailProjectURLMismatch.New(locale.T("error_git_project_url_mismatch"))
 	}
 
