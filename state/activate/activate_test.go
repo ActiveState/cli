@@ -90,12 +90,8 @@ func updateProjectMock() {
 
 	for _, proj := range mp.ProjectsResp.Projects {
 		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("example-org") {
-			proj.Branches = proj.Branches[0:1]
-
 			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-			isMain := true
 			proj.Branches[0].CommitID = &cid
-			proj.Branches[0].Main = &isMain
 		}
 		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("sample-org") {
 			proj.Branches[0].BranchID = strfmt.UUID("00010001-0001-0001-0001-000100010003")

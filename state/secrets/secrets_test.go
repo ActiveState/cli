@@ -83,12 +83,8 @@ func updateProjectMock() {
 		}
 
 		if secretProj || intelProj {
-			proj.Branches = proj.Branches[0:1]
-
 			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 			proj.Branches[0].CommitID = &cid
-			isMain := true
-			proj.Branches[0].Main = &isMain
 		}
 	}
 }

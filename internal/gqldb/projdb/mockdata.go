@@ -12,6 +12,7 @@ func NewProjectsRespDefaultMock(orgData TextToID) *gql.ProjectsResp {
 	psr := &gql.ProjectsResp{
 		Projects: []*gql.Project{
 			&gql.Project{
+				Branches:       MakeBranchesBareMock(1, MakeStrfmtUUID(1, 1)),
 				Description:    PtrToString("the CodeIntel project of ActiveState"),
 				Name:           "CodeIntel",
 				Added:          gql.Time{Time: time.Now().Add(-time.Hour * 24 * 1)},
@@ -20,6 +21,7 @@ func NewProjectsRespDefaultMock(orgData TextToID) *gql.ProjectsResp {
 				OrganizationID: orgData.ID("ActiveState"),
 			},
 			&gql.Project{
+				Branches:       MakeBranchesBareMock(2, MakeStrfmtUUID(2, 2)),
 				Description:    PtrToString("the SecretProject project of SecretOrg"),
 				Name:           "SecretProject",
 				Added:          gql.Time{Time: time.Now().Add(-time.Hour * 24 * 1)},
@@ -28,6 +30,7 @@ func NewProjectsRespDefaultMock(orgData TextToID) *gql.ProjectsResp {
 				OrganizationID: orgData.ID("SecretOrg"),
 			},
 			&gql.Project{
+				Branches:       MakeBranchesBareMock(3, MakeStrfmtUUID(3, 3)),
 				Description:    PtrToString("the example-proj of example-org"),
 				Name:           "example-proj",
 				Added:          gql.Time{Time: time.Now().Add(-time.Hour * 24 * 10)},

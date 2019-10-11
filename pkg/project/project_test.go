@@ -52,9 +52,11 @@ func updateProjectMock() {
 	for _, proj := range mp.ProjectsResp.Projects {
 		if proj.Name == "SecretProject" {
 			proj.ProjectID = strfmt.UUID("00020002-0002-0002-0002-000200020003")
+
 			for _, b := range proj.Branches {
 				b.ProjectID = &proj.ProjectID
 			}
+
 			uid := strfmt.UUID("00000000-0000-0000-0000-000000000000")
 			proj.CreatedBy = &uid
 			proj.OrganizationID = mp.OrgData.ID("SecretOrg")
