@@ -94,7 +94,7 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	orgID := "00030003-0003-0003-0003-000300030003"
+	orgID := "00010001-0001-0001-0001-000100010001"
 	scottrID := "00020002-0002-0002-0002-000200020002"
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -115,7 +115,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	orgID := "00030003-0003-0003-0003-000300030003"
+	orgID := "00010001-0001-0001-0001-000100010001"
 	scottrID := "00020002-0002-0002-0002-000200020002"
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -145,14 +145,14 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 
 	suite.NotZero(*scottrSyncChanges[1].Value)
 	suite.Equal("proj-secret", *scottrSyncChanges[1].Name)
-	suite.Equal(strfmt.UUID("00040004-0004-0004-0004-000400040004"), scottrSyncChanges[1].ProjectID)
+	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), scottrSyncChanges[1].ProjectID)
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
-	orgID := "00030003-0003-0003-0003-000300030003"
+	orgID := "00010001-0001-0001-0001-000100010001"
 	currentUserID := "00000000-0000-0000-0000-000000000000"
 	scottrID := "00020002-0002-0002-0002-000200020002"
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)

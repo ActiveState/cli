@@ -91,7 +91,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 
 	var userChanges []*secrets_models.UserSecretChange
 	var bodyErr error
-	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00030003-0003-0003-0003-000300030003/user_secrets", func(req *http.Request) (int, string) {
+	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
 		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
@@ -103,7 +103,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 	suite.secretsMock.RegisterWithCode("GET", "/whoami", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/publickeys/00020002-0002-0002-0002-000200020002", 200)
-	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00030003-0003-0003-0003-000300030003/user_secrets/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
+	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
 		reqBody, _ := ioutil.ReadAll(req.Body)
 		json.Unmarshal(reqBody, &sharedChanges)
 		return 204, "empty-response"
@@ -120,7 +120,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 	suite.NotZero(*userChanges[0].Value)
 	suite.Equal("secret-name", *userChanges[0].Name)
 	suite.Equal(false, *userChanges[0].IsUser)
-	suite.Equal(strfmt.UUID("00040004-0004-0004-0004-000400040004"), userChanges[0].ProjectID)
+	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), userChanges[0].ProjectID)
 
 	suite.Require().Len(sharedChanges, 1)
 	suite.NotZero(*sharedChanges[0].Value)
