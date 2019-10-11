@@ -65,23 +65,7 @@ func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *mono_models.Checkpoint
 
 // MockGetProject registers mocks for project "string" and a VCS checkpoint
 func (m *Mock) MockGetProject() {
-	m.httpmock.Register("GET", "/organizations/string/projects/string")
 	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
-}
-
-// MockGetProjectNoLanguage returns a mock returning a project without a language set
-func (m *Mock) MockGetProjectNoLanguage() {
-	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-language")
-}
-
-// MockGetProjectDiffCommit registers a mock returning a project with a commit history
-func (m *Mock) MockGetProjectDiffCommit() {
-	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
-}
-
-// MockGetProject404 registers a mock for a request for a non-existent project
-func (m *Mock) MockGetProject404() {
-	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
 }
 
 // MockGetOrganizations registers a mock returning organizations
