@@ -1,7 +1,6 @@
 package project
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,7 +42,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
 
-	suite.expander = NewSecretExpander(suite.secretsClient, false)
+	suite.expander = NewSecretExpander(suite.secretsClient, nil)
 	suite.expander.project = Get()
 }
 
@@ -52,7 +51,6 @@ func (suite *SecretsAccessTestSuite) TestFindSecretNoAccess() {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/AccessOrg/members", 200)
 
 	_, fail := suite.expander.FindSecret("does.not.matter", false)
-	fmt.Println(fail)
 	suite.Require().Error(fail.ToError(), "should get an error when we do not have access")
 	suite.Equal(fail.Error(), locale.Tr("secrets_expand_err_no_access", "AccessOrg"))
 }

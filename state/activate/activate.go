@@ -69,8 +69,35 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Path,
 		},
+		&commands.Flag{
+			Name:        "new",
+			Shorthand:   "",
+			Description: "flag_state_activate_new_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.New,
+		},
+		&commands.Flag{
+			Name:        "owner",
+			Shorthand:   "",
+			Description: "flag_state_activate_owner_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Owner,
+		},
+		&commands.Flag{
+			Name:        "project",
+			Shorthand:   "",
+			Description: "flag_state_activate_project_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Project,
+		},
+		&commands.Flag{
+			Name:        "language",
+			Shorthand:   "",
+			Description: "flag_state_activate_language_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Language,
+		},
 	},
-
 	Arguments: []*commands.Argument{
 		&commands.Argument{
 			Name:        "arg_state_activate_namespace",
@@ -82,7 +109,11 @@ var Command = &commands.Command{
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Path string
+	Path     string
+	New      bool
+	Owner    string
+	Project  string
+	Language string
 }
 
 // Args hold the arg values passed through the command line
@@ -92,11 +123,18 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && !projectExists(Flags.Path) {
-		NewExecute(cmd, args)
+	updater.PrintUpdateMessage()
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
 	}
 
-	ExistingExecute(cmd, args)
+	switch {
+	case len(args) == 0 && !projectExists(Flags.Path), Flags.New:
+		NewExecute(cmd, args)
+	default:
+		ExistingExecute(cmd, args)
+	}
 }
 
 func projectExists(path string) bool {
@@ -107,15 +145,9 @@ func projectExists(path string) bool {
 	return true
 }
 
-// ExistingExecute activates a project based on the namepsace in the
+// ExistingExecute activates a project based on the namespace in the
 // arguments or the existing project file
 func ExistingExecute(cmd *cobra.Command, args []string) {
-	updater.PrintUpdateMessage()
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_auth_required"))
-	}
-
 	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
@@ -127,31 +159,13 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail = promptCreateProject(cmd, args)
+	fail := promptCreateProject(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 		return
 	}
 
-	// activate should be continually called while returning true
-	// looping here provides a layer of scope to handle printing output
-	var proj *project.Project
-	for {
-		proj = project.Get()
-		print.Info(locale.T("info_activating_state", proj))
-
-		if branchName != constants.StableBranch {
-			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
-		}
-
-		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
-			break
-		}
-
-		print.Info(locale.T("info_reactivating", proj))
-	}
-
-	print.Bold(locale.T("info_deactivated", proj))
+	activateProject()
 }
 
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
@@ -233,18 +247,17 @@ func getProjectFileByPath(path string) *project.Project {
 		// CWD is used to return to the directory before retrieving the as.yaml
 		// file was initiated.
 		cwd, err := os.Getwd()
-
 		if err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
+			failures.Handle(err, locale.Tr("err_activate_path", path))
 		}
 
 		if err := os.Chdir(path); err != nil {
-			failures.Handle(err, locale.T("err_activate_path"))
+			failures.Handle(err, locale.Tr("err_activate_path", path))
 		}
 		defer func() {
 			logging.Debug("moving back to origin dir")
 			if err := os.Chdir(cwd); err != nil {
-				failures.Handle(err, locale.T("err_activate_path"))
+				failures.Handle(err, locale.Tr("err_activate_path", path))
 			}
 		}()
 	}
@@ -256,6 +269,28 @@ func getProjectFileByPath(path string) *project.Project {
 		}
 	}
 	return prj
+}
+
+func activateProject() {
+	// activate should be continually called while returning true
+	// looping here provides a layer of scope to handle printing output
+	var proj *project.Project
+	for {
+		proj = project.Get()
+		print.Info(locale.T("info_activating_state", proj))
+
+		if branchName != constants.StableBranch {
+			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
+		}
+
+		if !activate(proj.Owner(), proj.Name(), proj.Source().Path()) {
+			break
+		}
+
+		print.Info(locale.T("info_reactivating", proj))
+	}
+
+	print.Bold(locale.T("info_deactivated", proj))
 }
 
 // savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this

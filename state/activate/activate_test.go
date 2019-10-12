@@ -80,6 +80,10 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
 	Flags.Path = ""
+	Flags.New = false
+	Flags.Owner = ""
+	Flags.Project = ""
+	Flags.Language = ""
 	Args.Namespace = ""
 
 	failures.ResetHandled()

@@ -33,20 +33,23 @@ type Command struct {
 	}
 
 	Flags struct {
-		JSON *bool
+		JSON   *bool
+		Filter *string
 	}
 }
 
-type secretJSONDefinition struct {
-	Name        string `json:"name,omitempty"`
-	Scope       string `json:"scope,omitempty"`
-	Description string `json:"description,omitempty"`
+type SecretExport struct {
+	Name        string `json:"name"`
+	Scope       string `json:"scope"`
+	Description string `json:"description"`
+	HasValue    bool   `json:"has_value"`
 	Value       string `json:"value,omitempty"`
 }
 
 // NewCommand creates a new Keypair command.
 func NewCommand(secretsClient *secretsapi.Client) *Command {
 	var flagJSON bool
+	var flagFilter string
 
 	c := Command{
 		secretsClient: secretsClient,
@@ -61,11 +64,18 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 					Type:        commands.TypeBool,
 					BoolVar:     &flagJSON,
 				},
+				{
+					Name:        "filter-usedby",
+					Description: "secrets_flag_filter",
+					Type:        commands.TypeString,
+					StringVar:   &flagFilter,
+				},
 			},
 		},
 	}
 
 	c.Flags.JSON = &flagJSON
+	c.Flags.Filter = &flagFilter
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -98,14 +108,20 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}
 
-	defs, fail := definedSecrets(cmd.secretsClient)
+	defs, fail := definedSecrets(cmd.secretsClient, *cmd.Flags.Filter)
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err_defined"))
 		return
 	}
 
+	secretExports, fail := defsToSecrets(defs)
+	if fail != nil {
+		failures.Handle(fail, locale.T("secrets_err_values"))
+		return
+	}
+
 	if *cmd.Flags.JSON {
-		data, fail := secretsAsJSON(defs)
+		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))
 			return
@@ -115,47 +131,92 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	rows, fail := secretsToRows(defs)
+	rows, fail := secretsToRows(secretExports)
 	if fail != nil {
 		failures.Handle(fail, locale.T("secrets_err_output"))
 		return
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
+	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
 	t.SetAlign("left")
 	print.Line(t.Render("simple"))
 }
 
-func definedSecrets(secCli *secretsapi.Client) ([]*secretsModels.SecretDefinition, *failures.Failure) {
+func definedSecrets(secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {
 	prj := project.Get()
 	logging.Debug("listing variables for org=%s, project=%s", prj.Owner(), prj.Name())
 
-	return secrets.DefsByProject(secCli, prj.Owner(), prj.Name())
+	secretDefs, fail := secrets.DefsByProject(secCli, prj.Owner(), prj.Name())
+	if fail != nil {
+		return nil, fail
+	}
+
+	if filter != "" {
+		secretDefs = filterSecrets(secretDefs, filter)
+	}
+
+	return secretDefs, nil
 }
 
-func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Failure) {
-	ds := make([]secretJSONDefinition, len(defs))
+func filterSecrets(secrectDefs []*secretsModels.SecretDefinition, filter string) []*secretsModels.SecretDefinition {
+	prj := project.Get()
+	secrectDefsFiltered := []*secretsModels.SecretDefinition{}
 
-	for i, def := range defs {
-		name, fail := ptrToString(def.Name, "name")
-		if fail != nil {
-			return nil, fail
-		}
-		scope, fail := ptrToString(def.Scope, "scope")
-		if fail != nil {
-			return nil, fail
-		}
+	oldExpander := project.RegisteredExpander("secrets")
+	if oldExpander != nil {
+		defer project.RegisterExpander("secrets", oldExpander)
+	}
 
-		ds[i] = secretJSONDefinition{
-			Name:        name,
-			Scope:       scope,
-			Description: def.Description,
+	expander := project.NewSecretExpander(secretsapi.Get(), prj)
+	project.RegisterExpander("secrets", expander.Expand)
+	project.ExpandFromProject(fmt.Sprintf("$%s", filter), prj)
+	accessedSecrets := expander.SecretsAccessed()
+	if accessedSecrets == nil {
+		return secrectDefsFiltered
+	}
+
+	for _, secretDef := range secrectDefs {
+		isUser := *secretDef.Scope == secretsModels.SecretDefinitionScopeUser
+		for _, accessedSecret := range accessedSecrets {
+			if accessedSecret.Name == *secretDef.Name && accessedSecret.IsUser == isUser {
+				secrectDefsFiltered = append(secrectDefsFiltered, secretDef)
+			}
 		}
 	}
 
-	bs, err := json.Marshal(ds)
+	return secrectDefsFiltered
+}
+
+func defsToSecrets(defs []*secretsModels.SecretDefinition) ([]*SecretExport, *failures.Failure) {
+	secretsExport := make([]*SecretExport, len(defs))
+	expander := project.NewSecretExpander(secretsapi.Get(), project.Get())
+
+	for i, def := range defs {
+		if def.Name == nil || def.Scope == nil {
+			logging.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
+			continue
+		}
+
+		secretValue, fail := expander.FindSecret(*def.Name, *def.Scope == secretsModels.SecretDefinitionScopeUser)
+		if fail != nil {
+			return secretsExport, fail
+		}
+
+		secretsExport[i] = &SecretExport{
+			Name:        *def.Name,
+			Scope:       *def.Scope,
+			Description: def.Description,
+			HasValue:    secretValue != nil,
+		}
+	}
+
+	return secretsExport, nil
+}
+
+func secretsAsJSON(secretExports []*SecretExport) ([]byte, *failures.Failure) {
+	bs, err := json.Marshal(secretExports)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
@@ -164,14 +225,18 @@ func secretsAsJSON(defs []*secretsModels.SecretDefinition) ([]byte, *failures.Fa
 }
 
 // secretsToRows returns the rows used in our output table
-func secretsToRows(defs []*secretsModels.SecretDefinition) ([][]interface{}, *failures.Failure) {
+func secretsToRows(secretExports []*SecretExport) ([][]interface{}, *failures.Failure) {
 	rows := [][]interface{}{}
-	for _, def := range defs {
+	for _, secret := range secretExports {
 		description := "-"
-		if def.Description != "" {
-			description = def.Description
+		if secret.Description != "" {
+			description = secret.Description
 		}
-		rows = append(rows, []interface{}{*def.Name, *def.Scope, description, fmt.Sprintf("%s.%s", *def.Scope, *def.Name)})
+		hasValue := locale.T("secrets_row_value_set")
+		if !secret.HasValue {
+			hasValue = locale.T("secrets_row_value_unset")
+		}
+		rows = append(rows, []interface{}{secret.Name, secret.Scope, hasValue, description, fmt.Sprintf("%s.%s", secret.Scope, secret.Name)})
 	}
 	return rows, nil
 }

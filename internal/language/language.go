@@ -121,6 +121,11 @@ func (l *Language) Text() string {
 	return l.data().text
 }
 
+// Ext return the file extension for the language.
+func (l Language) Ext() string {
+	return l.data().ext
+}
+
 // Header returns the interpreter directive.
 func (l Language) Header() string {
 	ld := l.data()
@@ -169,7 +174,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
-func (l *Language) MarshalYAML() (interface{}, error) {
+func (l Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
 }
 

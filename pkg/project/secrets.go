@@ -25,51 +25,62 @@ var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", fai
 // FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
 var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess")
 
+// UserCategory is the string used when referencing user secrets (eg. $secrets.user.foo)
+const UserCategory = "user"
+
+// ProjectCategory is the string used when referencing project secrets (eg. $secrets.project.foo)
+const ProjectCategory = "project"
+
 func init() {
-	RegisterExpander("secrets.user", NewSecretPromptingExpander(secretsapi.Get(), true))
-	RegisterExpander("secrets.project", NewSecretPromptingExpander(secretsapi.Get(), false))
+	expander := NewSecretPromptingExpander(secretsapi.Get())
+	RegisterExpander("secrets", expander)
 
 	// Deprecation mechanic
-	projectExpander := NewSecretPromptingExpander(secretsapi.Get(), false)
-	RegisterExpander("variables", func(name string, project *Project) (string, *failures.Failure) {
+	RegisterExpander("variables", func(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 		print.Warning(locale.Tr("secrets_warn_deprecated_var_expand", name))
-		return projectExpander(name, project)
+		return expander(name, meta, isFunction, project)
 	})
+}
+
+// SecretAccess is used to track secrets that were requested
+type SecretAccess struct {
+	IsUser bool
+	Name   string
 }
 
 // SecretExpander takes care of expanding secrets
 type SecretExpander struct {
-	secretsClient *secretsapi.Client
-	keypair       keypairs.Keypair
-	organization  *mono_models.Organization
-	remoteProject *mono_models.Project
-	projectFile   *projectfile.Project
-	project       *Project
-	secrets       []*secretsModels.UserSecret
-	cachedSecrets map[string]string
-	isUser        bool
+	secretsClient   *secretsapi.Client
+	keypair         keypairs.Keypair
+	organization    *mono_models.Organization
+	remoteProject   *mono_models.Project
+	projectFile     *projectfile.Project
+	project         *Project
+	secrets         []*secretsModels.UserSecret
+	secretsAccessed []*SecretAccess
+	cachedSecrets   map[string]string
 }
 
 // NewSecretExpander returns a new instance of SecretExpander
-func NewSecretExpander(secretsClient *secretsapi.Client, isUser bool) *SecretExpander {
+func NewSecretExpander(secretsClient *secretsapi.Client, prj *Project) *SecretExpander {
 	return &SecretExpander{
 		secretsClient: secretsClient,
 		cachedSecrets: map[string]string{},
-		isUser:        isUser,
+		project:       prj,
 	}
 }
 
 // NewSecretQuietExpander creates an Expander which can retrieve and decrypt stored user secrets.
-func NewSecretQuietExpander(secretsClient *secretsapi.Client, isUser bool) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, isUser)
+func NewSecretQuietExpander(secretsClient *secretsapi.Client) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil)
 	return secretsExpander.Expand
 }
 
 // NewSecretPromptingExpander creates an Expander which can retrieve and decrypt stored user secrets. Additionally,
 // it will prompt the user to provide a value for a secret -- in the event none is found -- and save the new
 // value with the secrets service.
-func NewSecretPromptingExpander(secretsClient *secretsapi.Client, isUser bool) ExpanderFunc {
-	secretsExpander := NewSecretExpander(secretsClient, isUser)
+func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
+	secretsExpander := NewSecretExpander(secretsClient, nil)
 	return secretsExpander.ExpandWithPrompt
 }
 
@@ -141,10 +152,6 @@ func (e *SecretExpander) Secrets() ([]*secretsModels.UserSecret, *failures.Failu
 
 // FetchSecret retrieves the given secret
 func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failures.Failure) {
-	if knownValue, exists := e.cachedSecrets[name]; exists {
-		return knownValue, nil
-	}
-
 	keypair, fail := e.KeyPair()
 	if fail != nil {
 		return "", nil
@@ -163,8 +170,7 @@ func (e *SecretExpander) FetchSecret(name string, isUser bool) (string, *failure
 		return "", fail
 	}
 
-	e.cachedSecrets[name] = string(decrBytes)
-	return e.cachedSecrets[name], nil
+	return string(decrBytes), nil
 }
 
 // FetchDefinition retrieves the definition associated with a secret
@@ -209,6 +215,8 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 		return nil, fail
 	}
 
+	e.secretsAccessed = append(e.secretsAccessed, &SecretAccess{isUser, name})
+
 	projectID := project.ProjectID.String()
 	variableRequiresUser := isUser
 	variableRequiresProject := true
@@ -234,11 +242,18 @@ func (e *SecretExpander) FindSecret(name string, isUser bool) (*secretsModels.Us
 	return nil, nil
 }
 
+// SecretsAccessed returns all secrets that were accessed since initialization
+func (e *SecretExpander) SecretsAccessed() []*SecretAccess {
+	return e.secretsAccessed
+}
+
 // SecretFunc defines what our expander functions will be returning
 type SecretFunc func(name string, project *Project) (string, *failures.Failure)
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(name string, project *Project) (string, *failures.Failure) {
+func (e *SecretExpander) Expand(category string, name string, isFunction bool, project *Project) (string, *failures.Failure) {
+	isUser := category == UserCategory
+
 	if e.project == nil {
 		e.project = project
 	}
@@ -251,14 +266,15 @@ func (e *SecretExpander) Expand(name string, project *Project) (string, *failure
 		return "", fail
 	}
 
-	if knownValue, exists := e.cachedSecrets[name]; exists {
+	if knownValue, exists := e.cachedSecrets[category+name]; exists {
 		return knownValue, nil
 	}
 
-	userSecret, fail := e.FindSecret(name, e.isUser)
+	userSecret, fail := e.FindSecret(name, isUser)
 	if fail != nil {
 		return "", fail
 	}
+
 	if userSecret == nil {
 		return "", secretsapi.FailUserSecretNotFound.New("secrets_expand_err_not_found", name)
 	}
@@ -269,12 +285,18 @@ func (e *SecretExpander) Expand(name string, project *Project) (string, *failure
 	}
 
 	secretValue := string(decrBytes)
-	e.cachedSecrets[name] = secretValue
+	e.cachedSecrets[category+name] = secretValue
 	return secretValue, nil
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string, *failures.Failure) {
+func (e *SecretExpander) ExpandWithPrompt(category string, name string, isFunction bool, project *Project) (string, *failures.Failure) {
+	isUser := category == UserCategory
+
+	if knownValue, exists := e.cachedSecrets[category+name]; exists {
+		return knownValue, nil
+	}
+
 	if e.project == nil {
 		e.project = project
 	}
@@ -287,21 +309,22 @@ func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string
 		return "", fail
 	}
 
-	value, fail := e.FetchSecret(name, e.isUser)
+	value, fail := e.FetchSecret(name, isUser)
 	if fail != nil && !fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
 		return "", fail
 	}
+
 	if fail == nil {
 		return value, nil
 	}
 
-	def, fail := e.FetchDefinition(name, e.isUser)
+	def, fail := e.FetchDefinition(name, isUser)
 	if fail != nil {
 		return "", fail
 	}
 
 	scope := string(secretsapi.ScopeUser)
-	if !e.isUser {
+	if !isUser {
 		scope = string(secretsapi.ScopeProject)
 	}
 	description := locale.T("secret_no_description")
@@ -323,14 +346,14 @@ func (e *SecretExpander) ExpandWithPrompt(name string, project *Project) (string
 		return "", fail
 	}
 
-	fail = secrets.Save(e.secretsClient, keypair, org, pj, e.isUser, name, value)
+	fail = secrets.Save(e.secretsClient, keypair, org, pj, isUser, name, value)
 
 	if fail != nil {
 		return "", fail
 	}
 
 	// Cache it so we're not repeatedly prompting for the same secret
-	e.cachedSecrets[name] = value
+	e.cachedSecrets[category+name] = value
 
 	return value, nil
 }

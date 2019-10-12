@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/progress"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -30,6 +31,8 @@ type RuntimeDLTestSuite struct {
 
 	project *project.Project
 	dir     string
+
+	prg *progress.Progress
 
 	hcMock *hcMock.Mock
 	rtMock *rtMock.Mock
@@ -68,6 +71,8 @@ func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	if rt.GOOS == "darwin" {
 		model.HostPlatform = sysinfo.Linux.String()
 	}
+
+	suite.prg = progress.New(progress.WithOutput(nil))
 }
 
 func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
@@ -76,20 +81,21 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 
 	err := os.RemoveAll(suite.dir)
 	suite.Require().NoError(err)
+	suite.prg.Close()
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoOptions))
 	artfs, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	files, fail := r.Download(artfs)
+	files, fail := r.Download(artfs, suite.prg)
 	suite.Require().NoError(fail.ToError())
 
 	suite.Implements((*runtime.Downloader)(nil), r)
 	suite.Contains(files, filepath.Join(suite.dir, "python"+runtime.InstallerExtension))
 	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+runtime.InstallerExtension))
 
-	for file, _ := range files {
+	for file := range files {
 		suite.FileExists(file)
 	}
 }
@@ -114,7 +120,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidURL))
 	files, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	_, fail = r.Download(files)
+	_, fail = r.Download(files, suite.prg)
 	suite.Require().Error(fail.ToError())
 
 	suite.Equal(model.FailSignS3URL.Name, fail.Type.Name)
