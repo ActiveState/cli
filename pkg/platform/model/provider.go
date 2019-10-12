@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/platform/api/client"
 	"github.com/ActiveState/cli/internal/platform/api/graphql/projclient"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -20,14 +20,10 @@ var prv = func() ProjectProvider {
 		return defaultProjectProviderMock()
 	}
 
-	endpoint := constants.GraphqlURLStage
-	if constants.APIEnv == "prod" {
-		endpoint = constants.GraphqlURLProd
-	}
-
+	endpoint := api.GetServiceURL(api.ServiceGraphQL)
 	timeout := time.Second * 16
 
-	gc := gqlclient.New(endpoint, nil, authentication.Get(), timeout)
+	gc := gqlclient.New(endpoint.String(), nil, authentication.Get(), timeout)
 
 	p, err := projclient.New(gc)
 	if err != nil {
