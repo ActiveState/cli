@@ -56,6 +56,15 @@ func NewProjectsRespDefaultMock(orgData TextToID) *client.ProjectsResp {
 				Changed:        model.Time{Time: time.Now().Add(-time.Hour * 24 * 2)},
 				OrganizationID: orgData.ID("sample-org"),
 			},
+			&model.Project{
+				Branches:       MakeBranchesMock(1, 1, 1, MakeStrfmtUUID(6, 6)),
+				Description:    PtrToString("the string of string"),
+				Name:           "string",
+				Added:          model.Time{Time: time.Now().Add(-time.Hour * 24 * 3)},
+				CreatedBy:      NewStrfmtUUID(4, 4),
+				Changed:        model.Time{Time: time.Now().Add(-time.Hour * 24 * 2)},
+				OrganizationID: orgData.ID("string"),
+			},
 		},
 	}
 
@@ -79,6 +88,7 @@ func MakeOrgDataDefaultMock() TextToID {
 		"SecretOrg":   MakeStrfmtUUID(2, 2),
 		"example-org": MakeStrfmtUUID(3, 3),
 		"sample-org":  MakeStrfmtUUID(4, 4),
+		"string":      MakeStrfmtUUID(5, 5),
 	}
 }
 
