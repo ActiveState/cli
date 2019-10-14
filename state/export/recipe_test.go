@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -16,7 +15,6 @@ import (
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -35,8 +33,6 @@ func (suite *RecipeCommandTestSuite) SetupTest() {
 }
 
 func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
-	updateProjectMock()
-
 	suite.apim = apiMock.Init()
 	suite.authm = authMock.Init()
 	suite.invm = invMock.Init()
@@ -49,17 +45,6 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.ex = exiter.New()
 	Command.Exiter = suite.ex.Exit
-}
-
-func updateProjectMock() {
-	mp := model.ProjectProviderMock()
-
-	for _, proj := range mp.ProjectsResp.Projects {
-		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("sample-org") {
-			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-			proj.Branches[0].CommitID = &cid
-		}
-	}
 }
 
 func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
@@ -75,8 +60,6 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 
 	projectfile.Reset()
 	failures.ResetHandled()
-
-	model.ResetProviderMock()
 }
 
 func (suite *RecipeCommandTestSuite) TestNoArg() {
@@ -108,7 +91,7 @@ func (suite *RecipeCommandTestSuite) runRecipeCommandTest(code int, args ...stri
 	cc := Command.GetCobraCmd()
 	cc.SetArgs(append([]string{"recipe"}, args...))
 
-	projectURL := fmt.Sprintf("https://%s/sample-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}
