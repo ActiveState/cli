@@ -1,12 +1,10 @@
 package activate
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -38,9 +36,6 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
-	//ppm := model.ProjectProviderMock()
-	//for _, proj := range ppm.ProjectsResp
-
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/sample-org/projects")
@@ -67,8 +62,10 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 }
 
 func setupProjectMock() {
-	orgProjMockCalled := false //  The project response changes once the project is created so we need
+	/*//  The project response changes once the project is created so we need
 	// to provide a different response after the first call to this mock
+	orgProjMockCalled := false
+
 	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
 		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
 		if code != 200 {
@@ -94,7 +91,7 @@ func setupProjectMock() {
 			responseFile = getResponseFile(method, code, request, responsePath)
 		}
 		return 200, string(fileutils.ReadFileUnsafe(responseFile))
-	})
+	})*/
 }
 
 func (suite *ActivateTestSuite) TestActivateCopy() {
@@ -105,14 +102,8 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
+	httpmock.Register("POST", "organizations/sample-org/projects")
 	setupProjectMock()
-	httpmock.RegisterWithCode("GET", "organizations/ActiveState/projects/CodeIntel", 404)
-	httpmock.RegisterWithResponderBody("GET", "/organizations/test-owner/projects/test-name", 200, func(req *http.Request) (int, string) {
-		responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
-		responseFile := filepath.Join(responsePath, "GET-organizations/test-owner/projects/test-name-commit.json")
-		return 200, string(fileutils.ReadFileUnsafe(responseFile))
-	})
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
 
@@ -121,7 +112,7 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 	suite.promptMock.OnMethod("Input").Once().Return("example-proj", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("example-org", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("sample-org", nil)
 
 	projPathOriginal := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", constants.ConfigFileName)
 	newPath := filepath.Join(suite.dir, constants.ConfigFileName)
@@ -149,13 +140,16 @@ func (suite *ActivateTestSuite) TestNewPlatformProject() {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
-	httpmock.Register("POST", "organizations/test-owner/projects")
+	httpmock.Register("POST", "organizations/sample-org/projects")
 	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
-	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010003", 0, func(req *http.Request) (int, string) {
+		addCommitIDToBranch(strfmt.UUID(path.Base(req.URL.Path)), "00020002-0002-0002-0002-000200020002")
+		return 200, ""
+	})
 
 	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--new", "--project", "test-name", "--owner", "test-owner", "--language", "python3"})
+	Cc.SetArgs([]string{"--new", "--project", "example-proj", "--owner", "sample-org", "--language", "python3"})
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
 	suite.NoError(failures.Handled(), "No failure occurred")
