@@ -35,7 +35,7 @@ func (suite *ProjectsTestSuite) TestProjects_FetchByName() {
 }
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
-	project, fail := model.FetchProjectByName("string", "string")
+	project, fail := model.FetchProjectByName("bad-org", "bad-proj")
 	suite.EqualError(fail.ToError(), client.ErrNoValueAvailable.Error())
 	suite.Nil(project)
 }
