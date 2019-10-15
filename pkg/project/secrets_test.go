@@ -15,9 +15,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -31,6 +31,7 @@ type SecretsExpanderTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *mock.Mock
 }
 
 func loadSecretsProject() (*projectfile.Project, error) {
@@ -51,8 +52,6 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
 	failures.ResetHandled()
 
-	updateProjectMock()
-
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "Unmarshalled project YAML")
 	projectFile.Persist()
@@ -69,13 +68,16 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = mock.Init()
+	suite.graphMock.ProjectByOrgAndName()
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
-	model.ResetProviderMock()
+	suite.graphMock.Close()
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {

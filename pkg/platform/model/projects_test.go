@@ -1,9 +1,9 @@
 package model_test
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/client"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/platform/api/client"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"

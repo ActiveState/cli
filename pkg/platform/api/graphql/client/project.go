@@ -1,7 +1,7 @@
 package client
 
 func ProjectByOrgAndName() *projectByOrgAndName {
-	return &projectByOrgAndName{}
+	return &projectByOrgAndName{map[string]interface{}{}}
 }
 
 type projectByOrgAndName struct {
