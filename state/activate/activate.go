@@ -264,8 +264,7 @@ func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failu
 		if fail != nil {
 			return fail
 		}
-	}
-	if err != nil {
+	} else if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
