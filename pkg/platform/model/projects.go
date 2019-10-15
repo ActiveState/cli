@@ -3,6 +3,10 @@ package model
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/client"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -27,17 +31,23 @@ var (
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
-	proj, err := prv.ProjectByOrgAndName(orgName, projectName)
+
+	request := client.ProjectByOrgAndName()
+	request.SetOrg(orgName)
+	request.SetProject(projectName)
+
+	gql := graphql.Get()
+	response := model.Projects{}
+	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, FailNoValidProject.Wrap(err)
+		return nil, api.FailUnknown.Wrap(err)
 	}
 
-	mp, err := proj.Project.ToMonoProject()
-	if err != nil {
-		return nil, FailCannotConvertModel.Wrap(err)
+	if len(response.Projects) == 0 {
+		return nil, FailNoValidProject.New(locale.Tr("err_api_project_not_found", projectName, orgName))
 	}
 
-	return mp, nil
+	return response.Projects[0].ToMonoProject()
 }
 
 // FetchOrganizationProjects fetches the projects for an organization

@@ -40,3 +40,7 @@ type Project struct {
 	ProjectID      strfmt.UUID    `json:"project_id"`
 	RepoURL        *string        `json:"repo_url"`
 }
+
+type Projects struct {
+	Projects []*Project `json:"projects"`
+}

@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/failures"
+
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,10 +34,10 @@ func (b *Branch) ToMonoBranch() *mono_models.Branch {
 	}
 }
 
-func (p *Project) ToMonoProject() (*mono_models.Project, error) {
+func (p *Project) ToMonoProject() (*mono_models.Project, *failures.Failure) {
 	for _, b := range p.Branches {
 		if b.ProjectID == nil {
-			return nil, ErrMissingBranchProjectID
+			return nil, failures.FailMarshal.Wrap(ErrMissingBranchProjectID)
 		}
 	}
 
