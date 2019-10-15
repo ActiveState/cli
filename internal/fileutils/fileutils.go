@@ -280,7 +280,8 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 	}
 
 	// make the target file temporarily writable
-	if FileExists(filePath) {
+	fileExists := FileExists(filePath)
+	if fileExists {
 		stat, _ := os.Stat(filePath)
 		if err := os.Chmod(filePath, FileMode); err != nil {
 			return failures.FailIO.Wrap(err)
@@ -290,6 +291,10 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FileMode)
 	if err != nil {
+		if !fileExists {
+			target := path.Dir(filePath)
+			err = fmt.Errorf("access to target %q is denied", target)
+		}
 		return failures.FailIO.Wrap(err)
 	}
 	defer f.Close()
