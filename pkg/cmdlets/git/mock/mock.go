@@ -28,7 +28,8 @@ func Init() *Mock {
 func (m *Mock) CloneProjectRepo(owner, name, path string) *failures.Failure {
 	args := m.Called(path)
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
+	dummyID := "00010001-0001-0001-0001-000100010001"
+	projectURL := fmt.Sprintf("https://%s/%s/%s?commitID=%s", constants.PlatformURL, owner, name, dummyID)
 	_, fail := projectfile.Create(projectURL, path)
 	if fail != nil {
 		return fail

@@ -277,7 +277,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 
 func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetProject()
+	suite.apiMock.MockGetProjectNoLanguage()
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
@@ -295,7 +295,7 @@ func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/string/string", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it
