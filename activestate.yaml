@@ -13,6 +13,16 @@ scripts:
       if [ ! -z "$COMSPEC" ]; then
         BUILD_NAME="state.exe"
       fi
+      function buildProject() {
+        local type=${1-internal}
+        [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "bad build type '$type'" && exit 1
+        local goos=${2-$(go env GOHOSTOS)}
+        [[ $goos =~ ^(windows|darwin|linux)$ ]] && export GOOS=$goos
+        local ext=""
+        [[ $goos == windows ]] && ext=".exe"
+        eval go build -tags $type -o ./build/$BUILD_NAME$ext $CLI_BUILDFLAGS $CLI_PKGS
+        unset GOOS
+      }
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
@@ -23,14 +33,14 @@ scripts:
     description: Builds the project.
     value: |
       $scripts.preprocess
-      eval go build -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      buildProject internal ${1}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: build-external
     description: Builds the project for external use (limiting its feature-set).
     value: |
       $scripts.preprocess
-      eval go build -tags external -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      buildProject external ${1}
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: install
