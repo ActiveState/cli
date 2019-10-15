@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	repoMock "github.com/ActiveState/cli/pkg/cmdlets/git/mock"
+	gitMock "github.com/ActiveState/cli/pkg/cmdlets/git/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -41,7 +41,7 @@ type ActivateTestSuite struct {
 	apiMock    *apiMock.Mock
 	rMock      *rMock.Mock
 	promptMock *promptMock.Mock
-	repoMock   *repoMock.Mock
+	gitMock    *gitMock.Mock
 	dir        string
 	origDir    string
 }
@@ -59,9 +59,9 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
 	suite.promptMock = promptMock.Init()
-	suite.repoMock = repoMock.Init()
+	suite.gitMock = gitMock.Init()
 	prompter = suite.promptMock
-	repo = suite.repoMock
+	repo = suite.gitMock
 
 	var err error
 
@@ -96,7 +96,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.apiMock.Close()
 	suite.rMock.Close()
 	suite.promptMock.Close()
-	suite.repoMock.Close()
+	suite.gitMock.Close()
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
@@ -281,7 +281,7 @@ func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
-	suite.repoMock.OnMethod("CloneProjectRepo").Return(nil)
+	suite.gitMock.OnMethod("CloneProjectRepo").Return(nil)
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})
