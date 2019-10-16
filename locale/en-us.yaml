@@ -566,9 +566,7 @@ run_listing_scripts:
 
 secrets_cmd_description:
   other: Manage Your Secrets
-secrets_flag_json:
-  other: Changes output to machine-readable JSON
-secrets_flag_json:
+secrets_flag_filter:
   other: Show only secrets that match the given filter. The filter value is the config path that you want to see secrets for, eg. constants.foo, scripts.foo, secrets.project.foo, etc.
 secrets_get_cmd_description:
   other: Get the value of a secret
