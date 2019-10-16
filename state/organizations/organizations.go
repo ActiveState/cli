@@ -56,7 +56,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	listOrganizations(orgs)
 }
 
-func orgsToJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
+func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 	type orgRaw struct {
 		Name string `json:"name,omitempty"`
 	}
