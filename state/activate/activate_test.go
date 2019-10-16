@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -257,7 +258,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 	fail := activateFromNamespace("foo")
-	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
+	suite.Equal(project.FailInvalidNamespace.Name, fail.Type.Name)
 }
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {

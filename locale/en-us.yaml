@@ -274,7 +274,7 @@ arg_state_fork_namespace_description:
 auth_required_fork:
   other: You need to be authenticated to fork an ActiveState Platform project
 err_fork_auth_required:
-  other: Forking a project requires you to be authenticated against the ActiveState Platformfork
+  other: Forking a project requires you to be authenticated against the ActiveState Platformform
 err_fork_create_fork:
   other: Could not create the forked project
 err_fork_invalid_namespace:

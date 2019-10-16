@@ -1,8 +1,6 @@
 package fork
 
 import (
-	"regexp"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -14,21 +12,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/cobra"
 )
 
-// TODO: Think about moving the namespace regex stuff to the project package or some other
-// common package
 var (
-	failInvalidNamespace = failures.Type("fork.fail.invalidnamespace", failures.FailUserInput)
-
 	failUpdateBranch = failures.Type("fork.fail.updatebranch")
 
 	failEditProject = failures.Type("fork.fail.editproject")
 )
-
-// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
 var prompter prompt.Prompter
 
@@ -64,18 +56,13 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	rx := regexp.MustCompile(NamespaceRegex)
-	groups := rx.FindStringSubmatch(Args.Namespace)
-	if len(groups) != 3 {
-		failures.Handle(
-			failInvalidNamespace.New(locale.Tr("err_invalid_namespace", Args.Namespace)),
-			locale.T("err_fork_namespace"),
-		)
-		return
+	namespace, fail := project.ParseNamespace(Args.Namespace)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_fork_invalid_namespace"))
 	}
 
-	originalOwner := groups[1]
-	projectName := groups[2]
+	originalOwner := namespace.Owner
+	projectName := namespace.Project
 
 	newOwner, fail := getForkOwner()
 	if fail != nil {

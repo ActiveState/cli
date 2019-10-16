@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -172,17 +171,13 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
 // to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
 func activateFromNamespace(namespace string) *failures.Failure {
-	rx := regexp.MustCompile(NamespaceRegex)
-	groups := rx.FindStringSubmatch(namespace)
-	if len(groups) != 3 {
-		return failInvalidNamespace.New(locale.Tr("err_invalid_namespace", namespace))
+	ns, fail := project.ParseNamespace(namespace)
+	if fail != nil {
+		return fail
 	}
 
-	org := groups[1]
-	name := groups[2]
-
 	// Ensure that the project exists and that we have access to it
-	project, fail := model.FetchProjectByName(org, name)
+	project, fail := model.FetchProjectByName(ns.Owner, ns.Project)
 	if fail != nil {
 		return fail
 	}
@@ -206,7 +201,7 @@ func activateFromNamespace(namespace string) *failures.Failure {
 
 	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
 		// If not actually create the project
-		fail = createProject(org, name, commitID, languages, directory)
+		fail = createProject(ns.Owner, ns.Project, commitID, languages, directory)
 		if fail != nil {
 			return fail
 		}
