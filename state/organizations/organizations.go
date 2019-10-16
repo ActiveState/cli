@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Flags captures values for any of the flags used with the scripts command.
+// Flags captures values for any of the flags used with the organizations command.
 var Flags struct {
 	JSON bool
 }
