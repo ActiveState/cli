@@ -43,7 +43,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	if Flags.JSON {
-		data, fail := orgsToJSON(orgs)
+		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			failures.Handle(fail, locale.T("organizations_err_output"))
 			return
