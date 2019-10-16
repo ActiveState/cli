@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/ActiveState/survey"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
