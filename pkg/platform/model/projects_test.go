@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"

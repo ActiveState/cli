@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/client"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -32,7 +32,7 @@ var (
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
-	request := client.ProjectByOrgAndName(orgName, projectName)
+	request := request.ProjectByOrgAndName(orgName, projectName)
 
 	gql := graphql.Get()
 	response := model.Projects{}

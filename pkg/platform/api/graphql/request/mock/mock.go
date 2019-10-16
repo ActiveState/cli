@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/logging"
 
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/client"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -90,13 +90,13 @@ func (m *Mock) handleRequest(req *http.Request) (int, string) {
 }
 
 func (m *Mock) NoProjects(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "NoProjects", options))
+	m.responders = append(m.responders, NewResponder(request.ProjectByOrgAndName("", "").Query(), "NoProjects", options))
 }
 
 func (m *Mock) ProjectByOrgAndName(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "Project", options))
+	m.responders = append(m.responders, NewResponder(request.ProjectByOrgAndName("", "").Query(), "Project", options))
 }
 
 func (m *Mock) ProjectByOrgAndNameNoCommits(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "ProjectNoCommits", options))
+	m.responders = append(m.responders, NewResponder(request.ProjectByOrgAndName("", "").Query(), "ProjectNoCommits", options))
 }

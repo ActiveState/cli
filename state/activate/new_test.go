@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/suite"

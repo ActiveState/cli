@@ -3,7 +3,7 @@ package mock
 import (
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"

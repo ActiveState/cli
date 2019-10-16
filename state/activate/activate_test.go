@@ -25,7 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"

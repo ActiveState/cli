@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
-	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"

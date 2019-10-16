@@ -1,4 +1,4 @@
-package client
+package request
 
 func ProjectByOrgAndName(org string, project string) *projectByOrgAndName {
 	return &projectByOrgAndName{map[string]interface{}{
