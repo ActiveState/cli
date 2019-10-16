@@ -90,13 +90,13 @@ func (m *Mock) handleRequest(req *http.Request) (int, string) {
 }
 
 func (m *Mock) NoProjects(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "NoProjects", options))
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "NoProjects", options))
 }
 
 func (m *Mock) ProjectByOrgAndName(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "Project", options))
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "Project", options))
 }
 
 func (m *Mock) ProjectByOrgAndNameNoCommits(options Options) {
-	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "ProjectNoCommits", options))
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName("", "").Query(), "ProjectNoCommits", options))
 }

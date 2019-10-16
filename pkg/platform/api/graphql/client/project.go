@@ -1,7 +1,10 @@
 package client
 
-func ProjectByOrgAndName() *projectByOrgAndName {
-	return &projectByOrgAndName{map[string]interface{}{}}
+func ProjectByOrgAndName(org string, project string) *projectByOrgAndName {
+	return &projectByOrgAndName{map[string]interface{}{
+		"org":  org,
+		"name": project,
+	}}
 }
 
 type projectByOrgAndName struct {
@@ -44,12 +47,4 @@ func (p *projectByOrgAndName) Query() string {
 
 func (p *projectByOrgAndName) Vars() map[string]interface{} {
 	return p.vars
-}
-
-func (p *projectByOrgAndName) SetOrg(org string) {
-	p.vars["org"] = org
-}
-
-func (p *projectByOrgAndName) SetProject(project string) {
-	p.vars["name"] = project
 }

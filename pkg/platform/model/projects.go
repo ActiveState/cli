@@ -32,9 +32,7 @@ var (
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
-	request := client.ProjectByOrgAndName()
-	request.SetOrg(orgName)
-	request.SetProject(projectName)
+	request := client.ProjectByOrgAndName(orgName, projectName)
 
 	gql := graphql.Get()
 	response := model.Projects{}
