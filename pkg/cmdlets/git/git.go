@@ -33,16 +33,17 @@ type Repository interface {
 }
 
 // NewRepo returns a new repository
-func NewRepo() Repository {
-	return &gitRepo{}
+func NewRepo() *Repo {
+	return &Repo{}
 }
 
-type gitRepo struct {
+// Repo represents a git repository
+type Repo struct {
 }
 
-// CloneProjectRepo will attempt to clone the associalted public git repository
+// CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *gitRepo) CloneProject(owner, name, path string) *failures.Failure {
+func (r *Repo) CloneProject(owner, name, path string) *failures.Failure {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
 		return fail
@@ -68,12 +69,7 @@ func (r *gitRepo) CloneProject(owner, name, path string) *failures.Failure {
 		return fail
 	}
 
-	fail = moveFiles(tempDir, path)
-	if fail != nil {
-		return fail
-	}
-
-	return nil
+	return moveFiles(tempDir, path)
 }
 
 func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
