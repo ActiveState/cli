@@ -89,6 +89,25 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 }
 
+func getForkOwner() (string, *failures.Failure) {
+	currentUser := authentication.Get().WhoAmI()
+	orgs, fail := model.FetchOrganizations()
+	if fail != nil {
+		return "", fail
+	}
+	if len(orgs) == 0 {
+		return currentUser, nil
+	}
+
+	options := make([]string, len(orgs))
+	for i, org := range orgs {
+		options[i] = org.Name
+	}
+	options = append([]string{currentUser}, options...)
+
+	return prompter.Select(locale.T("fork_select_org"), options, "")
+}
+
 func createFork(originalOwner, newOwner, projectName string) *failures.Failure {
 	originalProject, fail := model.FetchProjectByName(originalOwner, projectName)
 	if fail != nil {
@@ -116,25 +135,6 @@ func createFork(originalOwner, newOwner, projectName string) *failures.Failure {
 	}
 
 	return editProjectDetails(originalOwner, newOwner, projectName)
-}
-
-func getForkOwner() (string, *failures.Failure) {
-	currentUser := authentication.Get().WhoAmI()
-	orgs, fail := model.FetchOrganizations()
-	if fail != nil {
-		return "", fail
-	}
-	if len(orgs) == 0 {
-		return currentUser, nil
-	}
-
-	options := make([]string, len(orgs))
-	for i, org := range orgs {
-		options[i] = org.Name
-	}
-	options = append([]string{currentUser}, options...)
-
-	return prompter.Select(locale.T("fork_select_org"), options, "")
 }
 
 func addNewProject(owner, name string) (*mono_models.Project, *failures.Failure) {
