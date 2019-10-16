@@ -23,9 +23,9 @@ func Init() *Mock {
 	return &Mock{}
 }
 
-// CloneProjectRepo will attempt to clone the associalted public git repository
+// CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (m *Mock) CloneProjectRepo(owner, name, path string) *failures.Failure {
+func (m *Mock) CloneProject(owner, name, path string) *failures.Failure {
 	args := m.Called(path)
 
 	dummyID := "00010001-0001-0001-0001-000100010001"

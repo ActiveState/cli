@@ -281,7 +281,7 @@ func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
-	suite.gitMock.OnMethod("CloneProjectRepo").Return(nil)
+	suite.gitMock.OnMethod("CloneProject").Return(nil)
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})

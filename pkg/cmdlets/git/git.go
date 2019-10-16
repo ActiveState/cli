@@ -29,7 +29,7 @@ var (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProjectRepo(owner, name, path string) *failures.Failure
+	CloneProject(owner, name, path string) *failures.Failure
 }
 
 // NewRepo returns a new repository
@@ -42,7 +42,7 @@ type gitRepo struct {
 
 // CloneProjectRepo will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *gitRepo) CloneProjectRepo(owner, name, path string) *failures.Failure {
+func (r *gitRepo) CloneProject(owner, name, path string) *failures.Failure {
 	project, fail := model.FetchProjectByName(owner, name)
 	if fail != nil {
 		return fail

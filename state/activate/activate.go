@@ -254,7 +254,7 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 }
 
 func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
-	fail := repo.CloneProjectRepo(org, name, directory)
+	fail := repo.CloneProject(org, name, directory)
 	if fail != nil {
 		return fail
 	}
