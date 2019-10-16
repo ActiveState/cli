@@ -16,6 +16,14 @@ var Command = &commands.Command{
 	Aliases:     []string{"orgs"},
 	Description: "organizations_description",
 	Run:         Execute,
+	Flags: []*commands.Flag{
+		{
+			Name:        "json",
+			Description: "flag_json_desc",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.JSON,
+		},
+	},
 }
 
 // Execute the organizations command.

@@ -403,7 +403,7 @@ run_description:
   other: Run Your Project Scripts
 scripts_description:
   other: Show project scripts 
-scripts_flag_json:
+flag_json_desc:
   other: Changes output to machine-readable JSON
 scripts_col_name:
   other: Name
