@@ -70,6 +70,8 @@ func createUpdate(path string, platform string) {
 	// Permissions may be lost due to the file copy, so ensure it's still executable
 	permissions, _ := permbits.Stat(tempPath)
 	permissions.SetUserExecute(true)
+	permissions.SetGroupExecute(true)
+	permissions.SetOtherExecute(true)
 	err = permbits.Chmod(tempPath, permissions)
 	if err != nil {
 		panic(errors.Wrap(fail.ToError(), "Could not make file executable"))
