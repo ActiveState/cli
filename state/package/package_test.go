@@ -8,24 +8,28 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type PkgTestSuite struct {
 	suite.Suite
-	apiMock  *apiMock.Mock
-	authMock *authMock.Mock
-	invMock  *invMock.Mock
-	exiter   *exiter.Exiter
+	apiMock   *apiMock.Mock
+	authMock  *authMock.Mock
+	invMock   *invMock.Mock
+	graphMock *graphMock.Mock
+	exiter    *exiter.Exiter
 }
 
 func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.invMock = invMock.Init()
 	suite.authMock = authMock.Init()
+	suite.graphMock = graphMock.Init()
 	suite.exiter = exiter.New()
 
 	AddCommand.Exiter = suite.exiter.Exit
@@ -43,12 +47,14 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock.MockGetProject()
 	suite.apiMock.MockVcsGetCheckpoint()
 	suite.apiMock.MockCommit()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *PkgTestSuite) AfterTest(suiteName, testName string) {
 	suite.invMock.Close()
 	suite.apiMock.Close()
 	suite.authMock.Close()
+	suite.graphMock.Close()
 
 	UpdateArgs.Name = ""
 

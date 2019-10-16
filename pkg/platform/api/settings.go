@@ -25,6 +25,9 @@ const (
 
 	// ServiceInventory is our service that's used to query available inventory and dependencies
 	ServiceInventory = "inventory"
+
+	// ServiceGraphQL is our service that's used as a graphql endpoint for platform requests
+	ServiceGraphQL = "platform-graphql"
 )
 
 var urlsByService = map[Service]*url.URL{
@@ -47,6 +50,11 @@ var urlsByService = map[Service]*url.URL{
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.InventoryAPIPath,
+	},
+	ServiceGraphQL: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.GraphqlAPIPath,
 	},
 }
 
