@@ -9,19 +9,17 @@ scripts:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-      BUILD_NAME="state"
-      if [ ! -z "$COMSPEC" ]; then
-        BUILD_NAME="state.exe"
-      fi
       function buildProject() {
         local type=${1-internal}
         [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "bad build type '$type'" && exit 1
         local goos=${2-$(go env GOHOSTOS)}
-        [[ $goos =~ ^(windows|darwin|linux)$ ]] && export GOOS=$goos
-        local ext=""
-        [[ $goos == windows ]] && ext=".exe"
-        eval go build -tags $type -o ./build/$BUILD_NAME$ext $CLI_BUILDFLAGS $CLI_PKGS
+        [[ ! $goos =~ ^(windows|darwin|linux)$ ]] && >&2 echo "bad goos value '$goos'" && exit 1
+        local out=./build/state
+        [[ $goos == windows ]] && out=${out}.exe
+        export GOOS=$goos
+        eval go build -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
         unset GOOS
+        echo ${out}
       }
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
@@ -30,19 +28,19 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
-    description: Builds the project.
+    description: Builds the project. One argument may be provided to set the build target OS.
     value: |
       $scripts.preprocess
-      buildProject internal ${1}
+      outFile=$(buildProject internal ${1})
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
+      go run scripts/update-generator/main.go -o public/update $outFile
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set).
+    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS.
     value: |
       $scripts.preprocess
-      buildProject external ${1}
+      outFile=$(buildProject external ${1})
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
+      go run scripts/update-generator/main.go -o public/update $outFile
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
