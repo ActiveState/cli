@@ -11,9 +11,9 @@ scripts:
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
       function buildProject() {
         local type=${1-internal}
-        [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "bad build type '$type'" && exit 1
+        [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "'$type' is not a supported build type" && return 2
         local goos=${2-$(go env GOHOSTOS)}
-        [[ ! $goos =~ ^(windows|darwin|linux)$ ]] && >&2 echo "bad goos value '$goos'" && exit 1
+        [[ ! $goos =~ ^(windows|darwin|linux)$ ]] && >&2 echo "'$goos' is not a supported build target" && return 2
         local out=./build/state
         [[ $goos == windows ]] && out=${out}.exe
         export GOOS=$goos
@@ -28,17 +28,17 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
-    description: Builds the project. One argument may be provided to set the build target OS.
+    description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      outFile=$(buildProject internal ${1})
+      outFile=$(buildProject internal ${1}) || exit $?
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update $outFile
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS.
+    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      outFile=$(buildProject external ${1})
+      outFile=$(buildProject external ${1}) || exit $?
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update $outFile
   - name: install
