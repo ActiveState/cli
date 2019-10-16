@@ -84,6 +84,9 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	Flags.Language = ""
 	Args.Namespace = ""
 
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
+	os.Unsetenv(constants.ProjectEnvVarName)
+
 	failures.ResetHandled()
 }
 

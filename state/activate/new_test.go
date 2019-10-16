@@ -27,7 +27,7 @@ func (suite *ActivateNewTestSuite) setupMocks() {
 	gmock := suite.rMock.GraphMock
 	gmock.Reset()
 	gmock.ProjectByOrgAndNameNoCommits(graphMock.Once)
-	gmock.ProjectByOrgAndName(graphMock.Once)
+	gmock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *ActivateNewTestSuite) TestActivateNew() {
