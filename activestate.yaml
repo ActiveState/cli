@@ -17,7 +17,7 @@ scripts:
         local out=./build/state
         [[ $goos == windows ]] && out=${out}.exe
         export GOOS=$goos
-        eval go build -v -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
+        eval go build -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
         unset GOOS
         echo ${out}
       }
