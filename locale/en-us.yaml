@@ -417,6 +417,8 @@ scripts_no_name:
   other: No script with name {{.V0}}
 scripts_err_output:
   other: Failed to display scripts output
+organizations_err_output:
+  other: Failed to display organizations output
 edit_description:
   other: Edit a given script
 edit_script_cmd_name_arg:
