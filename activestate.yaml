@@ -19,16 +19,15 @@ scripts:
       $scripts.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
-      go mod vendor
   - name: build
-    description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
+    description: Builds the project.
     value: |
       $scripts.preprocess
       eval go build -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set). Note by default this targets the staging environment, to target prod use `APIENV=prod`.
+    description: Builds the project for external use (limiting its feature-set).
     value: |
       $scripts.preprocess
       eval go build -tags external -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
@@ -97,7 +96,7 @@ scripts:
       ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "api/.*?(client|model)"`
     standalone: true
   - name: integration-tests
-    description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
+    description: Runs integration tests.
     value: cd test/integration && python3 -m unittest discover -p "*_test.py"
   - name: clean
     description: Cleans out the build dir.
@@ -112,6 +111,10 @@ scripts:
 events:
   - name: ACTIVATE
     value: |
+      if ! type "go" &> /dev/null; then
+        echo "go is not installed. Please install Go version 1.11 or above."
+        exit 1
+      fi
       $scripts.SET_ENV
       $scripts.preprocess
       git config core.hooksPath .githooks

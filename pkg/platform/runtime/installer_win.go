@@ -4,6 +4,7 @@ package runtime
 
 import (
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
 // InstallerExtension is used to identify whether an artifact is one that we should care about
@@ -14,7 +15,7 @@ func Archiver() archiver.Archiver {
 	return archiver.DefaultZip
 }
 
-// Unarchiver returns the unarchiver to use
-func Unarchiver() archiver.Unarchiver {
-	return archiver.DefaultZip
+// UnarchiverWithProgress returns the ProgressUnarchiver to use
+func UnarchiverWithProgress() unarchiver.Unarchiver {
+	return unarchiver.NewZip()
 }

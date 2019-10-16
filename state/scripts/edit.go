@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
@@ -21,9 +23,9 @@ import (
 
 // The default open command and editors based on platform
 const (
-	openCmdLin = "xdg-open"
-	openCmdMac = "open"
-	openCmdWin = "start"
+	openCmdLin       = "xdg-open"
+	openCmdMac       = "open"
+	defaultEditorWin = "notepad"
 )
 
 var (
@@ -32,6 +34,9 @@ var (
 
 	// FailWatcherInstance indicates a failure from the active watcher
 	FailWatcherInstance = failures.Type("edit.fail.watcherinstance")
+
+	// FailInvalidEditor indicates the EDITOR variable is not correctly set
+	FailInvalidEditor = failures.Type("edit.fail.invalideditor")
 )
 
 // EditArgs captures values for any arguments used with the edit command
@@ -127,7 +132,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.NewSource(script.LanguageSafe(), scriptBlock)
+	return scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
 }
 
 func openEditor(filename string) *failures.Failure {
@@ -153,8 +158,9 @@ func openEditor(filename string) *failures.Failure {
 }
 
 func getOpenCmd() (string, *failures.Failure) {
-	if editor := os.Getenv("EDITOR"); editor != "" {
-		return editor, nil
+	editor := os.Getenv("EDITOR")
+	if editor != "" {
+		return verifyEditor(editor)
 	}
 
 	switch runtime.GOOS {
@@ -167,10 +173,36 @@ func getOpenCmd() (string, *failures.Failure) {
 	case "darwin":
 		return openCmdMac, nil
 	case "windows":
-		return openCmdWin, nil
+		return defaultEditorWin, nil
 	default:
 		return "", failures.FailRuntime.New("error_edit_unrecognized_platform", runtime.GOOS)
 	}
+}
+
+func verifyEditor(editor string) (string, *failures.Failure) {
+	if strings.Contains(editor, string(os.PathSeparator)) {
+		return verifyPathEditor(editor)
+	}
+
+	_, err := exec.LookPath(editor)
+	if err != nil {
+		return "", FailInvalidEditor.Wrap(err)
+	}
+
+	return editor, nil
+}
+
+func verifyPathEditor(editor string) (string, *failures.Failure) {
+	if runtime.GOOS == "windows" && filepath.Ext(editor) == "" {
+		return "", FailInvalidEditor.New("error_edit_windows_invalid_editor")
+	}
+
+	_, err := os.Stat(editor)
+	if err != nil {
+		return "", FailInvalidEditor.Wrap(err)
+	}
+
+	return editor, nil
 }
 
 type scriptWatcher struct {

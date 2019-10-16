@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+// FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
 var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
 
 // nullByte represents the null-terminator byte

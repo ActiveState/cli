@@ -11,11 +11,15 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+// ensure that Downloader implements the Download interface
+var _ Downloader = &Download{}
 
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."
@@ -50,7 +54,7 @@ type HeadChefArtifact = headchef_models.BuildCompletedArtifactsItems0
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download(artifacts []*HeadChefArtifact) (files map[string]*HeadChefArtifact, fail *failures.Failure)
+	Download(artifacts []*HeadChefArtifact, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
 
 	// FetchArtifacts will fetch artifact
 	FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure)
@@ -176,7 +180,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifacts []*HeadChefArtifact) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
+func (r *Download) Download(artifacts []*HeadChefArtifact, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
 	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 
@@ -198,6 +202,6 @@ func (r *Download) Download(artifacts []*HeadChefArtifact) (files map[string]*He
 		files[targetPath] = artf
 	}
 
-	downloader := download.New(entries, 1)
+	downloader := download.New(entries, 1, progress)
 	return files, downloader.Download()
 }
