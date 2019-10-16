@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
@@ -26,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
@@ -55,8 +55,6 @@ func (suite *ActivateTestSuite) SetupSuite() {
 }
 
 func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
-	updateProjectMock()
-
 	suite.authMock = authMock.Init()
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
@@ -89,20 +87,6 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
 }
 
-func updateProjectMock() {
-	mp := model.ProjectProviderMock()
-
-	for _, proj := range mp.ProjectsResp.Projects {
-		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("example-org") {
-			cid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
-			proj.Branches[0].CommitID = &cid
-		}
-		if proj.Name == "example-proj" && proj.OrganizationID == mp.OrgData.ID("sample-org") {
-			proj.Branches[0].BranchID = strfmt.UUID("00010001-0001-0001-0001-000100010003")
-		}
-	}
-}
-
 func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	os.Chdir(suite.origDir)
 
@@ -116,7 +100,6 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	}
 
 	projectfile.Reset()
-	model.ResetProviderMock()
 }
 
 func (suite *ActivateTestSuite) TestExecute() {
@@ -275,6 +258,8 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
 	suite.authMock.MockLoggedin()
+	suite.rMock.GraphMock.Reset()
+	suite.rMock.GraphMock.NoProjects(graphMock.NoOptions)
 
 	fail := activateFromNamespace(ProjectNamespace + "junk")
 	suite.Equal(model.FailNoValidProject.Name, fail.Type.Name)
@@ -442,6 +427,10 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 }
 
 func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
+	mock := graphMock.Init()
+	defer mock.Close()
+	mock.NoProjects(graphMock.NoOptions)
+
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`project: "https://platform.activestate.com/bad-org/bad-proj"`)
 

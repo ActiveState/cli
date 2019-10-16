@@ -1,9 +1,9 @@
 package model_test
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/client"
 	"testing"
 
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -12,31 +12,38 @@ import (
 
 type ProjectsTestSuite struct {
 	suite.Suite
-	apiMock  *apiMock.Mock
-	authMock *authMock.Mock
+	apiMock   *apiMock.Mock
+	authMock  *authMock.Mock
+	graphMock *graphMock.Mock
 }
 
 func (suite *ProjectsTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.authMock = authMock.Init()
+	suite.graphMock = graphMock.Init()
 
 	suite.authMock.MockLoggedin()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *ProjectsTestSuite) AfterTest(suiteName, testName string) {
 	suite.apiMock.Close()
 	suite.authMock.Close()
+	suite.graphMock.Close()
 }
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName() {
-	project, fail := model.FetchProjectByName("example-org", "example-proj")
+	project, fail := model.FetchProjectByName("string", "string")
 	suite.Require().NoError(fail.ToError(), "Fetched project")
-	suite.Equal("example-proj", project.Name)
+	suite.Equal("string", project.Name)
 }
 
 func (suite *ProjectsTestSuite) TestProjects_FetchByName_NotFound() {
+	suite.graphMock.Reset()
+	suite.graphMock.NoProjects(graphMock.NoOptions)
 	project, fail := model.FetchProjectByName("bad-org", "bad-proj")
-	suite.EqualError(fail.ToError(), client.ErrNoValueAvailable.Error())
+	suite.Require().Error(fail.ToError())
+	suite.Equal(fail.Type.Name, model.FailNoValidProject.Name)
 	suite.Nil(project)
 }
 

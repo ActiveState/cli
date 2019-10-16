@@ -3,8 +3,8 @@ package activate
 import (
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
+	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -12,26 +12,26 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
 )
 
-func addCommitIDToBranch(bid, cid strfmt.UUID) {
-	mp := model.ProjectProviderMock()
-
-	for _, p := range mp.ProjectsResp.Projects {
-		for _, b := range p.Branches {
-			if b.BranchID == bid {
-				b.CommitID = &cid
-			}
-		}
-	}
+type ActivateNewTestSuite struct {
+	ActivateTestSuite
 }
 
-func (suite *ActivateTestSuite) TestActivateNew() {
+func (suite *ActivateNewTestSuite) setupMocks() {
 	suite.rMock.MockFullRuntime()
+	gmock := suite.rMock.GraphMock
+	gmock.Reset()
+	gmock.ProjectByOrgAndNameNoCommits(graphMock.Once)
+	gmock.ProjectByOrgAndName(graphMock.Once)
+}
+
+func (suite *ActivateNewTestSuite) TestActivateNew() {
+	suite.setupMocks()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -39,11 +39,9 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/sample-org/projects")
-	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
 	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010003", 0, func(req *http.Request) (int, string) {
-		addCommitIDToBranch(strfmt.UUID(path.Base(req.URL.Path)), "00020002-0002-0002-0002-000200020002")
 		return 200, ""
 	})
 
@@ -61,41 +59,8 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	suite.NoError(err, "Project was created")
 }
 
-func setupProjectMock() {
-	/*//  The project response changes once the project is created so we need
-	// to provide a different response after the first call to this mock
-	orgProjMockCalled := false
-
-	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
-		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
-		if code != 200 {
-			responseFile = fmt.Sprintf("%s-%d", responseFile, code)
-		}
-		ext := ".json"
-		if filepath.Ext(responseFile) != "" {
-			ext = ""
-		}
-		responseFile = filepath.Join(responsePath, responseFile) + ext
-
-		return responseFile
-	}
-	responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
-	request := "organizations/sample-org/projects/example-proj"
-	pathToFileWithCommit := "organizations/sample-org/projects/example-proj-commit"
-	method := "GET"
-	code := 200
-	httpmock.RegisterWithResponderBody(method, request, code, func(req *http.Request) (int, string) {
-		responseFile := getResponseFile(method, code, pathToFileWithCommit, responsePath)
-		if !orgProjMockCalled {
-			orgProjMockCalled = true
-			responseFile = getResponseFile(method, code, request, responsePath)
-		}
-		return 200, string(fileutils.ReadFileUnsafe(responseFile))
-	})*/
-}
-
-func (suite *ActivateTestSuite) TestActivateCopy() {
-	suite.rMock.MockFullRuntime()
+func (suite *ActivateNewTestSuite) TestActivateCopy() {
+	suite.setupMocks()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
@@ -103,7 +68,6 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("POST", "organizations/sample-org/projects")
-	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
 
@@ -133,18 +97,16 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.Equal("master", prj.Version())
 }
 
-func (suite *ActivateTestSuite) TestNewPlatformProject() {
-	suite.rMock.MockFullRuntime()
+func (suite *ActivateNewTestSuite) TestNewPlatformProject() {
+	suite.setupMocks()
 	suite.authMock.MockLoggedin()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "organizations/sample-org/projects")
-	setupProjectMock()
 	httpmock.Register("POST", "vcs/commit")
-	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010003", 0, func(req *http.Request) (int, string) {
-		addCommitIDToBranch(strfmt.UUID(path.Base(req.URL.Path)), "00020002-0002-0002-0002-000200020002")
+	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001", 0, func(req *http.Request) (int, string) {
 		return 200, ""
 	})
 
@@ -153,4 +115,8 @@ func (suite *ActivateTestSuite) TestNewPlatformProject() {
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
 	suite.NoError(failures.Handled(), "No failure occurred")
+}
+
+func TestActivateNewTestSuite(t *testing.T) {
+	suite.Run(t, new(ActivateNewTestSuite))
 }

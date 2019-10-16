@@ -64,7 +64,7 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	authentication.Get().AuthenticateWithToken("")
 
 	suite.graphMock = mock.Init()
-	suite.graphMock.ProjectByOrgAndName()
+	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {

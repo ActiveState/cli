@@ -15,10 +15,37 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 )
 
+type Options uint8
+
+const NoOptions Options = 0
+
+const (
+	Once Options = 1 << iota
+)
+
+type Responder struct {
+	matchable    string
+	responseFile string
+	options      Options
+}
+
+func NewResponder(match string, responseFile string, options Options) *Responder {
+	var matchable bytes.Buffer
+	if err := json.NewEncoder(&matchable).Encode(strings.TrimSpace(match)); err != nil {
+		logging.Panic("Could not encode matchable: %v", err)
+	}
+	matchProcessed := strings.Trim(strings.TrimSpace(matchable.String()), `"`)
+	return &Responder{matchProcessed, responseFile, options}
+}
+
+func (r *Responder) option(op Options) bool {
+	return r.options&op != 0
+}
+
 // Mock registers some common http requests usually used by the model
 type Mock struct {
 	httpmock   *httpmock.HTTPMock
-	responders map[string]string
+	responders []*Responder
 }
 
 var mock *httpmock.HTTPMock
@@ -27,26 +54,15 @@ var mock *httpmock.HTTPMock
 func Init() *Mock {
 	mock := &Mock{
 		httpmock.Activate(api.GetServiceURL(api.ServiceGraphQL).String()),
-		map[string]string{},
+		[]*Responder{},
 	}
-	mock.httpmock.RegisterWithResponder("POST", "", func(req *http.Request) (int, string) {
-		body, err := ioutil.ReadAll(req.Body)
-		if err != nil {
-			return 500, err.Error()
-		}
-		for match, response := range mock.responders {
-			var matchable bytes.Buffer
-			if err := json.NewEncoder(&matchable).Encode(strings.TrimSpace(match)); err != nil {
-				logging.Panic("Could not encode matchable: %v", err)
-			}
-			matchProcessed := strings.Trim(strings.TrimSpace(matchable.String()), `"`)
-			if strings.Contains(string(body), matchProcessed) {
-				return 200, response
-			}
-		}
-		return 500, "No match found"
-	})
+	mock.httpmock.RegisterWithResponder("POST", "", mock.handleRequest)
 	return mock
+}
+
+// Reset unsets any responders, useful since this mock is special since it doesn't mock based on path
+func (m *Mock) Reset() {
+	m.responders = []*Responder{}
 }
 
 // Close de-activates the mocking helper
@@ -54,7 +70,33 @@ func (m *Mock) Close() {
 	httpmock.DeActivate()
 }
 
-// Mock registers mocks for requests for receiving signed S3 URIs to packages
-func (m *Mock) ProjectByOrgAndName() {
-	m.responders[client.ProjectByOrgAndName().Query()] = "ProjectByOrgAndName"
+// Close de-activates the mocking helper
+func (m *Mock) handleRequest(req *http.Request) (int, string) {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return 500, err.Error()
+	}
+	for i, responder := range m.responders {
+		if strings.Contains(string(body), responder.matchable) {
+			if responder.option(Once) {
+				// Delete responder
+				m.responders = append(m.responders[:i], m.responders[i+1:]...)
+			}
+			return 200, responder.responseFile
+		}
+	}
+	logging.Panic("No match found for request: %s, body: %s", req.URL.String(), string(body))
+	return 500, ""
+}
+
+func (m *Mock) NoProjects(options Options) {
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "NoProjects", options))
+}
+
+func (m *Mock) ProjectByOrgAndName(options Options) {
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "Project", options))
+}
+
+func (m *Mock) ProjectByOrgAndNameNoCommits(options Options) {
+	m.responders = append(m.responders, NewResponder(client.ProjectByOrgAndName().Query(), "ProjectNoCommits", options))
 }

@@ -70,7 +70,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	authentication.Get().AuthenticateWithToken("")
 
 	suite.graphMock = mock.Init()
-	suite.graphMock.ProjectByOrgAndName()
+	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {

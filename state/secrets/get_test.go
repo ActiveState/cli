@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -19,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -33,13 +33,12 @@ type SecretsGetCommandTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *graphMock.Mock
 }
 
 func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) {
 	locale.Set("en-US")
 	failures.ResetHandled()
-
-	updateProjectMock()
 
 	projectFile, err := loadSecretsProject()
 	suite.Require().Nil(err, "unmarshalling custom project yaml")
@@ -63,13 +62,16 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = graphMock.Init()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *SecretsGetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
-	model.ResetProviderMock()
+	suite.graphMock.Close()
 }
 
 func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {

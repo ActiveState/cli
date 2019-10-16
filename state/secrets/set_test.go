@@ -20,10 +20,10 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/client/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secrets_models "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/state/secrets"
 )
 
@@ -36,6 +36,7 @@ type VarSetCommandTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *graphMock.Mock
 }
 
 func (suite *VarSetCommandTestSuite) SetupSuite() {
@@ -48,8 +49,6 @@ func (suite *VarSetCommandTestSuite) SetupSuite() {
 
 func (suite *VarSetCommandTestSuite) BeforeTest(suiteName, testName string) {
 	failures.ResetHandled()
-
-	updateProjectMock()
 
 	// support test projectfile access
 	srcProjectFile := filepath.Join(suite.testdataDir, constants.ConfigFileName)
@@ -67,12 +66,15 @@ func (suite *VarSetCommandTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = graphMock.Init()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *VarSetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
-	model.ResetProviderMock()
+	suite.graphMock.Close()
 }
 
 func (suite *VarSetCommandTestSuite) TestCommandConfig() {
@@ -123,7 +125,7 @@ func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
 	suite.NotZero(*userChanges[0].Value)
 	suite.Equal("secret-name", *userChanges[0].Name)
 	suite.Equal(false, *userChanges[0].IsUser)
-	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020002"), userChanges[0].ProjectID)
+	suite.Equal(strfmt.UUID("00010001-0001-0001-0001-000100010001"), userChanges[0].ProjectID)
 
 	suite.Require().Len(sharedChanges, 1)
 	suite.NotZero(*sharedChanges[0].Value)
