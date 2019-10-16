@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
+	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/internal/profile"
 	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/keypair"
@@ -47,6 +48,7 @@ func register() {
 	Command.Append(export.Command)
 	Command.Append(invite.Command)
 	Command.Append(pkg.Command)
+	Command.Append(fork.Command)
 
 	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
 	Command.Append(keypair.Command)

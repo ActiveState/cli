@@ -127,6 +127,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
 	}
 
 	switch {

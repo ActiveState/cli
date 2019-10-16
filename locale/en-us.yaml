@@ -265,6 +265,22 @@ signup_success:
   other: Your account has been registered and a confirmation email has been sent to {{.Email}}, your account will have limited permissions until you confirm it.
 login_cancelled:
   other: Authentication Cancelled
+fork_project:
+  other: Fork an existing platform project
+arg_state_fork_namespace:
+  other: ORG/PROJECT
+arg_state_fork_namespace_description:
+  other: The namespace of the project to be forked
+auth_required_fork:
+  other: You need to be authenticated to fork an ActiveState Platform project
+err_fork_auth_required:
+  other: Forking a project requires you to be authenticated against the ActiveState Platformfork
+err_fork_create_fork:
+  other: Could not create the forked project
+err_fork_invalid_namespace:
+  other: Could not fork the given project as the namespace is incorrect
+fork_select_org:
+  other: Please select an owner for the forked project
 local:
   other: Local
 organization:
