@@ -65,7 +65,6 @@ func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *mono_models.Checkpoint
 
 // MockGetProject registers mocks for project "string" and a VCS checkpoint
 func (m *Mock) MockGetProject() {
-	m.httpmock.Register("GET", "/organizations/string/projects/string")
 	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
 }
 

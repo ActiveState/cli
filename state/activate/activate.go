@@ -414,7 +414,7 @@ func promptCreateProjectIfNecessary(cmd *cobra.Command, args []string) *failures
 		return nil
 	}
 
-	if api.FailProjectNotFound.Matches(fail.Type) {
+	if api.FailProjectNotFound.Matches(fail.Type) || model.FailNoValidProject.Matches(fail.Type) {
 		create, fail := prompter.Confirm(locale.Tr("state_activate_prompt_create_project", proj.Name(), proj.Owner()), false)
 		if fail != nil {
 			return fail

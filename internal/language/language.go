@@ -174,7 +174,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
-func (l *Language) MarshalYAML() (interface{}, error) {
+func (l Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
 }
 

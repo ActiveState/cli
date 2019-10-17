@@ -1,8 +1,9 @@
 {
-  "added": "2019-02-19T16:58:03.026Z",
+  "added": "2019-02-19T17:09:47.140Z",
   "branches": [
     {
-      "branchID": "00010001-0001-0001-0001-000100010001",
+      "branchID": "string",
+      "commitID": "string",
       "default": true,
       "label": "string",
       "projectID": "string",
@@ -18,7 +19,7 @@
       "name": "string"
     }
   ],
-  "lastEdited": "2019-02-19T16:58:03.026Z",
+  "lastEdited": "2019-02-19T17:09:47.140Z",
   "managed": true,
   "name": "string",
   "organizationID": "string",

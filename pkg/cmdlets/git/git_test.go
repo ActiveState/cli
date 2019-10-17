@@ -24,12 +24,14 @@ import (
 type GitTestSuite struct {
 	suite.Suite
 	authMock   *authMock.Mock
+	graphMock  *httpmock.HTTPMock
 	dir        string
 	anotherDir string
 }
 
 func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
+	suite.graphMock = httpmock.Activate(api.GetServiceURL(api.ServiceGraphQL).String())
 
 	var err error
 	suite.dir, err = ioutil.TempDir("", testName)
@@ -74,6 +76,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 	suite.authMock.Close()
+	httpmock.DeActivate()
 
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
@@ -88,30 +91,30 @@ func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 func (suite *GitTestSuite) TestCloneProjectRepo() {
 	type tempProject struct {
 		Name           string `json:"name"`
-		RepoURL        string `json:"repoUrl"`
-		OrganizationID string `json:"organizationID"`
+		RepoURL        string `json:"repo_url"`
+		OrganizationID string `json:"organization_id"`
 	}
 
 	suite.authMock.MockLoggedin()
 
-	data := tempProject{
+	response := `{"data": {"projects": [%s]}}`
+	proj := tempProject{
 		Name:           "clone",
 		RepoURL:        suite.dir + "/.git",
 		OrganizationID: "00010001-0001-0001-0001-000100010001",
 	}
-	file, err := json.MarshalIndent(data, "", " ")
+
+	file, err := json.MarshalIndent(proj, "", " ")
 	suite.NoError(err, "could not marshall tempProject struct")
 
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithResponseBody("GET", "/organizations/test-owner/projects/test-project", 200, string(file))
+	data := fmt.Sprintf(response, string(file))
+	suite.graphMock.RegisterWithResponseBody("POST", "", 200, string(data))
 
 	targetDir := filepath.Join(suite.dir, "target-clone-dir")
 
 	repo := NewRepo()
 	fail := repo.CloneProject("test-owner", "test-project", targetDir)
-	suite.NoError(fail.ToError(), "should clone without issue")
+	suite.Require().NoError(fail.ToError(), "should clone without issue")
 	suite.FileExists(filepath.Join(targetDir, "activestate.yaml"), "activestate.yaml file should have been cloned")
 	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")
 }
