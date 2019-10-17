@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -144,14 +146,6 @@ func projectExists(path string) bool {
 // arguments or the existing project file
 func ExistingExecute(cmd *cobra.Command, args []string) {
 	checker.RunCommitsBehindNotifier()
-
-	if Args.Namespace != "" {
-		fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-		if fail != nil {
-			failures.Handle(fail, locale.T("err_activate_auth_required"))
-			return
-		}
-	}
 
 	if Args.Namespace != "" {
 		fail := activateFromNamespace(Args.Namespace)
@@ -302,14 +296,16 @@ func getPathsForNamespace(namespace string) []string {
 
 // createProjectFile will create a project file (activestate.yaml) at the given location
 func createProjectFile(org, name string, directory string) *failures.Failure {
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-	if fail != nil {
-		return fail
-	}
-
 	// Ensure that the project exists and that we have access to it
 	project, fail := model.FetchProjectByName(org, name)
-	if fail != nil {
+	if fail != nil && fail.Type.Matches(model.FailNoValidProject) && !authentication.Get().Authenticated() {
+		// If we can't find the project and we aren't authenticated we assume authentication is required
+		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			return fail
+		}
+		return createProjectFile(org, name, directory)
+	} else if fail != nil {
 		return fail
 	}
 
@@ -379,8 +375,17 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 	proj := project.Get()
 	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail == nil {
-		return nil
+	if fail == nil || !fail.Type.Matches(model.FailNoValidProject) {
+		return fail
+	}
+
+	// If we can't find the project and we aren't authenticated we should first authenticate before continuing
+	if !authentication.Get().Authenticated() {
+		fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			return fail
+		}
+		return promptCreateProject(cmd, args)
 	}
 
 	if api.FailProjectNotFound.Matches(fail.Type) || model.FailNoValidProject.Matches(fail.Type) {
