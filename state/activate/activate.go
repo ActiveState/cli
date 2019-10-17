@@ -33,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -49,10 +50,14 @@ const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
 var branchName = constants.BranchName
 
-var prompter prompt.Prompter
+var (
+	prompter prompt.Prompter
+	repo     git.Repository
+)
 
 func init() {
 	prompter = prompt.New()
+	repo = git.NewRepo()
 }
 
 // Command holds our main command definition
@@ -159,7 +164,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail := promptCreateProject(cmd, args)
+	fail := promptCreateProjectIfNecessary(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 		return
@@ -204,10 +209,16 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	}
 
 	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
-		// If not actually create the project
-		fail = createProject(org, name, commitID, languages, directory)
-		if fail != nil {
-			return fail
+		if project.RepoURL != nil {
+			fail = cloneProjectRepo(org, name, directory, commitID)
+			if fail != nil {
+				return fail
+			}
+		} else {
+			fail = createProject(org, name, commitID, languages, directory)
+			if fail != nil {
+				return fail
+			}
 		}
 	} else {
 		prj := getProjectFileByPath(directory)
@@ -240,6 +251,24 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 		}
 	}
 	return determineProjectPath(namespace)
+}
+
+func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := repo.CloneProject(org, name, directory)
+	if fail != nil {
+		return fail
+	}
+	_, err := os.Stat(filepath.Join(directory, constants.ConfigFileName))
+	if os.IsNotExist(err) {
+		fail = createProjectFile(org, name, directory, commitID)
+		if fail != nil {
+			return fail
+		}
+	} else if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
 }
 
 func getProjectFileByPath(path string) *project.Project {
@@ -322,6 +351,10 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		return failures.FailUserInput.Wrap(err)
 	}
 
+	return createProjectFile(org, project, directory, commitID)
+}
+
+func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *failures.Failure {
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
 	if commitID != nil {
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
@@ -374,7 +407,7 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	return nil, nil
 }
 
-func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
+func promptCreateProjectIfNecessary(cmd *cobra.Command, args []string) *failures.Failure {
 	proj := project.Get()
 	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
 	if fail == nil {
