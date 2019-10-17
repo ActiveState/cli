@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
@@ -33,8 +34,13 @@ type projectStruct struct {
 
 // NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
+	}
+
 	projectInfo := new(projectStruct)
-	var fail *failures.Failure
 
 	projectInfo, fail = newProjectInfo()
 	if fail != nil {
@@ -53,6 +59,12 @@ func NewExecute(cmd *cobra.Command, args []string) {
 
 // CopyExecute creates a new project from an existing activestate.yaml
 func CopyExecute(cmd *cobra.Command, args []string) {
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
+	}
+
 	projFile := project.Get().Source()
 
 	projectInfo, fail := newProjectInfo()

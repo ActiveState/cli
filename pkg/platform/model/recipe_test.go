@@ -7,6 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -20,6 +21,7 @@ type RecipeTestSuite struct {
 	invMock     *invMock.Mock
 	apiMock     *apiMock.Mock
 	authMock    *authMock.Mock
+	graphMock   *graphMock.Mock
 	platformUID string
 }
 
@@ -27,9 +29,10 @@ func (suite *RecipeTestSuite) BeforeTest(suiteName, testName string) {
 	suite.invMock = invMock.Init()
 	suite.apiMock = apiMock.Init()
 	suite.authMock = authMock.Init()
+	suite.graphMock = graphMock.Init()
 
 	suite.authMock.MockLoggedin()
-	suite.apiMock.MockVcsGetCheckpoint()
+	suite.graphMock.Checkpoint(graphMock.NoOptions)
 	suite.invMock.MockOrderRecipes()
 	suite.invMock.MockPlatforms()
 
@@ -47,6 +50,7 @@ func (suite *RecipeTestSuite) AfterTest(suiteName, testName string) {
 	suite.invMock.Close()
 	suite.apiMock.Close()
 	suite.authMock.Close()
+	suite.graphMock.Close()
 }
 
 func (suite *RecipeTestSuite) mockProject() *mono_models.Project {

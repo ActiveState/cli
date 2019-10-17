@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
@@ -124,10 +123,6 @@ var Args struct {
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
 	updater.PrintUpdateMessage()
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_auth_required"))
-	}
 
 	switch {
 	case len(args) == 0 && !projectExists(Flags.Path), Flags.New:
@@ -150,7 +145,14 @@ func projectExists(path string) bool {
 func ExistingExecute(cmd *cobra.Command, args []string) {
 	checker.RunCommitsBehindNotifier()
 
-	logging.Debug("Execute")
+	if Args.Namespace != "" {
+		fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_activate_auth_required"))
+			return
+		}
+	}
+
 	if Args.Namespace != "" {
 		fail := activateFromNamespace(Args.Namespace)
 		if fail != nil {
@@ -180,32 +182,15 @@ func activateFromNamespace(namespace string) *failures.Failure {
 	org := groups[1]
 	name := groups[2]
 
-	// Ensure that the project exists and that we have access to it
-	project, fail := model.FetchProjectByName(org, name)
-	if fail != nil {
-		return fail
-	}
-
-	branch, fail := model.DefaultBranchForProject(project)
-	if fail != nil {
-		return fail
-	}
-	commitID := branch.CommitID
-
-	languages, fail := model.FetchLanguagesForBranch(branch)
-	if fail != nil {
-		return fail
-	}
-
 	var directory string
-	directory, fail = getDirByNameSpace(Flags.Path, namespace)
+	directory, fail := getDirByNameSpace(Flags.Path, namespace)
 	if fail != nil {
 		return fail
 	}
 
 	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
 		// If not actually create the project
-		fail = createProject(org, name, commitID, languages, directory)
+		fail = createProjectFile(org, name, directory)
 		if fail != nil {
 			return fail
 		}
@@ -315,19 +300,36 @@ func getPathsForNamespace(namespace string) []string {
 	return paths
 }
 
-// createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
+// createProjectFile will create a project file (activestate.yaml) at the given location
+func createProjectFile(org, name string, directory string) *failures.Failure {
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		return fail
+	}
+
+	// Ensure that the project exists and that we have access to it
+	project, fail := model.FetchProjectByName(org, name)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := model.DefaultBranchForProject(project)
+	if fail != nil {
+		return fail
+	}
+	commitID := branch.CommitID
+
 	err := os.MkdirAll(directory, 0755)
 	if err != nil {
 		return failures.FailUserInput.Wrap(err)
 	}
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, name)
 	if commitID != nil {
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
 
-	_, fail := projectfile.Create(projectURL, directory)
+	_, fail = projectfile.Create(projectURL, directory)
 	if fail != nil {
 		return fail
 	}
@@ -401,10 +403,20 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
 func activate(owner, name, srcPath string) bool {
+	// Ensure that the project exists and that we have access to it
+	_, fail := model.FetchProjectByName(owner, name)
+	if fail != nil && fail.Type.Matches(model.FailNoValidProject) {
+		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_activate_auth_required"))
+			return false
+		}
+	}
+
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail := venv.Activate()
+	fail = venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return false

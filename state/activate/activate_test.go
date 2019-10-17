@@ -29,7 +29,6 @@ import (
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -130,7 +129,10 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.rMock.MockFullRuntime()
 
 	if !withLang {
-		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+		gmock := suite.rMock.GraphMock
+		gmock.Reset()
+		gmock.ProjectByOrgAndName(graphMock.NoOptions)
+		gmock.NoCheckpoint(graphMock.NoOptions)
 	}
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
@@ -184,7 +186,6 @@ func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
 	suite.rMock.MockFullRuntime()
 	suite.authMock.MockLoggedin()
-	suite.apiMock.MockVcsGetCheckpoint()
 
 	Cc := Command.GetCobraCmd()
 	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
@@ -220,7 +221,10 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+	gmock := suite.rMock.GraphMock
+	gmock.Reset()
+	gmock.ProjectByOrgAndName(graphMock.NoOptions)
+	gmock.NoCheckpoint(graphMock.NoOptions)
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
@@ -257,15 +261,6 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 	fail := activateFromNamespace("foo")
 	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
-}
-
-func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
-	suite.authMock.MockLoggedin()
-	suite.rMock.GraphMock.Reset()
-	suite.rMock.GraphMock.NoProjects(graphMock.NoOptions)
-
-	fail := activateFromNamespace(ProjectNamespace + "junk")
-	suite.Equal(model.FailNoValidProject.Name, fail.Type.Name)
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it
