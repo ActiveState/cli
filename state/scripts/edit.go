@@ -149,7 +149,7 @@ func openEditor(filename string) *failures.Failure {
 	subCmd.Stdout = os.Stdout
 	subCmd.Stderr = os.Stderr
 
-	err := subCmd.Run()
+	err := subCmd.Start()
 	if err != nil {
 		return failures.FailCmd.Wrap(err)
 	}
