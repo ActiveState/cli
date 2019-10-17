@@ -47,7 +47,7 @@ func (suite *ForkTestSuite) TestExecute() {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/organizations/test/projects")
-	httpmock.Register("PUT", "/vcs/branch/string")
+	httpmock.Register("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001")
 	httpmock.Register("POST", "/organizations/test/projects/string")
 
 	Cc := Command.GetCobraCmd()
