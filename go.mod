@@ -9,7 +9,7 @@ require (
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
 	github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/Netflix/go-expect v0.0.0-20180615182759-c93bf25de8e8
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
@@ -35,10 +35,13 @@ require (
 	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 	github.com/gobuffalo/packr v1.10.7
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/google/goexpect v0.0.0-20191001010744-5b6988669ffa // indirect
+	github.com/google/goterm v0.0.0-20190703233501-fc88cf888a3f // indirect
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
+	github.com/hinshun/vt10x v0.0.0-20180616224451-1954e6464174
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
@@ -80,6 +83,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.7
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
