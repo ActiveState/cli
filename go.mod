@@ -17,7 +17,6 @@ require (
 	github.com/aws/aws-sdk-go v1.13.8
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 	github.com/dave/jennifer v0.18.0
-	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/fatih/color v1.5.0
@@ -45,10 +44,11 @@ require (
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/kr/binarydist v0.0.0-20160721043806-3035450ff8b9 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
+	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.7.4 // indirect
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
+	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -61,8 +61,7 @@ require (
 	github.com/pelletier/go-toml v1.1.0 // indirect
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
-	github.com/pkg/errors v0.8.0
-	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
 	github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d // indirect
@@ -76,17 +75,17 @@ require (
 	github.com/spf13/jwalterweatherman v0.0.0-20180109140146-7c0cea34c8ec // indirect
 	github.com/spf13/pflag v1.0.0
 	github.com/spf13/viper v0.0.0-20171227194143-aafc9e6bc7b7
-	github.com/stretchr/objx v0.1.1 // indirect
-	github.com/stretchr/testify v1.2.1
+	github.com/stretchr/testify v1.3.0
 	github.com/thoas/go-funk v0.0.0-20170604141201-14304e8530de
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
+	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.0.0
 )

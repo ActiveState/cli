@@ -134,6 +134,9 @@ const InventoryAPIPath = "/sv/inventory-api"
 // InventoryURLProd is the host used for platform api calls when on production
 const InventoryURL = "https://platform.activestate.com" + InventoryAPIPath
 
+// GraphqlAPIPath is the path used for the platform graphql api
+const GraphqlAPIPath = "/graphql/v1/graphql"
+
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
 const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
 

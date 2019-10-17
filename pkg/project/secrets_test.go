@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -30,6 +31,7 @@ type SecretsExpanderTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *mock.Mock
 }
 
 func loadSecretsProject() (*projectfile.Project, error) {
@@ -66,17 +68,20 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = mock.Init()
+	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	suite.graphMock.Close()
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 

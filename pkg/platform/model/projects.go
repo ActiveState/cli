@@ -3,34 +3,49 @@ package model
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-// FailNoValidProject is a failure for the call api.GetProject
-var FailNoValidProject = failures.Type("model.fail.novalidproject")
+var (
+	// FailNoValidProject is a failure for the call api.GetProject
+	FailNoValidProject = failures.Type("model.fail.novalidproject")
 
-// FailNoDefaultBranch is a failure in getting a project's default branch
-var FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
+	// FailNoDefaultBranch is a failure in getting a project's default branch
+	FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
+
+	// FailCannotConvertModel is a failure to convert a new model to an existing model
+	FailCannotConvertModel = failures.Type("model.fail.cannotconvertmodel")
+)
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
-	params := clientProjects.NewGetProjectParams()
-	params.OrganizationName = orgName
-	params.ProjectName = projectName
-	resOk, err := authentication.Client().Projects.GetProject(params, authentication.ClientAuth())
+	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
+
+	request := request.ProjectByOrgAndName(orgName, projectName)
+
+	gql := graphql.Get()
+	response := model.Projects{}
+	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, processProjectErrorResponse(err, projectName, orgName)
+		return nil, api.FailUnknown.Wrap(err)
 	}
-	if resOk.Payload.Name == "" || resOk.Payload.OrganizationID.String() == "" {
-		return nil, FailNoValidProject.New("err_invalid_project")
+
+	if len(response.Projects) == 0 {
+		return nil, FailNoValidProject.New(locale.Tr("err_api_project_not_found", projectName, orgName))
 	}
-	return resOk.Payload, nil
+
+	return response.Projects[0].ToMonoProject()
 }
 
 // FetchOrganizationProjects fetches the projects for an organization

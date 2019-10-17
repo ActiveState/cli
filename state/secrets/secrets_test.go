@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -30,6 +31,7 @@ type VariablesCommandTestSuite struct {
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
 	authMock      *authMock.Mock
+	graphMock     *graphMock.Mock
 }
 
 func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
@@ -54,22 +56,25 @@ func (suite *VariablesCommandTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
+
+	suite.graphMock = graphMock.Init()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
 	httpmock.DeActivate()
 	suite.authMock.Close()
+	suite.graphMock.Close()
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
-		return 200, "definitions/00020002-0002-0002-0002-000200020002"
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00010001-0001-0001-0001-000100010001", func(req *http.Request) (int, string) {
+		return 200, "definitions/00010001-0001-0001-0001-000100010001"
 	})
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 
@@ -92,10 +97,9 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
-		return 200, "definitions/00020002-0002-0002-0002-000200020002"
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00010001-0001-0001-0001-000100010001", func(req *http.Request) (int, string) {
+		return 200, "definitions/00010001-0001-0001-0001-000100010001"
 	})
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 
@@ -118,10 +122,9 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
 	cmd := secrets.NewCommand(suite.secretsClient)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/projects/CodeIntel", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
-	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00020002-0002-0002-0002-000200020002", func(req *http.Request) (int, string) {
-		return 200, "definitions/00020002-0002-0002-0002-000200020002"
+	suite.secretsMock.RegisterWithResponder("GET", "/definitions/00010001-0001-0001-0001-000100010001", func(req *http.Request) (int, string) {
+		return 200, "definitions/00010001-0001-0001-0001-000100010001"
 	})
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010001/user_secrets", 200)
 

@@ -1,9 +1,16 @@
 [
   {
-    "URLname": "test-owner",
+    "URLname": "example-org",
     "added": "2018-05-08T14:53:26.729Z",
-    "name": "test-owner",
-    "organizationID": "test-owner",
+    "name": "example-org",
+    "organizationID": "example-org",
+    "personal": true
+  },
+  {
+    "URLname": "sample-org",
+    "added": "2018-05-08T14:53:26.729Z",
+    "name": "sample-org",
+    "organizationID": "sample-org",
     "personal": true
   }
 ]
