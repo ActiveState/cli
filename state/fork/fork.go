@@ -64,7 +64,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	originalOwner := namespace.Owner
 	projectName := namespace.Project
 
-	newOwner, fail := getForkOwner()
+	newOwner, fail := promptForOwner()
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_get_owner"))
 		return
@@ -76,7 +76,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 }
 
-func getForkOwner() (string, *failures.Failure) {
+func promptForOwner() (string, *failures.Failure) {
 	currentUser := authentication.Get().WhoAmI()
 	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
