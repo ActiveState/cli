@@ -43,9 +43,6 @@ var (
 	failTargetDirInUse   = failures.Type("activate.fail.dirinuse", failures.FailUserInput)
 )
 
-// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
-
 var branchName = constants.BranchName
 
 var prompter prompt.Prompter
