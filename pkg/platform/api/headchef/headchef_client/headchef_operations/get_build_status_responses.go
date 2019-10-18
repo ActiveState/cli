@@ -61,7 +61,7 @@ func NewGetBuildStatusOK() *GetBuildStatusOK {
 A build has already been requested with that request ID
 */
 type GetBuildStatusOK struct {
-	Payload headchef_models.BuildRequestedResponse
+	Payload *headchef_models.BuildStatusResponse
 }
 
 func (o *GetBuildStatusOK) Error() string {
@@ -70,8 +70,10 @@ func (o *GetBuildStatusOK) Error() string {
 
 func (o *GetBuildStatusOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(headchef_models.BuildStatusResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

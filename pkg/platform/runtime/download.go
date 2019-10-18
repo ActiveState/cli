@@ -30,8 +30,17 @@ var (
 	// FailNoValidArtifact indicates a failure due to the project not containing any valid artifacts
 	FailNoValidArtifact = failures.Type("runtime.fail.novalidartifact")
 
-	// FailBuild indicates a failure due to the build failing
-	FailBuild = failures.Type("runtime.fail.build")
+	// FailBuildFailed indicates a failure due to the build failing
+	FailBuildFailed = failures.Type("runtime.fail.buildfailed")
+
+	// FailBuildInProgress indicates a failure due to the build being in progress
+	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress")
+
+	// FailBuildBadResponse indicates a failure due to the build req/resp malfunctioning
+	FailBuildBadResponse = failures.Type("runtime.fail.buildbadresponse")
+
+	// FailBuildErrResponse indicates a failure due to the build req/resp returning an error
+	FailBuildErrResponse = failures.Type("runtime.fail.builderrresponse")
 
 	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
@@ -115,14 +124,11 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildStatus := headchef.InitRequest().Run(buildRequest)
+	buildStatus := headchef.InitBuildStatusClient().Run(buildRequest)
 	var artifacts []*HeadChefArtifact
 
 	for {
 		select {
-		case <-buildStatus.Started:
-			logging.Debug("BuildStarted")
-
 		case resp := <-buildStatus.Completed:
 			logging.Debug("BuildCompleted:", resp)
 
@@ -145,11 +151,23 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 
 		case msg := <-buildStatus.Failed:
 			logging.Debug("BuildFailed: %s", msg)
-			return nil, FailBuild.New(msg)
+			return nil, FailBuildFailed.New(msg)
+
+		case <-buildStatus.Started:
+			logging.Debug("BuildStarted")
+			return nil, FailBuildInProgress.New(locale.T("build_status_in_progress"))
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
-			return nil, fail
+
+			switch {
+			case fail.Type.Matches(headchef.FailRestAPIError):
+				l10n := locale.Tr("build_status_unknown_error", fail.Error())
+				return nil, FailBuildErrResponse.New(l10n)
+			default:
+				l10n := locale.T("build_status_unknown")
+				return nil, FailBuildBadResponse.New(l10n)
+			}
 		}
 	}
 }

@@ -23,14 +23,13 @@ import (
 type V1BuildRequest struct {
 
 	// The version of camel to use when running setup-builds.pl. NOTE: this is temporary until the camel version is included in the recipe.
-	// Required: true
-	CamelCommit *string `json:"camel_commit"`
+	CamelCommit string `json:"camel_commit,omitempty"`
 
 	// A list of additional command-line parameters to pass to setup-builds.pl. NOTE: this is a temporary feature to expose some camel features before build options are implemented.
 	// Unique: true
 	CamelFlags []string `json:"camel_flags"`
 
-	// format
+	// Selects what format to bundle artifacts in. NOTE: This is currently unimplemented and may be removed in the future.
 	// Required: true
 	// Enum: [7zip dmg msi raw tarball zip]
 	Format *string `json:"format"`
@@ -46,10 +45,6 @@ type V1BuildRequest struct {
 // Validate validates this v1 build request
 func (m *V1BuildRequest) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateCamelCommit(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateCamelFlags(formats); err != nil {
 		res = append(res, err)
@@ -70,15 +65,6 @@ func (m *V1BuildRequest) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1BuildRequest) validateCamelCommit(formats strfmt.Registry) error {
-
-	if err := validate.Required("camel_commit", "body", m.CamelCommit); err != nil {
-		return err
-	}
-
 	return nil
 }
 

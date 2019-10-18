@@ -12,9 +12,9 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItems Patch
+// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItems Ingredient Version Revision Patch
 //
-// A diff of changes that can be applied to an ingredient's source code. This model contains all patch properties and is returned from read requests
+// A single patch along with its sequence number for a particular ingredient version revision
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsPatchesItems
 type V1BuildRequestRecipeResolvedIngredientsItemsPatchesItems struct {
 	V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0

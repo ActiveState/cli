@@ -738,10 +738,8 @@ build_status_unknown:
   other: Build status could not be retrieved, please check the dashboard for more information
 build_status_in_progress:
   other: Build is in progress, please try again later
-build_status_unknown_status:
-  other: "Build reported an unknown error: {{.V0}}"
-build_status_noresponse:
-  other: Build status was not reported, please check the dashboard for more information
+build_status_unknown_error:
+  other: "Build reported an unknown error: {{.V0}}; Please check the dashboard for more information"
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:

@@ -10,91 +10,72 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0 v1 build request recipe resolved ingredients items patches items all of0
+// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0 Patch
+//
+// A diff of changes that can be applied to an ingredient's source code. This model contains all patch properties and is returned from read requests
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0
 type V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0 struct {
+	V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0
 
-	// creation timestamp
-	// Required: true
-	// Format: date-time
-	CreationTimestamp *strfmt.DateTime `json:"creation_timestamp"`
+	V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1
+}
 
-	// links
-	// Required: true
-	Links *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0Links `json:"links"`
+// UnmarshalJSON unmarshals this object from a JSON structure
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) UnmarshalJSON(raw []byte) error {
+	// AO0
+	var aO0 V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
+		return err
+	}
+	m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0 = aO0
 
-	// patch id
-	// Required: true
-	// Format: uuid
-	PatchID *strfmt.UUID `json:"patch_id"`
+	// AO1
+	var aO1 V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
+		return err
+	}
+	m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1 = aO1
+
+	return nil
+}
+
+// MarshalJSON marshals this object to a JSON structure
+func (m V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) MarshalJSON() ([]byte, error) {
+	_parts := make([][]byte, 0, 2)
+
+	aO0, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO0)
+
+	aO1, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO1)
+
+	return swag.ConcatJSON(_parts...), nil
 }
 
 // Validate validates this v1 build request recipe resolved ingredients items patches items all of0
 func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateCreationTimestamp(formats); err != nil {
+	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0
+	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateLinks(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePatchID(formats); err != nil {
+	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1
+	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0AllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) validateCreationTimestamp(formats strfmt.Registry) error {
-
-	if err := validate.Required("creation_timestamp", "body", m.CreationTimestamp); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("creation_timestamp", "body", "date-time", m.CreationTimestamp.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) validateLinks(formats strfmt.Registry) error {
-
-	if err := validate.Required("links", "body", m.Links); err != nil {
-		return err
-	}
-
-	if m.Links != nil {
-		if err := m.Links.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf0) validatePatchID(formats strfmt.Registry) error {
-
-	if err := validate.Required("patch_id", "body", m.PatchID); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("patch_id", "body", "uuid", m.PatchID.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 

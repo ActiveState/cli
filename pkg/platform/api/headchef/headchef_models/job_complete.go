@@ -21,29 +21,24 @@ import (
 // swagger:model jobComplete
 type JobComplete struct {
 
-	// The timestamp for when this job completed.
-	// Required: true
-	// Format: date-time
-	Finished *strfmt.DateTime `json:"finished"`
-
-	// Job UUID. Returns by the scheduler when a job is created.
+	// Unique identifier for the job.
 	// Required: true
 	// Format: uuid
 	JobID *strfmt.UUID `json:"job_id"`
 
 	// The state of the job at time of completion.
 	// Required: true
-	// Enum: [TASK_DROPPED TASK_ERROR TASK_FAILED TASK_FINISHED TASK_GONE TASK_GONE_BY_OPERATOR TASK_KILLED TASK_KILLING TASK_LOST TASK_RUNNING TASK_STAGING TASK_STARTING TASK_UNKNOWN TASK_UNREACHABLE]
+	// Enum: [Completed Error Failed Pending Running]
 	State *string `json:"state"`
+
+	// The timestamp for when this job completed.
+	// Format: date-time
+	Timestamp strfmt.DateTime `json:"timestamp,omitempty"`
 }
 
 // Validate validates this job complete
 func (m *JobComplete) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateFinished(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateJobID(formats); err != nil {
 		res = append(res, err)
@@ -53,22 +48,13 @@ func (m *JobComplete) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateTimestamp(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *JobComplete) validateFinished(formats strfmt.Registry) error {
-
-	if err := validate.Required("finished", "body", m.Finished); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("finished", "body", "date-time", m.Finished.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -89,7 +75,7 @@ var jobCompleteTypeStatePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["TASK_DROPPED","TASK_ERROR","TASK_FAILED","TASK_FINISHED","TASK_GONE","TASK_GONE_BY_OPERATOR","TASK_KILLED","TASK_KILLING","TASK_LOST","TASK_RUNNING","TASK_STAGING","TASK_STARTING","TASK_UNKNOWN","TASK_UNREACHABLE"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Completed","Error","Failed","Pending","Running"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -99,47 +85,20 @@ func init() {
 
 const (
 
-	// JobCompleteStateTASKDROPPED captures enum value "TASK_DROPPED"
-	JobCompleteStateTASKDROPPED string = "TASK_DROPPED"
+	// JobCompleteStateCompleted captures enum value "Completed"
+	JobCompleteStateCompleted string = "Completed"
 
-	// JobCompleteStateTASKERROR captures enum value "TASK_ERROR"
-	JobCompleteStateTASKERROR string = "TASK_ERROR"
+	// JobCompleteStateError captures enum value "Error"
+	JobCompleteStateError string = "Error"
 
-	// JobCompleteStateTASKFAILED captures enum value "TASK_FAILED"
-	JobCompleteStateTASKFAILED string = "TASK_FAILED"
+	// JobCompleteStateFailed captures enum value "Failed"
+	JobCompleteStateFailed string = "Failed"
 
-	// JobCompleteStateTASKFINISHED captures enum value "TASK_FINISHED"
-	JobCompleteStateTASKFINISHED string = "TASK_FINISHED"
+	// JobCompleteStatePending captures enum value "Pending"
+	JobCompleteStatePending string = "Pending"
 
-	// JobCompleteStateTASKGONE captures enum value "TASK_GONE"
-	JobCompleteStateTASKGONE string = "TASK_GONE"
-
-	// JobCompleteStateTASKGONEBYOPERATOR captures enum value "TASK_GONE_BY_OPERATOR"
-	JobCompleteStateTASKGONEBYOPERATOR string = "TASK_GONE_BY_OPERATOR"
-
-	// JobCompleteStateTASKKILLED captures enum value "TASK_KILLED"
-	JobCompleteStateTASKKILLED string = "TASK_KILLED"
-
-	// JobCompleteStateTASKKILLING captures enum value "TASK_KILLING"
-	JobCompleteStateTASKKILLING string = "TASK_KILLING"
-
-	// JobCompleteStateTASKLOST captures enum value "TASK_LOST"
-	JobCompleteStateTASKLOST string = "TASK_LOST"
-
-	// JobCompleteStateTASKRUNNING captures enum value "TASK_RUNNING"
-	JobCompleteStateTASKRUNNING string = "TASK_RUNNING"
-
-	// JobCompleteStateTASKSTAGING captures enum value "TASK_STAGING"
-	JobCompleteStateTASKSTAGING string = "TASK_STAGING"
-
-	// JobCompleteStateTASKSTARTING captures enum value "TASK_STARTING"
-	JobCompleteStateTASKSTARTING string = "TASK_STARTING"
-
-	// JobCompleteStateTASKUNKNOWN captures enum value "TASK_UNKNOWN"
-	JobCompleteStateTASKUNKNOWN string = "TASK_UNKNOWN"
-
-	// JobCompleteStateTASKUNREACHABLE captures enum value "TASK_UNREACHABLE"
-	JobCompleteStateTASKUNREACHABLE string = "TASK_UNREACHABLE"
+	// JobCompleteStateRunning captures enum value "Running"
+	JobCompleteStateRunning string = "Running"
 )
 
 // prop value enum
@@ -158,6 +117,19 @@ func (m *JobComplete) validateState(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateStateEnum("state", "body", *m.State); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *JobComplete) validateTimestamp(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Timestamp) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("timestamp", "body", "date-time", m.Timestamp.String(), formats); err != nil {
 		return err
 	}
 

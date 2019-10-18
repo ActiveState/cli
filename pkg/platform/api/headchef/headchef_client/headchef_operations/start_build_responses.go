@@ -58,10 +58,10 @@ func NewStartBuildCreated() *StartBuildCreated {
 
 /*StartBuildCreated handles this case with default header values.
 
-The requested build has already ended
+The requested build has already ended. The response's type field is one of: build_completed or build_failed.
 */
 type StartBuildCreated struct {
-	Payload headchef_models.BuildEndedResponse
+	Payload *headchef_models.BuildStatusResponse
 }
 
 func (o *StartBuildCreated) Error() string {
@@ -70,8 +70,10 @@ func (o *StartBuildCreated) Error() string {
 
 func (o *StartBuildCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(headchef_models.BuildStatusResponse)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
@@ -85,10 +87,10 @@ func NewStartBuildAccepted() *StartBuildAccepted {
 
 /*StartBuildAccepted handles this case with default header values.
 
-The requested build has been started but hasn't yet completed
+The requested build has been started but hasn't yet completed. The response's type field is build_started.
 */
 type StartBuildAccepted struct {
-	Payload *headchef_models.BuildStartedResponse
+	Payload *headchef_models.BuildStatusResponse
 }
 
 func (o *StartBuildAccepted) Error() string {
@@ -97,7 +99,7 @@ func (o *StartBuildAccepted) Error() string {
 
 func (o *StartBuildAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(headchef_models.BuildStartedResponse)
+	o.Payload = new(headchef_models.BuildStatusResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

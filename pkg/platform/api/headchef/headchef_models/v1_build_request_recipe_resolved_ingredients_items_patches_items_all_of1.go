@@ -6,8 +6,6 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
@@ -15,37 +13,21 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1 Patch Core
-//
-// A diff of changes that can be applied to an ingredient's source code. This model only contains mutable fields of a patch.
+// V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1 v1 build request recipe resolved ingredients items patches items all of1
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1
 type V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1 struct {
 
-	// The features that must already be present in the recipe for this patch to be used. For example, can be used to create patches that only work on specific operating systems.
-	Conditions []*V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1ConditionsItems `json:"conditions"`
-
-	// The patch itself
+	// sequence number
 	// Required: true
-	Content *string `json:"content"`
-
-	// A concise summary of what this patch can be used for
-	// Required: true
-	Description *string `json:"description"`
+	// Minimum: 1
+	SequenceNumber *int64 `json:"sequence_number"`
 }
 
 // Validate validates this v1 build request recipe resolved ingredients items patches items all of1
 func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateConditions(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateContent(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateDescription(formats); err != nil {
+	if err := m.validateSequenceNumber(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -55,43 +37,13 @@ func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) Validat
 	return nil
 }
 
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) validateConditions(formats strfmt.Registry) error {
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) validateSequenceNumber(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Conditions) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.Conditions); i++ {
-		if swag.IsZero(m.Conditions[i]) { // not required
-			continue
-		}
-
-		if m.Conditions[i] != nil {
-			if err := m.Conditions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) validateContent(formats strfmt.Registry) error {
-
-	if err := validate.Required("content", "body", m.Content); err != nil {
+	if err := validate.Required("sequence_number", "body", m.SequenceNumber); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsPatchesItemsAllOf1) validateDescription(formats strfmt.Registry) error {
-
-	if err := validate.Required("description", "body", m.Description); err != nil {
+	if err := validate.MinimumInt("sequence_number", "body", int64(*m.SequenceNumber), 1, false); err != nil {
 		return err
 	}
 
