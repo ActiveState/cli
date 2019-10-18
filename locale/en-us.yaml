@@ -269,6 +269,8 @@ fork_project:
   other: Fork an existing platform project
 flag_state_fork_org_description:
   other: The organization to fork the project to
+flag_state_fork_private_description:
+  other: Denotes if the forked project will be private
 flag_state_fork_name_description:
   other: The name of the new project to be created
 arg_state_fork_namespace:
