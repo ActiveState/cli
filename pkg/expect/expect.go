@@ -13,10 +13,14 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	ptyexpect "github.com/Netflix/go-expect"
+	"github.com/hinshun/vt10x"
 )
 
 type Suite struct {
 	suite.Suite
+	console      *ptyexpect.Console
+	state        *vt10x.State
 	process      *Process
 	processEnded chan bool
 	env          []string
@@ -40,6 +44,7 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	commandLine := fmt.Sprintf("%s %s", executable, strings.Join(args, " "))
 	fmt.Printf("Spawning '%s' from %s\n", commandLine, wd)
 	s.process = NewProcess(executable, args...)
+
 	s.process.SetEnv(s.env)
 	s.processEnded = make(chan bool)
 
@@ -115,13 +120,24 @@ func (s *Suite) ExpectRe(value *regexp.Regexp, timeout ...time.Duration) {
 
 	out := ""
 	err := s.Timeout(func(stop chan bool) {
-		s.process.OnOutput(func(output []byte) {
-			if value.MatchString(string(output)) {
-				stop <- true
+		if s.process.console != nil {
+			fmt.Printf("Waiting for regexp: %s\n", value.String())
+			_, err := s.process.console.Expect(ptyexpect.Regexp(value))
+			fmt.Println("Found regexp")
+			if err != nil {
+				s.FailNow("Error when expecting '%s', value: %v", value.String(), err)
 			}
-			out = out + string(output)
-		})
+			stop <- true
+		} else {
+			s.process.OnOutput(func(output []byte) {
+				if value.MatchString(string(output)) {
+					stop <- true
+				}
+				out = out + string(output)
+			})
+		}
 	}, t)
+	fmt.Printf("Output is '%s'\n", out)
 	if err != nil {
 		s.FailNow("Could not meet expectation", "Expectation: '%s'\nError: %v\n---\noutput:\n---\n%s\n---\n",
 			value.String(), err, s.process.CombinedOutput())
@@ -130,7 +146,7 @@ func (s *Suite) ExpectRe(value *regexp.Regexp, timeout ...time.Duration) {
 
 func (s *Suite) Send(value string) {
 	// Since we're not running a TTY emulator we need little workarounds like this to ensure stdin is ready
-	time.Sleep(100 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 
 	err := s.process.Write(value + "\n")
 	if err != nil {
@@ -146,6 +162,7 @@ func (s *Suite) Stop() {
 	if s.process == nil {
 		s.FailNow("stop called without a spawned process")
 	}
+	s.process.Quit()
 }
 
 func (s *Suite) Timeout(f func(stop chan bool), t time.Duration) error {

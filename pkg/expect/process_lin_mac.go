@@ -4,56 +4,68 @@ package expect
 
 import (
 	"fmt"
-	"io"
+	"log"
+	"os"
 
-	"github.com/kr/pty"
-
-	"github.com/ActiveState/cli/internal/logging"
+	ptyexpect "github.com/Netflix/go-expect"
+	"github.com/hinshun/vt10x"
 )
 
 func (p *Process) start() error {
-	var err error
-	if p.pty, err = pty.Start(p.cmd); err != nil {
-		return err
+	fmt.Printf("Start the process")
+	// redirect the inputs to the pseudo terminal
+
+	// run the command
+	err := p.cmd.Start()
+	if err != nil {
+		return fmt.Errorf("Error starting process: %v", err)
 	}
-
-	go func() {
-		_, err := io.Copy(p.outWriter, p.pty)
-		if err != nil {
-			logging.Error("Error while copying stdout: %v", err)
-		}
-	}()
-
-	go func() {
-		_, err := io.Copy(p.pty, p.inReader)
-		if err != nil {
-			logging.Error("Error while copying stdin: %v", err)
-		}
-	}()
 
 	return nil
 }
 
+func (p *Process) setupPTY() error {
+
+	var err error
+	p.logfile, err = os.OpenFile("testlogfile2", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	p.logfile.WriteString("test")
+
+	p.console, p.state, err = vt10x.NewVT10XConsole(
+		ptyexpect.WithStdout(os.Stdout),
+		ptyexpect.WithLogger(log.New(p.logfile, "logger", 0)),
+	)
+	if err != nil {
+		return fmt.Errorf("Error spawning a pseudo terminal: %v", err)
+	}
+	return nil
+
+}
+
 func (p *Process) setupStdin() {
-	p.inReader, p.inWriter = io.Pipe()
+	p.cmd.Stdin = p.console.Tty()
 }
 
 func (p *Process) setupStdout() {
-	outWriter := NewStdWriter()
-	outWriter.OnWrite(func(data []byte) {
-		p.stdout = p.stdout + string(data)
-		p.combined = p.combined + string(data)
-		p.onOutput(data)
-		p.onStdout(data)
-	})
-	p.outWriter = outWriter
+	p.cmd.Stdout = p.console.Tty()
+}
+
+func (p *Process) setupStderr() {
+	p.cmd.Stderr = p.console.Tty()
 }
 
 func (p *Process) close() error {
-	return p.pty.Close()
+	p.logfile.Close()
+	err := p.console.Close()
+	if err != nil {
+		return fmt.Errorf("Error closing the pseudo terminal: %v", err)
+	}
+	return nil
 }
 
 func (p *Process) Write(input string) error {
-	_, err := fmt.Fprintf(p.inWriter, "%s\n", input)
+	_, err := p.console.SendLine(input)
 	return err
 }

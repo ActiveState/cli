@@ -38,3 +38,14 @@ func (p *Process) Write(input string) error {
 	_, err := io.WriteString(p.stdin, input)
 	return err
 }
+
+func (p *Process) setupStderr() {
+	errWriter := NewStdWriter()
+	errWriter.OnWrite(func(data []byte) {
+		p.stderr = p.stderr + string(data)
+		p.combined = p.combined + string(data)
+		p.onOutput(data)
+		p.onStderr(data)
+	})
+	p.cmd.Stderr = errWriter
+}
