@@ -419,7 +419,7 @@ run_description:
   other: Run Your Project Scripts
 scripts_description:
   other: Show project scripts 
-scripts_flag_json:
+flag_json_desc:
   other: Changes output to machine-readable JSON
 scripts_col_name:
   other: Name
@@ -433,6 +433,8 @@ scripts_no_name:
   other: No script with name {{.V0}}
 scripts_err_output:
   other: Failed to display scripts output
+organizations_err_output:
+  other: Failed to display organizations output
 edit_description:
   other: Edit a given script
 edit_script_cmd_name_arg:
@@ -582,9 +584,7 @@ run_listing_scripts:
 
 secrets_cmd_description:
   other: Manage Your Secrets
-secrets_flag_json:
-  other: Changes output to machine-readable JSON
-secrets_flag_json:
+secrets_flag_filter:
   other: Show only secrets that match the given filter. The filter value is the config path that you want to see secrets for, eg. constants.foo, scripts.foo, secrets.project.foo, etc.
 secrets_get_cmd_description:
   other: Get the value of a secret
