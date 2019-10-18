@@ -44,10 +44,9 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.authMock.MockLoggedin()
 	suite.invMock.MockIngredientsByName()
-	suite.apiMock.MockGetProject()
-	suite.apiMock.MockVcsGetCheckpoint()
 	suite.apiMock.MockCommit()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	suite.graphMock.Checkpoint(graphMock.NoOptions)
 }
 
 func (suite *PkgTestSuite) AfterTest(suiteName, testName string) {

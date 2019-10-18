@@ -41,11 +41,10 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.graphMock = graphMock.Init()
 
 	suite.authm.MockLoggedin()
-	suite.apim.MockGetProject()
-	suite.apim.MockVcsGetCheckpoint()
 	suite.invm.MockPlatforms()
 	suite.invm.MockOrderRecipes()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	suite.graphMock.Checkpoint(graphMock.NoOptions)
 
 	suite.ex = exiter.New()
 	Command.Exiter = suite.ex.Exit

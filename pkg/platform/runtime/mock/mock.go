@@ -44,11 +44,11 @@ func (m *Mock) Close() {
 
 func (m *Mock) MockFullRuntime() {
 	m.authMock.MockLoggedin()
-	m.apiMock.MockVcsGetCheckpoint()
 	m.apiMock.MockSignS3URI()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
 	m.GraphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	m.GraphMock.Checkpoint(graphMock.NoOptions)
 
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)
