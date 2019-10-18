@@ -87,7 +87,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	newName := Flags.Name
 	if newName == "" {
-		newName = namespace.Project
+		newName = originalName
 	}
 
 	newOwner := Flags.Organization
