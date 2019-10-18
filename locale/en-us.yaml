@@ -269,6 +269,8 @@ fork_project:
   other: Fork an existing platform project
 flag_state_fork_org_description:
   other: The organization to fork the project to
+flag_state_fork_name_description:
+  other: The name of the new project to be created
 arg_state_fork_namespace:
   other: ORG/PROJECT
 arg_state_fork_namespace_description:
@@ -283,6 +285,8 @@ err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
 fork_select_org:
   other: Please select an owner for the forked project
+state_fork_success:
+  other: Successfully forked project {{.OriginalOwner}}/{{.OriginalName}} as {{.NewOwner}}/{{.NewName}}
 local:
   other: Local
 organization:

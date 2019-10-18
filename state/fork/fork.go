@@ -3,6 +3,7 @@ package fork
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -48,12 +49,19 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Organization,
 		},
+		&commands.Flag{
+			Name:        "name",
+			Description: "flag_state_fork_name_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Name,
+		},
 	},
 }
 
 // Flags hold the arg values passed through the command line
 var Flags struct {
 	Organization string
+	Name         string
 }
 
 // Args holds the values passed through the command line
@@ -75,7 +83,12 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	originalOwner := namespace.Owner
-	projectName := namespace.Project
+	originalName := namespace.Project
+
+	newName := Flags.Name
+	if newName == "" {
+		newName = namespace.Project
+	}
 
 	newOwner := Flags.Organization
 	if newOwner == "" {
@@ -86,10 +99,17 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail = createFork(originalOwner, newOwner, projectName)
+	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_create_fork"))
 	}
+
+	print.Info(locale.T("state_fork_success", map[string]string{
+		"OriginalOwner": originalOwner,
+		"OriginalName":  originalName,
+		"NewOwner":      newOwner,
+		"NewName":       newName,
+	}))
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -111,13 +131,13 @@ func promptForOwner() (string, *failures.Failure) {
 	return prompter.Select(locale.T("fork_select_org"), options, "")
 }
 
-func createFork(originalOwner, newOwner, projectName string) *failures.Failure {
-	originalProject, fail := model.FetchProjectByName(originalOwner, projectName)
+func createFork(originalOwner, newOwner, originalName, newName string) *failures.Failure {
+	originalProject, fail := model.FetchProjectByName(originalOwner, originalName)
 	if fail != nil {
 		return fail
 	}
 
-	newProject, fail := addNewProject(newOwner, projectName)
+	newProject, fail := addNewProject(newOwner, newName)
 	if fail != nil {
 		return fail
 	}
@@ -137,7 +157,7 @@ func createFork(originalOwner, newOwner, projectName string) *failures.Failure {
 		return fail
 	}
 
-	return editProjectDetails(originalOwner, newOwner, projectName)
+	return editProjectDetails(originalOwner, newOwner, newName)
 }
 
 func addNewProject(owner, name string) (*mono_models.Project, *failures.Failure) {
