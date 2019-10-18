@@ -13,6 +13,7 @@ import (
 )
 
 const ProjectNamespace = "string/string"
+const OrgFlag = "--org=test"
 
 type ForkTestSuite struct {
 	suite.Suite
@@ -56,6 +57,8 @@ func (suite *ForkTestSuite) TestExecute() {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})
+	Command.Execute()
+	Cc.SetArgs([]string{ProjectNamespace, OrgFlag})
 	Command.Execute()
 }
 

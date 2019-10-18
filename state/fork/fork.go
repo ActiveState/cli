@@ -41,6 +41,19 @@ var Command = &commands.Command{
 			Required:    true,
 		},
 	},
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "org",
+			Description: "flag_state_fork_org_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Organization,
+		},
+	},
+}
+
+// Flags hold the arg values passed through the command line
+var Flags struct {
+	Organization string
 }
 
 // Args holds the values passed through the command line
@@ -64,10 +77,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	originalOwner := namespace.Owner
 	projectName := namespace.Project
 
-	newOwner, fail := promptForOwner()
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_fork_get_owner"))
-		return
+	newOwner := Flags.Organization
+	if newOwner == "" {
+		newOwner, fail = promptForOwner()
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_fork_get_owner"))
+			return
+		}
 	}
 
 	fail = createFork(originalOwner, newOwner, projectName)
