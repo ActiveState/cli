@@ -268,7 +268,7 @@ login_cancelled:
 fork_project:
   other: Fork an existing platform project
 flag_state_fork_org_description:
-  other: The organization to fork the project to `--org=myOrg`
+  other: The organization to fork the project to
 arg_state_fork_namespace:
   other: ORG/PROJECT
 arg_state_fork_namespace_description:
