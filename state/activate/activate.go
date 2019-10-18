@@ -411,6 +411,7 @@ func activate(owner, name, srcPath string) bool {
 	// Ensure that the project exists and that we have access to it
 	_, fail := model.FetchProjectByName(owner, name)
 	if fail != nil && fail.Type.Matches(model.FailNoValidProject) {
+		// If we can't find the project and we aren't authenticated we assume authentication is required
 		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
 		if fail != nil {
 			failures.Handle(fail, locale.T("err_activate_auth_required"))
