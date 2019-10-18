@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -67,16 +66,12 @@ func init() {
 
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
-	if authentication.Get().Authenticated() {
-		renewOK, err := authentication.Client().Authentication.GetRenew(nil, authentication.ClientAuth())
-		if err != nil {
-			logging.Warningf("Renewing failed: %s", err)
-		} else {
-			print.Line(locale.T("logged_in_as", map[string]string{
-				"Name": renewOK.Payload.User.Username,
-			}))
-			return
-		}
+	auth := authentication.Get()
+	if auth.Authenticated() {
+		print.Line(locale.T("logged_in_as", map[string]string{
+			"Name": auth.WhoAmI(),
+		}))
+		return
 	}
 
 	if Flags.Token == "" {
