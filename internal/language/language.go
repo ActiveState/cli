@@ -42,11 +42,11 @@ var lookup = [...]languageData{
 		Executable{"", false},
 	},
 	{
-		"bash", "Bash", ".tmp", true, "", "",
+		"bash", "Bash", ".sh", true, "", "",
 		Executable{"", true},
 	},
 	{
-		"sh", "Shell", ".tmp", true, "", "",
+		"sh", "Shell", ".sh", true, "", "",
 		Executable{"", true},
 	},
 	{
@@ -54,15 +54,15 @@ var lookup = [...]languageData{
 		Executable{"", true},
 	},
 	{
-		"perl", "Perl", ".tmp", true, "perl", "5.28.1",
+		"perl", "Perl", ".pl", true, "perl", "5.28.1",
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", "Python 2", ".tmp", true, "python", "2.7.14",
+		"python2", "Python 2", ".py", true, "python", "2.7.14",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"python3", "Python 3", ".tmp", true, "python", "3.6.6",
+		"python3", "Python 3", ".py", true, "python", "3.6.6",
 		Executable{constants.ActivePython3Executable, false},
 	},
 }
@@ -121,6 +121,11 @@ func (l *Language) Text() string {
 	return l.data().text
 }
 
+// Ext return the file extension for the language.
+func (l Language) Ext() string {
+	return l.data().ext
+}
+
 // Header returns the interpreter directive.
 func (l Language) Header() string {
 	ld := l.data()
@@ -169,7 +174,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
-func (l *Language) MarshalYAML() (interface{}, error) {
+func (l Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
 }
 

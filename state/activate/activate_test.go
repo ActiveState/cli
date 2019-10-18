@@ -5,12 +5,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -22,15 +24,18 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	gitMock "github.com/ActiveState/cli/pkg/cmdlets/git/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-const ProjectNamespace = "string/string"
+const ProjectNamespace = "example-org/example-proj"
 
 type ActivateTestSuite struct {
 	suite.Suite
@@ -38,6 +43,7 @@ type ActivateTestSuite struct {
 	apiMock    *apiMock.Mock
 	rMock      *rMock.Mock
 	promptMock *promptMock.Mock
+	gitMock    *gitMock.Mock
 	dir        string
 	origDir    string
 }
@@ -55,7 +61,9 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
 	suite.promptMock = promptMock.Init()
+	suite.gitMock = gitMock.Init()
 	prompter = suite.promptMock
+	repo = suite.gitMock
 
 	var err error
 
@@ -73,8 +81,15 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
-
+	Flags.Path = ""
+	Flags.New = false
+	Flags.Owner = ""
+	Flags.Project = ""
+	Flags.Language = ""
 	Args.Namespace = ""
+
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
+	os.Unsetenv(constants.ProjectEnvVarName)
 
 	failures.ResetHandled()
 }
@@ -86,6 +101,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.apiMock.Close()
 	suite.rMock.Close()
 	suite.promptMock.Close()
+	suite.gitMock.Close()
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
@@ -101,7 +117,6 @@ func (suite *ActivateTestSuite) TestExecute() {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 
 	authentication.Get().AuthenticateWithToken("")
 
@@ -118,10 +133,14 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoRepo()
 
 	if !withLang {
-		suite.apiMock.MockGetProjectNoLanguage()
-		suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+		gmock := suite.rMock.GraphMock
+		gmock.Reset()
+		gmock.ProjectByOrgAndName(graphMock.NoOptions)
+		gmock.NoCheckpoint(graphMock.NoOptions)
+		suite.apiMock.MockGetProjectNoRepoNoLanguage()
 	}
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
@@ -139,8 +158,54 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 	suite.FileExists(configFile)
 	pjfile, fail := projectfile.Parse(configFile)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().Equal("https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 	return pjfile
+}
+
+func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
+	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoRepo()
+	suite.authMock.MockLoggedin()
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir), ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+	Cc.SetArgs(nil)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(suite.dir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
+
+	// Activate existing project
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", suite.dir)})
+	err = Command.Execute()
+	suite.Require().NoError(err)
+	Cc.SetArgs(nil)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+}
+
+func (suite *ActivateTestSuite) TestPathFlagWithNamespaceNoMatch() {
+	suite.rMock.MockFullRuntime()
+	suite.authMock.MockLoggedin()
+
+	Cc := Command.GetCobraCmd()
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata")
+	Cc.SetArgs([]string{fmt.Sprintf("--path=%s", dir), "no/match"})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, exitCode, "Should fail do to non matching namespaces in as.yaml")
+	Cc.SetArgs(nil)
 }
 
 func (suite *ActivateTestSuite) TestExecuteWithNamespace() {
@@ -165,8 +230,11 @@ func (suite *ActivateTestSuite) TestExecuteWithNamespaceDirExists() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	suite.rMock.MockFullRuntime()
-	suite.apiMock.MockGetProjectNoLanguage()
-	suite.apiMock.MockVcsGetCheckpointCustomReq(nil)
+	gmock := suite.rMock.GraphMock
+	gmock.Reset()
+	gmock.ProjectByOrgAndName(graphMock.NoOptions)
+	gmock.NoCheckpoint(graphMock.NoOptions)
+	suite.apiMock.MockGetProjectNoRepoNoLanguage()
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
@@ -202,15 +270,30 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 	fail := activateFromNamespace("foo")
-	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
+	suite.Equal(project.FailInvalidNamespace.Name, fail.Type.Name)
 }
 
-func (suite *ActivateTestSuite) TestActivateFromNamespaceNoProject() {
-	suite.authMock.MockLoggedin()
-	suite.apiMock.MockGetProject404()
+func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
+	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoLanguage()
 
-	fail := activateFromNamespace(ProjectNamespace)
-	suite.Equal(api.FailProjectNotFound.Name, fail.Type.Name)
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
+	suite.gitMock.OnMethod("CloneProject").Return(nil)
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(targetDir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it
@@ -357,7 +440,6 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	httpmock.Register("GET", "organizations/ActiveState/projects/CodeIntel")
 
 	authentication.Get().AuthenticateWithToken("")
 
@@ -373,6 +455,38 @@ func (suite *ActivateTestSuite) TestUnstableWarning() {
 	suite.Require().NoError(err)
 
 	suite.Contains(out, locale.Tr("unstable_version_warning", constants.BugTrackerURL), "Prints our unstable warning")
+}
+
+func (suite *ActivateTestSuite) TestPromptCreateProjectFail() {
+	mock := graphMock.Init()
+	defer mock.Close()
+	mock.NoProjects(graphMock.NoOptions)
+
+	projectFile := &projectfile.Project{}
+	contents := strings.TrimSpace(`project: "https://platform.activestate.com/bad-org/bad-proj"`)
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.Require().NoError(err, "unexpected error marshalling yaml")
+
+	projectFile.SetPath(filepath.Join(suite.dir, constants.ConfigFileName))
+	projectFile.Save()
+	suite.Require().NoError(err, "should be able to save in suite dir")
+	defer os.Remove(filepath.Join(suite.dir, constants.ConfigFileName))
+
+	suite.authMock.MockLoggedin()
+
+	suite.promptMock.OnMethod("Confirm").Once().Return(false, nil)
+
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	code := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	suite.Require().Equal(1, code, "Exits with code 1")
+
+	suite.Require().Error(failures.Handled())
+	suite.Require().Equal(locale.T("err_must_create_project"), failures.Handled().Error())
+
 }
 
 func TestActivateSuite(t *testing.T) {

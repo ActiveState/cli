@@ -2,7 +2,10 @@ package project
 
 import (
 	"regexp"
-	"strings"
+
+	"github.com/ActiveState/cli/internal/scriptfile"
+
+	"github.com/ActiveState/cli/internal/rxutils"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -69,17 +72,27 @@ func limitExpandFromProject(depth int, s string, p *Project) string {
 		return ""
 	}
 
-	regex := regexp.MustCompile("\\${?((?:\\w+\\.)+)([\\w-]+)}?")
-	expanded := regex.ReplaceAllStringFunc(s, func(variable string) string {
-		components := strings.Split(strings.Trim(variable, "${}"), ".")
-		category := strings.Join(components[0:len(components)-1], ".")
-		name := components[len(components)-1 : len(components)][0]
+	regex := regexp.MustCompile("\\${?(\\w+)\\.([\\w-]+)+\\.?([\\w-]+)?(\\(\\))?}?")
+	expanded := rxutils.ReplaceAllStringSubmatchFunc(regex, s, func(groups []string) string {
+		var variable, category, name, meta string
+		var isFunction bool
+
+		variable = groups[0]
+		category = groups[1]
+		name = groups[2]
+		if len(groups) > 3 {
+			meta = groups[3]
+		}
+		if len(groups) > 4 {
+			isFunction = true
+		}
+
 		var value string
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
 			var failure *failures.Failure
 
-			if value, failure = expanderFn(name, p); failure != nil {
+			if value, failure = expanderFn(name, meta, isFunction, p); failure != nil {
 				lastFailure = FailExpandVariableBadName.New("error_expand_variable_project_unknown_name", variable, failure.Error())
 				print.Warning(lastFailure.Error())
 			}
@@ -100,10 +113,10 @@ func limitExpandFromProject(depth int, s string, p *Project) string {
 // ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(name string, project *Project) (string, *failures.Failure)
+type ExpanderFunc func(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(name string, project *Project) (string, *failures.Failure) {
+func PlatformExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
 	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
@@ -131,7 +144,7 @@ func PlatformExpander(name string, project *Project) (string, *failures.Failure)
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(name string, project *Project) (string, *failures.Failure) {
+func EventExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
 	var value string
 	for _, event := range projectFile.Events {
@@ -144,20 +157,21 @@ func EventExpander(name string, project *Project) (string, *failures.Failure) {
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(name string, project *Project) (string, *failures.Failure) {
-	projectFile := project.Source()
-	var value string
-	for _, script := range projectFile.Scripts {
-		if script.Name == name && !constraints.IsConstrained(script.Constraints) {
-			value = script.Value
-			break
-		}
+func ScriptExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
+	script := project.ScriptByName(name)
+	if script == nil {
+		return "", nil
 	}
-	return value, nil
+
+	if meta == "path" && isFunction {
+		sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Value())
+		return sf.Filename(), fail
+	}
+	return script.Raw(), nil
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(name string, project *Project) (string, *failures.Failure) {
+func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
 	var value string
 	for _, constant := range projectFile.Constants {

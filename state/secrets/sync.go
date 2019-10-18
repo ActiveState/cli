@@ -5,7 +5,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,6 +15,7 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )

@@ -1,11 +1,8 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -13,77 +10,133 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var exit = os.Exit
 
-// NewExecute the new command.
+type projectStruct struct {
+	name     string
+	owner    string
+	path     string
+	language language.Language
+}
+
+// NewExecute creates a new project on the platform
 func NewExecute(cmd *cobra.Command, args []string) {
-	logging.Debug("Execute")
-
-	name, fail := prompter.Input(locale.T("state_activate_new_prompt_name"), "", prompt.InputRequired)
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
 	}
 
-	lang, fail := promptForLanguage()
+	projectInfo := new(projectStruct)
+
+	projectInfo, fail = newProjectInfo()
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+		failures.Handle(fail, locale.T("error_state_activate_new_prompt"))
+		return
 	}
 
-	if !authentication.Get().Authenticated() && flag.Lookup("test.v") == nil {
-		print.Error(locale.T("error_state_activate_new_no_auth"))
-		exit(1)
+	fail = createNewProject(projectInfo)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_new_create"))
+		return
+	}
+
+	activateProject()
+}
+
+// CopyExecute creates a new project from an existing activestate.yaml
+func CopyExecute(cmd *cobra.Command, args []string) {
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
+	}
+
+	projFile := project.Get().Source()
+
+	projectInfo, fail := newProjectInfo()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_copy_prompts"))
+		return
+	}
+
+	projFile.Project, fail = getProjectURL(projectInfo.owner, projectInfo.name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_copy_project_url"))
+		return
+	}
+
+	fail = projFile.Save()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_activate_copy_save"))
+		return
+	}
+}
+
+func newProjectInfo() (*projectStruct, *failures.Failure) {
+	projectInfo := new(projectStruct)
+	var fail *failures.Failure
+
+	projectInfo.path, fail = getProjectPath()
+	if fail != nil {
+		return nil, fail
+	}
+
+	projectInfo.name = Flags.Project
+	if projectInfo.name == "" {
+		projectInfo.name, fail = promptForProjectName()
+		if fail != nil {
+			return nil, fail
+		}
+	}
+
+	if Flags.Language == "" {
+		projectInfo.language, fail = promptForLanguage()
+		if fail != nil {
+			return nil, fail
+		}
+	} else {
+		projectInfo.language, fail = getLanguageFromFlags()
+		if fail != nil {
+			return nil, fail
+		}
 	}
 
 	// If the user is not yet authenticated into the ActiveState Platform, it is a
 	// simple prompt. Otherwise, fetch the list of organizations the user belongs
 	// to and present the list to the user for a selection.
-	owner, fail := promptForOwner()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
+	projectInfo.owner = Flags.Owner
+	if projectInfo.owner == "" {
+		projectInfo.owner, fail = promptForOwner()
+		if fail != nil {
+			return nil, fail
+		}
 	}
 
-	// Create the project on the platform
-	if fail = createPlatformProject(name, owner, lang); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_project_add"))
-		exit(1)
+	return projectInfo, nil
+}
+
+func promptForProjectName() (string, *failures.Failure) {
+	var defaultName string
+	if projectExists(Flags.Path) {
+		proj := project.Get()
+		defaultName = proj.Name()
 	}
 
-	path, fail := fetchPath(name)
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
-
-	// Create the project directory
-	if fail = createProjectDir(path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
-
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
-
-	// Create the project locally on disk.
-	if _, fail = projectfile.Create(projectURL, path); fail != nil {
-		failures.Handle(fail, locale.T("error_state_activate_new_aborted"))
-		exit(1)
-	}
-
-	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": path}))
+	return prompter.Input(locale.T("state_activate_new_prompt_name"), defaultName, prompt.InputRequired)
 }
 
 func promptForLanguage() (language.Language, *failures.Failure) {
@@ -129,24 +182,28 @@ func promptForOwner() (string, *failures.Failure) {
 	return owners[0], nil // auto-select only option
 }
 
-func fetchPath(projName string) (string, *failures.Failure) {
-	cwd, _ := os.Getwd()
-	files, _ := ioutil.ReadDir(cwd)
-
-	if len(files) == 0 {
-		// Current working directory is devoid of files. Use it as the path for
-		// the new project.
-		return cwd, nil
+func createNewProject(projectInfo *projectStruct) *failures.Failure {
+	fail := createPlatformProject(projectInfo.name, projectInfo.owner, projectInfo.language)
+	if fail != nil {
+		return fail
 	}
 
-	// Current working directory has files in it. Use a subdirectory with the
-	// project name as the path for the new project.
-	path := filepath.Join(cwd, projName)
-	if _, err := os.Stat(path); err == nil {
-		return "", failures.FailIO.New("error_state_activate_new_exists")
+	if fail := createProjectDir(projectInfo.path); fail != nil {
+		return fail
 	}
 
-	return path, nil
+	projectURL, fail := getProjectURL(projectInfo.owner, projectInfo.name)
+	if fail != nil {
+		return fail
+	}
+
+	_, fail = projectfile.Create(projectURL, projectInfo.path)
+	if fail != nil {
+		return fail
+	}
+
+	print.Line(locale.T("state_activate_new_created", map[string]interface{}{"Dir": projectInfo.path}))
+	return nil
 }
 
 func createPlatformProject(name, owner string, lang language.Language) *failures.Failure {
@@ -155,23 +212,60 @@ func createPlatformProject(name, owner string, lang language.Language) *failures
 	addParams.SetProject(&mono_models.Project{Name: name})
 	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
-		return api.FailUnknown.Wrap(err)
+		return api.FailUnknown.New(api.ErrorMessageFromPayload(err))
 	}
 
 	return model.CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
 }
 
-func createProjectDir(path string) *failures.Failure {
-	if _, err := os.Stat(path); err == nil {
-		// Directory already exists
-		files, _ := ioutil.ReadDir(path)
-		if len(files) == 0 {
-			return nil
+func getProjectPath() (string, *failures.Failure) {
+	path := Flags.Path
+	if path == "" {
+		var err error
+		path, err = os.Getwd()
+		if err != nil {
+			return "", failures.FailOS.Wrap(err)
 		}
-		return failures.FailIO.New("error_state_activate_new_exists")
 	}
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return failures.FailIO.New("error_state_activate_new_mkdir")
+
+	return path, nil
+}
+
+func createProjectDir(path string) *failures.Failure {
+	if _, err := os.Stat(path); err != nil {
+		if !os.IsNotExist(err) {
+			return failures.FailOS.Wrap(err)
+		}
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return failures.FailOS.Wrap(err)
+		}
 	}
 	return nil
+}
+
+func getProjectURL(owner, name string) (string, *failures.Failure) {
+	cid, fail := model.LatestCommitID(owner, name)
+	if fail != nil {
+		return "", fail
+	}
+
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, owner, name)
+	if cid == nil || cid.String() == "" {
+		print.Warning(locale.T("error_state_activate_new_no_commit_aborted",
+			map[string]interface{}{"Owner": owner, "ProjectName": name}))
+	} else {
+		projectURL = projectURL + fmt.Sprintf("?commitID=%s", cid.String())
+	}
+
+	return projectURL, nil
+}
+
+func getLanguageFromFlags() (language.Language, *failures.Failure) {
+	for _, lang := range language.Available() {
+		if Flags.Language == lang.String() {
+			return lang, nil
+		}
+	}
+
+	return language.Unknown, failures.FailUserInput.New(locale.T("error_state_activate_language_flag_invalid"))
 }

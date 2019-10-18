@@ -6,10 +6,15 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/progress"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDownload(t *testing.T) {
+
+	p := progress.New(progress.WithOutput(nil))
+	defer p.Close()
+
 	var entries []*Entry
 	for i := 1; i <= 3; i++ {
 		target := filepath.Join(os.TempDir(), "state-test-download", "file"+strconv.Itoa(i))
@@ -21,7 +26,7 @@ func TestDownload(t *testing.T) {
 		})
 	}
 
-	manager := New(entries, 5)
+	manager := New(entries, 5, p)
 	fail := manager.Download()
 	assert.NoError(t, fail.ToError(), "Should download files")
 

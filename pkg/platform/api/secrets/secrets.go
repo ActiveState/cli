@@ -88,8 +88,8 @@ func NewClient(schema, host, basePath string) *Client {
 // NewDefaultClient creates a new Client using constants SecretsAPISchema, -Host, and -Path and
 // a provided Bearer-token value.
 func NewDefaultClient() *Client {
-	apiSetting := api.GetSettings(api.ServiceSecrets)
-	return NewClient(apiSetting.Schema, apiSetting.Host, apiSetting.BasePath)
+	serviceURL := api.GetServiceURL(api.ServiceSecrets)
+	return NewClient(serviceURL.Scheme, serviceURL.Host, serviceURL.Path)
 }
 
 // DefaultClient represents a secretsapi Client instance that can be accessed by any package

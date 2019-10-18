@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -445,9 +446,14 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, *failures.Failure) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), s.IsUser())
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil)
 
-	value, fail := secretsExpander.Expand(s.secret.Name, s.project)
+	category := ProjectCategory
+	if s.IsUser() {
+		category = UserCategory
+	}
+
+	value, fail := secretsExpander.Expand(category, s.secret.Name, false, s.project)
 	if fail != nil {
 		if fail.Type.Matches(secretsapi.FailUserSecretNotFound) {
 			return nil, nil
@@ -527,9 +533,25 @@ func (script *Script) Source() *projectfile.Project { return script.project.proj
 // Name returns script name
 func (script *Script) Name() string { return script.script.Name }
 
-// Language ...
+// Language returns the language of this script
 func (script *Script) Language() language.Language {
 	return script.script.Language
+}
+
+// LanguageSafe returns the language of this script. The returned
+// language is guaranteed to be of a known scripting language
+func (script *Script) LanguageSafe() language.Language {
+	if script.Language() == language.Unknown {
+		return defaultScriptLanguage()
+	}
+	return script.Language()
+}
+
+func defaultScriptLanguage() language.Language {
+	if runtime.GOOS == "windows" {
+		return language.Batch
+	}
+	return language.Sh
 }
 
 // Description returns script description
@@ -539,6 +561,11 @@ func (script *Script) Description() string { return script.script.Description }
 func (script *Script) Value() string {
 	value := Expand(script.script.Value)
 	return value
+}
+
+// Raw returns the script value with no secrets or constants expanded
+func (script *Script) Raw() string {
+	return script.script.Value
 }
 
 // Standalone returns if the script is standalone or not

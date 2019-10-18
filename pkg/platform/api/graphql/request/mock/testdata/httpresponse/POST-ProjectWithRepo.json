@@ -1,0 +1,31 @@
+{
+  "data": {
+    "projects": [
+      {
+        "branches": [
+          {
+            "branch_id": "00010001-0001-0001-0001-000100010001",
+            "commit_id": "00010001-0001-0001-0001-000100010001",
+            "main": true,
+            "project_id": "00010001-0001-0001-0001-000100010001",
+            "tracking_type": null,
+            "tracks": null,
+            "label": "string"
+          }
+        ],
+        "description": "string",
+        "name": "string",
+        "added": "2019-10-10T17:55:34",
+        "created_by": "00010001-0001-0001-0001-000100010001",
+        "forked_from": null,
+        "forked_project": null,
+        "changed": "2019-10-10T17:55:34",
+        "managed": false,
+        "organization_id": "00010001-0001-0001-0001-000100010001",
+        "private": false,
+        "project_id": "00010001-0001-0001-0001-000100010001",
+        "repo_url": "string"
+      }
+    ]
+  }
+}

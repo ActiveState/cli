@@ -7,10 +7,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -19,7 +22,7 @@ var (
 )
 
 // Checkpoint represents a collection of requirements
-type Checkpoint []*mono_models.Checkpoint
+type Checkpoint []*model.Requirement
 
 // FetchLanguagesForProject fetches a list of language names for the given project
 func FetchLanguagesForProject(orgName string, projectName string) ([]string, *failures.Failure) {
@@ -62,27 +65,22 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 	return languages, nil
 }
 
-// FetchCheckpointForBranch fetches the checkpoint for the given branch
-func FetchCheckpointForBranch(branch *mono_models.Branch) (Checkpoint, *failures.Failure) {
-	if branch.CommitID == nil {
-		return nil, FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	return FetchCheckpointForCommit(*branch.CommitID)
-}
-
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
 func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
-	auth := authentication.Get()
-	params := version_control.NewGetCheckpointParams()
-	params.CommitID = commitID
+	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
-	response, err := auth.Client().VersionControl.GetCheckpoint(params, auth.ClientAuth())
+	request := request.CheckpointByCommit(commitID)
+
+	gql := graphql.Get()
+	response := model.Checkpoint{}
+	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, FailGetCheckpoint.New(locale.Tr("err_get_checkpoint", err.Error()))
+		return nil, api.FailUnknown.Wrap(err)
 	}
 
-	return response.Payload, nil
+	logging.Debug("Returning %d requirements", len(response.Requirements))
+
+	return response.Requirements, nil
 }
 
 // CheckpointToOrder converts a checkpoint to an order

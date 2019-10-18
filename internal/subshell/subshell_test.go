@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -40,6 +41,50 @@ func TestActivate(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Should deactivate")
 
 	assert.False(t, subs.IsActive(), "Subshell should be inactive")
+}
+
+func TestActivateCmdExists(t *testing.T) {
+	setup(t)
+
+	os.Setenv("SHELL", "bash")
+	os.Setenv("ComSpec", "cmd.exe")
+
+	filename := "debug"
+	if runtime.GOOS == "windows" {
+		filename = "debug.exe"
+	}
+
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_EXCL, 0700)
+	assert.NoError(t, err, "Should be able to create executable file")
+	defer os.Remove(f.Name())
+
+	err = f.Close()
+	assert.NoError(t, err, "Could no close file")
+
+	originalPath := os.Getenv("PATH")
+	defer os.Setenv("PATH", originalPath)
+
+	wd, err := os.Getwd()
+	assert.NoError(t, err, "Could not get current working directory")
+
+	err = os.Setenv("PATH", wd)
+	assert.NoError(t, err, "Could not set PATH")
+
+	out, err := osutil.CaptureStdout(func() {
+		subs, fail := Activate()
+		assert.NoError(t, fail.ToError(), "Should activate")
+
+		assert.NotEqual(t, "", subs.Shell(), "Should detect a shell")
+		assert.True(t, subs.IsActive(), "Subshell should be active")
+
+		fail = subs.Deactivate()
+		assert.NoError(t, fail.ToError(), "Should deactivate")
+
+		assert.False(t, subs.IsActive(), "Subshell should be inactive")
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, locale.Tr("warn_script_name_in_use", "debug", "debug", "project", "project_debug"), strings.TrimSuffix(out, "\n"), "output should match")
 }
 
 func TestActivateFailures(t *testing.T) {
@@ -91,4 +136,8 @@ func TestRunCommand(t *testing.T) {
 	assert.Equal(t, "Hello", trimmed[len(trimmed)-len("Hello"):])
 
 	projectfile.Reset()
+}
+
+func TestIsActivated(t *testing.T) {
+	assert.False(t, IsActivated())
 }

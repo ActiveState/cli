@@ -28,11 +28,15 @@ var Command = &commands.Command{
 	Flags: []*commands.Flag{
 		{
 			Name:        "json",
-			Description: "scripts_flag_json",
+			Description: "flag_json_desc",
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.JSON,
 		},
 	},
+}
+
+func init() {
+	Command.Append(EditCommand)
 }
 
 // Execute the scripts command.

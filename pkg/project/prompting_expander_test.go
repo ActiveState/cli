@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -34,6 +35,7 @@ type VarPromptingExpanderTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *mock.Mock
 }
 
 func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName string) {
@@ -58,43 +60,47 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.platformMock = httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 
 	suite.platformMock.Register("POST", "/login")
+	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = mock.Init()
+	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	suite.graphMock.Close()
 }
 
-func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander(isUser bool) project.ExpanderFunc {
+func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return project.NewSecretPromptingExpander(suite.secretsClient, isUser)
+	return project.NewSecretPromptingExpander(suite.secretsClient)
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string, expectedFailureType *failures.FailureType) {
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 400, "something-happened"
 	})
-	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00010001-0001-0001-0001-000100010001", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
-	expanderFn := suite.prepareWorkingExpander(false)
-	expandedValue, failure := expanderFn(secretName, suite.project)
+	expanderFn := suite.prepareWorkingExpander()
+	expandedValue, failure := expanderFn(project.ProjectCategory, secretName, false, suite.project)
 
 	suite.Require().NotNil(failure)
 	suite.Truef(failure.Type.Matches(expectedFailureType), "unexpected failure type: %v, expected: %v", failure.Type.Name, expectedFailureType.Name)
 	suite.Zero(expandedValue)
 }
 
-func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName string, isUser bool, expectedValue string) {
+func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretName string, category string, expectedValue string) {
 	var userChanges []*secretsModels.UserSecretChange
 	var bodyErr error
 	suite.secretsMock.RegisterWithResponder("PATCH", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
@@ -102,26 +108,31 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 		bodyErr = json.Unmarshal(reqBody, &userChanges)
 		return 204, "empty-response"
 	})
-	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00020002-0002-0002-0002-000200020003", 200, "[]")
+	suite.secretsMock.RegisterWithResponseBody("GET", "/definitions/00010001-0001-0001-0001-000100010001", 200, "[]")
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
-	expanderFn := suite.prepareWorkingExpander(isUser)
-	expandedValue, failure := expanderFn(secretName, suite.project)
+	expanderFn := suite.prepareWorkingExpander()
+	expandedValue, failure := expanderFn(category, secretName, false, suite.project)
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(failure)
 	suite.Equal(expectedValue, expandedValue)
 
-	_, failure = expanderFn(secretName, suite.project)
+	_, failure = expanderFn(category, secretName, false, suite.project)
 	suite.Require().Nil(failure, "Should not prompt again because it should have stored/cached the secret")
 
 	suite.Require().Len(userChanges, 1)
 
 	change := userChanges[0]
 	suite.Equal(secretName, *change.Name)
-	suite.Equal(isUser, *change.IsUser)
 
-	suite.Equal(strfmt.UUID("00020002-0002-0002-0002-000200020003"), change.ProjectID)
+	if category == project.ProjectCategory {
+		suite.Equal(false, *change.IsUser)
+	} else {
+		suite.Equal(true, *change.IsUser)
+	}
+
+	suite.Equal(strfmt.UUID("00010001-0001-0001-0001-000100010001"), change.ProjectID)
 
 	kp, _ := keypairs.LoadWithDefaults()
 	decryptedBytes, failure := kp.DecodeAndDecrypt(*change.Value)
@@ -130,8 +141,8 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSavesSecret() {
-	suite.assertExpansionSaveSuccess("proj-secret", false, "more amazing")
-	suite.assertExpansionSaveSuccess("user-secret", true, "more amazing")
+	suite.assertExpansionSaveSuccess("proj-secret", project.ProjectCategory, "more amazing")
+	suite.assertExpansionSaveSuccess("user-secret", project.UserCategory, "more amazing")
 }
 
 func (suite *VarPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {

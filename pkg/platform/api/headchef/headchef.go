@@ -2,6 +2,7 @@ package headchef
 
 import (
 	"context"
+	"net/url"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -47,11 +48,11 @@ type BuildStatusClient struct {
 }
 
 func InitBuildStatusClient() *BuildStatusClient {
-	return NewBuildStatusClient(api.GetSettings(api.ServiceHeadChef))
+	return NewBuildStatusClient(api.GetServiceURL(api.ServiceHeadChef))
 }
 
-func NewBuildStatusClient(apiSetting api.Settings) *BuildStatusClient {
-	transportRuntime := httptransport.New(apiSetting.Host, apiSetting.BasePath, []string{apiSetting.Schema})
+func NewBuildStatusClient(apiURL *url.URL) *BuildStatusClient {
+	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
 	transportRuntime.SetDebug(true)

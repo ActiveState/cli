@@ -67,13 +67,14 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return
+	}
+
 	lang := script.Language()
 	if lang == language.Unknown {
-		subs, fail := subshell.Get()
-		if fail != nil {
-			failures.Handle(fail, locale.T("error_state_run_no_shell"))
-			return
-		}
 		lang = language.MakeByShell(subs.Shell())
 	}
 
@@ -98,13 +99,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 			return
 		}
 
+		subs.SetEnv(venv.GetEnvSlice(true))
 		path = venv.GetEnv()["PATH"]
-	}
-
-	subs, fail := subshell.Get()
-	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_no_shell"))
-		return
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
@@ -114,7 +110,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	// Run the script.
 	scriptBlock := project.Expand(script.Value())
-	sf, fail := scriptfile.New(lang, scriptBlock)
+	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_state_run_setup_scriptfile"))
 		return

@@ -1,22 +1,24 @@
 package activate
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -32,6 +34,8 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -42,15 +46,16 @@ var (
 	failTargetDirInUse   = failures.Type("activate.fail.dirinuse", failures.FailUserInput)
 )
 
-// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
-
 var branchName = constants.BranchName
 
-var prompter prompt.Prompter
+var (
+	prompter prompt.Prompter
+	repo     git.Repository
+)
 
 func init() {
 	prompter = prompt.New()
+	repo = git.NewRepo()
 }
 
 // Command holds our main command definition
@@ -67,8 +72,35 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Path,
 		},
+		&commands.Flag{
+			Name:        "new",
+			Shorthand:   "",
+			Description: "flag_state_activate_new_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.New,
+		},
+		&commands.Flag{
+			Name:        "owner",
+			Shorthand:   "",
+			Description: "flag_state_activate_owner_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Owner,
+		},
+		&commands.Flag{
+			Name:        "project",
+			Shorthand:   "",
+			Description: "flag_state_activate_project_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Project,
+		},
+		&commands.Flag{
+			Name:        "language",
+			Shorthand:   "",
+			Description: "flag_state_activate_language_description",
+			Type:        commands.TypeString,
+			StringVar:   &Flags.Language,
+		},
 	},
-
 	Arguments: []*commands.Argument{
 		&commands.Argument{
 			Name:        "arg_state_activate_namespace",
@@ -80,7 +112,11 @@ var Command = &commands.Command{
 
 // Flags hold the flag values passed through the command line
 var Flags struct {
-	Path string
+	Path     string
+	New      bool
+	Owner    string
+	Project  string
+	Language string
 }
 
 // Args hold the arg values passed through the command line
@@ -90,34 +126,29 @@ var Args struct {
 
 // Execute the activate command
 func Execute(cmd *cobra.Command, args []string) {
-	if len(args) == 0 && projectNotExists() {
-		NewExecute(cmd, args)
-		return
-	}
-
-	ExistingExecute(cmd, args)
-}
-
-func projectNotExists() bool {
-	if _, fail := project.GetOnce(); fail != nil {
-		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
-			return true
-		}
-	}
-	return false
-}
-
-// ExistingExecute ...
-func ExistingExecute(cmd *cobra.Command, args []string) {
 	updater.PrintUpdateMessage()
-	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_auth_required"))
-	}
 
+	switch {
+	case len(args) == 0 && !projectExists(Flags.Path), Flags.New:
+		NewExecute(cmd, args)
+	default:
+		ExistingExecute(cmd, args)
+	}
+}
+
+func projectExists(path string) bool {
+	prj := getProjectFileByPath(path)
+	if prj == nil {
+		return false
+	}
+	return true
+}
+
+// ExistingExecute activates a project based on the namespace in the
+// arguments or the existing project file
+func ExistingExecute(cmd *cobra.Command, args []string) {
 	checker.RunCommitsBehindNotifier()
 
-	logging.Debug("Execute")
 	if Args.Namespace != "" {
 		fail := activateFromNamespace(Args.Namespace)
 		if fail != nil {
@@ -126,6 +157,140 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	fail := promptCreateProjectIfNecessary(cmd, args)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_create_project"))
+		return
+	}
+
+	activateProject()
+}
+
+// activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
+// to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
+func activateFromNamespace(namespace string) *failures.Failure {
+	ns, fail := project.ParseNamespace(namespace)
+	if fail != nil {
+		return fail
+	}
+
+	// Ensure that the project exists and that we have access to it
+	project, fail := model.FetchProjectByName(ns.Owner, ns.Project)
+	if fail != nil && fail.Type.Matches(model.FailNoValidProject) && !authentication.Get().Authenticated() {
+		// If we can't find the project and we aren't authenticated we assume authentication is required
+		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			return fail
+		}
+		return activateFromNamespace(namespace)
+	} else if fail != nil {
+		return fail
+	}
+
+	branch, fail := model.DefaultBranchForProject(project)
+	if fail != nil {
+		return fail
+	}
+
+	var directory string
+	directory, fail = getDirByNameSpace(Flags.Path, namespace)
+	if fail != nil {
+		return fail
+	}
+
+	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
+		if project.RepoURL != nil {
+			fail = cloneProjectRepo(ns.Owner, ns.Project, directory, branch.CommitID)
+			if fail != nil {
+				return fail
+			}
+		} else {
+			fail = createProjectFile(ns.Owner, ns.Project, directory, branch.CommitID)
+			if fail != nil {
+				return fail
+			}
+		}
+	} else {
+		prj := getProjectFileByPath(directory)
+		if !strings.Contains(prj.URL(), namespace) {
+			return failTargetDirInUse.New(locale.Tr("err_namespace_and_project_do_not_match"))
+		}
+	}
+
+	projectfile.Reset()
+	err := os.Chdir(directory)
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
+}
+
+func getDirByNameSpace(path string, namespace string) (string, *failures.Failure) {
+	if Flags.Path != "" {
+		return Flags.Path, nil
+	}
+	// Change to already checked out project if it exists
+	projectPaths := getPathsForNamespace(namespace)
+	if len(projectPaths) > 0 {
+		confirmedPath, fail := confirmProjectPath(projectPaths)
+		if fail != nil {
+			return "", fail
+		}
+		if confirmedPath != nil {
+			return *confirmedPath, nil
+		}
+	}
+	return determineProjectPath(namespace)
+}
+
+func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := repo.CloneProject(org, name, directory)
+	if fail != nil {
+		return fail
+	}
+	_, err := os.Stat(filepath.Join(directory, constants.ConfigFileName))
+	if os.IsNotExist(err) {
+		fail = createProjectFile(org, name, directory, commitID)
+		if fail != nil {
+			return fail
+		}
+	} else if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
+}
+
+func getProjectFileByPath(path string) *project.Project {
+	if path != "" {
+		// CWD is used to return to the directory before retrieving the as.yaml
+		// file was initiated.
+		cwd, err := os.Getwd()
+		if err != nil {
+			failures.Handle(err, locale.Tr("err_activate_path", path))
+		}
+
+		if err := os.Chdir(path); err != nil {
+			failures.Handle(err, locale.Tr("err_activate_path", path))
+		}
+		defer func() {
+			logging.Debug("moving back to origin dir")
+			if err := os.Chdir(cwd); err != nil {
+				failures.Handle(err, locale.Tr("err_activate_path", path))
+			}
+		}()
+	}
+
+	prj, fail := project.GetOnce()
+	if fail != nil {
+		if fileutils.FailFindInPathNotFound.Matches(fail.Type) {
+			return nil
+		}
+	}
+	return prj
+}
+
+func activateProject() {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
@@ -145,72 +310,6 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 	}
 
 	print.Bold(locale.T("info_deactivated", proj))
-}
-
-// activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
-// to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
-func activateFromNamespace(namespace string) *failures.Failure {
-	rx := regexp.MustCompile(NamespaceRegex)
-	groups := rx.FindStringSubmatch(namespace)
-	if len(groups) != 3 {
-		return failInvalidNamespace.New(locale.Tr("err_invalid_namespace", namespace))
-	}
-
-	org := groups[1]
-	name := groups[2]
-
-	// Ensure that the project exists and that we have access to it
-	project, fail := model.FetchProjectByName(org, name)
-	if fail != nil {
-		return fail
-	}
-
-	branch, fail := model.DefaultBranchForProject(project)
-	if fail != nil {
-		return fail
-	}
-	commitID := branch.CommitID
-
-	languages, fail := model.FetchLanguagesForBranch(branch)
-	if fail != nil {
-		return fail
-	}
-
-	var directory string
-
-	// Change to already checked out project if it exists
-	projectPaths := getPathsForNamespace(namespace)
-	if len(projectPaths) > 0 {
-		confirmedPath, fail := confirmProjectPath(projectPaths)
-		if fail != nil {
-			return fail
-		}
-		if confirmedPath != nil {
-			directory = *confirmedPath
-		}
-	}
-
-	// Otherwise ask the user for the directory
-	if directory == "" {
-		// Determine where to create our project
-		directory, fail = determineProjectPath(namespace)
-		if fail != nil {
-			return fail
-		}
-
-		// Actually create the project
-		fail = createProject(org, name, commitID, languages, directory)
-		if fail != nil {
-			return fail
-		}
-	}
-
-	projectfile.Reset()
-	err := os.Chdir(directory)
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-	return nil
 }
 
 // savePathForNamespace saves a new path for the given namespace, so the state tool is aware of locations where this
@@ -235,11 +334,10 @@ func getPathsForNamespace(namespace string) []string {
 	return paths
 }
 
-// createProject will create a project file (activestate.yaml) at the given location
-func createProject(org, project string, commitID *strfmt.UUID, languages []string, directory string) *failures.Failure {
-	err := os.MkdirAll(directory, 0755)
-	if err != nil {
-		return failures.FailUserInput.Wrap(err)
+func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := fileutils.MkdirUnlessExists(directory)
+	if fail != nil {
+		return fail
 	}
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
@@ -247,7 +345,7 @@ func createProject(org, project string, commitID *strfmt.UUID, languages []strin
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
 
-	_, fail := projectfile.Create(projectURL, directory)
+	_, fail = projectfile.Create(projectURL, directory)
 	if fail != nil {
 		return fail
 	}
@@ -294,13 +392,57 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	return nil, nil
 }
 
+func promptCreateProjectIfNecessary(cmd *cobra.Command, args []string) *failures.Failure {
+	proj := project.Get()
+	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
+	if fail == nil || !fail.Type.Matches(model.FailNoValidProject) {
+		return fail
+	}
+
+	// If we can't find the project and we aren't authenticated we should first authenticate before continuing
+	if !authentication.Get().Authenticated() {
+		fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			return fail
+		}
+		return promptCreateProjectIfNecessary(cmd, args)
+	}
+
+	if api.FailProjectNotFound.Matches(fail.Type) || model.FailNoValidProject.Matches(fail.Type) {
+		create, fail := prompter.Confirm(locale.Tr("state_activate_prompt_create_project", proj.Name(), proj.Owner()), false)
+		if fail != nil {
+			return fail
+		}
+		if create {
+			CopyExecute(cmd, args)
+		} else {
+			return failures.FailUserInput.New(locale.T("err_must_create_project"))
+		}
+	} else {
+		return fail
+	}
+
+	return nil
+}
+
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
 func activate(owner, name, srcPath string) bool {
+	// Ensure that the project exists and that we have access to it
+	_, fail := model.FetchProjectByName(owner, name)
+	if fail != nil && fail.Type.Matches(model.FailNoValidProject) {
+		// If we can't find the project and we aren't authenticated we assume authentication is required
+		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_activate_auth_required"))
+			return false
+		}
+	}
+
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
-	fail := venv.Activate()
+	fail = venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
 		return false
@@ -317,7 +459,7 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	if flag.Lookup("test.v") != nil {
+	if condition.InTest() {
 		return false
 	}
 
