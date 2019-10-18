@@ -24,12 +24,14 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	gitMock "github.com/ActiveState/cli/pkg/cmdlets/git/mock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	rMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -41,6 +43,7 @@ type ActivateTestSuite struct {
 	apiMock    *apiMock.Mock
 	rMock      *rMock.Mock
 	promptMock *promptMock.Mock
+	gitMock    *gitMock.Mock
 	dir        string
 	origDir    string
 }
@@ -58,7 +61,9 @@ func (suite *ActivateTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock = apiMock.Init()
 	suite.rMock = rMock.Init()
 	suite.promptMock = promptMock.Init()
+	suite.gitMock = gitMock.Init()
 	prompter = suite.promptMock
+	repo = suite.gitMock
 
 	var err error
 
@@ -96,6 +101,7 @@ func (suite *ActivateTestSuite) AfterTest(suiteName, testName string) {
 	suite.apiMock.Close()
 	suite.rMock.Close()
 	suite.promptMock.Close()
+	suite.gitMock.Close()
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
@@ -127,12 +133,14 @@ func (suite *ActivateTestSuite) TestExecute() {
 
 func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *projectfile.Project {
 	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoRepo()
 
 	if !withLang {
 		gmock := suite.rMock.GraphMock
 		gmock.Reset()
 		gmock.ProjectByOrgAndName(graphMock.NoOptions)
 		gmock.NoCheckpoint(graphMock.NoOptions)
+		suite.apiMock.MockGetProjectNoRepoNoLanguage()
 	}
 
 	targetDir := filepath.Join(suite.dir, ProjectNamespace)
@@ -156,6 +164,7 @@ func (suite *ActivateTestSuite) testExecuteWithNamespace(withLang bool) *project
 
 func (suite *ActivateTestSuite) TestPathFlagWithNamespace() {
 	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoRepo()
 	suite.authMock.MockLoggedin()
 
 	Cc := Command.GetCobraCmd()
@@ -225,6 +234,7 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 	gmock.Reset()
 	gmock.ProjectByOrgAndName(graphMock.NoOptions)
 	gmock.NoCheckpoint(graphMock.NoOptions)
+	suite.apiMock.MockGetProjectNoRepoNoLanguage()
 
 	targetDirOrig := filepath.Join(suite.dir, ProjectNamespace)
 	suite.promptMock.OnMethod("Input").Once().Return(targetDirOrig, nil)
@@ -260,7 +270,30 @@ func (suite *ActivateTestSuite) TestActivateFromNamespaceDontUseExisting() {
 
 func (suite *ActivateTestSuite) TestActivateFromNamespaceInvalidNamespace() {
 	fail := activateFromNamespace("foo")
-	suite.Equal(failInvalidNamespace.Name, fail.Type.Name)
+	suite.Equal(project.FailInvalidNamespace.Name, fail.Type.Name)
+}
+
+func (suite *ActivateTestSuite) TestActivateNamespaceCloneProjectRepo() {
+	suite.rMock.MockFullRuntime()
+	suite.apiMock.MockGetProjectNoLanguage()
+
+	targetDir := filepath.Join(suite.dir, ProjectNamespace)
+	suite.promptMock.OnMethod("Input").Return(targetDir, nil)
+	suite.gitMock.OnMethod("CloneProject").Return(nil)
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	err := Command.Execute()
+	suite.Require().NoError(err)
+
+	suite.Equal(true, true, "Execute didn't panic")
+	suite.NoError(failures.Handled(), "No failure occurred")
+
+	configFile := filepath.Join(targetDir, constants.ConfigFileName)
+	suite.FileExists(configFile)
+	pjfile, fail := projectfile.Parse(configFile)
+	suite.Require().NoError(fail.ToError())
+	suite.Require().Equal("https://platform.activestate.com/example-org/example-proj?commitID=00010001-0001-0001-0001-000100010001", pjfile.Project, "Project field should have been populated properly.")
 }
 
 // lfrValOk calls listenForReactivation in such a way that we can be sure it

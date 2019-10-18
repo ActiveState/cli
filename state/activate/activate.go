@@ -6,13 +6,13 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,6 +34,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -45,15 +46,16 @@ var (
 	failTargetDirInUse   = failures.Type("activate.fail.dirinuse", failures.FailUserInput)
 )
 
-// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
-const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
-
 var branchName = constants.BranchName
 
-var prompter prompt.Prompter
+var (
+	prompter prompt.Prompter
+	repo     git.Repository
+)
 
 func init() {
 	prompter = prompt.New()
+	repo = git.NewRepo()
 }
 
 // Command holds our main command definition
@@ -155,7 +157,7 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fail := promptCreateProject(cmd, args)
+	fail := promptCreateProjectIfNecessary(cmd, args)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_create_project"))
 		return
@@ -167,26 +169,46 @@ func ExistingExecute(cmd *cobra.Command, args []string) {
 // activateFromNamespace will try to find a relevant local checkout for the given namespace, or otherwise prompt the user
 // to create one. Once that is done it changes directory to the checkout and defers activation back to the main execution handler.
 func activateFromNamespace(namespace string) *failures.Failure {
-	rx := regexp.MustCompile(NamespaceRegex)
-	groups := rx.FindStringSubmatch(namespace)
-	if len(groups) != 3 {
-		return failInvalidNamespace.New(locale.Tr("err_invalid_namespace", namespace))
+	ns, fail := project.ParseNamespace(namespace)
+	if fail != nil {
+		return fail
 	}
 
-	org := groups[1]
-	name := groups[2]
+	// Ensure that the project exists and that we have access to it
+	project, fail := model.FetchProjectByName(ns.Owner, ns.Project)
+	if fail != nil && fail.Type.Matches(model.FailNoValidProject) && !authentication.Get().Authenticated() {
+		// If we can't find the project and we aren't authenticated we assume authentication is required
+		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
+		if fail != nil {
+			return fail
+		}
+		return activateFromNamespace(namespace)
+	} else if fail != nil {
+		return fail
+	}
+
+	branch, fail := model.DefaultBranchForProject(project)
+	if fail != nil {
+		return fail
+	}
 
 	var directory string
-	directory, fail := getDirByNameSpace(Flags.Path, namespace)
+	directory, fail = getDirByNameSpace(Flags.Path, namespace)
 	if fail != nil {
 		return fail
 	}
 
 	if _, err := os.Stat(filepath.Join(directory, constants.ConfigFileName)); err != nil {
-		// If not actually create the project
-		fail = createProjectFile(org, name, directory)
-		if fail != nil {
-			return fail
+		if project.RepoURL != nil {
+			fail = cloneProjectRepo(ns.Owner, ns.Project, directory, branch.CommitID)
+			if fail != nil {
+				return fail
+			}
+		} else {
+			fail = createProjectFile(ns.Owner, ns.Project, directory, branch.CommitID)
+			if fail != nil {
+				return fail
+			}
 		}
 	} else {
 		prj := getProjectFileByPath(directory)
@@ -219,6 +241,24 @@ func getDirByNameSpace(path string, namespace string) (string, *failures.Failure
 		}
 	}
 	return determineProjectPath(namespace)
+}
+
+func cloneProjectRepo(org, name, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := repo.CloneProject(org, name, directory)
+	if fail != nil {
+		return fail
+	}
+	_, err := os.Stat(filepath.Join(directory, constants.ConfigFileName))
+	if os.IsNotExist(err) {
+		fail = createProjectFile(org, name, directory, commitID)
+		if fail != nil {
+			return fail
+		}
+	} else if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
 }
 
 func getProjectFileByPath(path string) *project.Project {
@@ -294,33 +334,13 @@ func getPathsForNamespace(namespace string) []string {
 	return paths
 }
 
-// createProjectFile will create a project file (activestate.yaml) at the given location
-func createProjectFile(org, name string, directory string) *failures.Failure {
-	// Ensure that the project exists and that we have access to it
-	project, fail := model.FetchProjectByName(org, name)
-	if fail != nil && fail.Type.Matches(model.FailNoValidProject) && !authentication.Get().Authenticated() {
-		// If we can't find the project and we aren't authenticated we assume authentication is required
-		fail = auth.RequireAuthentication(locale.T("auth_required_activate"))
-		if fail != nil {
-			return fail
-		}
-		return createProjectFile(org, name, directory)
-	} else if fail != nil {
-		return fail
-	}
-
-	branch, fail := model.DefaultBranchForProject(project)
+func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *failures.Failure {
+	fail := fileutils.MkdirUnlessExists(directory)
 	if fail != nil {
 		return fail
 	}
-	commitID := branch.CommitID
 
-	err := os.MkdirAll(directory, 0755)
-	if err != nil {
-		return failures.FailUserInput.Wrap(err)
-	}
-
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, name)
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
 	if commitID != nil {
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
@@ -372,7 +392,7 @@ func confirmProjectPath(projectPaths []string) (confirmedPath *string, fail *fai
 	return nil, nil
 }
 
-func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
+func promptCreateProjectIfNecessary(cmd *cobra.Command, args []string) *failures.Failure {
 	proj := project.Get()
 	_, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
 	if fail == nil || !fail.Type.Matches(model.FailNoValidProject) {
@@ -385,7 +405,7 @@ func promptCreateProject(cmd *cobra.Command, args []string) *failures.Failure {
 		if fail != nil {
 			return fail
 		}
-		return promptCreateProject(cmd, args)
+		return promptCreateProjectIfNecessary(cmd, args)
 	}
 
 	if api.FailProjectNotFound.Matches(fail.Type) || model.FailNoValidProject.Matches(fail.Type) {

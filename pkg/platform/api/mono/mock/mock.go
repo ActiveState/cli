@@ -36,6 +36,36 @@ func (m *Mock) MockSignS3URI() {
 	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Flegacy-python"+ext, 200, "s3/sign/legacy-python"+ext+".json")
 }
 
+// MockGetProject registers mocks for project "string" and a VCS checkpoint
+func (m *Mock) MockGetProject() {
+	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
+}
+
+// MockGetProjectNoLanguage returns a mock returning a project without a language set
+func (m *Mock) MockGetProjectNoLanguage() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-language")
+}
+
+// MockGetProjectNoRepo returns a mock returning a project without a repo association
+func (m *Mock) MockGetProjectNoRepo() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo.json")
+}
+
+// MockGetProjectNoRepoNoLanguage returns a mock returning a project with no repo or language association
+func (m *Mock) MockGetProjectNoRepoNoLanguage() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo-no-language.json")
+}
+
+// MockGetProjectDiffCommit registers a mock returning a project with a commit history
+func (m *Mock) MockGetProjectDiffCommit() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-diff-commit")
+}
+
+// MockGetProject404 registers a mock for a request for a non-existent project
+func (m *Mock) MockGetProject404() {
+	m.httpmock.RegisterWithCode("GET", "/organizations/string/projects/string", 404)
+}
+
 // MockGetOrganizations registers a mock returning organizations
 func (m *Mock) MockGetOrganizations() {
 	httpmock.RegisterWithCode("GET", "/organizations", 200)
