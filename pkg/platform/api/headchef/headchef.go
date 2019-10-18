@@ -63,14 +63,15 @@ func NewRequest(apiSetting api.Settings) *Request {
 func (r *Request) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
 	buildStatus := NewBuildStatus()
 
-	go r.run(buildRequest, buildStatus)
+	go func() {
+		defer buildStatus.Close()
+		r.run(buildRequest, buildStatus)
+	}()
 
 	return buildStatus
 }
 
 func (r *Request) run(buildRequest *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
-	defer buildStatus.Close()
-
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildRequest,
