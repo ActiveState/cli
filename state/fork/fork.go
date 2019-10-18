@@ -48,12 +48,19 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Organization,
 		},
+		&commands.Flag{
+			Name:        "private",
+			Description: "flag_state_fork_private_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.Private,
+		},
 	},
 }
 
 // Flags hold the arg values passed through the command line
 var Flags struct {
 	Organization string
+	Private      bool
 }
 
 // Args holds the values passed through the command line
@@ -178,6 +185,7 @@ func editProjectDetails(originalOwner, newOwner, name string) *failures.Failure 
 			Organization: originalOwner,
 			Project:      name,
 		},
+		Private: Flags.Private,
 	}
 	editParams.SetProject(updates)
 	editParams.SetOrganizationName(newOwner)
