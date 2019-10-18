@@ -100,3 +100,15 @@ func (m *Mock) ProjectByOrgAndName(options Options) {
 func (m *Mock) ProjectByOrgAndNameNoCommits(options Options) {
 	m.responders = append(m.responders, NewResponder(request.ProjectByOrgAndName("", "").Query(), "ProjectNoCommits", options))
 }
+
+func (m *Mock) Checkpoint(options Options) {
+	m.responders = append(m.responders, NewResponder(request.CheckpointByCommit("").Query(), "Checkpoint", options))
+}
+
+func (m *Mock) CheckpointWithPrePlatform(options Options) {
+	m.responders = append(m.responders, NewResponder(request.CheckpointByCommit("").Query(), "CheckpointPrePlatform", options))
+}
+
+func (m *Mock) NoCheckpoint(options Options) {
+	m.responders = append(m.responders, NewResponder(request.CheckpointByCommit("").Query(), "NoCheckpoint", options))
+}
