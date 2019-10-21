@@ -23,7 +23,7 @@ import (
 
 var (
 	// FailNoCredentials is the failure type used when trying to authenticate without credentials
-	FailNoCredentials = failures.Type("authentication.fail.nocredentials")
+	FailNoCredentials = failures.Type("authentication.fail.nocredentials", failures.FailUserInput)
 
 	// FailAuthAPI identifies a failure due to the auth api call
 	FailAuthAPI = failures.Type("authentication.fail.api", api.FailUnknown)
