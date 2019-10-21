@@ -55,7 +55,7 @@ func NewBuildStatusClient(apiURL *url.URL) *BuildStatusClient {
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
-	transportRuntime.SetDebug(true)
+	//transportRuntime.SetDebug(true)
 
 	return &BuildStatusClient{
 		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
