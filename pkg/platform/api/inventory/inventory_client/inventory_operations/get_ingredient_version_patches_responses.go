@@ -51,10 +51,10 @@ func NewGetIngredientVersionPatchesOK() *GetIngredientVersionPatchesOK {
 
 /*GetIngredientVersionPatchesOK handles this case with default header values.
 
-A paginated list of patches
+A paginated list of patches for this ingredient version
 */
 type GetIngredientVersionPatchesOK struct {
-	Payload *inventory_models.V1PatchPagedList
+	Payload *inventory_models.V1IngredientVersionPatchPagedList
 }
 
 func (o *GetIngredientVersionPatchesOK) Error() string {
@@ -63,7 +63,7 @@ func (o *GetIngredientVersionPatchesOK) Error() string {
 
 func (o *GetIngredientVersionPatchesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.V1PatchPagedList)
+	o.Payload = new(inventory_models.V1IngredientVersionPatchPagedList)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

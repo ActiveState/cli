@@ -21,12 +21,8 @@ import (
 // swagger:model v1RecipeResponseRecipesItems
 type V1RecipeResponseRecipesItems struct {
 
-	// Build options that are passed to the build engine
-	// Unique: true
-	BuildOptions []*V1RecipeResponseRecipesItemsBuildOptionsItems `json:"build_options"`
-
 	// Camel-specific flags for controlling the build.
-	CamelFlags interface{} `json:"camel_flags,omitempty"`
+	CamelFlags []string `json:"camel_flags"`
 
 	// image
 	// Required: true
@@ -52,10 +48,6 @@ type V1RecipeResponseRecipesItems struct {
 func (m *V1RecipeResponseRecipesItems) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateBuildOptions(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateImage(formats); err != nil {
 		res = append(res, err)
 	}
@@ -75,35 +67,6 @@ func (m *V1RecipeResponseRecipesItems) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1RecipeResponseRecipesItems) validateBuildOptions(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.BuildOptions) { // not required
-		return nil
-	}
-
-	if err := validate.UniqueItems("build_options", "body", m.BuildOptions); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.BuildOptions); i++ {
-		if swag.IsZero(m.BuildOptions[i]) { // not required
-			continue
-		}
-
-		if m.BuildOptions[i] != nil {
-			if err := m.BuildOptions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("build_options" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 

@@ -21,12 +21,8 @@ import (
 // swagger:model v1Order
 type V1Order struct {
 
-	// Build options that are passed to the build engine
-	// Unique: true
-	BuildOptions []*V1OrderBuildOptionsItems `json:"build_options"`
-
 	// Camel-specific flags for controlling the build.
-	CamelFlags interface{} `json:"camel_flags,omitempty"`
+	CamelFlags []string `json:"camel_flags"`
 
 	// Order UUID, supplied by client to be copied to all resulting recipes
 	// Required: true
@@ -35,7 +31,6 @@ type V1Order struct {
 
 	// List of platform IDs for the order
 	// Required: true
-	// Min Items: 1
 	// Unique: true
 	Platforms []strfmt.UUID `json:"platforms"`
 
@@ -53,10 +48,6 @@ type V1Order struct {
 // Validate validates this v1 order
 func (m *V1Order) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateBuildOptions(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateOrderID(formats); err != nil {
 		res = append(res, err)
@@ -80,35 +71,6 @@ func (m *V1Order) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *V1Order) validateBuildOptions(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.BuildOptions) { // not required
-		return nil
-	}
-
-	if err := validate.UniqueItems("build_options", "body", m.BuildOptions); err != nil {
-		return err
-	}
-
-	for i := 0; i < len(m.BuildOptions); i++ {
-		if swag.IsZero(m.BuildOptions[i]) { // not required
-			continue
-		}
-
-		if m.BuildOptions[i] != nil {
-			if err := m.BuildOptions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("build_options" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
 func (m *V1Order) validateOrderID(formats strfmt.Registry) error {
 
 	if err := validate.Required("order_id", "body", m.OrderID); err != nil {
@@ -125,12 +87,6 @@ func (m *V1Order) validateOrderID(formats strfmt.Registry) error {
 func (m *V1Order) validatePlatforms(formats strfmt.Registry) error {
 
 	if err := validate.Required("platforms", "body", m.Platforms); err != nil {
-		return err
-	}
-
-	iPlatformsSize := int64(len(m.Platforms))
-
-	if err := validate.MinItems("platforms", "body", iPlatformsSize, 1); err != nil {
 		return err
 	}
 

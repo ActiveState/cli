@@ -13,9 +13,9 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1 v1 recipe response recipes items resolved ingredients items patches items all of1
-// swagger:model v1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1
-type V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1 struct {
+// V1IngredientVersionPatchPagedListPatchesItemsAllOf1 v1 ingredient version patch paged list patches items all of1
+// swagger:model v1IngredientVersionPatchPagedListPatchesItemsAllOf1
+type V1IngredientVersionPatchPagedListPatchesItemsAllOf1 struct {
 
 	// sequence number
 	// Required: true
@@ -23,8 +23,8 @@ type V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1 stru
 	SequenceNumber *int64 `json:"sequence_number"`
 }
 
-// Validate validates this v1 recipe response recipes items resolved ingredients items patches items all of1
-func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1) Validate(formats strfmt.Registry) error {
+// Validate validates this v1 ingredient version patch paged list patches items all of1
+func (m *V1IngredientVersionPatchPagedListPatchesItemsAllOf1) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSequenceNumber(formats); err != nil {
@@ -37,7 +37,7 @@ func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1)
 	return nil
 }
 
-func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1) validateSequenceNumber(formats strfmt.Registry) error {
+func (m *V1IngredientVersionPatchPagedListPatchesItemsAllOf1) validateSequenceNumber(formats strfmt.Registry) error {
 
 	if err := validate.Required("sequence_number", "body", m.SequenceNumber); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1)
 }
 
 // MarshalBinary interface implementation
-func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1) MarshalBinary() ([]byte, error) {
+func (m *V1IngredientVersionPatchPagedListPatchesItemsAllOf1) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -59,8 +59,8 @@ func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1)
 }
 
 // UnmarshalBinary interface implementation
-func (m *V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1) UnmarshalBinary(b []byte) error {
-	var res V1RecipeResponseRecipesItemsResolvedIngredientsItemsPatchesItemsAllOf1
+func (m *V1IngredientVersionPatchPagedListPatchesItemsAllOf1) UnmarshalBinary(b []byte) error {
+	var res V1IngredientVersionPatchPagedListPatchesItemsAllOf1
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

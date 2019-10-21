@@ -58,7 +58,7 @@ type GetNamespaceIngredientsOK struct {
 }
 
 func (o *GetNamespaceIngredientsOK) Error() string {
-	return fmt.Sprintf("[GET /v1/namespaces/{namespace}/ingredients][%d] getNamespaceIngredientsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredientsOK  %+v", 200, o.Payload)
 }
 
 func (o *GetNamespaceIngredientsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -96,7 +96,7 @@ func (o *GetNamespaceIngredientsDefault) Code() int {
 }
 
 func (o *GetNamespaceIngredientsDefault) Error() string {
-	return fmt.Sprintf("[GET /v1/namespaces/{namespace}/ingredients][%d] getNamespaceIngredients default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /v1/namespaces/ingredients][%d] getNamespaceIngredients default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *GetNamespaceIngredientsDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -311,9 +311,13 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 
 	}
 
-	// path param namespace
-	if err := r.SetPathParam("namespace", o.Namespace); err != nil {
-		return err
+	// query param namespace
+	qrNamespace := o.Namespace
+	qNamespace := qrNamespace
+	if qNamespace != "" {
+		if err := r.SetQueryParam("namespace", qNamespace); err != nil {
+			return err
+		}
 	}
 
 	if o.OrganizationID != nil {

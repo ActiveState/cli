@@ -23,7 +23,7 @@ type V1IngredientVersionRevisionCreateAllOf0 struct {
 	BuildScripts []strfmt.UUID `json:"build_scripts"`
 
 	// The patch(es) applied to this ingredient version's source code, referenced by their patch ID.
-	Patches []strfmt.UUID `json:"patches"`
+	Patches []*V1IngredientVersionRevisionCreateAllOf0PatchesItems `json:"patches"`
 }
 
 // Validate validates this v1 ingredient version revision create all of0
@@ -68,9 +68,17 @@ func (m *V1IngredientVersionRevisionCreateAllOf0) validatePatches(formats strfmt
 	}
 
 	for i := 0; i < len(m.Patches); i++ {
+		if swag.IsZero(m.Patches[i]) { // not required
+			continue
+		}
 
-		if err := validate.FormatOf("patches"+"."+strconv.Itoa(i), "body", "uuid", m.Patches[i].String(), formats); err != nil {
-			return err
+		if m.Patches[i] != nil {
+			if err := m.Patches[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
 		}
 
 	}
