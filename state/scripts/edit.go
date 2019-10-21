@@ -25,7 +25,7 @@ import (
 const (
 	openCmdLin       = "xdg-open"
 	openCmdMac       = "open"
-	defaultEditorWin = "notepad"
+	defaultEditorWin = "notepad.exe"
 )
 
 var (
@@ -149,7 +149,7 @@ func openEditor(filename string) *failures.Failure {
 	subCmd.Stdout = os.Stdout
 	subCmd.Stderr = os.Stderr
 
-	if runtime.GOOS == "windows" && editorCmd == defaultEditorWin {
+	if runtime.GOOS == "windows" && strings.Contains(editorCmd, defaultEditorWin) {
 		err := subCmd.Start()
 		if err != nil {
 			return failures.FailCmd.Wrap(err)
