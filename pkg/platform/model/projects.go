@@ -19,7 +19,7 @@ import (
 
 var (
 	// FailNoValidProject is a failure for the call api.GetProject
-	FailNoValidProject = failures.Type("model.fail.novalidproject")
+	FailNoValidProject = failures.Type("model.fail.novalidproject", failures.FailUser)
 
 	// FailNoDefaultBranch is a failure in getting a project's default branch
 	FailNoDefaultBranch = failures.Type("model.fail.nodefaultbranch")
