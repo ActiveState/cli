@@ -14,9 +14,7 @@ import (
 func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
-	personal := false
 	params.SetMemberOnly(&memberOnly)
-	params.SetPersonal(&personal)
 	res, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 
 	if err != nil {
