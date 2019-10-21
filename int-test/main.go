@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer c.Close()
 
 	cmd := exec.Command("./build/state", "auth")
 	cmd.Stdin = c.Tty()

@@ -7,7 +7,7 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
-	github.com/ActiveState/survey v1.8.6-0.20190605204944-52b0b1a6a534
+	github.com/ActiveState/survey v1.8.6-0.20190731165540-fcf53bc6dc3f
 	github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/Netflix/go-expect v0.0.0-20180615182759-c93bf25de8e8
@@ -54,6 +54,8 @@ require (
 	github.com/magiconair/properties v1.7.4 // indirect
 	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
+	github.com/mattn/go-colorable v0.1.4 // indirect
+	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20170309133038-4fdf99ab2936
 	github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047 // indirect
@@ -84,8 +86,8 @@ require (
 	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+	golang.org/x/sys v0.0.0-20191020212454-3e7259c5e7c2 // indirect
 	google.golang.org/grpc v1.24.0 // indirect
-	gopkg.in/AlecAivazis/survey.v1 v1.8.7 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa
 	gopkg.in/ini.v1 v1.48.0 // indirect

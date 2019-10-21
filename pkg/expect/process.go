@@ -2,16 +2,21 @@ package expect
 
 import (
 	"io"
+	"log"
 	"os"
 	"os/exec"
 
 	"github.com/ActiveState/cli/internal/osutils"
+	ptyexpect "github.com/Netflix/go-expect"
+	"github.com/hinshun/vt10x"
 )
 
 type Process struct {
 	// Process
-	cmd *exec.Cmd
-	pty *os.File
+	cmd     *exec.Cmd
+	console *ptyexpect.Console
+	state   *vt10x.State
+	logfile *os.File
 
 	// Event handlers
 	onOutput func([]byte)
@@ -41,21 +46,15 @@ func NewProcess(name string, args ...string) *Process {
 		onStdout: func([]byte) {},
 		onStderr: func([]byte) {},
 	}
+
+	err := p.setupPTY()
+	if err != nil {
+		log.Fatalf("Could not spawn a PTY: %v", err)
+	}
 	p.setupStdin()
 	p.setupStdout()
 	p.setupStderr()
 	return p
-}
-
-func (p *Process) setupStderr() {
-	errWriter := NewStdWriter()
-	errWriter.OnWrite(func(data []byte) {
-		p.stderr = p.stderr + string(data)
-		p.combined = p.combined + string(data)
-		p.onOutput(data)
-		p.onStderr(data)
-	})
-	p.cmd.Stderr = errWriter
 }
 
 func (p *Process) SetEnv(env []string) {

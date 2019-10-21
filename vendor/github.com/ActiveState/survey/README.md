@@ -1,7 +1,7 @@
 # Survey
 
 [![Build Status](https://travis-ci.org/AlecAivazis/survey.svg?branch=feature%2Fpretty)](https://travis-ci.org/AlecAivazis/survey)
-[![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg)](https://godoc.org/gopkg.in/AlecAivazis/survey.v1)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-5272B4.svg)](https://godoc.org/github.com/ActiveState/survey)
 
 A library for building interactive prompts. 
 
@@ -12,7 +12,7 @@ package main
 
 import (
     "fmt"
-    "gopkg.in/AlecAivazis/survey.v1"
+    "github.com/ActiveState/survey"
 )
 
 // the questions to ask
@@ -82,9 +82,9 @@ Examples can be found in the `examples/` directory. Run them
 to see basic behavior:
 
 ```bash
-go get gopkg.in/AlecAivazis/survey.v1
+go get github.com/ActiveState/survey
 
-cd $GOPATH/src/gopkg.in/AlecAivazis/survey.v1
+cd $GOPATH/src/github.com/ActiveState/survey
 
 go run examples/simple.go
 go run examples/validation.go
@@ -270,8 +270,8 @@ looks for by setting the `HelpInputRune` variable in `survey/core`:
 
 ```golang
 import (
-    "gopkg.in/AlecAivazis/survey.v1"
-    surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
+    "github.com/ActiveState/survey"
+    surveyCore "github.com/ActiveState/survey/core"
 )
 
 number := ""
@@ -337,7 +337,7 @@ to maintain those releases. Importing version 1 of survey would look like:
 ```golang
 package main
 
-import "gopkg.in/AlecAivazis/survey.v1"
+import "github.com/ActiveState/survey"
 ```
 
 ## Testing

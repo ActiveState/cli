@@ -6,7 +6,7 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
 github.com/ActiveState/state-required/require
-# github.com/ActiveState/survey v1.8.6-0.20190605204944-52b0b1a6a534
+# github.com/ActiveState/survey v1.8.6-0.20190731165540-fcf53bc6dc3f
 github.com/ActiveState/survey
 github.com/ActiveState/survey/core
 github.com/ActiveState/survey/terminal
@@ -150,9 +150,9 @@ github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
 # github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 github.com/mash/go-tempfile-suffix
-# github.com/mattn/go-colorable v0.0.9
+# github.com/mattn/go-colorable v0.1.4
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.3
+# github.com/mattn/go-isatty v0.0.10
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
@@ -232,7 +232,7 @@ golang.org/x/crypto/ssh/terminal
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
-# golang.org/x/sys v0.0.0-20190904154756-749cb33beabd
+# golang.org/x/sys v0.0.0-20191020212454-3e7259c5e7c2
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry

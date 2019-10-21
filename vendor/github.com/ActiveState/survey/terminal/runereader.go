@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"bytes"
 	"fmt"
 	"unicode"
 )
@@ -8,7 +9,7 @@ import (
 type RuneReader struct {
 	stdio  Stdio
 	cursor *Cursor
-	state  runeReaderState
+	state  RuneReaderState
 }
 
 func NewRuneReader(stdio Stdio) *RuneReader {
@@ -16,6 +17,13 @@ func NewRuneReader(stdio Stdio) *RuneReader {
 		stdio: stdio,
 		state: newRuneReaderState(stdio.In),
 	}
+}
+
+type RuneReaderState interface {
+	Buffer() *bytes.Buffer
+	SetTermMode() error
+	RestoreTermMode() error
+	ReadRune() (rune, int, error)
 }
 
 func (rr *RuneReader) printChar(char rune, mask rune) {
@@ -40,13 +48,13 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 	}
 
 	// we get the terminal width and height (if resized after this point the property might become invalid)
-	terminalSize, _ := cursor.Size(rr.Buffer())
+	terminalSize, _ := cursor.Size(rr.state.Buffer())
 	// we set the current location of the cursor once
-	cursorCurrent, _ := cursor.Location(rr.Buffer())
+	cursorCurrent, _ := cursor.Location(rr.state.Buffer())
 
 	for {
 		// wait for some input
-		r, _, err := rr.ReadRune()
+		r, _, err := rr.state.ReadRune()
 		if err != nil {
 			return line, err
 		}
@@ -302,7 +310,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				cursor.Restore()
 			}
 			// check if cursor needs to move to next line
-			cursorCurrent, _ = cursor.Location(rr.Buffer())
+			cursorCurrent, _ = cursor.Location(rr.state.Buffer())
 			if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
 				cursor.NextLine(1)
 			} else {
@@ -313,4 +321,16 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 
 		}
 	}
+}
+
+func (rr *RuneReader) SetTermMode() error {
+	return rr.state.SetTermMode()
+}
+
+func (rr *RuneReader) RestoreTermMode() error {
+	return rr.state.RestoreTermMode()
+}
+
+func (rr *RuneReader) ReadRune() (rune, int, error) {
+	return rr.state.ReadRune()
 }
