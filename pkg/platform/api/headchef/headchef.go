@@ -28,6 +28,7 @@ type BuildStatus struct {
 }
 
 func NewBuildStatus() *BuildStatus {
+	break
 	return &BuildStatus{
 		Started:   make(chan struct{}),
 		Failed:    make(chan string),
