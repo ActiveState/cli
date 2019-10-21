@@ -47,11 +47,16 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
-		if rrErr, ok := err.(*inventory_operations.ResolveRecipesDefault); ok {
+		switch rrErr := err.(type) {
+		case *inventory_operations.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
 			return nil, FailOrderRecipes.New(msg)
+		case *inventory_operations.ResolveRecipesBadRequest:
+			msg := *rrErr.Payload.Message
+			return nil, FailOrderRecipes.New(msg)
+		default:
+			return nil, FailOrderRecipes.Wrap(err)
 		}
-		return nil, FailOrderRecipes.Wrap(err)
 	}
 
 	return recipe.Payload.Recipes, nil
