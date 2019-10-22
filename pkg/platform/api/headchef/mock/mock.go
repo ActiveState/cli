@@ -1,15 +1,8 @@
 package mock
 
 import (
-	"runtime"
-	"time"
-
-	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api"
 )
 
 type Mock struct {
@@ -18,7 +11,7 @@ type Mock struct {
 
 func Init() *Mock {
 	return &Mock{
-		httpmock.Activate(api.GetServiceURL(api.ServiceHeadChef).String())
+		httpmock.Activate(api.GetServiceURL(api.ServiceHeadChef).String()),
 	}
 }
 
