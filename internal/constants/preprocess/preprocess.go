@@ -36,7 +36,7 @@ func branchName() (string, string) {
 		if strings.Contains(branch, "/") {
 			return strings.Split(branch, "/")[1], branch
 		}
-		return branch, branch
+		return branch, "origin/" + branch
 	}
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
 		return branch, "origin/" + branch
@@ -66,6 +66,7 @@ func getCmdOutput(cmdString string) string {
 
 	if err != nil {
 		log.Fatalf("Command failed, command: %s, args: %v, output: %s, error: %s, code: %s", cmdArgs[0], cmdArgs[1:], out.String(), stderr.String(), err)
+		os.Exit(1)
 	}
 	return strings.Trim(out.String(), "\n")
 }
