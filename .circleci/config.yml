@@ -5,6 +5,7 @@ defaults:
       run:
         name: Prepare Environment
         command: |
+          set -e
           mkdir -p $TEST_RESULTS
           GOFLAGSTMP=$GOFLAGS
           GOFLAGS=""
@@ -43,6 +44,7 @@ defaults:
       run:
         name: Build the CLI
         command: |
+          set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
@@ -54,11 +56,14 @@ defaults:
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
-        command: state run integration-tests
+        command: |
+          set -e
+          state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
         command: |
+          set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             state run deploy-updates
