@@ -58,15 +58,26 @@ func Execute(cmd *cobra.Command, args []string) {
 
 func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 	type orgRaw struct {
-		Name string `json:"name,omitempty"`
-		Tier string `json:"tier,omitempty"`
+		Name            string `json:"name,omitempty"`
+		Tier            string `json:"tier,omitempty"`
+		PrivateProjects bool   `json:"privateProjects"`
+	}
+
+	tiers, fail := model.FetchTiers()
+	if fail != nil {
+		return nil, fail
+	}
+	tiersToPrivMap := make(map[string]bool)
+	for _, t := range tiers {
+		tiersToPrivMap[t.Name] = t.RequiresPayment
 	}
 
 	orgsRaw := make([]orgRaw, len(orgs))
 	for i, org := range orgs {
 		orgsRaw[i] = orgRaw{
-			Name: org.Name,
-			Tier: org.Tier,
+			Name:            org.Name,
+			Tier:            org.Tier,
+			PrivateProjects: tiersToPrivMap[org.Tier],
 		}
 	}
 

@@ -76,6 +76,11 @@ func (m *Mock) MockGetOrganization() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 200)
 }
 
+// MockGetTiers registers a mock returning the specific organization "string"
+func (m *Mock) MockGetTiers() {
+	httpmock.RegisterWithCode("GET", "/tiers", 200)
+}
+
 // MockGetOrganization401 registers a mock for an organization request when we are not authenticated
 func (m *Mock) MockGetOrganization401() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 401)

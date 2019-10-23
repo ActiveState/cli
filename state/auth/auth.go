@@ -121,7 +121,7 @@ func userToJSON(username string) ([]byte, *failures.Failure) {
 	type userJSON struct {
 		Username        string `json:"username,omitempty"`
 		Tier            string `json:"tier,omitempty"`
-		PrivateProjects bool   `json:"privateProjects,omitempty"`
+		PrivateProjects bool   `json:"privateProjects"`
 	}
 
 	organization, fail := model.FetchOrgByURLName(username)
@@ -129,10 +129,15 @@ func userToJSON(username string) ([]byte, *failures.Failure) {
 		return nil, fail
 	}
 
+	tiers, fail := model.FetchTiers()
+	if fail != nil {
+		return nil, fail
+	}
+
 	tier := organization.Tier
 	privateProjects := false
-	if tier != "free" {
-		privateProjects = true
+	for _, t := range tiers {
+		privateProjects = (tier == t.Name && t.RequiresPayment)
 	}
 
 	userJ := userJSON{username, tier, privateProjects}
