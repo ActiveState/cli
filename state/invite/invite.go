@@ -216,7 +216,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	organization, fail := model.FetchOrgByURLName(orgName)
 	if fail != nil {
-		failures.Handle(fail, locale.Tr("invite_fetch_org_err", orgName))
+		failures.Handle(fail, locale.Tr("fetch_org_err", orgName))
 		return
 	}
 

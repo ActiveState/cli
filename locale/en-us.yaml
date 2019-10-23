@@ -265,6 +265,10 @@ signup_success:
   other: Your account has been registered and a confirmation email has been sent to {{.Email}}, your account will have limited permissions until you confirm it.
 login_cancelled:
   other: Authentication Cancelled
+login_err_output:
+  other: Failed to display user output
+fetch_org_err:
+  other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
   other: Fork an existing platform project
 flag_state_fork_org_description:
@@ -307,8 +311,6 @@ org_role_choice_member:
   other: Member (can only edit projects)
 invite_description:
   other: Invite new members to an organization
-invite_fetch_org_err:
-  other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 invite_flag_organization_description:
   other: "Organization to invite to. If not set, invite to current project's organization"
 invite_flag_role_description:

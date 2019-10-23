@@ -59,12 +59,14 @@ func Execute(cmd *cobra.Command, args []string) {
 func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 	type orgRaw struct {
 		Name string `json:"name,omitempty"`
+		Tier string `json:"tier,omitempty"`
 	}
 
 	orgsRaw := make([]orgRaw, len(orgs))
 	for i, org := range orgs {
 		orgsRaw[i] = orgRaw{
 			Name: org.Name,
+			Tier: org.Tier,
 		}
 	}
 
