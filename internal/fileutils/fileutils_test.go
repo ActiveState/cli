@@ -322,8 +322,11 @@ func TestCopyAllFiles(t *testing.T) {
 	_, fail = Touch(filepath.Join(src, "test-dir", "test-file"))
 	require.NoError(t, fail.ToError())
 
-	err := os.Symlink(filepath.Join(src, "test-dir", "test-file"), filepath.Join(src, "test-link"))
-	require.NoError(t, err)
+	if runtime.GOOS != "windows" {
+		// Symlink creation on Windows requires privledged create when done via os.Symlink
+		err := os.Symlink(filepath.Join(src, "test-dir", "test-file"), filepath.Join(src, "test-link"))
+		require.NoError(t, err)
+	}
 
 	fail = CopyAllFiles(src, dest)
 	require.NoError(t, fail.ToError())
