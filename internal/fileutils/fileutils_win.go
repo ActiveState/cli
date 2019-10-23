@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 // IsExecutable determines if the file at the given path has any execute permissions.
@@ -25,4 +27,8 @@ func IsExecutable(path string) bool {
 		}
 	}
 	return false
+}
+
+func copyPermissions(fileInfo, entry os.FileInfo, dest string) *failures.Failure {
+	return nil
 }
