@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"time"
 	"syscall"
+	"time"
 
 	"github.com/ActiveState/cli/int-test/conpty"
 	expect "github.com/Netflix/go-expect"
@@ -30,7 +30,7 @@ func WithTimeoutMatcher(d time.Duration) expect.ExpectOpt {
 }
 
 func main() {
-	wpty := conpty.WinPtyPipe{}
+	wpty := conpty.New()
 	defer wpty.Close()
 	err := wpty.CreatePseudoConsoleAndPipes()
 	if err != nil {
@@ -53,6 +53,13 @@ func main() {
 	fmt.Printf("create wpty\n")
 	// wpty.PipeIn.WriteString("abc")
 	// fmt.Printf("written the stuff\n")
+	b := make([]byte, 5)
+	n, err := wpty.ReadStdout(b)
+	// n, err := wpty.PipeOut.Read(b)
+	if err != nil {
+		fmt.Printf("Failed reading from pipe: %v\n", err)
+	}
+	fmt.Printf("read: %s\n", string(b[:n]))
 	go func() {
 		fmt.Println("reading from stdout")
 		b := make([]byte, 1000)
@@ -64,12 +71,12 @@ func main() {
 		fmt.Printf("read: %s\n", string(b[:n]))
 	}()
 	/*
-	go func() {
-		_, err := wpty.PipeIn.WriteString("abc")
-		if err != nil {
-			fmt.Printf("Failed writing to pipe: %v\n", err)
-		}
-	}()
+		go func() {
+			_, err := wpty.PipeIn.WriteString("abc")
+			if err != nil {
+				fmt.Printf("Failed writing to pipe: %v\n", err)
+			}
+		}()
 	*/
 	time.Sleep(2 * time.Second)
 
