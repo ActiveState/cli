@@ -12,8 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -515,21 +513,15 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 			}
 		}
 
-		if runtime.GOOS != "windows" {
-			stat, ok := fileInfo.Sys().(*syscall.Stat_t)
-			if !ok {
-				return failures.FailOS.Wrap(err)
-			}
+		fail := copyPermissions(fileInfo, entry, dest)
+		if fail != nil {
+			return fail
+		}
 
-			if err := os.Lchown(destPath, int(stat.Uid), int(stat.Gid)); err != nil {
+		isSymlink := entry.Mode()&os.ModeSymlink != 0
+		if !isSymlink {
+			if err := os.Chmod(destPath, entry.Mode()); err != nil {
 				return failures.FailOS.Wrap(err)
-			}
-
-			isSymlink := entry.Mode()&os.ModeSymlink != 0
-			if !isSymlink {
-				if err := os.Chmod(destPath, entry.Mode()); err != nil {
-					return failures.FailOS.Wrap(err)
-				}
 			}
 		}
 	}
