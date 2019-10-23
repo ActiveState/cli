@@ -29,6 +29,6 @@ func IsExecutable(path string) bool {
 	return false
 }
 
-func copyPermissions(src, dest string) *failures.Failure {
+func copyPermissions(fileInfo, entry os.FileInfo, dest string) *failures.Failure {
 	return nil
 }
