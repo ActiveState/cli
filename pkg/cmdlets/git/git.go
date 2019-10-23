@@ -69,7 +69,7 @@ func (r *Repo) CloneProject(owner, name, path string) *failures.Failure {
 		return fail
 	}
 
-	return moveFiles(tempDir, path)
+	return copyFiles(tempDir, path)
 }
 
 func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
@@ -98,7 +98,7 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 	return nil
 }
 
-func moveFiles(src, dest string) *failures.Failure {
+func copyFiles(src, dest string) *failures.Failure {
 	if fileutils.DirExists(dest) {
 		return FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
 	}
@@ -108,5 +108,5 @@ func moveFiles(src, dest string) *failures.Failure {
 		return failures.FailUserInput.Wrap(err)
 	}
 
-	return fileutils.MoveAllFiles(src, dest)
+	return fileutils.CopyAllFiles(src, dest)
 }

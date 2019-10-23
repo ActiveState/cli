@@ -12,6 +12,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -466,4 +468,87 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 	}
 
 	return f.Name(), nil
+}
+
+// CopyAllFiles will copy all of the files/dirs within one directory to another.
+// Both directories must already exist
+func CopyAllFiles(src, dest string) *failures.Failure {
+	if !DirExists(src) {
+		return failures.FailOS.New("err_os_not_a_directory", src)
+	} else if !DirExists(dest) {
+		return failures.FailOS.New("err_os_not_a_directory", dest)
+	}
+
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dest, entry.Name())
+
+		fileInfo, err := os.Stat(srcPath)
+		if err != nil {
+			return failures.FailOS.Wrap(err)
+		}
+
+		switch fileInfo.Mode() & os.ModeType {
+		case os.ModeDir:
+			fail := MkdirUnlessExists(destPath)
+			if fail != nil {
+				return fail
+			}
+			fail = CopyAllFiles(srcPath, destPath)
+			if fail != nil {
+				return fail
+			}
+		case os.ModeSymlink:
+			fail := CopySymlink(srcPath, destPath)
+			if fail != nil {
+				return fail
+			}
+		default:
+			fail := CopyFile(srcPath, destPath)
+			if fail != nil {
+				return fail
+			}
+		}
+
+		if runtime.GOOS != "windows" {
+			stat, ok := fileInfo.Sys().(*syscall.Stat_t)
+			if !ok {
+				return failures.FailOS.Wrap(err)
+			}
+
+			if err := os.Lchown(destPath, int(stat.Uid), int(stat.Gid)); err != nil {
+				return failures.FailOS.Wrap(err)
+			}
+
+			isSymlink := entry.Mode()&os.ModeSymlink != 0
+			if !isSymlink {
+				if err := os.Chmod(destPath, entry.Mode()); err != nil {
+					return failures.FailOS.Wrap(err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// CopySymlink reads the symlink at src and creates a new
+// link at dest
+func CopySymlink(src, dest string) *failures.Failure {
+	link, err := os.Readlink(src)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	err = os.Symlink(link, dest)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
 }
