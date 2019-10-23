@@ -1,0 +1,30 @@
+{
+	"artifacts": [
+		{
+			"artifact_id": "00010001-0001-0001-0001-000100010001",
+			"build_timestamp": "0001-01-01T00:00:00.000Z",
+			"dependency_ids": [],
+			"platform_id": "00010001-0001-0001-0001-000100010001"
+		},
+		{
+			"artifact_id": "00020002-0002-0002-0002-000200020002",
+			"build_timestamp": "0001-01-01T00:00:00.000Z",
+			"dependency_ids": [],
+			"platform_id": "00010001-0001-0001-0001-000100010001"
+		},
+		{
+			"artifact_id": "00030003-0003-0003-0003-000300030003",
+			"build_timestamp": "0001-01-01T00:00:00.000Z",
+			"dependency_ids": [],
+			"ingredient_version_id": "00010001-0001-0001-0001-000100010001",
+			"platform_id": "00010001-0001-0001-0001-000100010001"
+		}
+	],
+	"build_request_id": "00010001-0001-0001-0001-000100010001",
+	"errors": [],
+	"is_retryable": false,
+	"message": "Build completed",
+	"recipe_id": "00010001-0001-0001-0001-000100010001",
+	"timestamp": "2019-10-21T22:09:03.000Z",
+	"type": "build_completed"
+}

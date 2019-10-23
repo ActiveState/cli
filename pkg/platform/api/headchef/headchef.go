@@ -94,13 +94,12 @@ func (r *BuildStatusClient) run(buildRequest *headchef_models.V1BuildRequest, bu
 			junk := "junk"
 			created.Payload.Type = &junk
 		}
-		msg := created.Payload.Message
 
 		switch *created.Payload.Type {
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
 			buildStatus.Completed <- created.Payload
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
-			buildStatus.Failed <- msg
+			buildStatus.Failed <- created.Payload.Message
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- struct{}{}
 		default:
