@@ -31,6 +31,8 @@ func (m *Mock) Close() {
 
 func (m *Mock) MockBuilds(respType ResponseType) {
 	regWithResp := m.httpmock.RegisterWithResponse
+	regWithBody := m.httpmock.RegisterWithResponseBody
+
 	path := "/v1/builds"
 
 	switch respType {
@@ -41,9 +43,9 @@ func (m *Mock) MockBuilds(respType ResponseType) {
 	case Completed:
 		regWithResp("POST", path, 201, "builds-completed")
 	case RunFail:
-		m.httpmock.RegisterWithResponseBody("POST", path, 500, `{"message": "no"}`)
+		regWithBody("POST", path, 500, `{"message": "no"}`)
 	case RunFailMalformed:
-		m.httpmock.RegisterWithResponseBody("POST", path, 201, `{"type": "no"}`)
+		regWithBody("POST", path, 201, `{"type": "no"}`)
 	default:
 		panic("use a valid ResponseType constant")
 	}
