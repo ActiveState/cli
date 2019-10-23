@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -305,4 +306,25 @@ func TestCreateTempExecutable(t *testing.T) {
 		res = int64(0400 & info.Mode()) // readable by user
 	}
 	assert.NotZero(t, res, "file should be readable/executable")
+}
+
+func TestCopyAllFiles(t *testing.T) {
+	src := getTempDir(t, t.Name())
+	dest := getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
+	defer func() {
+		os.RemoveAll(src)
+		os.RemoveAll(dest)
+	}()
+
+	fail := Mkdir(filepath.Join(src, "test-dir"))
+	require.NoError(t, fail.ToError())
+
+	_, fail = Touch(filepath.Join(src, "test-dir", "test-file"))
+	require.NoError(t, fail.ToError())
+
+	err := os.Symlink(filepath.Join(src, "test-dir", "test-file"), filepath.Join(src, "test-link"))
+	require.NoError(t, err)
+
+	fail = CopyAllFiles(src, dest)
+	require.NoError(t, fail.ToError())
 }

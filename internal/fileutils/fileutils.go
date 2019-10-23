@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -486,7 +487,7 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
 
-		fileInfo, err := os.Stat(srcPath)
+		fileInfo, err := os.Lstat(srcPath)
 		if err != nil {
 			return failures.FailOS.Wrap(err)
 		}
@@ -513,9 +514,11 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 			}
 		}
 
-		fail := copyPermissions(fileInfo, entry, dest)
-		if fail != nil {
-			return fail
+		if runtime.GOOS != "windows" {
+			fail := copyPermissions(fileInfo, entry, dest)
+			if fail != nil {
+				return fail
+			}
 		}
 
 		isSymlink := entry.Mode()&os.ModeSymlink != 0
@@ -537,6 +540,8 @@ func CopySymlink(src, dest string) *failures.Failure {
 		return failures.FailOS.Wrap(err)
 	}
 
+	// TODO: Determine if this will work in windows, if not only do this
+	// on linux/mac
 	err = os.Symlink(link, dest)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
