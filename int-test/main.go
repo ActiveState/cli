@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"time"
+	"syscall"
 
 	"github.com/ActiveState/cli/int-test/conpty"
 	expect "github.com/Netflix/go-expect"
@@ -30,6 +31,7 @@ func WithTimeoutMatcher(d time.Duration) expect.ExpectOpt {
 
 func main() {
 	wpty := conpty.WinPtyPipe{}
+	defer wpty.Close()
 	err := wpty.CreatePseudoConsoleAndPipes()
 	if err != nil {
 		log.Fatalf("Could not create pseudo terminal: %v", err)
@@ -38,27 +40,37 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not initialize extended startup info: %v", err)
 	}
-	_, _, err = wpty.Spawn([]string{".\\test.bat"})
+	_, p, err := wpty.Spawn([]string{"ping", "localhost"})
 	if err != nil {
 		log.Fatalf("windows error: %v", err)
 	}
+	var exitCode uint32
+	err = syscall.GetExitCodeProcess(syscall.Handle(p), &exitCode)
+	if err != nil {
+		log.Printf("Could not get exit code: %v\n", err)
+	}
+	log.Printf("exit code: %d", exitCode)
 	fmt.Printf("create wpty\n")
 	// wpty.PipeIn.WriteString("abc")
 	// fmt.Printf("written the stuff\n")
 	go func() {
+		fmt.Println("reading from stdout")
 		b := make([]byte, 1000)
+		// n, err := wpty.ReadStdout(b)
 		n, err := wpty.PipeOut.Read(b)
 		if err != nil {
 			fmt.Printf("Failed reading from pipe: %v\n", err)
 		}
 		fmt.Printf("read: %s\n", string(b[:n]))
 	}()
+	/*
 	go func() {
 		_, err := wpty.PipeIn.WriteString("abc")
 		if err != nil {
 			fmt.Printf("Failed writing to pipe: %v\n", err)
 		}
 	}()
+	*/
 	time.Sleep(2 * time.Second)
 
 	return
