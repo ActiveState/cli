@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/int-test/conpty"
 	expect "github.com/Netflix/go-expect"
-	"github.com/hinshun/vt10x"
 )
 
 type TimeoutMatcher struct {
@@ -40,7 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not initialize extended startup info: %v", err)
 	}
-	_, p, err := wpty.Spawn([]string{"ping", "localhost"})
+	_, p, err := wpty.Spawn([]string{".\\test.bat"})
 	if err != nil {
 		log.Fatalf("windows error: %v", err)
 	}
@@ -53,92 +51,50 @@ func main() {
 	fmt.Printf("create wpty\n")
 	// wpty.PipeIn.WriteString("abc")
 	// fmt.Printf("written the stuff\n")
-	b := make([]byte, 5)
+	time.Sleep(2 * time.Second)
+	/* b := make([]byte, 5)
 	n, err := wpty.ReadStdout(b)
 	// n, err := wpty.PipeOut.Read(b)
 	if err != nil {
 		fmt.Printf("Failed reading from pipe: %v\n", err)
 	}
+
 	fmt.Printf("read: %s\n", string(b[:n]))
+	*/
+	f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE, 0666)
+	defer f.Close()
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
 	go func() {
 		fmt.Println("reading from stdout")
-		b := make([]byte, 1000)
+		b := make([]byte, 500)
 		// n, err := wpty.ReadStdout(b)
 		n, err := wpty.PipeOut.Read(b)
 		if err != nil {
 			fmt.Printf("Failed reading from pipe: %v\n", err)
 		}
-		fmt.Printf("read: %s\n", string(b[:n]))
+		fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
+		f.WriteString(string(b[:n]))
 	}()
-	/*
-		go func() {
-			_, err := wpty.PipeIn.WriteString("abc")
-			if err != nil {
-				fmt.Printf("Failed writing to pipe: %v\n", err)
-			}
-		}()
-	*/
+	go func() {
+		// give it one second to get ready for input
+		time.Sleep(time.Second)
+		_, err := wpty.PipeIn.WriteString("Hello world\n")
+		if err != nil {
+			fmt.Printf("Failed writing to pipe: %v\n", err)
+		}
+		fmt.Printf("wrote to pipe...")
+		b := make([]byte, 500)
+		// n, err := wpty.ReadStdout(b)
+		n, err := wpty.PipeOut.Read(b)
+		if err != nil {
+			fmt.Printf("Failed reading from pipe: %v\n", err)
+		}
+		fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
+		f.WriteString(string(b[:n]))
+	}()
 	time.Sleep(2 * time.Second)
 
 	return
-	// fmt.Printf("%v", conpty.ProcNonExistent)
-	f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	f2, err := os.OpenFile("testprogress", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	c, state, err := vt10x.NewVT10XConsole(expect.WithStdout(os.Stdout), expect.WithLogger(log.New(f, "logger", 0)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer c.Close()
-
-	cmd := exec.Command("./build/state", "auth")
-	cmd.Stdin = c.Tty()
-	cmd.Stdout = c.Tty()
-	cmd.Stderr = c.Tty()
-
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//time.Sleep(time.Second)
-	f2.WriteString("searching username\n")
-	c.Expect(expect.String("username:"))
-	/*
-		go func() {
-			c.Expect(WithTimeoutMatcher(2 * time.Second))
-		}()
-	*/
-	// time.Sleep(2 * time.Second)
-	/*
-		tChan := make(chan struct{}, 0)
-		go func() {
-			tChan <- struct{}{}
-		}()
-		<-tChan
-	*/
-	f2.WriteString("found username\n")
-	c.Send("abc\n")
-	// c.Send(fmt.Sprintf("\x1b[%dE", 1))
-	f2.WriteString("wrote password\n")
-	c.ExpectString("password:")
-	f2.WriteString("sending password\n")
-	// time.Sleep(time.Second)
-	c.Send("def\n")
-	f2.WriteString("sent password\n")
-	c.SendLine("")
-	c.Close()
-
-	err = cmd.Wait()
-
-	fmt.Printf("state: %v", state.String())
-	f2.WriteString("stopped waiting for command\n")
-	if err != nil {
-		log.Fatal(err)
-	}
 }

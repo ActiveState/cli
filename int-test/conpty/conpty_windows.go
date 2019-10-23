@@ -22,8 +22,8 @@ var (
 )
 
 type COORD struct {
-	X uint16
-	Y uint16
+	X uint32
+	Y uint32
 }
 
 type WinPtyPipe struct {
