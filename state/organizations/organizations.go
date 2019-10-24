@@ -74,10 +74,17 @@ func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 
 	orgsRaw := make([]orgRaw, len(orgs))
 	for i, org := range orgs {
-		orgsRaw[i] = orgRaw{
-			Name:            org.Name,
-			Tier:            org.Tier,
-			PrivateProjects: tiersToPrivMap[org.Tier],
+		if val, ok := tiersToPrivMap[org.Tier]; ok {
+			orgsRaw[i] = orgRaw{
+				Name:            org.Name,
+				Tier:            org.Tier,
+				PrivateProjects: val,
+			}
+		} else {
+			return nil, failures.FailNotFound.New(locale.T("organizations_unknown_tier", map[string]string{
+				"Tier":         org.Tier,
+				"Organization": org.Name,
+			}))
 		}
 	}
 
