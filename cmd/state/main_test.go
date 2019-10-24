@@ -26,7 +26,7 @@ func (suite *MainTestSuite) TestPanicCaught() {
 		}
 	}
 	out := capturer.CaptureOutput(func() {
-		runAndExit([]string{"IdontExist"}, exiter)
+		runAndExit([]string{"", "IdontExist"}, exiter)
 	})
 	suite.Contains(out, locale.T("err_main_panic"))
 	suite.Contains(out, `unknown command "IdontExist"`)
@@ -40,9 +40,9 @@ func (suite *MainTestSuite) TestDeprecated() {
 
 	ex := exiter.New()
 	out, code := ex.Capture(func() {
-		runAndExit([]string{}, ex.Exit)
+		runAndExit([]string{""}, ex.Exit)
 	})
-	suite.Require().Equal(0, code)
+	suite.Require().Equal(0, code, "Should exit with code 0, output: %s", out)
 	suite.Require().Contains(out, locale.Tr("warn_deprecation", "")[0:50])
 }
 
@@ -53,9 +53,9 @@ func (suite *MainTestSuite) TestExpired() {
 
 	ex := exiter.New()
 	out, code := ex.Capture(func() {
-		runAndExit([]string{}, ex.Exit)
+		runAndExit([]string{""}, ex.Exit)
 	})
-	suite.Require().Equal(0, code)
+	suite.Require().Equal(0, code, "Should exit with code 0, output: %s", out)
 	suite.Require().Contains(out, locale.Tr("err_deprecation", "")[0:50])
 }
 

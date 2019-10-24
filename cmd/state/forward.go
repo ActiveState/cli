@@ -91,14 +91,14 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ex
 
 	if info == nil {
 		failures.Handle(err, locale.T("forward_fail_info"))
-		Command.Exiter(1)
+		exiter(1)
 	}
 
 	print.Line(locale.Tr("downloading_state_version", info.Version))
 	err = up.Download(binary)
 	if err != nil {
 		failures.Handle(err, locale.T("forward_fail_download"))
-		Command.Exiter(1)
+		exiter(1)
 	}
 
 	permissions, _ := permbits.Stat(binary)
@@ -106,6 +106,6 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ex
 	err = permbits.Chmod(binary, permissions)
 	if err != nil {
 		failures.Handle(err, locale.T("forward_fail_perm"))
-		Command.Exiter(1)
+		exiter(1)
 	}
 }
