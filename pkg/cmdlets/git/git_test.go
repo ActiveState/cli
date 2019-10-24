@@ -130,6 +130,28 @@ func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
 	suite.EqualError(fail, expected.Error(), "expected errors to match")
 }
 
+func (suite *GitTestSuite) TestCopyFiles() {
+	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
+	fail := copyFiles(suite.dir, anotherDir)
+	suite.NoError(fail.ToError(), "should be able to move files wihout error")
+
+	_, err := os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
+	suite.NoError(err, "file should be moved")
+
+	_, err = os.Stat(filepath.Join(anotherDir, "test-file"))
+	suite.NoError(err, "file should be moved")
+}
+
+func (suite *GitTestSuite) TestCopyFilesDirInUse() {
+	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
+	err := os.MkdirAll(anotherDir, 0755)
+	suite.NoError(err, "should be able to create another temp directory")
+
+	fail := copyFiles(suite.dir, anotherDir)
+	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
+	suite.EqualError(fail, expected.Error())
+}
+
 func TestGitTestSuite(t *testing.T) {
 	suite.Run(t, new(GitTestSuite))
 }
