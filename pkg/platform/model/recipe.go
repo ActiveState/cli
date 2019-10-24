@@ -75,11 +75,7 @@ func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failure
 			return nil, fail
 		}
 
-		if pf == nil {
-			continue
-		}
-
-		if pf.Kernel.Name == nil {
+		if pf == nil || pf.Kernel == nil || pf.Kernel.Name == nil {
 			continue
 		}
 
