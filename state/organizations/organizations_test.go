@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -36,17 +37,53 @@ func TestOrganizations(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 
-	httpmock.Register("GET", "/organizations")
+	amock := apiMock.Init()
+	amock.MockGetOrganizations()
+	amock.MockGetPaidTiers()
 
 	var execErr error
+	cc := Command.GetCobraCmd()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = Command.Execute()
+		execErr = cc.Execute()
 	})
 	require.NoError(t, outErr)
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Contains(t, outStr, "test-organization")
+	assert.Contains(t, outStr, "string")
+
+	cc.SetArgs([]string{"--json"})
+	outStr, outErr = osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\n", outStr, "Expect privateProjects to be true")
+
+	amock.MockGetFreeTiers()
+	outStr, outErr = osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\n", outStr, "Expect privateProjects to be false")
+
+	amock.MockGetBadTiers()
+	outStr, outErr = osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	err := failures.Handled() // Returns an error so have to cast it to a failure
+	fail, _ := err.(*failures.Failure)
+	assert.True(t, fail.Type.Matches(failures.FailNotFound), "The wrong failure occurred")
+
+	assert.Equal(t, "", outStr, "Expect no output")
+	amock.Close()
 }
 
 func TestClientError(t *testing.T) {
