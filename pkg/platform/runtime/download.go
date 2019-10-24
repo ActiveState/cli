@@ -141,6 +141,10 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 			}
 
 			for _, artf := range resp.Artifacts {
+				if artf.URI == nil {
+					continue
+				}
+
 				filename := filepath.Base(artf.URI.String())
 				if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
 					artifacts = append(artifacts, artf)

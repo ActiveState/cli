@@ -1,6 +1,8 @@
 package mock
 
 import (
+	"runtime"
+
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 )
@@ -13,6 +15,14 @@ const (
 	Completed
 	RunFail
 	RunFailMalformed
+)
+
+type ArtifactsOption string
+
+const (
+	Skip    ArtifactsOption = "-skip_artifacts"
+	Invalid ArtifactsOption = "-invalid_artifacts"
+	BadURI  ArtifactsOption = "-baduri_artifacts"
 )
 
 type Mock struct {
@@ -29,7 +39,7 @@ func (m *Mock) Close() {
 	httpmock.DeActivate()
 }
 
-func (m *Mock) MockBuilds(respType ResponseType) {
+func (m *Mock) MockBuilds(respType ResponseType, artOpts ...ArtifactsOption) {
 	regWithResp := m.httpmock.RegisterWithResponse
 	regWithBody := m.httpmock.RegisterWithResponseBody
 
@@ -41,7 +51,24 @@ func (m *Mock) MockBuilds(respType ResponseType) {
 	case Failed:
 		regWithResp("POST", path, 201, "builds-failed")
 	case Completed:
-		regWithResp("POST", path, 201, "builds-completed")
+		var suffix string
+		if runtime.GOOS == "windows" {
+			suffix = "-windows"
+		}
+
+		if hasOpt(artOpts, Invalid) {
+			suffix = string(Invalid)
+		}
+
+		if hasOpt(artOpts, BadURI) {
+			suffix = string(BadURI)
+		}
+
+		if hasOpt(artOpts, Skip) {
+			suffix = string(Skip)
+		}
+
+		regWithResp("POST", path, 201, "builds-completed"+suffix)
 	case RunFail:
 		regWithBody("POST", path, 500, `{"message": "no"}`)
 	case RunFailMalformed:
@@ -49,4 +76,13 @@ func (m *Mock) MockBuilds(respType ResponseType) {
 	default:
 		panic("use a valid ResponseType constant")
 	}
+}
+
+func hasOpt(artOpts []ArtifactsOption, opt ArtifactsOption) bool {
+	for _, artOpt := range artOpts {
+		if artOpt == opt {
+			return true
+		}
+	}
+	return false
 }

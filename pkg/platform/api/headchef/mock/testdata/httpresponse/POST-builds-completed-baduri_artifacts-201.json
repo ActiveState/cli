@@ -2,11 +2,11 @@
 	"artifacts": [
 		{
 			"artifact_id": "00010001-0001-0001-0001-000100010001",
-			"uri": "http://test.tld/python.tar.gz"
+			"uri": "htp;/test.tld/python.tar.gz"
 		},
 		{
 			"artifact_id": "00020002-0002-0002-0002-000200020002",
-			"uri": "http://test.tld/legacy-python.tar.gz"
+			"uri": "htp;/test.tld/legacy-python.tar.gz"
 		}
 	],
 	"build_request_id": "00010001-0001-0001-0001-000100010001",

@@ -49,10 +49,10 @@ func (m *Mock) MockFullRuntime() {
 	m.invMock.MockPlatforms()
 	m.GraphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	m.GraphMock.Checkpoint(graphMock.NoOptions)
+	m.hcMock.MockBuilds(hcMock.Completed)
 
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)
-	runtime.InitRequester = m.hcMock.Requester(hcMock.NoOptions)
 
 	m.MockDownload()
 }
