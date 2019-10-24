@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"path/filepath"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -51,12 +52,13 @@ func (m *Mock) MockBuilds(respType ResponseType, artOpts ...ArtifactsOption) {
 	case Failed:
 		regWithResp("POST", path, 201, "builds-failed")
 	case Completed:
-		var suffix string
+		var dir, suffix string
 		if runtime.GOOS == "windows" {
-			suffix = "-windows"
+			dir = "windows"
 		}
 
 		if hasOpt(artOpts, Invalid) {
+			dir = ""
 			suffix = string(Invalid)
 		}
 
@@ -65,10 +67,13 @@ func (m *Mock) MockBuilds(respType ResponseType, artOpts ...ArtifactsOption) {
 		}
 
 		if hasOpt(artOpts, Skip) {
+			dir = ""
 			suffix = string(Skip)
 		}
 
-		regWithResp("POST", path, 201, "builds-completed"+suffix)
+		file := filepath.Join(dir, "builds-completed"+suffix)
+		regWithResp("POST", path, 201, file)
+
 	case RunFail:
 		regWithBody("POST", path, 500, `{"message": "no"}`)
 	case RunFailMalformed:
