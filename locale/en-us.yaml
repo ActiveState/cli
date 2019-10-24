@@ -799,6 +799,8 @@ forward_fail_with_error:
   other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
 forward_fail_download:
   other: Could not forward command to the appropriate state tool version, download failed
+forward_fail_info:
+  other: Could not forward command to the appropriate state tool version, the specified version is not available
 forward_fail_perm:
   other: Could not forward command to the appropriate state tool version, could not make file executable
 flag_update_lock_description:
