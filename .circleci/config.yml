@@ -135,7 +135,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
     macos:
-      xcode: 9.2.0
+      xcode: 9.3.0
     resource_class: large
     working_directory: /private/tmp/workdir/github.com/ActiveState/cli
     steps:
