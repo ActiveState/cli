@@ -48,30 +48,34 @@ func (m *Mock) MockBuilds(respType ResponseType, artOpts ...ArtifactsOption) {
 
 	switch respType {
 	case Started:
-		regWithResp("POST", path, 202, "builds-started")
+		file := filepath.Clean("builds/common/started")
+		regWithResp("POST", path, 202, file)
 	case Failed:
-		regWithResp("POST", path, 201, "builds-failed")
+		file := filepath.Clean("builds/common/failed")
+		regWithResp("POST", path, 201, file)
 	case Completed:
-		var dir, suffix string
+		dir := "unix"
+		var suffix string
+
 		if runtime.GOOS == "windows" {
 			dir = "windows"
-		}
-
-		if hasOpt(artOpts, Invalid) {
-			dir = ""
-			suffix = string(Invalid)
 		}
 
 		if hasOpt(artOpts, BadURI) {
 			suffix = string(BadURI)
 		}
 
+		if hasOpt(artOpts, Invalid) {
+			dir = "common"
+			suffix = string(Invalid)
+		}
+
 		if hasOpt(artOpts, Skip) {
-			dir = ""
+			dir = "common"
 			suffix = string(Skip)
 		}
 
-		file := filepath.Join(dir, "builds-completed"+suffix)
+		file := filepath.Join("builds", dir, "completed"+suffix)
 		regWithResp("POST", path, 201, file)
 
 	case RunFail:
