@@ -7,6 +7,9 @@
             "operating_system": {
                 "name": "Linux"
             },
+	    "kernel": {
+		"name": "Linux"
+	    },
             "platform_id": "00010001-0001-0001-0001-000100010001",
             "processor": {
                 "bit_width": "32",
@@ -20,6 +23,9 @@
             "operating_system": {
                 "name": "macOS"
             },
+	    "kernel": {
+		"name": "Darwin"
+	    },
             "platform_id": "00020002-0002-0002-0002-000200020002",
             "processor": {
                 "bit_width": "32",
@@ -33,6 +39,9 @@
             "operating_system": {
                 "name": "Windows"
             },
+	    "kernel": {
+		"name": "Windows"
+	    },
             "platform_id": "00030003-0003-0003-0003-000300030003",
             "processor": {
                 "bit_width": "32",
