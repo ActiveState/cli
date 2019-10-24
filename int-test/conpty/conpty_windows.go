@@ -21,16 +21,12 @@ var (
 	procCreateProcessW                    = kernel32.NewProc("CreateProcessW")
 )
 
-type COORD struct {
-	X uint32
-	Y uint32
-}
-
 type WinPtyPipe struct {
 	hpCon               *syscall.Handle
 	pipeFdIn            syscall.Handle
 	pipeFdOut           syscall.Handle
 	startupInfo         StartupInfoEx
+	consoleSize         uintptr
 	PipeIn              *os.File
 	PipeOut             *os.File
 	attributeListBuffer []byte
@@ -124,9 +120,12 @@ func closePseudoConsole(handle syscall.Handle) (err error) {
 	return
 }
 
-func New() *WinPtyPipe {
-	fmt.Printf("%d", unsafe.Sizeof(COORD{}))
-	return &WinPtyPipe{hpCon: new(syscall.Handle), startupInfo: StartupInfoEx{}}
+func New(X int16, Y int16) *WinPtyPipe {
+	return &WinPtyPipe{
+		hpCon:       new(syscall.Handle),
+		startupInfo: StartupInfoEx{},
+		consoleSize: uintptr(X) + (uintptr(Y) << 16),
+	}
 }
 
 func (winpty *WinPtyPipe) Close() (err error) {
@@ -327,8 +326,8 @@ func (winpty *WinPtyPipe) Spawn(argv []string) (pid int, handle uintptr, err err
 	return int(pi.ProcessId), uintptr(pi.Process), nil
 }
 
-func createPseudoConsole(consoleSize *COORD, ptyIn syscall.Handle, ptyOut syscall.Handle, hpCon *syscall.Handle) (err error) {
-	r1, _, e1 := procCreatePseudoConsole.Call(uintptr(unsafe.Pointer(consoleSize)), uintptr(ptyIn), uintptr(ptyOut), 0, uintptr(unsafe.Pointer(hpCon)))
+func createPseudoConsole(consoleSize uintptr, ptyIn syscall.Handle, ptyOut syscall.Handle, hpCon *syscall.Handle) (err error) {
+	r1, _, e1 := procCreatePseudoConsole.Call(consoleSize, uintptr(ptyIn), uintptr(ptyOut), 0, uintptr(unsafe.Pointer(hpCon)))
 
 	if r1 != 0 { // !S_OK
 		err = e1
@@ -348,9 +347,8 @@ func (wpty *WinPtyPipe) CreatePseudoConsoleAndPipes() (err error) {
 	}
 
 	fmt.Printf("pipe handles = %d, %d, invalidHandle=%d\n", uintptr(hPipePTYIn), uintptr(hPipePTYOut), uintptr(syscall.InvalidHandle))
-	consoleSize := COORD{X: 120, Y: 40}
 
-	err = createPseudoConsole(&consoleSize, hPipePTYIn, hPipePTYOut, wpty.hpCon)
+	err = createPseudoConsole(wpty.consoleSize, hPipePTYIn, hPipePTYOut, wpty.hpCon)
 	if err != nil {
 		return fmt.Errorf("failed to create pseudo console: %d, %v", uintptr(*wpty.hpCon), err)
 	}

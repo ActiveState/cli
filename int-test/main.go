@@ -28,7 +28,7 @@ func WithTimeoutMatcher(d time.Duration) expect.ExpectOpt {
 }
 
 func main() {
-	wpty := conpty.New()
+	wpty := conpty.New(80, 40)
 	defer wpty.Close()
 	err := wpty.CreatePseudoConsoleAndPipes()
 	if err != nil {
@@ -68,30 +68,30 @@ func main() {
 	}
 	go func() {
 		fmt.Println("reading from stdout")
-		b := make([]byte, 500)
+		b := make([]byte, 1000)
 		// n, err := wpty.ReadStdout(b)
 		n, err := wpty.PipeOut.Read(b)
 		if err != nil {
 			fmt.Printf("Failed reading from pipe: %v\n", err)
 		}
-		fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
+		// fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
 		f.WriteString(string(b[:n]))
 	}()
 	go func() {
 		// give it one second to get ready for input
 		time.Sleep(time.Second)
-		_, err := wpty.PipeIn.WriteString("Hello world\n")
+		_, err := wpty.PipeIn.WriteString("abcdefg world\r\n\n")
 		if err != nil {
 			fmt.Printf("Failed writing to pipe: %v\n", err)
 		}
 		fmt.Printf("wrote to pipe...")
-		b := make([]byte, 500)
+		b := make([]byte, 2000)
 		// n, err := wpty.ReadStdout(b)
 		n, err := wpty.PipeOut.Read(b)
 		if err != nil {
 			fmt.Printf("Failed reading from pipe: %v\n", err)
 		}
-		fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
+		fmt.Printf("read 2: %d bytes: %s\n", n, string(b[:n]))
 		f.WriteString(string(b[:n]))
 	}()
 	time.Sleep(2 * time.Second)
