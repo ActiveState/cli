@@ -513,17 +513,6 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 				return fail
 			}
 		}
-
-		fail := copyPermissions(fileInfo, entry, destPath)
-		if fail != nil {
-			return fail
-		}
-
-		fail = copyOwnership(fileInfo, dest)
-		if fail != nil {
-			return fail
-		}
-
 	}
 
 	return nil

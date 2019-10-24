@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -330,8 +329,6 @@ func TestCopyAllFiles(t *testing.T) {
 
 	_, fail = Touch(sourceFile)
 	require.NoError(t, fail.ToError())
-	err := os.Chmod(sourceFile, 0777)
-	require.NoError(t, err)
 
 	if runtime.GOOS != "windows" {
 		// Symlink creation on Windows requires privledged create
@@ -346,12 +343,6 @@ func TestCopyAllFiles(t *testing.T) {
 	require.FileExists(t, destFile)
 
 	if runtime.GOOS != "windows" {
-		destFilePerms, err := permbits.Stat(destFile)
-		require.NoError(t, err)
-		if destFilePerms != 0777 {
-			t.Fatal("copied file permissions do not match")
-		}
-
 		require.FileExists(t, destLink)
 	}
 }
