@@ -121,6 +121,7 @@ func SetOutput(w io.Writer) {
 type LoggingHandler interface {
 	SetFormatter(Formatter)
 	SetVerbose(bool)
+	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 }
 
@@ -133,6 +134,10 @@ func (l *strandardHandler) SetFormatter(f Formatter) {
 }
 
 func (l *strandardHandler) SetVerbose(v bool) {
+}
+
+func (l *strandardHandler) Output() io.Writer {
+	return nil
 }
 
 // default handling interface - just

@@ -166,7 +166,7 @@ func setupRollbar() {
 		data["platform_os"] = runtime.GOOS
 	})
 
-	log.SetOutput(os.Stderr)
+	log.SetOutput(logging.CurrentHandler().Output())
 }
 
 // Execute the `state` command
