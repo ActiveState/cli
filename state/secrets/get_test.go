@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -32,6 +33,7 @@ type SecretsGetCommandTestSuite struct {
 	secretsClient *secretsapi.Client
 	secretsMock   *httpmock.HTTPMock
 	platformMock  *httpmock.HTTPMock
+	graphMock     *graphMock.Mock
 }
 
 func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) {
@@ -60,19 +62,22 @@ func (suite *SecretsGetCommandTestSuite) BeforeTest(suiteName, testName string) 
 
 	suite.platformMock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
+
+	suite.graphMock = graphMock.Init()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 }
 
 func (suite *SecretsGetCommandTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
 	osutil.RemoveConfigFile(constants.KeypairLocalFileName + ".key")
+	suite.graphMock.Close()
 }
 
 func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
-	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg/projects/SecretProject", 200)
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
 }
 
@@ -90,7 +95,9 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 	})
 	suite.Equal(expectedExitCode, exitCode, "expected exit code to match")
 
-	failure := failures.Handled().(*failures.Failure)
+	handled := failures.Handled()
+	failure, ok := handled.(*failures.Failure)
+	suite.Require().Truef(ok, "got %v, wanted failure", handled)
 	suite.Equalf(expectedFailureType, failure.Type, "unexpected failure type: %v", failure.Type)
 }
 

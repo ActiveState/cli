@@ -62,7 +62,7 @@ func (mock *HTTPMock) RegisterWithCode(method string, request string, code int) 
 func (mock *HTTPMock) RegisterWithResponse(method string, request string, code int, responseFile string) {
 	responsePath := getResponsePath()
 	responseFile = getResponseFile(method, code, responseFile, responsePath)
-	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	request = strings.TrimSuffix(mock.urlPrefix+"/"+strings.TrimPrefix(request, "/"), "/")
 	parent.RegisterResponder(method, request,
 		parent.NewStringResponder(code, string(fileutils.ReadFileUnsafe(responseFile))))
 }
@@ -74,14 +74,14 @@ func (mock *HTTPMock) RegisterWithResponseBody(method string, request string, co
 
 // RegisterWithResponseBytes will respond with the given code and responseBytes, no external files involved
 func (mock *HTTPMock) RegisterWithResponseBytes(method string, request string, code int, responseBytes []byte) {
-	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	request = strings.TrimSuffix(mock.urlPrefix+"/"+strings.TrimPrefix(request, "/"), "/")
 	parent.RegisterResponder(method, request,
 		parent.NewBytesResponder(code, responseBytes))
 }
 
 // RegisterWithResponderBody register a httpmock with a custom responder that returns the response body
 func (mock *HTTPMock) RegisterWithResponderBody(method string, request string, cb func(req *http.Request) (int, string)) {
-	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	request = strings.TrimSuffix(mock.urlPrefix+"/"+strings.TrimPrefix(request, "/"), "/")
 	parent.RegisterResponder(method, request, func(req *http.Request) (*http.Response, error) {
 		code, responseData := cb(req)
 		return parent.NewStringResponse(code, responseData), nil
@@ -90,7 +90,8 @@ func (mock *HTTPMock) RegisterWithResponderBody(method string, request string, c
 
 // RegisterWithResponder register a httpmock with a custom responder
 func (mock *HTTPMock) RegisterWithResponder(method string, request string, cb func(req *http.Request) (int, string)) {
-	request = mock.urlPrefix + "/" + strings.TrimPrefix(request, "/")
+	request = strings.TrimSuffix(mock.urlPrefix+"/"+strings.TrimPrefix(request, "/"), "/")
+	logging.Debug("Mocking: %s", request)
 	responsePath := getResponsePath()
 	parent.RegisterResponder(method, request, func(req *http.Request) (*http.Response, error) {
 		code, responseFile := cb(req)

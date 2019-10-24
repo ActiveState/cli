@@ -5,6 +5,7 @@ defaults:
       run:
         name: Prepare Environment
         command: |
+          set -e
           mkdir -p $TEST_RESULTS
           GOFLAGSTMP=$GOFLAGS
           GOFLAGS=""
@@ -43,22 +44,30 @@ defaults:
       run:
         name: Build the CLI
         command: |
+          set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
-            APIENV=prod BRANCH_OVERRIDE=unstable state run build-external
+            BRANCH_OVERRIDE=unstable state run build-external
           fi
 
           echo "Building for internal use"
-          APIENV=prod state run build
+          state run build
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
-        command: state run integration-tests
+        command: |
+          set -e
+          state run integration-tests
     deployBits: &deployBits
       run:
         name: Deploy bits
-        command: state run deploy-updates
+        command: |
+          set -e
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          if [[ "$BRANCH" == "master" ]]; then
+            state run deploy-updates
+          fi
     storeArtifacts: &storeArtifacts
       store_artifacts:
         path: /tmp/test-results
@@ -126,7 +135,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
     macos:
-      xcode: 9.2.0
+      xcode: 9.3.0
     resource_class: large
     working_directory: /private/tmp/workdir/github.com/ActiveState/cli
     steps:

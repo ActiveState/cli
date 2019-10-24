@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
@@ -20,10 +21,11 @@ import (
 
 type RecipeCommandTestSuite struct {
 	suite.Suite
-	apim  *apiMock.Mock
-	authm *authMock.Mock
-	invm  *invMock.Mock
-	ex    *exiter.Exiter
+	apim      *apiMock.Mock
+	authm     *authMock.Mock
+	invm      *invMock.Mock
+	graphMock *graphMock.Mock
+	ex        *exiter.Exiter
 }
 
 func (suite *RecipeCommandTestSuite) SetupTest() {
@@ -36,12 +38,13 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apim = apiMock.Init()
 	suite.authm = authMock.Init()
 	suite.invm = invMock.Init()
+	suite.graphMock = graphMock.Init()
 
 	suite.authm.MockLoggedin()
-	suite.apim.MockGetProject()
-	suite.apim.MockVcsGetCheckpoint()
 	suite.invm.MockPlatforms()
 	suite.invm.MockOrderRecipes()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	suite.graphMock.Checkpoint(graphMock.NoOptions)
 
 	suite.ex = exiter.New()
 	Command.Exiter = suite.ex.Exit
@@ -51,6 +54,7 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 	suite.invm.Close()
 	suite.authm.Close()
 	suite.apim.Close()
+	suite.graphMock.Close()
 
 	RecipeArgs = recipeArgs{}
 	RecipeFlags = recipeFlags{}

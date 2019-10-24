@@ -164,7 +164,7 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 	}
 
 	if meta == "path" && isFunction {
-		sf, fail := scriptfile.New(script.LanguageSafe(), script.Value())
+		sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Value())
 		return sf.Filename(), fail
 	}
 	return script.Raw(), nil

@@ -9,10 +9,18 @@ scripts:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-      BUILD_NAME="state"
-      if [ ! -z "$COMSPEC" ]; then
-        BUILD_NAME="state.exe"
-      fi
+      function buildProject() {
+        local type=${1-internal}
+        [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "'$type' is not a supported build type" && return 2
+        local goos=${2-$(go env GOHOSTOS)}
+        [[ ! $goos =~ ^(windows|darwin|linux)$ ]] && >&2 echo "'$goos' is not a supported build target" && return 2
+        local out=./build/state
+        [[ $goos == windows ]] && out=${out}.exe
+        export GOOS=$goos
+        eval go build -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
+        unset GOOS
+        echo ${out}
+      }
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
@@ -20,19 +28,19 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
-    description: Builds the project. Note by default this targets the staging environment, to target prod use `APIENV=prod`.
+    description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      eval go build -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      outFile=$(buildProject internal ${1}) || exit $?
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
+      go run scripts/update-generator/main.go -o public/update $outFile
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set). Note by default this targets the staging environment, to target prod use `APIENV=prod`.
+    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      eval go build -tags external -o ./build/$BUILD_NAME $CLI_BUILDFLAGS $CLI_PKGS
+      outFile=$(buildProject external ${1}) || exit $?
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update ./build/$BUILD_NAME
+      go run scripts/update-generator/main.go -o public/update $outFile
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
@@ -93,10 +101,10 @@ scripts:
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -parallel 12 `go list ./... | grep -vE "api/.*?(client|model)"`
+      ACTIVESTATE_PROJECT="" go test -parallel 12 ./...
     standalone: true
   - name: integration-tests
-    description: Runs integration tests. Note this assumes that you ran a build with `APIENV=prod`, staging would likely cause failures.
+    description: Runs integration tests.
     value: cd test/integration && python3 -m unittest discover -p "*_test.py"
   - name: clean
     description: Cleans out the build dir.
@@ -111,6 +119,10 @@ scripts:
 events:
   - name: ACTIVATE
     value: |
+      if ! type "go" &> /dev/null; then
+        echo "go is not installed. Please install Go version 1.11 or above."
+        exit 1
+      fi
       $scripts.SET_ENV
       $scripts.preprocess
       git config core.hooksPath .githooks

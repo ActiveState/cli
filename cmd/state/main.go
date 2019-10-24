@@ -30,7 +30,7 @@ import (
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
-var FailMainPanic = failures.Type("main.fail.panic")
+var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
 	runAndExit(os.Args, os.Exit)
@@ -125,7 +125,7 @@ func setupRollbar() {
 		data["platform_os"] = runtime.GOOS
 	})
 
-	log.SetOutput(os.Stderr)
+	log.SetOutput(logging.CurrentHandler().Output())
 }
 
 // When an update was found and applied, re-launch the update with the current

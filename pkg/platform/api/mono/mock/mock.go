@@ -1,13 +1,10 @@
 package mock
 
 import (
-	"fmt"
-	"log"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // Mock registers some common http requests usually used by the model
@@ -39,39 +36,24 @@ func (m *Mock) MockSignS3URI() {
 	m.httpmock.RegisterWithResponse("GET", "/s3/sign/http:%2F%2Ftest.tld%2Flegacy-python"+ext, 200, "s3/sign/legacy-python"+ext+".json")
 }
 
-// MockVcsGetCheckpoint registers mocks for version control commits
-func (m *Mock) MockVcsGetCheckpoint() {
-	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
-	m.httpmock.Register("GET", "/vcs/commits/00020002-0002-0002-0002-000200020002/checkpoint")
-}
-
-// MockVcsGetCheckpointPython registers a mock returning a VCS checkpoint for python
-func (m *Mock) MockVcsGetCheckpointPython() {
-	m.MockVcsGetCheckpointCustomReq(&mono_models.Checkpoint{
-		Namespace:   "language",
-		Requirement: "Python",
-	})
-}
-
-// MockVcsGetCheckpointCustomReq registers a mock returning the platform data for a specific requirement at a given VCS checkpoint
-func (m *Mock) MockVcsGetCheckpointCustomReq(requirement *mono_models.Checkpoint) {
-	jsonBytes, err := requirement.MarshalBinary()
-	if err != nil {
-		log.Panicf("Error during marshalling requirement: %v", err)
-	}
-	json := fmt.Sprintf("[%s]", string(jsonBytes))
-	m.httpmock.RegisterWithResponseBody("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint", 200, json)
-}
-
 // MockGetProject registers mocks for project "string" and a VCS checkpoint
 func (m *Mock) MockGetProject() {
-	m.httpmock.Register("GET", "/organizations/string/projects/string")
 	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint")
 }
 
 // MockGetProjectNoLanguage returns a mock returning a project without a language set
 func (m *Mock) MockGetProjectNoLanguage() {
 	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-language")
+}
+
+// MockGetProjectNoRepo returns a mock returning a project without a repo association
+func (m *Mock) MockGetProjectNoRepo() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo.json")
+}
+
+// MockGetProjectNoRepoNoLanguage returns a mock returning a project with no repo or language association
+func (m *Mock) MockGetProjectNoRepoNoLanguage() {
+	m.httpmock.RegisterWithResponse("GET", "/organizations/string/projects/string", 200, "organizations/string/projects/string-no-repo-no-language.json")
 }
 
 // MockGetProjectDiffCommit registers a mock returning a project with a commit history

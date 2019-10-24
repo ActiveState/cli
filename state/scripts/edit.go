@@ -25,7 +25,7 @@ import (
 const (
 	openCmdLin       = "xdg-open"
 	openCmdMac       = "open"
-	defaultEditorWin = "notepad"
+	defaultEditorWin = "notepad.exe"
 )
 
 var (
@@ -132,7 +132,7 @@ func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures
 		scriptBlock = script.Value()
 	}
 
-	return scriptfile.NewSource(script.LanguageSafe(), scriptBlock)
+	return scriptfile.NewAsSource(script.LanguageSafe(), script.Name(), scriptBlock)
 }
 
 func openEditor(filename string) *failures.Failure {
@@ -149,9 +149,16 @@ func openEditor(filename string) *failures.Failure {
 	subCmd.Stdout = os.Stdout
 	subCmd.Stderr = os.Stderr
 
-	err := subCmd.Run()
-	if err != nil {
-		return failures.FailCmd.Wrap(err)
+	if runtime.GOOS == "windows" && strings.Contains(editorCmd, defaultEditorWin) {
+		err := subCmd.Start()
+		if err != nil {
+			return failures.FailCmd.Wrap(err)
+		}
+	} else {
+		err := subCmd.Run()
+		if err != nil {
+			return failures.FailCmd.Wrap(err)
+		}
 	}
 
 	return nil

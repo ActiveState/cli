@@ -1,11 +1,10 @@
 package activate
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -13,28 +12,45 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/stretchr/testify/suite"
 )
 
-func (suite *ActivateTestSuite) TestActivateNew() {
+type ActivateNewTestSuite struct {
+	ActivateTestSuite
+}
+
+func (suite *ActivateNewTestSuite) setupMocks() {
 	suite.rMock.MockFullRuntime()
+	gmock := suite.rMock.GraphMock
+	gmock.Reset()
+	gmock.ProjectByOrgAndNameNoCommits(graphMock.Once)
+	gmock.ProjectByOrgAndName(graphMock.NoOptions)
+	gmock.Checkpoint(graphMock.NoOptions)
+}
+
+func (suite *ActivateNewTestSuite) TestActivateNew() {
+	suite.setupMocks()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
-	setupProjectMock()
+	httpmock.Register("POST", "organizations/sample-org/projects")
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
+	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010003", 0, func(req *http.Request) (int, string) {
+		return 200, ""
+	})
 
 	authentication.Get().AuthenticateWithToken("")
 
-	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("example-proj", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+	suite.promptMock.OnMethod("Select").Once().Return("sample-org", nil)
 
 	err := Command.Execute()
 	suite.NoError(err, "Executed without error")
@@ -44,58 +60,24 @@ func (suite *ActivateTestSuite) TestActivateNew() {
 	suite.NoError(err, "Project was created")
 }
 
-func setupProjectMock() {
-	orgProjMockCalled := false //  The project response changes once the project is created so we need
-	// too provide a different response after the first call to this mock
-	getResponseFile := func(method string, code int, responseFile string, responsePath string) string {
-		responseFile = fmt.Sprintf("%s-%s", strings.ToUpper(method), strings.TrimPrefix(responseFile, "/"))
-		if code != 200 {
-			responseFile = fmt.Sprintf("%s-%d", responseFile, code)
-		}
-		ext := ".json"
-		if filepath.Ext(responseFile) != "" {
-			ext = ""
-		}
-		responseFile = filepath.Join(responsePath, responseFile) + ext
-
-		return responseFile
-	}
-	responsePath := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", "httpresponse")
-	request := "organizations/test-owner/projects/test-name"
-	pathToFileWithCommit := "organizations/test-owner/projects/test-name-commit"
-	method := "GET"
-	code := 200
-	httpmock.RegisterWithResponderBody(method, request, code, func(req *http.Request) (int, string) {
-		responseFile := getResponseFile(method, code, pathToFileWithCommit, responsePath)
-		if !orgProjMockCalled {
-			orgProjMockCalled = true
-			responseFile = getResponseFile(method, code, request, responsePath)
-		}
-		return 200, string(fileutils.ReadFileUnsafe(responseFile))
-	})
-}
-
-func (suite *ActivateTestSuite) TestActivateCopy() {
-	suite.rMock.MockFullRuntime()
+func (suite *ActivateNewTestSuite) TestActivateCopy() {
+	suite.setupMocks()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/organizations")
-	httpmock.Register("POST", "organizations/test-owner/projects")
-	httpmock.RegisterWithCode("GET", "organizations/ActiveState/projects/CodeIntel", 404)
-	setupProjectMock()
+	httpmock.Register("POST", "organizations/sample-org/projects")
 	httpmock.Register("POST", "vcs/commit")
 	httpmock.Register("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001")
-	suite.apiMock.MockGetProject404()
 
 	authentication.Get().AuthenticateWithToken("")
 
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-name", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("example-proj", nil)
 	suite.promptMock.OnMethod("Select").Once().Return("Python 3", nil)
-	suite.promptMock.OnMethod("Input").Once().Return("test-owner", nil)
+	suite.promptMock.OnMethod("Input").Once().Return("sample-org", nil)
 
 	projPathOriginal := filepath.Join(environment.GetRootPathUnsafe(), "state", "activate", "testdata", constants.ConfigFileName)
 	newPath := filepath.Join(suite.dir, constants.ConfigFileName)
@@ -111,7 +93,31 @@ func (suite *ActivateTestSuite) TestActivateCopy() {
 	suite.NoError(err, "Project was created")
 	prj, fail := project.GetOnce()
 	suite.NoError(fail.ToError(), "Should retrieve project")
-	newURL := "https://platform.activestate.com/test-owner/test-name?commitID=00010001-0001-0001-0001-000100010001"
+	newURL := "https://platform.activestate.com/ActiveState/CodeIntel?commitID=00010001-0001-0001-0001-000100010001"
 	suite.Equal(newURL, prj.URL())
 	suite.Equal("master", prj.Version())
+}
+
+func (suite *ActivateNewTestSuite) TestNewPlatformProject() {
+	suite.setupMocks()
+	suite.authMock.MockLoggedin()
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "organizations/sample-org/projects")
+	httpmock.Register("POST", "vcs/commit")
+	httpmock.RegisterWithResponderBody("PUT", "vcs/branch/00010001-0001-0001-0001-000100010001", 0, func(req *http.Request) (int, string) {
+		return 200, ""
+	})
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--new", "--project", "example-proj", "--owner", "sample-org", "--language", "python3"})
+	err := Command.Execute()
+	suite.NoError(err, "Executed without error")
+	suite.NoError(failures.Handled(), "No failure occurred")
+}
+
+func TestActivateNewTestSuite(t *testing.T) {
+	suite.Run(t, new(ActivateNewTestSuite))
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -22,6 +23,7 @@ type InternalTestSuite struct {
 	installer   *Installer
 	authMock    *authMock.Mock
 	httpmock    *httpmock.HTTPMock
+	graphMock   *graphMock.Mock
 }
 
 func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
@@ -45,12 +47,15 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.installer, fail = NewInstaller(suite.downloadDir, suite.cacheDir, InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
+
+	suite.graphMock = graphMock.Init()
 }
 
 func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 	projectfile.Reset()
 	suite.authMock.Close()
 	httpmock.DeActivate()
+	suite.graphMock.Close()
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
@@ -64,9 +69,7 @@ func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointPrePlatform() {
-	httpmock.RegisterWithResponseBody(
-		"GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/checkpoint", 200,
-		`[{"namespace": "pre-platform-installer"}]`)
+	suite.graphMock.CheckpointWithPrePlatform(graphMock.NoOptions)
 	fail := suite.installer.validateCheckpoint()
 	suite.Equal(FailPrePlatformNotSupported.Name, fail.Type.Name)
 }

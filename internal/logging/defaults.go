@@ -4,6 +4,7 @@ package logging
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -28,6 +29,10 @@ func (l *fileHandler) SetFormatter(f Formatter) {
 
 func (l *fileHandler) SetVerbose(v bool) {
 	l.verbose = v
+}
+
+func (l *fileHandler) Output() io.Writer {
+	return l.file
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {

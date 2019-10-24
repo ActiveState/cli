@@ -89,20 +89,23 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ex
 		exiter(1)
 	}
 
-	if info != nil {
-		print.Line(locale.Tr("downloading_state_version", info.Version))
-		err = up.Download(binary)
-		if err != nil {
-			failures.Handle(err, locale.T("forward_fail_download"))
-			exiter(1)
-		}
+	if info == nil {
+		failures.Handle(err, locale.T("forward_fail_info"))
+		Command.Exiter(1)
+	}
 
-		permissions, _ := permbits.Stat(binary)
-		permissions.SetUserExecute(true)
-		err = permbits.Chmod(binary, permissions)
-		if err != nil {
-			failures.Handle(err, locale.T("forward_fail_perm"))
-			exiter(1)
-		}
+	print.Line(locale.Tr("downloading_state_version", info.Version))
+	err = up.Download(binary)
+	if err != nil {
+		failures.Handle(err, locale.T("forward_fail_download"))
+		Command.Exiter(1)
+	}
+
+	permissions, _ := permbits.Stat(binary)
+	permissions.SetUserExecute(true)
+	err = permbits.Chmod(binary, permissions)
+	if err != nil {
+		failures.Handle(err, locale.T("forward_fail_perm"))
+		Command.Exiter(1)
 	}
 }
