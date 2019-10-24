@@ -21,7 +21,7 @@ func IsExecutable(path string) bool {
 func copyPermissions(fileInfo, entry os.FileInfo, dest string) *failures.Failure {
 	stat, ok := fileInfo.Sys().(*syscall.Stat_t)
 	if !ok {
-		return failures.FailOS.New(locale.T("TODO:"))
+		return failures.FailOS.New(locale.T("err_copy_permissions_syscall"))
 	}
 
 	if err := os.Lchown(dest, int(stat.Uid), int(stat.Gid)); err != nil {

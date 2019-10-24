@@ -535,13 +535,14 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 // CopySymlink reads the symlink at src and creates a new
 // link at dest
 func CopySymlink(src, dest string) *failures.Failure {
+	if runtime.GOOS == "windows" {
+		return failures.FailOS.New(locale.T("err_copy_windows_symlink"))
+	}
 	link, err := os.Readlink(src)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
-	// TODO: Determine if this will work in windows, if not only do this
-	// on linux/mac
 	err = os.Symlink(link, dest)
 	if err != nil {
 		return failures.FailOS.Wrap(err)
