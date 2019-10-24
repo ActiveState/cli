@@ -32,3 +32,7 @@ func IsExecutable(path string) bool {
 func copyPermissions(fileInfo, entry os.FileInfo, dest string) *failures.Failure {
 	return nil
 }
+
+func copyOwnership(fileInfo os.FileInfo, dest string) *failures.Failure {
+	return nil
+}

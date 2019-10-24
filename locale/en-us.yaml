@@ -961,7 +961,7 @@ pull_latest:
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 err_copy_permissions_syscall:
-  other: Could not get required information to copy file permissions
+  other: Could not get required information to copy file ownership
 err_copy_windows_symlink:
   other: "Cannot copy directory: contains symlink"
 unstable_version_warning:

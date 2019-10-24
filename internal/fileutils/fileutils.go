@@ -514,19 +514,16 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 			}
 		}
 
-		if runtime.GOOS != "windows" {
-			fail := copyPermissions(fileInfo, entry, dest)
-			if fail != nil {
-				return fail
-			}
+		fail := copyPermissions(fileInfo, entry, destPath)
+		if fail != nil {
+			return fail
 		}
 
-		isSymlink := entry.Mode()&os.ModeSymlink != 0
-		if !isSymlink {
-			if err := os.Chmod(destPath, entry.Mode()); err != nil {
-				return failures.FailOS.Wrap(err)
-			}
+		fail = copyOwnership(fileInfo, dest)
+		if fail != nil {
+			return fail
 		}
+
 	}
 
 	return nil
@@ -536,8 +533,11 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 // link at dest
 func CopySymlink(src, dest string) *failures.Failure {
 	if runtime.GOOS == "windows" {
+		// symlink creation on Windows requires requires elevated permissions
+		// or developer mode enabled, both of which we can't guarantee here
 		return failures.FailOS.New(locale.T("err_copy_windows_symlink"))
 	}
+
 	link, err := os.Readlink(src)
 	if err != nil {
 		return failures.FailOS.Wrap(err)

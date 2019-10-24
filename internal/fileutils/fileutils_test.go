@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -309,25 +310,48 @@ func TestCreateTempExecutable(t *testing.T) {
 }
 
 func TestCopyAllFiles(t *testing.T) {
-	src := getTempDir(t, t.Name())
-	dest := getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
+	var (
+		src        = getTempDir(t, t.Name())
+		dest       = getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
+		sourceDir  = filepath.Join(src, "test-dir")
+		sourceFile = filepath.Join(src, "test-dir", "test-file")
+		sourceLink = filepath.Join(src, "test-link")
+		destDir    = filepath.Join(dest, "test-dir")
+		destFile   = filepath.Join(filepath.Join(dest, "test-dir", "test-file"))
+		destLink   = filepath.Join(dest, "test-link")
+	)
 	defer func() {
 		os.RemoveAll(src)
 		os.RemoveAll(dest)
 	}()
 
-	fail := Mkdir(filepath.Join(src, "test-dir"))
+	fail := Mkdir(sourceDir)
 	require.NoError(t, fail.ToError())
 
-	_, fail = Touch(filepath.Join(src, "test-dir", "test-file"))
+	_, fail = Touch(sourceFile)
 	require.NoError(t, fail.ToError())
+	err := os.Chmod(sourceFile, 0777)
+	require.NoError(t, err)
 
 	if runtime.GOOS != "windows" {
-		// Symlink creation on Windows requires privledged create when done via os.Symlink
-		err := os.Symlink(filepath.Join(src, "test-dir", "test-file"), filepath.Join(src, "test-link"))
+		// Symlink creation on Windows requires privledged create
+		err := os.Symlink(sourceFile, sourceLink)
 		require.NoError(t, err)
 	}
 
 	fail = CopyAllFiles(src, dest)
 	require.NoError(t, fail.ToError())
+	require.DirExists(t, dest)
+	require.DirExists(t, destDir)
+	require.FileExists(t, destFile)
+
+	if runtime.GOOS != "windows" {
+		destFilePerms, err := permbits.Stat(destFile)
+		require.NoError(t, err)
+		if destFilePerms != 0777 {
+			t.Fatal("copied file permissions do not match")
+		}
+
+		require.FileExists(t, destLink)
+	}
 }
