@@ -4,6 +4,7 @@ package logging
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"testing"
@@ -22,6 +23,10 @@ func (l *Test1Handler) SetFormatter(f Formatter) {
 }
 
 func (l *Test1Handler) SetVerbose(v bool) {
+}
+
+func (l *Test1Handler) Output() io.Writer {
+	return nil
 }
 
 func (l *Test1Handler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
@@ -138,6 +143,10 @@ func (t *TestHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 func (t *TestHandler) SetFormatter(fmt Formatter) {
 	t.formatter = fmt
+}
+
+func (l *TestHandler) Output() io.Writer {
+	return nil
 }
 
 func (l *TestHandler) SetVerbose(v bool) {
