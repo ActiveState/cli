@@ -1,3 +1,9 @@
+// Package conpty provides functions for creating a process attached to a
+// ConPTY pseudo-terminal.  This allows the process to call console specific
+// API functions without an actual terminal being present.
+//
+// The concept is best explained in this blog post:
+// https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
 package conpty
 
 import (
@@ -8,64 +14,23 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
-var (
-	kernel32                              = syscall.NewLazyDLL("kernel32.dll")
-	procCreatePseudoConsole               = kernel32.NewProc("CreatePseudoConsole")
-	procClosePseudoConsole                = kernel32.NewProc("ClosePseudoConsole")
-	procInitializeProcThreadAttributeList = kernel32.NewProc("InitializeProcThreadAttributeList")
-	procUpdateProcThreadAttribute         = kernel32.NewProc("UpdateProcThreadAttribute")
-	procLocalAlloc                        = kernel32.NewProc("LocalAlloc")
-	procDeleteProcThreadAttributeList     = kernel32.NewProc("DeleteProcThreadAttributeList")
-	procCreateProcessW                    = kernel32.NewProc("CreateProcessW")
-)
-
-type WinPtyPipe struct {
-	hpCon               *syscall.Handle
-	pipeFdIn            syscall.Handle
-	pipeFdOut           syscall.Handle
-	startupInfo         StartupInfoEx
+// ConPty represents a windows pseudo console.
+// Attach a process to it by calling the Spawn() method.
+// You can send UTF encoded commands to it with Write() and listen to
+// its output stream by accessing the output pipe via OutPipe()
+type ConPty struct {
+	hpCon               *windows.Handle
+	pipeFdIn            windows.Handle
+	pipeFdOut           windows.Handle
+	startupInfo         startupInfoEx
 	consoleSize         uintptr
 	PipeIn              *os.File
 	PipeOut             *os.File
 	attributeListBuffer []byte
-}
-
-type StartupInfoEx struct {
-	startupInfo     syscall.StartupInfo
-	lpAttributeList syscall.Handle
-}
-
-type ProcThreadAttribute uintptr
-
-const ExtendedStartupinfoPresent uint32 = 0x00080000
-
-const (
-	ProcThreadAttributePseudoconsole ProcThreadAttribute = 22 | 0x00020000 // this is the only one we support right now
-)
-
-func deleteProcThreadAttributeList(handle syscall.Handle) (err error) {
-	_, _, e1 := syscall.Syscall(procDeleteProcThreadAttributeList.Addr(), 1, uintptr(handle), 0, 0)
-	if e1 != 0 {
-		err = e1
-	}
-	return
-}
-
-func localAlloc(size uint64) (ptr syscall.Handle, err error) {
-	r1, _, e1 := syscall.Syscall(procLocalAlloc.Addr(), 2, uintptr(0x0040), uintptr(size), 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = e1
-		} else {
-			err = syscall.EINVAL
-		}
-		ptr = syscall.InvalidHandle
-		return
-	}
-	ptr = syscall.Handle(r1)
-	return
 }
 
 // makeCmdLine builds a command line out of args by escaping "special"
@@ -76,59 +41,20 @@ func makeCmdLine(args []string) string {
 		if s != "" {
 			s += " "
 		}
-		s += syscall.EscapeArg(v)
+		s += windows.EscapeArg(v)
 	}
 	return s
 }
 
-func updateProcThreadAttributeList(attributeList syscall.Handle, attribute ProcThreadAttribute, lpValue syscall.Handle, lpSize uintptr) (err error) {
-
-	r1, _, e1 := procUpdateProcThreadAttribute.Call(uintptr(attributeList), 0, uintptr(attribute), uintptr(lpValue), lpSize, 0, 0)
-	if r1 == 0 {
-		err = e1
-	}
-
-	return
-}
-
-func initializeProcThreadAttributeList(attributeList uintptr, attributeCount uint32, listSize *uint64) (err error) {
-
-	if attributeList == 0 {
-		syscall.Syscall6(procInitializeProcThreadAttributeList.Addr(), 4, 0, uintptr(attributeCount), 0, uintptr(unsafe.Pointer(listSize)), 0, 0)
-		return
-	}
-	// b := make([]byte, *listSize)
-	r1, _, e1 := procInitializeProcThreadAttributeList.Call(attributeList, uintptr(attributeCount), 0, uintptr(unsafe.Pointer(listSize)))
-	// r1, _, e1 := syscall.Syscall6(procInitializeProcThreadAttributeList.Addr(), 4, uintptr(unsafe.Pointer(&b[0])), uintptr(attributeCount), 0, uintptr(unsafe.Pointer(listSize)), 0, 0)
-	if r1 == 0 {
-		err = e1
-	}
-
-	return
-}
-
-func closePseudoConsole(handle syscall.Handle) (err error) {
-	r1, _, e1 := syscall.Syscall(procClosePseudoConsole.Addr(), 1, uintptr(handle), 0, 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = e1
-		} else {
-			err = syscall.EINVAL
-		}
-	}
-
-	return
-}
-
-func New(X int16, Y int16) *WinPtyPipe {
-	return &WinPtyPipe{
-		hpCon:       new(syscall.Handle),
-		startupInfo: StartupInfoEx{},
+func New(X int16, Y int16) *ConPty {
+	return &ConPty{
+		hpCon:       new(windows.Handle),
+		startupInfo: startupInfoEx{},
 		consoleSize: uintptr(X) + (uintptr(Y) << 16),
 	}
 }
 
-func (winpty *WinPtyPipe) Close() (err error) {
+func (winpty *ConPty) Close() (err error) {
 	err = deleteProcThreadAttributeList(winpty.startupInfo.lpAttributeList)
 	if err != nil {
 		log.Printf("Failed to free delete proc thread attribute list: %v", err)
@@ -148,12 +74,12 @@ func (winpty *WinPtyPipe) Close() (err error) {
 	return
 }
 
-func (winpty *WinPtyPipe) ReadStdout(buf []byte) (n uint32, err error) {
-	err = syscall.ReadFile(winpty.pipeFdOut, buf, &n, nil)
+func (winpty *ConPty) ReadStdout(buf []byte) (n uint32, err error) {
+	err = windows.ReadFile(winpty.pipeFdOut, buf, &n, nil)
 	return
 }
 
-func (winpty *WinPtyPipe) InitializeStartupInfoAttachedToPTY() (err error) {
+func (winpty *ConPty) InitializeStartupInfoAttachedToPTY() (err error) {
 
 	var attrListSize uint64
 	fmt.Printf("sizeof(startupinfo) = %d\n", unsafe.Sizeof(winpty.startupInfo.startupInfo))
@@ -167,7 +93,7 @@ func (winpty *WinPtyPipe) InitializeStartupInfoAttachedToPTY() (err error) {
 
 	winpty.attributeListBuffer = make([]byte, attrListSize)
 	// winpty.startupInfo.lpAttributeList, err = localAlloc(attrListSize)
-	winpty.startupInfo.lpAttributeList = syscall.Handle(unsafe.Pointer(&winpty.attributeListBuffer[0]))
+	winpty.startupInfo.lpAttributeList = windows.Handle(unsafe.Pointer(&winpty.attributeListBuffer[0]))
 	if err != nil {
 		return fmt.Errorf("Could not allocate local memory: %v", err)
 	}
@@ -179,13 +105,13 @@ func (winpty *WinPtyPipe) InitializeStartupInfoAttachedToPTY() (err error) {
 		return fmt.Errorf("failed to initialize proc attributes: %v", err)
 	}
 
-	fmt.Printf("%d\n", ProcThreadAttributePseudoconsole)
+	fmt.Printf("%d\n", procThreadAttributePseudoconsole)
 	fmt.Printf("sizeof(HPCON) = %d, %d\n", unsafe.Sizeof(*winpty.hpCon), uintptr(*winpty.hpCon))
 	fmt.Printf("listBuffer: %s\n", hex.EncodeToString(winpty.attributeListBuffer))
 
 	err = updateProcThreadAttributeList(
 		winpty.startupInfo.lpAttributeList,
-		ProcThreadAttributePseudoconsole,
+		procThreadAttributePseudoconsole,
 		*winpty.hpCon,
 		unsafe.Sizeof(*winpty.hpCon))
 	if err != nil {
@@ -199,7 +125,7 @@ func (winpty *WinPtyPipe) InitializeStartupInfoAttachedToPTY() (err error) {
 	return
 }
 
-func (winpty *WinPtyPipe) Spawn(argv []string) (pid int, handle uintptr, err error) {
+func (winpty *ConPty) Spawn(argv []string) (pid int, handle uintptr, err error) {
 	/*
 		if len(argv0) == 0 {
 			return 0, 0, syscall.EWINDOWS
@@ -230,7 +156,7 @@ func (winpty *WinPtyPipe) Spawn(argv []string) (pid int, handle uintptr, err err
 
 	var argvp *uint16
 	if len(cmdline) != 0 {
-		argvp, err = syscall.UTF16PtrFromString(cmdline)
+		argvp, err = windows.UTF16PtrFromString(cmdline)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -279,9 +205,9 @@ func (winpty *WinPtyPipe) Spawn(argv []string) (pid int, handle uintptr, err err
 
 	// winpty.startupInfo.startupInfo.Flags = syscall.STARTF_USESTDHANDLES
 
-	pi := new(syscall.ProcessInformation)
+	pi := new(windows.ProcessInformation)
 
-	flags := uint32(syscall.CREATE_UNICODE_ENVIRONMENT) | ExtendedStartupinfoPresent
+	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
 	// flags := ExtendedStartupinfoPresent
 	// flags := uint32(0)
 	fmt.Printf("cb = %d, flags=%d\n", winpty.startupInfo.startupInfo.Cb, flags)
@@ -326,23 +252,14 @@ func (winpty *WinPtyPipe) Spawn(argv []string) (pid int, handle uintptr, err err
 	return int(pi.ProcessId), uintptr(pi.Process), nil
 }
 
-func createPseudoConsole(consoleSize uintptr, ptyIn syscall.Handle, ptyOut syscall.Handle, hpCon *syscall.Handle) (err error) {
-	r1, _, e1 := procCreatePseudoConsole.Call(consoleSize, uintptr(ptyIn), uintptr(ptyOut), 0, uintptr(unsafe.Pointer(hpCon)))
+func (wpty *ConPty) CreatePseudoConsoleAndPipes() (err error) {
+	var hPipePTYIn windows.Handle
+	var hPipePTYOut windows.Handle
 
-	if r1 != 0 { // !S_OK
-		err = e1
-	}
-	return
-}
-
-func (wpty *WinPtyPipe) CreatePseudoConsoleAndPipes() (err error) {
-	var hPipePTYIn syscall.Handle
-	var hPipePTYOut syscall.Handle
-
-	if err := syscall.CreatePipe(&hPipePTYIn, &wpty.pipeFdIn, nil, 0); err != nil {
+	if err := windows.CreatePipe(&hPipePTYIn, &wpty.pipeFdIn, nil, 0); err != nil {
 		log.Fatalf("Failed to create PTY input pipe: %v", err)
 	}
-	if err := syscall.CreatePipe(&wpty.pipeFdOut, &hPipePTYOut, nil, 0); err != nil {
+	if err := windows.CreatePipe(&wpty.pipeFdOut, &hPipePTYOut, nil, 0); err != nil {
 		log.Fatalf("Failed to create PTY output pipe: %v", err)
 	}
 
@@ -358,14 +275,14 @@ func (wpty *WinPtyPipe) CreatePseudoConsoleAndPipes() (err error) {
 	// Note: We can close the handles to the PTY-end of the pipes here
 	// because the handles are dup'ed into the ConHost and will be released
 	// when the ConPTY is destroyed.
-	if hPipePTYOut != syscall.InvalidHandle {
-		syscall.CloseHandle(hPipePTYOut)
+	if hPipePTYOut != windows.InvalidHandle {
+		windows.CloseHandle(hPipePTYOut)
 	}
-	if hPipePTYIn != syscall.InvalidHandle {
-		syscall.CloseHandle(hPipePTYIn)
+	if hPipePTYIn != windows.InvalidHandle {
+		windows.CloseHandle(hPipePTYIn)
 	}
 
-	t, err := syscall.GetFileType(wpty.pipeFdOut)
+	t, err := windows.GetFileType(wpty.pipeFdOut)
 	if err != nil {
 		fmt.Printf("error get file type: %v", err)
 	}
@@ -374,13 +291,4 @@ func (wpty *WinPtyPipe) CreatePseudoConsoleAndPipes() (err error) {
 	wpty.PipeOut = os.NewFile(uintptr(wpty.pipeFdOut), "|1")
 
 	return
-}
-
-func spawn() {
-
-	var sI syscall.StartupInfo
-	var pI syscall.ProcessInformation
-
-	argv := syscall.StringToUTF16Ptr(".\\build\\state.exe")
-	syscall.CreateProcess(nil, argv, nil, nil, false, 0, nil, nil, &sI, &pI)
 }

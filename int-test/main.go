@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -9,26 +8,16 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/int-test/conpty"
-	expect "github.com/Netflix/go-expect"
+	"github.com/hinshun/vt10x"
 )
-
-type TimeoutMatcher struct {
-	expireTime time.Time
-}
-
-func (tom *TimeoutMatcher) Match(buf *bytes.Buffer) bool {
-	return (time.Now().UnixNano() > tom.expireTime.UnixNano())
-}
-
-func WithTimeoutMatcher(d time.Duration) expect.ExpectOpt {
-	return func(eo *expect.ExpectOpts) error {
-		eo.Matchers = append(eo.Matchers, &TimeoutMatcher{time.Now().Add(d)})
-		return nil
-	}
-}
 
 func main() {
 	wpty := conpty.New(80, 40)
+	var state vt10x.State
+	stateLog, _ := os.Create("state.log")
+	defer stateLog.Close()
+	l := log.New(stateLog, "state: ", 0)
+	l.Printf("test")
 	defer wpty.Close()
 	err := wpty.CreatePseudoConsoleAndPipes()
 	if err != nil {
@@ -48,6 +37,26 @@ func main() {
 		log.Printf("Could not get exit code: %v\n", err)
 	}
 	log.Printf("exit code: %d", exitCode)
+
+	term, err := vt10x.Create(&state, wpty.PipeOut)
+	if err != nil {
+		log.Fatalf("Could not create vt10x terminal: %v", err)
+	}
+	defer term.Close()
+	state.DebugLogger = l
+	term.Resize(80, 40)
+
+	go func() {
+		for {
+			err := term.Parse()
+			fmt.Printf("parsed")
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				break
+			}
+		}
+	}()
+
 	fmt.Printf("create wpty\n")
 	// wpty.PipeIn.WriteString("abc")
 	// fmt.Printf("written the stuff\n")
@@ -66,35 +75,38 @@ func main() {
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
-	go func() {
-		fmt.Println("reading from stdout")
-		b := make([]byte, 1000)
-		// n, err := wpty.ReadStdout(b)
-		n, err := wpty.PipeOut.Read(b)
-		if err != nil {
-			fmt.Printf("Failed reading from pipe: %v\n", err)
-		}
-		// fmt.Printf("read: %d bytes: %s\n", n, string(b[:n]))
-		f.WriteString(string(b[:n]))
-	}()
-	go func() {
-		// give it one second to get ready for input
-		time.Sleep(time.Second)
-		_, err := wpty.PipeIn.WriteString("abcdefg world\r\n\n")
-		if err != nil {
-			fmt.Printf("Failed writing to pipe: %v\n", err)
-		}
-		fmt.Printf("wrote to pipe...")
-		b := make([]byte, 2000)
-		// n, err := wpty.ReadStdout(b)
-		n, err := wpty.PipeOut.Read(b)
-		if err != nil {
-			fmt.Printf("Failed reading from pipe: %v\n", err)
-		}
-		fmt.Printf("read 2: %d bytes: %s\n", n, string(b[:n]))
-		f.WriteString(string(b[:n]))
-	}()
+	/*
+		go func() {
+			fmt.Println("reading from stdout")
+			b := make([]byte, 2000)
+			// n, err := wpty.ReadStdout(b)
+			n, err := wpty.PipeOut.Read(b)
+			if err != nil {
+				fmt.Printf("Failed reading from pipe: %v\n", err)
+			}
+			fmt.Printf("read: %d bytes\n", n)
+			f.WriteString(string(b[:n]))
+		}()
+		go func() {
+			// give it one second to get ready for input
+			time.Sleep(time.Second)
+			_, err := wpty.PipeIn.WriteString("abcdefg world\r\n\n")
+			if err != nil {
+				fmt.Printf("Failed writing to pipe: %v\n", err)
+			}
+			fmt.Printf("wrote to pipe...")
+			b := make([]byte, 2000)
+			// n, err := wpty.ReadStdout(b)
+			n, err := wpty.PipeOut.Read(b)
+			if err != nil {
+				fmt.Printf("Failed reading from pipe: %v\n", err)
+			}
+			fmt.Printf("read 2: %d bytes\n", n)
+			f.WriteString(string(b[:n]))
+		}()
+	*/
 	time.Sleep(2 * time.Second)
+	fmt.Printf("state: %s", state.String())
 
 	return
 }
