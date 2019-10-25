@@ -47,7 +47,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	suite.promptMock = promptMock.Init()
 	authlet.Prompter = suite.promptMock
 
-	Command.GetCobraCmd().SetArgs([]string{})
+	setup(suite.T())
 }
 
 func (suite *LoginWithKeypairTestSuite) AfterTest(suiteName, testName string) {

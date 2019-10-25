@@ -231,6 +231,8 @@ func (u *Updater) fetchInfo() error {
 	}
 	fullURL += url.QueryEscape(plat) + ".json"
 
+	logging.Debug("Fetching update URL: %s", fullURL)
+
 	r, err := u.fetch(fullURL)
 	if err != nil {
 		return err

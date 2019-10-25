@@ -31,7 +31,7 @@ import (
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
-var FailMainPanic = failures.Type("main.fail.panic")
+var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 // T links to locale.T
 var T = locale.T
@@ -89,7 +89,7 @@ func main() {
 				panic(r) // don't capture exiter panics
 			}
 			failures.Handle(FailMainPanic.New("err_main_panic"), "")
-			logging.Error("%v - caught panic", r)
+			logging.Errorf("%v - caught panic", r)
 			logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
 			time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 			os.Exit(1)
@@ -166,7 +166,7 @@ func setupRollbar() {
 		data["platform_os"] = runtime.GOOS
 	})
 
-	log.SetOutput(os.Stderr)
+	log.SetOutput(logging.CurrentHandler().Output())
 }
 
 // Execute the `state` command
