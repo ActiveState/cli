@@ -1,7 +1,6 @@
 package conpty
 
 import (
-	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -74,7 +73,7 @@ func localAlloc(size uint64) (ptr windows.Handle, err error) {
 	return
 }
 
-func createPseudoConsole(consoleSize uintptr, ptyIn windows.Handle, ptyOut syscall.Handle, hpCon *syscall.Handle) (err error) {
+func createPseudoConsole(consoleSize uintptr, ptyIn windows.Handle, ptyOut windows.Handle, hpCon *windows.Handle) (err error) {
 	r1, _, e1 := procCreatePseudoConsole.Call(consoleSize, uintptr(ptyIn), uintptr(ptyOut), 0, uintptr(unsafe.Pointer(hpCon)))
 
 	if r1 != 0 { // !S_OK
