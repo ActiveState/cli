@@ -175,6 +175,9 @@ func TestArtifactEnvSetupMeta(t *testing.T) {
 	require.NoError(t, err)
 
 	pythonBinaryFilename := "python3"
+	if rt.GOOS == "windows" {
+		pythonBinaryFilename = pythonBinaryFilename + ".exe"
+	}
 	_, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
 	require.NoError(t, fail.ToError())
 
