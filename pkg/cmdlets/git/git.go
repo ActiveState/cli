@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -108,5 +109,11 @@ func moveFiles(src, dest string) *failures.Failure {
 		return failures.FailUserInput.Wrap(err)
 	}
 
-	return fileutils.MoveAllFiles(src, dest)
+	fail := fileutils.MoveAllFiles(src, dest)
+	if fail != nil {
+		logging.Warningf("Could not move files. Falling back to copy. Move error: %v", fail)
+		return fileutils.CopyFiles(src, dest)
+	}
+
+	return nil
 }

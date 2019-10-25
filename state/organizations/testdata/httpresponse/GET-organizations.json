@@ -4,6 +4,7 @@
     "added": "2018-05-08T14:53:26.729Z",
     "name": "test-organization",
     "organizationID": "test-organization",
-    "personal": true
+    "personal": true,
+    "tier": "test-tier"
   }
 ]

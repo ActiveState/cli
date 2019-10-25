@@ -134,10 +134,6 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials) *failures
 		return fail
 	}
 
-	print.Line(locale.T("login_success_welcome_back", map[string]string{
-		"Name": auth.WhoAmI(),
-	}))
-
 	return nil
 }
 
