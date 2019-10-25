@@ -221,24 +221,20 @@ else
   fi
 fi
 
+SPACEPATH=${PATH//:/ }
+[[ $SPACEPATH =~ (^|[[:space:]])$INSTALLDIR($|[[:space:]]) ]] && INPATH=true || INPATH=false
+
+if ! $INPATH; then
+  for PATHELEM in $SPACEPATH; do
+    if [ -w ${PATHELEM} ]; then
+      INSTALLDIR=$PATHELEM
+      break
+    fi
+  done
+fi
+
 # Prompt the user for a directory to install to.
 while "true"; do
-  userprompt "Please enter the installation directory [$INSTALLDIR]: "
-  INPUT=$(userinput $INSTALLDIR)
-  if [ -e "$INPUT" -a ! -d "$INPUT" ]; then
-    warn "$INPUT exists and is not a directory"
-    continue
-  elif [ -e "$INPUT" -a ! -w "$INPUT" ]; then
-    warn "You do not have permission to write to $INPUT"
-    continue
-  fi
-  if [ ! -z "$INPUT" ]; then
-    if [ ! -z "`realpath \"$INPUT\" 2>/dev/null`" ]; then
-      INSTALLDIR="`realpath \"$INPUT\"`"
-    else
-      INSTALLDIR="$INPUT"
-    fi
-  fi
   info "Installing to $INSTALLDIR"
   if [ ! -e "$INSTALLDIR" ]; then
     info "NOTE: $INSTALLDIR will be created"
