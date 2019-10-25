@@ -83,7 +83,6 @@ func runAndExit(args []string, exiter func(int)) {
 	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
 		logging.Error("Error happened while running cmdtree: %w", err)
 		exiter(1)
-		//Command.Exiter(1)
 		return
 	}
 
