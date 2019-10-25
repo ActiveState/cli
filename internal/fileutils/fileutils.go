@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -469,12 +468,13 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 	return f.Name(), nil
 }
 
-// CopyAllFiles will copy all of the files/dirs within one directory to another.
+// CopyFiles will copy all of the files/dirs within one directory to another.
 // Both directories must already exist
-func CopyAllFiles(src, dest string) *failures.Failure {
+func CopyFiles(src, dest string) *failures.Failure {
 	if !DirExists(src) {
 		return failures.FailOS.New("err_os_not_a_directory", src)
-	} else if !DirExists(dest) {
+	}
+	if !DirExists(dest) {
 		return failures.FailOS.New("err_os_not_a_directory", dest)
 	}
 
@@ -498,7 +498,7 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 			if fail != nil {
 				return fail
 			}
-			fail = CopyAllFiles(srcPath, destPath)
+			fail = CopyFiles(srcPath, destPath)
 			if fail != nil {
 				return fail
 			}
@@ -521,12 +521,6 @@ func CopyAllFiles(src, dest string) *failures.Failure {
 // CopySymlink reads the symlink at src and creates a new
 // link at dest
 func CopySymlink(src, dest string) *failures.Failure {
-	if runtime.GOOS == "windows" {
-		// symlink creation on Windows requires requires elevated permissions
-		// or developer mode enabled, both of which we can't guarantee here
-		return failures.FailOS.New(locale.T("err_copy_windows_symlink"))
-	}
-
 	link, err := os.Readlink(src)
 	if err != nil {
 		return failures.FailOS.Wrap(err)

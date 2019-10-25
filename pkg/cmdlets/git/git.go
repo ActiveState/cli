@@ -108,5 +108,5 @@ func copyFiles(src, dest string) *failures.Failure {
 		return failures.FailUserInput.Wrap(err)
 	}
 
-	return fileutils.CopyAllFiles(src, dest)
+	return fileutils.CopyFiles(src, dest)
 }

@@ -308,7 +308,7 @@ func TestCreateTempExecutable(t *testing.T) {
 	assert.NotZero(t, res, "file should be readable/executable")
 }
 
-func TestCopyAllFiles(t *testing.T) {
+func TestCopyFiles(t *testing.T) {
 	var (
 		src        = getTempDir(t, t.Name())
 		dest       = getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
@@ -336,7 +336,7 @@ func TestCopyAllFiles(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	fail = CopyAllFiles(src, dest)
+	fail = CopyFiles(src, dest)
 	require.NoError(t, fail.ToError())
 	require.DirExists(t, dest)
 	require.DirExists(t, destDir)
@@ -344,5 +344,92 @@ func TestCopyAllFiles(t *testing.T) {
 
 	if runtime.GOOS != "windows" {
 		require.FileExists(t, destLink)
+
+		link, err := os.Readlink(destLink)
+		require.NoError(t, err)
+		require.Equal(t, sourceFile, link)
 	}
+}
+
+type symlinkTestInfo struct {
+	src,
+	dest,
+	srcDir,
+	srcFile,
+	srcLink,
+	destFile,
+	destLink string
+	t *testing.T
+}
+
+func TestCopySymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skip symlink test on Windows")
+	}
+
+	var (
+		src  = getTempDir(t, t.Name())
+		dest = getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
+	)
+
+	info := symlinkTestInfo{
+		src:      getTempDir(t, t.Name()),
+		dest:     getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-")),
+		srcDir:   filepath.Join(src, "bar"),
+		srcFile:  filepath.Join(src, "bar", "foo"),
+		srcLink:  filepath.Join(src, "foo"),
+		destFile: filepath.Join(dest, "bar", "foo"),
+		destLink: filepath.Join(dest, "foo"),
+	}
+
+	runSymlinkTest(t, info)
+}
+
+func TestCopySymlinkRelative(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skip symlink test on Windows")
+	}
+
+	dest := getTempDir(t, strings.Join([]string{t.Name(), "destination"}, "-"))
+	info := symlinkTestInfo{
+		src:      getTempDir(t, t.Name()),
+		dest:     dest,
+		srcDir:   "bar",
+		srcFile:  "bar/foo",
+		srcLink:  "foo",
+		destFile: filepath.Join(dest, "bar", "foo"),
+		destLink: filepath.Join(dest, "foo"),
+	}
+
+	runSymlinkTest(t, info)
+}
+
+func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
+	err := os.Chdir(info.src)
+	require.NoError(t, err)
+
+	fail := Mkdir(info.srcDir)
+	require.NoError(t, fail.ToError())
+	_, fail = Touch(info.srcFile)
+	require.NoError(t, fail.ToError())
+
+	content := "stuff"
+	err = ioutil.WriteFile(info.srcFile, []byte(content), 0644)
+	require.NoError(t, err)
+
+	err = os.Symlink(info.srcFile, info.srcLink)
+	require.NoError(t, err)
+
+	linkContent, err := ioutil.ReadFile(info.srcLink)
+	require.NoError(t, err)
+	require.Equal(t, content, string(linkContent))
+
+	fail = CopyFile(info.srcFile, info.destFile)
+	require.NoError(t, err)
+	fail = CopySymlink(info.srcLink, info.destLink)
+	require.NoError(t, fail.ToError())
+
+	copiedLinkContent, err := ioutil.ReadFile(info.destLink)
+	require.NoError(t, err)
+	require.Equal(t, content, string(copiedLinkContent))
 }
