@@ -1,4 +1,4 @@
-// +build darwin dragonfly linux netbsd openbsd solaris
+// +build windows
 
 package xpty
 
@@ -11,33 +11,39 @@ import (
 	"github.com/ActiveState/cli/pkg/conpty"
 )
 
-type xpty = conpty.ConPty
+type xpty_ struct {
+	*conpty.ConPty
+}
 
-func Open() (*Xpty, error) {
+func open() (*xpty_, error) {
 	c, err := conpty.New(80, 20)
 	if err != nil {
 		return nil, err
 	}
-	return &Xpty{c}, nil
+	return &xpty_{c}, nil
 }
 
-func (p *Xpty) TerminalOutPipe() io.Reader {
-	return p.xpty.OutPipe()
+func (p *xpty_) terminalOutPipe() io.Reader {
+	return p.OutPipe()
 }
 
-func (p *Xpty) TerminalInPipe() io.Writer {
-	return p.xpty.InPipe()
+func (p *xpty_) terminalInPipe() io.Writer {
+	return p.InPipe()
 }
 
-func (p *Xpty) Close() error {
-	return p.xpty.Close()
+func (p *xpty_) close() error {
+	return p.Close()
 }
 
-func (p *Xpty) Tty() *os.File {
+func (p *xpty_) tty() *os.File {
 	return nil
 }
 
-func (p *Xpty) StartProcessInTerminal(c *exec.Cmd) (err error) {
+func (p *xpty_) terminalOutFd() uintptr {
+	return p.OutFd()
+}
+
+func (p *xpty_) startProcessInTerminal(c *exec.Cmd) (err error) {
 	var argv []string
 	if len(c.Args) > 0 {
 		argv = c.Args
@@ -51,7 +57,7 @@ func (p *Xpty) StartProcessInTerminal(c *exec.Cmd) (err error) {
 	} else {
 		envv = os.Environ()
 	}
-	_, _, err = p.xpty.Spawn(c.Path, argv, &syscall.ProcAttr{
+	_, _, err = p.Spawn(c.Path, argv, &syscall.ProcAttr{
 		Dir: c.Dir,
 		Env: envv,
 	})

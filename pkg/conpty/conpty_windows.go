@@ -82,6 +82,10 @@ func (c *ConPty) InPipe() *os.File {
 	return c.inPipe
 }
 
+func (c *ConPty) OutFd() uintptr {
+	return c.outPipe.Fd()
+}
+
 // Write safely writes bytes to the pseudo terminal
 func (c *ConPty) Write(buf []byte) (uint32, error) {
 	var n uint32

@@ -24,7 +24,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/kr/pty"
+	"github.com/ActiveState/cli/pkg/xpty"
 )
 
 // Console is an interface to automate input and output for interactive
@@ -33,8 +33,7 @@ import (
 // and multiplex its output to other writers.
 type Console struct {
 	opts            ConsoleOpts
-	ptm             *os.File
-	pts             *os.File
+	Pty             *xpty.Xpty
 	passthroughPipe *PassthroughPipe
 	runeReader      *bufio.Reader
 	closers         []io.Closer
@@ -145,13 +144,14 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 		}
 	}
 
-	ptm, pts, err := pty.Open()
+	var pty *xpty.Xpty
+	pty, err := xpty.Open()
 	if err != nil {
 		return nil, err
 	}
-	closers := append(options.Closers, pts, ptm)
+	closers := append(options.Closers, pty)
 
-	passthroughPipe, err := NewPassthroughPipe(ptm)
+	passthroughPipe, err := NewPassthroughPipe(pty.TerminalOutPipe())
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,7 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 
 	c := &Console{
 		opts:            options,
-		ptm:             ptm,
-		pts:             pts,
+		pty:             pty,
 		passthroughPipe: passthroughPipe,
 		runeReader:      bufio.NewReaderSize(passthroughPipe, utf8.UTFMax),
 		closers:         closers,
@@ -182,24 +181,24 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 // a pair of psuedo-devices, one of which, the slave, emulates a real text
 // terminal device.
 func (c *Console) Tty() *os.File {
-	return c.pts
+	return c.pty.Tty()
 }
 
 // Read reads bytes b from Console's tty.
 func (c *Console) Read(b []byte) (int, error) {
-	return c.ptm.Read(b)
+	return c.pty.TerminalOutPipe().Read(b)
 }
 
 // Write writes bytes b to Console's tty.
 func (c *Console) Write(b []byte) (int, error) {
 	c.Logf("console write: %q", b)
-	return c.ptm.Write(b)
+	return c.pty.TerminalInPipe().Write(b)
 }
 
 // Fd returns Console's file descripting referencing the master part of its
 // pty.
 func (c *Console) Fd() uintptr {
-	return c.ptm.Fd()
+	return c.pty.TerminalOutFd()
 }
 
 // Close closes Console's tty. Calling Close will unblock Expect and ExpectEOF.
@@ -216,7 +215,7 @@ func (c *Console) Close() error {
 // Send writes string s to Console's tty.
 func (c *Console) Send(s string) (int, error) {
 	c.Logf("console send: %q", s)
-	n, err := c.ptm.WriteString(s)
+	n, err := io.WriteString(c.pty.TerminalInPipe(), s)
 	for _, observer := range c.opts.SendObservers {
 		observer(s, n, err)
 	}

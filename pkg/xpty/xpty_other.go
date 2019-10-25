@@ -10,41 +10,44 @@ import (
 	"github.com/creack/pty"
 )
 
-type xpty struct {
+type xpty_ struct {
 	ptm *os.File
 	pts *os.File
 }
 
-func Open() (*Xpty, error) {
+func open() (*xpty_, error) {
 	ptm, pts, err := pty.Open()
 	if err != nil {
 		return nil, err
 	}
-	return &Xpty{&xpty{ptm, pts}}, nil
+	return &xpty_{ptm, pts}, nil
 }
 
-func (p *Xpty) TerminalOutPipe() io.Reader {
-	return p.xpty.ptm
+func (p *xpty_) terminalOutPipe() io.Reader {
+	return p.ptm
 }
 
-func (p *Xpty) TerminalInPipe() io.Writer {
-	return p.xpty.ptm
+func (p *xpty_) terminalInPipe() io.Writer {
+	return p.ptm
 }
 
-func (p *Xpty) Close() error {
-	p.xpty.pts.Close()
-	p.xpty.ptm.Close()
+func (p *xpty_) close() error {
+	p.pts.Close()
+	p.ptm.Close()
 	return nil
 }
 
-func (p *Xpty) Tty() *os.File {
-	return p.xpty.pts
+func (p *xpty_) tty() *os.File {
+	return p.pts
 }
 
-func (p *Xpty) StartProcessInTerminal(c *exec.Cmd) (err error) {
-	c.StdIn = p.xpty.pts
-	c.StdOut = p.xpty.pts
-	c.StdErr = p.xpty.pts
-	_, err = c.Start()
-	return
+func (p *xpty_) terminalOutFd() uintptr {
+	return p.ptm.Fd()
+}
+
+func (p *xpty_) startProcessInTerminal(cmd *exec.Cmd) error {
+	cmd.Stdin = p.pts
+	cmd.Stdout = p.pts
+	cmd.Stderr = p.pts
+	return cmd.Start()
 }
