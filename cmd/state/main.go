@@ -38,6 +38,8 @@ func main() {
 
 func runAndExit(args []string, exiter func(int)) {
 	logging.Debug("main")
+	logging.Debug("ConfigPath: %s", config.ConfigPath())
+	logging.Debug("CachePath: %s", config.CachePath())
 	setupRollbar()
 
 	// Write our config to file
