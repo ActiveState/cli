@@ -95,6 +95,7 @@ class IntegrationTest(unittest.TestCase):
         self.spawn_command('%s %s' % (self.get_build_path(), args))
 
     def spawn_command(self, cmd):
+        print("Running: %s" % cmd)
         self.child = spawner(cmd, env=self.env, timeout=10, cwd=self.cwd)
         self.child.logfile_read = IntegrationLogger(cmd)
 

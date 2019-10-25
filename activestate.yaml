@@ -105,7 +105,7 @@ scripts:
     standalone: true
   - name: integration-tests
     description: Runs integration tests.
-    value: cd test/integration && python3 -m unittest discover -p "*_test.py"
+    value: cd test/integration && python3 -m unittest auth_test.py
   - name: clean
     description: Cleans out the build dir.
     value: |

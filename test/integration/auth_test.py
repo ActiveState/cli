@@ -14,6 +14,7 @@ class TestAuth(helpers.IntegrationTest):
         self.email = "%s@test.tld" % self.username
 
     def test_auth(self):
+        print("test_auth")
         if os.name == 'nt':
             return
         self.auth_signup()
@@ -21,6 +22,7 @@ class TestAuth(helpers.IntegrationTest):
         self.auth_login()
 
     def test_helpers(self):
+        print("test_helpers")
         if os.name == 'nt':
             return
         self.auth_logout()
@@ -29,6 +31,7 @@ class TestAuth(helpers.IntegrationTest):
         self.create_user_and_login()
 
     def auth_signup(self):
+        print("auth_signup")
         self.spawn("auth signup")
         self.expect("username:")
         self.send(self.username)
@@ -44,11 +47,13 @@ class TestAuth(helpers.IntegrationTest):
         self.wait()
 
     def auth_logout(self):
+        print("auth_logout")
         self.spawn("auth logout")
         self.expect("You have been logged out")
         self.wait()
 
     def auth_login(self):
+        print("auth_login")
         self.spawn("auth")
         self.expect("username:")
         self.send(self.username)
@@ -63,6 +68,7 @@ class TestAuth(helpers.IntegrationTest):
         self.wait()
 
     def auth_login_with_flags(self):
+        print("auth_login_with_flags")
         self.spawn("auth --username %s --password %s" % (self.username, self.password))
         self.expect("succesfully authenticated")
         self.wait()
@@ -73,15 +79,18 @@ class TestAuth(helpers.IntegrationTest):
         self.wait()
 
     def login_as_persistent_user(self):
+        print("login_as_persistent_user")
         self.username = "cli-integration-tests"
         self.password = "test-cli-integration"
         self.auth_login_with_flags()
 
     def create_user_and_login(self):
+        print("create_user_and_login")
         self.username, self.password = self.create_user()
         self.auth_login_with_flags()
 
     def create_user(self):
+        print("create_user")
         username = "user-%s" % uuid.uuid4().hex
         data = {
             "name": username,
