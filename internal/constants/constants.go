@@ -1,7 +1,5 @@
 package constants
 
-import "time"
-
 // VersionNumber holds the current version of our cli
 const VersionNumber = "0.2.2"
 
@@ -124,20 +122,8 @@ const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
 // HeadChefAPIPath is the api path used for the headchef api
 const HeadChefAPIPath = "/sv/head-chef"
 
-// HeadChefURL is the host used for platform api calls when on production
-const HeadChefURL = "https://platform.activestate.com" + HeadChefAPIPath
-
-// HeadChefOrigin is the Origin header to use when making head-chef requests
-const HeadChefOrigin = "http://localhost"
-
-// HeadChefBuildStatusCheckMax is the timeout for checking a single build status
-const HeadChefBuildStatusCheckMax = time.Hour * 8
-
 // InventoryAPIPath is the api path used for the secrets api
 const InventoryAPIPath = "/sv/inventory-api-v1"
-
-// InventoryURLProd is the host used for platform api calls when on production
-const InventoryURL = "https://platform.activestate.com" + InventoryAPIPath
 
 // GraphqlAPIPath is the path used for the platform graphql api
 const GraphqlAPIPath = "/graphql/v1/graphql"
