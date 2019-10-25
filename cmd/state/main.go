@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
@@ -35,24 +33,25 @@ import (
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
-	runAndExit(os.Args, os.Exit)
+	exiter := func(code int) {
+		os.Exit(code)
+	}
+
+	runAndExit(os.Args, exiter)
 }
 
 func runAndExit(args []string, exiter func(int)) {
 	logging.Debug("main")
+
+	// Handle panics gracefully
+	defer handlePanics(exiter)
+
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
 	setupRollbar()
 
 	// Write our config to file
-	defer func() {
-		logging.Debug("Saving config")
-		config.Save()
-		logging.Debug(string(fileutils.ReadFileUnsafe(config.ConfigPath())))
-	}()
-
-	// Handle panics gracefully
-	defer handlePanics(exiter)
+	defer config.Save()
 
 	// setup profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
