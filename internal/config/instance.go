@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/print"
 )
@@ -134,6 +135,8 @@ func (i *Instance) ensureConfigExists() {
 			i.exit("Can't close config file: %s", err)
 		}
 	}
+
+	logging.Debug("Using configDir: %s", i.configDir.Path)
 }
 
 func (i *Instance) ensureCacheExists() {
@@ -158,6 +161,8 @@ func (i *Instance) ensureCacheExists() {
 	if err := i.cacheDir.MkdirAll(); err != nil {
 		i.exit("Can't create cache directory: %s", err)
 	}
+
+	logging.Debug("Using cacheDir: %s", i.cacheDir.Path)
 }
 
 func (i *Instance) exit(message string, a ...interface{}) {
