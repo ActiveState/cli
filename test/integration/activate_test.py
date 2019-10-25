@@ -8,7 +8,7 @@ dir_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 class TestActivate(helpers.IntegrationTest):
 
-    def test_activate_python2(self):
+    def disabled_test_activate_python2(self):
         if os.name == 'nt':
             return
         path = os.path.join(dir_path, "testdata")
