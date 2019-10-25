@@ -76,6 +76,21 @@ func (m *Mock) MockGetOrganization() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 200)
 }
 
+// MockGetPaidTiers registers a mock returning the specific tier "string"
+func (m *Mock) MockGetPaidTiers() {
+	httpmock.RegisterWithResponse("GET", "/tiers", 200, "/tiers/paid")
+}
+
+// MockGetFreeTiers registers a mock returning the specific tier "string"
+func (m *Mock) MockGetFreeTiers() {
+	httpmock.RegisterWithResponse("GET", "/tiers", 200, "/tiers/free")
+}
+
+// MockGetFreeTiers registers a mock returning a tier that doesn't exist int GET-organizations/string.json
+func (m *Mock) MockGetBadTiers() {
+	httpmock.RegisterWithResponse("GET", "/tiers", 200, "/tiers/bad")
+}
+
 // MockGetOrganization401 registers a mock for an organization request when we are not authenticated
 func (m *Mock) MockGetOrganization401() {
 	httpmock.RegisterWithCode("GET", "/organizations/string", 401)

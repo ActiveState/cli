@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -27,26 +28,103 @@ func setup(t *testing.T) {
 	Cc.SetArgs([]string{})
 }
 
-func TestOrganizations(t *testing.T) {
+func setupOrgTest(t *testing.T) *apiMock.Mock {
 	setup(t)
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 
-	httpmock.Register("GET", "/organizations")
+	amock := apiMock.Init()
+	amock.MockGetOrganizations()
+	return amock
+}
+
+func tearDownOrgTest(t *testing.T, aMock *apiMock.Mock) {
+	httpmock.DeActivate()
+	if aMock != nil {
+		aMock.Close()
+	}
+}
+
+func TestOrganizations(t *testing.T) {
+	setupOrgTest(t)
 
 	var execErr error
+	cc := Command.GetCobraCmd()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = Command.Execute()
+		execErr = cc.Execute()
 	})
 	require.NoError(t, outErr)
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Contains(t, outStr, "test-organization")
+	assert.Contains(t, outStr, "string")
+
+	tearDownOrgTest(t, nil)
+}
+
+func TestOrganizationsJSONPaid(t *testing.T) {
+	aMock := setupOrgTest(t)
+	aMock.MockGetPaidTiers()
+
+	var execErr error
+	cc := Command.GetCobraCmd()
+	cc.SetArgs([]string{"--json"})
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\n", outStr, "Expect privateProjects to be true")
+
+	tearDownOrgTest(t, aMock)
+}
+
+func TestOrganizationsJSONFree(t *testing.T) {
+	aMock := setupOrgTest(t)
+	aMock.MockGetFreeTiers()
+
+	var execErr error
+	cc := Command.GetCobraCmd()
+	cc.SetArgs([]string{"--json"})
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\n", outStr, "Expect privateProjects to be false")
+
+	tearDownOrgTest(t, aMock)
+}
+
+func TestOrganizationsJSONBad(t *testing.T) {
+	aMock := setupOrgTest(t)
+	aMock.MockGetBadTiers()
+
+	var execErr error
+	cc := Command.GetCobraCmd()
+	cc.SetArgs([]string{"--json"})
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = cc.Execute()
+	})
+
+	require.NoError(t, outErr)
+	require.NoError(t, execErr)
+	err := failures.Handled() // Returns an error so have to cast it to a failure
+	fail, _ := err.(*failures.Failure)
+	assert.True(t, fail.Type.Matches(failures.FailNotFound), "The wrong failure occurred")
+
+	assert.Equal(t, "", outStr, "Expect no output")
+
+	tearDownOrgTest(t, aMock)
 }
 
 func TestClientError(t *testing.T) {
