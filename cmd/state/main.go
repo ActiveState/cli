@@ -37,14 +37,18 @@ func main() {
 		os.Exit(code)
 	}
 
-	runAndExit(os.Args, exiter)
-}
-
-func runAndExit(args []string, exiter func(int)) {
-	logging.Debug("main")
-
 	// Handle panics gracefully
 	defer handlePanics(exiter)
+
+	err, code := run(os.Args)
+	if err != nil {
+		print.Error(err.Error())
+	}
+	exiter(code)
+}
+
+func run(args []string) (error, int) {
+	logging.Debug("main")
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
@@ -57,8 +61,8 @@ func runAndExit(args []string, exiter func(int)) {
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
-			failures.Handle(fail, "cpu_profiling_setup_failed")
-			exiter(1)
+			print.Error(locale.T("cpu_profiling_setup_failed"))
+			return fail, 1
 		}
 		defer cleanUpCPUProf()
 	}
@@ -66,10 +70,17 @@ func runAndExit(args []string, exiter func(int)) {
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(args, "update")
 	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
-		relaunch(exiter) // will not return
+		return relaunch() // will not return
 	}
 
-	forwardAndExit(args, exiter) // exits only if it forwards
+	code, fail := forward(args)
+	if fail != nil {
+		print.Error(locale.T("forward_fail"))
+		return fail, 1
+	}
+	if code != -1 {
+		return nil, code
+	}
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
@@ -89,11 +100,11 @@ func runAndExit(args []string, exiter func(int)) {
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
 	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
 		logging.Error("Error happened while running cmdtree: %w", err)
-		exiter(1)
-		return
+		print.Error(locale.T("err_cmdtree"))
+		return err, 1
 	}
 
-	exiter(0)
+	return nil, 0
 }
 
 func handlePanics(exiter func(int)) {
@@ -137,12 +148,13 @@ func setupRollbar() {
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 // This function will never return to its caller.
-func relaunch(func(int)) {
+func relaunch() (error, int) {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
-	if err := cmd.Wait(); err != nil {
+	err := cmd.Wait()
+	if err != nil {
 		logging.Error("relaunched cmd returned error: %v", err)
 	}
-	os.Exit(osutils.CmdExitCode(cmd))
+	return err, osutils.CmdExitCode(cmd)
 }
