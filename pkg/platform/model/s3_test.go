@@ -29,7 +29,6 @@ func (suite *S3TestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *S3TestSuite) TestGetS3() {
-	suite.authMock.MockLoggedin()
 	suite.apiMock.MockSignS3URI()
 
 	ext := ".tar.gz"
