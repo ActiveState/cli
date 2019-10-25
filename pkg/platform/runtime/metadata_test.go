@@ -1,7 +1,6 @@
 package runtime_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -46,8 +45,7 @@ func TestHasBinaryFile(t *testing.T) {
 	require.NoError(t, err)
 
 	pythonBinaryFilename := "python3"
-	binaryFile, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
-	fmt.Println("binary file: ", binaryFile.Name())
+	_, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
 	require.NoError(t, fail.ToError())
 
 	pythonBinary := runtime.MetaDataBinary{

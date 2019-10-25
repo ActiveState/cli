@@ -2,9 +2,10 @@ package virtualenvironment
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
+	rt "runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -68,7 +71,7 @@ func TestActivate(t *testing.T) {
 
 	venv := Init()
 	fail := venv.Activate()
-	if runtime.GOOS == "windows" {
+	if rt.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
 		require.Error(t, fail, "Symlinking requires admin privilages for now")
@@ -85,7 +88,7 @@ func TestActivate(t *testing.T) {
 
 	venv = Init()
 	fail = venv.Activate()
-	if runtime.GOOS == "windows" {
+	if rt.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
 		require.Error(t, fail, "Symlinking requires admin privilages for now")
@@ -137,7 +140,7 @@ func TestEnv(t *testing.T) {
 	assert.NotEmpty(t, venv.ActivationID())
 }
 
-func TestActivatePythonProject(t *testing.T) {
+func TestArtifactEnvSetupLang(t *testing.T) {
 	setup(t)
 	defer teardown()
 
@@ -151,18 +154,40 @@ func TestActivatePythonProject(t *testing.T) {
 	}
 	pjfile.Persist()
 
-	venv := Init()
-	fail := venv.Activate()
-	if runtime.GOOS == "windows" {
-		// Since creating symlinks on Windows requires admin privilages for now,
-		// test activation should fail.
-		require.Error(t, fail, "Symlinking requires admin privilages for now")
-	} else {
-		require.NoError(t, fail.ToError(), "Should activate, even if no languages are defined")
+	meta := &runtime.MetaData{}
+	env := map[string]string{}
+
+	artifactEnvSetup(env, meta)
+	require.NotEmpty(t, env["PYTHONIOENCODING"])
+}
+
+func TestArtifactEnvSetupMeta(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
+	}
+	pjfile.Persist()
+
+	tempDir, err := ioutil.TempDir("", t.Name())
+	require.NoError(t, err)
+
+	pythonBinaryFilename := "python3"
+	_, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
+	require.NoError(t, fail.ToError())
+
+	pythonBinary := runtime.MetaDataBinary{
+		Path:     tempDir,
+		Relative: false,
 	}
 
-	if runtime.GOOS != "darwin" {
-		// Only Linux and Windows currently support runtime environments
-		require.NotEmpty(t, os.Getenv("PYTHONIOENCODING"))
+	meta := &runtime.MetaData{
+		BinaryLocations: []runtime.MetaDataBinary{pythonBinary},
 	}
+	env := map[string]string{}
+
+	artifactEnvSetup(env, meta)
+	require.NotEmpty(t, env["PYTHONIOENCODING"])
 }
