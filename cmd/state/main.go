@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/fileutils"
+
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
@@ -43,7 +45,11 @@ func runAndExit(args []string, exiter func(int)) {
 	setupRollbar()
 
 	// Write our config to file
-	defer config.Save()
+	defer func() {
+		logging.Debug("Saving config")
+		config.Save()
+		logging.Debug(string(fileutils.ReadFileUnsafe(config.ConfigPath())))
+	}()
 
 	// Handle panics gracefully
 	defer handlePanics(exiter)
