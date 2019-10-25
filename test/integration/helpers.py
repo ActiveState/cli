@@ -43,6 +43,7 @@ class IntegrationTest(unittest.TestCase):
                 del env[k]
         self.env = env
 
+        self.env["VERBOSE"] = "true"
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
         self.env["ACTIVESTATE_CLI_CACHEDIR"] = self.get_temp_path()
@@ -114,7 +115,7 @@ class IntegrationTest(unittest.TestCase):
     def set_config(self, config_dir):
         self.config_dir = config_dir
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
-        #print("%s is using configdir: %s" % (self.id(), config_dir))
+        print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
         self.cwd = cwd
