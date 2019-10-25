@@ -55,7 +55,7 @@ func newStateCommand() *captain.Command {
 			{
 				Name:        "verbose",
 				Shorthand:   "v",
-				Description: "flag_state_verbose_description",
+				Description: locale.T("flag_state_verbose_description"),
 				Type:        captain.TypeBool,
 				Persist:     true,
 				OnUse: func() {
@@ -65,7 +65,7 @@ func newStateCommand() *captain.Command {
 			},
 			{
 				Name:        "version",
-				Description: "flag_state_version_description",
+				Description: locale.T("flag_state_version_description"),
 				Type:        captain.TypeBool,
 				BoolVar:     &opts.Version,
 			},
