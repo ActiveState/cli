@@ -15,10 +15,9 @@ type MainTestSuite struct {
 	suite.Suite
 }
 
-func (suite *MainTestSuite) TestPanicCaught() {
-	out, exitCode := run([]string{"", "IdontExist"})
-	suite.Contains(out, locale.T("err_cmdtree"))
-	suite.Contains(out, `unknown command "IdontExist"`)
+func (suite *MainTestSuite) TestUnknownCommand() {
+	err, exitCode := run([]string{"", "IdontExist"})
+	suite.Contains(err.Error(), `unknown command "IdontExist"`)
 	suite.Equal(1, exitCode)
 }
 
