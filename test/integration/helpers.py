@@ -191,6 +191,7 @@ class IntegrationTest(unittest.TestCase):
             return
         result = result or 0
         self.assertEqual(code, result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
+        print("output from %s:\n %s" % (self.id(), self.child.logfile_read.logged))
         return result
 
     def fail(self, msg=None):
