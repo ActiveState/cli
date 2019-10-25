@@ -43,7 +43,6 @@ class IntegrationTest(unittest.TestCase):
                 del env[k]
         self.env = env
 
-        self.env["VERBOSE"] = "true"
         self.env["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true"
         self.env["ACTIVESTATE_CLI_DISABLE_RUNTIME"] = "true"
         self.env["ACTIVESTATE_CLI_CACHEDIR"] = self.get_temp_path()
@@ -95,7 +94,6 @@ class IntegrationTest(unittest.TestCase):
         self.spawn_command('%s %s' % (self.get_build_path(), args))
 
     def spawn_command(self, cmd):
-        print("Running: %s" % cmd)
         self.child = spawner(cmd, env=self.env, timeout=10, cwd=self.cwd)
         self.child.logfile_read = IntegrationLogger(cmd)
 
@@ -116,7 +114,7 @@ class IntegrationTest(unittest.TestCase):
     def set_config(self, config_dir):
         self.config_dir = config_dir
         self.env["ACTIVESTATE_CLI_CONFIGDIR"] = config_dir
-        print("%s is using configdir: %s" % (self.id(), config_dir))
+        #print("%s is using configdir: %s" % (self.id(), config_dir))
 
     def set_cwd(self, cwd):
         self.cwd = cwd
@@ -192,7 +190,7 @@ class IntegrationTest(unittest.TestCase):
             return
         result = result or 0
         self.assertEqual(code, result, "exits with code %d, output:\n---\n%s\n---" % (code, self.child.logfile_read.logged))
-        print("output from %s:\n %s" % (self.id(), self.child.logfile_read.logged))
+        #print("output from %s:\n %s" % (self.id(), self.child.logfile_read.logged))
         return result
 
     def fail(self, msg=None):
