@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -68,6 +69,7 @@ func init() {
 func Execute(cmd *cobra.Command, args []string) {
 	auth := authentication.Get()
 	if auth.Authenticated() {
+		logging.Debug("Already authenticated")
 		print.Line(locale.T("logged_in_as", map[string]string{
 			"Name": auth.WhoAmI(),
 		}))
