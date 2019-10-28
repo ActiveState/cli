@@ -17,11 +17,6 @@ var (
 	FailMetaDataNotDetected = failures.Type("runtime.metadata.notdetected", failures.FailIO, failures.FailNotFound)
 )
 
-const (
-	pythonEncodingEnvVar = "PYTHONIOENCODING"
-	pythonEncodingUTF8   = "utf-8"
-)
-
 // MetaData is used to parse the metadata.json file
 type MetaData struct {
 	// Path is the directory containing the meta file
@@ -139,8 +134,8 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		if _, exists := m.Env["PYTHONPATH"]; !exists {
 			m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
 		}
-		if os.Getenv(pythonEncodingEnvVar) == "" {
-			m.Env[pythonEncodingEnvVar] = pythonEncodingUTF8
+		if os.Getenv("PYTHONIOENCODING") == "" {
+			m.Env["PYTHONIOENCODING"] = "utf-8"
 		}
 
 		//Perl
