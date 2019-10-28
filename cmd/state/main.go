@@ -40,14 +40,14 @@ func main() {
 	// Handle panics gracefully
 	defer handlePanics(exiter)
 
-	err, code := run(os.Args)
+	code, err := run(os.Args)
 	if err != nil {
 		print.Error(err.Error())
 	}
 	exiter(code)
 }
 
-func run(args []string) (error, int) {
+func run(args []string) (int, error) {
 	logging.Debug("main")
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
@@ -62,7 +62,7 @@ func run(args []string) (error, int) {
 		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
 			print.Error(locale.T("cpu_profiling_setup_failed"))
-			return fail, 1
+			return 1, fail
 		}
 		defer cleanUpCPUProf()
 	}
@@ -76,10 +76,10 @@ func run(args []string) (error, int) {
 	code, fail := forward(args)
 	if fail != nil {
 		print.Error(locale.T("forward_fail"))
-		return fail, 1
+		return 1, fail
 	}
 	if code != -1 {
-		return nil, code
+		return code, nil
 	}
 
 	// Check for deprecation
@@ -101,10 +101,10 @@ func run(args []string) (error, int) {
 	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
 		logging.Error("Error happened while running cmdtree: %w", err)
 		print.Error(locale.T("err_cmdtree"))
-		return err, 1
+		return 1, err
 	}
 
-	return nil, 0
+	return 0, nil
 }
 
 func handlePanics(exiter func(int)) {
@@ -148,7 +148,7 @@ func setupRollbar() {
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 // This function will never return to its caller.
-func relaunch() (error, int) {
+func relaunch() (int, error) {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
@@ -156,5 +156,5 @@ func relaunch() (error, int) {
 	if err != nil {
 		logging.Error("relaunched cmd returned error: %v", err)
 	}
-	return err, osutils.CmdExitCode(cmd)
+	return osutils.CmdExitCode(cmd), err
 }
