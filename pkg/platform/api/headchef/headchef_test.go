@@ -31,12 +31,12 @@ func (suite *HeadchefTestSuite) AfterTest(suiteName, testName string) {
 func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headchef.BuildStatus {
 	suite.mock.MockBuilds(rt)
 
-	client := headchef.NewBuildStatusClient(api.GetServiceURL(api.ServiceHeadChef))
+	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef))
 	buildRequest := &headchef_models.V1BuildRequest{
 		Requester: &headchef_models.Requester{},
 		Recipe:    &headchef_models.V1BuildRequestRecipe{},
 	}
-	return client.Run(buildRequest)
+	return client.RequestBuild(buildRequest)
 }
 
 func (suite *HeadchefTestSuite) TestBuildStarted() {
