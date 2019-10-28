@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	FailRestAPIError       = failures.Type("headchef.fail.restapi.error")
-	FailRestAPINoResponse  = failures.Type("headchef.fail.restapi.noresponse")
-	FailRestAPIBadResponse = failures.Type("headchef.fail.restapi.badresponse")
+	FailBuildReqErrorResp   = failures.Type("headchef.fail.buildreq.errorresp")
+	FailBuildReqNoResp      = failures.Type("headchef.fail.buildreq.noresp")
+	FailBuildCreatedBadType = failures.Type("headchef.fail.buildcreated.badtype")
+	FailBuildCreatedNilType = failures.Type("headchef.fail.buildcreated.niltype")
 )
 
 type BuildStatus struct {
@@ -86,14 +87,13 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
 			msg = *startErr.Payload.Message
 		}
-		buildStatus.RunFail <- FailRestAPIError.New(msg)
+		buildStatus.RunFail <- FailBuildReqErrorResp.New(msg)
 	case accepted != nil:
 		buildStatus.Started <- struct{}{}
 	case created != nil:
-		failBadResp := FailRestAPIBadResponse.New("bad response")
 
 		if created.Payload.Type == nil {
-			buildStatus.RunFail <- failBadResp
+			buildStatus.RunFail <- FailBuildCreatedNilType.New("nil type response")
 			break
 		}
 
@@ -105,9 +105,9 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- struct{}{}
 		default:
-			buildStatus.RunFail <- failBadResp
+			buildStatus.RunFail <- FailBuildCreatedBadType.New("bad type response")
 		}
 	default:
-		buildStatus.RunFail <- FailRestAPINoResponse.New("no response")
+		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
 	}
 }

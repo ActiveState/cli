@@ -169,7 +169,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 			logging.Debug("Failure: %v", fail)
 
 			switch {
-			case fail.Type.Matches(headchef.FailRestAPIError):
+			case fail.Type.Matches(headchef.FailBuildReqErrorResp):
 				l10n := locale.Tr("build_status_unknown_error", fail.Error())
 				return nil, FailBuildErrResponse.New(l10n)
 			default:
