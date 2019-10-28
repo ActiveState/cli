@@ -12,7 +12,7 @@ Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
  -n                    Don't prompt for anything, just install and override any existing executables
  -t <dir>              Install target directory
- -f <file>             Default 'state'.  Binary filename to use
+ -f <file>              Default 'state'.  Binary filename to use
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -206,34 +206,47 @@ else
 fi
 chmod +x $TMPDIR/$TMPEXE
 
-# Check for existing installation. Otherwise, make the installation default to
-# /usr/local/bin if the user has write permission, or to a local bin.
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ ! -z "$TARGET" ]; then
-  INSTALLDIR=$TARGET
-elif [ ! -z "$INSTALLDIR" ]; then
+if [ -e "$INSTALLDIR/$STATEEXE" ]; then
   warn "Previous installation detected at $INSTALLDIR"
-else
-  if [ -w "/usr/local/bin" ]; then
-    INSTALLDIR="/usr/local/bin"
-  else
-    INSTALLDIR="$HOME/.local/bin"
-  fi
 fi
 
-SPACEPATH=${PATH//:/ }
-[[ $SPACEPATH =~ (^|[[:space:]])$INSTALLDIR($|[[:space:]]) ]] && INPATH=true || INPATH=false
-
-if ! $INPATH; then
-  for PATHELEM in $SPACEPATH; do
-    if [ -w ${PATHELEM} ]; then
-      INSTALLDIR=$PATHELEM
+# Use target directory provided by user which no verification or default to
+# one of two commonly used directories. Ensure they are in PATH and if not
+# use the first writable directory in PATH
+if [ ! -z "$TARGET" ]; then
+  INSTALLDIR=$TARGET
+else
+  if [ -w "/usr/local/not" ]; then
+    INSTALLDIR="/usr/local/bin"
+  else
+    INSTALLDIR="$HOME/.local/not"
+  fi
+  # Verify the install directory is in PATH.
+  INPATH=false
+  OLDIFS=$IFS
+  IFS=':'
+  for PATHELEM in $PATH; do 
+    if [ $INSTALLDIR = $PATHELEM ]; then
+      INPATH=true
       break
     fi
   done
+
+  # If the install directory is not in PATH we default to the first
+  # directory in PATH that we have write access to.
+  if ! $INPATH; then
+    for PATHELEM in $PATH; do
+      if [ -w $PATHELEM ]; then
+        INSTALLDIR=$PATHELEM
+        break
+      fi
+    done
+  fi
+  IFS=$OLDIFS
 fi
 
-# Prompt the user for a directory to install to.
+# Install to the determined intstall directory.
 while "true"; do
   info "Installing to $INSTALLDIR"
   if [ ! -e "$INSTALLDIR" ]; then
