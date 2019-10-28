@@ -43,40 +43,40 @@ func (s *BuildStatus) Close() {
 	close(s.RunFail)
 }
 
-type BuildStatusClient struct {
+type Client struct {
 	client *headchef_operations.Client
 }
 
-func InitBuildStatusClient() *BuildStatusClient {
-	return NewBuildStatusClient(api.GetServiceURL(api.ServiceHeadChef))
+func InitClient() *Client {
+	return NewClient(api.GetServiceURL(api.ServiceHeadChef))
 }
 
-func NewBuildStatusClient(apiURL *url.URL) *BuildStatusClient {
+func NewClient(apiURL *url.URL) *Client {
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	transportRuntime.Transport = api.NewUserAgentTripper()
 
 	//transportRuntime.SetDebug(true)
 
-	return &BuildStatusClient{
+	return &Client{
 		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 	}
 }
 
-func (r *BuildStatusClient) Run(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
+func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
 	buildStatus := NewBuildStatus()
 
 	go func() {
 		defer buildStatus.Close()
-		r.run(buildRequest, buildStatus)
+		r.reqBuild(buildRequest, buildStatus)
 	}()
 
 	return buildStatus
 }
 
-func (r *BuildStatusClient) run(buildRequest *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
+func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
-		BuildRequest: buildRequest,
+		BuildRequest: buildReq,
 	}
 	created, accepted, err := r.client.StartBuildV1(&startParams)
 
