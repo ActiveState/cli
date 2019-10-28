@@ -84,7 +84,7 @@ func (suite *HeadchefTestSuite) TestBuildRunFail() {
 		suite.True(ok, "runfail channel must not be closed")
 		suite.NotNil(fail, "runfail failure must not be nil")
 
-		failMatches := fail.Type.Matches(headchef.FailRestAPIError)
+		failMatches := fail.Type.Matches(headchef.FailBuildReqErrorResp)
 		suite.True(failMatches, "runfail failure must be correct type")
 
 	case <-time.After(maxWait):
@@ -100,7 +100,7 @@ func (suite *HeadchefTestSuite) TestBuildRunFailMalformed() {
 		suite.True(ok, "runfail channel must not be closed")
 		suite.NotNil(fail, "runfail failure must not be nil")
 
-		failMatches := fail.Type.Matches(headchef.FailRestAPIBadResponse)
+		failMatches := fail.Type.Matches(headchef.FailBuildCreatedBadType)
 		suite.True(failMatches, "runfail failure must be correct type")
 
 	case <-time.After(maxWait):
