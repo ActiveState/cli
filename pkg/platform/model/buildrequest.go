@@ -6,31 +6,30 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 )
 
-func BuildRequestorForProject(pj *mono_models.Project) (*headchef_models.BuildRequestRequester, *failures.Failure) {
+func NewHeadChefRequester(pj *mono_models.Project) (*headchef_models.Requester, *failures.Failure) {
 	userID := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 	auth := authentication.Get()
 	if auth.Authenticated() {
 		userID = *auth.UserID()
 	}
-	return &headchef_models.BuildRequestRequester{
+	return &headchef_models.Requester{
 		OrganizationID: &pj.OrganizationID,
 		ProjectID:      &pj.ProjectID,
 		UserID:         &userID,
 	}, nil
 }
 
-func BuildRequestForProject(pj *mono_models.Project) (*headchef_models.BuildRequest, *failures.Failure) {
-	requestor, fail := BuildRequestorForProject(pj)
+func NewBuildRequest(pj *mono_models.Project) (*headchef_models.V1BuildRequest, *failures.Failure) {
+	requester, fail := NewHeadChefRequester(pj)
 	if fail != nil {
 		return nil, fail
 	}
 
-	uuid := strfmt.UUID(uuid.New().String())
-	return &headchef_models.BuildRequest{
-		BuildRequestID: &uuid,
-		Requester:      requestor,
+	format := "raw"
+	return &headchef_models.V1BuildRequest{
+		Requester: requester,
+		Format:    &format,
 	}, nil
 }

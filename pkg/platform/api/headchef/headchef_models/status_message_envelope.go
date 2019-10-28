@@ -38,7 +38,7 @@ type StatusMessageEnvelope struct {
 
 	// Indicates the type of the contained message.
 	// Required: true
-	// Enum: [build_completed build_failed build_started heartbeat task_completed task_failed task_started]
+	// Enum: [build_completed build_failed build_started heartbeat log_general pkg_build_completed pkg_build_failed pkg_build_skipped pkg_build_started task_completed task_failed task_scheduled task_skipped task_started]
 	Type *string `json:"type"`
 }
 
@@ -94,7 +94,7 @@ var statusMessageEnvelopeTypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["build_completed","build_failed","build_started","heartbeat","task_completed","task_failed","task_started"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["build_completed","build_failed","build_started","heartbeat","log_general","pkg_build_completed","pkg_build_failed","pkg_build_skipped","pkg_build_started","task_completed","task_failed","task_scheduled","task_skipped","task_started"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -116,11 +116,32 @@ const (
 	// StatusMessageEnvelopeTypeHeartbeat captures enum value "heartbeat"
 	StatusMessageEnvelopeTypeHeartbeat string = "heartbeat"
 
+	// StatusMessageEnvelopeTypeLogGeneral captures enum value "log_general"
+	StatusMessageEnvelopeTypeLogGeneral string = "log_general"
+
+	// StatusMessageEnvelopeTypePkgBuildCompleted captures enum value "pkg_build_completed"
+	StatusMessageEnvelopeTypePkgBuildCompleted string = "pkg_build_completed"
+
+	// StatusMessageEnvelopeTypePkgBuildFailed captures enum value "pkg_build_failed"
+	StatusMessageEnvelopeTypePkgBuildFailed string = "pkg_build_failed"
+
+	// StatusMessageEnvelopeTypePkgBuildSkipped captures enum value "pkg_build_skipped"
+	StatusMessageEnvelopeTypePkgBuildSkipped string = "pkg_build_skipped"
+
+	// StatusMessageEnvelopeTypePkgBuildStarted captures enum value "pkg_build_started"
+	StatusMessageEnvelopeTypePkgBuildStarted string = "pkg_build_started"
+
 	// StatusMessageEnvelopeTypeTaskCompleted captures enum value "task_completed"
 	StatusMessageEnvelopeTypeTaskCompleted string = "task_completed"
 
 	// StatusMessageEnvelopeTypeTaskFailed captures enum value "task_failed"
 	StatusMessageEnvelopeTypeTaskFailed string = "task_failed"
+
+	// StatusMessageEnvelopeTypeTaskScheduled captures enum value "task_scheduled"
+	StatusMessageEnvelopeTypeTaskScheduled string = "task_scheduled"
+
+	// StatusMessageEnvelopeTypeTaskSkipped captures enum value "task_skipped"
+	StatusMessageEnvelopeTypeTaskSkipped string = "task_skipped"
 
 	// StatusMessageEnvelopeTypeTaskStarted captures enum value "task_started"
 	StatusMessageEnvelopeTypeTaskStarted string = "task_started"
