@@ -16,7 +16,7 @@ type MainTestSuite struct {
 }
 
 func (suite *MainTestSuite) TestUnknownCommand() {
-	err, exitCode := run([]string{"", "IdontExist"})
+	exitCode, err := run([]string{"", "IdontExist"})
 	suite.Contains(err.Error(), `unknown command "IdontExist"`)
 	suite.Equal(1, exitCode)
 }
@@ -29,7 +29,7 @@ func (suite *MainTestSuite) TestDeprecated() {
 	var exitCode = -1
 	out := capturer.CaptureOutput(func() {
 		var err error
-		err, exitCode = run([]string{""})
+		exitCode, err = run([]string{""})
 		suite.Require().NoError(err)
 	})
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", out)
@@ -44,7 +44,7 @@ func (suite *MainTestSuite) TestExpired() {
 	var exitCode = -1
 	out := capturer.CaptureOutput(func() {
 		var err error
-		err, exitCode = run([]string{""})
+		exitCode, err = run([]string{""})
 		suite.Require().NoError(err)
 	})
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", out)
