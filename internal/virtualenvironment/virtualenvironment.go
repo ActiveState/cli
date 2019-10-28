@@ -152,7 +152,6 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
 			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
 		}
-
 	}
 
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())

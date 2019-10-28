@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	rt "runtime"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -68,7 +68,7 @@ func TestActivate(t *testing.T) {
 
 	venv := Init()
 	fail := venv.Activate()
-	if rt.GOOS == "windows" {
+	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
 		require.Error(t, fail, "Symlinking requires admin privilages for now")
@@ -85,7 +85,7 @@ func TestActivate(t *testing.T) {
 
 	venv = Init()
 	fail = venv.Activate()
-	if rt.GOOS == "windows" {
+	if runtime.GOOS == "windows" {
 		// Since creating symlinks on Windows requires admin privilages for now,
 		// test activation should fail.
 		require.Error(t, fail, "Symlinking requires admin privilages for now")
