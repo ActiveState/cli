@@ -90,9 +90,11 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	case accepted != nil:
 		buildStatus.Started <- struct{}{}
 	case created != nil:
+		failBadResp := FailRestAPIBadResponse.New("bad response")
+
 		if created.Payload.Type == nil {
-			junk := "junk"
-			created.Payload.Type = &junk
+			buildStatus.RunFail <- failBadResp
+			break
 		}
 
 		switch *created.Payload.Type {
@@ -103,7 +105,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- struct{}{}
 		default:
-			buildStatus.RunFail <- FailRestAPIBadResponse.New("bad response")
+			buildStatus.RunFail <- failBadResp
 		}
 	default:
 		buildStatus.RunFail <- FailRestAPINoResponse.New("no response")
