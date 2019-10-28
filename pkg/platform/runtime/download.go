@@ -28,27 +28,30 @@ var (
 	// FailNoCommit indicates a failure due to there not being a commit
 	FailNoCommit = failures.Type("runtime.fail.nocommit")
 
-	// FailNoResponse indicates a failure due to a lack of a response from the API
-	FailNoResponse = failures.Type("runtime.fail.noresponse")
-
 	// FailNoArtifacts indicates a failure due to the project not containing any artifacts
 	FailNoArtifacts = failures.Type("runtime.fail.noartifacts")
 
 	// FailNoValidArtifact indicates a failure due to the project not containing any valid artifacts
 	FailNoValidArtifact = failures.Type("runtime.fail.novalidartifact")
 
-	// FailBuild indicates a failure due to the build failing
-	FailBuild = failures.Type("runtime.fail.build")
+	// FailBuildFailed indicates a failure due to the build failing
+	FailBuildFailed = failures.Type("runtime.fail.buildfailed")
+
+	// FailBuildInProgress indicates a failure due to the build being in progress
+	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress")
+
+	// FailBuildBadResponse indicates a failure due to the build req/resp malfunctioning
+	FailBuildBadResponse = failures.Type("runtime.fail.buildbadresponse")
+
+	// FailBuildErrResponse indicates a failure due to the build req/resp returning an error
+	FailBuildErrResponse = failures.Type("runtime.fail.builderrresponse")
 
 	// FailArtifactInvalidURL indicates a failure due to an artifact having an invalid URL
 	FailArtifactInvalidURL = failures.Type("runtime.fail.invalidurl")
 )
 
-// InitRequester is the requester used for downloaded, exported for testing purposes
-var InitRequester headchef.InitRequester = headchef.InitRequest
-
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
-type HeadChefArtifact = headchef_models.BuildCompletedArtifactsItems0
+type HeadChefArtifact = headchef_models.Artifact
 
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
@@ -62,23 +65,22 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	project           *project.Project
-	targetDir         string
-	headchefRequester headchef.InitRequester
+	project   *project.Project
+	targetDir string
 }
 
 // InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
 func InitDownload(targetDir string) Downloader {
-	return NewDownload(project.Get(), targetDir, InitRequester)
+	return NewDownload(project.Get(), targetDir)
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(project *project.Project, targetDir string, headchefRequester headchef.InitRequester) Downloader {
-	return &Download{project, targetDir, headchefRequester}
+func NewDownload(project *project.Project, targetDir string) Downloader {
+	return &Download{project, targetDir}
 }
 
 // fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures.Failure) {
+func (r *Download) fetchBuildRequest() (*headchef_models.V1BuildRequest, *failures.Failure) {
 	// First, get the platform project for our current project
 	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
@@ -97,7 +99,7 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 	}
 
 	// Get the effective recipe from the list of recipes, this is the first recipe that matches our current platform
-	effectiveRecipe, fail := model.RecipeByPlatform(recipes, model.HostPlatform)
+	effectiveRecipe, fail := model.RecipeByHostPlatform(recipes, model.HostPlatform)
 	if fail != nil {
 		return nil, fail
 	}
@@ -109,7 +111,7 @@ func (r *Download) fetchBuildRequest() (*headchef_models.BuildRequest, *failures
 	}
 
 	// Wrap it all up in a build request
-	buildRequest, fail := model.BuildRequestForProject(platProject)
+	buildRequest, fail := model.NewBuildRequest(platProject)
 	if fail != nil {
 		return nil, fail
 	}
@@ -125,58 +127,57 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 		return nil, fail
 	}
 
-	done := make(chan bool)
-
+	logging.Debug("sending request to head-chef")
+	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
 	var artifacts []*HeadChefArtifact
 
-	request := r.headchefRequester(buildRequest)
-	request.OnBuildCompleted(func(response headchef_models.BuildCompleted) {
-		logging.Debug("Build Completed")
-		if len(response.Artifacts) == 0 {
-			fail = FailNoArtifacts.New(locale.T("err_no_artifacts"))
-			return
-		}
+	for {
+		select {
+		case resp := <-buildStatus.Completed:
+			logging.Debug("BuildCompleted:", resp)
 
-		for _, artf := range response.Artifacts {
-			filename := filepath.Base(artf.URI.String())
-			if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
-				artifacts = append(artifacts, artf)
+			if len(resp.Artifacts) == 0 {
+				return nil, FailNoArtifacts.New(locale.T("err_no_artifacts"))
+			}
+
+			for _, artf := range resp.Artifacts {
+				if artf.URI == nil {
+					continue
+				}
+
+				filename := filepath.Base(artf.URI.String())
+				if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
+					artifacts = append(artifacts, artf)
+				}
+			}
+
+			if len(artifacts) == 0 {
+				return nil, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
+			}
+
+			return artifacts, nil
+
+		case msg := <-buildStatus.Failed:
+			logging.Debug("BuildFailed: %s", msg)
+			return nil, FailBuildFailed.New(msg)
+
+		case <-buildStatus.Started:
+			logging.Debug("BuildStarted")
+			return nil, FailBuildInProgress.New(locale.T("build_status_in_progress"))
+
+		case fail := <-buildStatus.RunFail:
+			logging.Debug("Failure: %v", fail)
+
+			switch {
+			case fail.Type.Matches(headchef.FailRestAPIError):
+				l10n := locale.Tr("build_status_unknown_error", fail.Error())
+				return nil, FailBuildErrResponse.New(l10n)
+			default:
+				l10n := locale.T("build_status_unknown")
+				return nil, FailBuildBadResponse.New(l10n)
 			}
 		}
-
-		if len(artifacts) == 0 {
-			fail = FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
-		}
-	})
-
-	request.OnBuildStarted(func() {
-		logging.Debug("Build started")
-	})
-
-	request.OnBuildFailed(func(message string) {
-		logging.Debug("Build failed: %s", message)
-		fail = FailBuild.New(message)
-	})
-
-	request.OnFailure(func(failure *failures.Failure) {
-		logging.Debug("Failure: %v", failure)
-		fail = failure
-	})
-
-	request.OnClose(func() {
-		logging.Debug("Done")
-		done <- true
-	})
-
-	request.Start()
-
-	<-done
-
-	if len(artifacts) == 0 && fail == nil {
-		return nil, FailNoResponse.New(locale.T("err_runtime_download_no_response"))
 	}
-
-	return artifacts, fail
 }
 
 // Download is the main function used to kick off the runtime download

@@ -1,127 +1,111 @@
 package headchef_test
 
 import (
-	"net/url"
 	"testing"
+	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/testhelpers/wsmock"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
+	headchefMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 )
 
-type RequestResult struct {
-	BuildStarted         bool
-	BuildCompleted       bool
-	BuildCompletedResult headchef_models.BuildCompleted
-	BuildFailed          bool
-	BuildFailedMessage   string
-	Failure              *failures.Failure
-	Closed               bool
-}
+var maxWait = time.Second * 2
 
 type HeadchefTestSuite struct {
 	suite.Suite
-	mock *wsmock.WsMock
+	mock *headchefMock.Mock
 }
 
 func (suite *HeadchefTestSuite) BeforeTest(suiteName, testName string) {
-	suite.mock = wsmock.Init()
+	suite.mock = headchefMock.Init()
 }
 
 func (suite *HeadchefTestSuite) AfterTest(suiteName, testName string) {
-	go suite.mock.Close()
+	suite.mock.Close()
 }
 
-func (suite *HeadchefTestSuite) PerformRequest() *RequestResult {
-	result := &RequestResult{}
+func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headchef.BuildStatus {
+	suite.mock.MockBuilds(rt)
 
-	buildRecipe := &headchef_models.BuildRequestRecipe{}
-	requester := &headchef_models.BuildRequestRequester{}
-	buildRequest := &headchef_models.BuildRequest{Requester: requester, Recipe: buildRecipe}
-	u, err := url.Parse("ws://example.org/ws")
-	suite.Require().NoError(err)
-	req := headchef.NewRequest(u, buildRequest, suite.mock.Dialer())
-
-	req.OnBuildStarted(func() {
-		result.BuildStarted = true
-	})
-
-	req.OnBuildCompleted(func(res headchef_models.BuildCompleted) {
-		result.BuildCompleted = true
-		result.BuildCompletedResult = res
-	})
-
-	req.OnBuildFailed(func(msg string) {
-		result.BuildFailed = true
-		result.BuildFailedMessage = msg
-	})
-
-	req.OnFailure(func(fail *failures.Failure) {
-		result.Failure = fail
-	})
-
-	done := make(chan bool)
-
-	req.OnClose(func() {
-		result.Closed = true
-		done <- true
-		suite.mock.Close()
-	})
-
-	req.Start()
-	<-done
-
-	return result
+	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef))
+	buildRequest := &headchef_models.V1BuildRequest{
+		Requester: &headchef_models.Requester{},
+		Recipe:    &headchef_models.V1BuildRequestRecipe{},
+	}
+	return client.RequestBuild(buildRequest)
 }
 
-func (suite *HeadchefTestSuite) TestSuccesfulBuild() {
-	suite.mock.QueueResponse("build_started")
-	suite.mock.QueueResponse("build_completed")
+func (suite *HeadchefTestSuite) TestBuildStarted() {
+	status := suite.SendRequest(mock.Started)
 
-	result := suite.PerformRequest()
-
-	suite.True(result.BuildStarted, "Fired OnBuildStarted")
-	suite.True(result.BuildCompleted, "Fired OnBuildCompleted")
+	select {
+	case _, ok := <-status.Started:
+		suite.True(ok, "started channel must not be closed")
+	case <-time.After(maxWait):
+		suite.FailNow("started not received")
+	}
 }
 
-func (suite *HeadchefTestSuite) TestBuildFailure() {
-	suite.mock.QueueResponse("build_started")
-	suite.mock.QueueResponse("build_failed")
+func (suite *HeadchefTestSuite) TestBuildFailed() {
+	status := suite.SendRequest(mock.Failed)
 
-	result := suite.PerformRequest()
-
-	suite.True(result.BuildStarted, "Fired OnBuildStarted")
-	suite.True(result.BuildFailed, "Fired OnBuildFailed")
+	select {
+	case msg, ok := <-status.Failed:
+		suite.True(ok, "failed channel must not be closed")
+		suite.NotEmpty(msg, "failed build requires message")
+	case <-time.After(maxWait):
+		suite.FailNow("failed not received")
+	}
 }
 
-func (suite *HeadchefTestSuite) TestValidationFailure() {
-	suite.mock.QueueResponse("validation_error")
+func (suite *HeadchefTestSuite) TestBuildCompleted() {
+	status := suite.SendRequest(mock.Completed)
 
-	result := suite.PerformRequest()
+	select {
+	case statusResp, ok := <-status.Completed:
+		suite.True(ok, "completed channel must not be closed")
+		suite.NotNil(statusResp, "completed status response must not be nil")
+		suite.NotEmpty(statusResp.Artifacts, "completed artifacts must not be empty")
 
-	suite.NotNil(result.Failure, "Fired Validation Error")
-	suite.True(result.Failure.Type.Matches(headchef.FailRequestValidation))
+	case <-time.After(maxWait):
+		suite.FailNow("completed not received")
+	}
 }
 
-func (suite *HeadchefTestSuite) TestUnknownFailure() {
-	suite.mock.QueueResponse("unknown_message")
-	suite.mock.QueueResponse("build_completed")
+func (suite *HeadchefTestSuite) TestBuildRunFail() {
+	status := suite.SendRequest(mock.RunFail)
 
-	result := suite.PerformRequest()
+	select {
+	case fail, ok := <-status.RunFail:
+		suite.True(ok, "runfail channel must not be closed")
+		suite.NotNil(fail, "runfail failure must not be nil")
 
-	suite.True(result.BuildCompleted, "Comleted despite unknown message")
+		failMatches := fail.Type.Matches(headchef.FailRestAPIError)
+		suite.True(failMatches, "runfail failure must be correct type")
+
+	case <-time.After(maxWait):
+		suite.FailNow("runfail not received")
+	}
 }
 
-func (suite *HeadchefTestSuite) TestMalformedJsonFailure() {
-	suite.mock.QueueResponse("malformed_json")
-	suite.mock.QueueResponse("build_completed")
+func (suite *HeadchefTestSuite) TestBuildRunFailMalformed() {
+	status := suite.SendRequest(mock.RunFailMalformed)
 
-	result := suite.PerformRequest()
+	select {
+	case fail, ok := <-status.RunFail:
+		suite.True(ok, "runfail channel must not be closed")
+		suite.NotNil(fail, "runfail failure must not be nil")
 
-	suite.True(result.BuildCompleted, "Comleted despite malformed json in one of the messages")
+		failMatches := fail.Type.Matches(headchef.FailRestAPIBadResponse)
+		suite.True(failMatches, "runfail failure must be correct type")
+
+	case <-time.After(maxWait):
+		suite.FailNow("runfail not received")
+	}
 }
 
 func TestHeadchefTestSuite(t *testing.T) {

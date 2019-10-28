@@ -1,252 +1,113 @@
 package headchef
 
 import (
-	"encoding/json"
+	"context"
 	"net/url"
-	"time"
 
-	"github.com/gorilla/websocket"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/sacOO7/gowebsocket"
 )
-
-var DefaultDialer *websocket.Dialer
 
 var (
-	FailRequestConnect = failures.Type("headchef.fail.request.connect", failures.FailNetwork)
-
-	FailRequestMarshal = failures.Type("headchef.fail.request.marshal", failures.FailMarshal)
-
-	FailRequestUnmarshal = failures.Type("headchef.fail.request.unmarshal", failures.FailMarshal)
-
-	FailRequestUnmarshalStatus = failures.Type("headchef.fail.request.unmarshalstatus", FailRequestUnmarshal)
-
-	FailRequestAtDisconnect = failures.Type("headchef.fail.request.atdisconnect")
-
-	FailRequestValidation = failures.Type("headchef.fail.request.validation")
+	FailRestAPIError       = failures.Type("headchef.fail.restapi.error")
+	FailRestAPINoResponse  = failures.Type("headchef.fail.restapi.noresponse")
+	FailRestAPIBadResponse = failures.Type("headchef.fail.restapi.badresponse")
 )
 
-type Requester interface {
-	OnBuildStarted(f RequestBuildStarted)
-	OnBuildFailed(f RequestBuildFailed)
-	OnBuildCompleted(f RequestBuildCompleted)
-	OnFailure(f RequestFailure)
-	OnClose(f RequestClose)
-	Start()
+type BuildStatus struct {
+	Started   chan struct{}
+	Failed    chan string
+	Completed chan *headchef_models.BuildStatusResponse
+	RunFail   chan *failures.Failure
 }
 
-type Request struct {
-	socket       gowebsocket.Socket
-	buildRequest *headchef_models.BuildRequest
-
-	onBuildStarted   RequestBuildStarted
-	onBuildFailed    RequestBuildFailed
-	onBuildCompleted RequestBuildCompleted
-	onFailure        RequestFailure
-	onClose          RequestClose
-}
-
-type RequestBuildStarted func()
-type RequestBuildFailed func(message string)
-type RequestBuildCompleted func(headchef_models.BuildCompleted)
-type RequestFailure func(*failures.Failure)
-type RequestClose func()
-
-type InitRequester func(buildRequest *headchef_models.BuildRequest) Requester
-
-func InitRequest(buildRequest *headchef_models.BuildRequest) Requester {
-	return NewRequest(api.GetServiceURL(api.ServiceHeadChef), buildRequest, DefaultDialer)
-}
-
-func NewRequest(u *url.URL, buildRequest *headchef_models.BuildRequest, dialer *websocket.Dialer) Requester {
-	logging.Debug("connecting to head-chef at %s", u.String())
-
-	socket := gowebsocket.New(u.String())
-	if dialer != nil {
-		socket.WebsocketDialer = dialer
-	}
-	socket.RequestHeader.Set("Origin", constants.HeadChefOrigin)
-
-	request := &Request{socket: socket, buildRequest: buildRequest}
-
-	return request
-}
-
-func (r *Request) OnBuildStarted(f RequestBuildStarted) {
-	r.onBuildStarted = f
-}
-
-func (r *Request) triggerBuildStarted() {
-	logging.Debug("BuildStarted")
-	if r.onBuildStarted != nil {
-		r.onBuildStarted()
+func NewBuildStatus() *BuildStatus {
+	return &BuildStatus{
+		Started:   make(chan struct{}),
+		Failed:    make(chan string),
+		Completed: make(chan *headchef_models.BuildStatusResponse),
+		RunFail:   make(chan *failures.Failure),
 	}
 }
 
-func (r *Request) OnBuildFailed(f RequestBuildFailed) {
-	r.onBuildFailed = f
+func (s *BuildStatus) Close() {
+	close(s.Started)
+	close(s.Failed)
+	close(s.Completed)
+	close(s.RunFail)
 }
 
-func (r *Request) triggerBuildFailed(message string) {
-	logging.Debug("BuildFailed: %s", message)
-	if r.onBuildFailed != nil {
-		r.onBuildFailed(message)
+type Client struct {
+	client *headchef_operations.Client
+}
+
+func InitClient() *Client {
+	return NewClient(api.GetServiceURL(api.ServiceHeadChef))
+}
+
+func NewClient(apiURL *url.URL) *Client {
+	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
+	transportRuntime.Transport = api.NewUserAgentTripper()
+
+	//transportRuntime.SetDebug(true)
+
+	return &Client{
+		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 	}
 }
 
-func (r *Request) OnBuildCompleted(f RequestBuildCompleted) {
-	r.onBuildCompleted = f
+func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
+	buildStatus := NewBuildStatus()
+
+	go func() {
+		defer buildStatus.Close()
+		r.reqBuild(buildRequest, buildStatus)
+	}()
+
+	return buildStatus
 }
 
-func (r *Request) triggerBuildCompleted(response headchef_models.BuildCompleted) {
-	logging.Debug("BuildCompleted:", response.Message)
-	if r.onBuildCompleted != nil {
-		r.onBuildCompleted(response)
+func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
+	startParams := headchef_operations.StartBuildV1Params{
+		Context:      context.Background(),
+		BuildRequest: buildReq,
 	}
-}
+	created, accepted, err := r.client.StartBuildV1(&startParams)
 
-func (r *Request) OnFailure(f RequestFailure) {
-	r.onFailure = f
-}
-
-func (r *Request) triggerFailure(fail *failures.Failure) {
-	logging.Debug("Failure: %v", fail)
-	if r.onFailure != nil {
-		r.onFailure(fail)
-	}
-}
-
-func (r *Request) OnClose(f RequestClose) {
-	r.onClose = f
-}
-
-func (r *Request) triggerClose() {
-	logging.Debug("Close")
-	if r.onClose != nil {
-		r.onClose()
-	}
-}
-
-func (r *Request) close() {
-	// Work around strange bug where socket.Close() times out on writing the close message.
-	// Oddly the timeout imposed close call works just fine.
-	// I've only encountered this issue in tests, so might be an issue with our testing library
-	r.socket.Conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
-	go r.socket.Close() // run in subroutine so the close doesn't block anything, it's of no consequence
-}
-
-func (r *Request) handleMessage(message string, socket gowebsocket.Socket) {
-	if r.handleValidationError(message) {
-		return
-	}
-
-	if !r.handleStatusMessage(message) {
-		// If neither handleValidationError nor handleStatusMessage handled the message we potentially have a problem
-		// Though it could be nothing (eg. the headchef was updated with new messages that aren't required for backwards compatibility)
-		logging.Warning("Unrecognized message: %s", message)
-	}
-}
-
-func (r *Request) handleValidationError(message string) (handled bool) {
-	validationError := headchef_models.RestAPIValidationError{}
-	err := validationError.UnmarshalJSON([]byte(message))
-	if err == nil && validationError.ValidationErrors != nil {
-		errMsg := message
-		if validationError.Message != nil {
-			errMsg = *validationError.Message
+	switch {
+	case err != nil:
+		msg := err.Error()
+		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
+			msg = *startErr.Payload.Message
 		}
-		r.triggerFailure(FailRequestValidation.New(errMsg))
-		r.socket.Close()
-		return true
-	}
+		buildStatus.RunFail <- FailRestAPIError.New(msg)
+	case accepted != nil:
+		buildStatus.Started <- struct{}{}
+	case created != nil:
+		failBadResp := FailRestAPIBadResponse.New("bad response")
 
-	return false
-}
-
-func (r *Request) handleStatusMessage(message string) (handled bool) {
-	envelope := headchef_models.StatusMessageEnvelope{}
-	err := envelope.UnmarshalBinary([]byte(message))
-	if err != nil {
-		logging.Error("Could not unmarshal websocket response, error: %v", err)
-		return false
-	}
-	if envelope.Type == nil {
-		return false // this isn't a status message
-	}
-
-	switch *envelope.Type {
-	// Build Started
-	case headchef_models.StatusMessageEnvelopeTypeBuildStarted:
-		r.triggerBuildStarted()
-		return true
-
-	// Build Completed
-	case headchef_models.StatusMessageEnvelopeTypeBuildCompleted:
-		response := headchef_models.BuildCompleted{}
-		json, err := json.Marshal(envelope.Body)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-			return true
+		if created.Payload.Type == nil {
+			buildStatus.RunFail <- failBadResp
+			break
 		}
-		err = response.UnmarshalBinary(json)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-		} else {
-			r.triggerBuildCompleted(response)
+
+		switch *created.Payload.Type {
+		case headchef_models.BuildStatusResponseTypeBuildCompleted:
+			buildStatus.Completed <- created.Payload
+		case headchef_models.BuildStatusResponseTypeBuildFailed:
+			buildStatus.Failed <- created.Payload.Message
+		case headchef_models.BuildStatusResponseTypeBuildStarted:
+			buildStatus.Started <- struct{}{}
+		default:
+			buildStatus.RunFail <- failBadResp
 		}
-		r.close()
-		return true
-
-	// Build Failed
-	case headchef_models.StatusMessageEnvelopeTypeBuildFailed:
-		response := headchef_models.BuildFailed{}
-		json, err := json.Marshal(envelope.Body)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-			return true
-		}
-		err = response.UnmarshalBinary(json)
-		if err != nil {
-			r.triggerFailure(FailRequestUnmarshalStatus.Wrap(err))
-		} else {
-			logging.Warning("head-chef build failed with the following errors: %v", response.Errors)
-			r.triggerBuildFailed(response.Message)
-		}
-		r.close()
-		return true
+	default:
+		buildStatus.RunFail <- FailRestAPINoResponse.New("no response")
 	}
-
-	return false
-}
-
-func (r *Request) Start() {
-	// Hook up our event handlers
-	r.socket.OnConnectError = func(err error, socket gowebsocket.Socket) {
-		r.triggerFailure(FailRequestConnect.Wrap(err))
-	}
-	r.socket.OnTextMessage = r.handleMessage
-	r.socket.OnDisconnected = func(err error, socket gowebsocket.Socket) {
-		// The error here is useless, because gowebsocket just forwards the close message as an error, regardless of whether
-		// it actually is one
-		r.triggerClose()
-	}
-
-	r.socket.OnConnected = func(socket gowebsocket.Socket) {
-		logging.Debug("Connected")
-
-		// Send our build request
-		bytes, err := r.buildRequest.MarshalBinary()
-		if err != nil {
-			r.triggerFailure(FailRequestMarshal.Wrap(err))
-		}
-		r.socket.SendBinary(bytes)
-	}
-
-	r.socket.Connect()
 }

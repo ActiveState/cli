@@ -42,7 +42,7 @@ var urlsByService = map[Service]*url.URL{
 		Path:   constants.SecretsAPIPath,
 	},
 	ServiceHeadChef: {
-		Scheme: "wss",
+		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.HeadChefAPIPath,
 	},

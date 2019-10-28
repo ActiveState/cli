@@ -25,38 +25,182 @@ type Client struct {
 }
 
 /*
-Hack hack API
+GetBuildStatus Get status of a build that has previously been started using the build_request_id returned from /builds. Status requests for pre-platform builds will always result in a 404 as these are not actual platform builds.
 */
-func (a *Client) Hack(params *HackParams) (*HackOK, *HackCreated, *HackAccepted, error) {
+func (a *Client) GetBuildStatus(params *GetBuildStatusParams) (*GetBuildStatusOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewHackParams()
+		params = NewGetBuildStatusParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "hack",
+		ID:                 "getBuildStatus",
+		Method:             "GET",
+		PathPattern:        "/builds/{build_request_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetBuildStatusReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetBuildStatusOK), nil
+
+}
+
+/*
+HealthCheck health check API
+*/
+func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewHealthCheckParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "healthCheck",
+		Method:             "GET",
+		PathPattern:        "/healthz",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &HealthCheckReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*HealthCheckOK), nil
+
+}
+
+/*
+JobStatus Receives job status callbacks from the scheduler when jobs for a given build request complete/fail. If a job fails the build will be marked as failed.
+*/
+func (a *Client) JobStatus(params *JobStatusParams) (*JobStatusOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewJobStatusParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "jobStatus",
+		Method:             "POST",
+		PathPattern:        "/builds/{build_request_id}/job-status",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &JobStatusReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*JobStatusOK), nil
+
+}
+
+/*
+StartBuild start build API
+*/
+func (a *Client) StartBuild(params *StartBuildParams) (*StartBuildCreated, *StartBuildAccepted, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewStartBuildParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "startBuild",
+		Method:             "POST",
+		PathPattern:        "/builds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &StartBuildReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	switch value := result.(type) {
+	case *StartBuildCreated:
+		return value, nil, nil
+	case *StartBuildAccepted:
+		return nil, value, nil
+	}
+	return nil, nil, nil
+
+}
+
+/*
+StartBuildV1 start build v1 API
+*/
+func (a *Client) StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created, *StartBuildV1Accepted, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewStartBuildV1Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "startBuildV1",
+		Method:             "POST",
+		PathPattern:        "/v1/builds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &StartBuildV1Reader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	switch value := result.(type) {
+	case *StartBuildV1Created:
+		return value, nil, nil
+	case *StartBuildV1Accepted:
+		return nil, value, nil
+	}
+	return nil, nil, nil
+
+}
+
+/*
+Websocket Websocket compatibility layer for the state tool.
+*/
+func (a *Client) Websocket(params *WebsocketParams) (*WebsocketOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewWebsocketParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "websocket",
 		Method:             "GET",
 		PathPattern:        "/",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &HackReader{formats: a.formats},
+		Reader:             &WebsocketReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
-	switch value := result.(type) {
-	case *HackOK:
-		return value, nil, nil, nil
-	case *HackCreated:
-		return nil, value, nil, nil
-	case *HackAccepted:
-		return nil, nil, value, nil
-	}
-	return nil, nil, nil, nil
+	return result.(*WebsocketOK), nil
 
 }
 

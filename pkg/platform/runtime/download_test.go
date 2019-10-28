@@ -85,7 +85,7 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoOptions))
+	r := runtime.NewDownload(suite.project, suite.dir)
 	artfs, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	files, fail := r.Download(artfs, suite.prg)
@@ -101,7 +101,9 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.NoArtifacts))
+	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Skip)
+
+	r := runtime.NewDownload(suite.project, suite.dir)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -109,7 +111,9 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidArtifact() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidArtifact))
+	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Invalid)
+
+	r := runtime.NewDownload(suite.project, suite.dir)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -117,7 +121,9 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidArtifact() {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.InvalidURL))
+	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.BadURI)
+
+	r := runtime.NewDownload(suite.project, suite.dir)
 	files, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	_, fail = r.Download(files, suite.prg)
@@ -127,19 +133,23 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.BuildFailure))
+	suite.hcMock.MockBuilds(hcMock.Failed)
+
+	r := runtime.NewDownload(suite.project, suite.dir)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
-	suite.Equal(runtime.FailBuild.Name, fail.Type.Name)
+	suite.Equal(runtime.FailBuildFailed.Name, fail.Type.Name)
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
-	r := runtime.NewDownload(suite.project, suite.dir, suite.hcMock.Requester(hcMock.RegularFailure))
+	suite.hcMock.MockBuilds(hcMock.RunFail)
+
+	r := runtime.NewDownload(suite.project, suite.dir)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
-	suite.Equal(failures.FailDeveloper.Name, fail.Type.Name)
+	suite.Equal(runtime.FailBuildErrResponse.Name, fail.Type.Name)
 }
 
 func TestRuntimeDLSuite(t *testing.T) {

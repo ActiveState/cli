@@ -14,7 +14,7 @@ import (
 // BuildStarted Build Started
 //
 // A message indicating that a requested build has been started.
-// swagger:model buildStarted
+// swagger:model BuildStarted
 type BuildStarted struct {
 
 	// A user-facing message describing the build event.
