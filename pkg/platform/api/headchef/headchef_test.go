@@ -100,7 +100,7 @@ func (suite *HeadchefTestSuite) TestBuildRunFailMalformed() {
 		suite.True(ok, "runfail channel must not be closed")
 		suite.NotNil(fail, "runfail failure must not be nil")
 
-		failMatches := fail.Type.Matches(headchef.FailBuildCreatedBadType)
+		failMatches := fail.Type.Matches(headchef.FailBuildCreatedUnknownType)
 		suite.True(failMatches, "runfail failure must be correct type")
 
 	case <-time.After(maxWait):

@@ -2,6 +2,7 @@ package headchef
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -15,10 +16,10 @@ import (
 )
 
 var (
-	FailBuildReqErrorResp   = failures.Type("headchef.fail.buildreq.errorresp")
-	FailBuildReqNoResp      = failures.Type("headchef.fail.buildreq.noresp")
-	FailBuildCreatedBadType = failures.Type("headchef.fail.buildcreated.badtype")
-	FailBuildCreatedNilType = failures.Type("headchef.fail.buildcreated.niltype")
+	FailBuildReqErrorResp       = failures.Type("headchef.fail.buildreq.errorresp")
+	FailBuildReqNoResp          = failures.Type("headchef.fail.buildreq.noresp")
+	FailBuildCreatedUnknownType = failures.Type("headchef.fail.buildcreated.unknowntype")
+	FailBuildCreatedNilType     = failures.Type("headchef.fail.buildcreated.niltype")
 )
 
 type BuildStatus struct {
@@ -91,13 +92,14 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	case accepted != nil:
 		buildStatus.Started <- struct{}{}
 	case created != nil:
-
 		if created.Payload.Type == nil {
-			buildStatus.RunFail <- FailBuildCreatedNilType.New("nil type response")
+			msg := "created response cannot be handled: nil type"
+			buildStatus.RunFail <- FailBuildCreatedNilType.New(msg)
 			break
 		}
+		payloadType := *created.Payload.Type
 
-		switch *created.Payload.Type {
+		switch payloadType {
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
 			buildStatus.Completed <- created.Payload
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
@@ -105,7 +107,11 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- struct{}{}
 		default:
-			buildStatus.RunFail <- FailBuildCreatedBadType.New("bad type response")
+			msg := fmt.Sprintf(
+				"created response cannot be handled: unknown type %q",
+				payloadType,
+			)
+			buildStatus.RunFail <- FailBuildCreatedUnknownType.New(msg)
 		}
 	default:
 		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
