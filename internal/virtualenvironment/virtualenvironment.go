@@ -153,38 +153,12 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
 		}
 
-		artifactEnvSetup(env, meta)
 	}
 
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 	return env
-}
-
-func artifactEnvSetup(env map[string]string, meta *runtime.MetaData) {
-	proj := projectfile.Get()
-	if isPythonArtifact(proj, meta) {
-		setPythonEnvVars(env, proj)
-	}
-}
-
-func isPythonArtifact(proj *projectfile.Project, meta *runtime.MetaData) bool {
-	for _, lang := range proj.Languages {
-		if strings.ToLower(lang.Name) == "python" {
-			return true
-		}
-	}
-
-	return meta.HasBinaryFile(constants.ActivePython3Executable) || meta.HasBinaryFile(constants.ActivePython2Executable)
-}
-
-func setPythonEnvVars(env map[string]string, proj *projectfile.Project) {
-	const pythonEncoding = "PYTHONIOENCODING"
-	encoding := os.Getenv(pythonEncoding)
-	if encoding == "" {
-		env[pythonEncoding] = "utf-8"
-	}
 }
 
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle

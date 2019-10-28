@@ -1,11 +1,13 @@
 package runtime_test
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	rt "runtime"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -14,6 +16,19 @@ import (
 
 type MetaDataTestSuite struct {
 	suite.Suite
+
+	dir string
+}
+
+func (suite *MetaDataTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	suite.dir, err = ioutil.TempDir("", "metadata-test")
+	suite.Require().NoError(err)
+}
+
+func (suite *MetaDataTestSuite) AfterTest(suiteName, testName string) {
+	err := os.RemoveAll(suite.dir)
+	suite.Require().NoError(err)
 }
 
 func (suite *MetaDataTestSuite) TestMetaData() {
@@ -36,25 +51,39 @@ func (suite *MetaDataTestSuite) TestMetaData() {
 	suite.Equal(true, metaData.BinaryLocations[0].Relative)
 }
 
-func TestMetaDataTestSuite(t *testing.T) {
-	suite.Run(t, new(MetaDataTestSuite))
-}
+func (suite *MetaDataTestSuite) TestMetaData_MakeBackwardsCompatible() {
+	template := `{
+		"affected_env": "PYTHONPATH",
+		"binaries_in": [
+			{
+				"path": "%s",
+				"relative": 1
+			}
+		],
+		"relocation_dir": "/relocate"
+	}`
 
-func TestHasBinaryFile(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", t.Name())
-	require.NoError(t, err)
+	originalValue := os.Getenv("PYTHONIOENCODING")
+	defer func() {
+		os.Setenv("PYTHONIOENCODING", originalValue)
+	}()
 
 	pythonBinaryFilename := "python3"
-	_, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
-	require.NoError(t, fail.ToError())
-
-	pythonBinary := runtime.MetaDataBinary{
-		Path:     tempDir,
-		Relative: false,
+	if rt.GOOS == "windows" {
+		pythonBinaryFilename = pythonBinaryFilename + ".exe"
 	}
+	_, fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
+	suite.Require().NoError(fail.ToError())
 
-	meta := &runtime.MetaData{
-		BinaryLocations: []runtime.MetaDataBinary{pythonBinary},
-	}
-	require.True(t, meta.HasBinaryFile(pythonBinaryFilename))
+	contents := fmt.Sprintf(template, suite.dir)
+	metaData, fail := runtime.ParseMetaData([]byte(contents))
+	suite.Require().NoError(fail.ToError())
+
+	fail = metaData.MakeBackwardsCompatible()
+	suite.Require().NoError(fail.ToError())
+	suite.Require().NotEmpty(metaData.Env["PYTHONIOENCODING"])
+}
+
+func TestMetaDataTestSuite(t *testing.T) {
+	suite.Run(t, new(MetaDataTestSuite))
 }

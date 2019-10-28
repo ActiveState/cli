@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"runtime"
 
@@ -14,6 +15,11 @@ import (
 var (
 	// FailMetaDataNotDetected indicates a failure due to the metafile not being detected.
 	FailMetaDataNotDetected = failures.Type("runtime.metadata.notdetected", failures.FailIO, failures.FailNotFound)
+)
+
+const (
+	pythonEncodingEnvVar = "PYTHONIOENCODING"
+	pythonEncodingUTF8   = "utf-8"
 )
 
 // MetaData is used to parse the metadata.json file
@@ -81,7 +87,9 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 
 // ParseMetaData will parse the given bytes into the MetaData struct
 func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
-	metaData := &MetaData{}
+	metaData := &MetaData{
+		Env: make(map[string]string),
+	}
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
@@ -95,8 +103,8 @@ func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
 	return metaData, nil
 }
 
-// MakeBackwardsCompatible will assume the LibLocation in cases where the metadata doesn't contain it and we know what
-// it should be
+// MakeBackwardsCompatible will assume the LibLocation in cases where the metadata
+// doesn't contain it and we know what it should be
 func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	// BinaryLocations
 	if m.BinaryLocations == nil || len(m.BinaryLocations) == 0 {
@@ -109,7 +117,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	}
 
 	// Python
-	if m.HasBinaryFile(constants.ActivePython3Executable) || m.HasBinaryFile(constants.ActivePython2Executable) {
+	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
 		logging.Debug("Detected Python artifact, ensuring backwards compatibility")
 
 		// RelocationTargetBinaries
@@ -131,9 +139,12 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		if _, exists := m.Env["PYTHONPATH"]; !exists {
 			m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
 		}
+		if os.Getenv(pythonEncodingEnvVar) == "" {
+			m.Env[pythonEncodingEnvVar] = pythonEncodingUTF8
+		}
 
 		//Perl
-	} else if m.HasBinaryFile(constants.ActivePerlExecutable) {
+	} else if m.hasBinaryFile(constants.ActivePerlExecutable) {
 		logging.Debug("Detected Perl artifact, ensuring backwards compatibility")
 
 		// RelocationDir
@@ -158,9 +169,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	return nil
 }
 
-// HasBinaryFile returns true if this metadata has a binary file
-// in it's known locations for the given exectubale
-func (m *MetaData) HasBinaryFile(executable string) bool {
+func (m *MetaData) hasBinaryFile(executable string) bool {
 	for _, dir := range m.BinaryLocations {
 		parent := ""
 		if dir.Relative {

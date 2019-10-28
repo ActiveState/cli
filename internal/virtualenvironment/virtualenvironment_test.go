@@ -2,7 +2,6 @@ package virtualenvironment
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -13,9 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -138,59 +135,4 @@ func TestEnv(t *testing.T) {
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
 	assert.NotEmpty(t, venv.ActivationID())
-}
-
-func TestArtifactEnvSetupLang(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	lang := projectfile.Language{
-		Name: "python",
-	}
-	pjfile := projectfile.Project{
-		Project:   projectURL,
-		Languages: []projectfile.Language{lang},
-	}
-	pjfile.Persist()
-
-	meta := &runtime.MetaData{}
-	env := map[string]string{}
-
-	artifactEnvSetup(env, meta)
-	require.NotEmpty(t, env["PYTHONIOENCODING"])
-}
-
-func TestArtifactEnvSetupMeta(t *testing.T) {
-	setup(t)
-	defer teardown()
-
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
-	tempDir, err := ioutil.TempDir("", t.Name())
-	require.NoError(t, err)
-
-	pythonBinaryFilename := "python3"
-	if rt.GOOS == "windows" {
-		pythonBinaryFilename = pythonBinaryFilename + ".exe"
-	}
-	_, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
-	require.NoError(t, fail.ToError())
-
-	pythonBinary := runtime.MetaDataBinary{
-		Path:     tempDir,
-		Relative: false,
-	}
-
-	meta := &runtime.MetaData{
-		BinaryLocations: []runtime.MetaDataBinary{pythonBinary},
-	}
-	env := map[string]string{}
-
-	artifactEnvSetup(env, meta)
-	require.NotEmpty(t, env["PYTHONIOENCODING"])
 }
