@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	rt "runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -68,14 +69,18 @@ func (suite *MetaDataTestSuite) TestMetaData_MakeBackwardsCompatible() {
 		os.Setenv("PYTHONIOENCODING", originalValue)
 	}()
 
+	tempDir := suite.dir
 	pythonBinaryFilename := "python3"
 	if rt.GOOS == "windows" {
 		pythonBinaryFilename = pythonBinaryFilename + ".exe"
+		tempDir = strings.ReplaceAll(tempDir, "\\", "\\\\")
 	}
-	_, fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
+	tempBinary, fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
 	suite.Require().NoError(fail.ToError())
+	defer tempBinary.Close()
 
-	contents := fmt.Sprintf(template, suite.dir)
+	fmt.Println(tempDir)
+	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
 	suite.Require().NoError(fail.ToError())
 
