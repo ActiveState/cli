@@ -166,6 +166,7 @@ func TestExpect(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error but got '%s'", err)
 	}
+
 	// close the pts so we can expect EOF
 	testCloser(t, c.Tty())
 	wg.Wait()
@@ -274,7 +275,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 	c.SendLine("2")
 	c.ExpectString("What is Netflix backwards?")
 	c.SendLine("xilfteN")
-	c.Expect(EOF, PTSClosed, WithTimeout(time.Second))
+	c.Expect(EOF, WithTimeout(time.Second))
 
 	wg.Wait()
 }

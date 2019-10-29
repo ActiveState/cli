@@ -38,7 +38,7 @@ func (c *Console) ExpectString(s string) (string, error) {
 // ExpectEOF reads from Console's tty until EOF or an error occurs, and returns
 // the buffer read by Console.  We also treat the PTSClosed error as an EOF.
 func (c *Console) ExpectEOF() (string, error) {
-	return c.Expect(EOF, PTSClosed)
+	return c.Expect(EOF)
 }
 
 // Expect reads from Console's tty until a condition specified from opts is

@@ -15,6 +15,7 @@
 package expect2
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -24,9 +25,18 @@ import (
 // deadline. If a timeout is reached the error is returned, otherwise the error
 // from the provided io.Reader returned is passed through instead.
 type PassthroughPipe struct {
-	reader *os.File
-	errC   chan error
+	reader       *os.File
+	bytesReadC   chan int
+	readRequestC chan chan<- struct{}
+	errC         chan error
+	deadline     time.Time
 }
+
+type errPassthroughTimeout struct {
+	error
+}
+
+func (errPassthroughTimeout) Timeout() bool { return true }
 
 // NewPassthroughPipe returns a new pipe for a io.Reader that passes through
 // non-timeout errors.
@@ -37,13 +47,22 @@ func NewPassthroughPipe(reader io.Reader) (*PassthroughPipe, error) {
 	}
 
 	errC := make(chan error, 1)
+	bytesWritten := make(chan int)
+	bytesRead := make(chan int)
 	go func() {
 		defer close(errC)
-		_, readerErr := io.Copy(pipeWriter, reader)
-		if readerErr == nil {
-			// io.Copy reads from reader until EOF, and a successful Copy returns
-			// err == nil. We set it back to io.EOF to surface the error to Expect.
-			readerErr = io.EOF
+		defer close(bytesWritten)
+		var readerErr error
+		for {
+			buf := make([]byte, 32*1024)
+			n, err := reader.Read(buf)
+			if err != nil {
+				// We always overwrite the error and set it to EOF.  This way we'll always find the end of the stream.
+				readerErr = io.EOF
+				break
+			}
+			pipeWriter.Write(buf[:n])
+			bytesWritten <- n
 		}
 
 		// Closing the pipeWriter will unblock the pipeReader.Read.
@@ -60,36 +79,79 @@ func NewPassthroughPipe(reader io.Reader) (*PassthroughPipe, error) {
 		errC <- readerErr
 	}()
 
+	readRequestC := make(chan chan<- struct{})
+	go func() {
+		defer close(readRequestC)
+		var totalWritten int
+		var totalRead int
+		var readyToRead chan<- struct{}
+		for {
+			select {
+			case r := <-readRequestC:
+				if r != nil && readyToRead != nil {
+					panic("Reading from passthrough pipe needs to be serialized, sorry!")
+				}
+				readyToRead = r
+			case nw, ok := <-bytesWritten:
+				totalWritten += nw
+				if !ok {
+					bytesWritten = nil
+				}
+			case nr, ok := <-bytesRead:
+				totalRead += nr
+				if !ok {
+					bytesRead = nil
+				}
+			}
+			if bytesWritten == nil && bytesRead == nil {
+				break
+			}
+			if totalWritten > totalRead && readyToRead != nil {
+				readyToRead <- struct{}{}
+				readyToRead = nil
+			}
+		}
+	}()
+
 	return &PassthroughPipe{
-		reader: pipeReader,
-		errC:   errC,
+		reader:       pipeReader,
+		errC:         errC,
+		bytesReadC:   bytesRead,
+		readRequestC: readRequestC,
 	}, nil
 }
 
 func (pp *PassthroughPipe) Read(p []byte) (n int, err error) {
+	timeoutDuration := time.Until(pp.deadline)
+	if pp.deadline.IsZero() {
+		timeoutDuration = time.Hour * 1000
+	}
+	readyToRead := make(chan struct{}, 1)
+	pp.readRequestC <- readyToRead
+	select {
+	case readerErr := <-pp.errC:
+		pp.readRequestC <- nil
+		return 0, readerErr
+	case <-readyToRead:
+	case <-time.After(timeoutDuration):
+		pp.readRequestC <- nil
+		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
+	}
 	n, err = pp.reader.Read(p)
 	if err != nil {
-		if os.IsTimeout(err) {
-			return n, err
-		}
-
-		// If the pipe is closed, this is the second time calling Read on
-		// PassthroughPipe, so just return the error from the os.Pipe io.Reader.
-		perr, ok := <-pp.errC
-		if !ok {
-			return n, err
-		}
-
-		return n, perr
+		return n, err
 	}
+	pp.bytesReadC <- n
 
 	return n, nil
 }
 
 func (pp *PassthroughPipe) Close() error {
+	close(pp.bytesReadC)
 	return pp.reader.Close()
 }
 
 func (pp *PassthroughPipe) SetReadDeadline(t time.Time) error {
-	return pp.reader.SetReadDeadline(t)
+	pp.deadline = t
+	return nil
 }
