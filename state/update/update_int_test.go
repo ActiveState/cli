@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -65,7 +66,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
 	suite.Spawn("update")
-	suite.Expect("Update completed")
+	suite.Expect("Update completed", 60*time.Second)
 	suite.Wait()
 
 	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as we ran update")
@@ -73,6 +74,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
+
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode.")
+	}
 
 	suite.Run(t, new(UpdateIntegrationTestSuite))
 
