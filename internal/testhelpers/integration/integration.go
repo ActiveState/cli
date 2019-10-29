@@ -67,8 +67,8 @@ func (s *Suite) SetupTest() {
 	err = permbits.Chmod(s.executable, permissions)
 	s.Require().NoError(err)
 
-	// s.ClearEnv()
-	// s.AppendEnv(os.Environ())
+	s.ClearEnv()
+	s.AppendEnv(os.Environ())
 	s.AppendEnv([]string{
 		"ACTIVESTATE_CLI_CONFIGDIR=" + configDir,
 		"ACTIVESTATE_CLI_CACHEDIR=" + cacheDir,
