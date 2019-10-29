@@ -18,12 +18,10 @@ type ActivateIntegrationTestSuite struct {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
-	return
 	suite.activatePython("3")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
-	return
 	suite.activatePython("2")
 }
 
@@ -40,7 +38,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Spawn("-v", "activate", "ActiveState-CLI/Python3")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("State activated") // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
+	suite.Expect("activated state") // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
 	suite.WaitForInput(10 * time.Second)
 	suite.SendLine("exit")
 	suite.Wait()
@@ -63,12 +61,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	os.Remove(tempDir)
 	suite.Require().NoError(err)
 
-	suite.Spawn("-v", "activate", "ActiveState-CLI/Python"+version)
+	suite.Spawn("activate", "ActiveState-CLI/Python"+version)
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
 	suite.Expect("Downloading")
 	suite.Expect("Installing", 120*time.Second)
-	suite.Expect("State activated", 120*time.Second)
+	suite.Expect("activated state", 120*time.Second)
 	suite.WaitForInput()
 	suite.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	suite.Expect("ActiveState Software Inc.")
