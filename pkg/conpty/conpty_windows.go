@@ -156,8 +156,8 @@ func (c *ConPty) Spawn(argv0 string, argv []string, attr *syscall.ProcAttr) (pid
 	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
 
 	var zeroSec windows.SecurityAttributes
-	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
-	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
+	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
+	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec)), InheritHandle: 1}
 
 	// c.startupInfo.startupInfo.Cb = uint32(unsafe.Sizeof(c.startupInfo))
 	err = windows.CreateProcess(
