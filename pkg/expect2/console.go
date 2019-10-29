@@ -149,7 +149,7 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	if err != nil {
 		return nil, err
 	}
-	closers := append(options.Closers, pty)
+	closers := append(options.Closers)
 
 	passthroughPipe, err := NewPassthroughPipe(pty.TerminalOutPipe())
 	if err != nil {
@@ -209,7 +209,9 @@ func (c *Console) Close() error {
 			c.Logf("failed to close: %s", err)
 		}
 	}
-	return nil
+
+	// close the tty in the end
+	return c.Pty.Close()
 }
 
 // Send writes string s to Console's tty.
