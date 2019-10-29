@@ -41,6 +41,7 @@ func initializeProcThreadAttributeList(attributeList uintptr, attributeCount uin
 		return
 	}
 	r1, _, e1 := procInitializeProcThreadAttributeList.Call(attributeList, uintptr(attributeCount), 0, uintptr(unsafe.Pointer(listSize)))
+
 	if r1 == 0 { // boolean FALSE
 		err = e1
 	}
@@ -51,17 +52,20 @@ func initializeProcThreadAttributeList(attributeList uintptr, attributeCount uin
 func updateProcThreadAttributeList(attributeList windows.Handle, attribute procThreadAttribute, lpValue windows.Handle, lpSize uintptr) (err error) {
 
 	r1, _, e1 := procUpdateProcThreadAttribute.Call(uintptr(attributeList), 0, uintptr(attribute), uintptr(lpValue), lpSize, 0, 0)
-	if r1 == 0 {
+
+	if r1 == 0 { // boolean FALSE
 		err = e1
 	}
 
 	return
 }
 func deleteProcThreadAttributeList(handle windows.Handle) (err error) {
-	r1, _, e1 := procDeleteProcThreadAttributeList.Call(uintptr(handle))
-	if r1 == 0 {
+	r1, _, e1 = procDeleteProcThreadAttributeList.Call(uintptr(handle))
+
+	if r1 == 0 { // boolean FALSE
 		err = e1
 	}
+
 	return
 }
 
