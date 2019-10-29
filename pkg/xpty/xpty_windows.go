@@ -16,19 +16,8 @@ type impl struct {
 	*conpty.ConPty
 }
 
-/*
-func (xp *Xpty) openVT(cols, rows uint16) error {
-	term, err := vt10x.Create(xp.State, )
-	if err != nil {
-		return err
-	}
-	term.Resize(int(cols), int(rows))
-	xp.Term = term
-}
-*/
-
 func open(cols, rows uint16) (*impl, error) {
-	c, err := conpty.New(cols, rows)
+	c, err := conpty.New(int16(cols), int16(rows))
 	if err != nil {
 		return nil, err
 	}
