@@ -8,6 +8,8 @@ github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8 h1:zMXh
 github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8/go.mod h1:RG4eNKvmn9ZUEGBg/c+lvZdE8iZE4rM54zb7wGwJvIY=
 github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a h1:w0rnPskgd7shZuKf6h/2LjMqZmAvG2HCAN6Chg/kJ8A=
 github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a/go.mod h1:9L5BiOyziWNetyh7lkwxKIoWz3czZu8N0nepnmG1tPo=
+github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba h1:sx6zkr6D7K3L+wX0CyWQbmN16OffQmDuxoZbOE+NM6Y=
+github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba/go.mod h1:uQsI9n7MwVaHTJdyE2HjiU+7oOQfkFN+WJKq6KImAmU=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=

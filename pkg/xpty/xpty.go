@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/hinshun/vt10x"
+	"github.com/ActiveState/vt10x"
 )
 
 type Xpty struct {

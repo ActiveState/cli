@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/hinshun/vt10x"
+	"github.com/ActiveState/vt10x"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
 

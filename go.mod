@@ -8,6 +8,7 @@ require (
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
 	github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a
+	github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
