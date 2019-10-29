@@ -58,7 +58,10 @@ func updateProcThreadAttributeList(attributeList windows.Handle, attribute procT
 	return
 }
 func deleteProcThreadAttributeList(handle windows.Handle) (err error) {
-	_, _, err = procDeleteProcThreadAttributeList.Call(uintptr(handle))
+	r1, _, e1 := procDeleteProcThreadAttributeList.Call(uintptr(handle))
+	if r1 == 0 {
+		err = e1
+	}
 	return
 }
 

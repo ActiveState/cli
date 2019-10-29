@@ -145,7 +145,7 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	}
 
 	var pty *xpty.Xpty
-	pty, err := xpty.Open(80, 100)
+	pty, err := xpty.Open(80, 40)
 	if err != nil {
 		return nil, err
 	}

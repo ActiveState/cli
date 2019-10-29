@@ -149,24 +149,22 @@ func (c *ConPty) Spawn(argv0 string, argv []string, attr *syscall.ProcAttr) (pid
 		}
 	}
 
-	// c.startupInfo.startupInfo.Flags = windows.STARTF_USESTDHANDLES
+	c.startupInfo.startupInfo.Flags = windows.STARTF_USESTDHANDLES
 
 	pi := new(windows.ProcessInformation)
 
 	flags := uint32(windows.CREATE_UNICODE_ENVIRONMENT) | extendedStartupinfoPresent
 
-	/*
-		var zeroSec windows.SecurityAttributes
-		pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
-		tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
-	*/
+	var zeroSec windows.SecurityAttributes
+	pSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
+	tSec := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(zeroSec))}
 
 	// c.startupInfo.startupInfo.Cb = uint32(unsafe.Sizeof(c.startupInfo))
 	err = windows.CreateProcess(
 		argv0p,
 		argvp,
-		nil, // process handle not inheritable
-		nil, // thread handles not inheritable,
+		pSec, // process handle not inheritable
+		tSec, // thread handles not inheritable,
 		false,
 		flags,
 		createEnvBlock(attr.Env),
@@ -177,7 +175,7 @@ func (c *ConPty) Spawn(argv0 string, argv []string, attr *syscall.ProcAttr) (pid
 	fmt.Printf("event was: %d\n", ev)
 	*/
 	if err != nil {
-		fmt.Printf("error waiting for object: %v", err)
+		fmt.Printf("error creating process: %v", err)
 	}
 	defer windows.CloseHandle(windows.Handle(pi.Thread))
 

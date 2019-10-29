@@ -85,6 +85,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.9.4
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
+	golang.org/x/sys v0.0.0-20190904154756-749cb33beabd
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/inconshreveable/go-update.v0 v0.0.0-20150814200126-d8b0b1d421aa

@@ -12,11 +12,12 @@ import (
 )
 
 func main() {
-	c := exec.Command("./test.sh")
+	// c := exec.Command("./test.sh")
 	// c := exec.Command("/bin/sh", "-c", "echo")
-	// c := exec.Command("./build/state", "auth", "signup")
+	// c := exec.Command(".\\build\\state.exe", "auth", "signup")
+	c := exec.Command(".\\demo.exe")
 	// ptm, pts, err := pty.Open()
-	xp, err := xpty.Open(80, 20)
+	xp, err := xpty.Open(130, 20)
 	if err != nil {
 		log.Fatalf("Failed to make Xpty: %v\n", err)
 	}

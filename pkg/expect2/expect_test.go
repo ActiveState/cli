@@ -343,9 +343,7 @@ func TestEditor(t *testing.T) {
 	}
 
 	cmd := exec.Command("vi", file.Name())
-	cmd.Stdin = c.Tty()
-	cmd.Stdout = c.Tty()
-	cmd.Stderr = c.Tty()
+	c.Pty.StartProcessInTerminal(cmd)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -381,9 +379,7 @@ func ExampleConsole_echo() {
 	defer c.Close()
 
 	cmd := exec.Command("echo")
-	cmd.Stdin = c.Tty()
-	cmd.Stdout = c.Tty()
-	cmd.Stderr = c.Tty()
+	c.Pty.StartProcessInTerminal(cmd)
 
 	err = cmd.Start()
 	if err != nil {
