@@ -186,5 +186,6 @@ func (s *Suite) Wait() (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
 		return
 	}
+	s.ExpectEOF()
 	return s.cmd.Process.Wait()
 }
