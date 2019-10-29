@@ -1,4 +1,4 @@
-package activate_test
+package integration
 
 import (
 	"io/ioutil"
@@ -26,6 +26,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
+	if runtime.GOOS == "windows" {
+		return // See command below on why test on windows does not work right now.
+	}
 	os.Chdir(os.TempDir())
 
 	tempDir, err := ioutil.TempDir("", "")
@@ -45,7 +48,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
-	if runtime.GOOS == "darwin" {
+	// We are currently disabling these tests on Windows, because when the state tool spawns a
+	// bash or CMD shell in a ConPTY environment, the text send to the PTY is not forwarded to
+	// the shell.  It is unclear, if this can be fixed right now.
+	if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
 		return // Runtimes aren't supported on macOS
 	}
 
