@@ -87,9 +87,11 @@ func (xp *Xpty) openVT(cols uint16, rows uint16) (err error) {
 
 	// connect the pipes as described above
 	go func() {
+		// this drains the rwPipe continuously.  If that didn't happen, we would block on write.
 		io.Copy(xp.impl.terminalInPipe(), xp.rwPipe)
 	}()
 
+	// duplicate the terminal output pipe: write to vt terminal everything that is being read from it.
 	xp.termOutPipe = io.TeeReader(xp.impl.terminalOutPipe(), xp.Term)
 	return nil
 }
