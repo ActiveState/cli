@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -18,12 +17,14 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/expect2"
 )
 
 var persistentUsername = "cli-integration-tests"
 var persistentPassword = "test-cli-integration"
 
+// Suite is our integration test suite
 type Suite struct {
 	suite.Suite
 	console    *expect2.Console
@@ -34,6 +35,7 @@ type Suite struct {
 	logFile    *os.File
 }
 
+// SetupTest sets up an integration test suite for testing the state tool executable
 func (s *Suite) SetupTest() {
 	exe := ""
 	if runtime.GOOS == "windows" {
@@ -81,24 +83,28 @@ func (s *Suite) SetupTest() {
 	os.Chdir(os.TempDir())
 }
 
+// ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
 }
 
+// AppendEnv appends new environment variable settings
 func (s *Suite) AppendEnv(env []string) {
 	s.env = append(s.env, env...)
 }
 
+// Spawn executes the state tool executable under test in a pseudo-terminal
 func (s *Suite) Spawn(args ...string) {
 	s.SpawnCustom(s.executable, args...)
 }
 
+// SpawnCustom executes an executable in a pseudo-terminal for integration tests
 func (s *Suite) SpawnCustom(executable string, args ...string) {
 	wd, _ := os.Getwd()
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
-	fmt.Printf("Spawning '%s' from %s\n", s.cmd.String(), wd)
+	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
 
 	var err error
 	s.logFile, err = os.Create("pty.log")
@@ -106,9 +112,11 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 		s.Failf("", "Could not open pty log file: %v", err)
 	}
 	s.console, err = expect2.NewConsole(
-		expect2.WithDefaultTimeout(10*time.Second),
+		expect2.WithDefaultTimeout(10 * time.Second),
+	)
+	/*
 		expect2.WithLogger(log.New(s.logFile, "", 0)),
-		expect2.WithCloser(s.logFile))
+		expect2.WithCloser(s.logFile))*/
 	s.Require().NoError(err)
 
 	err = s.console.Pty.StartProcessInTerminal(s.cmd)
@@ -116,10 +124,13 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	// stack := stacktrace.Get()
 }
 
+// Output returns the current Terminal snapshot.
 func (s *Suite) Output() string {
 	return s.console.Pty.State.String()
 }
 
+// Expect listens to the terminal output and returns once the expected value is found or
+// a timeout occurs
 func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	opts := []expect2.ExpectOpt{expect2.String(value)}
 	if len(timeout) > 0 {
@@ -134,6 +145,7 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	}
 }
 
+// WaitForInput returns once a shell prompt is active on the terminal
 func (s *Suite) WaitForInput(timeout ...time.Duration) {
 	usr, err := user.Current()
 	s.Require().NoError(err)
@@ -147,6 +159,7 @@ func (s *Suite) WaitForInput(timeout ...time.Duration) {
 	s.Expect("wait_ready_"+usr.HomeDir, timeout...)
 }
 
+// SendLine sends a new line to the terminal, as if a user typed it
 func (s *Suite) SendLine(value string) {
 	_, err := s.console.SendLine(value)
 	if err != nil {
@@ -154,6 +167,7 @@ func (s *Suite) SendLine(value string) {
 	}
 }
 
+// Send sends a string to the terminal as if a user typed it
 func (s *Suite) Send(value string) {
 	_, err := s.console.Send(value)
 	if err != nil {
@@ -161,14 +175,17 @@ func (s *Suite) Send(value string) {
 	}
 }
 
+// ExpectEOF waits for the end of the terminal output stream before it returns
 func (s *Suite) ExpectEOF() {
 	s.console.Expect(expect2.EOF)
 }
 
+// Quit sends an interrupt signal to the tested process
 func (s *Suite) Quit() error {
 	return s.cmd.Process.Signal(os.Interrupt)
 }
 
+// Stop sends an interrupt signal for the tested process and fails if no process has been started yet.
 func (s *Suite) Stop() error {
 	if s.cmd == nil || s.cmd.Process == nil {
 		s.FailNow("stop called without a spawned process")
@@ -176,12 +193,14 @@ func (s *Suite) Stop() error {
 	return s.Quit()
 }
 
+// LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", persistentUsername, "--password", persistentPassword)
-	s.Expect("succesfully authenticated")
+	s.Expect("successfully authenticated")
 	s.Wait()
 }
 
+// Wait waits for the tested process to finish and forwards its state including ExitCode
 func (s *Suite) Wait() (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
 		return
