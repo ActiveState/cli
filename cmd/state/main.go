@@ -12,9 +12,9 @@ import (
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
-	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -24,96 +24,63 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands" // commands
-	_ "github.com/ActiveState/state-required/require"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
-// T links to locale.T
-var T = locale.T
-
-// Flags hold the flag values passed through the command line
-var Flags struct {
-	Locale  string
-	Verbose bool
-	Version bool
-}
-
-// Command holds our main command definition
-var Command = &commands.Command{
-	Name:        "state",
-	Description: "state_description",
-	Run:         Execute,
-
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "locale",
-			Shorthand:   "l",
-			Description: "flag_state_locale_description",
-			Type:        commands.TypeString,
-			Persist:     true,
-			StringVar:   &Flags.Locale,
-		},
-		&commands.Flag{
-			Name:        "verbose",
-			Shorthand:   "v",
-			Description: "flag_state_verbose_description",
-			Type:        commands.TypeBool,
-			Persist:     true,
-			OnUse:       onVerboseFlag,
-			BoolVar:     &Flags.Verbose,
-		},
-		&commands.Flag{
-			Name:        "version",
-			Description: "flag_state_version_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.Version,
-		},
-	},
-
-	UsageTemplate: "usage_tpl",
-}
-
 func main() {
-	logging.Debug("main")
-	Command.Register()
+	exiter := func(code int) {
+		os.Exit(code)
+	}
 
 	// Handle panics gracefully
-	defer func() {
-		if r := recover(); r != nil {
-			if fmt.Sprintf("%v", r) == "exiter" {
-				panic(r) // don't capture exiter panics
-			}
-			failures.Handle(FailMainPanic.New("err_main_panic"), "")
-			logging.Errorf("%v - caught panic", r)
-			logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
-			time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
-			os.Exit(1)
-		}
-	}()
+	defer handlePanics(exiter)
 
+	code, err := run(os.Args)
+	if err != nil {
+		print.Error(err.Error())
+	}
+	exiter(code)
+}
+
+func run(args []string) (int, error) {
+	logging.Debug("main")
+
+	logging.Debug("ConfigPath: %s", config.ConfigPath())
+	logging.Debug("CachePath: %s", config.CachePath())
+	setupRollbar()
+
+	// Write our config to file
+	defer config.Save()
+
+	// setup profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
-		cleanUpCPUProf, fail := runCPUProfiling()
+		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
-			failures.Handle(fail, "cpu_profiling_setup_failed")
-			os.Exit(1)
+			print.Error(locale.T("cpu_profiling_setup_failed"))
+			return 1, fail
 		}
 		defer cleanUpCPUProf()
 	}
 
-	setupRollbar()
-
 	// Don't auto-update if we're 'state update'ing
-	manualUpdate := funk.Contains(os.Args, "update")
+	manualUpdate := funk.Contains(args, "update")
 	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
-		relaunch() // will not return
+		return relaunch() // will not return
 	}
 
-	forwardAndExit(os.Args) // exits only if it forwards
+	code, fail := forward(args)
+	if fail != nil {
+		print.Error(locale.T("forward_fail"))
+		return 1, fail
+	}
+	if code != -1 {
+		return code, nil
+	}
 
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
@@ -129,19 +96,28 @@ func main() {
 		}
 	}
 
-	register()
-
-	// This actually runs the command
-	err := Command.Execute()
-
-	if err != nil {
-		fmt.Println(err)
-		Command.Exiter(1)
-		return
+	cmds := cmdtree.New()
+	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
+	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
+		logging.Error("Error happened while running cmdtree: %w", err)
+		print.Error(locale.T("err_cmdtree"))
+		return 1, err
 	}
 
-	// Write our config to file
-	config.Save()
+	return 0, nil
+}
+
+func handlePanics(exiter func(int)) {
+	if r := recover(); r != nil {
+		if fmt.Sprintf("%v", r) == "exiter" {
+			panic(r) // don't capture exiter panics
+		}
+		failures.Handle(FailMainPanic.New("err_main_panic"), "")
+		logging.Error("%v - caught panic", r)
+		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
+		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
+		exiter(1)
+	}
 }
 
 func setupRollbar() {
@@ -169,37 +145,16 @@ func setupRollbar() {
 	log.SetOutput(logging.CurrentHandler().Output())
 }
 
-// Execute the `state` command
-func Execute(cmd *cobra.Command, args []string) {
-	logging.Debug("Execute")
-
-	if Flags.Version {
-		print.Info(locale.T("version_info", map[string]interface{}{
-			"Version":  constants.Version,
-			"Branch":   constants.BranchName,
-			"Revision": constants.RevisionHash,
-			"Date":     constants.Date}))
-		return
-	}
-
-	cmd.Usage()
-}
-
-func onVerboseFlag() {
-	if Flags.Verbose {
-		logging.CurrentHandler().SetVerbose(true)
-	}
-}
-
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 // This function will never return to its caller.
-func relaunch() {
+func relaunch() (int, error) {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	cmd.Start()
-	if err := cmd.Wait(); err != nil {
+	err := cmd.Wait()
+	if err != nil {
 		logging.Error("relaunched cmd returned error: %v", err)
 	}
-	os.Exit(osutils.CmdExitCode(cmd))
+	return osutils.CmdExitCode(cmd), err
 }

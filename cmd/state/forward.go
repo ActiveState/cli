@@ -22,36 +22,38 @@ import (
 // forceFileExt is used in tests, do not use it for anything else
 var forceFileExt string
 
-// forwardAndExit will forward the call to the appropriate state tool version if necessary
-func forwardAndExit(args []string) {
+// forward will forward the call to the appropriate state tool version if necessary
+func forward(args []string) (int, *failures.Failure) {
 	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_version_parse"))
-		Command.Exiter(1)
+		return 1, fail
 	}
 	if versionInfo == nil {
-		return
+		return -1, nil
 	}
 	if !shouldForward(versionInfo) {
-		return
+		return -1, nil
 	}
 
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
-	ensureForwardExists(binary, versionInfo)
+	fail = ensureForwardExists(binary, versionInfo)
+	if fail != nil {
+		return 1, fail
+	}
 
-	execForwardAndExit(binary, args)
+	return execForward(binary, args)
 }
 
-func execForwardAndExit(binary string, args []string) {
+func execForward(binary string, args []string) (int, *failures.Failure) {
 	logging.Debug("Forwarding to binary at %s", binary)
 
 	code, _, err := osutils.ExecuteAndPipeStd(binary, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Error("Forwarding command resulted in error: %v", err)
-		print.Error(locale.Tr("forward_fail_with_error", err.Error()))
+		return 1, failures.FailOS.New(locale.Tr("forward_fail_with_error", err.Error()))
 	}
-	Command.Exiter(code)
+	return code, nil
 }
 
 func shouldForward(versionInfo *projectfile.VersionInfo) bool {
@@ -69,9 +71,9 @@ func forwardBin(versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(datadir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
+func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) *failures.Failure {
 	if fileutils.FileExists(binary) {
-		return
+		return nil
 	}
 
 	up := updater.Updater{
@@ -85,27 +87,25 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo) {
 
 	info, err := up.Info()
 	if err != nil {
-		failures.Handle(err, locale.T("forward_fail_download"))
-		Command.Exiter(1)
+		return failures.FailNetwork.Wrap(err)
 	}
 
 	if info == nil {
-		failures.Handle(err, locale.T("forward_fail_info"))
-		Command.Exiter(1)
+		return failures.FailNetwork.New(locale.T("forward_fail_info"))
 	}
 
 	print.Line(locale.Tr("downloading_state_version", info.Version))
 	err = up.Download(binary)
 	if err != nil {
-		failures.Handle(err, locale.T("forward_fail_download"))
-		Command.Exiter(1)
+		return failures.FailNetwork.Wrap(err)
 	}
 
 	permissions, _ := permbits.Stat(binary)
 	permissions.SetUserExecute(true)
 	err = permbits.Chmod(binary, permissions)
 	if err != nil {
-		failures.Handle(err, locale.T("forward_fail_perm"))
-		Command.Exiter(1)
+		return failures.FailIO.Wrap(err)
 	}
+
+	return nil
 }

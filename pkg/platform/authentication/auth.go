@@ -99,6 +99,7 @@ func New() *Auth {
 	auth := &Auth{}
 
 	if availableAPIToken() != "" {
+		logging.Debug("Authenticating with stored API token")
 		auth.Authenticate()
 	}
 
@@ -263,6 +264,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 
 func availableAPIToken() string {
 	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
 	return viper.GetString("apiToken")

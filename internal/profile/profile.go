@@ -1,8 +1,11 @@
 package profile
 
 import (
+	"fmt"
 	"os"
 	"runtime/pprof"
+	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/failures"
 )
@@ -13,12 +16,12 @@ var (
 )
 
 // CPU runs the CPU profiler. Be sure to run the cleanup func.
-func CPU(file string) (cleanUp func(), fail *failures.Failure) {
-	if file == "" {
-		return func() {}, FailSetupCPUProfiling.New("must provide file name")
-	}
+func CPU() (cleanUp func(), fail *failures.Failure) {
+	timeString := time.Now().Format("20060102-150405.000")
+	timeString = strings.Replace(timeString, ".", "-", 1)
+	cpuProfFile := fmt.Sprintf("cpu_%s.prof", timeString)
 
-	f, err := os.Create(file)
+	f, err := os.Create(cpuProfFile)
 	if err != nil {
 		return func() {}, FailSetupCPUProfiling.Wrap(err)
 	}

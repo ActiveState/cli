@@ -40,7 +40,7 @@ Examples:[[BR]]
 [[end]]
 
 [[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
-[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]][[BR]]
+[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
   [[rpad .Name .NamePadding ]] [[.Short]]
 [[end]][[end]][[end]]
 
@@ -801,12 +801,8 @@ forward_fail:
   other: Could not forward command to the appropriate state tool version
 forward_fail_with_error:
   other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
-forward_fail_download:
-  other: Could not forward command to the appropriate state tool version, download failed
 forward_fail_info:
   other: Could not forward command to the appropriate state tool version, the specified version is not available
-forward_fail_perm:
-  other: Could not forward command to the appropriate state tool version, could not make file executable
 flag_update_lock_description:
   other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
 err_lock_failed:
@@ -1126,6 +1122,8 @@ err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
+err_cmdtree:
+  other: Could not run the requested command
 err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:

@@ -1,9 +1,9 @@
 // +build external
 
-package main
+package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/state/activate"
@@ -22,29 +22,26 @@ import (
 	"github.com/ActiveState/cli/state/update"
 )
 
-// register will register any commands and expanders
-func register() {
+// applyLegacyChildren will register any commands and expanders
+func applyLegacyChildren(cmd *captain.Command) {
 	logging.Debug("register external")
 
 	secretsapi.InitializeClient()
 
-	Command.Append(activate.Command)
-	Command.Append(events.Command)
-	Command.Append(update.Command)
-	Command.Append(auth.Command)
-	Command.Append(organizations.Command)
-	Command.Append(projects.Command)
-	Command.Append(show.Command)
-	Command.Append(run.Command)
-	Command.Append(scripts.Command)
-	Command.Append(pull.Command)
-	Command.Append(export.Command)
-	Command.Append(fork.Command)
-
-	Command.Append(secrets.NewCommand(secretsapi.Get()).Config())
-	Command.Append(keypair.Command)
-}
-
-func runCPUProfiling() (cleanUp func(), fail *failures.Failure) {
-	return func() {}, nil
+	cmd.AddLegacyChildren(
+		activate.Command,
+		events.Command,
+		update.Command,
+		auth.Command,
+		organizations.Command,
+		projects.Command,
+		show.Command,
+		run.Command,
+		scripts.Command,
+		pull.Command,
+		export.Command,
+		secrets.NewCommand(secretsapi.Get()).Config(),
+		keypair.Command,
+		fork.Command,
+	)
 }

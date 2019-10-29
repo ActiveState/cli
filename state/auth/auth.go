@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -81,6 +82,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	var user []byte
 	var fail *failures.Failure
 	if auth.Authenticated() {
+		logging.Debug("Already authenticated")
 		if Flags.JSON {
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
