@@ -42,8 +42,9 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 		suite.SpawnCustom("tar", "-C", tempPath, "-xf", archivePath)
 	}
 
-	suite.Wait()
-	suite.Equal(0, suite.ExitCode(), "Exits with code 0")
+	ps, err := suite.Wait()
+	suite.Require().NoError(err)
+	suite.Equal(0, ps.ExitCode(), "Exits with code 0")
 
 	suite.SpawnCustom(filepath.Join(tempPath, platform+exe), "--version")
 	suite.Expect(constants.BuildNumber)

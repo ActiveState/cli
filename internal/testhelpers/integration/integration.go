@@ -90,8 +90,12 @@ func (s *Suite) AppendEnv(env []string) {
 }
 
 func (s *Suite) Spawn(args ...string) {
+	s.SpawnCustom(s.executable, args...)
+}
+
+func (s *Suite) SpawnCustom(executable string, args ...string) {
 	wd, _ := os.Getwd()
-	s.cmd = exec.Command(s.executable, args...)
+	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
 	fmt.Printf("Spawning '%s' from %s\n", s.cmd.String(), wd)
