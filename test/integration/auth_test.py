@@ -54,7 +54,7 @@ class TestAuth(helpers.IntegrationTest):
         self.send(self.username)
         self.expect("password:")
         self.send(self.password)
-        self.expect("succesfully authenticated")
+        self.expect("successfully authenticated")
         self.wait()
 
         # still logged in?
@@ -64,7 +64,7 @@ class TestAuth(helpers.IntegrationTest):
 
     def auth_login_with_flags(self):
         self.spawn("auth --username %s --password %s" % (self.username, self.password))
-        self.expect("succesfully authenticated")
+        self.expect("successfully authenticated")
         self.wait()
 
         # still logged in?

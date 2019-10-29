@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
-	"os"
 	"os/exec"
 	"runtime/debug"
 	"strings"
@@ -369,32 +367,4 @@ func TestEditor(t *testing.T) {
 	if string(data) != "Hello world\n" {
 		t.Errorf("Expected '%s' to equal '%s'", string(data), "Hello world\n")
 	}
-}
-
-func ExampleConsole_echo() {
-	c, err := NewConsole(WithStdout(os.Stdout))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer c.Close()
-
-	cmd := exec.Command("echo")
-	c.Pty.StartProcessInTerminal(cmd)
-
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	c.Send("Hello world")
-	c.ExpectString("Hello world")
-	c.Tty().Close()
-	c.ExpectEOF()
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Output: Hello world
 }

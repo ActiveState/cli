@@ -76,7 +76,7 @@ func (suite *AuthIntegrationTestSuite) Login() {
 	suite.SendLine(suite.username)
 	suite.Expect("password:")
 	suite.SendLine(suite.password)
-	suite.Expect("succesfully authenticated")
+	suite.Expect("successfully authenticated")
 	suite.Wait()
 
 	// still logged in?

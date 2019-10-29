@@ -38,7 +38,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Spawn("-v", "activate", "ActiveState-CLI/Python3")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("activated state") // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
+	suite.Expect("activated state", 20*time.Second) // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
 	suite.WaitForInput(10 * time.Second)
 	suite.SendLine("exit")
 	suite.Wait()
