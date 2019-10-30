@@ -314,7 +314,6 @@ function install()
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
         if(Test-Path $installPath -PathType Leaf) {
-            # TODO: There is a bug here that if you run the `.\public\install.ps1 -t C:\temp\state\bin` twice it will error the second time
             Remove-Item $installPath -Erroraction 'silentlycontinue'
             $occurance = errorOccured $False
             if($occurance[0]){
@@ -325,7 +324,7 @@ function install()
     }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
-    # Check if installation is in $PATH, if not, update SYSTEM or USER settings
+    # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
         Write-Host "`nInstallation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
@@ -354,11 +353,12 @@ function install()
     notifySettingChange
 
     $env:Path = $installDir + ";" + $env:Path
-    activateIfRequested
 
     warningIfAdmin
     Write-Host "State tool successfully installed to: $installDir." -ForegroundColor Yellow
     Write-Host "Please restart your command prompt in order to start using the 'state.exe' program." -ForegroundColor Yellow
+    activateIfRequested
+
 }
 
 install
