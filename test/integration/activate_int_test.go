@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -18,6 +17,23 @@ type ActivateIntegrationTestSuite struct {
 	integration.Suite
 }
 
+func (suite *ActivateIntegrationTestSuite) prepareTempDirectory(prefix string) (tempDir string, cleanup func()) {
+
+	tempDir, err := ioutil.TempDir("", prefix)
+	suite.Require().NoError(err)
+	err = os.RemoveAll(tempDir)
+	suite.Require().NoError(err)
+	err = os.MkdirAll(tempDir, 0770)
+	suite.Require().NoError(err)
+	err = os.Chdir(tempDir)
+	suite.Require().NoError(err)
+
+	return tempDir, func() {
+		os.Chdir(os.TempDir())
+		os.RemoveAll(tempDir)
+	}
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
 	suite.activatePython("3")
 }
@@ -32,19 +48,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 		return // See command below on why test on windows does not work right now.
 	}
 
-	tempDir, err := ioutil.TempDir("", "activate_test_no_runtime")
-	suite.Require().NoError(err)
-	err = os.RemoveAll(tempDir)
-	suite.Require().NoError(err)
-	err = os.MkdirAll(tempDir, 0770)
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
-
-	defer func() {
-		os.Chdir(os.TempDir())
-		os.RemoveAll(tempDir)
-	}()
+	tempDir, cb := suite.prepareTempDirectory("activate_test_no_runtime")
+	defer cb()
 
 	suite.LoginAsPersistentUser()
 
@@ -67,20 +72,8 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 
 	pythonExe := "python" + version
 
-	tempDir, err := ioutil.TempDir("", "activate_test")
-	fmt.Printf("temporary directory is: %s\n", tempDir)
-	suite.Require().NoError(err)
-	err = os.RemoveAll(tempDir)
-	suite.Require().NoError(err)
-	err = os.MkdirAll(tempDir, 0770)
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
-
-	defer func() {
-		os.Chdir(os.TempDir())
-		os.RemoveAll(tempDir)
-	}()
+	tempDir, cb := suite.prepareTempDirectory("activate_test")
+	defer cb()
 
 	suite.LoginAsPersistentUser()
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
