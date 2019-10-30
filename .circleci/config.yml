@@ -58,7 +58,7 @@ defaults:
         name: Run integration tests
         command: |
           set -e
-          state run integration-tests
+          go test ./test/integration
     deployBits: &deployBits
       run:
         name: Deploy bits
