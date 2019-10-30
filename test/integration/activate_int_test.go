@@ -36,8 +36,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Require().NoError(err)
 	err = os.RemoveAll(tempDir)
 	suite.Require().NoError(err)
+	err = os.MkdirAll(tempDir, 0770)
+	suite.Require().NoError(err)
+	err = os.Chdir(tempDir)
+	suite.Require().NoError(err)
 
-	os.Chdir(tempDir)
 	defer func() {
 		os.Chdir(os.TempDir())
 		os.RemoveAll(tempDir)
@@ -69,7 +72,10 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	suite.Require().NoError(err)
 	err = os.RemoveAll(tempDir)
 	suite.Require().NoError(err)
-	os.Chdir(tempDir)
+	err = os.MkdirAll(tempDir, 0770)
+	suite.Require().NoError(err)
+	err = os.Chdir(tempDir)
+	suite.Require().NoError(err)
 
 	defer func() {
 		os.Chdir(os.TempDir())
