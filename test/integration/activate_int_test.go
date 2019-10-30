@@ -63,6 +63,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Runtimes are not supported on macOS")
 	}
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("suite.AppendEnv() does not work on windows currently.  Skipping this test.")
+	}
 
 	pythonExe := "python" + version
 
