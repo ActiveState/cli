@@ -2,16 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
 
-	"github.com/denisbrodbeck/machineid"
-	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
@@ -52,7 +48,7 @@ func run(args []string) (int, error) {
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
-	setupRollbar()
+	logging.SetupRollbar()
 
 	// Write our config to file
 	defer config.Save()
@@ -118,31 +114,6 @@ func handlePanics(exiter func(int)) {
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)
 	}
-}
-
-func setupRollbar() {
-	id, err := machineid.ID()
-	if err != nil {
-		logging.Error("Cannot retrieve machine ID: %s", err.Error())
-		id = "unknown"
-	}
-
-	rollbar.SetToken(constants.RollbarToken)
-	rollbar.SetEnvironment(constants.BranchName)
-	rollbar.SetCodeVersion(constants.RevisionHash)
-	rollbar.SetPerson(id, id, id)
-	rollbar.SetServerRoot("github.com/ActiveState/cli")
-
-	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
-	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.
-	rollbar.SetPlatform("client")
-	rollbar.SetTransform(func(data map[string]interface{}) {
-		// We're not a server, so don't send server info (could contain sensitive info, like hostname)
-		data["server"] = map[string]interface{}{}
-		data["platform_os"] = runtime.GOOS
-	})
-
-	log.SetOutput(logging.CurrentHandler().Output())
 }
 
 // When an update was found and applied, re-launch the update with the current

@@ -93,7 +93,16 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		buildStatus.Started <- struct{}{}
 	case created != nil:
 		if created.Payload.Type == nil {
-			msg := "created response cannot be handled: nil type"
+			requestBytes, err := buildReq.MarshalBinary()
+			if err != nil {
+				requestBytes = []byte(
+					fmt.Sprintf("cannot marshal request: %v", err),
+				)
+			}
+			msg := fmt.Sprintf(
+				"created response cannot be handled: nil type from request %q",
+				string(requestBytes),
+			)
 			buildStatus.RunFail <- FailBuildCreatedNilType.New(msg)
 			break
 		}
