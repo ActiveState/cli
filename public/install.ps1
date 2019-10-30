@@ -153,7 +153,7 @@ function isValidFolder([string] $path)
     return checkPermsRecur $path
 }
 
-# stateToolPathIsSet returns true if the state tool's installation directory is in the current PATH
+# isStateToolInstallationOnPath returns true if the state tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
     $existing -eq $installDirectory
@@ -168,54 +168,18 @@ function getExistingOnPath(){
     }
 }
 
-function getDefaultInstallDir() {
-    if ($script:TARGET) {
-         $script:TARGET
-    } elseif (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
-        $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        $existing
-    } else {
-        (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
-    }
-}
-
 function activateIfRequested() {
     if ( $script:ACTIVATE -ne "" ) {
         # This creates an interactive sub-shell.
         Write-Host "`nActivating project $script:ACTIVATE`n" -ForegroundColor Yellow
         &$script:STATEEXE activate $script:ACTIVATE
-
-        # We should be done after activating the project
-        exit(0)
     }
 }
 
-function promptInstallDir()
-{   
-    $installDir = ""
-    $defaultDir = getDefaultInstallDir
-    while($True){
-        $installDir = (Read-Host "Please enter the installation directory [$defaultDir]").Trim()
-        if ($installDir -eq ""){
-            $installDir = $defaultDir
-        }
-        if( -Not (isValidFolder $installDir)) {
-            continue
-        }
-        $targetFile = Join-Path $installDir $script:STATEEXE
-        if (Test-Path $targetFile -PathType Leaf) {
-            Write-host "Previous installation detected at '$targetFile'"
-            if( -Not (promptYNQ "Do you want to continue installation with this directory?"))
-            {
-                continue
-            } else  {
-                Write-Warning "Overwriting previous installation"
-            }
-        }
-        break
+function warningIfadmin() {
+    if (IsAdmin) {
+        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
-    $installDir
 }
 
 function install()
@@ -229,6 +193,9 @@ function install()
     -f <file>            Default 'state.exe'.  Binary filename to use
     -activate <project>  Activate a project when state tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
+
+    # Ensure errors from previously run commands are reported during install
+    $Error.Clear()
 
     if ($h) {
         Write-Host $USAGE
@@ -308,14 +275,34 @@ function install()
     Write-Host "Extracting $statepkg...`n"
     Expand-Archive $zipPath $tmpParentPath
 
-    # Confirm the user wants to use the default install location by prompting for new dir
-    if ( -Not $script:NOPROMPT) {
-        $installDir = promptInstallDir
-    } else {
-        $installDir = getDefaultInstallDir
+    # Check if previous installation exists and let user know if it does
+    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+        $existing = getExistingOnPath
+        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+        $existing
     }
+
+    # Get the install directory and ensure we have permissions on it.
+    # If the user provided an install dir we do no verification.
+    if ($script:TARGET) {
+        $installDir = $script:TARGET
+   } else {
+       $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
+        if (-Not (hasWritePermission $Env:APPDATA)){
+            Write-Error "Do not have write permissions to: '$Env:APPDATA'"
+            Write-Error "Aborting installation"
+            exit 1
+        }
+   }
+
     # Install binary
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
+    if ( -Not $script:NOPROMPT ) {
+        if( -Not (promptYNQ "Continue?") ) {
+            exit(0)
+        }
+    }
+
     #  If the install dir doesn't exist
     $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path $installDir)) {
@@ -323,6 +310,7 @@ function install()
         New-Item -Path $installDir -ItemType Directory | Out-Null
     } else {
         if(Test-Path $installPath -PathType Leaf) {
+            # TODO: There is a bug here that if you run the `.\public\install.ps1 -t C:\temp\state\bin` twice it will error the second time
             Remove-Item $installPath -Erroraction 'silentlycontinue'
             $occurance = errorOccured $False
             if($occurance[0]){
@@ -337,10 +325,12 @@ function install()
     if (isStateToolInstallationOnPath $installDir) {
         Write-Host "`nInstallation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
+        warningIfAdmin
         activateIfRequested
         exit(0)
     }
 
+    # Update PATH for state tool installation directory
     $envTarget = [EnvironmentVariableTarget]::User
     $envTargetName = "user"
     if (isAdmin) {
@@ -348,42 +338,23 @@ function install()
 	    $envTargetName = "system"
     }
 
-    # If -activate flag is set: always set path, if -n flag is set never set path, otherwise ask
-    if ( $script:ACTIVATE -ne "" -Or (
-            -Not $script:NOPROMPT -And (
-                promptYN $("Allow '"+$installPath+"' to be prepended to your PATH?")
-                )
-            )
-       ) {
-        Write-Host "Updating environment...`n"
-        Write-Host "Adding $installDir to $envTargetName PATH`n"
-        # This only sets it in the registry and it will NOT be accessible in the current session
-        [Environment]::SetEnvironmentVariable(
-            'Path',
-            $installDir + ";" + [Environment]::GetEnvironmentVariable(
-                'Path', [EnvironmentVariableTarget]::Machine),
-            $envTarget)
+    Write-Host "Updating environment...`n"
+    Write-Host "Adding $installDir to $envTargetName PATH`n"
+    # This only sets it in the registry and it will NOT be accessible in the current session
+    [Environment]::SetEnvironmentVariable(
+        'Path',
+        $installDir + ";" + [Environment]::GetEnvironmentVariable(
+            'Path', [EnvironmentVariableTarget]::Machine),
+        $envTarget)
 
-        notifySettingChange
+    notifySettingChange
 
-        # NOTE: This exits the script if an activation is requested.
-        $env:Path = $installDir + ";" + $env:Path
-        activateIfRequested
-    } else {
-	Write-Host "To start using the State tool right away update your current PATH by running 'set PATH=%PATH%;$installDir'`n" -ForegroundColor Yellow
-    }
+    $env:Path = $installDir + ";" + $env:Path
+    activateIfRequested
 
-    # Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
-    if (IsAdmin) {
-        Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
-    }
-    # Print a warning that we cannot automatically activate a requested project.
-    if ( "$script:ACTIVATE" -ne "" ) {
-        Write-Host "`nCannot activate project $script:ACTIVATE yet." -ForegroundColor Yellow
-        Write-Host "In order to activate a project, the state tool needs to be installed in your PATH first."
-        Write-Host "To manually activate the project run 'state activate $script:ACTIVATE' once 'state' is on your PATH"
-    }
+    warningIfAdmin
+    Write-Host "State tool successfully installed to: $installDir." -ForegroundColor Yellow
+    Write-Host "Please restart your command prompt in order to start using the 'state.exe' program." -ForegroundColor Yellow
 }
 
 install
-Write-Host "Installation complete" -ForegroundColor Yellow
