@@ -13,7 +13,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults
 
 ### Expected behavior
 
@@ -65,10 +65,8 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults.
 
 ### Expected behavior
 
 You should end up in a shell with an activated state.
-
-

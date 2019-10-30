@@ -234,16 +234,24 @@ else
   done
 
   # If the install directory is not in PATH we default to the first
-  # directory in PATH that we have write access to.
+  # directory in PATH that we have write access to as a last resort.
   if ! $INPATH; then
     for PATHELEM in $PATH; do
       if [ -w $PATHELEM ]; then
         INSTALLDIR=$PATHELEM
         break
+      else
+        INSTALLDIR=""
       fi
     done
   fi
   IFS=$OLDIFS
+fi
+
+if [ -z "$INSTALLDIR" ]; then
+  error "Could not install state tool to PATH."
+  error "You can use the '-t' flag to denote an install target."
+  exit 1
 fi
 
 # Install to the determined intstall directory.
