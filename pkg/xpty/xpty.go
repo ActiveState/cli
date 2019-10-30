@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/vt10x"
 )
 
+// Xpty reprents an abstract peudo-terminal for the Windows or *nix architecture
 type Xpty struct {
 	*impl       // os specific
 	Term        *vt10x.VT
@@ -55,7 +56,7 @@ func (rw *readWritePipe) Close() error {
 	return nil
 }
 
-func (xp *Xpty) openVT(cols uint16, rows uint16) (err error) {
+func (p *Xpty) openVT(cols uint16, rows uint16) (err error) {
 
 	/*
 			 We are creating a communication pipe to handle DSR (device status report) and
@@ -76,26 +77,27 @@ func (xp *Xpty) openVT(cols uint16, rows uint16) (err error) {
 			 Note: This is a simplification from github.com/hinshun/vt10x (console.go)
 	*/
 
-	xp.rwPipe = newReadWritePipe()
+	p.rwPipe = newReadWritePipe()
 
 	// Note: the Term instance also closes the rwPipe
-	xp.Term, err = vt10x.Create(xp.State, xp.rwPipe)
+	p.Term, err = vt10x.Create(p.State, p.rwPipe)
 	if err != nil {
 		return err
 	}
-	xp.Term.Resize(int(cols), int(rows))
+	p.Term.Resize(int(cols), int(rows))
 
 	// connect the pipes as described above
 	go func() {
 		// this drains the rwPipe continuously.  If that didn't happen, we would block on write.
-		io.Copy(xp.impl.terminalInPipe(), xp.rwPipe)
+		io.Copy(p.impl.terminalInPipe(), p.rwPipe)
 	}()
 
 	// duplicate the terminal output pipe: write to vt terminal everything that is being read from it.
-	xp.termOutPipe = io.TeeReader(xp.impl.terminalOutPipe(), xp.Term)
+	p.termOutPipe = io.TeeReader(p.impl.terminalOutPipe(), p.Term)
 	return nil
 }
 
+// Open opens a pseudo-terminal of the given size
 func Open(cols uint16, rows uint16) (*Xpty, error) {
 	xpImpl, err := open(cols, rows)
 	if err != nil {
@@ -110,14 +112,19 @@ func Open(cols uint16, rows uint16) (*Xpty, error) {
 	return xp, nil
 }
 
+// TerminalOutPipe returns a reader with data that is written by an application to the pseudo terminal
+// On unix this is the /dev/ptm file
 func (p *Xpty) TerminalOutPipe() io.Reader {
 	return p.termOutPipe
 }
 
+// TerminalInPipe returns a writer that can be used to write user input to the pseudo terminal.
+// On unix this is the /dev/ptm file
 func (p *Xpty) TerminalInPipe() io.Writer {
 	return p.impl.terminalInPipe()
 }
 
+// Close closes the abstracted pseudo-terminal
 func (p *Xpty) Close() error {
 	err := p.impl.close()
 	if err != nil {
@@ -129,13 +136,18 @@ func (p *Xpty) Close() error {
 	return p.Term.Close()
 }
 
+// Tty returns the pseudo terminal files that an application can read from or write to
+// This is only available on linux, and would return the "slave" /dev/pts file
 func (p *Xpty) Tty() *os.File {
 	return p.impl.tty()
 }
 
+// TerminalOutFd returns the file descriptor of the terminal
 func (p *Xpty) TerminalOutFd() uintptr {
 	return p.impl.terminalOutFd()
 }
+
+// StartProcessInTerminal executes the given command connected to the abstracted pseudo-terminal
 func (p *Xpty) StartProcessInTerminal(cmd *exec.Cmd) error {
 	return p.impl.startProcessInTerminal(cmd)
 }

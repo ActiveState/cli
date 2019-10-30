@@ -135,6 +135,7 @@ func min(x, y int) int {
 	return y
 }
 
+// Read reads from the PassthroughPipe and errors out if no data has been written to the pipe before the read deadline expired
 func (pp *PassthroughPipe) Read(p []byte) (n int, err error) {
 	timeoutDuration := time.Until(pp.deadline)
 	if pp.deadline.IsZero() {
@@ -162,11 +163,13 @@ func (pp *PassthroughPipe) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
+// Close Closes the pipe
 func (pp *PassthroughPipe) Close() error {
 	close(pp.bytesReadC)
 	return pp.reader.Close()
 }
 
+// SetReadDeadline sets a deadline until when a read needs to have succeded, or a timeout error will be thrown.
 func (pp *PassthroughPipe) SetReadDeadline(t time.Time) error {
 	pp.deadline = t
 	return nil
