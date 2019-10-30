@@ -22,6 +22,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
+	suite.T().Skip("Python 2 is not officially supported by the platform ATM.")
 	suite.activatePython("2")
 }
 
@@ -29,16 +30,17 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	if runtime.GOOS == "windows" {
 		return // See command below on why test on windows does not work right now.
 	}
-	os.Chdir(os.TempDir())
 
 	tempDir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
-	os.Remove(tempDir)
+	err = os.Remove(tempDir)
 	suite.Require().NoError(err)
+
+	os.Chdir(tempDir)
 
 	suite.LoginAsPersistentUser()
 
-	suite.Spawn("-v", "activate", "ActiveState-CLI/Python3")
+	suite.Spawn("activate", "ActiveState-CLI/Python3")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
 	suite.Expect("activated state", 20*time.Second) // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
@@ -57,15 +59,15 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 
 	pythonExe := "python" + version
 
-	os.Chdir(os.TempDir())
+	tempDir, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+	err = os.Remove(tempDir)
+	suite.Require().NoError(err)
+
+	os.Chdir(tempDir)
 
 	suite.LoginAsPersistentUser()
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
-
-	tempDir, err := ioutil.TempDir("", "")
-	suite.Require().NoError(err)
-	os.Remove(tempDir)
-	suite.Require().NoError(err)
 
 	suite.Spawn("activate", "ActiveState-CLI/Python"+version)
 	suite.Expect("Where would you like to checkout")
