@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os/exec"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -324,6 +325,9 @@ func TestConsoleChain(t *testing.T) {
 }
 
 func TestEditor(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		t.SkipNow()
+	}
 	if _, err := exec.LookPath("vi"); err != nil {
 		t.Skip("vi not found in PATH")
 	}
