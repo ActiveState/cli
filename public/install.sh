@@ -209,10 +209,16 @@ chmod +x $TMPDIR/$TMPEXE
 # Check for existing installation. Otherwise, make the installation default to
 # /usr/local/bin if the user has write permission, or to a local bin.
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+echo $INSTALLDIR
+if [ ! -z "$INSTALLDIR" ]; then
+  warn "Previous installation detected at $INSTALLDIR"
+  echo "If you would like to reinstall the state tool please first uninstall it."
+  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  exit 0
+fi
+
 if [ ! -z "$TARGET" ]; then
   INSTALLDIR=$TARGET
-elif [ ! -z "$INSTALLDIR" ]; then
-  warn "Previous installation detected at $INSTALLDIR"
 else
   if [ -w "/usr/local/bin" ]; then
     INSTALLDIR="/usr/local/bin"
