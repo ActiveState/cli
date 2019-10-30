@@ -211,9 +211,9 @@ if [ -e "$INSTALLDIR/$STATEEXE" ]; then
   warn "Previous installation detected at $INSTALLDIR"
 fi
 
-# Use target directory provided by user which no verification or default to
-# one of two commonly used directories. Ensure they are in PATH and if not
-# use the first writable directory in PATH
+# Use target directory provided by user with no verification or default to
+# one of two commonly used directories. 
+# Ensure they are in PATH and if not use the first writable directory in PATH
 if [ ! -z "$TARGET" ]; then
   INSTALLDIR=$TARGET
 else
@@ -254,7 +254,7 @@ if [ -z "$INSTALLDIR" ]; then
   exit 1
 fi
 
-# Install to the determined intstall directory.
+# Install to the determined directory.
 while "true"; do
   info "Installing to $INSTALLDIR"
   if [ ! -e "$INSTALLDIR" ]; then
@@ -303,14 +303,15 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   exit 0
 fi
 
-# Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
-
 # Prints a warning if an activation was requested and state tool is not in the PATH
 activation_warning() {
   if [ -n "$ACTIVATE" ]; then
     echo
     warn "Cannot activate ${ACTIVATE} yet."
     echo "In order to activate a project, the state tool needs to be installed in your PATH first."
+    echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
+    echo "To make the changes to your path permanent please add the line"
+    echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
     echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
   fi
 }
@@ -320,6 +321,9 @@ if [ ! -w "$profile" ]; then
   info "Installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
+  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
+  echo "To make the changes to your path permanent please add the line"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
   activation_warning
   exit 0
 fi
@@ -330,6 +334,9 @@ if [ "$RESPONSE" != "y" ]; then
   info "Installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
+  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
+  echo "To make the changes to your path permanent please add the line"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
   activation_warning
   exit 0
 fi

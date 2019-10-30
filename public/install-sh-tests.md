@@ -37,7 +37,7 @@ Confirm all defaults
 
 - The state tool gets installed under `/root/.local/bin`.
 - You see an error message that the state tool could not be activated.
-- You see instructions how to activate the project manually or with the install script.
+- You see instructions how to install the state tool and then activate the project manually or with the install script.
 
 ## Invalid options
 
