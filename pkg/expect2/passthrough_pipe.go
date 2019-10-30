@@ -114,7 +114,7 @@ func NewPassthroughPipe(reader io.Reader) (*PassthroughPipe, error) {
 				break
 			}
 			if totalWritten > totalRead && readyToRead != nil {
-				readyToRead <- struct{}{}
+				readyToRead <- (totalWritten - totalRead)
 				readyToRead = nil
 			}
 		}

@@ -208,11 +208,6 @@ func (c *ConPty) createPseudoConsoleAndPipes() (err error) {
 		windows.CloseHandle(hPipePTYIn)
 	}
 
-	t, err := windows.GetFileType(c.pipeFdOut)
-	if err != nil {
-		fmt.Printf("error get file type: %v", err)
-	}
-	fmt.Printf("t = %d\n", t)
 	c.inPipe = os.NewFile(uintptr(c.pipeFdIn), "|0")
 	c.outPipe = os.NewFile(uintptr(c.pipeFdOut), "|1")
 
