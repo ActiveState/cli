@@ -194,7 +194,7 @@ function install()
     -activate <project>  Activate a project when state tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
 
-    # Ensure errors from previously run commands are reported during install
+    # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
 
     if ($h) {
