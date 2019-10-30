@@ -13,7 +13,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults
 
 ### Expected behavior
 
@@ -37,7 +37,7 @@ Confirm all defaults
 
 - The state tool gets installed under `/root/.local/bin`.
 - You see an error message that the state tool could not be activated.
-- You see instructions how to activate the project manually or with the install script.
+- You see instructions how to install the state tool and then activate the project manually or with the install script.
 
 ## Invalid options
 
@@ -65,10 +65,8 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults.
 
 ### Expected behavior
 
 You should end up in a shell with an activated state.
-
-
