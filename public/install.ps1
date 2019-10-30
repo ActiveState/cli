@@ -78,7 +78,7 @@ function promptYNQ([string]$msg)
     if ($response.ToLower() -eq "q")
     {
         Write-Host "Aborting Installation" -ForegroundColor Yellow
-        exit(0)
+        exit 0
     }
     if ( -Not ($response.ToLower() -eq "y") )
     {
@@ -204,7 +204,7 @@ function install()
 
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
         Write-Error "Flags -n and -activate cannot be set at the same time."
-        exit(1)
+        exit 1
     }
     
     # State tool binary base dir
@@ -299,7 +299,7 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYNQ "Continue?") ) {
-            exit(0)
+            exit 0
         }
     }
 
@@ -315,7 +315,7 @@ function install()
             $occurance = errorOccured $False
             if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
-                exit(1)
+                exit 1
             }
         }
     }
@@ -327,7 +327,7 @@ function install()
         Write-Host "You may now start using the '$script:STATEEXE' program."
         warningIfAdmin
         activateIfRequested
-        exit(0)
+        exit 0
     }
 
     # Update PATH for state tool installation directory
