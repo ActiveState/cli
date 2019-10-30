@@ -171,10 +171,6 @@ function getExistingOnPath(){
 function getDefaultInstallDir() {
     if ($script:TARGET) {
          $script:TARGET
-    } elseif (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
-        $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        $existing
     } else {
         (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
     }
@@ -307,6 +303,14 @@ function install()
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
     Expand-Archive $zipPath $tmpParentPath
+
+    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+        $existing = getExistingOnPath
+        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+        Write-Host "If you would like to reinstall the state tool please first uninstall it."
+        Write-Host "You can do this by running 'Remove-Item' $existing'"
+        exit 0
+    }
 
     # Confirm the user wants to use the default install location by prompting for new dir
     if ( -Not $script:NOPROMPT) {
