@@ -44,9 +44,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	if runtime.GOOS == "windows" {
-		return // See command below on why test on windows does not work right now.
-	}
 
 	tempDir, cb := suite.prepareTempDirectory("activate_test_no_runtime")
 	defer cb()
@@ -63,11 +60,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
-	// We are currently disabling these tests on Windows, because when the state tool spawns a
-	// bash or CMD shell in a ConPTY environment, the text send to the PTY is not forwarded to
-	// the shell.  It is unclear, if this can be fixed right now.
-	if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
-		return // Runtimes aren't supported on macOS
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Runtimes are not supported on macOS")
 	}
 
 	pythonExe := "python" + version
@@ -81,7 +75,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	suite.Spawn("activate", "ActiveState-CLI/Python"+version)
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("Downloading")
+	suite.Expect("Downloading", 120*time.Second)
 	suite.Expect("Installing", 120*time.Second)
 	suite.Expect("activated state", 120*time.Second)
 	suite.WaitForInput()

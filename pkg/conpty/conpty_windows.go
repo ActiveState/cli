@@ -193,14 +193,10 @@ func (c *ConPty) createPseudoConsoleAndPipes() (err error) {
 		log.Fatalf("Failed to create PTY output pipe: %v", err)
 	}
 
-	fmt.Printf("pipe handles = %d, %d, invalidHandle=%d\n", uintptr(hPipePTYIn), uintptr(hPipePTYOut), uintptr(windows.InvalidHandle))
-
 	err = createPseudoConsole(c.consoleSize, hPipePTYIn, hPipePTYOut, c.hpCon)
 	if err != nil {
 		return fmt.Errorf("failed to create pseudo console: %d, %v", uintptr(*c.hpCon), err)
 	}
-
-	fmt.Printf("hpcon = %d\n", uintptr(*c.hpCon))
 
 	// Note: We can close the handles to the PTY-end of the pipes here
 	// because the handles are dup'ed into the ConHost and will be released

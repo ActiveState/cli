@@ -77,7 +77,7 @@ func (s *Suite) SetupTest() {
 		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
-		"SHELL=bash",
+		// "SHELL=bash",
 	})
 
 	os.Chdir(os.TempDir())
