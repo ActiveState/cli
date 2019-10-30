@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
-	"github.com/ActiveState/cli/pkg/expect"
 )
 
 type ActivateIntegrationTestSuite struct {
@@ -94,5 +93,5 @@ func TestActivateIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 
 	//suite.Run(t, new(ActivateIntegrationTestSuite))
-	expect.RunParallel(t, new(ActivateIntegrationTestSuite))
+	integration.RunParallel(t, new(ActivateIntegrationTestSuite))
 }

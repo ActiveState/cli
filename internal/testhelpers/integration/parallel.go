@@ -1,4 +1,4 @@
-package expect
+package integration
 
 import (
 	"flag"

@@ -58,5 +58,5 @@ func TestUpdateGenIntegrationTestSuite(t *testing.T) {
 
 	// parallel doesn't work with these due to contamination. The RunParallel function does not seem to allow for
 	// setting up individual tests
-	//expect.RunParallel(t, new(UpdateGenIntegrationTestSuite))
+	//integration.RunParallel(t, new(UpdateGenIntegrationTestSuite))
 }

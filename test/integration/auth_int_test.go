@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
-	"github.com/ActiveState/cli/pkg/expect"
 )
 
 var uid uuid.UUID
@@ -89,5 +88,5 @@ func TestAuthIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 
 	//suite.Run(t, new(AuthIntegrationTestSuite))
-	expect.RunParallel(t, new(AuthIntegrationTestSuite))
+	integration.RunParallel(t, new(AuthIntegrationTestSuite))
 }

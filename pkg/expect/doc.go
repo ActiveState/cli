@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// expect2 provides an expect-like interface to automate control of
+// expect provides an expect-like interface to automate control of
 // applications. It is unlike expect in that it does not spawn or manage
 // process lifecycle. This package only focuses on expecting output and sending
 // input through it's psuedoterminal.
-package expect2
+package expect

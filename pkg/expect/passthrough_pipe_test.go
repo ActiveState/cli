@@ -1,4 +1,4 @@
-package expect2
+package expect
 
 import (
 	"errors"

@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/expect2"
+	"github.com/ActiveState/cli/pkg/expect"
 )
 
 var persistentUsername = "cli-integration-tests"
@@ -27,7 +27,7 @@ var persistentPassword = "test-cli-integration"
 // Suite is our integration test suite
 type Suite struct {
 	suite.Suite
-	console    *expect2.Console
+	console    *expect.Console
 	state      *vt10x.State
 	executable string
 	cmd        *exec.Cmd
@@ -111,12 +111,12 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	if err != nil {
 		s.Failf("", "Could not open pty log file: %v", err)
 	}
-	s.console, err = expect2.NewConsole(
-		expect2.WithDefaultTimeout(10 * time.Second),
+	s.console, err = expect.NewConsole(
+		expect.WithDefaultTimeout(10 * time.Second),
 	)
 	/*
-		expect2.WithLogger(log.New(s.logFile, "", 0)),
-		expect2.WithCloser(s.logFile))*/
+		expect.WithLogger(log.New(s.logFile, "", 0)),
+		expect.WithCloser(s.logFile))*/
 	s.Require().NoError(err)
 
 	err = s.console.Pty.StartProcessInTerminal(s.cmd)
@@ -132,9 +132,9 @@ func (s *Suite) Output() string {
 // Expect listens to the terminal output and returns once the expected value is found or
 // a timeout occurs
 func (s *Suite) Expect(value string, timeout ...time.Duration) {
-	opts := []expect2.ExpectOpt{expect2.String(value)}
+	opts := []expect.ExpectOpt{expect.String(value)}
 	if len(timeout) > 0 {
-		opts = append(opts, expect2.WithTimeout(timeout[0]))
+		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
 	_, err := s.console.Expect(opts...)
 	if err != nil {
@@ -177,7 +177,7 @@ func (s *Suite) Send(value string) {
 
 // ExpectEOF waits for the end of the terminal output stream before it returns
 func (s *Suite) ExpectEOF() {
-	s.console.Expect(expect2.EOF)
+	s.console.Expect(expect.EOF)
 }
 
 // Quit sends an interrupt signal to the tested process
