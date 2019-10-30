@@ -221,7 +221,7 @@ function install()
     } else {
         Write-Warning "x86 processors are not supported at this time"
         Write-Warning "Contact ActiveState Support for assistance"
-        Write-Warning "Aborting install"
+        Write-Warning "Aborting installation"
         exit 1
     }
 
@@ -275,19 +275,12 @@ function install()
     Write-Host "Extracting $statepkg...`n"
     Expand-Archive $zipPath $tmpParentPath
 
-    # Check if previous installation exists and let user know if it does
-    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
-        $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        $existing
-    }
-
     # Get the install directory and ensure we have permissions on it.
     # If the user provided an install dir we do no verification.
     if ($script:TARGET) {
         $installDir = $script:TARGET
    } else {
-       $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
+        $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
             Write-Error "Do not have write permissions to: '$Env:APPDATA'"
             Write-Error "Aborting installation"
@@ -303,8 +296,19 @@ function install()
         }
     }
 
+    # Check if previous installation exists and let user know if it does
+   $installPath = Join-Path $installDir $script:STATEEXE
+   if (Test-Path $installPath -PathType Leaf) {
+        Write-Host $("Previous install detected at '"+($installPath)+"'") -ForegroundColor Yellow
+        if( -Not (promptYNQ "Do you want to continue installation with this directory?")) {
+            Write-Host "Aborting installation"
+            exit 0
+        } else {
+            Write-Warning "Overwriting previous installation"
+        }
+    }
+
     #  If the install dir doesn't exist
-    $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
