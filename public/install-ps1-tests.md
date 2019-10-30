@@ -11,6 +11,8 @@ To do this run:
 Remove-Item (Get-Command state.exe).Source
 ```
 
+If you installed the state tool with a different binary name replace 'state.exe' with it.
+
 When the tests are complete run the install script with your preferred configuration
 options to reinstall the state tool.
 
