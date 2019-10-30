@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -31,12 +32,16 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 		return // See command below on why test on windows does not work right now.
 	}
 
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "activate_test_no_runtime")
 	suite.Require().NoError(err)
-	err = os.Remove(tempDir)
+	err = os.RemoveAll(tempDir)
 	suite.Require().NoError(err)
 
 	os.Chdir(tempDir)
+	defer func() {
+		os.Chdir(os.TempDir())
+		os.RemoveAll(tempDir)
+	}()
 
 	suite.LoginAsPersistentUser()
 
@@ -59,12 +64,17 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 
 	pythonExe := "python" + version
 
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := ioutil.TempDir("", "activate_test")
+	fmt.Printf("temporary directory is: %s\n", tempDir)
 	suite.Require().NoError(err)
-	err = os.Remove(tempDir)
+	err = os.RemoveAll(tempDir)
 	suite.Require().NoError(err)
-
 	os.Chdir(tempDir)
+
+	defer func() {
+		os.Chdir(os.TempDir())
+		os.RemoveAll(tempDir)
+	}()
 
 	suite.LoginAsPersistentUser()
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
