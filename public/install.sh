@@ -217,10 +217,10 @@ fi
 if [ ! -z "$TARGET" ]; then
   INSTALLDIR=$TARGET
 else
-  if [ -w "/usr/local/not" ]; then
+  if [ -w "/usr/local/bin" ]; then
     INSTALLDIR="/usr/local/bin"
   else
-    INSTALLDIR="$HOME/.local/not"
+    INSTALLDIR="$HOME/.local/bin"
   fi
   # Verify the install directory is in PATH.
   INPATH=false
