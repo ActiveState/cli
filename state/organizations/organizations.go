@@ -59,6 +59,7 @@ func Execute(cmd *cobra.Command, args []string) {
 func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 	type orgRaw struct {
 		Name            string `json:"name,omitempty"`
+		URLName         string `json:"URLName,omitempty"`
 		Tier            string `json:"tier,omitempty"`
 		PrivateProjects bool   `json:"privateProjects"`
 	}
@@ -77,6 +78,7 @@ func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 		if val, ok := tiersToPrivMap[org.Tier]; ok {
 			orgsRaw[i] = orgRaw{
 				Name:            org.Name,
+				URLName:         org.Urlname,
 				Tier:            org.Tier,
 				PrivateProjects: val,
 			}
