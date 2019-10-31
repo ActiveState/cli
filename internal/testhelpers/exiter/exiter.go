@@ -1,6 +1,10 @@
 package exiter
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/kami-zh/go-capturer"
+)
 
 var defaultExiter *Exiter
 
@@ -41,9 +45,23 @@ func (e *Exiter) WaitForExit(f func()) (exitCode int) {
 	return e.exitCode
 }
 
+// Capture will capture the output and exit code
+func (e *Exiter) Capture(f func()) (string, int) {
+	var code int
+	out := capturer.CaptureOutput(func() {
+		code = e.WaitForExit(f)
+	})
+	return out, code
+}
+
 // WaitForExit runs Exiter.WaitForExit()
 func WaitForExit(f func()) (exitCode int) {
 	return defaultExiter.WaitForExit(f)
+}
+
+// Capture runs Exiter.Capture()
+func Capture(f func()) (string, int) {
+	return defaultExiter.Capture(f)
 }
 
 // Exit runs Exiter.Exit

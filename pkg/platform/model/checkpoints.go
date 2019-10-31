@@ -3,17 +3,17 @@ package model
 import (
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -23,6 +23,21 @@ var (
 
 // Checkpoint represents a collection of requirements
 type Checkpoint []*model.Requirement
+
+// FetchLanguagesForProject fetches a list of language names for the given project
+func FetchLanguagesForProject(orgName string, projectName string) ([]string, *failures.Failure) {
+	platProject, fail := FetchProjectByName(orgName, projectName)
+	if fail != nil {
+		return nil, fail
+	}
+
+	branch, fail := DefaultBranchForProject(platProject)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return FetchLanguagesForBranch(branch)
+}
 
 // FetchLanguagesForBranch fetches a list of language names for the given branch
 func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Failure) {
@@ -69,9 +84,10 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failu
 }
 
 // CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(checkpoint Checkpoint) *inventory_models.Order {
+func CheckpointToOrder(commitID strfmt.UUID, checkpoint Checkpoint) *inventory_models.V1Order {
 	timestamp := strfmt.DateTime(time.Now())
-	return &inventory_models.Order{
+	return &inventory_models.V1Order{
+		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),
 		Requirements: CheckpointToRequirements(checkpoint),
 		Timestamp:    &timestamp,
@@ -79,17 +95,22 @@ func CheckpointToOrder(checkpoint Checkpoint) *inventory_models.Order {
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
-func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRequirementsItems0 {
-	result := []*inventory_models.OrderRequirementsItems0{}
+func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
+	result := []*inventory_models.V1OrderRequirementsItems{}
 
 	for _, req := range checkpoint {
 		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
-		result = append(result, &inventory_models.OrderRequirementsItems0{
-			PackageName:      &req.Requirement,
-			Namespace:        req.Namespace,
-			VersionSpecifier: req.VersionConstraint,
+
+		eq := "eq"
+		result = append(result, &inventory_models.V1OrderRequirementsItems{
+			Feature:   &req.Requirement,
+			Namespace: &req.Namespace,
+			VersionRequirements: []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
+				Comparator: &eq,
+				Version:    &req.VersionConstraint,
+			}},
 		})
 	}
 

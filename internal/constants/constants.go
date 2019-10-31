@@ -119,20 +119,11 @@ const SecretsAPIPath = "/api/secrets/v1"
 // SecretsURL is the host used for secrets api calls when on production
 const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
 
-// HeadChefAPIPath is the api path used for the secrets api
-const HeadChefAPIPath = "/sv/head-chef/"
-
-// HeadChefURL is the host used for platform api calls when on production
-const HeadChefURL = "wss://platform.activestate.com" + HeadChefAPIPath
-
-// HeadChefOrigin is the Origin header to use when making head-chef requests
-const HeadChefOrigin = "http://localhost"
+// HeadChefAPIPath is the api path used for the headchef api
+const HeadChefAPIPath = "/sv/head-chef"
 
 // InventoryAPIPath is the api path used for the secrets api
-const InventoryAPIPath = "/sv/inventory-api"
-
-// InventoryURLProd is the host used for platform api calls when on production
-const InventoryURL = "https://platform.activestate.com" + InventoryAPIPath
+const InventoryAPIPath = "/sv/inventory-api-v1"
 
 // GraphqlAPIPath is the path used for the platform graphql api
 const GraphqlAPIPath = "/graphql/v1/graphql"

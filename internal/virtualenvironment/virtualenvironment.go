@@ -2,8 +2,8 @@ package virtualenvironment
 
 import (
 	"bytes"
-	"html/template"
 	"fmt"
+	"html/template"
 	"os"
 	"path/filepath"
 	rt "runtime"

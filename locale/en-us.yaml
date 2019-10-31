@@ -40,7 +40,7 @@ Examples:[[BR]]
 [[end]]
 
 [[if .HasAvailableSubCommands]][[BR]][[BR]]Available Commands:
-[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]][[BR]]
+[[range .Commands]][[if (or .IsAvailableCommand (eq .Name \"help\"))]][[BR]]
   [[rpad .Name .NamePadding ]] [[.Short]]
 [[end]][[end]][[end]]
 
@@ -119,7 +119,7 @@ error_could_not_activate_venv:
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
-  other: "Argument missing: {{.Name}}"
+  other: "Argument missing: {{.V0}}"
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_invalid_input:
@@ -801,12 +801,8 @@ forward_fail:
   other: Could not forward command to the appropriate state tool version
 forward_fail_with_error:
   other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
-forward_fail_download:
-  other: Could not forward command to the appropriate state tool version, download failed
 forward_fail_info:
   other: Could not forward command to the appropriate state tool version, the specified version is not available
-forward_fail_perm:
-  other: Could not forward command to the appropriate state tool version, could not make file executable
 flag_update_lock_description:
   other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
 err_lock_failed:
@@ -870,6 +866,12 @@ installer_err_runtime_no_commits:
   other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the state tool. Please make a new project.
+build_status_unknown:
+  other: Build status could not be retrieved, please check the dashboard for more information
+build_status_in_progress:
+  other: Build is in progress, please try again later
+build_status_unknown_error:
+  other: "Build reported an unknown error: {{.V0}}; Please check the dashboard for more information"
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -1120,3 +1122,9 @@ err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
+err_cmdtree:
+  other: Could not run the requested command
+err_fetch_languages:
+  other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
+err_no_languages:
+  other: "Your project does not have any language configured"

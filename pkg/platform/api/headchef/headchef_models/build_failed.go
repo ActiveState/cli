@@ -16,12 +16,16 @@ import (
 // BuildFailed Build Failed
 //
 // A message indicating that a build failed.
-// swagger:model buildFailed
+// swagger:model BuildFailed
 type BuildFailed struct {
 
 	// All of the errors from the failed build. Note that these errors may not be suitable for presenting to users and should simply be logged for further investigation.
 	// Required: true
 	Errors []string `json:"errors"`
+
+	// If true this failed build can be retried and it may succeed. If false, retrying this failed build will not change the outcome. This field's value is only valid when type is build_failed.
+	// Required: true
+	IsRetryable bool `json:"is_retryable"`
 
 	// An S3 URI containing the log for this build.
 	// Format: uri
@@ -39,6 +43,10 @@ func (m *BuildFailed) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateIsRetryable(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateLogURI(formats); err != nil {
 		res = append(res, err)
 	}
@@ -52,6 +60,15 @@ func (m *BuildFailed) Validate(formats strfmt.Registry) error {
 func (m *BuildFailed) validateErrors(formats strfmt.Registry) error {
 
 	if err := validate.Required("errors", "body", m.Errors); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *BuildFailed) validateIsRetryable(formats strfmt.Registry) error {
+
+	if err := validate.Required("is_retryable", "body", bool(m.IsRetryable)); err != nil {
 		return err
 	}
 

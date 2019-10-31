@@ -39,6 +39,7 @@ func Authenticate() {
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
 func AuthenticateWithInput(username string, password string) {
+	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password}
 	if err := promptForLogin(credentials); err != nil {
 		failures.Handle(err, locale.T("err_prompt_unkown"))

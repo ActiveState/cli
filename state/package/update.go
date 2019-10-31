@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // UpdateArgs hold the arg values passed through the command line
@@ -39,15 +40,22 @@ func init() {
 func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteUpdate")
 
+	pj := project.Get()
+	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_fetch_languages"))
+		AddCommand.Exiter(1)
+	}
+
 	name, version := splitNameAndVersion(UpdateArgs.Name)
 	if version == "" {
-		_, ingredientVersion, fail := model.IngredientWithLatestVersion(name)
-		if ingredientVersion.Version == nil {
+		ingredientVersion, fail := model.IngredientWithLatestVersion(language, name)
+		if ingredientVersion.Version.Version == nil {
 			print.Error(locale.T("package_ingredient_version_not_available"))
 			AddCommand.Exiter(1)
 			return
 		}
-		version = *ingredientVersion.Version
+		version = *ingredientVersion.Version.Version
 		if fail != nil {
 			failures.Handle(fail, locale.T("package_ingredient_not_found"))
 			AddCommand.Exiter(1)
@@ -55,5 +63,5 @@ func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 		}
 	}
 
-	executeAddUpdate(UpdateCommand, name, version, model.OperationUpdated)
+	executeAddUpdate(UpdateCommand, language, name, version, model.OperationUpdated)
 }

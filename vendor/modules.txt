@@ -4,9 +4,7 @@ github.com/ActiveState/archiver
 github.com/ActiveState/go-colortext
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8
-github.com/ActiveState/state-required/require
-# github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a
+# github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e
 github.com/ActiveState/sysinfo
 # github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba
 github.com/ActiveState/vt10x
@@ -195,10 +193,6 @@ github.com/pmezard/go-difflib/difflib
 github.com/posener/wstest
 # github.com/rollbar/rollbar-go v1.1.0
 github.com/rollbar/rollbar-go
-# github.com/sacOO7/go-logger v0.0.0-20180719173527-9ac9add5a50d
-github.com/sacOO7/go-logger
-# github.com/sacOO7/gowebsocket v0.0.0-20180719182212-1436bb906a4e
-github.com/sacOO7/gowebsocket
 # github.com/sergi/go-diff v1.0.0
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
@@ -246,7 +240,7 @@ github.com/vbauerster/mpb/v4/internal
 github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
-# golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472
+# golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc
 golang.org/x/crypto/cast5
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
@@ -264,13 +258,13 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/knownhosts
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
+# golang.org/x/net v0.0.0-20191003171128-d98b1b443823
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20190904154756-749cb33beabd
+# golang.org/x/sys v0.0.0-20191003212358-c178f38b412c
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
