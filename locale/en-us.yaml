@@ -119,7 +119,7 @@ error_could_not_activate_venv:
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
-  other: "Argument missing: {{.Name}}"
+  other: "Argument missing: {{.V0}}"
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_invalid_input:
