@@ -215,6 +215,15 @@ func New(p *projectfile.Project) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// Parse will parse the given projectfile and instantiate a Project struct with it
+func Parse(fpath string) (*Project, *failures.Failure) {
+	pjfile, fail := projectfile.Parse(fpath)
+	if fail != nil {
+		return nil, fail
+	}
+	return New(pjfile)
+}
+
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
