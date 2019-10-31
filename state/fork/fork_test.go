@@ -5,12 +5,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -103,6 +105,60 @@ func (suite *ForkTestSuite) TestExecute_OrgFlag() {
 		"NewOwner":      "flag-org",
 		"NewName":       "string",
 	})+"\n", outStr)
+}
+
+func (suite *ForkTestSuite) TestExecute_FailAddNewProject() {
+	suite.authMock.MockLoggedin()
+
+	suite.apiMock.MockGetOrganizations()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	suite.promptMock.OnMethod("Select").Once().Return("test", nil)
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("POST", "/organizations/test/projects", 401)
+	httpmock.Register("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001")
+	httpmock.Register("POST", "/organizations/test/projects/string")
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	stderr := capturer.CaptureStderr(func() {
+		code := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		suite.Require().Equal(1, code, "Exits with code 1")
+	})
+	suite.Contains(stderr, locale.T("err_fork_create_fork"))
+}
+
+func (suite *ForkTestSuite) TestExecute_FailBranch() {
+	suite.authMock.MockLoggedin()
+
+	suite.apiMock.MockGetOrganizations()
+	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	suite.promptMock.OnMethod("Select").Once().Return("test", nil)
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/organizations/test/projects")
+	httpmock.RegisterWithCode("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001", 404)
+	httpmock.Register("POST", "/organizations/test/projects/string")
+
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{ProjectNamespace})
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	stderr := capturer.CaptureStderr(func() {
+		code := ex.WaitForExit(func() {
+			Command.Execute()
+		})
+		suite.Require().Equal(1, code, "Exits with code 1")
+	})
+	suite.Contains(stderr, locale.T("err_fork_create_fork"))
 }
 
 func TestForkSuite(t *testing.T) {
