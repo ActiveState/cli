@@ -305,6 +305,7 @@ function install()
     }
 
     #  If the install dir doesn't exist
+    $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null

@@ -88,7 +88,7 @@ Remove-Item -Recurse -Force C:\temp\state\bin
 #### Version A.3 Invalid options
 
 ```powershell
-.\public\install.ps1 -Activate ActiveState/cli -n
+powershell .\public\install.ps1 -Activate ActiveState/cli -n
 ```
 
 **What to look for**:
@@ -98,7 +98,7 @@ Remove-Item -Recurse -Force C:\temp\state\bin
 #### Version A.4 Install and Activate
 
 ```powershell
-.\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
+powershell .\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
 ```
 
 When prompted for the activation directory, type `C:\temp\state`
@@ -127,10 +127,10 @@ $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join '
 [System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
 ```
 
-#### Version A.6 Install twice
+#### Version A.5 Install twice
 
 ```powershell
-.\public\install.ps1
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
 
 When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
@@ -138,12 +138,11 @@ When prompted for installation directory, respond with temporary directory `C:\t
 Run command again
 
 ```powershell
-.\public\install.ps1
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
 
 **What to look for**:
 
-- You should be prompted to update your PATH
 - You should see a warning for running as administrator
 - After the second install attempt you should be presented with a message that says:
 
@@ -153,7 +152,7 @@ If you would like to reinstall the state tool please first uninstall it.
 You can do this by running 'Remove-Item' <install-dir>'
 ```
 
-### Cleanup A.6
+### Cleanup A.5
 
 ```powershell
 Remove-Item -Recurse -Force C:\temp\state
@@ -227,7 +226,7 @@ Remove-Item -Recurse -Force C:\temp\state\bin
 #### Version U.3 Install and Activate
 
 ```powershell
-.\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
+powershell .\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
 ```
 
 When prompted for the activation directory, type `C:\temp\state`
