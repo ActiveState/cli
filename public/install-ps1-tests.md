@@ -130,7 +130,7 @@ $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join '
 #### Version A.5 Install twice
 
 ```powershell
-powershell .\public\install.ps1 -t C:\temp\state\bin
+.\public\install.ps1 -t C:\temp\state\bin
 ```
 
 When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
@@ -138,7 +138,7 @@ When prompted for installation directory, respond with temporary directory `C:\t
 Run command again
 
 ```powershell
-powershell .\public\install.ps1 -t C:\temp\state\bin
+.\public\install.ps1 -t C:\temp\state\bin
 ```
 
 **What to look for**:
@@ -160,6 +160,7 @@ Remove-Item -Recurse -Force C:\temp\state
 $path = [System.Environment]::GetEnvironmentVariable( 'PATH', [EnvironmentVariableTarget]::Machine)
 $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join ';'
 [System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
+$env:Path = $oldpath
 ```
 
 ## As User
