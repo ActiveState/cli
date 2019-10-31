@@ -93,9 +93,14 @@ func run(args []string) (int, error) {
 	}
 
 	cmds := cmdtree.New()
+	if err := cmds.Execute(args[1:]); err != nil {
+		logging.Error("cmdtree execution error: %w", err)
+		print.Error(locale.T("err_cmdtree"))
+		return 1, err
+	}
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
-		logging.Error("Error happened while running cmdtree: %w", err)
+	if err := failures.Handled(); err != nil {
+		logging.Error("failure handled while running cmdtree: %w", err)
 		print.Error(locale.T("err_cmdtree"))
 		return 1, err
 	}
