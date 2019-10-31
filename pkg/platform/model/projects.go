@@ -42,7 +42,11 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	}
 
 	if len(response.Projects) == 0 {
-		return nil, FailNoValidProject.New(locale.Tr("err_api_project_not_found", projectName, orgName))
+		errMsg := "err_api_project_not_found"
+		if !authentication.Get().Authenticated() {
+			errMsg = "err_api_project_not_found_unauthenticated"
+		}
+		return nil, FailNoValidProject.New(locale.Tr(errMsg, projectName, orgName))
 	}
 
 	return response.Projects[0].ToMonoProject()
