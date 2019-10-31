@@ -114,14 +114,9 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	s.console, err = expect.NewConsole(
 		expect.WithDefaultTimeout(10 * time.Second),
 	)
-	/*
-		expect.WithLogger(log.New(s.logFile, "", 0)),
-		expect.WithCloser(s.logFile))*/
 	s.Require().NoError(err)
 
 	err = s.console.Pty.StartProcessInTerminal(s.cmd)
-
-	// stack := stacktrace.Get()
 }
 
 // Output returns the current Terminal snapshot.
@@ -131,6 +126,7 @@ func (s *Suite) Output() string {
 
 // Expect listens to the terminal output and returns once the expected value is found or
 // a timeout occurs
+// Default timeout is 10 seconds
 func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	opts := []expect.ExpectOpt{expect.String(value)}
 	if len(timeout) > 0 {
@@ -146,6 +142,7 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 }
 
 // WaitForInput returns once a shell prompt is active on the terminal
+// Default timeout is 10 seconds
 func (s *Suite) WaitForInput(timeout ...time.Duration) {
 	usr, err := user.Current()
 	s.Require().NoError(err)
