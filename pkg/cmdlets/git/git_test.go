@@ -148,8 +148,7 @@ func (suite *GitTestSuite) TestMoveFilesDirInUse() {
 	suite.NoError(err, "should be able to create another temp directory")
 
 	fail := moveFiles(suite.dir, anotherDir)
-	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
-	suite.EqualError(fail, expected.Error())
+	suite.NoError(fail.ToError())
 }
 
 func TestGitTestSuite(t *testing.T) {

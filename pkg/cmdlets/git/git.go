@@ -100,13 +100,11 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 }
 
 func moveFiles(src, dest string) *failures.Failure {
-	if fileutils.DirExists(dest) {
-		return FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
-	}
-
-	err := os.MkdirAll(dest, 0755)
-	if err != nil {
-		return failures.FailUserInput.Wrap(err)
+	if !fileutils.DirExists(dest) {
+		err := os.MkdirAll(dest, 0755)
+		if err != nil {
+			return failures.FailUserInput.Wrap(err)
+		}
 	}
 
 	fail := fileutils.MoveAllFiles(src, dest)
