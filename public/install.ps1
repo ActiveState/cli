@@ -71,22 +71,6 @@ function promptYN([string]$msg)
     return $True
 }
 
-function promptYNQ([string]$msg)
-{
-    $response = Read-Host -Prompt $msg" [y/N/q]`n"
-
-    if ($response.ToLower() -eq "q")
-    {
-        Write-Host "Aborting Installation" -ForegroundColor Yellow
-        exit 0
-    }
-    if ( -Not ($response.ToLower() -eq "y") )
-    {
-        return $False
-    }
-    return $True
-}
-
 function errorOccured($suppress) {
     $errMsg = $Error[0]
     $Error.Clear()
@@ -292,7 +276,7 @@ function install()
         $existing = getExistingOnPath
         Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
         Write-Host "If you would like to reinstall the state tool please first uninstall it."
-        Write-Host "You can do this by running 'Remove-Item' $existing'"
+        Write-Host "You can do this by running 'Remove-Item $existing'"
         exit 0
     }
 
