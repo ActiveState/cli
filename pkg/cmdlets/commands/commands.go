@@ -20,6 +20,9 @@ var T = locale.T
 // Tt links to locale.Tt
 var Tt = locale.Tt
 
+// Tr links to locale.Tr
+var Tr = locale.Tr
+
 // Note we only support the types that we currently have need for. You can add more as needed. Check the pflag docs
 // for reference: https://godoc.org/github.com/spf13/pflag
 const (
@@ -159,7 +162,7 @@ func (c *Command) argInputValidator(cmd *cobra.Command, args []string) error {
 				break
 			}
 
-			errMsg += T("error_missing_arg", c.Arguments[i]) + "\n"
+			errMsg += Tr("error_missing_arg", T(arg.Name)) + "\n"
 		}
 		if errMsg != "" {
 			return failures.FailUserInput.New(errMsg)
