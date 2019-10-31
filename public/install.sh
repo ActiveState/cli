@@ -303,6 +303,17 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   exit 0
 fi
 
+manual_installation_instructions() {
+  info "Installation complete."
+  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
+  echo "using the '$STATEEXE' program."
+  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
+  echo "To make the changes to your path permanent please add the line"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  activation_warning
+  exit 1
+}
+
 # Prints a warning if an activation was requested and state tool is not in the PATH
 activation_warning() {
   if [ -n "$ACTIVATE" ]; then
@@ -316,29 +327,19 @@ activation_warning() {
   fi
 }
 
+# Check if we can write to the users profile, if not give manual
+# insallation instructions
 profile="`info $HOME`/.profile"
 if [ ! -w "$profile" ]; then
-  info "Installation complete."
-  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
-  echo "using the '$STATEEXE' program."
-  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
-  echo "To make the changes to your path permanent please add the line"
-  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
-  activation_warning
-  exit 0
+  manual_installation_instructions
 fi
 
+# Prompt user to update users path, otherwise present manual
+# installation instructions
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
 RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
 if [ "$RESPONSE" != "y" ]; then
-  info "Installation complete."
-  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
-  echo "using the '$STATEEXE' program."
-  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
-  echo "To make the changes to your path permanent please add the line"
-  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
-  activation_warning
-  exit 0
+  manual_installation_instructions
 fi
 info "Updating environment..."
 pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
@@ -353,5 +354,5 @@ fi
 info "Installation complete."
 echo "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
-
 activation_warning
+exit 1
