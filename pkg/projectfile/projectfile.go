@@ -345,6 +345,27 @@ func GetOnce() (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
+func FromPath(path string) (*Project, *failures.Failure) {
+	// we do not want to use a path provided by state if we're running tests
+	projectFilePath, failure := fileutils.FindFileInPath(path, constants.ConfigFileName)
+	if failure != nil {
+		return nil, failure
+	}
+
+	_, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		logging.Warning("Cannot load config file: %v", err)
+		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
+	}
+	project, fail := Parse(projectFilePath)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return project, nil
+}
+
 // Create a new activestate.yaml with default content
 func Create(projectURL string, path string) (*Project, *failures.Failure) {
 	if path == "" {

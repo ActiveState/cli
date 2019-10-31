@@ -251,7 +251,16 @@ func GetSafe() (*Project, *failures.Failure) {
 
 // GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
 func GetOnce() (*Project, *failures.Failure) {
-	pjFile, fail := projectfile.GetOnce()
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+	return FromPath(wd)
+}
+
+// FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
+func FromPath(path string) (*Project, *failures.Failure) {
+	pjFile, fail := projectfile.FromPath(path)
 	if fail != nil {
 		return nil, fail
 	}
