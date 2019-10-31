@@ -129,11 +129,13 @@ func (installer *Installer) Install() *failures.Failure {
 
 	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
+		progress.Cancel()
 		return fail
 	}
 
 	fail = installer.InstallFromArchives(archives, progress)
 	if fail != nil {
+		progress.Cancel()
 		return fail
 	}
 

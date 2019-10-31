@@ -101,7 +101,6 @@ func progressRun() (err error) {
 	err = tarGzDownloadBarHeuristic(p)
 
 	totalBar2.Increment()
-	time.Sleep(200 * time.Millisecond)
 	return nil
 }
 

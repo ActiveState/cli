@@ -48,9 +48,13 @@ func New(options ...mpb.ContainerOption) *Progress {
 	}
 }
 
+// Cancel cancels all bar listeners and ensures that p.Close() will return
+func (p *Progress) Cancel() {
+	p.cancel()
+}
+
 // Close needs to be called after the Progress struct is not needed anymore
 func (p *Progress) Close() {
-	p.cancel()
 	p.progress.Wait()
 }
 
