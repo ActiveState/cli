@@ -52,7 +52,6 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 You see an error message that `-n` and `--activate` cannot be used at the same time.
 
-
 ## Custom state tool name
 
 Install state tool and activate project `ActiveState/cli` afterwards.
@@ -71,4 +70,32 @@ Confirm all defaults, and log in to platform with credentials
 
 You should end up in a shell with an activated state.
 
+## Previous installation detected
 
+Install the state tool with defaults and then attempt to install again
+
+```sh
+docker run --rm -it -v $PWD/public:scripts -w /root buildpack-dep:bionic-curl \
+    /scripts/install.sh
+```
+
+From inside the docker container
+
+```sh
+/scripts/install.sh
+```
+
+### User interaction
+
+Confirm all defaults
+
+### Expected behaviour
+
+When installing for the second time you should be presented with a message
+stating:
+
+```sh
+Previous installation detected at <installation-path>
+If you would like to reinstall the state tool please first uninstall it.
+You can do this by running 'rm <installation-path>'
+```
