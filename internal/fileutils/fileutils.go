@@ -206,7 +206,7 @@ func Mkdir(path string, subpath ...string) *failures.Failure {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, DirMode)
 		if err != nil {
-			return failures.FailIO.Wrap(err)
+			return failures.FailIO.Wrap(err, fmt.Sprintf("Path: %s", path))
 		}
 	}
 	return nil
