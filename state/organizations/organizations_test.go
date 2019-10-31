@@ -80,7 +80,7 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\n", outStr, "Expect privateProjects to be true")
+	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":true}]\n", outStr, "Expect privateProjects to be true")
 
 	tearDownOrgTest(t, aMock)
 }
@@ -100,7 +100,7 @@ func TestOrganizationsJSONFree(t *testing.T) {
 	require.NoError(t, execErr)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
-	assert.Equal(t, "[{\"name\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\n", outStr, "Expect privateProjects to be false")
+	assert.Equal(t, "[{\"name\":\"string\",\"URLName\":\"string\",\"tier\":\"string\",\"privateProjects\":false}]\n", outStr, "Expect privateProjects to be false")
 
 	tearDownOrgTest(t, aMock)
 }
