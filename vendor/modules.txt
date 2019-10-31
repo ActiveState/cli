@@ -6,9 +6,13 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e
 github.com/ActiveState/sysinfo
+# github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba
+github.com/ActiveState/vt10x
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
+# github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
+github.com/Netflix/go-expect
 # github.com/PuerkitoBio/purell v1.1.0
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
@@ -49,6 +53,8 @@ github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/service/sts
 # github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 github.com/bndr/gotabulate
+# github.com/creack/pty v1.1.7
+github.com/creack/pty
 # github.com/dave/jennifer v0.18.0
 github.com/dave/jennifer/jen
 # github.com/davecgh/go-spew v1.1.1
@@ -139,6 +145,8 @@ github.com/kardianos/osext
 github.com/kevinburke/ssh_config
 # github.com/kr/binarydist v0.0.0-20160721043806-3035450ff8b9
 github.com/kr/binarydist
+# github.com/kr/pty v1.1.8
+github.com/kr/pty
 # github.com/machinebox/graphql v0.2.2
 github.com/machinebox/graphql
 # github.com/magiconair/properties v1.7.4
