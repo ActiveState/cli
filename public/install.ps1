@@ -386,4 +386,4 @@ function install()
 }
 
 install
-Write-Host "Installation complete" -ForegroundColor Yellow
+Write-Host "State tool installation complete" -ForegroundColor Yellow
