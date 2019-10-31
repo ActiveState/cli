@@ -288,23 +288,19 @@ function install()
         }
    }
 
+    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+        $existing = getExistingOnPath
+        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+        Write-Host "If you would like to reinstall the state tool please first uninstall it."
+        Write-Host "You can do this by running 'Remove-Item' $existing'"
+        exit 0
+    }
+
     # Install binary
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYNQ "Continue?") ) {
-            exit 0
-        }
-    }
-
-    # Check if previous installation exists and let user know if it does
-   $installPath = Join-Path $installDir $script:STATEEXE
-   if (Test-Path $installPath -PathType Leaf) {
-        Write-Host $("Previous install detected at '"+($installPath)+"'") -ForegroundColor Yellow
-        if( -Not (promptYNQ "Do you want to continue installation with this directory?")) {
-            Write-Host "Aborting installation"
-            exit 0
-        } else {
-            Write-Warning "Overwriting previous installation"
+        if( -Not (promptYN "Continue?") ) {
+            exit 1
         }
     }
 

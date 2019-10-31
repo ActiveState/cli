@@ -207,8 +207,11 @@ fi
 chmod +x $TMPDIR/$TMPEXE
 
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ -e "$INSTALLDIR/$STATEEXE" ]; then
+if [ ! -z "$INSTALLDIR" ]; then
   warn "Previous installation detected at $INSTALLDIR"
+  echo "If you would like to reinstall the state tool please first uninstall it."
+  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  exit 0
 fi
 
 # Use target directory provided by user with no verification or default to
@@ -320,9 +323,6 @@ activation_warning() {
     echo
     warn "Cannot activate ${ACTIVATE} yet."
     echo "In order to activate a project, the state tool needs to be installed in your PATH first."
-    echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
-    echo "To make the changes to your path permanent please add the line"
-    echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
     echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
   fi
 }

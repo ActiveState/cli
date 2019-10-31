@@ -85,7 +85,7 @@ Should install to a directory on your path
 
 You should see a message saying `You may now start using the 'state' program`
 
-## No prompt with target
+## No prompt with target not in PATH
 
 Install the state tool with no prompts and a target not in the current PATH
 
@@ -99,3 +99,38 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 Should install to the provided directory
 
 You should see a message instructing you on how to update your PATH
+
+## Previous installation detected
+
+Install the state tool with defaults and then attempt to install again
+
+```sh
+docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl
+```
+
+From inside the docker container
+
+```sh
+/scripts/install.sh
+```
+
+Run above command again
+
+```sh
+/scripts/install.sh
+```
+
+### User interaction
+
+Confirm all defaults
+
+### Expected behaviour
+
+When installing for the second time you should be presented with a message
+stating:
+
+```sh
+Previous installation detected at <installation-path>
+If you would like to reinstall the state tool please first uninstall it.
+You can do this by running 'rm <installation-path>'
+```

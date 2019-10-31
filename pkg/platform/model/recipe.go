@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/sysinfo"
 )
 
@@ -26,7 +27,7 @@ var (
 var HostPlatform string
 
 // Recipe aliases recipe model
-type Recipe = inventory_models.RecipeResponseRecipesItems0
+type Recipe = inventory_models.V1RecipeResponseRecipesItems
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
@@ -41,42 +42,44 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	client := inventory.Get()
 
-	params := inventory_operations.NewOrderRecipesParams()
-	params.OrderID = commitID
+	params := inventory_operations.NewResolveRecipesParams()
+	params.Order = CheckpointToOrder(commitID, checkpoint)
 
-	order := CheckpointToOrder(checkpoint)
-	order.OrderID = &params.OrderID
-
-	params.Order = order
-	recipe, err := client.OrderRecipes(params)
+	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, FailOrderRecipes.Wrap(err)
+		switch rrErr := err.(type) {
+		case *inventory_operations.ResolveRecipesDefault:
+			msg := *rrErr.Payload.Message
+			return nil, FailOrderRecipes.New(msg)
+		case *inventory_operations.ResolveRecipesBadRequest:
+			msg := *rrErr.Payload.Message
+			return nil, FailOrderRecipes.New(msg)
+		default:
+			return nil, FailOrderRecipes.Wrap(err)
+		}
 	}
 
 	return recipe.Payload.Recipes, nil
 }
 
-// RecipeByPlatform filters multiple recipes down to one based on it's platform name
-func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
+// RecipeByHostPlatform filters multiple recipes down to one based on it's
+// platform name
+func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
 	for _, recipe := range recipes {
-		if recipe.PlatformID == nil {
+		if recipe.Platform.PlatformID == nil {
 			continue
 		}
 
-		pf, fail := FetchPlatformByUID(*recipe.PlatformID)
+		pf, fail := FetchPlatformByUID(*recipe.Platform.PlatformID)
 		if fail != nil {
 			return nil, fail
 		}
 
-		if pf == nil {
+		if pf == nil || pf.Kernel == nil || pf.Kernel.Name == nil {
 			continue
 		}
 
-		if pf.OsName == nil {
-			continue
-		}
-
-		if *pf.OsName == sysOSToPlatformOS(platform) {
+		if *pf.Kernel.Name == hostPlatformToKernelName(platform) {
 			return recipe, nil
 		}
 	}
@@ -84,13 +87,13 @@ func RecipeByPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Fa
 	return nil, FailRecipeNotFound.New(locale.T("err_recipe_not_found"))
 }
 
-// FetchRecipeForCommitAndPlatform returns the available recipe matching the commit id and platform string
-func FetchRecipeForCommitAndPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
+// FetchRecipeForCommitAndHostPlatform returns the available recipe matching the commit id and platform string
+func FetchRecipeForCommitAndHostPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
 	recipes, fail := FetchRecipesForCommit(pj, commitID)
 	if fail != nil {
 		return nil, fail
 	}
-	return RecipeByPlatform(recipes, platform)
+	return RecipeByHostPlatform(recipes, platform)
 }
 
 // FetchRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
@@ -103,17 +106,17 @@ func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, 
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	return FetchRecipeForCommitAndPlatform(pj, *branch.CommitID, platform)
+	return FetchRecipeForCommitAndHostPlatform(pj, *branch.CommitID, platform)
 }
 
 // RecipeToBuildRecipe converts a *Recipe to the related head chef model
-func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *failures.Failure) {
+func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe, *failures.Failure) {
 	b, err := recipe.MarshalBinary()
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
 
-	buildRecipe := &headchef_models.BuildRequestRecipe{}
+	buildRecipe := &headchef_models.V1BuildRequestRecipe{}
 	err = buildRecipe.UnmarshalBinary(b)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
@@ -122,14 +125,14 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.BuildRequestRecipe, *
 	return buildRecipe, nil
 }
 
-func sysOSToPlatformOS(os string) string {
+func hostPlatformToKernelName(os string) string {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
-		return inventory_models.PlatformOsNameLinux
+		return "Linux"
 	case strings.ToLower(sysinfo.Mac.String()):
-		return inventory_models.PlatformOsNameMacOS
+		return "Darwin"
 	case strings.ToLower(sysinfo.Windows.String()):
-		return inventory_models.PlatformOsNameWindows
+		return "Windows"
 	default:
 		return ""
 	}

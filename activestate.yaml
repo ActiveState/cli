@@ -3,7 +3,7 @@ scripts:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      CLI_PKGS=./state
+      CLI_PKGS=./cmd/state
       CLI_BUILDFLAGS='-ldflags="-s -w"'
       GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
@@ -79,14 +79,14 @@ scripts:
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/headchef
-      swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/head-chef/swagger.json -A headchef -a headchef_operations -m headchef_models -c headchef_client
       popd
   - name: generate-inventory-client
     description: Generates the inventory-api client files
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/inventory
-      swagger generate client -f ${WD}/../TheHomeRepot/repos/kitchen/inventory-api/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
+      swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
       popd
   - name: generate-clients
     description: Generates all api clients

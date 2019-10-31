@@ -1,5 +1,23 @@
 # Test runs for install.ps1 scripts
 
+---
+
+## NOTE
+
+In order to run these tests you must first uninstall the state tool.
+To do this run:
+
+```powershell
+Remove-Item (Get-Command state.exe).Source
+```
+
+If you installed the state tool with a different binary name replace 'state.exe' with it.
+
+When the tests are complete run the install script with your preferred configuration
+options to reinstall the state tool.
+
+---
+
 This is a list of tests to manually run after modifying the `install.ps1` file.
 
 ## As administrator
@@ -100,6 +118,42 @@ When prompted for the activation directory, type `C:\temp\state`
 #### Cleanup A.4
 
 Ensure that you exit out of your activated session.
+
+```powershell
+Remove-Item -Recurse -Force C:\temp\state
+
+$path = [System.Environment]::GetEnvironmentVariable( 'PATH', [EnvironmentVariableTarget]::Machine)
+$path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join ';'
+[System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
+```
+
+#### Version A.6 Install twice
+
+```powershell
+.\public\install.ps1
+```
+
+When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
+
+Run command again
+
+```powershell
+.\public\install.ps1
+```
+
+**What to look for**:
+
+- You should be prompted to update your PATH
+- You should see a warning for running as administrator
+- After the second install attempt you should be presented with a message that says:
+
+```powershell
+Previous install detected at '<install-dir>'
+If you would like to reinstall the state tool please first uninstall it.
+You can do this by running 'Remove-Item' <install-dir>'
+```
+
+### Cleanup A.6
 
 ```powershell
 Remove-Item -Recurse -Force C:\temp\state
