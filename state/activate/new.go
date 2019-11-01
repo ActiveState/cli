@@ -197,7 +197,7 @@ func createNewProject(projectInfo *projectStruct) *failures.Failure {
 		return fail
 	}
 
-	_, fail = projectfile.Create(projectURL, projectInfo.path)
+	_, fail = projectfile.CreateWithProjectURL(projectURL, projectInfo.path)
 	if fail != nil {
 		return fail
 	}

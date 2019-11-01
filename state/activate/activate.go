@@ -345,7 +345,7 @@ func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *f
 		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID)
 	}
 
-	_, fail = projectfile.Create(projectURL, directory)
+	_, fail = projectfile.CreateWithProjectURL(projectURL, directory)
 	if fail != nil {
 		return fail
 	}

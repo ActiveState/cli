@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type CheckoutAble interface {
@@ -53,7 +54,7 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		fail = createProjectFile(ns.Owner, ns.Project, targetPath, branch.CommitID)
+		fail = projectfile.Create(ns.Owner, ns.Project, branch.CommitID, targetPath)
 		if fail != nil {
 			return fail
 		}

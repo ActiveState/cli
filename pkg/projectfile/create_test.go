@@ -1,4 +1,4 @@
-package activate
+package projectfile
 
 import (
 	"path/filepath"
@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func Test_createProjectFile(t *testing.T) {
+func Test_Create(t *testing.T) {
 	var tempDir = fileutils.TempDirUnsafe()
 	var uuid = strfmt.UUID("00010001-0001-0001-0001-000100010001")
 	type args struct {
@@ -40,7 +40,7 @@ func Test_createProjectFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := createProjectFile(tt.args.org, tt.args.project, tt.args.directory, tt.args.commitID); !reflect.DeepEqual(got, tt.want) {
+			if got := Create(tt.args.org, tt.args.project, tt.args.commitID, tt.args.directory); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createProjectFile() = %v, want %v", got, tt.want)
 			}
 			configFile := filepath.Join(tempDir, constants.ConfigFileName)
