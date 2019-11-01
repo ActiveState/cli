@@ -122,13 +122,10 @@ func versionRequirement(versionConstraint string) []*inventory_models.V1OrderReq
 	}
 
 	var eq = "eq"
-	var versionReqs []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems
-	versionReqs = []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
+	return []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
 		Comparator: &eq,
 		Version:    &versionConstraint,
 	}}
-
-	return versionReqs
 }
 
 // CheckpointToPlatforms strips platforms from a checkpoint
