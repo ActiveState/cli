@@ -100,19 +100,31 @@ func ensureCorrectRepo(owner, name, projectFilePath string) *failures.Failure {
 }
 
 func moveFiles(src, dest string) *failures.Failure {
-	if fileutils.DirExists(dest) {
-		return FailTargetDirInUse.New(locale.T("error_git_target_dir_exists"))
+	fail := verifyDestinationDirectory(dest)
+	if fail != nil {
+		return fail
 	}
 
-	err := os.MkdirAll(dest, 0755)
-	if err != nil {
-		return failures.FailUserInput.Wrap(err)
-	}
-
-	fail := fileutils.MoveAllFiles(src, dest)
+	fail = fileutils.MoveAllFiles(src, dest)
 	if fail != nil {
 		logging.Warningf("Could not move files. Falling back to copy. Move error: %v", fail)
 		return fileutils.CopyFiles(src, dest)
+	}
+
+	return nil
+}
+
+func verifyDestinationDirectory(dest string) *failures.Failure {
+	if !fileutils.DirExists(dest) {
+		return fileutils.Mkdir(dest)
+	}
+
+	empty, fail := fileutils.IsEmptyDir(dest)
+	if fail != nil {
+		return fail
+	}
+	if !empty {
+		return FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
 	}
 
 	return nil
