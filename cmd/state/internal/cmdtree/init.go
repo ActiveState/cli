@@ -13,6 +13,7 @@ func newInitCommand() *captain.Command {
 	var namespace, path, language string
 	return captain.NewCommand(
 		"init",
+		locale.T("init_description"),
 		[]*captain.Flag{
 			{
 				Name:        "language",

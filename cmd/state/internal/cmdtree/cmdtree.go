@@ -16,6 +16,7 @@ func New() *CmdTree {
 	stateCmd.AddChildren(
 		newActivateCommand(),
 		newInitCommand(),
+		newPushCommand(),
 	)
 
 	applyLegacyChildren(stateCmd)
@@ -40,6 +41,7 @@ func newStateCommand() *captain.Command {
 	runner := state.New(opts)
 	cmd := captain.NewCommand(
 		"state",
+		locale.T("state_description"),
 		[]*captain.Flag{
 			{
 				Name:        "locale",

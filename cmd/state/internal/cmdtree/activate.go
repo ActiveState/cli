@@ -18,6 +18,7 @@ func newActivateCommand() *captain.Command {
 	var namespace, path string
 	return captain.NewCommand(
 		"activate",
+		locale.T("activate_project"),
 		[]*captain.Flag{
 			{
 				Name:        "path",

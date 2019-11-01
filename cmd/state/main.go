@@ -97,10 +97,26 @@ func run(args []string) (int, error) {
 	}
 
 	cmds := cmdtree.New()
+	err := cmds.Execute(args[1:])
+
+	// Can't pass failures as errors and still assert them as nil, so we have to typecase.
+	// Blame Go for being weird.
+	switch v := err.(type) {
+	case *failures.Failure:
+		if v != nil {
+			logging.Debug("Returning failure from cmdtree")
+			return 1, v.ToError()
+		}
+	case error:
+		if v != nil {
+			logging.Debug("Returning error from cmdtree")
+			return 1, v
+		}
+	}
+
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err := cmds.Execute(args[1:]); err != nil || failures.Handled() != nil {
-		logging.Error("Error happened while running cmdtree: %w", err)
-		print.Error(locale.T("err_cmdtree"))
+	if err := failures.Handled(); err != nil {
+		logging.Debug("Returning error from failures.Handled")
 		return 1, err
 	}
 

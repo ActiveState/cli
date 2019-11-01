@@ -3,11 +3,13 @@ package initialize
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -27,12 +29,12 @@ func NewInit(config configAble) *Init {
 	return &Init{config}
 }
 
-func (r *Init) Run(namespace, path, language string) error {
-	_, err := r.run(namespace, path, language)
+func (r *Init) Run(namespace, path, langName string) error {
+	_, err := r.run(namespace, path, langName)
 	return err
 }
 
-func (r *Init) run(namespace, path, language string) (string, error) {
+func (r *Init) run(namespace, path, langName string) (string, error) {
 	if namespace == "" {
 		return "", failures.FailUserInput.New("err_init_must_provide_namespace")
 	}
@@ -60,14 +62,18 @@ func (r *Init) run(namespace, path, language string) (string, error) {
 		return "", failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
+	// Store language for when we run 'state push'
+	if langName != "" {
+		lang := language.MakeByName(langName)
+		if lang == language.Unknown {
+			return "", failures.FailUserInput.New("err_init_invalid_language", langName, strings.Join(language.AvailableNames(), ", "))
+		}
+		r.config.Set(path+"_language", langName)
+	}
+
 	// Create the activestate.yaml
 	if fail := projectfile.Create(ns.Owner, ns.Project, nil, path); fail != nil {
 		return "", fail
-	}
-
-	// Store language for when we run 'state push'
-	if language != "" {
-		r.config.Set(path+"_language", language)
 	}
 
 	print.Line(locale.Tr("init_success", namespace, path))

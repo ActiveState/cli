@@ -1157,3 +1157,19 @@ flag_state_init_path:
   other: Path
 flag_state_init_path_description:
   other: Where to initialize the project
+err_wd:
+  other: Could not retrieve the working directory
+err_init_invalid_language:
+  other: "Invalid language specified: {{.V0}}, supported languages: {{.V1}}."
+err_push_invalid_language:
+  other: "Invalid language specified: {{.V0}}, please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
+push_creating_project:
+  other: "Creating project {{.V1}} under {{.V0}} on the ActiveState Platform"
+push_project_created:
+  other: "Project created at {{.V0}}"
+push_up_to_date:
+  other: "Your project is up to date"
+init_description:
+  other: Initialize a new project
+push_description:
+  other: Push your latest changes to the platform
