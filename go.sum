@@ -6,6 +6,7 @@ github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:l
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
 github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8 h1:zMXhP3KSuO3+6Vq2duhqEjnpd5Ct3xyGd16wffmhBkg=
 github.com/ActiveState/state-required v0.0.0-20180327174045-a0329b32eba8/go.mod h1:RG4eNKvmn9ZUEGBg/c+lvZdE8iZE4rM54zb7wGwJvIY=
+github.com/ActiveState/sysinfo v0.0.0-20180411143835-3202a6c2340e/go.mod h1:9L5BiOyziWNetyh7lkwxKIoWz3czZu8N0nepnmG1tPo=
 github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a h1:w0rnPskgd7shZuKf6h/2LjMqZmAvG2HCAN6Chg/kJ8A=
 github.com/ActiveState/sysinfo v0.0.0-20191008183931-425365ad033a/go.mod h1:9L5BiOyziWNetyh7lkwxKIoWz3czZu8N0nepnmG1tPo=
 github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba h1:sx6zkr6D7K3L+wX0CyWQbmN16OffQmDuxoZbOE+NM6Y=
