@@ -58,6 +58,8 @@ defaults:
         name: Run integration tests
         command: |
           set -e
+
+          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           go test ./test/integration
     deployBits: &deployBits
       run:
