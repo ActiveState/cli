@@ -84,6 +84,7 @@ func (p *Progress) AddTotalBar(name string, numElements int) *TotalBar {
 }
 
 // AddByteProgressBar adds a progressbar counting the progress in bytes
+// This is used as the progress bar for downloading artifacts
 func (p *Progress) AddByteProgressBar(totalBytes int64) *ByteProgressBar {
 	return p.progress.AddBar(totalBytes,
 		mpb.BarRemoveOnComplete(),
@@ -97,8 +98,8 @@ func (p *Progress) AddByteProgressBar(totalBytes int64) *ByteProgressBar {
 		mpb.AppendDecorators(decor.Percentage(decor.WC{W: 5})))
 }
 
-// AddUnpackBar adds a progressbar for unpacking an archiving.
-func (p *Progress) AddUnpackBar(bytesToRead int64) *UnpackBar {
-	return NewUnpackBar(bytesToRead, p)
+// AddUnpackBar adds a progressbar for unpacking an archive
+func (p *Progress) AddUnpackBar(bytesToRead int64, percentOnUnpack int) *UnpackBar {
+	return NewUnpackBar(bytesToRead, p, percentOnUnpack)
 
 }

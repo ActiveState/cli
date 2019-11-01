@@ -27,6 +27,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// During installation after all files are unpacked to a temporary directory, the progress bar should advanced this much.
+// This leaves room to advance the progress bar further while renaming strings in the unpacked files.
+const percentReportedAfterUnpack = 85
+
 var (
 	// FailInstallDirInvalid represents a Failure due to the working-dir for an installation being invalid in some way.
 	FailInstallDirInvalid = failures.Type("runtime.installdir.invalid", failures.FailIO)
@@ -212,7 +216,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	fail = installer.unpackArchive(archivePath, installDir, progress)
+	upb, fail := installer.unpackArchive(archivePath, installDir, progress)
 	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
@@ -224,7 +228,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	if fail = installer.Relocate(metaData); fail != nil {
+	if fail = installer.Relocate(metaData, upb); fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
@@ -249,17 +253,17 @@ func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failure
 	return installDir, nil
 }
 
-func (installer *Installer) unpackArchive(archivePath string, installDir string, p *progress.Progress) *failures.Failure {
+func (installer *Installer) unpackArchive(archivePath string, installDir string, p *progress.Progress) (*progress.UnpackBar, *failures.Failure) {
 	// initial guess
 	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
 		if fail != nil {
-			return fail
+			return nil, fail
 		}
-		return FailRuntimeInstallation.New("installer_err_installdir_notempty", installDir)
+		return nil, FailRuntimeInstallation.New("installer_err_installdir_notempty", installDir)
 	}
 
 	if fail := installer.validateArchive(archivePath); fail != nil {
-		return fail
+		return nil, fail
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())
@@ -271,11 +275,19 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 
 	logging.Debug("Unarchiving %s", archivePath)
 	// Unarchiving with progress adds a progress bar to p and completes when all files are written
-	err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p)
-	logging.Debug("Done unpacking")
+	var numUnpackedFiles int
+	installer.progressUnarchiver.SetNotifier(func(_ string, _ int64, isDir bool) {
+		if !isDir {
+			numUnpackedFiles++
+		}
+	})
+	upb, err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p, percentReportedAfterUnpack)
 	if err != nil {
-		return FailArchiveInvalid.Wrap(err)
+		return nil, FailArchiveInvalid.Wrap(err)
 	}
+
+	logging.Debug("Unpacked %d files\n", numUnpackedFiles)
+	upb.ReScale(numUnpackedFiles)
 
 	// Detect the install dir
 	tmpInstallDir := ""
@@ -287,31 +299,31 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 		}
 	}
 	if tmpInstallDir == "" {
-		return FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
+		return nil, FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
 	}
 
 	if fail := fileutils.MoveAllFiles(tmpInstallDir, installDir); fail != nil {
 		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
+		return nil, FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
 	if fileutils.FileExists(tmpMetaFile) {
 		target := filepath.Join(installDir, constants.RuntimeMetaFile)
 		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
-			return fail
+			return nil, fail
 		}
 		if err := os.Rename(tmpMetaFile, target); err != nil {
-			return FailRuntimeInstallation.Wrap(err)
+			return nil, FailRuntimeInstallation.Wrap(err)
 		}
 	}
 
 	if err = os.RemoveAll(tmpRuntimeDir); err != nil {
 		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
-		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
+		return nil, FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
 	}
 
-	return nil
+	return upb, nil
 }
 
 // OnDownload registers a function to be called when a download occurs
@@ -321,7 +333,7 @@ func (installer *Installer) OnDownload(f func()) {
 
 // Relocate will look through all of the files in this installation and replace any
 // character sequence in those files containing the given prefix.
-func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
+func (installer *Installer) Relocate(metaData *MetaData, upb *progress.UnpackBar) *failures.Failure {
 	prefix := metaData.RelocationDir
 
 	if len(prefix) == 0 || prefix == metaData.Path {
@@ -335,7 +347,11 @@ func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
-			return !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents))
+			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
+				upb.Increment()
+				return true
+			}
+			return false
 		})
 	if err != nil {
 		return FailRuntimeInstallation.Wrap(err)
@@ -346,13 +362,20 @@ func (installer *Installer) Relocate(metaData *MetaData) *failures.Failure {
 		// Replace binary files
 		err = fileutils.ReplaceAllInDirectory(metaData.Path, prefix, replacement,
 			// Binaries only
-			func(p string, contents []byte) bool { return fileutils.IsBinary(contents) })
+			func(p string, contents []byte) bool {
+				if fileutils.IsBinary(contents) {
+					upb.Increment()
+					return true
+				}
+				return false
+			})
 
 		if err != nil {
 			return FailRuntimeInstallation.Wrap(err)
 		}
 	}
 
+	upb.Complete()
 	logging.Debug("Done")
 
 	return nil

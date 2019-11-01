@@ -8,29 +8,31 @@ import (
 	"github.com/vbauerster/mpb/v4"
 )
 
-// proxyReader is io.Reader wrapper, for proxy read bytes
-type proxyReader struct {
+// ProxyReader is io.Reader wrapper, for proxy read bytes
+type ProxyReader struct {
 	io.ReadCloser
-	bar *mpb.Bar
-	iT  time.Time
+	bar      *mpb.Bar
+	iT       time.Time
+	complete func()
 }
 
-func (pr *proxyReader) Read(p []byte) (n int, err error) {
+// Read reads bytes from underlying ReadCloser and reports progress
+// Calls complete() method on EOF
+func (pr *ProxyReader) Read(p []byte) (n int, err error) {
 	n, err = pr.ReadCloser.Read(p)
 	if n > 0 {
 		pr.bar.IncrBy(n, time.Since(pr.iT))
 		pr.iT = time.Now()
 	}
 	if err == io.EOF {
-		go func() {
-			current := pr.bar.Current()
-			pr.bar.SetTotal(current, true)
-		}()
+		go pr.complete()
 	}
 	return
 }
 
-func (pr *proxyReader) ReadAt(p []byte, offset int64) (n int, err error) {
+// ReadAt reads into buffer starting at offset and reports progress
+// Calls complete method on EOF
+func (pr *ProxyReader) ReadAt(p []byte, offset int64) (n int, err error) {
 	prAt, ok := pr.ReadCloser.(io.ReaderAt)
 	if !ok {
 		return 0, fmt.Errorf("Proxied readers needs to implement io.ReaderAt")
@@ -45,10 +47,7 @@ func (pr *proxyReader) ReadAt(p []byte, offset int64) (n int, err error) {
 		pr.iT = time.Now()
 	}
 	if err == io.EOF {
-		go func() {
-			current := pr.bar.Current()
-			pr.bar.SetTotal(current, true)
-		}()
+		go pr.complete()
 	}
 	return
 }

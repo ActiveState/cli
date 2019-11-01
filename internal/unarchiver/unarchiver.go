@@ -23,37 +23,47 @@ type SingleUnarchiver interface {
 	ExtractNext(destination string) (f archiver.File, err error)
 }
 
+// ExtractNotifier gets called when a new file has been extracted from the archive
+type ExtractNotifier func(fileName string, size int64, isDir bool)
+
 // Unarchiver wraps an implementation of an unarchiver that can unpack one file at a time.
 type Unarchiver struct {
 	// wraps a struct that can unpack one file at a time.
 	impl SingleUnarchiver
+
+	notifier ExtractNotifier
+}
+
+// SetNotifier sets the notification function to be called after extracting a file
+func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
+	ua.notifier = cb
 }
 
 // UnarchiveWithProgress unarchives an archive file `source` and unpacks it in `destionation`
-// Progress is reported with a progress bar added to `p`
-func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progress.Progress) (err error) {
+// Progress is reported to an unpackBar
+func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progress.Progress, percentOnComplete int) (pb *progress.UnpackBar, err error) {
 	if !fileExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
-			return fmt.Errorf("preparing destination: %v", err)
+			return nil, fmt.Errorf("preparing destination: %v", err)
 		}
 	}
 
 	archiveFile, err := os.Open(source)
 	if err != nil {
-		return err
+		return
 	}
 	defer archiveFile.Close()
 
 	fileInfo, err := archiveFile.Stat()
 	if err != nil {
-		return fmt.Errorf("statting source file: %v", err)
+		return nil, fmt.Errorf("statting source file: %v", err)
 	}
 
 	archiveSizeIn := fileInfo.Size()
 
 	// Add the progress bar for unpacking
-	pb := p.AddUnpackBar(archiveSizeIn)
+	pb = p.AddUnpackBar(archiveSizeIn, percentOnComplete)
 
 	// and wrap the stream, such that we automatically report progress while reading bytes
 	wrappedStream := pb.NewProxyReader(archiveFile)
@@ -64,28 +74,30 @@ func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progr
 	// read one file at a time from the archive
 	err = impl.Open(wrappedStream, archiveSizeIn)
 	if err != nil {
-		return err
+		return
 	}
 	// note: that this is obviously not thread-safe
 	defer impl.Close()
 
 	for {
 		// extract one file at a time
-		f, err := impl.ExtractNext(destination)
+		var f archiver.File
+		f, err = impl.ExtractNext(destination)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return err
+			return
 		}
 
 		logging.Debug("Extracted %s File size: %d", f.Name(), f.Size())
+		ua.notifier(f.Name(), f.Size(), f.IsDir())
 	}
 
 	// Set the progress bar to complete state
 	pb.Complete()
 
-	return nil
+	return pb, nil
 }
 
 // the following files are just copied from the ActiveState/archiver repository

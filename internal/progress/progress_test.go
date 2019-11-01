@@ -37,7 +37,7 @@ func TestUnpackBar(t *testing.T) {
 		progress := New(WithOutput(buf))
 		defer progress.Close()
 
-		bar := progress.AddUnpackBar(30)
+		bar := progress.AddUnpackBar(30, 100)
 		dz := &devZero{}
 		wrapped := *bar.NewProxyReader(dz)
 		_, err := wrapped.Read(readBuf[:])

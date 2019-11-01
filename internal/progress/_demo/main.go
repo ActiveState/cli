@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 )
@@ -59,13 +60,29 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 	}
 	defer os.RemoveAll(dir)
 
-	tgz.UnarchiveWithProgress(tgzTestPath, dir, p)
+	var ub *progress.UnpackBar
+	ub, err = tgz.UnarchiveWithProgress(tgzTestPath, dir, p, 70)
+
 	time.Sleep(100 * time.Millisecond)
+
+	ub.ReScale(4)
+	time.Sleep(1 * time.Second)
+	ub.Increment()
+	time.Sleep(1 * time.Second)
+	ub.Increment()
+	time.Sleep(1 * time.Second)
+	ub.Increment()
+	time.Sleep(1 * time.Second)
+	ub.Increment()
 
 	return nil
 }
 
 func main() {
+	logging.CurrentHandler().SetVerbose(true)
+	logging.SetMinimalLevel(logging.DEBUG)
+	logging.SetOutput(os.Stderr)
+	logging.Debug("test\n")
 	err := run()
 	if err != nil {
 		fmt.Printf("%s failed with error: %s\n", os.Args[0], err)
