@@ -12,7 +12,7 @@ Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
  -n                    Don't prompt for anything, just install and override any existing executables
  -t <dir>              Install target directory
- -f <file>             Default 'state'.  Binary filename to use
+ -f <file>              Default 'state'.  Binary filename to use
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -206,39 +206,59 @@ else
 fi
 chmod +x $TMPDIR/$TMPEXE
 
-# Check for existing installation. Otherwise, make the installation default to
-# /usr/local/bin if the user has write permission, or to a local bin.
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+if [ ! -z "$INSTALLDIR" ]; then
+  warn "Previous installation detected at $INSTALLDIR"
+  echo "If you would like to reinstall the state tool please first uninstall it."
+  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  exit 0
+fi
+
+# Use target directory provided by user with no verification or default to
+# one of two commonly used directories. 
+# Ensure they are in PATH and if not use the first writable directory in PATH
 if [ ! -z "$TARGET" ]; then
   INSTALLDIR=$TARGET
-elif [ ! -z "$INSTALLDIR" ]; then
-  warn "Previous installation detected at $INSTALLDIR"
 else
   if [ -w "/usr/local/bin" ]; then
     INSTALLDIR="/usr/local/bin"
   else
     INSTALLDIR="$HOME/.local/bin"
   fi
+  # Verify the install directory is in PATH.
+  INPATH=false
+  OLDIFS=$IFS
+  IFS=':'
+  for PATHELEM in $PATH; do 
+    if [ $INSTALLDIR = $PATHELEM ]; then
+      INPATH=true
+      break
+    fi
+  done
+
+  # If the install directory is not in PATH we default to the first
+  # directory in PATH that we have write access to as a last resort.
+  if ! $INPATH; then
+    for PATHELEM in $PATH; do
+      if [ -w $PATHELEM ]; then
+        INSTALLDIR=$PATHELEM
+        break
+      else
+        INSTALLDIR=""
+      fi
+    done
+  fi
+  IFS=$OLDIFS
 fi
 
-# Prompt the user for a directory to install to.
+if [ -z "$INSTALLDIR" ]; then
+  error "Could not install state tool to PATH."
+  error "You can use the '-t' flag to denote an install target."
+  exit 1
+fi
+
+# Install to the determined directory.
 while "true"; do
-  userprompt "Please enter the installation directory [$INSTALLDIR]: "
-  INPUT=$(userinput $INSTALLDIR)
-  if [ -e "$INPUT" -a ! -d "$INPUT" ]; then
-    warn "$INPUT exists and is not a directory"
-    continue
-  elif [ -e "$INPUT" -a ! -w "$INPUT" ]; then
-    warn "You do not have permission to write to $INPUT"
-    continue
-  fi
-  if [ ! -z "$INPUT" ]; then
-    if [ ! -z "`realpath \"$INPUT\" 2>/dev/null`" ]; then
-      INSTALLDIR="`realpath \"$INPUT\"`"
-    else
-      INSTALLDIR="$INPUT"
-    fi
-  fi
   info "Installing to $INSTALLDIR"
   if [ ! -e "$INSTALLDIR" ]; then
     info "NOTE: $INSTALLDIR will be created"
@@ -286,7 +306,16 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   exit 0
 fi
 
-# Beyond this point, the state tool is not in the PATH and therefor unsafe to execute.
+manual_installation_instructions() {
+  info "State tool installation complete."
+  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
+  echo "using the '$STATEEXE' program."
+  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
+  echo "To make the changes to your path permanent please add the line"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  activation_warning
+  exit 1
+}
 
 # Prints a warning if an activation was requested and state tool is not in the PATH
 activation_warning() {
@@ -298,23 +327,19 @@ activation_warning() {
   fi
 }
 
+# Check if we can write to the users profile, if not give manual
+# insallation instructions
 profile="`info $HOME`/.profile"
 if [ ! -w "$profile" ]; then
-  info "State tool installation complete."
-  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
-  echo "using the '$STATEEXE' program."
-  activation_warning
-  exit 0
+  manual_installation_instructions
 fi
 
+# Prompt user to update users path, otherwise present manual
+# installation instructions
 userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
 RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
 if [ "$RESPONSE" != "y" ]; then
-  info "State tool installation complete."
-  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
-  echo "using the '$STATEEXE' program."
-  activation_warning
-  exit 0
+  manual_installation_instructions
 fi
 info "Updating environment..."
 pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
@@ -329,5 +354,5 @@ fi
 info "State tool installation complete."
 echo "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
-
 activation_warning
+exit 1

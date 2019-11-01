@@ -355,9 +355,9 @@ func createProjectFile(org, project, directory string, commitID *strfmt.UUID) *f
 
 // determineProjectPath will prompt the user for a location to save the project at
 func determineProjectPath(namespace string) (string, *failures.Failure) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", failures.FailRuntime.Wrap(err)
+	wd, fail := getWorkDir()
+	if fail != nil {
+		return "", fail
 	}
 
 	directory, fail := prompter.Input(locale.Tr("activate_namespace_location", namespace), filepath.Join(wd, namespace))
@@ -539,4 +539,22 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 func idsValid(currID string, rcvdID []byte) bool {
 	return currID != "" && len(rcvdID) > 0 && currID == string(rcvdID)
+}
+
+func getWorkDir() (string, *failures.Failure) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", failures.FailRuntime.Wrap(err)
+	}
+
+	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
+		return dir, nil
+	}
+
+	dir, err = os.UserHomeDir()
+	if err != nil {
+		return "", failures.FailRuntime.Wrap(err)
+	}
+
+	return dir, nil
 }

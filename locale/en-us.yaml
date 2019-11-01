@@ -119,7 +119,7 @@ error_could_not_activate_venv:
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
-  other: "Argument missing: {{.Name}}"
+  other: "Argument missing: {{.V0}}"
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory
 err_invalid_input:
@@ -141,7 +141,7 @@ version_info:
     Branch {{.Branch}}
     Built {{.Date}}
 update_complete:
-  other: Update completed succesfully
+  other: Update completed successfully
 update_hash_mismatch:
   other: The archive hash could not be verified
 err_project_file_unavailable:
@@ -254,7 +254,7 @@ signup_description:
 err_auth_signup_email_exists:
   other: An account with that email address already exists
 login_success_welcome_back:
-  other: You have succesfully authenticated, hello {{.Name}}!
+  other: You have successfully authenticated, hello {{.Name}}!
 logged_in_as:
   other: You are logged in as {{.Name}}
 logout_description:
@@ -380,7 +380,7 @@ error_state_activate_new_fetch_organizations:
 state_activate_new_created:
   other: Created new project in {{.Dir}}
 state_activate_new_platform_project:
-  other: New platform project succesfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
+  other: New platform project successfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
 state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
