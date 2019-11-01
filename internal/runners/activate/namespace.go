@@ -42,10 +42,8 @@ func NewNamespaceSelect(config configAble, prompter promptAble) *NamespaceSelect
 
 func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, error) {
 	// Detect targetPath either by preferredPath or by prompting the user
-	var targetPath string
-	if preferredPath != "" {
-		targetPath = preferredPath
-	} else {
+	targetPath := preferredPath
+	if targetPath == "" {
 		var err error
 		targetPath, err = r.promptForPath(namespace)
 		if err != nil {
