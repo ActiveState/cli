@@ -95,28 +95,28 @@ func run(args []string) (int, error) {
 	cmds := cmdtree.New()
 	err := cmds.Execute(args[1:])
 
-	// Can't pass failures as errors and still assert them as nil, so we have to typecase.
-	// Blame Go for being weird.
-	switch v := err.(type) {
-	case *failures.Failure:
-		if v != nil {
-			logging.Debug("Returning failure from cmdtree")
-			return 1, v.ToError()
-		}
-	case error:
-		if v != nil {
-			logging.Debug("Returning error from cmdtree")
-			return 1, v
-		}
+	if err2 := normalizeError(err); err2 != nil {
+		logging.Debug("Returning error from cmdtree")
+		return 1, err2
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err := failures.Handled(); err != nil {
+	if err2 := normalizeError(failures.Handled()); err2 != nil {
 		logging.Debug("Returning error from failures.Handled")
-		return 1, err
+		return 1, err2
 	}
 
 	return 0, nil
+}
+
+// Can't pass failures as errors and still assert them as nil, so we have to typecase.
+// Blame Go for being weird.
+func normalizeError(err error) error {
+	switch v := err.(type) {
+	case *failures.Failure:
+		return v.ToError()
+	}
+	return err
 }
 
 func handlePanics(exiter func(int)) {
