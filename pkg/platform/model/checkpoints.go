@@ -103,18 +103,29 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1Order
 			continue
 		}
 
-		eq := "eq"
 		result = append(result, &inventory_models.V1OrderRequirementsItems{
-			Feature:   &req.Requirement,
-			Namespace: &req.Namespace,
-			VersionRequirements: []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
-				Comparator: &eq,
-				Version:    &req.VersionConstraint,
-			}},
+			Feature:             &req.Requirement,
+			Namespace:           &req.Namespace,
+			VersionRequirements: versionRequirement(req.VersionConstraint),
 		})
 	}
 
 	return result
+}
+
+// versionRequirement returns nil if the version constraint is empty otherwise it will return a valid
+// list for a V1OrderRequirements' VersionRequirements. The VersionRequirements can be omitted however
+// if it is present then the Version string must be populated with at least one character.
+func versionRequirement(versionConstraint string) []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems {
+	if versionConstraint == "" {
+		return nil
+	}
+
+	var eq = "eq"
+	return []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
+		Comparator: &eq,
+		Version:    &versionConstraint,
+	}}
 }
 
 // CheckpointToPlatforms strips platforms from a checkpoint

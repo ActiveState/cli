@@ -1,5 +1,23 @@
 # Test runs for install.ps1 scripts
 
+---
+
+## NOTE
+
+In order to run these tests you must first uninstall the state tool.
+To do this run:
+
+```powershell
+Remove-Item (Get-Command state.exe).Source
+```
+
+If you installed the state tool with a different binary name replace 'state.exe' with it.
+
+When the tests are complete run the install script with your preferred configuration
+options to reinstall the state tool.
+
+---
+
 This is a list of tests to manually run after modifying the `install.ps1` file.
 
 ## As administrator
@@ -12,36 +30,19 @@ $oldpath = $env:Path
 
 ### Install as administrator
 
-#### Version A.1: Do not update path
+#### Version A.1: Update path
 
 ```powershell
-powershell .\public\install.ps1
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
 
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-You should be asked if you want to modify the system path, enter `n`.
-
-**What to look for**:
-
-- All messages should be accurate and make sense.
-- You should see instructions how to update the PATH in order to use the state tool.
-- You should see a warning about running as an administrator
-
-#### Version A.2: Update path
-
-```powershell
-powershell .\public\install.ps1
-```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-You should be asked if you want to modify the system path, enter `y`.  
+When prompted to continue after being presented with installation information select `y`.
 
 **What to look for**:
 
 - All messages should be accurate and make sense.
 - You should see a warning about running as administrator.
+- You should be presented with a message that says: `Please restart your command prompt in order to start using the 'state.exe' program`
 - Run
 
   ```powershell
@@ -49,22 +50,6 @@ You should be asked if you want to modify the system path, enter `y`.
   ```
 
   to ensure that the path is added to the system path.
-- Ensure that the path is also `$env:Path`.
-
-#### Version A.3: Path is set already
-
-```powershell
-$env:Path += ";C:\temp\state\bin"
-powershell .\public\install.ps1
-```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-**What to look for**:
-
-- All messages should be accurate and make sense.
-- You should receive a warning about running as administrator.
-- You should not be asked to set up the path.
 
 #### Cleanup A.1
 
@@ -76,33 +61,50 @@ $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join '
 [System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
 ```
 
-### Install and activate as administrator
-
-#### Version A.4 Invalid options
+#### Version A.2: Path is set already
 
 ```powershell
-.\public\install.ps1 -Activate ActiveState/cli -n
+$env:Path += ";C:\temp\state\bin"
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
 
-***What to look for**:
-
-- An error message about incompatible options
-
-#### Version A.5 Install
-
-```powershell
-.\public\install.ps1 -Activate ActiveState/cli
-```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-When prompted for a user name and password, enter your credentials.
-
-When prompted for the installation directory, type `C:\temp\state`
+When prompted to continue after being presented with installation information select `y`.
 
 **What to look for**:
 
-- You should not be prompted whether you want to add the PATH to the system path.
+- All messages should be accurate and make sense.
+- You should receive a warning about running as administrator.
+- You should be presented with a message that says: `You may now start using the 'state.exe' program`
+
+#### Cleanup A.2
+
+```powershell
+$env:Path = $oldpath
+Remove-Item -Recurse -Force C:\temp\state\bin
+```
+
+### Install and activate as administrator
+
+#### Version A.3 Invalid options
+
+```powershell
+powershell .\public\install.ps1 -Activate ActiveState/cli -n
+```
+
+**What to look for**:
+
+- An error message about incompatible options
+
+#### Version A.4 Install and Activate
+
+```powershell
+powershell .\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
+```
+
+When prompted for the activation directory, type `C:\temp\state`
+
+**What to look for**:
+
 - All messages should be accurate and make sense.
 - You should end up in an activated environment.  Ensure that the `state` tool is in the PATH.
 - Run
@@ -113,7 +115,7 @@ When prompted for the installation directory, type `C:\temp\state`
 
   to ensure that the path is added to the system path.
 
-#### Cleanup A.2
+#### Cleanup A.4
 
 Ensure that you exit out of your activated session.
 
@@ -123,6 +125,42 @@ Remove-Item -Recurse -Force C:\temp\state
 $path = [System.Environment]::GetEnvironmentVariable( 'PATH', [EnvironmentVariableTarget]::Machine)
 $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join ';'
 [System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
+```
+
+#### Version A.5 Install twice
+
+```powershell
+.\public\install.ps1 -t C:\temp\state\bin
+```
+
+When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
+
+Run command again
+
+```powershell
+.\public\install.ps1 -t C:\temp\state\bin
+```
+
+**What to look for**:
+
+- You should see a warning for running as administrator
+- After the second install attempt you should be presented with a message that says:
+
+```powershell
+Previous install detected at '<install-dir>'
+If you would like to reinstall the state tool please first uninstall it.
+You can do this by running 'Remove-Item' <install-dir>'
+```
+
+### Cleanup A.5
+
+```powershell
+Remove-Item -Recurse -Force C:\temp\state
+
+$path = [System.Environment]::GetEnvironmentVariable( 'PATH', [EnvironmentVariableTarget]::Machine)
+$path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join ';'
+[System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::Machine)
+$env:Path = $oldpath
 ```
 
 ## As User
@@ -135,34 +173,18 @@ $oldpath = $env:Path
 
 ### Install as user
 
-#### Version U.1: Do not update path
+#### Version U.1: Update path
 
 ```powershell
-powershell .\public\install.ps1
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
 
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-You should be asked if you want to modify the system path, enter `n`.
+When prompted to continue after being presented with installation information select `y`.
 
 **What to look for**:
 
 - All messages should be accurate and make sense.
-- You should receive instructions how to update the PATH in order to use the state tool.
-
-#### Version U.2: Update path
-
-```powershell
-powershell .\public\install.ps1
-```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-You should be asked if you want to modify the system path, enter `y`.  
-
-**What to look for**:
-
-- All messages should be accurate and make sense.
+- You should be presented with a message that says: `Please restart your command prompt in order to start using the 'state.exe' program`
 - Run
 
   ```powershell
@@ -170,20 +192,6 @@ You should be asked if you want to modify the system path, enter `y`.
   ```
 
   to ensure that the path is added to the system path.
-
-#### Version U.3: Path is set already
-
-```powershell
-$env:Path += ";C:\temp\state\bin"
-powershell .\public\install.ps1
-```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-**What to look for**:
-
-- All messages should be accurate and make sense.
-- You should not be asked to set up the path.
 
 #### Cleanup U.1
 
@@ -195,23 +203,37 @@ $path = ($path.Split(';') | Where-Object { $_ -ne 'C:\temp\state\bin' }) -join '
 [System.Environment]::SetEnvironmentVariable('PATH', $path, [EnvironmentVariableTarget]::User)
 ```
 
-### Install and activate as user
-
-#### Version U.4 Install
+#### Version U.2: Path is set already
 
 ```powershell
-.\public\install.ps1 -Activate ActiveState/cli
+$env:Path += ";C:\temp\state\bin"
+powershell .\public\install.ps1 -t C:\temp\state\bin
 ```
-
-When prompted for installation directory, respond with temporary directory `C:\temp\state\bin`.
-
-When prompted for a user name and password, enter your credentials.
-
-When prompted for the installation directory, type `C:\temp\state`
 
 **What to look for**:
 
-- You should not be prompted whether you want to add the PATH to the system path.
+- All messages should be accurate and make sense.
+- You should be presented with a message that says: `You may now start using the 'state.exe' program`
+
+### Cleanup U.2
+
+```powershell
+$env:Path = $oldpath
+Remove-Item -Recurse -Force C:\temp\state\bin
+```
+
+### Install and activate as user
+
+#### Version U.3 Install and Activate
+
+```powershell
+powershell .\public\install.ps1 -t C:\temp\state\bin -Activate ActiveState/cli
+```
+
+When prompted for the activation directory, type `C:\temp\state`
+
+**What to look for**:
+
 - All messages should be accurate and make sense.
 - You should end up in an activated environment.  Ensure that the `state` tool is in the PATH.
 - Run
@@ -222,7 +244,7 @@ When prompted for the installation directory, type `C:\temp\state`
 
   to ensure that the path is added to the system path.
 
-#### Cleanup U.2
+#### Cleanup U.3
 
 Ensure that you exit out of your activated session.
 

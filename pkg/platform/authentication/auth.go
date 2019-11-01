@@ -124,9 +124,18 @@ func (s *Auth) BearerToken() string {
 	return s.bearerToken
 }
 
+func (s *Auth) updateRollbarPerson() {
+	uid := s.UserID()
+	if uid == nil {
+		return
+	}
+	logging.UpdateRollbarPerson(uid.String())
+}
+
 // Authenticate will try to authenticate using stored credentials
 func (s *Auth) Authenticate() *failures.Failure {
 	if s.Authenticated() {
+		s.updateRollbarPerson()
 		return nil
 	}
 
@@ -156,6 +165,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) *fail
 			return FailAuthAPI.Wrap(err)
 		}
 	}
+	defer s.updateRollbarPerson()
 
 	payload := loginOK.Payload
 	s.user = payload.User

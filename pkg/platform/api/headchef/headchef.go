@@ -2,6 +2,7 @@ package headchef
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -15,9 +16,10 @@ import (
 )
 
 var (
-	FailRestAPIError       = failures.Type("headchef.fail.restapi.error")
-	FailRestAPINoResponse  = failures.Type("headchef.fail.restapi.noresponse")
-	FailRestAPIBadResponse = failures.Type("headchef.fail.restapi.badresponse")
+	FailBuildReqErrorResp       = failures.Type("headchef.fail.buildreq.errorresp")
+	FailBuildReqNoResp          = failures.Type("headchef.fail.buildreq.noresp")
+	FailBuildCreatedUnknownType = failures.Type("headchef.fail.buildcreated.unknowntype")
+	FailBuildCreatedNilType     = failures.Type("headchef.fail.buildcreated.niltype")
 )
 
 type BuildStatus struct {
@@ -86,18 +88,27 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
 			msg = *startErr.Payload.Message
 		}
-		buildStatus.RunFail <- FailRestAPIError.New(msg)
+		buildStatus.RunFail <- FailBuildReqErrorResp.New(msg)
 	case accepted != nil:
 		buildStatus.Started <- struct{}{}
 	case created != nil:
-		failBadResp := FailRestAPIBadResponse.New("bad response")
-
 		if created.Payload.Type == nil {
-			buildStatus.RunFail <- failBadResp
+			requestBytes, err := buildReq.MarshalBinary()
+			if err != nil {
+				requestBytes = []byte(
+					fmt.Sprintf("cannot marshal request: %v", err),
+				)
+			}
+			msg := fmt.Sprintf(
+				"created response cannot be handled: nil type from request %q",
+				string(requestBytes),
+			)
+			buildStatus.RunFail <- FailBuildCreatedNilType.New(msg)
 			break
 		}
+		payloadType := *created.Payload.Type
 
-		switch *created.Payload.Type {
+		switch payloadType {
 		case headchef_models.BuildStatusResponseTypeBuildCompleted:
 			buildStatus.Completed <- created.Payload
 		case headchef_models.BuildStatusResponseTypeBuildFailed:
@@ -105,9 +116,13 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		case headchef_models.BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- struct{}{}
 		default:
-			buildStatus.RunFail <- failBadResp
+			msg := fmt.Sprintf(
+				"created response cannot be handled: unknown type %q",
+				payloadType,
+			)
+			buildStatus.RunFail <- FailBuildCreatedUnknownType.New(msg)
 		}
 	default:
-		buildStatus.RunFail <- FailRestAPINoResponse.New("no response")
+		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
 	}
 }

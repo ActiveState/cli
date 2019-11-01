@@ -13,7 +13,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults
 
 ### Expected behavior
 
@@ -37,7 +37,7 @@ Confirm all defaults
 
 - The state tool gets installed under `/root/.local/bin`.
 - You see an error message that the state tool could not be activated.
-- You see instructions how to activate the project manually or with the install script.
+- You see instructions how to install the state tool and then activate the project manually or with the install script.
 
 ## Invalid options
 
@@ -52,7 +52,6 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 You see an error message that `-n` and `--activate` cannot be used at the same time.
 
-
 ## Custom state tool name
 
 Install state tool and activate project `ActiveState/cli` afterwards.
@@ -65,10 +64,73 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 ### User interaction
 
-Confirm all defaults, and log in to platform with credentials
+Confirm all defaults.
 
 ### Expected behavior
 
 You should end up in a shell with an activated state.
 
+## No prompt
 
+Install the state tool with no prompts
+
+```sh
+docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
+    /scripts/install.sh -n
+```
+
+### Expected behavior
+
+Should install to a directory on your path
+
+You should see a message saying `You may now start using the 'state' program`
+
+## No prompt with target not in PATH
+
+Install the state tool with no prompts and a target not in the current PATH
+
+```sh
+docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
+    /scripts/install.sh -n -t /root/.local/bin
+```
+
+### Expected beahvior
+
+Should install to the provided directory
+
+You should see a message instructing you on how to update your PATH
+
+## Previous installation detected
+
+Install the state tool with defaults and then attempt to install again
+
+```sh
+docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl
+```
+
+From inside the docker container
+
+```sh
+/scripts/install.sh
+```
+
+Run above command again
+
+```sh
+/scripts/install.sh
+```
+
+### User interaction
+
+Confirm all defaults
+
+### Expected behaviour
+
+When installing for the second time you should be presented with a message
+stating:
+
+```sh
+Previous installation detected at <installation-path>
+If you would like to reinstall the state tool please first uninstall it.
+You can do this by running 'rm <installation-path>'
+```

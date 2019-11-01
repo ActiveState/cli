@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"runtime"
 
@@ -81,7 +82,9 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 
 // ParseMetaData will parse the given bytes into the MetaData struct
 func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
-	metaData := &MetaData{}
+	metaData := &MetaData{
+		Env: make(map[string]string),
+	}
 	err := json.Unmarshal(contents, metaData)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
@@ -95,8 +98,8 @@ func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
 	return metaData, nil
 }
 
-// MakeBackwardsCompatible will assume the LibLocation in cases where the metadata doesn't contain it and we know what
-// it should be
+// MakeBackwardsCompatible will assume the LibLocation in cases where the metadata
+// doesn't contain it and we know what it should be
 func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	// BinaryLocations
 	if m.BinaryLocations == nil || len(m.BinaryLocations) == 0 {
@@ -130,6 +133,9 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		// Env
 		if _, exists := m.Env["PYTHONPATH"]; !exists {
 			m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
+		}
+		if os.Getenv("PYTHONIOENCODING") == "" {
+			m.Env["PYTHONIOENCODING"] = "utf-8"
 		}
 
 		//Perl

@@ -27,6 +27,22 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
 }
 
+// CmdString returns a human-readable description of c.
+// This is a copy of the Go 1.13 (cmd.String) function
+func CmdString(c *exec.Cmd) string {
+
+	// report the exact executable path (plus args)
+	b := new(strings.Builder)
+	b.WriteString(c.Path)
+
+	for _, a := range c.Args[1:] {
+		b.WriteByte(' ')
+		b.WriteString(a)
+	}
+
+	return b.String()
+}
+
 // ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
 func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
 	logging.Debug("Executing command and piping std: %s, %v", command, arg)
