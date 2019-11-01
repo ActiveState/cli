@@ -12,8 +12,8 @@ import (
 func newActivateCommand() *captain.Command {
 	prompter := prompt.New()
 	checkout := activate.NewCheckout(git.NewRepo())
-	namespaceSelect := activate.NewNamespaceSelect(checkout, viper.GetViper(), prompter)
-	activateRunner := activate.NewActivate(namespaceSelect)
+	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
+	activateRunner := activate.NewActivate(namespaceSelect, checkout)
 
 	var namespace, path string
 	return captain.NewCommand(

@@ -11,14 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 )
 
-type checkoutMock struct {
-	resultErr error
-}
-
-func (c *checkoutMock) Run(namespace string, path string) error {
-	return c.resultErr
-}
-
 type configMock struct {
 	result []string
 	set    map[string]interface{}
@@ -60,9 +52,8 @@ func TestNamespaceSelect_Run(t *testing.T) {
 	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte("project: https://platform.activestate.com/foo/bar"))
 
 	type fields struct {
-		activateCheckout CheckoutAble
-		config           configAble
-		prompter         promptAble
+		config   configAble
+		prompter promptAble
 	}
 	type args struct {
 		namespace     string
@@ -78,7 +69,6 @@ func TestNamespaceSelect_Run(t *testing.T) {
 		{
 			"namespace with path, empty config",
 			fields{
-				&checkoutMock{},
 				&configMock{},
 				&promptMock{},
 			},
@@ -89,7 +79,6 @@ func TestNamespaceSelect_Run(t *testing.T) {
 		{
 			"namespace without path, empty config",
 			fields{
-				&checkoutMock{},
 				&configMock{},
 				&promptMock{tempDir, nil, "", nil, false, false},
 			},
@@ -100,7 +89,6 @@ func TestNamespaceSelect_Run(t *testing.T) {
 		{
 			"namespace without path, existing config",
 			fields{
-				&checkoutMock{},
 				&configMock{result: []string{tempDirWithConfig}},
 				&promptMock{"", nil, tempDirWithConfig, nil, false, false},
 			},
@@ -111,7 +99,6 @@ func TestNamespaceSelect_Run(t *testing.T) {
 		{
 			"namespace with path, existing config",
 			fields{
-				&checkoutMock{},
 				&configMock{result: []string{filepath.Join(tempDirWithConfig, "dont-pick-me")}},
 				&promptMock{"", nil, tempDirWithConfig, nil, false, false},
 			},
@@ -122,7 +109,6 @@ func TestNamespaceSelect_Run(t *testing.T) {
 		{
 			"namespace without path, prompt error",
 			fields{
-				&checkoutMock{},
 				&configMock{},
 				&promptMock{"", failures.FailDeveloper.New("Expected error"), "", nil, false, false},
 			},
@@ -134,9 +120,8 @@ func TestNamespaceSelect_Run(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &NamespaceSelect{
-				activateCheckout: tt.fields.activateCheckout,
-				config:           tt.fields.config,
-				prompter:         tt.fields.prompter,
+				config:   tt.fields.config,
+				prompter: tt.fields.prompter,
 			}
 			got, err := r.Run(tt.args.namespace, tt.args.preferredPath)
 

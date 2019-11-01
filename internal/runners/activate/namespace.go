@@ -32,13 +32,12 @@ type namespaceSelectAble interface {
 
 // NamespaceSelect will select the right directory associated with a namespace, and chdir into it
 type NamespaceSelect struct {
-	activateCheckout CheckoutAble
-	config           configAble
-	prompter         promptAble
+	config   configAble
+	prompter promptAble
 }
 
-func NewNamespaceSelect(activateCheckout CheckoutAble, config configAble, prompter promptAble) *NamespaceSelect {
-	return &NamespaceSelect{activateCheckout, config, prompter}
+func NewNamespaceSelect(config configAble, prompter promptAble) *NamespaceSelect {
+	return &NamespaceSelect{config, prompter}
 }
 
 func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, error) {
@@ -68,15 +67,6 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	fail := fileutils.MkdirUnlessExists(targetPath)
 	if fail != nil {
 		return "", fail
-	}
-
-	// Checkout the project if it doesn't already exist at the target path
-	configFile := filepath.Join(targetPath, constants.ConfigFileName)
-	if !fileutils.FileExists(configFile) {
-		err := r.activateCheckout.Run(namespace, targetPath)
-		if err != nil {
-			return "", err
-		}
 	}
 
 	return targetPath, nil

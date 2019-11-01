@@ -2,17 +2,23 @@ package activate
 
 import (
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Activate struct {
-	namespaceSelect namespaceSelectAble
+	namespaceSelect  namespaceSelectAble
+	activateCheckout CheckoutAble
 }
 
-func NewActivate(namespaceSelect namespaceSelectAble) *Activate {
+func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
 		namespaceSelect,
+		activateCheckout,
 	}
 }
 
@@ -26,6 +32,18 @@ func (r *Activate) run(namespace string, preferredPath string, activatorLoop act
 	targetPath, err := r.setupPath(namespace, preferredPath)
 	if err != nil {
 		return err
+	}
+
+	// Checkout the project if it doesn't already exist at the target path
+	configFile := filepath.Join(targetPath, constants.ConfigFileName)
+	if !fileutils.FileExists(configFile) {
+		if namespace == "" {
+			return failures.FailUserInput.New("err_project_notexist_asyaml")
+		}
+		err := r.activateCheckout.Run(namespace, targetPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	return activatorLoop(targetPath, activate)

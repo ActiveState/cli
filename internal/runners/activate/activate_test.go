@@ -5,8 +5,19 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
+
+type checkoutMock struct {
+	resultErr error
+	called    bool
+}
+
+func (c *checkoutMock) Run(namespace string, path string) error {
+	c.called = true
+	return c.resultErr
+}
 
 type namespaceSelectMock struct {
 	resultPath string
@@ -25,8 +36,13 @@ var activatorMock = func(string, activateFunc) error {
 }
 
 func TestActivate_run(t *testing.T) {
+	var tempDir = fileutils.TempDirUnsafe()
+	var tempDirWithConfig = fileutils.TempDirUnsafe()
+	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
+
 	type fields struct {
 		namespaceSelect namespaceSelectAble
+		checkout        CheckoutAble
 	}
 	type args struct {
 		namespace     string
@@ -34,31 +50,45 @@ func TestActivate_run(t *testing.T) {
 		activatorLoop activationLoopFunc
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name         string
+		fields       fields
+		args         args
+		wantErr      bool
+		wantCheckout bool
 	}{
 		{
 			"expect no error",
-			fields{&namespaceSelectMock{"defer", nil}},
-			args{"foo", fileutils.TempDirUnsafe(), activatorMock},
+			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
+			args{"foo", tempDir, activatorMock},
 			false,
+			true,
+		},
+		{
+			"expect no error, expect checkout",
+			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
+			args{"foo", tempDir, activatorMock},
+			false,
+			true,
 		},
 		{
 			"expect error",
-			fields{&namespaceSelectMock{fileutils.TempDirUnsafe(), errors.New("mocked error")}},
+			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{}},
 			args{"foo", "", activatorMock},
 			true,
+			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Activate{
-				namespaceSelect: tt.fields.namespaceSelect,
+				namespaceSelect:  tt.fields.namespaceSelect,
+				activateCheckout: tt.fields.checkout,
 			}
 			if err := r.run(tt.args.namespace, tt.args.preferredPath, tt.args.activatorLoop); (err != nil) != tt.wantErr {
 				t.Errorf("Activate.run() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if checkoutCalled := r.activateCheckout.(*checkoutMock).called; checkoutCalled != tt.wantCheckout {
+				t.Errorf("Activate.run() checkout = %v, wantCheckout %v", checkoutCalled, tt.wantCheckout)
 			}
 		})
 	}
