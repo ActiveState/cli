@@ -72,7 +72,7 @@ func TestInit_Run(t *testing.T) {
 		{
 			"namespace with path and language",
 			fields{&configMock{}},
-			args{"foo/bar", filepath.Join(tempDir, "2"), "python"},
+			args{"foo/bar", filepath.Join(tempDir, "2"), "python2"},
 			false,
 			filepath.Join(tempDir, "2"),
 		},
