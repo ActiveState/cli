@@ -141,7 +141,7 @@ version_info:
     Branch {{.Branch}}
     Built {{.Date}}
 update_complete:
-  other: Update completed succesfully
+  other: Update completed successfully
 update_hash_mismatch:
   other: The archive hash could not be verified
 err_project_file_unavailable:
@@ -254,7 +254,7 @@ signup_description:
 err_auth_signup_email_exists:
   other: An account with that email address already exists
 login_success_welcome_back:
-  other: You have succesfully authenticated, hello {{.Name}}!
+  other: You have successfully authenticated, hello {{.Name}}!
 logged_in_as:
   other: You are logged in as {{.Name}}
 logout_description:
@@ -380,7 +380,7 @@ error_state_activate_new_fetch_organizations:
 state_activate_new_created:
   other: Created new project in {{.Dir}}
 state_activate_new_platform_project:
-  other: New platform project succesfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
+  other: New platform project successfully created as {{.Owner}}/{{.Project}}. To activate your new project run 'state activate {{.Owner}}/{{.Project}}'
 state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
@@ -1032,8 +1032,8 @@ err_project_require_path:
   other: A project path was not supplied
 error_git_project_url_mistmatch:
   other: The project URL in the cloned activestate.yaml does not match the platfom project
-error_git_target_dir_exists:
-  other: Target directory for cloning is already in use
+error_git_target_dir_not_empty:
+  other: Target directory for cloning already exists and is not empty
 git_cloning_project:
   other: Cloning the git repository associated with '{{.V0}}/{{.V1}}'
 language_name_unknown:
