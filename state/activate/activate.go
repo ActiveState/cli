@@ -174,8 +174,6 @@ func activateFromNamespace(namespace string) *failures.Failure {
 		return fail
 	}
 
-	print.Info(locale.T("info_looking_up_project", ns))
-
 	// Ensure that the project exists and that we have access to it
 	project, fail := model.FetchProjectByName(ns.Owner, ns.Project)
 	if fail != nil && fail.Type.Matches(model.FailNoValidProject) && !authentication.Get().Authenticated() {

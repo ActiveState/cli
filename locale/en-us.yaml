@@ -166,8 +166,6 @@ err_artifact_no_parent:
   other: "The given artifact has no parent: {{.V0}}. Only Language artifacts can be without parent."
 err_invalid_status_code:
   other: "Invalid status code: {{.V0}}"
-info_looking_up_project:
-  other: "Looking up project: {{.Owner}}/{{.Project}}"
 info_activating_state:
   other: "Activating state: {{.Owner}}/{{.Name}}"
 info_state_active_repoexists:
