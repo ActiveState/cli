@@ -13,7 +13,10 @@ type CmdTree struct {
 
 func New() *CmdTree {
 	stateCmd := newStateCommand()
-	stateCmd.AddChildren(newActivateCommand())
+	stateCmd.AddChildren(
+		newActivateCommand(),
+		newInitCommand(),
+	)
 
 	applyLegacyChildren(stateCmd)
 
