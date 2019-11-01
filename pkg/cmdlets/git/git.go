@@ -115,15 +115,17 @@ func moveFiles(src, dest string) *failures.Failure {
 }
 
 func verifyDestinationDirectory(dest string) *failures.Failure {
-	if fileutils.DirExists(dest) {
-		empty, fail := fileutils.IsEmptyDir(dest)
-		if fail != nil {
-			return fail
-		}
-		if !empty {
-			return FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
-		}
+	if !fileutils.DirExists(dest) {
+		return fileutils.Mkdir(dest)
 	}
 
-	return fileutils.MkdirUnlessExists(dest)
+	empty, fail := fileutils.IsEmptyDir(dest)
+	if fail != nil {
+		return fail
+	}
+	if !empty {
+		return FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))
+	}
+
+	return nil
 }
