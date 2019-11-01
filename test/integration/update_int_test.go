@@ -66,7 +66,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
 	suite.Spawn("update")
-	suite.Expect("Update completed", 60*time.Second)
+	suite.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
 	suite.Wait()
 
 	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as we ran update")

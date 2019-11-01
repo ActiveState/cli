@@ -124,6 +124,23 @@ func (s *Suite) Output() string {
 	return s.console.Pty.State.String()
 }
 
+// ExpectRe listens to the terminal output and returns once the expected regular expression is matched or
+// a timeout occurs
+// Default timeout is 10 seconds
+func (s *Suite) ExpectRe(value string, timeout ...time.Duration) {
+	opts := []expect.ExpectOpt{expect.RegexpPattern(value)}
+	if len(timeout) > 0 {
+		opts = append(opts, expect.WithTimeout(timeout[0]))
+	}
+	_, err := s.console.Expect(opts...)
+	if err != nil {
+		s.FailNow(
+			"Could not meet expectation",
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
+			value, err, s.Output())
+	}
+}
+
 // Expect listens to the terminal output and returns once the expected value is found or
 // a timeout occurs
 // Default timeout is 10 seconds
