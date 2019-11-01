@@ -191,13 +191,13 @@ func Type(name string, parents ...*FailureType) *FailureType {
 //
 // If description is empty, only the error message is printed
 func Handle(err error, description string) {
-	handled = err
-
 	switch t := err.(type) {
 	case *Failure:
+		handled = t.ToError()
 		t.Handle(description)
 		return
 	default:
+		handled = err
 		failure := failLegacy.New(err.Error())
 		if description == "" {
 			description = "Unknown Error:"
