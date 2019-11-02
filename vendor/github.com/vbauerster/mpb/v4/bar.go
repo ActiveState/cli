@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -18,7 +17,7 @@ import (
 // Filler interface.
 // Bar renders by calling Filler's Fill method. You can literally have
 // any bar kind, by implementing this interface and passing it to the
-// mpb.Add function.
+// *Progress.Add method.
 type Filler interface {
 	Fill(w io.Writer, width int, stat *decor.Statistics)
 }
@@ -28,6 +27,14 @@ type FillerFunc func(w io.Writer, width int, stat *decor.Statistics)
 
 func (f FillerFunc) Fill(w io.Writer, width int, stat *decor.Statistics) {
 	f(w, width, stat)
+}
+
+// BaseFiller interface.
+// If you ever need to implement a custom Filler based on mpb.NewBarFiller,
+// then you may need to implement this one as well, in order to retain
+// functionality of some `BarOption`s and method like *Bar.SetRefill.
+type BaseFiller interface {
+	BaseFiller() Filler
 }
 
 // Bar represents a progress Bar.
@@ -44,17 +51,12 @@ type Bar struct {
 	syncTableCh   chan [][]chan int
 	completed     chan bool
 
-	// concel is called either by user or on complete event
+	// cancel is called either by user or on complete event
 	cancel func()
 	// done is closed after cacheState is assigned
 	done chan struct{}
 	// cacheState is populated, right after close(shutdown)
 	cacheState *bState
-
-	arbitraryCurrent struct {
-		sync.Mutex
-		current int64
-	}
 
 	container      *Progress
 	dlogger        *log.Logger
@@ -64,6 +66,7 @@ type Bar struct {
 type extFunc func(in io.Reader, tw int, st *decor.Statistics) (out io.Reader, lines int)
 
 type bState struct {
+	baseF             Filler
 	filler            Filler
 	id                int
 	width             int
@@ -171,7 +174,7 @@ func (b *Bar) SetRefill(amount int64) {
 		SetRefill(int64)
 	}
 	b.operateState <- func(s *bState) {
-		if f, ok := s.filler.(refiller); ok {
+		if f, ok := s.baseF.(refiller); ok {
 			f.SetRefill(amount)
 		}
 	}
@@ -220,14 +223,20 @@ func (b *Bar) SetTotal(total int64, complete bool) {
 
 // SetCurrent sets progress' current to arbitrary amount.
 func (b *Bar) SetCurrent(current int64, wdd ...time.Duration) {
-	if current <= 0 {
-		return
+	select {
+	case b.operateState <- func(s *bState) {
+		for _, ar := range s.amountReceivers {
+			ar.NextAmount(current-s.current, wdd...)
+		}
+		s.current = current
+		if s.total > 0 && s.current >= s.total {
+			s.current = s.total
+			s.toComplete = true
+			go b.refreshNowTillShutdown()
+		}
+	}:
+	case <-b.done:
 	}
-	b.arbitraryCurrent.Lock()
-	last := b.arbitraryCurrent.current
-	b.IncrBy(int(current-last), wdd...)
-	b.arbitraryCurrent.current = current
-	b.arbitraryCurrent.Unlock()
 }
 
 // Increment is a shorthand for b.IncrInt64(1, wdd...).
@@ -246,14 +255,14 @@ func (b *Bar) IncrBy(n int, wdd ...time.Duration) {
 func (b *Bar) IncrInt64(n int64, wdd ...time.Duration) {
 	select {
 	case b.operateState <- func(s *bState) {
+		for _, ar := range s.amountReceivers {
+			ar.NextAmount(n, wdd...)
+		}
 		s.current += n
 		if s.total > 0 && s.current >= s.total {
 			s.current = s.total
 			s.toComplete = true
 			go b.refreshNowTillShutdown()
-		}
-		for _, ar := range s.amountReceivers {
-			ar.NextAmount(n, wdd...)
 		}
 	}:
 	case <-b.done:

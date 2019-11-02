@@ -32,7 +32,7 @@ func (dz *devZero) Close() error {
 
 func expectPercentage(t *testing.T, buf *bytes.Buffer, expected int) {
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
 	output := strings.Split(strings.TrimSpace(buf.String()), "\n")
 	lastLine := output[len(output)-1]
 	// remove non-printable characters
