@@ -2,10 +2,10 @@ package activate
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 
@@ -125,7 +125,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 
 // determineProjectPath will prompt the user for a location to save the project at
 func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failures.Failure) {
-	wd, err := os.Getwd()
+	wd, err := osutils.GetSafeWorkDir()
 	if err != nil {
 		return "", failures.FailRuntime.Wrap(err)
 	}
