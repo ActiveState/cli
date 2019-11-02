@@ -295,7 +295,7 @@ done
 # Check if the installation is in $PATH, if not, update user's profile if
 # permitted to.
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "Installation complete."
+  info "State tool installation complete."
   if [ -n "${ACTIVATE}" ]; then
     # switch this shell to interactive mode
     set -i
@@ -307,7 +307,7 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
 fi
 
 manual_installation_instructions() {
-  info "Installation complete."
+  info "State tool installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
@@ -351,7 +351,7 @@ else
   sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$profile"
 fi
 
-info "Installation complete."
+info "State tool installation complete."
 echo "Please either run 'source ~/.profile' or start a new login shell in "
 echo "order to start using the '$STATEEXE' program."
 activation_warning
