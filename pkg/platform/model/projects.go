@@ -6,12 +6,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -42,7 +45,11 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	}
 
 	if len(response.Projects) == 0 {
-		return nil, FailNoValidProject.New(locale.Tr("err_api_project_not_found", projectName, orgName))
+		errMsg := "err_api_project_not_found"
+		if !authentication.Get().Authenticated() {
+			errMsg = "err_api_project_not_found_unauthenticated"
+		}
+		return nil, FailNoValidProject.New(locale.Tr(errMsg, projectName, orgName))
 	}
 
 	return response.Projects[0].ToMonoProject()
@@ -81,6 +88,22 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 		}
 	}
 	return nil, FailNoDefaultBranch.New(locale.T("err_no_default_branch"))
+}
+
+// CreateProject will create the project on the platform
+func CreateProject(owner, name string, lang *language.Language) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+	addParams := projects.NewAddProjectParams()
+	addParams.SetOrganizationName(owner)
+	addParams.SetProject(&mono_models.Project{Name: name})
+	_, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
+	if err != nil {
+		return nil, "", api.FailUnknown.New(api.ErrorMessageFromPayload(err))
+	}
+
+	if lang != nil {
+		return CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
+	}
+	return CommitInitial(owner, name, "", "")
 }
 
 // ProjectURL creates a valid platform URL for the given project parameters

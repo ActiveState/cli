@@ -223,19 +223,19 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 }
 
 // CommitInitial ...
-func CommitInitial(projectOwner, projectName, language, langVersion string) *failures.Failure {
+func CommitInitial(projectOwner, projectName, language, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
-		return fail
+		return nil, "", fail
 	}
 
 	branch, fail := DefaultBranchForProject(proj)
 	if fail != nil {
-		return fail
+		return nil, "", fail
 	}
 
 	if branch.CommitID != nil {
-		return FailUpdateBranch.New(locale.T("err_branch_not_bare"))
+		return nil, "", FailUpdateBranch.New(locale.T("err_branch_not_bare"))
 	}
 
 	var changes []*mono_models.CommitChangeEditable
@@ -272,10 +272,10 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) *fai
 	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
-		return FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+		return nil, "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
 	}
 
-	return UpdateBranchCommit(branch.BranchID, res.Payload.CommitID)
+	return proj, res.Payload.CommitID, nil
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id

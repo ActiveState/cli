@@ -36,7 +36,10 @@ func init() {
 	funk.ForEach(Supported, func(x string) {
 		filename := strings.ToLower(x) + ".yaml"
 		filepath := path + filename
-		i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
+		err := i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
+		if err != nil {
+			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
+		}
 	})
 
 	locale := getLocaleFlag()

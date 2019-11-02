@@ -13,13 +13,11 @@ type CmdTree struct {
 
 func New() *CmdTree {
 	stateCmd := newStateCommand()
-	/*{
-		activateCmd := newActivateCommand()
-		cmd.SetChildren([]*captain.Command{activateCmd})
-		{
-			activateCmd.SetChildren([]*captain.Command{})
-		}
-	}*/
+	stateCmd.AddChildren(
+		newActivateCommand(),
+		newInitCommand(),
+		newPushCommand(),
+	)
 
 	applyLegacyChildren(stateCmd)
 
@@ -43,6 +41,7 @@ func newStateCommand() *captain.Command {
 	runner := state.New(opts)
 	cmd := captain.NewCommand(
 		"state",
+		locale.T("state_description"),
 		[]*captain.Flag{
 			{
 				Name:        "locale",

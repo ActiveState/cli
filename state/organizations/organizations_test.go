@@ -119,8 +119,7 @@ func TestOrganizationsJSONBad(t *testing.T) {
 	require.NoError(t, outErr)
 	require.NoError(t, execErr)
 	err := failures.Handled() // Returns an error so have to cast it to a failure
-	fail, _ := err.(*failures.Failure)
-	assert.True(t, fail.Type.Matches(failures.FailNotFound), "The wrong failure occurred")
+	require.Error(t, err)
 
 	assert.Equal(t, "", outStr, "Expect no output")
 
