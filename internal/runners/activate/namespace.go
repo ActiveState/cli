@@ -2,10 +2,11 @@ package activate
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 
@@ -171,7 +172,9 @@ func getSafeWorkDir() (string, error) {
 
 	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
 		return dir, nil
-	} dir, err = os.UserHomeDir()
+	}
+
+	dir, err = os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
