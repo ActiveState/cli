@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -125,7 +126,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 
 // determineProjectPath will prompt the user for a location to save the project at
 func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failures.Failure) {
-	wd, err := os.Getwd()
+	wd, err := getSafeWorkDir()
 	if err != nil {
 		return "", failures.FailRuntime.Wrap(err)
 	}
@@ -161,4 +162,22 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) *failures.
 	}
 
 	return nil
+}
+
+func getSafeWorkDir() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
+		return dir, nil
+	}
+
+	dir, err = os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return dir, nil
 }
