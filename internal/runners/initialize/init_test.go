@@ -23,11 +23,16 @@ func (c *configMock) Set(key string, value interface{}) {
 }
 
 func TestInit_Run(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Sprintf("Cannot get wd: %v", err))
+	}
+	defer os.Chdir(wd)
+
 	var tempDir = fileutils.TempDirUnsafe()
 	os.Chdir(tempDir)
 
 	// Set tempDir according to Getwd() as the fully resolved path tends to look different on macOS
-	var err error
 	tempDir, err = os.Getwd()
 	if err != nil {
 		panic(fmt.Sprintf("Cannot get wd: %v", err))
