@@ -281,12 +281,19 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 			numUnpackedFiles++
 		}
 	})
-	upb, err := installer.progressUnarchiver.UnarchiveWithProgress(archivePath, tmpRuntimeDir, p, percentReportedAfterUnpack)
+	// when we are done unpacking the archive, progress bar should be at 85% (percentReportedAfterUnpack)
+	upb, err := installer.progressUnarchiver.UnarchiveWithProgress(
+		archivePath, tmpRuntimeDir, p,
+		percentReportedAfterUnpack,
+	)
 	if err != nil {
 		return nil, FailArchiveInvalid.Wrap(err)
 	}
 
 	logging.Debug("Unpacked %d files\n", numUnpackedFiles)
+
+	// We rescale the progress bar, such that after all files are touched once,
+	// we reach 100%  (touching here means, renaming strings in Relocate())
 	upb.ReScale(numUnpackedFiles)
 
 	// Detect the install dir
