@@ -72,9 +72,21 @@ var lookup = [...]languageData{
 func Available() []Language {
 	var ls []Language
 
+	for _, name := range AvailableNames() {
+		ls = append(ls, MakeByName(name))
+	}
+
+	return ls
+}
+
+// AvailableNames returns all languages that are not "builtin" and also have a
+// defined executable name.
+func AvailableNames() []string {
+	var ls []string
+
 	for _, d := range lookup {
 		if !d.exec.base && d.exec.name != "" {
-			ls = append(ls, makeByName(d.name))
+			ls = append(ls, d.name)
 		}
 	}
 
@@ -94,7 +106,8 @@ func MakeByShell(shell string) Language {
 	return Bash
 }
 
-func makeByName(name string) Language {
+// MakeByName will retrieve a language by a given name
+func MakeByName(name string) Language {
 	for i, v := range lookup {
 		if strings.ToLower(name) == v.name {
 			return Language(i)
@@ -164,7 +177,7 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 		return err
 	}
 
-	*l = makeByName(s)
+	*l = MakeByName(s)
 
 	if len(s) > 0 && *l == Unknown {
 		return fmt.Errorf("cannot unmarshal yaml")

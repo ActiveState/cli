@@ -215,6 +215,15 @@ func New(p *projectfile.Project) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// Parse will parse the given projectfile and instantiate a Project struct with it
+func Parse(fpath string) (*Project, *failures.Failure) {
+	pjfile, fail := projectfile.Parse(fpath)
+	if fail != nil {
+		return nil, fail
+	}
+	return New(pjfile)
+}
+
 // Get returns project struct. Quits execution if error occurs
 func Get() *Project {
 	pj := projectfile.Get()
@@ -242,7 +251,16 @@ func GetSafe() (*Project, *failures.Failure) {
 
 // GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
 func GetOnce() (*Project, *failures.Failure) {
-	pjFile, fail := projectfile.GetOnce()
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, failures.FailIO.Wrap(err)
+	}
+	return FromPath(wd)
+}
+
+// FromPath will return the project that's located at the given path (this will walk up the directory tree until it finds the project)
+func FromPath(path string) (*Project, *failures.Failure) {
+	pjFile, fail := projectfile.FromPath(path)
 	if fail != nil {
 		return nil, fail
 	}

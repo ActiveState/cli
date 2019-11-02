@@ -26,7 +26,7 @@ type Command struct {
 	execute func(cmd *Command, args []string) error
 }
 
-func NewCommand(name string, flags []*Flag, args []*Argument, executor Executor) *Command {
+func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -45,8 +45,13 @@ func NewCommand(name string, flags []*Flag, args []*Argument, executor Executor)
 	}
 
 	cmd.cobra = &cobra.Command{
-		Use:  name,
-		RunE: cmd.runner,
+		Use:   name,
+		Short: description,
+		RunE:  cmd.runner,
+
+		// Silence errors and usage, we handle that ourselves
+		SilenceErrors: true,
+		SilenceUsage:  true,
 	}
 
 	cmd.setFlags(flags)
@@ -70,7 +75,7 @@ func (c *Command) SetAliases(aliases []string) {
 }
 
 func (c *Command) SetDescription(description string) {
-	c.cobra.Use = description
+	c.cobra.Short = description
 }
 
 func (c *Command) SetUsageTemplate(usageTemplate string) {

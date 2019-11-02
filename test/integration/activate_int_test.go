@@ -45,9 +45,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("State activate currently always activates into a bash shell, but we expect cmd.exe")
-	}
+	/*
+		if runtime.GOOS == "windows" {
+			suite.T().Skip("State activate currently always activates into a bash shell, but we expect cmd.exe")
+		}
+	*/
 
 	tempDir, cb := suite.prepareTempDirectory("activate_test_no_runtime")
 	defer cb()

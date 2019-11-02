@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -345,8 +346,29 @@ func GetOnce() (*Project, *failures.Failure) {
 	return project, nil
 }
 
-// Create a new activestate.yaml with default content
-func Create(projectURL string, path string) (*Project, *failures.Failure) {
+// FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
+func FromPath(path string) (*Project, *failures.Failure) {
+	// we do not want to use a path provided by state if we're running tests
+	projectFilePath, failure := fileutils.FindFileInPath(path, constants.ConfigFileName)
+	if failure != nil {
+		return nil, failure
+	}
+
+	_, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		logging.Warning("Cannot load config file: %v", err)
+		return nil, FailNoProject.New(locale.T("err_no_projectfile"))
+	}
+	project, fail := Parse(projectFilePath)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return project, nil
+}
+
+// CreateWithProjectURL a new activestate.yaml with default content
+func CreateWithProjectURL(projectURL string, path string) (*Project, *failures.Failure) {
 	if path == "" {
 		return nil, FailNewBlankPath.New(locale.T("err_project_require_path"))
 	}
@@ -380,6 +402,26 @@ func Create(projectURL string, path string) (*Project, *failures.Failure) {
 	}
 
 	return Parse(path)
+}
+
+// CreateByParams will create a new activestate.yaml with a projectURL for the given details
+func Create(org, project string, commitID *strfmt.UUID, directory string) *failures.Failure {
+	fail := fileutils.MkdirUnlessExists(directory)
+	if fail != nil {
+		return fail
+	}
+
+	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
+	if commitID != nil {
+		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID.String())
+	}
+
+	_, fail = CreateWithProjectURL(projectURL, directory)
+	if fail != nil {
+		return fail
+	}
+
+	return nil
 }
 
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't

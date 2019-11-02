@@ -411,6 +411,8 @@ err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
   other: The requested project {{.V0}} does not exist under {{.V1}}. Please ensure the owner is correct and that the project has been created.
+err_api_project_not_found_unauthenticated:
+  other: The requested project {{.V1}}/{{.V0}} could not be found. If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
@@ -1128,3 +1130,46 @@ err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:
   other: "Your project does not have any language configured"
+err_target_path_namespace_match:
+  other: "The project at the target path does not match the namespace you provided. Expected: {{.V0}}, Actual: {{.V1}}."
+err_project_notexist_push_first:
+  other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
+err_project_notexist_asyaml:
+  other: No activestate.yaml exists at the target directory, you should run 'state init' first.
+err_must_provide_directory:
+  other: You must provide a valid directory
+err_init_must_provide_namespace:
+  other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
+err_init_file_exists:
+  other: The target directory '{{.V0}}' already contains an activestate.yaml.
+init_success:
+  other: |
+    Project '{{.V0}}' has been succesfully initialized at '{{.V1}}'.
+    You should run 'state push' before activating your project for the first time.
+    Once pushed you can activate your project with 'state activate'.
+flag_state_init_language_description:
+  other: The language that this project should use
+arg_state_init_namespace:
+  other: ORG/PROJECT
+arg_state_init_namespace_description:
+  other: The namespace for the project that you wish to initialize
+flag_state_init_path:
+  other: Path
+flag_state_init_path_description:
+  other: Where to initialize the project
+err_wd:
+  other: Could not retrieve the working directory
+err_init_invalid_language:
+  other: "Invalid language specified: {{.V0}}, supported languages: {{.V1}}."
+err_push_invalid_language:
+  other: "Invalid language specified: {{.V0}}, please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
+push_creating_project:
+  other: "Creating project {{.V1}} under {{.V0}} on the ActiveState Platform"
+push_project_created:
+  other: "Project created at {{.V0}}"
+push_up_to_date:
+  other: "Your project is up to date"
+init_description:
+  other: Initialize a new project
+push_description:
+  other: Push your latest changes to the platform

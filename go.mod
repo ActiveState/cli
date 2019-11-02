@@ -41,7 +41,6 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/hcl v0.0.0-20171017181929-23c074d0eceb // indirect
-	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect

@@ -307,7 +307,7 @@ function install()
 
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
-        Write-Host "`nInstallation complete." -ForegroundColor Yellow
+        Write-Host "`nState tool installation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
         warningIfAdmin
         activateIfRequested

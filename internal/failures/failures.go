@@ -2,6 +2,7 @@ package failures
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -119,7 +120,10 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 }
 
 // Wrap wraps another error
-func (f *FailureType) Wrap(err error) *Failure {
+func (f *FailureType) Wrap(err error, message ...string) *Failure {
+	if len(message) > 0 {
+		err = fmt.Errorf("%s: %v", err, strings.Join(message, ": "))
+	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
 	fail := f.New(err.Error())
 	fail.err = err
@@ -188,7 +192,6 @@ func Type(name string, parents ...*FailureType) *FailureType {
 // If description is empty, only the error message is printed
 func Handle(err error, description string) {
 	handled = err
-
 	switch t := err.(type) {
 	case *Failure:
 		t.Handle(description)

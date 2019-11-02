@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -57,7 +58,7 @@ func (suite *AuthIntegrationTestSuite) Signup() {
 	suite.SendLine(suite.username)
 	suite.Expect("email:")
 	suite.SendLine(suite.email)
-	suite.Expect("account has been registered")
+	suite.Expect("account has been registered", 20*time.Second)
 	suite.Wait()
 }
 
@@ -75,7 +76,7 @@ func (suite *AuthIntegrationTestSuite) Login() {
 	suite.SendLine(suite.username)
 	suite.Expect("password:")
 	suite.SendLine(suite.password)
-	suite.Expect("successfully authenticated")
+	suite.Expect("successfully authenticated", 20*time.Second)
 	suite.Wait()
 
 	// still logged in?
