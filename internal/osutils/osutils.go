@@ -77,23 +77,3 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
 	return "/" + absolutePath, nil
 }
-
-// GetSafeWorkDir returns the current working directory or the home folder if
-// "c:\windows" is in the CWD.
-func GetSafeWorkDir() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
-		return dir, nil
-	}
-
-	dir, err = os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	return dir, nil
-}
