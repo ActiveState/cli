@@ -3,6 +3,7 @@ package integration
 import (
 	"io/ioutil"
 	"os"
+	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -81,14 +82,30 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	suite.Spawn("activate", "ActiveState-CLI/Python"+version)
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("Downloading", 120*time.Second)
+	suite.Expect("Downloading", 20*time.Second)
 	suite.Expect("Installing", 120*time.Second)
 	suite.Expect("activated state", 120*time.Second)
+
+	// ensure that we terminal contains output "Installing x/y" with x, y numbers and x=y
+	installingString := regexp.MustCompile(
+		"Installing *([0-9]+) */ *([0-9]+)",
+	).FindAllStringSubmatch(suite.TerminalSnapshot(), 1)
+	suite.Require().Len(installingString, 1, "no match for Installing x / x in\n%s", suite.TerminalSnapshot())
+	suite.Require().Equalf(
+		installingString[0][1], installingString[0][2],
+		"expected all artifacts are reported to be installed, got %s", installingString[0][0],
+	)
+
+	// ensure that shell is functional
 	suite.WaitForInput()
+
+	// test python
 	suite.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	suite.Expect("ActiveState Software Inc.")
 	suite.SendLine(pythonExe + " -c \"import numpy; print(numpy.__doc__)\"")
 	suite.Expect("import numpy as np")
+
+	// de-activate shell
 	suite.SendLine("exit")
 	suite.Wait()
 }
