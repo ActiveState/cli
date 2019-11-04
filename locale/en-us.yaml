@@ -289,6 +289,8 @@ err_fork_create_fork:
   other: Could not create the forked project
 err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
+err_fork_get_owner:
+  other: Could not get owner for forked project
 fork_select_org:
   other: Please select an owner for the forked project
 state_fork_success:
