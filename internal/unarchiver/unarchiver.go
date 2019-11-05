@@ -39,7 +39,7 @@ func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
 	ua.notifier = cb
 }
 
-// UnarchiveWithProgress unarchives an archive file `source` and unpacks it in `destionation`
+// UnarchiveWithProgress unarchives an archive file `source` and unpacks it in `destination`
 // Progress is reported to an unpackBar
 func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progress.Progress, percentOnComplete int) (pb *progress.UnpackBar, err error) {
 	if !fileExists(destination) {

@@ -49,12 +49,16 @@ func New(options ...mpb.ContainerOption) *Progress {
 }
 
 // Cancel cancels all bar listeners and ensures that p.Close() will return
+// It should be called *only* if an error occurred and the progress bar will not be able to complete.
 func (p *Progress) Cancel() {
 	p.cancel()
 }
 
 // Close needs to be called after the Progress struct is not needed anymore
 func (p *Progress) Close() {
+
+	// The mpb package calls this function Wait(), but it is really a cleanup method, that
+	// frees all the resources the progress bar allocated
 	p.progress.Wait()
 }
 
