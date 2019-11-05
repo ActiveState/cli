@@ -274,21 +274,37 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
-	// Unarchiving with progress adds a progress bar to p and completes when all files are written
+
+	// During unpacking we count the number of files to unpack
 	var numUnpackedFiles int
-	installer.progressUnarchiver.SetNotifier(func(_ string, _ int64, isDir bool) {
+	ua := installer.progressUnarchiver
+	ua.SetNotifier(func(_ string, _ int64, isDir bool) {
 		if !isDir {
 			numUnpackedFiles++
 		}
 	})
-	// when we are done unpacking the archive, progress bar should be at 85% (percentReportedAfterUnpack)
-	upb, err := installer.progressUnarchiver.UnarchiveWithProgress(
-		archivePath, tmpRuntimeDir, p,
-		percentReportedAfterUnpack,
-	)
+
+	// Prepare destination directory and open the archive file
+	archiveFile, archiveSize, err := ua.PrepareUnpacking(archivePath, tmpRuntimeDir)
+	if err != nil {
+		return nil, FailArchiveInvalid.Wrap(err)
+
+	}
+	defer archiveFile.Close()
+
+	// create an unpack bar and wrap the archiveFile, when we are done unpacking the
+	// bar should say `percentReportedAfterUnpack`%.
+	upb := p.AddUnpackBar(archiveSize, percentReportedAfterUnpack)
+	wrappedStream := progress.NewReaderProxy(upb, archiveFile)
+
+	// unpack it
+	err = ua.Unarchive(wrappedStream, archiveSize, tmpRuntimeDir)
 	if err != nil {
 		return nil, FailArchiveInvalid.Wrap(err)
 	}
+
+	// report that we are unpacked.
+	upb.Complete()
 
 	logging.Debug("Unpacked %d files\n", numUnpackedFiles)
 

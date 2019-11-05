@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
 )
 
 // SingleUnarchiver is an interface for an unarchiver that can unpack the next file
@@ -39,40 +38,39 @@ func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
 	ua.notifier = cb
 }
 
-// UnarchiveWithProgress unarchives an archive file `source` and unpacks it in `destination`
-// Progress is reported to an unpackBar
-func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progress.Progress, percentOnComplete int) (pb *progress.UnpackBar, err error) {
+// PrepareUnpacking prepares the destination directory and the archive for unpacking
+// Returns the opened file and its size
+func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, fileSize int64, err error) {
+
 	if !fileExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
-			return nil, fmt.Errorf("preparing destination: %v", err)
+			return nil, 0, fmt.Errorf("preparing destination: %v", err)
 		}
 	}
 
-	archiveFile, err := os.Open(source)
+	archiveFile, err = os.Open(source)
 	if err != nil {
-		return
+		return nil, 0, err
 	}
-	defer archiveFile.Close()
 
 	fileInfo, err := archiveFile.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("statting source file: %v", err)
+		archiveFile.Close()
+		return nil, 0, fmt.Errorf("statting source file: %v", err)
 	}
 
-	archiveSizeIn := fileInfo.Size()
+	return archiveFile, fileInfo.Size(), nil
 
-	// Add the progress bar for unpacking
-	pb = p.AddUnpackBar(archiveSizeIn, percentOnComplete)
+}
 
-	// and wrap the stream, such that we automatically report progress while reading bytes
-	wrappedStream := progress.NewReaderProxy(pb, archiveFile)
-
+// Unarchive unarchives an archive file ` and unpacks it in `destination`
+func (ua *Unarchiver) Unarchive(archiveStream io.Reader, archiveSize int64, destination string) (err error) {
 	// impl is the actual implementation of the unarchiver (tar.gz or zip)
 	impl := ua.impl
 
 	// read one file at a time from the archive
-	err = impl.Open(wrappedStream, archiveSizeIn)
+	err = impl.Open(archiveStream, archiveSize)
 	if err != nil {
 		return
 	}
@@ -94,10 +92,7 @@ func (ua *Unarchiver) UnarchiveWithProgress(source, destination string, p *progr
 		ua.notifier(f.Name(), f.Size(), f.IsDir())
 	}
 
-	// Set the progress bar to complete state
-	pb.Complete()
-
-	return pb, nil
+	return nil
 }
 
 // the following files are just copied from the ActiveState/archiver repository

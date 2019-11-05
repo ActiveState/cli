@@ -60,8 +60,15 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 	}
 	defer os.RemoveAll(dir)
 
-	var ub *progress.UnpackBar
-	ub, err = tgz.UnarchiveWithProgress(tgzTestPath, dir, p, 70)
+	aFile, aSize, err := tgz.PrepareUnpacking(tgzTestPath, dir)
+	if err != nil {
+		return err
+	}
+
+	ub := p.AddUnpackBar(aSize, 70)
+	aStream := progress.NewReaderProxy(ub, aFile)
+	err = tgz.Unarchive(aStream, aSize, dir)
+	ub.Complete()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -79,7 +86,7 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 }
 
 func main() {
-	logging.CurrentHandler().SetVerbose(true)
+	logging.CurrentHandler().SetVerbose(false)
 	logging.SetMinimalLevel(logging.DEBUG)
 	logging.SetOutput(os.Stderr)
 	logging.Debug("test\n")
