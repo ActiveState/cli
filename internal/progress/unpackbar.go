@@ -1,9 +1,7 @@
 package progress
 
 import (
-	"io"
 	"math"
-	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/vbauerster/mpb/v4"
@@ -111,16 +109,4 @@ func (upb *UnpackBar) ReScale(countsRemaining int, targetPercent ...int) {
 func (upb *UnpackBar) Increment() {
 	upb.bar.IncrBy(upb.scaleFactor)
 
-}
-
-// NewProxyReader wraps a Reader with functionality that automatically updates
-// the bar with progress about how many bytes have been read from the underlying
-// reader so far.
-func (upb *UnpackBar) NewProxyReader(r io.ReadCloser) *ProxyReader {
-	return &ProxyReader{
-		ReadCloser: r,
-		bar:        upb.bar,
-		iT:         time.Now(),
-		complete:   upb.Complete,
-	}
 }

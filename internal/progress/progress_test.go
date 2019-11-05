@@ -56,12 +56,12 @@ func TestUnpackBar(t *testing.T) {
 	buf := new(bytes.Buffer)
 	readBuf := make([]byte, 10)
 	func() {
-		progress := New(WithOutput(buf))
-		defer progress.Close()
+		p := New(WithOutput(buf))
+		defer p.Close()
 
-		bar := progress.AddUnpackBar(30, 70)
+		bar := p.AddUnpackBar(30, 70)
 		dz := &devZero{}
-		wrapped := *bar.NewProxyReader(dz)
+		wrapped := NewReaderProxy(bar, dz)
 		_, err := wrapped.Read(readBuf[:])
 		assert.NoError(t, err)
 		_, err = wrapped.Read(readBuf[:])

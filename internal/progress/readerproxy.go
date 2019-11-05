@@ -8,17 +8,29 @@ import (
 	"github.com/vbauerster/mpb/v4"
 )
 
-// ProxyReader is io.Reader wrapper, for proxy read bytes
-type ProxyReader struct {
+// ReaderProxy is io.Reader wrapper, for proxy read bytes
+type ReaderProxy struct {
 	io.ReadCloser
 	bar      *mpb.Bar
 	iT       time.Time
 	complete func()
 }
 
+// NewReaderProxy wraps a Reader with functionality that automatically updates
+// the bar with progress about how many bytes have been read from the underlying
+// reader so far.
+func NewReaderProxy(upb *UnpackBar, r io.ReadCloser) *ReaderProxy {
+	return &ReaderProxy{
+		ReadCloser: r,
+		bar:        upb.bar,
+		iT:         time.Now(),
+		complete:   upb.Complete,
+	}
+}
+
 // Read reads bytes from underlying ReadCloser and reports progress
 // Calls complete() method on EOF
-func (pr *ProxyReader) Read(p []byte) (n int, err error) {
+func (pr *ReaderProxy) Read(p []byte) (n int, err error) {
 	n, err = pr.ReadCloser.Read(p)
 	if n > 0 {
 		pr.bar.IncrBy(n, time.Since(pr.iT))
@@ -32,7 +44,7 @@ func (pr *ProxyReader) Read(p []byte) (n int, err error) {
 
 // ReadAt reads into buffer starting at offset and reports progress
 // Calls complete method on EOF
-func (pr *ProxyReader) ReadAt(p []byte, offset int64) (n int, err error) {
+func (pr *ReaderProxy) ReadAt(p []byte, offset int64) (n int, err error) {
 	prAt, ok := pr.ReadCloser.(io.ReaderAt)
 	if !ok {
 		return 0, fmt.Errorf("Proxied readers needs to implement io.ReaderAt")
