@@ -1036,7 +1036,7 @@ err_project_require_owner:
   other: A project owner was not supplied
 err_project_require_name:
   other: A project name was not supplied
-error_git_project_url_mistmatch:
+error_git_project_url_mismatch:
   other: The project URL in the cloned activestate.yaml does not match the platfom project
 error_git_target_dir_not_empty:
   other: Target directory for cloning already exists and is not empty
