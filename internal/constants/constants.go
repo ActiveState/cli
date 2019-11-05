@@ -66,6 +66,9 @@ const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
+// NonInteractive is the name of the environment variable that specifies whether to run the state tool without prompts
+const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://s3.ca-central-1.amazonaws.com/cli-update/update/"
 

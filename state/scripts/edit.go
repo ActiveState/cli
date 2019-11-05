@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -99,31 +100,13 @@ func editScript(script *project.Script) *failures.Failure {
 		return fail
 	}
 	defer watcher.close()
-	go watcher.run()
 
 	fail = openEditor(scriptFile.Filename())
 	if fail != nil {
 		return fail
 	}
 
-	prompter := prompt.New()
-	for {
-		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-		if fail != nil {
-			return fail
-		}
-		if doneEditing {
-			watcher.done <- true
-			break
-		}
-	}
-
-	select {
-	case fail = <-watcher.fails:
-		return fail
-	default:
-		return nil
-	}
+	return watcher.start()
 }
 
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
@@ -236,6 +219,36 @@ func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, *failu
 		done:       make(chan bool),
 		fails:      make(chan *failures.Failure),
 	}, nil
+}
+
+func (sw *scriptWatcher) start() *failures.Failure {
+	print.Line("Watching file changes at: %s", sw.scriptFile.Filename())
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		sw.run()
+	} else {
+		go sw.run()
+
+		prompter := prompt.New()
+		for {
+			doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+			if fail != nil {
+				return fail
+			}
+			if doneEditing {
+				sw.done <- true
+				break
+			}
+		}
+
+		select {
+		case fail := <-sw.fails:
+			return fail
+		default:
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (sw *scriptWatcher) run() {
