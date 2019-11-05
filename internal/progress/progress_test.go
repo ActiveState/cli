@@ -33,25 +33,16 @@ func (dz *devZero) Close() error {
 func expectPercentage(t *testing.T, buf *bytes.Buffer, expected int) {
 
 	time.Sleep(150 * time.Millisecond)
-	split := strings.Split(strings.TrimSpace(buf.String()), "\n")
-	le := len(split) - 5
-	if le < 0 {
-		le = 0
+	outputLines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+	lastFiveOffset := len(outputLines) - 5
+	if lastFiveOffset < 0 {
+		lastFiveOffset = 0
 	}
-	output := strings.Join(split[le:], "\n")
+	output := strings.Join(outputLines[lastFiveOffset:], "\n")
 	// remove non-printable characters
 	re := regexp.MustCompile("[[:^print:]]")
 	stripped := re.ReplaceAllLiteralString(output, "")
-	// fmt.Printf("output: %s\n", stripped)
 
-	/*
-		if expected == 100 {
-			if strings.Count(stripped, "%") > 0 {
-				t.Errorf("expected output bar to have completed, was '%s'", stripped)
-			}
-			return
-		}
-	*/
 	expectedTotal := fmt.Sprintf("%d %%", expected)
 
 	if strings.Count(stripped, expectedTotal) == 0 {
