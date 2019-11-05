@@ -84,6 +84,7 @@ func (suite *InstallerLinuxTestSuite) AfterTest(suiteName, testName string) {
 func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 	fail := suite.installer.InstallFromArchives(headchefArtifact("/no/such/archive.tar.gz"), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
 	suite.Equal(locale.Tr("installer_err_archive_notfound", "/no/such/archive.tar.gz"), fail.Error())
 }
@@ -97,6 +98,7 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 
 	fail = suite.installer.InstallFromArchives(headchefArtifact(invalidArchive), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
 	suite.Equal(locale.Tr("installer_err_archive_badext", invalidArchive), fail.Error())
 }
@@ -104,6 +106,7 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, "badarchive.tar.gz")), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailArchiveInvalid, fail.Type)
 	suite.Contains(fail.Error(), "EOF")
 }
@@ -112,6 +115,7 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarG
 	archivePath := path.Join(suite.dataDir, "empty.tar.gz")
 	fail := suite.installer.InstallFromArchives(headchefArtifact(archivePath), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailArchiveNoInstallDir, fail.Type)
 }
 
@@ -119,6 +123,7 @@ func (suite *InstallerLinuxTestSuite) TestInstall_RuntimeMissingPythonExecutable
 	archivePath := path.Join(suite.dataDir, "python-missing-python-binary.tar.gz")
 	fail := suite.installer.InstallFromArchives(headchefArtifact(archivePath), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailMetaDataNotDetected, fail.Type)
 }
 
@@ -126,12 +131,14 @@ func (suite *InstallerLinuxTestSuite) TestInstall_PythonFoundButNotExecutable() 
 	archivePath := path.Join(suite.dataDir, "python-noexec-python.tar.gz")
 	fail := suite.installer.InstallFromArchives(headchefArtifact(archivePath), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailRuntimeNotExecutable, fail.Type)
 }
 
 func (suite *InstallerLinuxTestSuite) TestInstall_InstallerFailsToGetPrefixes() {
 	fail := suite.installer.InstallFromArchives(headchefArtifact(path.Join(suite.dataDir, "python-fail-prefixes.tar.gz")), suite.prg)
 	suite.Require().Error(fail.ToError())
+	suite.prg.Cancel()
 	suite.Equal(runtime.FailRuntimeNoPrefixes, fail.Type)
 }
 
@@ -163,7 +170,10 @@ func (suite *InstallerLinuxTestSuite) TestRelocate() {
 	suite.Equal("lib", metaData.RelocationTargetBinaries)
 
 	installDir := filepath.Join(suite.cacheDir, "relocate")
-	fail := suite.installer.Relocate(metaData)
+	upb := suite.prg.AddUnpackBar(10000, 50)
+	upb.ReScale(3)
+
+	fail := suite.installer.Relocate(metaData, upb)
 	suite.Require().NoError(fail.ToError())
 
 	// test text

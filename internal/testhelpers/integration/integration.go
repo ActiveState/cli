@@ -141,6 +141,11 @@ func (s *Suite) ExpectRe(value string, timeout ...time.Duration) {
 	}
 }
 
+// TerminalSnapshot returns a snapshot of the terminal output
+func (s *Suite) TerminalSnapshot() string {
+	return s.console.Pty.State.String()
+}
+
 // Expect listens to the terminal output and returns once the expected value is found or
 // a timeout occurs
 // Default timeout is 10 seconds

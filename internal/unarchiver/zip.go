@@ -24,7 +24,7 @@ type ZipArchive struct {
 
 // NewZip initializes a new ZipArchive
 func NewZip() Unarchiver {
-	return Unarchiver{&ZipArchive{*archiver.DefaultZip}}
+	return Unarchiver{&ZipArchive{*archiver.DefaultZip}, func(_ string, _ int64, _ bool) {}}
 }
 
 // ExtractNext extracts the next file to destination

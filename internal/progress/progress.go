@@ -48,9 +48,17 @@ func New(options ...mpb.ContainerOption) *Progress {
 	}
 }
 
+// Cancel cancels all bar listeners and ensures that p.Close() will return
+// It should be called *only* if an error occurred and the progress bar will not be able to complete.
+func (p *Progress) Cancel() {
+	p.cancel()
+}
+
 // Close needs to be called after the Progress struct is not needed anymore
 func (p *Progress) Close() {
-	p.cancel()
+
+	// The mpb package calls this function Wait(), but it is really a cleanup method, that
+	// frees all the resources the progress bar allocated
 	p.progress.Wait()
 }
 
@@ -80,6 +88,7 @@ func (p *Progress) AddTotalBar(name string, numElements int) *TotalBar {
 }
 
 // AddByteProgressBar adds a progressbar counting the progress in bytes
+// This is used as the progress bar for downloading artifacts
 func (p *Progress) AddByteProgressBar(totalBytes int64) *ByteProgressBar {
 	return p.progress.AddBar(totalBytes,
 		mpb.BarRemoveOnComplete(),
@@ -93,8 +102,8 @@ func (p *Progress) AddByteProgressBar(totalBytes int64) *ByteProgressBar {
 		mpb.AppendDecorators(decor.Percentage(decor.WC{W: 5})))
 }
 
-// AddUnpackBar adds a progressbar for unpacking an archiving.
-func (p *Progress) AddUnpackBar(bytesToRead int64) *UnpackBar {
-	return NewUnpackBar(bytesToRead, p)
+// AddUnpackBar adds a progressbar for unpacking an archive
+func (p *Progress) AddUnpackBar(bytesToRead int64, percentOnUnpack int) *UnpackBar {
+	return NewUnpackBar(bytesToRead, p, percentOnUnpack)
 
 }
