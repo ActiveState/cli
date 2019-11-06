@@ -27,6 +27,7 @@ func (suite *ActivateIntegrationTestSuite) prepareTempDirectory(prefix string) (
 	suite.Require().NoError(err)
 	err = os.Chdir(tempDir)
 	suite.Require().NoError(err)
+	suite.SetWd(tempDir)
 
 	return tempDir, func() {
 		os.Chdir(os.TempDir())
@@ -44,12 +45,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-
-	/*
-		if runtime.GOOS == "windows" {
-			suite.T().Skip("State activate currently always activates into a bash shell, but we expect cmd.exe")
-		}
-	*/
 
 	tempDir, cb := suite.prepareTempDirectory("activate_test_no_runtime")
 	defer cb()

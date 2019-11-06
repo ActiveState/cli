@@ -33,6 +33,7 @@ type Suite struct {
 	cmd        *exec.Cmd
 	env        []string
 	logFile    *os.File
+	wd         *string
 }
 
 // SetupTest sets up an integration test suite for testing the state tool executable
@@ -92,6 +93,13 @@ func (s *Suite) AppendEnv(env []string) {
 	s.env = append(s.env, env...)
 }
 
+// SetWd specifies a working directory for the spawned processes
+// Use this method if you rely on running the test executable in a clean directory
+// By default all tests are run in `os.TempDir()`
+func (s *Suite) SetWd(dir string) {
+	s.wd = &dir
+}
+
 // Spawn executes the state tool executable under test in a pseudo-terminal
 func (s *Suite) Spawn(args ...string) {
 	s.SpawnCustom(s.executable, args...)
@@ -99,7 +107,12 @@ func (s *Suite) Spawn(args ...string) {
 
 // SpawnCustom executes an executable in a pseudo-terminal for integration tests
 func (s *Suite) SpawnCustom(executable string, args ...string) {
-	wd, _ := os.Getwd()
+	var wd string
+	if s.wd == nil {
+		wd, _ = os.Getwd()
+	} else {
+		wd = *s.wd
+	}
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
