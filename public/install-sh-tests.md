@@ -72,7 +72,7 @@ Overwrite the name of the state tool to `as`
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
-    /scripts/install.sh --activate ActiveState/cli -t /usr/local/bin -f as
+    /scripts/install.sh --activate ActiveState/cli -t /usr/local/bin -e as
 ```
 
 ### User interaction
@@ -148,26 +148,28 @@ To update the state tool to the latest version, please run 'state update'.
 To install in a different location, please specify the installation directory with '-t TARGET_DIR'.
 ```
 
+The state tool artifact was **NOT** downloaded.
+
 ### Follow up 1
 
-Run
+Run in the same docker container
 
 ```sh
 ./scripts/install.sh -n -f
 ```
 
-### Expected behavior
+#### Expected behavior
 
 When installing, it should warn the user that it is overwriting an existing solution.
 
 ### Follow up 2
 
-Run
+Run in the same docker container
 
 ```sh
 ./scripts/install.sh -t /opt/state
 ```
 
-### Expected behavior
+#### Expected behavior
 
 State tool should install into /opt/state
