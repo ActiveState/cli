@@ -80,7 +80,7 @@ var EditCommand = &commands.Command{
 func ExecuteEdit(cmd *cobra.Command, args []string) {
 	script := project.Get().ScriptByName(EditArgs.Name)
 	if script == nil {
-		fmt.Println(locale.Tr("edit_scripts_no_name", EditArgs.Name))
+		print.Line(locale.Tr("edit_scripts_no_name", EditArgs.Name))
 		return
 	}
 
@@ -217,13 +217,16 @@ func startNoninteractive(sw *scriptWatcher) {
 	go func() {
 		sig := <-c
 		logging.Debug(fmt.Sprintf("Detected: %s handling any failures encountered while watching file", sig))
-		defer sw.scriptFile.Clean()
+		defer func() {
+			sw.close()
+			sw.scriptFile.Clean()
+			os.Exit(1)
+		}()
 		select {
 		case fail := <-sw.fails:
-			failures.Handle(fail, "test")
-			os.Exit(1)
+			failures.Handle(fail, locale.T("error_edit_watcher_fail"))
 		default:
-			os.Exit(0)
+			// Do nothing and let defer take over
 		}
 	}()
 	sw.run()
@@ -310,6 +313,7 @@ func (sw *scriptWatcher) run() {
 }
 
 func (sw *scriptWatcher) close() {
+	sw.done <- true
 	sw.watcher.Close()
 	close(sw.done)
 	close(sw.fails)
