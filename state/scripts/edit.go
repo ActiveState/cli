@@ -217,6 +217,7 @@ func startNoninteractive(sw *scriptWatcher) {
 	go func() {
 		sig := <-c
 		logging.Debug(fmt.Sprintf("Detected: %s handling any failures encountered while watching file", sig))
+		defer sw.scriptFile.Clean()
 		select {
 		case fail := <-sw.fails:
 			failures.Handle(fail, "test")
