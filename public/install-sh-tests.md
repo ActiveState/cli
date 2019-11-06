@@ -39,7 +39,7 @@ Confirm all defaults
 - You see an error message that the state tool could not be activated.
 - You see instructions how to install the state tool and then activate the project manually or with the install script.
 
-## Invalid options
+## Invalid options 1
 
 You cannot run the install script without prompts, when activating a project.
 
@@ -52,6 +52,19 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 You see an error message that `-n` and `--activate` cannot be used at the same time.
 
+## Invalid options 2
+
+You always have to specify `-n` when specifying `-f`
+
+```sh
+docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
+    /scripts/install.sh -f
+```
+
+### Expected behavior
+
+You see an error message that `-f` requires `-n`.
+
 ## Custom state tool name
 
 Install state tool and activate project `ActiveState/cli` afterwards.
@@ -59,7 +72,7 @@ Overwrite the name of the state tool to `as`
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
-    /scripts/install.sh --activate ActiveState/cli -t /usr/local/bin -f as
+    /scripts/install.sh --activate ActiveState/cli -t /usr/local/bin -e as
 ```
 
 ### User interaction
@@ -94,7 +107,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
     /scripts/install.sh -n -t /root/.local/bin
 ```
 
-### Expected beahvior
+### Expected behavior
 
 Should install to the provided directory
 
@@ -124,13 +137,39 @@ Run above command again
 
 Confirm all defaults
 
-### Expected behaviour
+### Expected behavior
 
 When installing for the second time you should be presented with a message
 stating:
 
 ```sh
 Previous installation detected at <installation-path>
-If you would like to reinstall the state tool please first uninstall it.
-You can do this by running 'rm <installation-path>'
+To update the state tool to the latest version, please run 'state update'.
+To install in a different location, please specify the installation directory with '-t TARGET_DIR'.
 ```
+
+The state tool artifact was **NOT** downloaded.
+
+### Follow up 1
+
+Run in the same docker container
+
+```sh
+./scripts/install.sh -n -f
+```
+
+#### Expected behavior
+
+When installing, it should warn the user that it is overwriting an existing solution.
+
+### Follow up 2
+
+Run in the same docker container
+
+```sh
+./scripts/install.sh -t /opt/state
+```
+
+#### Expected behavior
+
+State tool should install into /opt/state

@@ -99,19 +99,19 @@ func NewWithContext(ctx context.Context, options ...ContainerOption) *Progress {
 
 // AddBar creates a new progress bar and adds to the container.
 func (p *Progress) AddBar(total int64, options ...BarOption) *Bar {
-	return p.Add(total, NewBarFiller(), options...)
+	return p.Add(total, NewBarFiller(DefaultBarStyle, false), options...)
 }
 
 // AddSpinner creates a new spinner bar and adds to the container.
 func (p *Progress) AddSpinner(total int64, alignment SpinnerAlignment, options ...BarOption) *Bar {
-	return p.Add(total, NewSpinnerFiller(alignment), options...)
+	return p.Add(total, NewSpinnerFiller(DefaultSpinnerStyle, alignment), options...)
 }
 
 // Add creates a bar which renders itself by provided filler.
 // Set total to 0, if you plan to update it later.
 func (p *Progress) Add(total int64, filler Filler, options ...BarOption) *Bar {
 	if filler == nil {
-		filler = NewBarFiller()
+		filler = NewBarFiller(DefaultBarStyle, false)
 	}
 	p.bwg.Add(1)
 	result := make(chan *Bar)
@@ -332,6 +332,7 @@ func (s *pState) updateSyncMatrix() {
 func (s *pState) makeBarState(total int64, filler Filler, options ...BarOption) *bState {
 	bs := &bState{
 		total:    total,
+		baseF:    filler,
 		filler:   filler,
 		priority: s.idCount,
 		id:       s.idCount,
@@ -340,6 +341,10 @@ func (s *pState) makeBarState(total int64, filler Filler, options ...BarOption) 
 		extender: func(r io.Reader, _ int, _ *decor.Statistics) (io.Reader, int) {
 			return r, 0
 		},
+	}
+
+	if f, ok := filler.(BaseFiller); ok {
+		bs.baseF = f.BaseFiller()
 	}
 
 	for _, opt := range options {
