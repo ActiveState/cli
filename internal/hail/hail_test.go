@@ -1,6 +1,7 @@
 package hail
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -34,14 +35,14 @@ func TestSend(t *testing.T) {
 
 func TestOpen(t *testing.T) {
 	start := time.Now()
-	done := make(chan struct{})
-	defer close(done)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	_, fail := Open(done, "/")
+	_, fail := Open(ctx, "/")
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
-	rcvs, fail := Open(done, file)
+	rcvs, fail := Open(ctx, file)
 	defer func() {
 		assert.NoError(t, os.Remove(file))
 	}()
@@ -78,16 +79,17 @@ func TestOpen(t *testing.T) {
 }
 
 func TestOpen_ReceivesClosed(t *testing.T) {
-	done := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	file := "garbage"
-	rcvs, fail := Open(done, file)
+	rcvs, fail := Open(ctx, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
 		assert.NoError(t, os.Remove(file))
 	}()
 
-	close(done)
+	cancel()
 
 	var malfunc bool
 	select {

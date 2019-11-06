@@ -1,6 +1,7 @@
 package hail
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"time"
@@ -52,7 +53,7 @@ func Send(file string, data []byte) *failures.Failure {
 // Open opens a channel for hailing. A *Received is sent in the returned
 // channel whenever the file located by the file name provided is created,
 // updated, or deleted.
-func Open(done <-chan struct{}, file string) (<-chan *Received, *failures.Failure) {
+func Open(ctx context.Context, file string) (<-chan *Received, *failures.Failure) {
 	openedAt := time.Now()
 
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_APPEND, 0660)
@@ -61,7 +62,7 @@ func Open(done <-chan struct{}, file string) (<-chan *Received, *failures.Failur
 	}
 	f.Close()
 
-	rcvs, err := monitor(done, openedAt, file)
+	rcvs, err := monitor(ctx.Done(), openedAt, file)
 	if err != nil {
 		return nil, failures.FailOS.Wrap(err)
 	}
