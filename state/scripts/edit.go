@@ -106,7 +106,7 @@ func editScript(script *project.Script) *failures.Failure {
 		return fail
 	}
 
-	return watcher.start()
+	return start(watcher)
 }
 
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
@@ -195,33 +195,7 @@ func verifyPathEditor(editor string) (string, *failures.Failure) {
 	return editor, nil
 }
 
-type scriptWatcher struct {
-	watcher    *fsnotify.Watcher
-	scriptFile *scriptfile.ScriptFile
-	done       chan bool
-	fails      chan *failures.Failure
-}
-
-func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, *failures.Failure) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
-	}
-
-	err = watcher.Add(scriptFile.Filename())
-	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
-	}
-
-	return &scriptWatcher{
-		watcher:    watcher,
-		scriptFile: scriptFile,
-		done:       make(chan bool),
-		fails:      make(chan *failures.Failure),
-	}, nil
-}
-
-func (sw *scriptWatcher) start() *failures.Failure {
+func start(sw *scriptWatcher) *failures.Failure {
 	print.Line("Watching file changes at: %s", sw.scriptFile.Filename())
 	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
 		sw.run()
@@ -249,6 +223,32 @@ func (sw *scriptWatcher) start() *failures.Failure {
 	}
 
 	return nil
+}
+
+type scriptWatcher struct {
+	watcher    *fsnotify.Watcher
+	scriptFile *scriptfile.ScriptFile
+	done       chan bool
+	fails      chan *failures.Failure
+}
+
+func newScriptWatcher(scriptFile *scriptfile.ScriptFile) (*scriptWatcher, *failures.Failure) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+
+	err = watcher.Add(scriptFile.Filename())
+	if err != nil {
+		return nil, failures.FailOS.Wrap(err)
+	}
+
+	return &scriptWatcher{
+		watcher:    watcher,
+		scriptFile: scriptFile,
+		done:       make(chan bool),
+		fails:      make(chan *failures.Failure),
+	}, nil
 }
 
 func (sw *scriptWatcher) run() {
