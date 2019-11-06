@@ -10,9 +10,10 @@ install.sh [flags]
 
 Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything, just install and override any existing executables
- -t <dir>              Install target directory
- -f <file>              Default 'state'.  Binary filename to use
+ -n                    Don't prompt for anything when installing into a new location.
+ -f                    Forces overwrite.  Overwrite existing state tool.
+ -t <dir>              Install into target directory <dir>
+ -B <file>             Default 'state'.  Binary filename to use
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -38,6 +39,7 @@ ARCH="amd64"
 TERM="${TERM:=xterm}"
 
 NOPROMPT=false
+FORCEOVERWRITE=false
 
 info () {
   echo "$(tput bold)==> ${1}$(tput sgr0)"
@@ -109,7 +111,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:f:?h-:" opt; do
+while getopts "nb:t:B:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -127,6 +129,9 @@ while getopts "nb:t:f:?h-:" opt; do
     TARGET=$OPTARG
     ;;
   f)
+    FORCEOVERWRITE=true
+    ;;
+  B)
     STATEEXE=$OPTARG
     ;;
   n)
@@ -143,6 +148,12 @@ done
 # so we are bailing if that's being requested...
 if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   error "Flags -n and --activate cannot be set at the same time."
+  exit 1
+fi
+
+# force overwrite requires no prompt flag
+if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
+  error "Flag -f also requires -n"
   exit 1
 fi
 
@@ -207,10 +218,16 @@ fi
 chmod +x $TMPDIR/$TMPEXE
 
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ ! -z "$INSTALLDIR" ]; then
+
+# stop if previous installation is detected unless
+# - FORCEOVERWRITE is specified OR
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ $TARGET == $INSTALLDIR ] \
+   ); then
   warn "Previous installation detected at $INSTALLDIR"
-  echo "If you would like to reinstall the state tool please first uninstall it."
-  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  echo "To update the state tool to the latest version, please run 'state update'."
+  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
 fi
 

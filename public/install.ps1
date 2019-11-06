@@ -15,18 +15,20 @@ param (
         [string]
         $t
     ,[Parameter(Mandatory=$False)][switch]$n
+    ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
         [string]
-        $f = "state.exe"
+        $B = "state.exe"
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
 $script:NOPROMPT = $n
+$script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($f).Trim()
-$script:STATE = $f.Substring(0, $f.IndexOf("."))
+$script:STATEEXE = ($B).Trim()
+$script:STATE = $f.Substring(0, $B.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:ACTIVATE =($activate).Trim()
 
@@ -190,6 +192,11 @@ function install()
         Write-Error "Flags -n and -activate cannot be set at the same time."
         exit 1
     }
+
+    if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
+        Write-Error "Flag -f also requires -n"
+        exit 1
+    }
     
     # State tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
@@ -263,21 +270,29 @@ function install()
     # If the user provided an install dir we do no verification.
     if ($script:TARGET) {
         $installDir = $script:TARGET
-   } else {
+    } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
             Write-Error "Do not have write permissions to: '$Env:APPDATA'"
             Write-Error "Aborting installation"
             exit 1
         }
-   }
+    }
 
-    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
+    # stop if previous installation is detected, unless
+    # - FORCEOVERWRITE is true
+    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue' -and (
+            -not $script:FORCEOVERWRITE 
+        )) {
         $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        Write-Host "If you would like to reinstall the state tool please first uninstall it."
-        Write-Host "You can do this by running 'Remove-Item $existing'"
-        exit 0
+
+        # also stop if a target directory is specified that differs from existing installation dir
+        if (-not $script:TARGET -or $script:TARGET -ne $existing) {
+            Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+            Write-Host "To update the state tool to the latest version, please run 'state update'."
+            Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+            exit 0
+        }
     }
 
     # Install binary
