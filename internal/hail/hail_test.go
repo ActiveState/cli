@@ -42,12 +42,12 @@ func TestOpen(t *testing.T) {
 
 	file := "garbage"
 	rcvs, fail := Open(done, file)
-	require.NoError(t, fail.ToError())
 	defer func() {
 		assert.NoError(t, os.Remove(file))
 	}()
-	postOpen := time.Now()
+	require.NoError(t, fail.ToError())
 
+	postOpen := time.Now()
 	data := []byte("some data")
 
 	ready := make(chan struct{})
@@ -59,7 +59,6 @@ func TestOpen(t *testing.T) {
 		assert.NoError(t, f.Close())
 		close(ready)
 	}()
-
 	<-ready
 
 	var r *Received
@@ -76,4 +75,26 @@ func TestOpen(t *testing.T) {
 		assert.True(t, r.Time.After(postOpen))
 	}
 	require.NoError(t, r.Fail.ToError())
+}
+
+func TestOpen_ReceivesClosed(t *testing.T) {
+	done := make(chan struct{})
+
+	file := "garbage"
+	rcvs, fail := Open(done, file)
+	require.NoError(t, fail.ToError())
+	defer func() {
+		assert.NoError(t, os.Remove(file))
+	}()
+
+	close(done)
+
+	var malfunc bool
+	select {
+	case _, malfunc = <-rcvs:
+	case <-time.After(time.Second * 2):
+		malfunc = true
+	}
+
+	assert.False(t, malfunc, "rcvs should be closed")
 }
