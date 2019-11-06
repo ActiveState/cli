@@ -20,7 +20,7 @@ type InitIntegrationTestSuite struct {
 var (
 	testUser    = "test-user"
 	testProject = "test-project"
-	namespace   = filepath.Join(testUser, testProject)
+	namespace   = fmt.Sprintf("%s/%s", testUser, testProject)
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
@@ -35,6 +35,7 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 
 func (suite *InitIntegrationTestSuite) runInitTest(config string, flags ...string) {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
+	fmt.Println("TEMPDIR: ", tempDir)
 	suite.Require().NoError(err)
 	defer os.RemoveAll(tempDir)
 
