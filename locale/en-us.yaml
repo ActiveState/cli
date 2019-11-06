@@ -1076,6 +1076,38 @@ sample_yaml:
           echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
           echo. 
           echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
+editor_yaml:
+  other: |
+    scripts:
+      - name: helloWorld
+        constraints: 
+          os: macos,linux
+        value: echo "Hello World!"
+      - name: helloWorld
+        constraints: 
+          os: windows
+        value: echo Hello World!
+      - name: intro
+        constraints: 
+          os: macos,linux
+        value: |
+          echo "Your runtime environment is now ready!"
+          echo ""
+          echo "Try to run the 'helloWorld' script in your editor."
+          echo ""
+          echo "To see how scripts work and add your own open up the activestate.yaml file with your editor."
+      - name: intro
+        constraints: 
+          os: windows
+        value: |
+          echo Your runtime environment is now ready!
+          echo.
+          echo Try to run the 'helloWorld' script in your editor.
+          echo.
+          echo To see how scripts work and add your own open up the activestate.yaml file with your editor.
+    events:
+      - name: ACTIVATE
+        value: $scripts.intro
 package_description:
   other: Manage packages used in your project
 users_plural:
@@ -1153,6 +1185,8 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_language_description:
   other: The language that this project should use
+flag_state_init_skeleton_description:
+  other: The activestate.yaml template to use with project file creation. Accepts two values 'base' and 'editor'.
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:

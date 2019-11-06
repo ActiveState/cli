@@ -25,58 +25,88 @@ type Init struct {
 	config configAble
 }
 
+type Options struct {
+	Namespace,
+	Path,
+	Language,
+	Skeleton string
+}
+
+const (
+	Base   = "base"
+	Editor = "editor"
+)
+
 func NewInit(config configAble) *Init {
 	return &Init{config}
 }
 
-func (r *Init) Run(namespace, path, langName string) error {
-	_, err := r.run(namespace, path, langName)
+func (r *Init) Run(opts Options) error {
+	_, err := r.run(opts)
 	return err
 }
 
-func (r *Init) run(namespace, path, langName string) (string, error) {
-	if namespace == "" {
+func (r *Init) run(opts Options) (string, error) {
+	if opts.Namespace == "" {
 		return "", failures.FailUserInput.New("err_init_must_provide_namespace")
 	}
 
-	ns, fail := project.ParseNamespace(namespace)
+	ns, fail := project.ParseNamespace(opts.Namespace)
 	if fail != nil {
 		return "", fail
 	}
 
 	// Detect path if none was provided
-	if path == "" {
+	if opts.Path == "" {
 		wd, err := os.Getwd()
 		if err != nil {
 			return "", err
 		}
-		path = filepath.Join(wd, namespace)
+		opts.Path = filepath.Join(wd, opts.Namespace)
 	}
 
 	// Fail if target dir already has an activestate.yaml
-	if fileutils.FileExists(filepath.Join(path, constants.ConfigFileName)) {
-		absPath, err := filepath.Abs(path)
+	if fileutils.FileExists(filepath.Join(opts.Path, constants.ConfigFileName)) {
+		absPath, err := filepath.Abs(opts.Path)
 		if err != nil {
 			return "", failures.FailIO.Wrap(err)
 		}
 		return "", failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	// Store language for when we run 'state push'
-	if langName != "" {
-		lang := language.MakeByName(langName)
+	if opts.Language != "" {
+		lang := language.MakeByName(opts.Language)
 		if lang == language.Unknown {
-			return "", failures.FailUserInput.New("err_init_invalid_language", langName, strings.Join(language.AvailableNames(), ", "))
+			return "", failures.FailUserInput.New("err_init_invalid_language", opts.Language, strings.Join(language.AvailableNames(), ", "))
 		}
-		r.config.Set(path+"_language", langName)
+		// Store language for when we run 'state push'
+		r.config.Set(opts.Path+"_language", opts.Language)
+	}
+
+	params := &projectfile.CreateParams{
+		Owner:     ns.Owner,
+		Project:   ns.Project,
+		Directory: opts.Path,
+	}
+	if opts.Skeleton != "" {
+		switch strings.ToLower(opts.Skeleton) {
+		case Editor:
+			// Set our own custom content
+			params.Content = locale.T("editor_yaml")
+		case Base:
+			// Use the default content set in the projectfile.Create function
+		default:
+			return "", failures.FailUserInput.New("err_init_invalid_skeleton_flag")
+		}
 	}
 
 	// Create the activestate.yaml
-	if fail := projectfile.Create(ns.Owner, ns.Project, nil, path); fail != nil {
+	fail = projectfile.Create(params)
+	if fail != nil {
 		return "", fail
 	}
 
-	print.Line(locale.Tr("init_success", namespace, path))
+	print.Line(locale.Tr("init_success", opts.Namespace, opts.Path))
 
-	return path, nil
+	return opts.Path, nil
 }
