@@ -20,15 +20,15 @@ param (
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
         [string]
-        $B = "state.exe"
+        $e = "state.exe"
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($B).Trim()
-$script:STATE = $f.Substring(0, $B.IndexOf("."))
+$script:STATEEXE = ($e).Trim()
+$script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:ACTIVATE =($activate).Trim()
 
@@ -147,7 +147,7 @@ function isStateToolInstallationOnPath($installDirectory) {
 
 function getExistingOnPath(){
     $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
-    if ($path -eq $null) {
+    if ($null -eq $path) {
         ""
     } else {
        (Resolve-Path (split-path -Path $path -Parent)).Path
@@ -280,18 +280,22 @@ function install()
     }
 
     # stop if previous installation is detected, unless
-    # - FORCEOVERWRITE is true
-    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue' -and (
-            -not $script:FORCEOVERWRITE 
-        )) {
+    # - A. a different target directory has been specified
+    # - B. FORCEOVERWRITE is true
+    if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
         $existing = getExistingOnPath
-
-        # also stop if a target directory is specified that differs from existing installation dir
-        if (-not $script:TARGET -or $script:TARGET -ne $existing) {
-            Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-            Write-Host "To update the state tool to the latest version, please run 'state update'."
-            Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
-            exit 0
+    
+        # check for A
+        if (-not $script:TARGET -or ( $script:TARGET -eq $existing )) {
+            # check for B
+            if ($script:FORCEOVERWRITE) {
+                Write-Warning "Overwriting previous installation."
+            } else {
+                Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+                Write-Host "To update the state tool to the latest version, please run 'state update'."
+                Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+                exit 0
+            }
         }
     }
 
