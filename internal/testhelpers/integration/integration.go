@@ -77,7 +77,6 @@ func (s *Suite) SetupTest() {
 		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
-		// "SHELL=bash",
 	})
 
 	os.Chdir(os.TempDir())
@@ -117,6 +116,7 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	s.Require().NoError(err)
 
 	err = s.console.Pty.StartProcessInTerminal(s.cmd)
+	s.Require().NoError(err)
 }
 
 // Output returns the current Terminal snapshot.
