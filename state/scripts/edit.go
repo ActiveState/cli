@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -198,31 +200,55 @@ func verifyPathEditor(editor string) (string, *failures.Failure) {
 func start(sw *scriptWatcher) *failures.Failure {
 	print.Line("Watching file changes at: %s", sw.scriptFile.Filename())
 	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
-		sw.run()
+		startNoninteractive(sw)
 	} else {
-		go sw.run()
-
-		prompter := prompt.New()
-		for {
-			doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-			if fail != nil {
-				return fail
-			}
-			if doneEditing {
-				sw.done <- true
-				break
-			}
-		}
-
-		select {
-		case fail := <-sw.fails:
+		fail := startInteractive(sw)
+		if fail != nil {
 			return fail
-		default:
-			return nil
 		}
 	}
 
 	return nil
+}
+
+func startNoninteractive(sw *scriptWatcher) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		sig := <-c
+		logging.Debug(fmt.Sprintf("Detected: %s handling any failures encountered while watching file", sig))
+		select {
+		case fail := <-sw.fails:
+			failures.Handle(fail, "test")
+			os.Exit(1)
+		default:
+			os.Exit(0)
+		}
+	}()
+	sw.run()
+}
+
+func startInteractive(sw *scriptWatcher) *failures.Failure {
+	go sw.run()
+
+	prompter := prompt.New()
+	for {
+		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+		if fail != nil {
+			return fail
+		}
+		if doneEditing {
+			sw.done <- true
+			break
+		}
+	}
+
+	select {
+	case fail := <-sw.fails:
+		return fail
+	default:
+		return nil
+	}
 }
 
 type scriptWatcher struct {
