@@ -52,7 +52,7 @@ function notifySettingChange(){
 "@
     }
     # notify all windows of environment block change
-    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result);
+    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result) | Out-Null;
 
 }
 
@@ -168,54 +168,13 @@ function warningIfadmin() {
     }
 }
 
-function install()
-{
-    $USAGE="install.ps1 [flags]
-    
-    Flags:
-    -b <branch>          Default 'unstable'.  Specify an alternative branch to install from (eg. master)
-    -n                   Don't prompt for anything, just install and override any existing executables
-    -t <dir>             Install target dir
-    -f <file>            Default 'state.exe'.  Binary filename to use
-    -activate <project>  Activate a project when state tools is correctly installed
-    -h                   Show usage information (what you're currently reading)"
+function fetchArtifacts($tmpParentPath, $statejson, $statepkg) {
 
-    # Ensure errors from previously run commands are not reported during install
-    $Error.Clear()
-
-    if ($h) {
-        Write-Host $USAGE
-        exit 0
-    }
-
-    if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
-        Write-Error "Flags -n and -activate cannot be set at the same time."
-        exit 1
-    }
-
-    if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
-        Write-Error "Flag -f also requires -n"
-        exit 1
-    }
-    
     # State tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
     
-    # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
-        $statejson="windows-amd64.json"
-        $statepkg="windows-amd64.zip"
-        $stateexe="windows-amd64.exe"
-
-    } else {
-        Write-Warning "x86 processors are not supported at this time"
-        Write-Warning "Contact ActiveState Support for assistance"
-        Write-Warning "Aborting installation"
-        exit 1
-    }
-
     $downloader = new-object System.Net.WebClient
 
     # Get version and checksum
@@ -233,7 +192,6 @@ function install()
     $latestChecksum = $versionedJson.Sha256v2
 
     # Download pkg file
-    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
     $zipPath = Join-Path $tmpParentPath $statepkg
     # Clean it up to start but leave it behind when done 
     if(Test-Path $tmpParentPath){
@@ -265,6 +223,52 @@ function install()
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
     Expand-Archive $zipPath $tmpParentPath
+}
+
+function install()
+{
+    $USAGE="install.ps1 [flags]
+    
+    Flags:
+    -b <branch>          Default 'unstable'.  Specify an alternative branch to install from (eg. master)
+    -n                   Don't prompt for anything, just install and override any existing executables
+    -t <dir>             Install target dir
+    -f <file>            Default 'state.exe'.  Binary filename to use
+    -activate <project>  Activate a project when state tools is correctly installed
+    -h                   Show usage information (what you're currently reading)"
+
+    # Ensure errors from previously run commands are not reported during install
+    $Error.Clear()
+
+    if ($h) {
+        Write-Host $USAGE
+        exit 0
+    }
+
+    if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
+        Write-Error "Flags -n and -activate cannot be set at the same time."
+        exit 1
+    }
+
+    if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
+        Write-Error "Flag -f also requires -n"
+        exit 1
+    }
+    
+    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
+
+    # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
+    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+        $statejson="windows-amd64.json"
+        $statepkg="windows-amd64.zip"
+        $stateexe="windows-amd64.exe"
+
+    } else {
+        Write-Warning "x86 processors are not supported at this time"
+        Write-Warning "Contact ActiveState Support for assistance"
+        Write-Warning "Aborting installation"
+        exit 1
+    }
 
     # Get the install directory and ensure we have permissions on it.
     # If the user provided an install dir we do no verification.
@@ -322,6 +326,7 @@ function install()
             }
         }
     }
+    fetchArtifacts $tmpParentPath $statejson $statepkg
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Check if installation is in $PATH
