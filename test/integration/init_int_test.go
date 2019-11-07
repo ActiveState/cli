@@ -38,6 +38,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(config string, flags ...strin
 	fmt.Println("TEMPDIR: ", tempDir)
 	suite.Require().NoError(err)
 	defer os.RemoveAll(tempDir)
+	suite.SetWd(tempDir)
 
 	err = os.Chdir(tempDir)
 	suite.Require().NoError(err)
