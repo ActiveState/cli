@@ -28,7 +28,7 @@ type TarGzArchive struct {
 
 // NewTarGz initializes a new TarGzArchiver
 func NewTarGz() Unarchiver {
-	return Unarchiver{&TarGzArchive{*archiver.DefaultTarGz}}
+	return Unarchiver{&TarGzArchive{*archiver.DefaultTarGz}, func(_ string, _ int64, _ bool) {}}
 }
 
 // GetExtractedSize returns the size of the extracted summed up files in the archive

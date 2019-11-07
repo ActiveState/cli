@@ -15,18 +15,20 @@ param (
         [string]
         $t
     ,[Parameter(Mandatory=$False)][switch]$n
+    ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
         [string]
-        $f = "state.exe"
+        $e = "state.exe"
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
 $script:NOPROMPT = $n
+$script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($f).Trim()
-$script:STATE = $f.Substring(0, $f.IndexOf("."))
+$script:STATEEXE = ($e).Trim()
+$script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:ACTIVATE =($activate).Trim()
 
@@ -145,7 +147,7 @@ function isStateToolInstallationOnPath($installDirectory) {
 
 function getExistingOnPath(){
     $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
-    if ($path -eq $null) {
+    if ($null -eq $path) {
         ""
     } else {
        (Resolve-Path (split-path -Path $path -Parent)).Path
@@ -188,6 +190,11 @@ function install()
 
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
         Write-Error "Flags -n and -activate cannot be set at the same time."
+        exit 1
+    }
+
+    if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
+        Write-Error "Flag -f also requires -n"
         exit 1
     }
     
@@ -263,21 +270,33 @@ function install()
     # If the user provided an install dir we do no verification.
     if ($script:TARGET) {
         $installDir = $script:TARGET
-   } else {
+    } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
             Write-Error "Do not have write permissions to: '$Env:APPDATA'"
             Write-Error "Aborting installation"
             exit 1
         }
-   }
+    }
 
+    # stop if previous installation is detected, unless
+    # - A. a different target directory has been specified
+    # - B. FORCEOVERWRITE is true
     if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
         $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        Write-Host "If you would like to reinstall the state tool please first uninstall it."
-        Write-Host "You can do this by running 'Remove-Item $existing'"
-        exit 0
+    
+        # check for A
+        if (-not $script:TARGET -or ( $script:TARGET -eq $existing )) {
+            # check for B
+            if ($script:FORCEOVERWRITE) {
+                Write-Warning "Overwriting previous installation."
+            } else {
+                Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+                Write-Host "To update the state tool to the latest version, please run 'state update'."
+                Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+                exit 0
+            }
+        }
     }
 
     # Install binary
