@@ -14,7 +14,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 	}
 	defer f.Close()
-	if _, err := f.WriteString("\nmore info!\n"); err != nil {
+	if _, err := f.WriteString("\nmore info!"); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }

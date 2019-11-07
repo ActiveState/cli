@@ -13,48 +13,77 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 )
 
 type EditIntegrationTestSuite struct {
 	integration.Suite
+	originalWd string
 }
 
-func (suite *EditIntegrationTestSuite) TestEdit() {
+func (suite *EditIntegrationTestSuite) SetupTest() {
+	suite.Suite.SetupTest()
+
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
 	suite.Require().NoError(err)
 
+	suite.originalWd, err = os.Getwd()
+	suite.Require().NoError(err)
 	err = os.Chdir(tempDir)
 	suite.Require().NoError(err)
 
 	root := environment.GetRootPathUnsafe()
-	editorScript := filepath.Join(root, "test/integration/assets/editor/main.go")
-	// suite.SetWd(tempDir)
+	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
 
-	fail := fileutils.CopyFile(editorScript, tempDir)
+	fail := fileutils.CopyFile(editorScript, filepath.Join(tempDir, "editor", "main.go"))
 	suite.Require().NoError(fail.ToError())
 
-	contents := strings.TrimSpace(`
+	configFileContent := strings.TrimSpace(`
 project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
-  - name: test
+  - name: test-script
     value: echo "hello test"
 `)
 
 	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(contents), projectFile)
-	suite.Require().NoError(err, "unexpected error marshalling yaml")
+	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
+	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
 	fail = projectFile.Save()
-	suite.Require().NoError(err, "should be able to save in temp dir")
+	suite.Require().NoError(err)
 
-	suite.SpawnCustom("go", "build", "main.go")
-	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(tempDir, "main"))})
-	suite.Spawn("edit", "test-script")
+	editorScriptDir := filepath.Join(tempDir, "editor")
+	suite.SetWd(editorScriptDir)
+	suite.SpawnCustom("go", "build", "-o", "editor")
+	suite.Wait()
+
+	suite.SetWd(tempDir)
+	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"))
+	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"))})
 }
 
-func (suite *EditIntegrationTestSuite) TestEditIntegrationTestSuite(t *testing.T) {
+func (suite *EditIntegrationTestSuite) TestEdit() {
+	defer os.Chdir(suite.originalWd)
+	suite.Spawn("scripts", "edit", "test-script")
+	suite.Expect("Watching file changes")
+	suite.Expect("Are you done editing?")
+	suite.Expect("Script changes dectect, updating activestate.yaml")
+	suite.SendLine("Y")
+	suite.Wait()
+}
+
+func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
+	defer os.Chdir(suite.originalWd)
+	suite.AppendEnv([]string{"ACTIVESTATE_NONINTERACTIVE=true"})
+	suite.Spawn("scripts", "edit", "test-script")
+	suite.Expect("Watching file changes")
+	suite.Expect("Script changes dectect, updating activestate.yaml")
+	suite.Quit()
+}
+
+func TestEditIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run
 
 	integration.RunParallel(t, new(EditIntegrationTestSuite))
