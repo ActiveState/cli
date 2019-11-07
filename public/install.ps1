@@ -168,7 +168,7 @@ function warningIfadmin() {
     }
 }
 
-function fetchArtifacts($tmpParentPath, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
     # State tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
@@ -192,12 +192,12 @@ function fetchArtifacts($tmpParentPath, $statejson, $statepkg) {
     $latestChecksum = $versionedJson.Sha256v2
 
     # Download pkg file
-    $zipPath = Join-Path $tmpParentPath $statepkg
+    $zipPath = Join-Path $downloadDir $statepkg
     # Clean it up to start but leave it behind when done 
-    if(Test-Path $tmpParentPath){
-        Remove-Item $tmpParentPath -Recurse
+    if(Test-Path $downloadDir){
+        Remove-Item $downloadDir -Recurse
     }
-    New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
+    New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
     $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
@@ -222,7 +222,7 @@ function fetchArtifacts($tmpParentPath, $statejson, $statepkg) {
 
     # Extract binary from pkg and confirm checksum
     Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $tmpParentPath
+    Expand-Archive $zipPath $downloadDir
 }
 
 function install()
@@ -255,8 +255,6 @@ function install()
         exit 1
     }
     
-    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
     if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
         $statejson="windows-amd64.json"
@@ -326,6 +324,8 @@ function install()
             }
         }
     }
+
+    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
     fetchArtifacts $tmpParentPath $statejson $statepkg
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
