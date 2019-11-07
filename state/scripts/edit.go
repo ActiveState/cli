@@ -87,6 +87,7 @@ func ExecuteEdit(cmd *cobra.Command, args []string) {
 	fail := editScript(script)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_edit_script"))
+		return
 	}
 }
 
@@ -218,6 +219,7 @@ func startNoninteractive(sw *scriptWatcher) {
 		sig := <-c
 		logging.Debug(fmt.Sprintf("Detected: %s handling any failures encountered while watching file", sig))
 		defer func() {
+			sw.done <- true
 			sw.close()
 			sw.scriptFile.Clean()
 			os.Exit(1)
@@ -313,7 +315,6 @@ func (sw *scriptWatcher) run() {
 }
 
 func (sw *scriptWatcher) close() {
-	sw.done <- true
 	sw.watcher.Close()
 	close(sw.done)
 	close(sw.fails)
