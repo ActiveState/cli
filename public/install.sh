@@ -10,10 +10,10 @@ install.sh [flags]
 
 Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything when installing into a new location.
- -f                    Forces overwrite.  Overwrite existing state tool.
+ -n                    Don't prompt for anything when installing into a new location
+ -f                    Forces overwrite.  Overwrite existing state tool
  -t <dir>              Install into target directory <dir>
- -B <file>             Default 'state'.  Binary filename to use
+ -e <file>             Default 'state'. Filename to use for the executable
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -111,7 +111,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:B:f?h-:" opt; do
+while getopts "nb:t:e:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -131,7 +131,7 @@ while getopts "nb:t:B:f?h-:" opt; do
   f)
     FORCEOVERWRITE=true
     ;;
-  B)
+  e)
     STATEEXE=$OPTARG
     ;;
   n)

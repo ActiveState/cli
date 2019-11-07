@@ -87,6 +87,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	namespace, fail := project.ParseNamespace(Args.Namespace)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_invalid_namespace"))
+		return
 	}
 
 	originalOwner := namespace.Owner
@@ -109,6 +110,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_create_fork"))
+		return
 	}
 
 	print.Info(locale.T("state_fork_success", map[string]string{
