@@ -67,7 +67,7 @@ scripts:
 
 	suite.SetWd(tempDir)
 	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"+extension))
-	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"))})
+	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension))})
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
