@@ -75,7 +75,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.Expect("Watching file changes")
 	suite.Expect("Are you done editing?")
-	suite.Expect("Script changes dectect, updating activestate.yaml")
+	suite.Expect("Script changes detected")
 	suite.SendLine("Y")
 	suite.Wait()
 }
@@ -85,7 +85,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	suite.AppendEnv([]string{"ACTIVESTATE_NONINTERACTIVE=true"})
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.Expect("Watching file changes")
-	suite.Expect("Script changes dectect, updating activestate.yaml")
+	suite.Expect("Script changes detected")
 	suite.Quit()
 }
 
