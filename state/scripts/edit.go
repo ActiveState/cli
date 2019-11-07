@@ -222,7 +222,7 @@ func startNoninteractive(sw *scriptWatcher) {
 			sw.done <- true
 			sw.close()
 			sw.scriptFile.Clean()
-			os.Exit(1)
+			Command.Exiter(1)
 		}()
 		select {
 		case fail := <-sw.fails:
