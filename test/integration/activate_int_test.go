@@ -83,7 +83,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	suite.Expect("Installing", 120*time.Second)
 	suite.Expect("activated state", 120*time.Second)
 
-	// ensure that we terminal contains output "Installing x/y" with x, y numbers and x=y
+	// ensure that terminal contains output "Installing x/y" with x, y numbers and x=y
 	installingString := regexp.MustCompile(
 		"Installing *([0-9]+) */ *([0-9]+)",
 	).FindAllStringSubmatch(suite.TerminalSnapshot(), 1)
@@ -99,8 +99,8 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	// test python
 	suite.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	suite.Expect("ActiveState Software Inc.")
-	suite.SendLine(pythonExe + " -c \"import numpy; print(numpy.__doc__)\"")
-	suite.Expect("import numpy as np")
+	suite.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
+	suite.Expect("unit and functional testing")
 
 	// de-activate shell
 	suite.SendLine("exit")
