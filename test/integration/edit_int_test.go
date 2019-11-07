@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -56,11 +57,16 @@ scripts:
 
 	editorScriptDir := filepath.Join(tempDir, "editor")
 	suite.SetWd(editorScriptDir)
-	suite.SpawnCustom("go", "build", "-o", "editor")
+
+	var extension string
+	if runtime.GOOS == "windows" {
+		extension = ".exe"
+	}
+	suite.SpawnCustom("go", "build", "-o", "editor"+extension)
 	suite.Wait()
 
 	suite.SetWd(tempDir)
-	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"))
+	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"+extension))
 	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"))})
 }
 
