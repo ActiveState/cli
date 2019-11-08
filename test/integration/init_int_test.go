@@ -35,13 +35,18 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 
 func (suite *InitIntegrationTestSuite) runInitTest(config string, flags ...string) {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
-	fmt.Println("TEMPDIR: ", tempDir)
 	suite.Require().NoError(err)
-	defer os.RemoveAll(tempDir)
 	suite.SetWd(tempDir)
 
+	originalWd, err := os.Getwd()
+	suite.Require().NoError(err)
 	err = os.Chdir(tempDir)
 	suite.Require().NoError(err)
+
+	defer func() {
+		os.Chdir(originalWd)
+		os.RemoveAll(tempDir)
+	}()
 
 	var args = []string{"init", namespace}
 	for _, flag := range flags {
