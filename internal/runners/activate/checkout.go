@@ -54,7 +54,12 @@ func (r *Checkout) Run(namespace string, targetPath string) error {
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		fail = projectfile.Create(ns.Owner, ns.Project, branch.CommitID, targetPath)
+		fail = projectfile.Create(&projectfile.CreateParams{
+			Owner:     ns.Owner,
+			Project:   ns.Project,
+			CommitID:  branch.CommitID,
+			Directory: targetPath,
+		})
 		if fail != nil {
 			return fail
 		}
