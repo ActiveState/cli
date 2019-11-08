@@ -35,7 +35,7 @@ type RunParams struct {
 	Project  string
 	Path     string
 	Skeleton SkeletonStyle
-	Language language.Language
+	Language *language.Language
 }
 
 func (params *RunParams) Prepare() error {
@@ -78,19 +78,19 @@ func NewInit(config configAble) *Init {
 }
 
 func (r *Init) Run(params *RunParams) error {
-	_, err := r.run(params)
+	_, err := r.run(r.config, params)
 	return err
 }
 
-func (r *Init) run(runParams *RunParams) (string, error) {
+func (r *Init) run(config configAble, runParams *RunParams) (string, error) {
 	err := runParams.Prepare()
 	if err != nil {
 		return "", err
 	}
 
-	if runParams.Language != language.Unknown {
+	if runParams.Language != nil && *runParams.Language != language.Unknown {
 		// Store language for when we run 'state push'
-		r.config.Set(runParams.Path+"_language", runParams.Language)
+		config.Set(runParams.Path+"_language", runParams.Language)
 	}
 
 	createParams := &projectfile.CreateParams{

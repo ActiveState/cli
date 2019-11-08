@@ -90,7 +90,7 @@ func newInitRunParams(args InitArgs, opts InitOpts) (*initialize.RunParams, erro
 		return nil, fail
 	}
 
-	var lang language.Language
+	var runLang *language.Language
 	if opts.Language != "" {
 		lang := language.MakeByName(opts.Language)
 		if lang == language.Unknown {
@@ -99,13 +99,14 @@ func newInitRunParams(args InitArgs, opts InitOpts) (*initialize.RunParams, erro
 				opts.Language, strings.Join(language.AvailableNames(), ", "),
 			)
 		}
+		runLang = &lang
 	}
 
 	return &initialize.RunParams{
 		Owner:    ns.Owner,
 		Project:  ns.Project,
 		Path:     args.Path,
-		Language: lang,
+		Language: runLang,
 		Skeleton: initialize.SkeletonStyle(opts.Skeleton),
 	}, nil
 }

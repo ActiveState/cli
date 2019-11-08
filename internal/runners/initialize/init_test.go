@@ -113,11 +113,11 @@ func TestInit_Run(t *testing.T) {
 			r := &Init{
 				config: tt.fields.config,
 			}
-			path, err := r.run(&RunParams{
+			path, err := r.run(tt.fields.config, &RunParams{
 				Owner:    tt.args.owner,
 				Project:  tt.args.project,
 				Path:     tt.args.path,
-				Language: tt.args.language,
+				Language: &tt.args.language,
 			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init.run() error = %v, wantErr %v", err, tt.wantErr)
