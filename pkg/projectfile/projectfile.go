@@ -432,7 +432,7 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
-	if len(match) != 3 {
+	if len(match) < 3 {
 		return nil, FailInvalidURL.New("err_projectfile_invalid_url")
 	}
 	owner, project := match[1], match[2]
