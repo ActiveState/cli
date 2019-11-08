@@ -32,6 +32,13 @@ $script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:ACTIVATE =($activate).Trim()
 
+# For recipe installation without prompts we need to be able to disable
+# prompots through an environment variable.
+if ($Env:NOPROMPT_INSTALL -eq "true") {
+    $script:NOPROMPT = $true
+    $script:FORCEOVERWRITE = $true
+}
+
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
 
