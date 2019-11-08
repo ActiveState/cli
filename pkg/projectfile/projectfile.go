@@ -47,6 +47,9 @@ var (
 
 	// FailProjectExists identifies a failure as being caused by the commit id not getting set
 	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
+
+	// FailInvalidURL identifies a failures as being caused by the project URL being invalid
+	FailInvalidURL = failures.Type("projectfile.fail.invalidurl")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -429,6 +432,9 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 		return nil, fail
 	}
 	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
+	if len(match) != 3 {
+		return nil, FailInvalidURL.New("err_projectfile_invalid_url")
+	}
 	owner, project := match[1], match[2]
 
 	if params.Content == "" {
