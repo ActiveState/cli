@@ -154,6 +154,7 @@ Run command again
 **What to look for**:
 
 - You should see a warning for running as administrator
+- The state tool artifact should **NOT** be downloaded
 - After the second install attempt you should be presented with a message that says:
 
 ```powershell
