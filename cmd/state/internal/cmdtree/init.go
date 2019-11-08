@@ -101,19 +101,11 @@ func newInitRunParams(args InitArgs, opts InitOpts) (*initialize.RunParams, erro
 		}
 	}
 
-	skeleton := initialize.SkeletonStyle(opts.Skeleton)
-	switch skeleton {
-	case initialize.Editor, initialize.Simple:
-		// We're good
-	default:
-		return nil, failures.FailUserInput.New("err_init_invalid_skeleton_flag")
-	}
-
 	return &initialize.RunParams{
 		Owner:    ns.Owner,
 		Project:  ns.Project,
 		Path:     args.Path,
 		Language: lang,
-		Skeleton: skeleton,
+		Skeleton: initialize.SkeletonStyle(opts.Skeleton),
 	}, nil
 }

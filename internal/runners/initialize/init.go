@@ -48,6 +48,13 @@ func (params *RunParams) Prepare() error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
+	switch params.Skeleton {
+	case Editor, Simple:
+		// We're good
+	default:
+		return failures.FailUserInput.New("err_init_invalid_skeleton_flag")
+	}
+
 	if params.Owner == "" {
 		return failures.FailUserInput.New("err_init_owner_missing")
 	}
