@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -82,6 +83,30 @@ func (suite *AuthIntegrationTestSuite) Login() {
 	// still logged in?
 	suite.Spawn("auth")
 	suite.Expect("You are logged in")
+	suite.Wait()
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+	type userJSON struct {
+		Username        string `json:"username,omitempty"`
+		URLName         string `json:"URLName,omitempty"`
+		Tier            string `json:"tier,omitempty"`
+		PrivateProjects bool   `json:"privateProjects"`
+	}
+
+	user := userJSON{
+		Username:        "cli-integration-tests",
+		URLName:         "cli-integration-tests",
+		Tier:            "free",
+		PrivateProjects: false,
+	}
+	data, err := json.Marshal(user)
+	suite.Require().NoError(err)
+
+	expected := string(data)
+	suite.LoginAsPersistentUser()
+	suite.Spawn("auth", "--json")
+	suite.Expect(expected)
 	suite.Wait()
 }
 
