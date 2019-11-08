@@ -2,6 +2,7 @@ package activate
 
 import (
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"runtime"
@@ -25,9 +26,10 @@ type activationLoopFunc func(targetPath string, activator activateFunc) error
 func activationLoop(targetPath string, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
-	var fail *failures.Failure
 	var proj *project.Project
+	var retErr error
 	for {
+		var fail *failures.Failure
 		proj, fail = project.FromPath(targetPath)
 		if fail != nil {
 			// The default failure returned by the project package is a big too vague, we want to give the user
@@ -45,7 +47,12 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		if !activator(proj.Owner(), proj.Name(), proj.Source().Path()) {
+		loop, err := activator(proj.Owner(), proj.Name(), proj.Source().Path())
+		if err != nil {
+			retErr = err
+			break
+		}
+		if !loop {
 			break
 		}
 
@@ -54,21 +61,21 @@ func activationLoop(targetPath string, activator activateFunc) error {
 
 	print.Bold(locale.T("info_deactivated", proj))
 
-	return nil
+	return retErr
 }
 
-type activateFunc func(owner, name, srcPath string) bool
+type activateFunc func(owner, name, srcPath string) (bool, error)
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(owner, name, srcPath string) bool {
+func activate(owner, name, srcPath string) (bool, error) {
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return false
+		return false, nil
 	}
 
 	ignoreWindowsInterrupts()
@@ -76,7 +83,7 @@ func activate(owner, name, srcPath string) bool {
 	subs, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return false
+		return false, nil
 	}
 
 	done := make(chan struct{})
@@ -86,7 +93,7 @@ func activate(owner, name, srcPath string) bool {
 	hails, fail := hail.Open(done, fname)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
-		return false
+		return false, nil
 	}
 
 	return listenForReactivation(venv.ActivationID(), hails, subs)
@@ -108,13 +115,13 @@ type subShell interface {
 	Failures() <-chan *failures.Failure
 }
 
-func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) (bool, error) {
 	for {
 		select {
 		case rcvd, ok := <-rcvs:
 			if !ok {
 				logging.Error("hailing channel closed")
-				return false
+				return false, nil
 			}
 
 			if rcvd.Fail != nil {
@@ -133,22 +140,29 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 			if fail := subs.Deactivate(); fail != nil {
 				failures.Handle(fail, locale.T("error_deactivating_subshell"))
-				return false
+				return false, nil
 			}
 
-			return true
+			return true, nil
 
 		case fail, ok := <-subs.Failures():
 			if !ok {
 				logging.Error("subshell failure channel closed")
-				return false
+				return false, nil
 			}
 
 			if fail != nil {
+				err := fail.ToError()
+				if eerr, ok := err.(*exec.ExitError); ok {
+					return false, eerr
+				}
+
+				fail.Silent = true
 				failures.Handle(fail, locale.T("error_in_active_subshell"))
+				//failures.Handle(fail, "")
 			}
 
-			return false
+			return false, nil
 		}
 	}
 }

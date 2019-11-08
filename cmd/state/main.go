@@ -38,8 +38,14 @@ func main() {
 
 	code, err := run(os.Args)
 	if err != nil {
-		print.Error(err.Error())
+		eerr, ok := err.(*exec.ExitError)
+		if ok {
+			code = eerr.ExitCode()
+		} else {
+			print.Error(err.Error())
+		}
 	}
+
 	exiter(code)
 }
 

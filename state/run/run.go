@@ -119,8 +119,12 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	code, err := subs.Run(sf.Filename(), scriptArgs...)
-	if err != nil || code != 0 {
-		failures.Handle(err, locale.T("error_state_run_error"))
+	if err != nil {
+		fail := failures.FailCmd.Wrap(err)
+		fail.Silent = true
+		failures.Handle(fail, locale.T("error_state_run_error"))
+	}
+	if code != 0 {
 		Command.Exiter(code)
 		return
 	}

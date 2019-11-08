@@ -116,7 +116,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 	}
 	logger("%s. Failure: %s File: %s, Line: %d", message, f.Name, file, line)
 
-	return &Failure{message, f, file, line, stacktrace.Get(), nil}
+	return &Failure{message, f, file, line, stacktrace.Get(), nil, false}
 }
 
 // Wrap wraps another error
@@ -138,6 +138,7 @@ type Failure struct {
 	Line    int
 	Trace   *stacktrace.Stacktrace
 	err     error
+	Silent  bool
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
@@ -161,6 +162,10 @@ func (e *Failure) ToError() error {
 //
 // If description is empty, only the error message is printed
 func (e *Failure) Handle(description string) {
+	if e.Silent {
+		return
+	}
+
 	logging.Debug("Handling failure, Trace:\n %s", e.Trace.String())
 
 	if description != "" {
