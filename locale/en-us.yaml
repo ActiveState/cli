@@ -1176,6 +1176,10 @@ err_init_must_provide_namespace:
   other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
+err_init_owner_missing:
+  other: Owner name is required to initialize a project
+err_init_project_missing:
+  other: Project name is required to initialize a project
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.

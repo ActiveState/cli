@@ -48,6 +48,13 @@ func (params *RunParams) Prepare() error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
+	if params.Owner == "" {
+		return failures.FailUserInput.New("err_init_owner_missing")
+	}
+	if params.Project == "" {
+		return failures.FailUserInput.New("err_init_project_missing")
+	}
+
 	if params.Path == "" {
 		wd, err := os.Getwd()
 		if err != nil {
