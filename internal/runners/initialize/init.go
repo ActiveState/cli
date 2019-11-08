@@ -78,11 +78,11 @@ func NewInit(config configAble) *Init {
 }
 
 func (r *Init) Run(params *RunParams) error {
-	_, err := r.run(r.config, params)
+	_, err := run(r.config, params)
 	return err
 }
 
-func (r *Init) run(config configAble, runParams *RunParams) (string, error) {
+func run(config configAble, runParams *RunParams) (string, error) {
 	err := runParams.Prepare()
 	if err != nil {
 		return "", err

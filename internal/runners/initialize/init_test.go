@@ -113,7 +113,7 @@ func TestInit_Run(t *testing.T) {
 			r := &Init{
 				config: tt.fields.config,
 			}
-			path, err := r.run(tt.fields.config, &RunParams{
+			path, err := run(tt.fields.config, &RunParams{
 				Owner:    tt.args.owner,
 				Project:  tt.args.project,
 				Path:     tt.args.path,
