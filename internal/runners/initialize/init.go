@@ -1,11 +1,9 @@
 package initialize
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,92 +19,83 @@ type configAble interface {
 	Set(key string, value interface{})
 }
 
+type SkeletonStyle string
+
+const (
+	Simple SkeletonStyle = ""
+	Editor SkeletonStyle = "editor"
+)
+
 type Init struct {
 	config configAble
 }
 
-type Options struct {
-	Namespace,
-	Path,
-	Language,
-	Skeleton string
+type RunParams struct {
+	Owner    string
+	Project  string
+	Path     string
+	Skeleton SkeletonStyle
+	Language language.Language
 }
 
-const (
-	Base   = "base"
-	Editor = "editor"
-)
+func (params *RunParams) Prepare() error {
+	// Fail if target dir already has an activestate.yaml
+	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
+		absPath, err := filepath.Abs(params.Path)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+		return failures.FailUserInput.New("err_init_file_exists", absPath)
+	}
+
+	if params.Path == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		params.Path = filepath.Join(wd, fmt.Sprintf("%s/%s", params.Owner, params.Project))
+	}
+
+	return nil
+}
 
 func NewInit(config configAble) *Init {
 	return &Init{config}
 }
 
-func (r *Init) Run(opts Options) error {
-	_, err := r.run(opts)
+func (r *Init) Run(params *RunParams) error {
+	_, err := r.run(params)
 	return err
 }
 
-func (r *Init) run(opts Options) (string, error) {
-	if opts.Namespace == "" {
-		return "", failures.FailUserInput.New("err_init_must_provide_namespace")
+func (r *Init) run(runParams *RunParams) (string, error) {
+	err := runParams.Prepare()
+	if err != nil {
+		return "", err
 	}
 
-	ns, fail := project.ParseNamespace(opts.Namespace)
-	if fail != nil {
-		return "", fail
-	}
-
-	// Detect path if none was provided
-	if opts.Path == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		opts.Path = filepath.Join(wd, opts.Namespace)
-	}
-
-	// Fail if target dir already has an activestate.yaml
-	if fileutils.FileExists(filepath.Join(opts.Path, constants.ConfigFileName)) {
-		absPath, err := filepath.Abs(opts.Path)
-		if err != nil {
-			return "", failures.FailIO.Wrap(err)
-		}
-		return "", failures.FailUserInput.New("err_init_file_exists", absPath)
-	}
-
-	if opts.Language != "" {
-		lang := language.MakeByName(opts.Language)
-		if lang == language.Unknown {
-			return "", failures.FailUserInput.New("err_init_invalid_language", opts.Language, strings.Join(language.AvailableNames(), ", "))
-		}
+	if runParams.Language != language.Unknown {
 		// Store language for when we run 'state push'
-		r.config.Set(opts.Path+"_language", opts.Language)
+		r.config.Set(runParams.Path+"_language", runParams.Language)
 	}
 
-	params := &projectfile.CreateParams{
-		Owner:     ns.Owner,
-		Project:   ns.Project,
-		Directory: opts.Path,
+	createParams := &projectfile.CreateParams{
+		Owner:     runParams.Owner,
+		Project:   runParams.Project,
+		Directory: runParams.Path,
 	}
-	if opts.Skeleton != "" {
-		switch strings.ToLower(opts.Skeleton) {
-		case Editor:
-			// Set our own custom content
-			params.Content = locale.T("editor_yaml")
-		case Base:
-			// Use the default content set in the projectfile.Create function
-		default:
-			return "", failures.FailUserInput.New("err_init_invalid_skeleton_flag")
-		}
+
+	if runParams.Skeleton == Editor {
+		createParams.Content = locale.T("editor_yaml")
 	}
 
 	// Create the activestate.yaml
-	fail = projectfile.Create(params)
+	fail := projectfile.Create(createParams)
 	if fail != nil {
 		return "", fail
 	}
 
-	print.Line(locale.Tr("init_success", opts.Namespace, opts.Path))
+	print.Line(locale.Tr("init_success", runParams.Owner, runParams.Project, runParams.Path))
 
-	return opts.Path, nil
+	return runParams.Path, nil
 }
