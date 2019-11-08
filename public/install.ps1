@@ -52,7 +52,7 @@ function notifySettingChange(){
 "@
     }
     # notify all windows of environment block change
-    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result);
+    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result) | Out-Null;
 
 }
 
@@ -168,6 +168,63 @@ function warningIfadmin() {
     }
 }
 
+function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+
+    # State tool binary base dir
+    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
+    
+    Write-Host "Preparing for installation...`n"
+    
+    $downloader = new-object System.Net.WebClient
+
+    # Get version and checksum
+    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
+    Write-Host "Determining latest version...`n"
+    try{
+        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $latestVersion = $branchJson.Version
+        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+    } catch [System.Exception] {
+        Write-Warning "Unable to retrieve the latest version number"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+    $latestChecksum = $versionedJson.Sha256v2
+
+    # Download pkg file
+    $zipPath = Join-Path $downloadDir $statepkg
+    # Clean it up to start but leave it behind when done 
+    if(Test-Path $downloadDir){
+        Remove-Item $downloadDir -Recurse
+    }
+    New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
+    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
+    Write-Host "Fetching the latest version: $latestVersion...`n"
+    try{
+        $downloader.DownloadFile($zipURL, $zipPath)
+    } catch [System.Exception] {
+        Write-Warning "Could not install state tool"
+        Write-Warning "Could not access $zipURL"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+
+    # Check the sums
+    Write-Host "Verifying checksums...`n"
+    $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+    if ($hash -ne $latestChecksum){
+        Write-Warning "SHA256 sum did not match:"
+        Write-Warning "Expected: $latestChecksum"
+        Write-Warning "Received: $hash"
+        Write-Warning "Aborting installation"
+        exit 1
+    }
+
+    # Extract binary from pkg and confirm checksum
+    Write-Host "Extracting $statepkg...`n"
+    Expand-Archive $zipPath $downloadDir
+}
+
 function install()
 {
     $USAGE="install.ps1 [flags]
@@ -198,11 +255,6 @@ function install()
         exit 1
     }
     
-    # State tool binary base dir
-    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
-    
-    Write-Host "Preparing for installation...`n"
-    
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
     if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
         $statejson="windows-amd64.json"
@@ -215,56 +267,6 @@ function install()
         Write-Warning "Aborting installation"
         exit 1
     }
-
-    $downloader = new-object System.Net.WebClient
-
-    # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
-    Write-Host "Determining latest version...`n"
-    try{
-        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
-        $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
-    } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number"
-        Write-Error $_.Exception.Message
-        exit 1
-    }
-    $latestChecksum = $versionedJson.Sha256v2
-
-    # Download pkg file
-    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $zipPath = Join-Path $tmpParentPath $statepkg
-    # Clean it up to start but leave it behind when done 
-    if(Test-Path $tmpParentPath){
-        Remove-Item $tmpParentPath -Recurse
-    }
-    New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
-    Write-Host "Fetching the latest version: $latestVersion...`n"
-    try{
-        $downloader.DownloadFile($zipURL, $zipPath)
-    } catch [System.Exception] {
-        Write-Warning "Could not install state tool"
-        Write-Warning "Could not access $zipURL"
-        Write-Error $_.Exception.Message
-        exit 1
-    }
-
-    # Check the sums
-    Write-Host "Verifying checksums...`n"
-    $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-    if ($hash -ne $latestChecksum){
-        Write-Warning "SHA256 sum did not match:"
-        Write-Warning "Expected: $latestChecksum"
-        Write-Warning "Received: $hash"
-        Write-Warning "Aborting installation"
-        exit 1
-    }
-
-    # Extract binary from pkg and confirm checksum
-    Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $tmpParentPath
 
     # Get the install directory and ensure we have permissions on it.
     # If the user provided an install dir we do no verification.
@@ -322,6 +324,9 @@ function install()
             }
         }
     }
+
+    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
+    fetchArtifacts $tmpParentPath $statejson $statepkg
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Check if installation is in $PATH
