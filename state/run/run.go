@@ -2,6 +2,7 @@ package run
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -121,9 +122,14 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	// ignore code for now, passing via failure
 	_, err := subs.Run(sf.Filename(), scriptArgs...)
 	if err != nil {
-		fail := failures.FailCmd.Wrap(err)
-		fail.Silent = true
-		failures.Handle(fail, locale.T("error_state_run_error"))
+		if eerr, ok := err.(*exec.ExitError); ok {
+			err = &failures.ExitError{
+				Err:    eerr,
+				Code:   eerr.ExitCode(),
+				Silent: true,
+			}
+		}
+		failures.Handle(err, locale.T("error_state_run_error"))
 	}
 }
 

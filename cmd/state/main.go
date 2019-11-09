@@ -38,10 +38,10 @@ func main() {
 
 	code, err := run(os.Args)
 	if err != nil {
-		eerr, ok := err.(interface{ ExitCode() int })
-		if ok {
+		if eerr, ok := err.(interface{ ExitCode() int }); ok {
 			code = eerr.ExitCode()
-		} else {
+		}
+		if eerr, ok := err.(interface{ IsSilent() bool }); !ok || !eerr.IsSilent() {
 			print.Error(err.Error())
 		}
 	}
