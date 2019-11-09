@@ -27,7 +27,6 @@ func activationLoop(targetPath string, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
 	var proj *project.Project
-	var retErr error
 	for {
 		var fail *failures.Failure
 		proj, fail = project.FromPath(targetPath)
@@ -47,12 +46,7 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			print.Stderr().Warning(locale.Tr("unstable_version_warning", constants.BugTrackerURL))
 		}
 
-		loop, err := activator(proj.Owner(), proj.Name(), proj.Source().Path())
-		if err != nil {
-			retErr = err
-			break
-		}
-		if !loop {
+		if !activator(proj.Owner(), proj.Name(), proj.Source().Path()) {
 			break
 		}
 
@@ -61,21 +55,21 @@ func activationLoop(targetPath string, activator activateFunc) error {
 
 	print.Bold(locale.T("info_deactivated", proj))
 
-	return retErr
+	return nil
 }
 
-type activateFunc func(owner, name, srcPath string) (bool, error)
+type activateFunc func(owner, name, srcPath string) bool
 
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
-func activate(owner, name, srcPath string) (bool, error) {
+func activate(owner, name, srcPath string) bool {
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
-		return false, nil
+		return false
 	}
 
 	ignoreWindowsInterrupts()
@@ -83,7 +77,7 @@ func activate(owner, name, srcPath string) (bool, error) {
 	subs, err := subshell.Activate()
 	if err != nil {
 		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
-		return false, nil
+		return false
 	}
 
 	done := make(chan struct{})
@@ -93,7 +87,7 @@ func activate(owner, name, srcPath string) (bool, error) {
 	hails, fail := hail.Open(done, fname)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
-		return false, nil
+		return false
 	}
 
 	return listenForReactivation(venv.ActivationID(), hails, subs)
@@ -115,13 +109,13 @@ type subShell interface {
 	Failures() <-chan *failures.Failure
 }
 
-func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) (bool, error) {
+func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell) bool {
 	for {
 		select {
 		case rcvd, ok := <-rcvs:
 			if !ok {
 				logging.Error("hailing channel closed")
-				return false, nil
+				return false
 			}
 
 			if rcvd.Fail != nil {
@@ -140,15 +134,15 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 			if fail := subs.Deactivate(); fail != nil {
 				failures.Handle(fail, locale.T("error_deactivating_subshell"))
-				return false, nil
+				return false
 			}
 
-			return true, nil
+			return true
 
 		case fail, ok := <-subs.Failures():
 			if !ok {
 				logging.Error("subshell failure channel closed")
-				return false, nil
+				return false
 			}
 
 			if fail != nil {
@@ -159,13 +153,13 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 						Silent: true,
 					}
 					failures.Handle(err, locale.T("error_in_active_subshell"))
-					return false, nil
+					return false
 				}
 
 				failures.Handle(fail, locale.T("error_in_active_subshell"))
 			}
 
-			return false, nil
+			return false
 		}
 	}
 }

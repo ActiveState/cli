@@ -198,7 +198,6 @@ func Handle(err error, description string) {
 		return
 	default:
 		if serr, ok := err.(interface{ IsSilent() bool }); ok && serr.IsSilent() {
-			fmt.Println("pew")
 			return
 		}
 
