@@ -38,7 +38,7 @@ func main() {
 
 	code, err := run(os.Args)
 	if err != nil {
-		eerr, ok := err.(*exec.ExitError)
+		eerr, ok := err.(interface{ ExitCode() int })
 		if ok {
 			code = eerr.ExitCode()
 		} else {
