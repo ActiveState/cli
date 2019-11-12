@@ -3,6 +3,9 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -106,8 +109,18 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	expected := string(data)
 	suite.LoginAsPersistentUser()
 	suite.Spawn("auth", "--json")
-	suite.Expect(expected)
 	suite.Wait()
+	if runtime.GOOS == "windows" {
+		// When the PTY reaches 80 characters it continues output on a new line.
+		// On Windows this means both a carriage return and a new line. Windows
+		// also picks up any spaces at the end of the console output, hence all
+		// the cleaning we must do here.
+		re := regexp.MustCompile("\r?\n")
+		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
+		suite.Equal(expected, actual)
+	} else {
+		suite.Expect(expected)
+	}
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
