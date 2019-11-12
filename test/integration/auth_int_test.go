@@ -109,6 +109,9 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	expected := string(data)
 	suite.LoginAsPersistentUser()
 	suite.Spawn("auth", "--json")
+	if runtime.GOOS != "windows" {
+		suite.Expect(expected)
+	}
 	suite.Wait()
 	if runtime.GOOS == "windows" {
 		// When the PTY reaches 80 characters it continues output on a new line.
@@ -118,8 +121,6 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 		re := regexp.MustCompile("\r?\n")
 		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
 		suite.Equal(expected, actual)
-	} else {
-		suite.Expect(expected)
 	}
 }
 
