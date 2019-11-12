@@ -92,7 +92,7 @@ func (suite *AuthIntegrationTestSuite) Login() {
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	type userJSON struct {
 		Username        string `json:"username,omitempty"`
-		URLName         string `json:"URLName,omitempty"`
+		URLName         string `json:"urlname,omitempty"`
 		Tier            string `json:"tier,omitempty"`
 		PrivateProjects bool   `json:"privateProjects"`
 	}

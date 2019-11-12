@@ -122,7 +122,7 @@ func Execute(cmd *cobra.Command, args []string) {
 func userToJSON(username string) ([]byte, *failures.Failure) {
 	type userJSON struct {
 		Username        string `json:"username,omitempty"`
-		URLName         string `json:"URLName,omitempty"`
+		URLName         string `json:"urlname,omitempty"`
 		Tier            string `json:"tier,omitempty"`
 		PrivateProjects bool   `json:"privateProjects"`
 	}
