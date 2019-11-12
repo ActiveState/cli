@@ -1,7 +1,11 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
+	"regexp"
+	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -83,6 +87,41 @@ func (suite *AuthIntegrationTestSuite) Login() {
 	suite.Spawn("auth")
 	suite.Expect("You are logged in")
 	suite.Wait()
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+	type userJSON struct {
+		Username        string `json:"username,omitempty"`
+		URLName         string `json:"urlname,omitempty"`
+		Tier            string `json:"tier,omitempty"`
+		PrivateProjects bool   `json:"privateProjects"`
+	}
+
+	user := userJSON{
+		Username:        "cli-integration-tests",
+		URLName:         "cli-integration-tests",
+		Tier:            "free",
+		PrivateProjects: false,
+	}
+	data, err := json.Marshal(user)
+	suite.Require().NoError(err)
+
+	expected := string(data)
+	suite.LoginAsPersistentUser()
+	suite.Spawn("auth", "--json")
+	if runtime.GOOS != "windows" {
+		suite.Expect(expected)
+	}
+	suite.Wait()
+	if runtime.GOOS == "windows" {
+		// When the PTY reaches 80 characters it continues output on a new line.
+		// On Windows this means both a carriage return and a new line. Windows
+		// also picks up any spaces at the end of the console output, hence all
+		// the cleaning we must do here.
+		re := regexp.MustCompile("\r?\n")
+		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
+		suite.Equal(expected, actual)
+	}
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
