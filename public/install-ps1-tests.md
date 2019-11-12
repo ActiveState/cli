@@ -85,7 +85,7 @@ Remove-Item -Recurse -Force C:\temp\state\bin
 
 ### Install and activate as administrator
 
-#### Version A.3 Invalid options
+#### Version A.3.1 Invalid options
 
 ```powershell
 powershell .\public\install.ps1 -Activate ActiveState/cli -n
@@ -94,6 +94,16 @@ powershell .\public\install.ps1 -Activate ActiveState/cli -n
 **What to look for**:
 
 - An error message about incompatible options
+
+#### Version A.3.2 Invalid options 2
+
+```powershell
+powershell .\public\install.ps1 -f
+```
+
+**What to look for**:
+
+- An error message about `-f`  options
 
 #### Version A.4 Install and Activate
 
@@ -144,13 +154,25 @@ Run command again
 **What to look for**:
 
 - You should see a warning for running as administrator
+- The state tool artifact should **NOT** be downloaded
 - After the second install attempt you should be presented with a message that says:
 
 ```powershell
 Previous install detected at '<install-dir>'
-If you would like to reinstall the state tool please first uninstall it.
-You can do this by running 'Remove-Item' <install-dir>'
+To update the state tool to the latest version, please run 'state update'.
+To install in a different location, please specify the installation directory with '-t TARGET_DIR'.
 ```
+
+### Version A.6 Install with force-overwrite
+
+```powershell
+.\public\install.ps1 -t C:\temp\state\bin -f -n
+```
+
+**What to look for**:
+
+- You should see a warning for running as administrator
+- You should see a warning that the state tool gets overwritten
 
 ### Cleanup A.5
 

@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/invite"
-	"github.com/ActiveState/cli/state/keypair"
 	"github.com/ActiveState/cli/state/organizations"
 	pkg "github.com/ActiveState/cli/state/package"
 	"github.com/ActiveState/cli/state/projects"
@@ -43,7 +42,6 @@ func applyLegacyChildren(cmd *captain.Command) {
 		invite.Command,
 		pkg.Command,
 		secrets.NewCommand(secretsapi.Get()).Config(),
-		keypair.Command,
 		fork.Command,
 	)
 }

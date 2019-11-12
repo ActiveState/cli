@@ -462,7 +462,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
-  other: Script changes dectect, updating activestate.yaml. Press (Y/y) when done editing
+  other: Script changes detected, updating activestate.yaml
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
@@ -1032,9 +1032,15 @@ err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
   other: A project already exists in the specified directory
+err_projectfile_invalid_url:
+  other: The provided URL is invalid
 err_project_require_path:
   other: A project path was not supplied
-error_git_project_url_mistmatch:
+err_project_require_owner:
+  other: A project owner was not supplied
+err_project_require_name:
+  other: A project name was not supplied
+error_git_project_url_mismatch:
   other: The project URL in the cloned activestate.yaml does not match the platfom project
 error_git_target_dir_not_empty:
   other: Target directory for cloning already exists and is not empty
@@ -1074,6 +1080,34 @@ sample_yaml:
           echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
           echo. 
           echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
+editor_yaml:
+  other: |
+    scripts:
+      - name: helloWorld
+        constraints: 
+          os: macos,linux
+        value: echo "Hello World!"
+      - name: helloWorld
+        constraints: 
+          os: windows
+        value: echo Hello World!
+      - name: intro
+        constraints: 
+          os: macos,linux
+        value: |
+          echo "Your runtime environment is now ready!"
+          echo ""
+          echo "To see how scripts work and add your own, open up the activestate.yaml file with your editor."
+      - name: intro
+        constraints: 
+          os: windows
+        value: |
+          echo Your runtime environment is now ready!
+          echo.
+          echo To see how scripts work and add your own, open up the activestate.yaml file with your editor.
+    events:
+      - name: ACTIVATE
+        value: $scripts.intro
 package_description:
   other: Manage packages used in your project
 users_plural:
@@ -1144,13 +1178,19 @@ err_init_must_provide_namespace:
   other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
+err_init_owner_missing:
+  other: Owner name is required to initialize a project
+err_init_project_missing:
+  other: Project name is required to initialize a project
 init_success:
   other: |
-    Project '{{.V0}}' has been succesfully initialized at '{{.V1}}'.
+    Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_language_description:
   other: The language that this project should use
+flag_state_init_skeleton_description:
+  other: The activestate.yaml template to use with project file creation. Accepts two values 'base' and 'editor'.
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 )
 
 type configMock struct {
@@ -49,9 +50,10 @@ func TestInit_Run(t *testing.T) {
 		config configAble
 	}
 	type args struct {
-		namespace string
-		path      string
-		language  string
+		owner    string
+		project  string
+		path     string
+		language language.Language
 	}
 	tests := []struct {
 		name     string
@@ -63,28 +65,45 @@ func TestInit_Run(t *testing.T) {
 		{
 			"namespace without path or language",
 			fields{&configMock{}},
-			args{"foo/bar", "", ""},
+			args{
+				owner:   "foo",
+				project: "bar",
+				path:    "",
+			},
 			false,
 			filepath.Join(tempDir, "foo/bar"),
 		},
 		{
 			"namespace with path and without language",
 			fields{&configMock{}},
-			args{"foo/bar", filepath.Join(tempDir, "1"), ""},
+			args{
+				owner:   "foo",
+				project: "bar",
+				path:    filepath.Join(tempDir, "1"),
+			},
 			false,
 			filepath.Join(tempDir, "1"),
 		},
 		{
 			"namespace with path and language",
 			fields{&configMock{}},
-			args{"foo/bar", filepath.Join(tempDir, "2"), "python2"},
+			args{
+				owner:    "foo",
+				project:  "bar",
+				path:     filepath.Join(tempDir, "2"),
+				language: language.Python2,
+			},
 			false,
 			filepath.Join(tempDir, "2"),
 		},
 		{
 			"as.yaml already exists",
 			fields{&configMock{}},
-			args{"foo/bar", tempDirWithConfig, ""},
+			args{
+				owner:   "foo",
+				project: "bar",
+				path:    tempDirWithConfig,
+			},
 			true,
 			"",
 		},
@@ -94,7 +113,12 @@ func TestInit_Run(t *testing.T) {
 			r := &Init{
 				config: tt.fields.config,
 			}
-			path, err := r.run(tt.args.namespace, tt.args.path, tt.args.language)
+			path, err := run(tt.fields.config, &RunParams{
+				Owner:    tt.args.owner,
+				Project:  tt.args.project,
+				Path:     tt.args.path,
+				Language: &tt.args.language,
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Init.run() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -110,11 +134,11 @@ func TestInit_Run(t *testing.T) {
 				t.Errorf("Expected file to exist: %s", configFile)
 			} else {
 				contents := fileutils.ReadFileUnsafe(configFile)
-				if !strings.Contains(string(contents), tt.args.namespace) {
-					t.Errorf("Expected %s to contain %s", contents, tt.args.namespace)
+				if !strings.Contains(string(contents), fmt.Sprintf("%s/%s", tt.args.owner, tt.args.project)) {
+					t.Errorf("Expected %s to contain %s/%s", contents, tt.args.owner, tt.args.project)
 				}
 			}
-			if tt.args.language != "" && len(r.config.(*configMock).set) == 0 {
+			if tt.args.language != language.Unknown && len(r.config.(*configMock).set) == 0 {
 				t.Errorf("Expected config to have been written for language")
 			}
 		})

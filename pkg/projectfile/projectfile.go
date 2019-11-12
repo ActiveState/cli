@@ -39,8 +39,17 @@ var (
 	// FailNewBlankPath identifies a failure as being caused by the commit id not getting set
 	FailNewBlankPath = failures.Type("projectfile.fail.blanknewpath")
 
+	// FailNewBlankOwner identifies a failure as being caused by the owner parameter not being set
+	FailNewBlankOwner = failures.Type("projectfile.fail.blanknewonwer")
+
+	// FailNewBlankProject identifies a failure as being caused by the project parameter not being set
+	FailNewBlankProject = failures.Type("projectfile.fail.blanknewproject")
+
 	// FailProjectExists identifies a failure as being caused by the commit id not getting set
 	FailProjectExists = failures.Type("projectfile.fail.projectalreadyexists")
+
+	// FailInvalidURL identifies a failures as being caused by the project URL being invalid
+	FailInvalidURL = failures.Type("projectfile.fail.invalidurl")
 )
 
 var strReg = fmt.Sprintf(`https:\/\/%s\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*(.*)`, strings.Replace(constants.PlatformURL, ".", "\\.", -1))
@@ -367,61 +376,101 @@ func FromPath(path string) (*Project, *failures.Failure) {
 	return project, nil
 }
 
-// CreateWithProjectURL a new activestate.yaml with default content
-func CreateWithProjectURL(projectURL string, path string) (*Project, *failures.Failure) {
-	if path == "" {
-		return nil, FailNewBlankPath.New(locale.T("err_project_require_path"))
-	}
-	path = filepath.Join(path, constants.ConfigFileName)
-
-	if fileutils.FileExists(path) {
-		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
-	}
-
-	fail := ValidateProjectURL(projectURL)
-	if fail != nil {
-		return nil, fail
-	}
-	match := ProjectURLRe.FindStringSubmatch(projectURL)
-	owner, project := match[1], match[2]
-
-	data := map[string]interface{}{
-		"Project": projectURL,
-		"Content": locale.T("sample_yaml",
-			map[string]interface{}{"Owner": owner, "Project": project}),
-	}
-
-	content, fail := loadTemplate(path, data)
-	if fail != nil {
-		return nil, fail
-	}
-
-	fail = fileutils.WriteFile(path, []byte(content.String()))
-	if fail != nil {
-		return nil, fail
-	}
-
-	return Parse(path)
+type CreateParams struct {
+	Owner      string
+	Project    string
+	CommitID   *strfmt.UUID
+	Directory  string
+	Content    string
+	path       string
+	projectURL string
 }
 
-// CreateByParams will create a new activestate.yaml with a projectURL for the given details
-func Create(org, project string, commitID *strfmt.UUID, directory string) *failures.Failure {
-	fail := fileutils.MkdirUnlessExists(directory)
+// CreateWithProjectURL a new activestate.yaml with default content
+func CreateWithProjectURL(projectURL, path string) (*Project, *failures.Failure) {
+	return createCustom(&CreateParams{
+		projectURL: projectURL,
+		Directory:  path,
+	})
+}
+
+// Create will create a new activestate.yaml with a projectURL for the given details
+func Create(params *CreateParams) *failures.Failure {
+	fail := validateCreateParams(params)
 	if fail != nil {
 		return fail
 	}
 
-	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, org, project)
-	if commitID != nil {
-		projectURL = fmt.Sprintf("%s?commitID=%s", projectURL, commitID.String())
-	}
-
-	_, fail = CreateWithProjectURL(projectURL, directory)
+	_, fail = createCustom(params)
 	if fail != nil {
 		return fail
 	}
 
 	return nil
+}
+
+func createCustom(params *CreateParams) (*Project, *failures.Failure) {
+	fail := fileutils.MkdirUnlessExists(params.Directory)
+	if fail != nil {
+		return nil, fail
+	}
+
+	if params.projectURL == "" {
+		params.projectURL = fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project)
+		if params.CommitID != nil {
+			params.projectURL = fmt.Sprintf("%s?commitID=%s", params.projectURL, params.CommitID.String())
+		}
+	}
+
+	params.path = filepath.Join(params.Directory, constants.ConfigFileName)
+	if fileutils.FileExists(params.path) {
+		return nil, FailProjectExists.New(locale.T("err_projectfile_exists"))
+	}
+
+	fail = ValidateProjectURL(params.projectURL)
+	if fail != nil {
+		return nil, fail
+	}
+	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
+	if len(match) < 3 {
+		return nil, FailInvalidURL.New("err_projectfile_invalid_url")
+	}
+	owner, project := match[1], match[2]
+
+	if params.Content == "" {
+		params.Content = locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project})
+	}
+
+	data := map[string]interface{}{
+		"Project": params.projectURL,
+		"Content": params.Content,
+	}
+
+	template, fail := loadTemplate(params.path, data)
+	if fail != nil {
+		return nil, fail
+	}
+
+	fail = fileutils.WriteFile(params.path, []byte(template.String()))
+	if fail != nil {
+		return nil, fail
+	}
+
+	return Parse(params.path)
+}
+
+func validateCreateParams(params *CreateParams) *failures.Failure {
+	switch {
+	case params.Owner == "":
+		return FailNewBlankOwner.New("err_project_require_owner")
+	case params.Project == "":
+		return FailNewBlankProject.New("err_project_require_name")
+	case params.Directory == "":
+		return FailNewBlankPath.New(locale.T("err_project_require_path"))
+	default:
+		return nil
+	}
 }
 
 // ParseVersionInfo parses the version field from the projectfile, and ONLY the version field. This is to ensure it doesn't

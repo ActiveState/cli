@@ -10,9 +10,10 @@ install.sh [flags]
 
 Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything, just install and override any existing executables
- -t <dir>              Install target directory
- -f <file>              Default 'state'.  Binary filename to use
+ -n                    Don't prompt for anything when installing into a new location
+ -f                    Forces overwrite.  Overwrite existing state tool
+ -t <dir>              Install into target directory <dir>
+ -e <file>             Default 'state'. Filename to use for the executable
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -38,6 +39,7 @@ ARCH="amd64"
 TERM="${TERM:=xterm}"
 
 NOPROMPT=false
+FORCEOVERWRITE=false
 
 info () {
   echo "$(tput bold)==> ${1}$(tput sgr0)"
@@ -109,7 +111,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:f:?h-:" opt; do
+while getopts "nb:t:e:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -127,6 +129,9 @@ while getopts "nb:t:f:?h-:" opt; do
     TARGET=$OPTARG
     ;;
   f)
+    FORCEOVERWRITE=true
+    ;;
+  e)
     STATEEXE=$OPTARG
     ;;
   n)
@@ -143,6 +148,12 @@ done
 # so we are bailing if that's being requested...
 if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   error "Flags -n and --activate cannot be set at the same time."
+  exit 1
+fi
+
+# force overwrite requires no prompt flag
+if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
+  error "Flag -f also requires -n"
   exit 1
 fi
 
@@ -163,6 +174,7 @@ else
   exit 1
 fi
 
+# remove previous installation in temp dir
 if [ -f $TMPDIR/$STATEPKG ]; then
   rm $TMPDIR/$STATEPKG
 fi
@@ -171,46 +183,55 @@ if [ -f $TMPDIR/$TMPEXE ]; then
   rm $TMPDIR/$TMPEXE
 fi
 
-info "Determining latest version..."
-# Determine the latest version to fetch.
-$FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
-VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-rm $TMPDIR/$STATEJSON
-if [ -z "$VERSION" ]; then
-  error "Unable to retrieve the latest version number"
-  exit 1
-fi
-info "Fetching the latest version: $VERSION..."
-# Fetch it.
-$FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
+fetchArtifact () {
+  info "Determining latest version..."
+  # Determine the latest version to fetch.
+  $FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
+  VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
+  SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  rm $TMPDIR/$STATEJSON
 
-# Extract the State binary after verifying its checksum.
-# Verify checksum.
-info "Verifying checksum..."
-SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
-if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
-  error "SHA256 sum did not match:"
-  error "Expected: $SUM"
-  error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
-  error "Aborting installation."
-  exit 1
-fi
+  if [ -z "$VERSION" ]; then
+    error "Unable to retrieve the latest version number"
+    exit 1
+  fi
+  info "Fetching the latest version: $VERSION..."
+  # Fetch it.
+  $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
 
-info "Extracting $STATEPKG..."
-if [ $OS = "windows" ]; then
-  # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
-  TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
-else
-  tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
-fi
-chmod +x $TMPDIR/$TMPEXE
+  # Extract the State binary after verifying its checksum.
+  # Verify checksum.
+  info "Verifying checksum..."
+  if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
+    error "SHA256 sum did not match:"
+    error "Expected: $SUM"
+    error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
+    error "Aborting installation."
+    exit 1
+  fi
+
+  info "Extracting $STATEPKG..."
+  if [ $OS = "windows" ]; then
+    # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
+    TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
+    powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
+  else
+    tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
+  fi
+  chmod +x $TMPDIR/$TMPEXE
+}
 
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ ! -z "$INSTALLDIR" ]; then
+
+# stop if previous installation is detected unless
+# - FORCEOVERWRITE is specified OR
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ $TARGET == $INSTALLDIR ] \
+   ); then
   warn "Previous installation detected at $INSTALLDIR"
-  echo "If you would like to reinstall the state tool please first uninstall it."
-  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  echo "To update the state tool to the latest version, please run 'state update'."
+  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
 fi
 
@@ -280,6 +301,7 @@ while "true"; do
       if [ ! -e "$INSTALLDIR" ]; then
         mkdir -p "$INSTALLDIR" || continue
       fi
+      fetchArtifact
       info "Installing to $INSTALLDIR..."
       mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
       if [ $? -eq 0 ]; then
