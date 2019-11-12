@@ -1,5 +1,0 @@
-{
-    "user_id": "11110000-1111-0000-1111-000011110000",
-    "encrypted_private_key": "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-256-CBC,d17d1e5e1fb564112371228031b503e9\nlhDvUPRZvSBdUBzQvMSUHTrF/DfcDb0bJ8/2eNrmuLmDwmPn7f1LjNKwl3R8XIjy\n-----END RSA PRIVATE KEY-----",
-    "public_key": "-----BEGIN RSA PUBLIC KEY-----\nMB0wDQYJKoZIhvcNAQEBBQADDAAwCQICDKECAwEAAQ==\n-----END RSA PUBLIC KEY-----"
-}
