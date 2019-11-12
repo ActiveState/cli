@@ -23,3 +23,6 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 
 	return nil
 }
+
+func runPrepare(cmd *exec.Cmd) {
+}
