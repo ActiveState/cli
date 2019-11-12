@@ -149,7 +149,6 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 				if eerr, ok := fail.ToError().(*exec.ExitError); ok {
 					err := &failures.ExitError{
 						Err:    eerr,
-						Code:   eerr.ExitCode(),
 						Silent: true,
 					}
 					failures.Handle(err, locale.T("error_in_active_subshell"))

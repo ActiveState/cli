@@ -125,7 +125,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		if eerr, ok := err.(*exec.ExitError); ok {
 			err = &failures.ExitError{
 				Err:    eerr,
-				Code:   eerr.ExitCode(),
 				Silent: true,
 			}
 		}

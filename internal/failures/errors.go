@@ -2,12 +2,7 @@ package failures
 
 type ExitError struct {
 	Err    error
-	Code   int
 	Silent bool
-}
-
-func (e *ExitError) ExitCode() int {
-	return e.Code
 }
 
 func (e *ExitError) IsSilent() bool {

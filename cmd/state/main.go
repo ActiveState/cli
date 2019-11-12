@@ -38,9 +38,6 @@ func main() {
 
 	code, err := run(os.Args)
 	if err != nil {
-		if eerr, ok := err.(interface{ ExitCode() int }); ok {
-			code = eerr.ExitCode()
-		}
 		if eerr, ok := err.(interface{ IsSilent() bool }); !ok || !eerr.IsSilent() {
 			print.Error(err.Error())
 		}
