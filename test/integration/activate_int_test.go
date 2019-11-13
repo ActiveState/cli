@@ -1,8 +1,10 @@
 package integration
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"regexp"
 	"runtime"
 	"testing"
@@ -25,7 +27,6 @@ func (suite *ActivateIntegrationTestSuite) prepareTempDirectory(prefix string) (
 	suite.Require().NoError(err)
 	err = os.MkdirAll(tempDir, 0770)
 	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
 	suite.Require().NoError(err)
 	suite.SetWd(tempDir)
 
@@ -56,11 +57,45 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.SendLine(tempDir)
 	suite.Expect("activated state", 20*time.Second) // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
 	suite.WaitForInput(10 * time.Second)
+
+	f, err := os.Create(path.Join(tempDir, "activestate.yaml"))
+	suite.Require().NoError(err)
+	f.WriteString("project: https://platform.activestate.com/Owner/ProjectName\n" +
+		"scripts:\n" +
+		"   - name: test\n" +
+		"     description: A script that runs for 20 seconds doing nothing.  It should be interrupted.\n" +
+		"     value: |\n" +
+		"          echo start of script\n" +
+		"          timeout 4\n" +
+		"          echo ONLY PRINT IF NOT INTERRUPTED\n" +
+		"     constraints:\n" +
+		"       os: windows\n" +
+		"   - name: test\n" +
+		"     description: A script that runs for 20 seconds doing nothing.  It should be interrupted.\n" +
+		"     value: |\n" +
+		"          echo start of script\n" +
+		"          sleep 4\n" +
+		"          echo ONLY PRINT IF NOT INTERRUPTED\n" +
+		"     constraints:\n" +
+		"       os: linux,macos\n")
+	f.Close()
+
+	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
+	suite.Expect("start of script", 5*time.Second)
+	suite.Send(string([]byte{0x3}))
+	suite.Expect("^C")
 	suite.SendLine("exit")
 	suite.Wait()
+	suite.Require().NotContains(
+		suite.TerminalSnapshot(), "ONLY PRINT IF NOT INTERRUPTED",
+	)
+	suite.Require().NotContains(
+		suite.TerminalSnapshot(), "Terminate batch job",
+	)
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
+	defer suite.TeardownTest()
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Runtimes are not supported on macOS")
 	}
