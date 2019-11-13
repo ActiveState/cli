@@ -82,6 +82,17 @@ func (s *Suite) SetupTest() {
 	os.Chdir(os.TempDir())
 }
 
+// Executable returns the path to the executable under test (state tool)
+func (s *Suite) Executable() string {
+	return s.executable
+}
+
+// TeardownTest closes the terminal attached to this integration test suite
+// Run this to clean-up everything set up with SetupTest()
+func (s *Suite) TeardownTest() {
+	s.console.Close()
+}
+
 // ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
@@ -228,10 +239,30 @@ func (s *Suite) LoginAsPersistentUser() {
 }
 
 // Wait waits for the tested process to finish and forwards its state including ExitCode
-func (s *Suite) Wait() (state *os.ProcessState, err error) {
+func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
 		return
 	}
-	s.ExpectEOF()
-	return s.cmd.Process.Wait()
+
+	t := time.Second
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+	done := make(chan struct {
+		state *os.ProcessState
+		err   error
+	})
+	go func() {
+		s, e := s.cmd.Process.Wait()
+		done <- struct {
+			state *os.ProcessState
+			err   error
+		}{state: s, err: e}
+	}()
+	select {
+	case s := <-done:
+		return s.state, s.err
+	case <-time.After(t):
+		return nil, fmt.Errorf("i/o error")
+	}
 }
