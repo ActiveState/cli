@@ -20,7 +20,7 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 	return nil
 }
 
-// runPrepare ensures that the processes are run in a new process group.
+// updateRunCmd ensures that the processes are run in a new process group.
 // The effects of this flag are explained here.
 // https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
 // Without the flag, `state run` commands can misbehave.  The simplest example
