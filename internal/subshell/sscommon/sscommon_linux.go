@@ -23,7 +23,3 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 
 	return nil
 }
-
-func updateRunCmd(cmd *exec.Cmd) *exec.Cmd {
-	return cmd
-}
