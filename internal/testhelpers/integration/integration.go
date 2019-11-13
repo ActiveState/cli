@@ -32,6 +32,7 @@ type Suite struct {
 	executable string
 	cmd        *exec.Cmd
 	env        []string
+	logFile    *os.File
 	wd         *string
 }
 
@@ -118,6 +119,10 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
 
 	var err error
+	s.logFile, err = os.Create("pty.log")
+	if err != nil {
+		s.Failf("", "Could not open pty log file: %v", err)
+	}
 	s.console, err = expect.NewConsole(
 		expect.WithDefaultTimeout(10 * time.Second),
 	)
