@@ -470,7 +470,11 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 
 // CopyFiles will copy all of the files/dirs within one directory to another.
 // Both directories must already exist
-func CopyFiles(src, dest string) *failures.Failure {
+func CopyFiles(src, dst string) *failures.Failure {
+	return copyFiles(src, dst, false)
+}
+
+func copyFiles(src, dest string, remove bool) *failures.Failure {
 	if !DirExists(src) {
 		return failures.FailOS.New("err_os_not_a_directory", src)
 	}
@@ -513,6 +517,14 @@ func CopyFiles(src, dest string) *failures.Failure {
 				return fail
 			}
 		}
+
+		if !remove {
+			continue
+		}
+
+		if err := os.Remove(srcPath); err != nil {
+			return failures.FailOS.Wrap(err)
+		}
 	}
 
 	return nil
@@ -552,4 +564,44 @@ func TempDirUnsafe() string {
 		panic(fmt.Sprintf("Could not create tempDir: %v", err))
 	}
 	return f
+}
+
+func trialRename(src, dst string) (bool, *failures.Failure) {
+	if !DirExists(src) {
+		return false, failures.FailOS.New("err_os_not_a_directory", src)
+	}
+	if !DirExists(dst) {
+		return false, failures.FailOS.New("err_os_not_a_directory", dst)
+	}
+
+	tmpFileBase := "test.ext"
+	tmpFileData := []byte("data")
+	tmpSrcName := filepath.Join(src, tmpFileBase)
+
+	if err := ioutil.WriteFile(tmpSrcName, tmpFileData, 0660); err != nil {
+		return false, failures.FailIO.Wrap(err)
+	}
+
+	filename := tmpSrcName
+	defer func() { _ = os.Remove(filename) }()
+
+	tmpDstFile := filepath.Join(dst, tmpFileBase)
+	if err := os.Rename(tmpSrcName, tmpDstFile); err != nil {
+		return false, nil
+	}
+	filename = tmpDstFile
+
+	return true, nil
+}
+
+func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
+	ok, fail := trialRename(src, dst)
+	if fail != nil {
+		return fail
+	}
+	if ok {
+		return MoveAllFiles(src, dst)
+	}
+
+	return copyFiles(src, dst, true)
 }
