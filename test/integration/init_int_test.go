@@ -24,28 +24,40 @@ var (
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest(locale.T("sample_yaml", map[string]interface{}{
+	suite.runInitTest("", locale.T("sample_yaml", map[string]interface{}{
 		"Owner": testUser, "Project": testProject,
 	}))
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.runInitTest(locale.T("editor_yaml"), "--skeleton", "editor")
+	suite.runInitTest("", locale.T("editor_yaml"), "--skeleton", "editor")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(config string, flags ...string) {
+func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
 	suite.Require().NoError(err)
-	suite.SetWd(tempDir)
+
+	suite.runInitTest(tempDir, locale.T("sample_yaml", map[string]interface{}{
+		"Owner": testUser, "Project": testProject,
+	}), "--path", filepath.Join(tempDir, namespace))
+}
+
+func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, flags ...string) {
+	if path == "" {
+		var err error
+		path, err = ioutil.TempDir("", suite.T().Name())
+		suite.Require().NoError(err)
+		suite.SetWd(path)
+	}
 
 	originalWd, err := os.Getwd()
 	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
+	err = os.Chdir(path)
 	suite.Require().NoError(err)
 
 	defer func() {
 		os.Chdir(originalWd)
-		os.RemoveAll(tempDir)
+		os.RemoveAll(path)
 	}()
 
 	var args = []string{"init", namespace}
@@ -57,7 +69,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(config string, flags ...strin
 	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
 	suite.Wait()
 
-	configFilepath := filepath.Join(tempDir, namespace, constants.ConfigFileName)
+	configFilepath := filepath.Join(path, namespace, constants.ConfigFileName)
 	suite.FileExists(configFilepath)
 
 	content, err := ioutil.ReadFile(configFilepath)
