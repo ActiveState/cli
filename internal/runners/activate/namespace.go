@@ -93,8 +93,8 @@ func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
 	return userPath, nil
 }
 
-// pathsForNamespace returns any locations that this namespace is used, it strips out duplicates and paths that are
-// no longer valid
+// availablePaths returns any locations that this namespace is used, it strips out
+// duplicates and paths that are no longer valid
 func (r *NamespaceSelect) availablePaths(namespace string) []string {
 	key := fmt.Sprintf("project_%s", namespace)
 	paths := r.config.GetStringSlice(key)
@@ -124,7 +124,7 @@ func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, *failur
 	return nil, nil
 }
 
-// determineProjectPath will prompt the user for a location to save the project at
+// promptForPathInput will prompt the user for a location to save the project at
 func (r *NamespaceSelect) promptForPathInput(namespace string) (string, *failures.Failure) {
 	wd, err := getSafeWorkDir()
 	if err != nil {
