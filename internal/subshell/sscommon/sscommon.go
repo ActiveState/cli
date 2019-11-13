@@ -94,7 +94,7 @@ func runDirect(env []string, name string, args ...string) (int, error) {
 	runCmd := exec.Command(name, args...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = env
-	runPrepare(runCmd)
+	runCmd = updateRunCmd(runCmd)
 
 	err := runCmd.Run()
 	return osutils.CmdExitCode(runCmd), err

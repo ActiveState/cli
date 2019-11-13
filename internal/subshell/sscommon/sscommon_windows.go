@@ -32,7 +32,8 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 // the issue. Perhaps without creating a new process group, the parent *also* gets
 // interrupted and then detaches the stdin from the batch file. But this is just a guess...
 // So, the entire thing keeps being scary.
-func runPrepare(cmd *exec.Cmd) {
+func updateRunCmd(cmd *exec.Cmd) *exec.Cmd {
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.CreationFlags = 0x00000200 // NEW_PROCESS_GROUP
+	return cmd
 }
