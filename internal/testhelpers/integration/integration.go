@@ -24,6 +24,8 @@ import (
 var persistentUsername = "cli-integration-tests"
 var persistentPassword = "test-cli-integration"
 
+var defaultTimeout = 10 * time.Second
+
 // Suite is our integration test suite
 type Suite struct {
 	suite.Suite
@@ -130,7 +132,7 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 
 	var err error
 	s.console, err = expect.NewConsole(
-		expect.WithDefaultTimeout(10 * time.Second),
+		expect.WithDefaultTimeout(defaultTimeout),
 	)
 	s.Require().NoError(err)
 
@@ -238,27 +240,30 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.Wait()
 }
 
-// Wait waits for the tested process to finish and forwards its state including ExitCode
+// Wait waits for the tested process to finish and returns its state including ExitCode
 func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
 		return
 	}
 
-	t := time.Second
+	s.console.Expect()
+
+	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	done := make(chan struct {
+
+	type processState struct {
 		state *os.ProcessState
 		err   error
-	})
+	}
+	done := make(chan processState)
+
 	go func() {
 		s, e := s.cmd.Process.Wait()
-		done <- struct {
-			state *os.ProcessState
-			err   error
-		}{state: s, err: e}
+		done <- processState{state: s, err: e}
 	}()
+
 	select {
 	case s := <-done:
 		return s.state, s.err
