@@ -594,6 +594,8 @@ func trialRename(src, dst string) (bool, *failures.Failure) {
 	return true, nil
 }
 
+// MoveAllFilesCrossDisk will move all of the files/dirs within one directory
+// to another directory even across disks. Both directories must already exist.
 func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
 	ok, fail := trialRename(src, dst)
 	if fail != nil {
