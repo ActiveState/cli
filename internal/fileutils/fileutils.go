@@ -582,14 +582,14 @@ func trialRename(src, dst string) (bool, *failures.Failure) {
 		return false, failures.FailIO.Wrap(err)
 	}
 
-	filename := tmpSrcName
-	defer func() { _ = os.Remove(filename) }()
+	cleanupFile := tmpSrcName
+	defer func() { _ = os.Remove(cleanupFile) }()
 
 	tmpDstFile := filepath.Join(dst, tmpFileBase)
 	if err := os.Rename(tmpSrcName, tmpDstFile); err != nil {
 		return false, nil
 	}
-	filename = tmpDstFile
+	cleanupFile = tmpDstFile
 
 	return true, nil
 }
