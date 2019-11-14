@@ -518,12 +518,10 @@ func copyFiles(src, dest string, remove bool) *failures.Failure {
 			}
 		}
 
-		if !remove {
-			continue
-		}
-
-		if err := os.Remove(srcPath); err != nil {
-			return failures.FailOS.Wrap(err)
+		if remove {
+			if err := os.Remove(srcPath); err != nil {
+				return failures.FailOS.Wrap(err)
+			}
 		}
 	}
 
