@@ -257,15 +257,15 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		state *os.ProcessState
 		err   error
 	}
-	done := make(chan processState)
+	states := make(chan processState)
 
 	go func() {
 		s, e := s.cmd.Process.Wait()
-		done <- processState{state: s, err: e}
+		states <- processState{state: s, err: e}
 	}()
 
 	select {
-	case s := <-done:
+	case s := <-states:
 		return s.state, s.err
 	case <-time.After(t):
 		return nil, fmt.Errorf("i/o error")
