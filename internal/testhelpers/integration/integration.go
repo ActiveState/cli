@@ -235,6 +235,16 @@ func (s *Suite) ExpectEOF() {
 	s.console.Expect(expect.EOF)
 }
 
+// Signal sends an arbitrary signal to the running process
+func (s *Suite) Signal(sig os.Signal) error {
+	return s.cmd.Process.Signal(sig)
+}
+
+// SendCtrlC tries to emulate what would happen in an interactive shell, when the user presses Ctrl-C
+func (s *Suite) SendCtrlC() {
+	s.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
+}
+
 // Quit sends an interrupt signal to the tested process
 func (s *Suite) Quit() error {
 	return s.cmd.Process.Signal(os.Interrupt)
