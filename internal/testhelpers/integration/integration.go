@@ -80,23 +80,8 @@ func (s *Suite) SetupTest() {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	})
-}
 
-// PrepareTemporaryWorkingDirectory prepares a temporary working directory to run the tests in
-// It returns the directory name a clean-up function
-func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string, cleanup func()) {
-
-	tempDir, err := ioutil.TempDir("", prefix)
-	s.Require().NoError(err)
-	err = os.RemoveAll(tempDir)
-	s.Require().NoError(err)
-	err = os.MkdirAll(tempDir, 0770)
-	s.Require().NoError(err)
-	s.SetWd(tempDir)
-
-	return tempDir, func() {
-		os.RemoveAll(tempDir)
-	}
+	os.Chdir(os.TempDir())
 }
 
 // Executable returns the path to the executable under test (state tool)
@@ -136,7 +121,7 @@ func (s *Suite) Spawn(args ...string) {
 func (s *Suite) SpawnCustom(executable string, args ...string) {
 	var wd string
 	if s.wd == nil {
-		wd = os.TempDir()
+		wd, _ = os.Getwd()
 	} else {
 		wd = *s.wd
 	}
