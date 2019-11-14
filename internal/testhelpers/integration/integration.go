@@ -258,9 +258,9 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		err   error
 	}
 	states := make(chan processState)
-	defer close(states)
 
 	go func() {
+		defer close(states)
 		s, e := s.cmd.Process.Wait()
 		states <- processState{state: s, err: e}
 	}()
