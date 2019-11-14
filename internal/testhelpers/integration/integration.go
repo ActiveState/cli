@@ -24,6 +24,8 @@ import (
 var persistentUsername = "cli-integration-tests"
 var persistentPassword = "test-cli-integration"
 
+var defaultTimeout = 10 * time.Second
+
 // Suite is our integration test suite
 type Suite struct {
 	suite.Suite
@@ -32,7 +34,6 @@ type Suite struct {
 	executable string
 	cmd        *exec.Cmd
 	env        []string
-	logFile    *os.File
 	wd         *string
 }
 
@@ -83,6 +84,17 @@ func (s *Suite) SetupTest() {
 	os.Chdir(os.TempDir())
 }
 
+// Executable returns the path to the executable under test (state tool)
+func (s *Suite) Executable() string {
+	return s.executable
+}
+
+// TeardownTest closes the terminal attached to this integration test suite
+// Run this to clean-up everything set up with SetupTest()
+func (s *Suite) TeardownTest() {
+	s.console.Close()
+}
+
 // ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
@@ -119,12 +131,8 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
 
 	var err error
-	s.logFile, err = os.Create("pty.log")
-	if err != nil {
-		s.Failf("", "Could not open pty log file: %v", err)
-	}
 	s.console, err = expect.NewConsole(
-		expect.WithDefaultTimeout(10 * time.Second),
+		expect.WithDefaultTimeout(defaultTimeout),
 	)
 	s.Require().NoError(err)
 
@@ -232,11 +240,33 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.Wait()
 }
 
-// Wait waits for the tested process to finish and forwards its state including ExitCode
-func (s *Suite) Wait() (state *os.ProcessState, err error) {
+// Wait waits for the tested process to finish and returns its state including ExitCode
+func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
 		return
 	}
-	s.ExpectEOF()
-	return s.cmd.Process.Wait()
+
+	t := defaultTimeout
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+
+	type processState struct {
+		state *os.ProcessState
+		err   error
+	}
+	states := make(chan processState)
+
+	go func() {
+		defer close(states)
+		s, e := s.cmd.Process.Wait()
+		states <- processState{state: s, err: e}
+	}()
+
+	select {
+	case s := <-states:
+		return s.state, s.err
+	case <-time.After(t):
+		return nil, fmt.Errorf("i/o error")
+	}
 }
