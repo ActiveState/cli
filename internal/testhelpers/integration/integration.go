@@ -246,8 +246,6 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		return
 	}
 
-	s.console.Expect()
-
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
