@@ -14,6 +14,9 @@ var (
 	// FailExecCmd represents a failure running a cmd
 	FailExecCmd = failures.Type("sscommon.fail.execcmd")
 
+	// FailExecCmdExit represents a cmd exit error failure
+	FailExecCmdExit = failures.Type("sscommon.fail.execcmdexit", failures.FailSilent)
+
 	// FailSignalCmd represents a failure sending a system signal to a cmd
 	FailSignalCmd = failures.Type("sscommon.fail.signalcmd")
 )
@@ -43,7 +46,7 @@ func Start(cmd *exec.Cmd) chan *failures.Failure {
 					return
 				}
 
-				fs <- FailExecCmd.Wrap(eerr)
+				fs <- FailExecCmdExit.Wrap(eerr)
 				return
 			}
 

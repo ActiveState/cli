@@ -2,7 +2,6 @@ package activate
 
 import (
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
 	"runtime"
@@ -146,15 +145,6 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 			}
 
 			if fail != nil {
-				if eerr, ok := fail.ToError().(*exec.ExitError); ok {
-					err := &failures.ExitError{
-						Err:    eerr,
-						Silent: true,
-					}
-					failures.Handle(err, locale.T("error_in_active_subshell"))
-					return false
-				}
-
 				failures.Handle(fail, locale.T("error_in_active_subshell"))
 			}
 
