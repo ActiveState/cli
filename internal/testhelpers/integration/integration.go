@@ -110,6 +110,17 @@ func (s *Suite) TeardownTest() {
 	s.console.Close()
 }
 
+// Executable returns the path to the executable under test (state tool)
+func (s *Suite) Executable() string {
+	return s.executable
+}
+
+// TeardownTest closes the terminal attached to this integration test suite
+// Run this to clean-up everything set up with SetupTest()
+func (s *Suite) TeardownTest() {
+	s.console.Close()
+}
+
 // ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
@@ -273,8 +284,6 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		return
 	}
 
-	s.console.Expect()
-
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
@@ -284,15 +293,16 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		state *os.ProcessState
 		err   error
 	}
-	done := make(chan processState)
+	states := make(chan processState)
 
 	go func() {
+		defer close(states)
 		s, e := s.cmd.Process.Wait()
-		done <- processState{state: s, err: e}
+		states <- processState{state: s, err: e}
 	}()
 
 	select {
-	case s := <-done:
+	case s := <-states:
 		return s.state, s.err
 	case <-time.After(t):
 		return nil, fmt.Errorf("i/o error")

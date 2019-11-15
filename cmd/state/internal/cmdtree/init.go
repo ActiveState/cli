@@ -68,6 +68,7 @@ func newInitCommand() *captain.Command {
 				Name:        locale.T("arg_state_init_namespace"),
 				Description: locale.T("arg_state_init_namespace_description"),
 				Variable:    &args.Namespace,
+				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
