@@ -70,7 +70,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
 		suite.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
 		suite.SendLine("N")
-		suite.Expect("N", 500 * time.Millisecond)
+		suite.Expect("N", 500*time.Millisecond)
 	}
 }
 
