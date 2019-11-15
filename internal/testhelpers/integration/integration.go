@@ -262,7 +262,9 @@ func (s *Suite) Stop() error {
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", persistentUsername, "--password", persistentPassword)
 	s.Expect("successfully authenticated")
-	s.Wait()
+	state, err := s.Wait()
+	s.Require().NoError(err)
+	s.Require().Equal(0, state.ExitCode())
 }
 
 // Wait waits for the tested process to finish and returns its state including ExitCode
