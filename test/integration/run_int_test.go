@@ -89,7 +89,10 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.Expect("Start of script", 5*time.Second)
 	time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
-	suite.Expect("^C")
+	if runtime.GOOS != "windows" {
+		// this does not show up on Windows CI
+		suite.Expect("^C")
+	}
 	suite.Expect("received SIGINT", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
 	time.Sleep(500 * time.Millisecond)
