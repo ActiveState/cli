@@ -68,7 +68,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	// interrupt the first (very long sleep)
 	suite.SendCtrlC()
 
@@ -83,11 +83,11 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.Expect("received SIGINT", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	res, err := suite.Wait(20 * time.Second)
 	suite.Require().NoError(err)
