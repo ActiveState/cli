@@ -276,7 +276,7 @@ var (
 	// everything after until a "?" or newline is reached. Everything after
 	// that is targeted, but not captured so that only the first capture
 	// group can be used in the replace value.
-	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\n]*).*)`)
+	setCommitRE = regexp.MustCompile(`(?m:^(project:.*\/[^?\r\n]*).*)`)
 )
 
 func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {

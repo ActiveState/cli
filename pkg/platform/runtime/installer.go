@@ -325,7 +325,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 		return nil, FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
 	}
 
-	if fail := fileutils.MoveAllFiles(tmpInstallDir, installDir); fail != nil {
+	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
 		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
 		return nil, FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
 	}

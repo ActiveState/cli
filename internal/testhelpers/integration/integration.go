@@ -80,8 +80,23 @@ func (s *Suite) SetupTest() {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	})
+}
 
-	os.Chdir(os.TempDir())
+// PrepareTemporaryWorkingDirectory prepares a temporary working directory to run the tests in
+// It returns the directory name a clean-up function
+func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string, cleanup func()) {
+
+	tempDir, err := ioutil.TempDir("", prefix)
+	s.Require().NoError(err)
+	err = os.RemoveAll(tempDir)
+	s.Require().NoError(err)
+	err = os.MkdirAll(tempDir, 0770)
+	s.Require().NoError(err)
+	s.SetWd(tempDir)
+
+	return tempDir, func() {
+		os.RemoveAll(tempDir)
+	}
 }
 
 // Executable returns the path to the executable under test (state tool)
@@ -89,10 +104,12 @@ func (s *Suite) Executable() string {
 	return s.executable
 }
 
-// TeardownTest closes the terminal attached to this integration test suite
+// TearDownTest closes the terminal attached to this integration test suite
 // Run this to clean-up everything set up with SetupTest()
-func (s *Suite) TeardownTest() {
-	s.console.Close()
+func (s *Suite) TearDownTest() {
+	if s.console != nil {
+		s.console.Close()
+	}
 }
 
 // ClearEnv removes all environment variables
@@ -121,13 +138,18 @@ func (s *Suite) Spawn(args ...string) {
 func (s *Suite) SpawnCustom(executable string, args ...string) {
 	var wd string
 	if s.wd == nil {
-		wd, _ = os.Getwd()
+		wd = os.TempDir()
 	} else {
 		wd = *s.wd
 	}
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
+
+	// Create the process in a new process group.
+	// This makes the behavior more consistent, as it isolates the signal handling from
+	// the parent processes, which are dependent on the test environment.
+	s.cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
 	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
 
 	var err error
@@ -215,9 +237,14 @@ func (s *Suite) Send(value string) {
 	}
 }
 
-// ExpectEOF waits for the end of the terminal output stream before it returns
-func (s *Suite) ExpectEOF() {
-	s.console.Expect(expect.EOF)
+// Signal sends an arbitrary signal to the running process
+func (s *Suite) Signal(sig os.Signal) error {
+	return s.cmd.Process.Signal(sig)
+}
+
+// SendCtrlC tries to emulate what would happen in an interactive shell, when the user presses Ctrl-C
+func (s *Suite) SendCtrlC() {
+	s.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
 }
 
 // Quit sends an interrupt signal to the tested process
@@ -237,7 +264,26 @@ func (s *Suite) Stop() error {
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", persistentUsername, "--password", persistentPassword)
 	s.Expect("successfully authenticated")
-	s.Wait()
+	state, err := s.Wait()
+	s.Require().NoError(err)
+	s.Require().Equal(0, state.ExitCode())
+}
+
+// ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
+func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := s.Wait(timeout...)
+	if err != nil {
+		s.FailNow(
+			"Error waiting for process:",
+			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
+			err, s.TerminalSnapshot())
+	}
+	if ps.ExitCode() != exitCode {
+		s.FailNow(
+			"Process terminated with unexpected exit code\n",
+			"Expected: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
+			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+	}
 }
 
 // Wait waits for the tested process to finish and returns its state including ExitCode

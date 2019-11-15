@@ -61,10 +61,8 @@ func NewPassthroughPipe(reader io.Reader) (*PassthroughPipe, error) {
 				readerErr = io.EOF
 				break
 			}
-			// fmt.Printf("read %d bytes: first characters are: %s\n", n, string(buf[:20]))
 			nw, err := pipeWriter.Write(buf[:n])
 			if err != nil {
-				fmt.Printf("pipeWriter reported error: %v\n", err)
 				readerErr = err
 				break
 			}

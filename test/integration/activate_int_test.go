@@ -2,8 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -23,24 +21,6 @@ type ActivateIntegrationTestSuite struct {
 	integration.Suite
 }
 
-func (suite *ActivateIntegrationTestSuite) prepareTempDirectory(prefix string) (tempDir string, cleanup func()) {
-
-	tempDir, err := ioutil.TempDir("", prefix)
-	suite.Require().NoError(err)
-	err = os.RemoveAll(tempDir)
-	suite.Require().NoError(err)
-	err = os.MkdirAll(tempDir, 0770)
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
-	suite.SetWd(tempDir)
-
-	return tempDir, func() {
-		os.Chdir(os.TempDir())
-		os.RemoveAll(tempDir)
-	}
-}
-
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
 	suite.activatePython("3")
 }
@@ -52,7 +32,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
-	tempDir, cb := suite.prepareTempDirectory("activate_test_no_runtime")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_no_runtime")
 	defer cb()
 
 	suite.LoginAsPersistentUser()
@@ -60,10 +40,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Spawn("activate", "ActiveState-CLI/Python3")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("activated state", 20*time.Second) // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
+	suite.Expect("activated state", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
-	suite.SendLine("exit")
-	suite.Wait()
+
+	suite.SendLine("exit 0")
+	suite.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
@@ -76,7 +57,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 
 	pythonExe := "python" + version
 
-	tempDir, cb := suite.prepareTempDirectory("activate_test")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
 	defer cb()
 
 	suite.LoginAsPersistentUser()
@@ -114,7 +95,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
-	tempDir, cb := suite.prepareTempDirectory("activate_test")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
 	defer cb()
 	suite.SetWd(tempDir)
 

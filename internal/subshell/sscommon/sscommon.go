@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -92,23 +91,21 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
-func ignoreWindowsInterrupts(ctx context.Context) {
-	if runtime.GOOS == "windows" {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT)
-		go func() {
-			defer close(c)
-			defer signal.Stop(c)
-			for {
-				select {
-				case <-c:
-					logging.Debug("Received a SIGINT interrupt")
-				case <-ctx.Done():
-					return
-				}
+func ignoreInterrupts(ctx context.Context) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT)
+	go func() {
+		defer close(c)
+		defer signal.Stop(c)
+		for {
+			select {
+			case <-c:
+				logging.Debug("Received a SIGINT interrupt")
+			case <-ctx.Done():
+				return
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func runDirect(env []string, name string, args ...string) (int, error) {
@@ -120,15 +117,17 @@ func runDirect(env []string, name string, args ...string) (int, error) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// On Windows, CTRL+C interrupts are sent to all processes in a terminal at
-	// the same time.  This interrupts `state run` and by default just exits it.
-	// If child processes started by `state run` do not exit, and keep reading
-	// from stdin, the parent shell (the one that you typed `state run` in) and
-	// the interrupted child process will both read from stdin at the same time,
-	// leading to unwanted behavior as in https://www.pivotaltracker.com/story/show/169509213
-	// By ignoring the Windows interrupts for the `state run` command, we will
-	// only return once the child process actually exits.
-	ignoreWindowsInterrupts(ctx)
+
+	// CTRL+C interrupts are sent to all processes in a terminal at the same
+	// time (with some extra control through process groups).
+	// Here is what can happen *without* the next line:
+	// - `state run` gets interrupted and exits, returning to the parent shell.
+	// - child processes started by state run ignores or handles interrupt, and stays alive.
+	// - the parent shell and the child process read from stdin simultaneously.
+	// This behavior has been reported in
+	// - https://www.pivotaltracker.com/story/show/169509213 and
+	// - https://www.pivotaltracker.com/story/show/167523128
+	ignoreInterrupts(ctx)
 
 	err := runCmd.Run()
 	return osutils.CmdExitCode(runCmd), err
