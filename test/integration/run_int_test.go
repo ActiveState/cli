@@ -64,6 +64,16 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.tmpDirCleanup()
 }
 
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
+	if runtime.GOOS == "windows" {
+		// send N to "Terminate batch job (Y/N)" question
+		suite.Expect("Terminate batch job")
+		time.Sleep(200 * time.Millisecond)
+		suite.SendLine("N")
+		suite.Expect("N", 500 * time.Millisecond)
+	}
+}
+
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
 	suite.Spawn("run", "test")
@@ -75,9 +85,8 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	suite.Expect("received SIGINT", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
 	suite.Expect("After second sleep")
-	res, err := suite.Wait(20 * time.Second)
-	suite.Require().NoError(err)
-	suite.Require().Equal(0, res.ExitCode())
+	suite.expectTerminateBatchJob()
+	suite.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
@@ -89,9 +98,8 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
 	time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
-	res, err := suite.Wait(20 * time.Second)
-	suite.Require().NoError(err)
-	suite.Require().Equal(123, res.ExitCode())
+	suite.expectTerminateBatchJob()
+	suite.ExpectExitCode(123)
 	suite.Require().NotContains(
 		suite.TerminalSnapshot(), "not printed after second interrupt",
 	)
