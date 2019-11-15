@@ -102,10 +102,12 @@ func run(args []string) (int, error) {
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err2 := normalizeError(failures.Handled()); err2 != nil {
-		if err2 = filterExitErrors(err2); err2 == nil {
-			return 1, nil
-		}
+	errFail := failures.Handled()
+	if isSilentFail(errFail) {
+		logging.Debug("returning as silent failure")
+		return 1, nil
+	}
+	if err2 := normalizeError(errFail); err2 != nil {
 		logging.Debug("Returning error from failures.Handled")
 		return 1, err2
 	}
@@ -113,11 +115,9 @@ func run(args []string) (int, error) {
 	return 0, nil
 }
 
-func filterExitErrors(err error) error {
-	if _, ok := err.(*exec.ExitError); ok {
-		return nil
-	}
-	return err
+func isSilentFail(errFail error) bool {
+	fail, ok := errFail.(*failures.Failure)
+	return ok && fail.Type.Matches(failures.FailSilent)
 }
 
 // Can't pass failures as errors and still assert them as nil, so we have to typecase.
