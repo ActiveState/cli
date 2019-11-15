@@ -107,7 +107,9 @@ func (s *Suite) Executable() string {
 // TearDownTest closes the terminal attached to this integration test suite
 // Run this to clean-up everything set up with SetupTest()
 func (s *Suite) TearDownTest() {
-	s.console.Close()
+	if s.console != nil {
+		s.console.Close()
+	}
 }
 
 // ClearEnv removes all environment variables
