@@ -59,8 +59,8 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 	suite.createProjectFile(tmpDir)
 }
 
-func (suite *RunIntegrationTestSuite) TeardownTest() {
-	suite.Suite.TeardownTest()
+func (suite *RunIntegrationTestSuite) TearDownTest() {
+	suite.Suite.TearDownTest()
 	suite.tmpDirCleanup()
 }
 

@@ -104,9 +104,9 @@ func (s *Suite) Executable() string {
 	return s.executable
 }
 
-// TeardownTest closes the terminal attached to this integration test suite
+// TearDownTest closes the terminal attached to this integration test suite
 // Run this to clean-up everything set up with SetupTest()
-func (s *Suite) TeardownTest() {
+func (s *Suite) TearDownTest() {
 	s.console.Close()
 }
 
@@ -228,11 +228,6 @@ func (s *Suite) Send(value string) {
 	if err != nil {
 		s.FailNow("Could not send data to terminal", "error: %v", err)
 	}
-}
-
-// ExpectEOF waits for the end of the terminal output stream before it returns
-func (s *Suite) ExpectEOF() {
-	s.console.Expect(expect.EOF)
 }
 
 // Signal sends an arbitrary signal to the running process
