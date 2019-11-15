@@ -64,20 +64,23 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
 	suite.Expect("start of script", 5*time.Second)
-	suite.Send(string([]byte{0x3}))
+	suite.SendCtrlC()
 	suite.Expect("^C")
-	suite.SendLine("exit")
-	suite.Wait()
+	if runtime.GOOS == "windows" {
+		suite.Expect("Terminate batch job (Y/N)")
+		suite.SendLine("Y")
+	}
+
+	suite.SendLine("exit 0")
+	st, err := suite.Wait()
+	suite.Require().NoError(err)
+	suite.Require().Equal(0, st.ExitCode())
 	suite.Require().NotContains(
 		suite.TerminalSnapshot(), "ONLY PRINT IF NOT INTERRUPTED",
-	)
-	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "Terminate batch job",
 	)
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
-	defer suite.TeardownTest()
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Runtimes are not supported on macOS")
 	}
