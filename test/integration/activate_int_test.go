@@ -1,16 +1,22 @@
 package integration
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type ActivateIntegrationTestSuite struct {
@@ -105,6 +111,41 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 	// de-activate shell
 	suite.SendLine("exit")
 	suite.Wait()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
+	tempDir, cb := suite.prepareTempDirectory("activate_test")
+	defer cb()
+	suite.SetWd(tempDir)
+
+	projectFile := &projectfile.Project{}
+	contents := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+branch: %s
+version: %s
+`, constants.BranchName, constants.Version))
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.Require().NoError(err)
+
+	projectFile.SetPath(filepath.Join(tempDir, "activestate.yaml"))
+	fail := projectFile.Save()
+	suite.Require().NoError(fail.ToError())
+	suite.Require().FileExists(filepath.Join(tempDir, "activestate.yaml"))
+
+	suite.LoginAsPersistentUser()
+	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
+
+	// Ensure we have the most up to date version of the project before activating
+	suite.Spawn("pull")
+	suite.Expect("Your activestate.yaml has been updated to the latest version available")
+	suite.Expect("Please reactivate any activated instances of the State Tool")
+	suite.Wait()
+
+	suite.Spawn("activate")
+	suite.Wait()
+	suite.Expect("Activating state: ActiveState-CLI/Python3")
+	suite.Expect("Active state: ActiveState-CLI/Python3")
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
