@@ -81,7 +81,8 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.Spawn("activate")
-	suite.Expect("Active state", 20*time.Second)
+	suite.Expect("Activating state: ActiveState-CLI/Python3")
+	suite.Expect("ActiveState-CLI/Python3", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
 	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
