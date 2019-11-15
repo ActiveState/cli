@@ -269,6 +269,7 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.Require().Equal(0, state.ExitCode())
 }
 
+// ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	ps, err := s.Wait(timeout...)
 	if err != nil {
