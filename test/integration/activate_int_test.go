@@ -126,7 +126,6 @@ version: %s
 	suite.Spawn("activate")
 	suite.Wait()
 	suite.Expect("Activating state: ActiveState-CLI/Python3")
-	suite.Expect("Active state: ActiveState-CLI/Python3")
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
