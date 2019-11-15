@@ -110,17 +110,6 @@ func (s *Suite) TeardownTest() {
 	s.console.Close()
 }
 
-// Executable returns the path to the executable under test (state tool)
-func (s *Suite) Executable() string {
-	return s.executable
-}
-
-// TeardownTest closes the terminal attached to this integration test suite
-// Run this to clean-up everything set up with SetupTest()
-func (s *Suite) TeardownTest() {
-	s.console.Close()
-}
-
 // ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
