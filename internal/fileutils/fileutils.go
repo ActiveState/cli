@@ -405,6 +405,7 @@ func IsEmptyDir(path string) (bool, *failures.Failure) {
 	}
 
 	files, err := dir.Readdir(1)
+	dir.Close()
 	if err != nil && err != io.EOF {
 		return false, failures.FailIO.Wrap(err)
 	}
@@ -426,9 +427,8 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
-	defer dir.Close()
-
 	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
