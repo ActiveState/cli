@@ -708,6 +708,8 @@ secrets_err_user_not_defined:
   other: "Secret has not been defined: {{.V0}}. Define it by running 'state secrets set {{.V0}}'."
 secrets_err_project_not_defined:
   other: "Secret has not been defined: {{.V0}}. Either define it by running 'state secrets set {{.V0}}' or have someone in your organization sync with you by having them run 'state secrets sync'."
+secrets_err_not_authenticated:
+  other: You are running a command that requires access to secrets, please authenticate by running 'state auth'.
 secrets_header_name:
   other: Name
 secrets_header_scope:
@@ -755,8 +757,7 @@ keypair_err_publickey_not_found:
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
-  other: Your keypair is not authenticated, run `state auth` first
-
+  other: You need to be authenticated to run this command, please run `state auth` first
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
