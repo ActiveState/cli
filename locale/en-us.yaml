@@ -807,7 +807,7 @@ forward_fail:
 forward_fail_with_error:
   other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
 forward_fail_info:
-  other: Could not forward command to the appropriate state tool version, the specified version is not available
+  other: The requested version of the state tool does not exist, please ensure the version and branch are correct.
 flag_update_lock_description:
   other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
 err_lock_failed:
