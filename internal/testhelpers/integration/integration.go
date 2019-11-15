@@ -262,6 +262,22 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.Require().Equal(0, state.ExitCode())
 }
 
+func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := s.Wait(timeout...)
+	if err != nil {
+		s.FailNow(
+			"Error waiting for process:",
+			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
+			err, s.TerminalSnapshot())
+	}
+	if ps.ExitCode() != exitCode {
+		s.FailNow(
+			"Process terminated with unexpected exit code\n",
+			"Expected: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
+			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+	}
+}
+
 // Wait waits for the tested process to finish and returns its state including ExitCode
 func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
