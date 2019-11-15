@@ -99,9 +99,13 @@ func runDirect(env []string, name string, args ...string) (int, error) {
 	runCmd.Env = env
 
 	err := runCmd.Run()
-	if eerr, ok := err.(*exec.ExitError); ok {
-		err = FailExecCmdExit.Wrap(eerr)
+	code := osutils.CmdExitCode(runCmd)
+	if err != nil {
+		if eerr, ok := err.(*exec.ExitError); ok {
+			return code, FailExecCmdExit.Wrap(eerr)
+		}
+		return code, FailExecCmd.Wrap(err)
 	}
 
-	return osutils.CmdExitCode(runCmd), err
+	return code, nil
 }
