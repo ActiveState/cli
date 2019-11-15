@@ -29,15 +29,8 @@ func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
 
-	var extension string
-	localPath := "./"
-	if runtime.GOOS == "windows" {
-		extension = ".exe"
-		// localPath = ".\\"
-	}
-	executable := fmt.Sprintf("%sinterrupt%s", localPath, extension)
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := fmt.Sprintf(strings.TrimSpace(`
+	configFileContent := strings.TrimSpace(`
 project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=40f4903a-e8a8-44a1-b2fd-eb1a2396a2f2
 scripts:
   - name: test
@@ -52,11 +45,11 @@ scripts:
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
-        go build -o .\interrupt .
-        .\interrupt
+        go build -o .\interrupt.exe .
+        .\interrupt.exe
     constraints:
         os: windows
-`), executable, executable)
+`)
 	projectFile := &projectfile.Project{}
 	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
