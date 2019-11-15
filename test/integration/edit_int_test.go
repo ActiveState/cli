@@ -53,7 +53,7 @@ scripts:
 
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
 	fail = projectFile.Save()
-	suite.Require().NoError(err)
+	suite.Require().NoError(fail.ToError())
 
 	editorScriptDir := filepath.Join(tempDir, "editor")
 	suite.SetWd(editorScriptDir)
