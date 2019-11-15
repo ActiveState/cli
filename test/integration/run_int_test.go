@@ -26,18 +26,37 @@ type RunIntegrationTestSuite struct {
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 
 	root := environment.GetRootPathUnsafe()
-	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.sh")
-	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.sh"))
+	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
+	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
 
+	var extension string
+	localPath := "./"
+	if runtime.GOOS == "windows" {
+		extension = ".exe"
+		// localPath = ".\\"
+	}
+	executable := fmt.Sprintf("%sinterrupt%s", localPath, extension)
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := strings.TrimSpace(`
+	configFileContent := fmt.Sprintf(strings.TrimSpace(`
 project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=40f4903a-e8a8-44a1-b2fd-eb1a2396a2f2
 scripts:
   - name: test
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
-    value: bash interrupt.sh
-`)
+    value: |
+        go build -o ./interrupt .
+        ./interrupt
+    constraints:
+        os: linux,macos
+  - name: test
+    description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
+    standalone: true
+    value: |
+        go build -o .\interrupt .
+        .\interrupt
+    constraints:
+        os: windows
+`), executable, executable)
 	projectFile := &projectfile.Project{}
 	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
@@ -87,11 +106,11 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
 	suite.Expect("Start of script", 5*time.Second)
-	time.Sleep(500 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
-	suite.Expect("received SIGINT", 3*time.Second)
+	suite.Expect("received interrupt", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	time.Sleep(500 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.expectTerminateBatchJob()
 
@@ -106,11 +125,11 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	time.Sleep(500 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 	// interrupt the first (very long) sleep
 	suite.SendCtrlC()
 
-	suite.Expect("received SIGINT", 3*time.Second)
+	suite.Expect("received interrupt", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
 	suite.Expect("After second sleep")
 	suite.expectTerminateBatchJob()
@@ -120,11 +139,11 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	time.Sleep(500 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
-	suite.Expect("received SIGINT", 3*time.Second)
+	suite.Expect("received interrupt", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	time.Sleep(500 * time.Millisecond)
+	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.expectTerminateBatchJob()
 	suite.ExpectExitCode(123)
