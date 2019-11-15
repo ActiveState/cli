@@ -1,9 +1,6 @@
 package integration
 
 import (
-	"fmt"
-	"os"
-	"path"
 	"regexp"
 	"runtime"
 	"testing"
