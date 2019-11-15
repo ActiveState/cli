@@ -1,8 +1,8 @@
 package scriptfile
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -29,21 +29,16 @@ func NewAsSource(l language.Language, name, script string) (*ScriptFile, *failur
 }
 
 func new(l language.Language, name string, script []byte) (*ScriptFile, *failures.Failure) {
-	file, fail := fileutils.WriteTempFile("", "", []byte(script), 0700)
+	file, fail := fileutils.WriteTempFile(
+		"", fmt.Sprintf("%s*%s", name, l.Ext()), []byte(script), 0700,
+	)
 	if fail != nil {
 		return nil, fail
 	}
 
-	dir, _ := filepath.Split(file)
-	updatedFilepath := filepath.Join(dir, name+l.Ext())
-	err := os.Rename(file, updatedFilepath)
-	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
-	}
-
 	return &ScriptFile{
 		lang: l,
-		file: updatedFilepath,
+		file: file,
 	}, nil
 }
 
