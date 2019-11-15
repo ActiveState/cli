@@ -37,47 +37,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Spawn("activate", "ActiveState-CLI/Python3")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
-	suite.Expect("activated state", 20*time.Second) // Note this line is REQUIRED. For reasons I cannot figure out the below WaitForInput will fail unless the subshell prints something.
+	suite.Expect("activated state", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
-	f, err := os.Create(path.Join(tempDir, "activestate.yaml"))
-	suite.Require().NoError(err)
-	f.WriteString("project: https://platform.activestate.com/Owner/ProjectName\n" +
-		"scripts:\n" +
-		"   - name: test\n" +
-		"     description: A script that runs for 20 seconds doing nothing.  It should be interrupted.\n" +
-		"     value: |\n" +
-		"          echo start of script\n" +
-		"          timeout 4\n" +
-		"          echo ONLY PRINT IF NOT INTERRUPTED\n" +
-		"     constraints:\n" +
-		"       os: windows\n" +
-		"   - name: test\n" +
-		"     description: A script that runs for 20 seconds doing nothing.  It should be interrupted.\n" +
-		"     value: |\n" +
-		"          echo start of script\n" +
-		"          sleep 4\n" +
-		"          echo ONLY PRINT IF NOT INTERRUPTED\n" +
-		"     constraints:\n" +
-		"       os: linux,macos\n")
-	f.Close()
-
-	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
-	suite.Expect("start of script", 5*time.Second)
-	suite.SendCtrlC()
-	suite.Expect("^C")
-	if runtime.GOOS == "windows" {
-		suite.Expect("Terminate batch job (Y/N)")
-		suite.SendLine("Y")
-	}
-
 	suite.SendLine("exit 0")
-	st, err := suite.Wait()
-	suite.Require().NoError(err)
-	suite.Require().Equal(0, st.ExitCode())
-	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "ONLY PRINT IF NOT INTERRUPTED",
-	)
+	suite.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
