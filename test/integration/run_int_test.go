@@ -99,11 +99,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
 	suite.Expect("Start of script", 5*time.Second)
-	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.expectTerminateBatchJob()
 
@@ -118,7 +116,6 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	// time.Sleep(500 * time.Millisecond)
 	// interrupt the first (very long) sleep
 	suite.SendCtrlC()
 
@@ -132,11 +129,9 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.Spawn("run", "test")
 	suite.Expect("Start of script")
-	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
 	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	// time.Sleep(500 * time.Millisecond)
 	suite.SendCtrlC()
 	suite.expectTerminateBatchJob()
 	suite.ExpectExitCode(123)
