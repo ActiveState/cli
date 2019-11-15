@@ -143,6 +143,11 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
+
+	// Create the process in a new process group.
+	// This makes the behavior more consistent, as it isolates the signal handling from
+	// the parent processes, which are dependent on the test environment.
+	s.cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
 	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
 
 	var err error
