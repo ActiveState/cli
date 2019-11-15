@@ -4,9 +4,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"runtime"
+	"os/exec"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
@@ -19,24 +23,18 @@ type RunIntegrationTestSuite struct {
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
+
+	root := environment.GetRootPathUnsafe()
+	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.sh")
+	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.sh"))
+
 	configFileContent := strings.TrimSpace(`
 project: https://platform.activestate.com/Owner/ProjectName
 scripts:
   - name: test
     description: A script that runs for 20 seconds doing nothing.  It should be interrupted.
     standalone: true
-    value: |
-       bash -c "
-            function f() { echo received SIGINT; }
-            trap f SIGINT
-            trap -p SIGINT
-            echo 'Start of script'
-            sleep 10000          
-            echo 'After first sleep or interrupt'
-            trap 'exit 123' SIGINT
-            sleep 2
-            echo 'After second sleep, but not printed after second interrupt'
-          "
+    value: bash interrupt.sh
 `)
 	projectFile := &projectfile.Project{}
 	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
@@ -50,6 +48,11 @@ scripts:
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
+	if runtime.GOOS == "windows" {
+		if _, err := exec.LookPath("bash"); err != nil {
+			suite.T().Skip("This test requires a bash shell in your PATH")
+		}
+	}
 	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	suite.tmpDirCleanup = cleanup
 
