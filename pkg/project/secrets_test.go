@@ -113,6 +113,14 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	suite.Zero(value)
 }
 
+func (suite *SecretsExpanderTestSuite) TestNoAuth() {
+	authentication.Get().Logout()
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient)
+	value, failure := expanderFn(project.ProjectCategory, "undefined-secret", false, suite.project)
+	suite.Truef(failure.Type.Matches(project.FailNotAuthenticated), "unexpected failure type: %v", failure.Type)
+	suite.Zero(value)
+}
+
 func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
 	suite.assertExpansionFailure("bad-base64-encoded-secret", keypairs.FailKeyDecode)
 }
