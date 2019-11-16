@@ -67,6 +67,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
+	suite.Spawn("--version")
 	suite.Spawn("update")
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {

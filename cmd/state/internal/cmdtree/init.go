@@ -14,7 +14,6 @@ import (
 
 type InitArgs struct {
 	Namespace string
-	Path      string
 }
 
 func (args *InitArgs) Prepare() error {
@@ -28,6 +27,7 @@ func (args *InitArgs) Prepare() error {
 type InitOpts struct {
 	Language string
 	Skeleton string
+	Path     string
 }
 
 func newInitCommand() *captain.Command {
@@ -41,6 +41,13 @@ func newInitCommand() *captain.Command {
 		"init",
 		locale.T("init_description"),
 		[]*captain.Flag{
+			{
+				Name:        "path",
+				Shorthand:   "",
+				Description: locale.T("arg_state_init_path_description"),
+				Type:        captain.TypeString,
+				StringVar:   &opts.Path,
+			},
 			{
 				Name:        "language",
 				Shorthand:   "",
@@ -61,11 +68,7 @@ func newInitCommand() *captain.Command {
 				Name:        locale.T("arg_state_init_namespace"),
 				Description: locale.T("arg_state_init_namespace_description"),
 				Variable:    &args.Namespace,
-			},
-			&captain.Argument{
-				Name:        locale.T("arg_state_init_path"),
-				Description: locale.T("arg_state_init_path_description"),
-				Variable:    &args.Path,
+				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
@@ -105,7 +108,7 @@ func newInitRunParams(args InitArgs, opts InitOpts) (*initialize.RunParams, erro
 	return &initialize.RunParams{
 		Owner:    ns.Owner,
 		Project:  ns.Project,
-		Path:     args.Path,
+		Path:     opts.Path,
 		Language: runLang,
 		Skeleton: initialize.SkeletonStyle(opts.Skeleton),
 	}, nil

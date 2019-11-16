@@ -275,6 +275,11 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) (*mo
 		return nil, "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
 	}
 
+	fail = UpdateBranchCommit(branch.BranchID, res.Payload.CommitID)
+	if fail != nil {
+		return nil, "", fail
+	}
+
 	return proj, res.Payload.CommitID, nil
 }
 

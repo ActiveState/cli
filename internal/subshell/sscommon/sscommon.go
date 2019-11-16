@@ -1,9 +1,12 @@
 package sscommon
 
 import (
+	"context"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
@@ -91,12 +94,43 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
+func ignoreInterrupts(ctx context.Context) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT)
+	go func() {
+		defer close(c)
+		defer signal.Stop(c)
+		for {
+			select {
+			case <-c:
+				logging.Debug("Received a SIGINT interrupt")
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
 func runDirect(env []string, name string, args ...string) (int, error) {
 	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
 
 	runCmd := exec.Command(name, args...)
 	runCmd.Stdin, runCmd.Stdout, runCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	runCmd.Env = env
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// CTRL+C interrupts are sent to all processes in a terminal at the same
+	// time (with some extra control through process groups).
+	// Here is what can happen *without* the next line:
+	// - `state run` gets interrupted and exits, returning to the parent shell.
+	// - child processes started by state run ignores or handles interrupt, and stays alive.
+	// - the parent shell and the child process read from stdin simultaneously.
+	// This behavior has been reported in
+	// - https://www.pivotaltracker.com/story/show/169509213 and
+	// - https://www.pivotaltracker.com/story/show/167523128
+	ignoreInterrupts(ctx)
 
 	err := runCmd.Run()
 	code := osutils.CmdExitCode(runCmd)

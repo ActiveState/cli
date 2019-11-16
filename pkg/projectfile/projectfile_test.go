@@ -375,6 +375,23 @@ project: https://example.com/xowner/xproject?commitID=123
 	assert.Equal(t, string(expectedYAML), string(out1))
 }
 
+func TestSetCommitInYAML_NoCommitID(t *testing.T) {
+	exampleYAML := []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject
+123: xvalue
+`)
+	expectedYAML := []byte(`
+junk: xgarbage
+project: https://example.com/xowner/xproject?commitID=123
+123: xvalue
+`)
+
+	out, fail := setCommitInYAML(exampleYAML, "123")
+	assert.NoError(t, fail.ToError())
+	assert.Equal(t, string(expectedYAML), string(out))
+}
+
 func TestNewProjectfile(t *testing.T) {
 	dir, err := ioutil.TempDir("", "projectfile-test")
 	assert.NoError(t, err, "Should be no error when getting a temp directory")

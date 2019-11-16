@@ -55,6 +55,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	}
 
 	cmd.setFlags(flags)
+	cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
 }
