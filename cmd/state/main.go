@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -105,7 +106,7 @@ func run(args []string) (int, error) {
 	errFail := failures.Handled()
 	if isSilentFail(errFail) {
 		logging.Debug("returning as silent failure")
-		return 1, nil
+		return unwrapExitCode(errFail), nil
 	}
 	if err2 := normalizeError(errFail); err2 != nil {
 		logging.Debug("Returning error from failures.Handled")
@@ -113,6 +114,24 @@ func run(args []string) (int, error) {
 	}
 
 	return 0, nil
+}
+
+// unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
+// returns the ExitCode of the process that failed with this error
+func unwrapExitCode(errFail error) int {
+	fail, ok := errFail.(*failures.Failure)
+	if !ok {
+		return 1
+	}
+	if fail.Type.Matches(sscommon.FailExecCmdExit) {
+		err := fail.ToError()
+		eerr, ok := err.(*exec.ExitError)
+		if !ok {
+			return 1
+		}
+		return eerr.ExitCode()
+	}
+	return 1
 }
 
 func isSilentFail(errFail error) bool {
