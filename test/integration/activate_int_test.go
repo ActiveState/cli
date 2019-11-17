@@ -128,7 +128,7 @@ version: %s
 
 	// not waiting for activation, as we test that part in a different test
 	suite.WaitForInput()
-	suite.Send("exit")
+	suite.SendLine("exit")
 	suite.ExpectExitCode(0)
 }
 
