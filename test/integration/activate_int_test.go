@@ -127,8 +127,9 @@ version: %s
 	suite.Expect("Activating state: ActiveState-CLI/Python3")
 
 	// not waiting for activation, as we test that part in a different test
-	suite.Quit()
-	suite.ExpectExitCode(-1)
+	suite.WaitForInput()
+	suite.Send("exit")
+	suite.ExpectExitCode(0)
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
