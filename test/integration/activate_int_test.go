@@ -91,11 +91,11 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 
 	// de-activate shell
 	suite.SendLine("exit")
-	suite.Wait()
+	suite.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
 	defer cb()
 	suite.SetWd(tempDir)
 
@@ -121,11 +121,14 @@ version: %s
 	suite.Spawn("pull")
 	suite.Expect("Your activestate.yaml has been updated to the latest version available")
 	suite.Expect("Please reactivate any activated instances of the State Tool")
-	suite.Wait()
+	suite.ExpectExitCode(0)
 
 	suite.Spawn("activate")
-	suite.Wait()
 	suite.Expect("Activating state: ActiveState-CLI/Python3")
+
+	// not waiting for activation, as we test that part in a different test
+	suite.Quit()
+	suite.ExpectExitCode(-1)
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
