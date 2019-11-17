@@ -123,15 +123,18 @@ func unwrapExitCode(errFail error) int {
 	if !ok {
 		return 1
 	}
-	if fail.Type.Matches(sscommon.FailExecCmdExit) {
-		err := fail.ToError()
-		eerr, ok := err.(*exec.ExitError)
-		if !ok {
-			return 1
-		}
-		return eerr.ExitCode()
+
+	if !fail.Type.Matches(sscommon.FailExecCmdExit) {
+		return 1
 	}
-	return 1
+	err := fail.ToError()
+
+	eerr, ok := err.(*exec.ExitError)
+	if !ok {
+		return 1
+	}
+
+	return eerr.ExitCode()
 }
 
 func isSilentFail(errFail error) bool {
