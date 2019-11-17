@@ -43,8 +43,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	suite.Expect("activated state", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
-	suite.SendLine("exit 0")
-	suite.ExpectExitCode(0)
+	suite.SendLine("exit 123")
+	suite.ExpectExitCode(123)
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
