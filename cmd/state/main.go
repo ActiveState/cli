@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -40,6 +41,7 @@ func main() {
 	if err != nil {
 		print.Error(err.Error())
 	}
+
 	exiter(code)
 }
 
@@ -101,12 +103,43 @@ func run(args []string) (int, error) {
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err2 := normalizeError(failures.Handled()); err2 != nil {
+	errFail := failures.Handled()
+	if isSilentFail(errFail) {
+		logging.Debug("returning as silent failure")
+		return unwrapExitCode(errFail), nil
+	}
+	if err2 := normalizeError(errFail); err2 != nil {
 		logging.Debug("Returning error from failures.Handled")
 		return 1, err2
 	}
 
 	return 0, nil
+}
+
+// unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
+// returns the ExitCode of the process that failed with this error
+func unwrapExitCode(errFail error) int {
+	fail, ok := errFail.(*failures.Failure)
+	if !ok {
+		return 1
+	}
+
+	if !fail.Type.Matches(sscommon.FailExecCmdExit) {
+		return 1
+	}
+	err := fail.ToError()
+
+	eerr, ok := err.(*exec.ExitError)
+	if !ok {
+		return 1
+	}
+
+	return eerr.ExitCode()
+}
+
+func isSilentFail(errFail error) bool {
+	fail, ok := errFail.(*failures.Failure)
+	return ok && fail.Type.Matches(failures.FailSilent)
 }
 
 // Can't pass failures as errors and still assert them as nil, so we have to typecase.

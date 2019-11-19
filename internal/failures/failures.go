@@ -73,6 +73,9 @@ var (
 	// FailNonFatal is not supposed to be used directly. It communicates a failure that can safely be ignored.
 	// Failures that inerhit from this type will not be logged to rollbar.
 	FailNonFatal = Type("failures.fail.nonfatal")
+
+	// FailSilent identifies failures that should not produce visible output.
+	FailSilent = Type("failures.fail.silent")
 )
 
 var handled error
@@ -162,6 +165,11 @@ func (e *Failure) ToError() error {
 // If description is empty, only the error message is printed
 func (e *Failure) Handle(description string) {
 	logging.Debug("Handling failure, Trace:\n %s", e.Trace.String())
+
+	if e.Type.Matches(FailSilent) {
+		logging.Debug("Silent failure:\n %s", description)
+		return
+	}
 
 	if description != "" {
 		logging.Warning(description)
