@@ -31,21 +31,35 @@ func init() {
 	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
 }
 
-func branchName() (string, string) {
-	if branch, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
-		if strings.Contains(branch, "/") {
-			return strings.Split(branch, "/")[1], branch
-		}
-		return branch, "origin/" + branch
-	}
+// gitBranchName returns the branch name of the current git commit / PR
+func gitBranchName() string {
+	// branch name variable set by Azure CI during pull request
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
-		return branch, "origin/" + branch
+		return branch
 	}
+	// branch name variable set by Azure CI
 	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
-		return branch, "origin/" + branch
+		return branch
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
-	return branch, branch
+	return branch
+}
+
+// branchName returns the release name and the branch name it is generated from
+// Usually the release name is identical to the branch name, unless environment variable
+// `BRANCH_OVERRIDE` is set
+func branchName() (string, string) {
+	branch := gitBranchName()
+	releaseName := branch
+
+	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
+		if strings.Contains(releaseOverride, "/") {
+			releaseName = strings.Split(releaseOverride, "/")[1]
+		}
+		releaseName = releaseOverride
+	}
+	return releaseName, "origin/" + branch
+
 }
 
 func buildNumber() string {
