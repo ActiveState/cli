@@ -58,13 +58,34 @@ func branchName() (string, string) {
 		}
 		releaseName = releaseOverride
 	}
-	return releaseName, "origin/" + branch
+
+	// prefer the origin branch if it exists
+	gitBranch := "origin/" + branch
+	if getCmdExitCode(fmt.Sprintf("git rev-list --verify --quiet %s", gitBranch)) != 0 {
+		gitBranch = branch
+	}
+
+	return releaseName, gitBranch
 
 }
 
 func buildNumber() string {
 	out := getCmdOutput("git rev-list --all --count")
 	return strings.TrimSpace(out)
+}
+
+func getCmdExitCode(cmdString string) int {
+	cmdArgs := strings.Split(cmdString, " ")
+
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+	if err := cmd.Run(); err != nil {
+		if eerr, ok := err.(*exec.ExitError); ok {
+			return eerr.ExitCode()
+		}
+		os.Exit(1)
+	}
+	return 0
+
 }
 
 func getCmdOutput(cmdString string) string {
