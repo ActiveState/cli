@@ -61,7 +61,7 @@ func branchName() (string, string) {
 
 	// prefer the origin branch if it exists
 	gitBranch := "origin/" + branch
-	if getCmdExitCode(fmt.Sprintf("git rev-list --verify --quiet %s", gitBranch)) != 0 {
+	if getCmdExitCode(fmt.Sprintf("git rev-parse --verify --quiet %s", gitBranch)) != 0 {
 		gitBranch = branch
 	}
 
