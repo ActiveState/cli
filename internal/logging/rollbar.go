@@ -10,13 +10,7 @@ import (
 )
 
 func SetupRollbar() {
-	machID, err := machineid.ID()
-	if err != nil {
-		Error("Cannot retrieve machine ID: %s", err.Error())
-		machID = "unknown"
-	}
-
-	UpdateRollbarPerson(machID, "unknown", "unknown") // call again at authentication
+	UpdateRollbarPerson("unknown", "unknown", "unknown") // call again at authentication
 	rollbar.SetToken(constants.RollbarToken)
 	rollbar.SetEnvironment(constants.BranchName)
 	rollbar.SetCodeVersion(constants.RevisionHash)
@@ -35,5 +29,16 @@ func SetupRollbar() {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	rollbar.SetPerson(userID, username, email)
+	machID, err := machineid.ID()
+	if err != nil {
+		Error("Cannot retrieve machine ID: %s", err.Error())
+		machID = "unknown"
+	}
+
+	// MachineID is the only thing we have that is consistent between authed and unauthed users, so
+	// we set that as the "person ID" in rollbar so the segmenting of data is consistent
+	rollbar.SetPerson(machID, username, email)
+	rollbar.SetCustom(map[string]interface{}{
+		"UserID": userID,
+	})
 }
