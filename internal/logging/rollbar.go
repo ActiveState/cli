@@ -10,7 +10,13 @@ import (
 )
 
 func SetupRollbar() {
-	UpdateRollbarPerson("N/A") // call again at authentication
+	machID, err := machineid.ID()
+	if err != nil {
+		Error("Cannot retrieve machine ID: %s", err.Error())
+		machID = "unknown"
+	}
+
+	UpdateRollbarPerson(machID, "unknown", "unknown") // call again at authentication
 	rollbar.SetToken(constants.RollbarToken)
 	rollbar.SetEnvironment(constants.BranchName)
 	rollbar.SetCodeVersion(constants.RevisionHash)
@@ -28,11 +34,6 @@ func SetupRollbar() {
 	log.SetOutput(CurrentHandler().Output())
 }
 
-func UpdateRollbarPerson(userID string) {
-	machID, err := machineid.ID()
-	if err != nil {
-		Error("Cannot retrieve machine ID: %s", err.Error())
-		machID = "unknown"
-	}
-	rollbar.SetPerson(machID, userID, machID)
+func UpdateRollbarPerson(userID, username, email string) {
+	rollbar.SetPerson(userID, username, email)
 }
