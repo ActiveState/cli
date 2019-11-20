@@ -35,11 +35,11 @@ func init() {
 func gitBranchName() string {
 	// branch name variable set by Azure CI during pull request
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
-		return branch
+		return "origin/" + branch
 	}
 	// branch name variable set by Azure CI
 	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
-		return branch
+		return "origin/" + branch
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
@@ -53,39 +53,19 @@ func branchName() (string, string) {
 	releaseName := branch
 
 	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
-		if strings.Contains(releaseOverride, "/") {
-			releaseName = strings.Split(releaseOverride, "/")[1]
-		}
 		releaseName = releaseOverride
 	}
-
-	// prefer the origin branch if it exists
-	gitBranch := "origin/" + branch
-	if getCmdExitCode(fmt.Sprintf("git rev-parse --verify --quiet %s", gitBranch)) != 0 {
-		gitBranch = branch
+	if strings.Contains(releaseName, "/") {
+		releaseName = strings.Split(releaseName, "/")[1]
 	}
 
-	return releaseName, gitBranch
+	return releaseName, branch
 
 }
 
 func buildNumber() string {
 	out := getCmdOutput("git rev-list --all --count")
 	return strings.TrimSpace(out)
-}
-
-func getCmdExitCode(cmdString string) int {
-	cmdArgs := strings.Split(cmdString, " ")
-
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-	if err := cmd.Run(); err != nil {
-		if eerr, ok := err.(*exec.ExitError); ok {
-			return eerr.ExitCode()
-		}
-		os.Exit(1)
-	}
-	return 0
-
 }
 
 func getCmdOutput(cmdString string) string {
