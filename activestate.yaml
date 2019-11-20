@@ -65,7 +65,7 @@ scripts:
     value: |
       WD=$(pwd)
       pushd pkg/platform/api/mono
-      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yml -A mono -a mono_operations -m mono_models -c mono_client
+      swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
       popd
   - name: generate-secrets-client
     description: Generates the secrets-api client files

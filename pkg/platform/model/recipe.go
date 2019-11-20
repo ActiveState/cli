@@ -38,7 +38,7 @@ func init() {
 
 // FetchRecipesForCommit returns a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
-	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -46,7 +46,7 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	client := inventory.Get()
 
 	params := inventory_operations.NewResolveRecipesParams()
-	params.Order = CheckpointToOrder(commitID, checkpoint)
+	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {

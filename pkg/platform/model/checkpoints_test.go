@@ -34,7 +34,7 @@ func (suite *CheckpointTestSuite) TestGetCheckpoint() {
 	suite.authMock.MockLoggedin()
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
 
-	response, fail := model.FetchCheckpointForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
+	response, _, fail := model.FetchCheckpointForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(response, "Returns checkpoints")
 }

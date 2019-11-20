@@ -7,6 +7,9 @@
                 "requirement": "Python",
                 "version_constraint": "string"
             }
-        ]
+        ],
+        "vcs_commits_by_pk": {
+            "at_time": "2019-11-12T01:35:54.496903+00:00"
+        }
     }
 }
