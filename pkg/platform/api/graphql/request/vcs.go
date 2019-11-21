@@ -15,15 +15,18 @@ type checkpointByCommit struct {
 }
 
 func (p *checkpointByCommit) Query() string {
-	return `query ($commit_id: uuid) {
-		vcs_checkpoints(where: {commit_id:{_eq: $commit_id}})
-		{
+	return `query ($commit_id: uuid!) {
+		vcs_checkpoints(where: {commit_id:{_eq: $commit_id}}) {
 		  commit_id
 		  namespace
 		  requirement
 		  version_constraint
 		}
-	  }`
+		vcs_commits_by_pk(commit_id: $commit_id) {
+		  at_time
+		}
+	  }	  
+	  `
 }
 
 func (p *checkpointByCommit) Vars() map[string]interface{} {

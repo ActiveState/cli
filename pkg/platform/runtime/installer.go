@@ -153,7 +153,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(pj.Owner(), pj.Name(), ""))
 	}
 
-	checkpoint, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
+	checkpoint, _, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
 	if fail != nil {
 		return fail
 	}

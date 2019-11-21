@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -50,7 +48,7 @@ func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Fa
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
 func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure) {
-	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	checkpoint, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -66,7 +64,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
+func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, *failures.Failure) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
@@ -75,22 +73,21 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failu
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, strfmt.NewDateTime(), api.FailUnknown.Wrap(err)
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	return response.Requirements, nil
+	return response.Requirements, response.Commit.AtTime, nil
 }
 
 // CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(commitID strfmt.UUID, checkpoint Checkpoint) *inventory_models.V1Order {
-	timestamp := strfmt.DateTime(time.Now())
+func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
 	return &inventory_models.V1Order{
 		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),
 		Requirements: CheckpointToRequirements(checkpoint),
-		Timestamp:    &timestamp,
+		Timestamp:    &atTime,
 	}
 }
 
