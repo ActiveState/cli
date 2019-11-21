@@ -100,7 +100,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	if Flags.Token == "" {
-		authlet.AuthenticateWithInput(Flags.Username, Flags.Password)
+		fail = authlet.AuthenticateWithInput(Flags.Username, Flags.Password)
+		if fail != nil {
+			failures.Handle(fail, locale.T("login_err_auth"))
+			return
+		}
 	} else {
 		tokenAuth()
 	}

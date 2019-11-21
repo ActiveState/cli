@@ -43,12 +43,14 @@ func (suite *AuthIntegrationTestSuite) SetupTest() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	suite.Signup()
-	suite.Logout()
-	suite.Login()
+	suite.signup()
+	suite.logout()
+	suite.login()
+	suite.logout()
+	suite.loginFlags()
 }
 
-func (suite *AuthIntegrationTestSuite) Signup() {
+func (suite *AuthIntegrationTestSuite) signup() {
 	suite.Spawn("auth", "signup")
 	defer suite.Stop()
 
@@ -66,7 +68,7 @@ func (suite *AuthIntegrationTestSuite) Signup() {
 	suite.Wait()
 }
 
-func (suite *AuthIntegrationTestSuite) Logout() {
+func (suite *AuthIntegrationTestSuite) logout() {
 	suite.Spawn("auth", "logout")
 	defer suite.Stop()
 
@@ -74,7 +76,7 @@ func (suite *AuthIntegrationTestSuite) Logout() {
 	suite.Wait()
 }
 
-func (suite *AuthIntegrationTestSuite) Login() {
+func (suite *AuthIntegrationTestSuite) login() {
 	suite.Spawn("auth")
 	suite.Expect("username:")
 	suite.SendLine(suite.username)
@@ -86,6 +88,13 @@ func (suite *AuthIntegrationTestSuite) Login() {
 	// still logged in?
 	suite.Spawn("auth")
 	suite.Expect("You are logged in")
+	suite.Wait()
+}
+
+func (suite *AuthIntegrationTestSuite) loginFlags() {
+	suite.Spawn("auth", "--username", suite.username, "--password", "bad-password")
+	suite.Expect("Failed to authenticate")
+	suite.Expect("You are not authorized, did you provide valid login credentials?")
 	suite.Wait()
 }
 

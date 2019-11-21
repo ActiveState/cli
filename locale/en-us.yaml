@@ -235,8 +235,6 @@ prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
 err_auth_failed:
   other: Authentication failed
-err_auth_signup_failed:
-  other: Could not authenticate, signup failed
 err_auth_username_check:
   other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
@@ -267,6 +265,8 @@ login_cancelled:
   other: Authentication Cancelled
 login_err_output:
   other: Failed to display user output
+login_err_auth:
+  other: Authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
@@ -746,8 +746,6 @@ keypair_generate_success:
   other: Keypair generated successfully
 keypair_auth_cmd_description:
   other: Authenticate existing Keypair for future sessions
-keypair_err:
-  other: Unable to access user's Keypair
 keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
@@ -997,8 +995,8 @@ installing_artifacts:
   other: Installing required artifacts
 fileutils_err_ammend_file:
   other: "Could not edit file: '{{.V0}}'"
-err_auth_fail_totp:
-  other: Failed to receive Authentication Token input
+err_auth_empty_token:
+  other: The provided token is empty
 fail_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
