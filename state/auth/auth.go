@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -83,7 +84,9 @@ func Execute(cmd *cobra.Command, args []string) {
 	var fail *failures.Failure
 	if auth.Authenticated() {
 		logging.Debug("Already authenticated")
-		if Flags.JSON {
+		// TODO: Might be a better way to do this
+		output := cmd.Flag("output")
+		if strings.ToLower(output.Value.String()) == "json" {
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				failures.Handle(fail, locale.T("login_err_output"))

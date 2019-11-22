@@ -10,6 +10,7 @@ import (
 type Options struct {
 	Locale  string
 	Version bool
+	Output  string
 }
 
 func NewOptions() *Options {

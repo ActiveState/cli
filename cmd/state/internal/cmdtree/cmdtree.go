@@ -63,6 +63,14 @@ func newStateCommand() *captain.Command {
 				BoolVar: &globals.Verbose,
 			},
 			{
+				Name:        "output",
+				Shorthand:   "o",
+				Description: locale.T("flag_state_output_description"),
+				Type:        captain.TypeString,
+				Persist:     true,
+				StringVar:   &opts.Output,
+			},
+			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Type:        captain.TypeBool,
