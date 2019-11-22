@@ -12,7 +12,7 @@ import (
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
-func ensureUserKeypair(passphrase string) {
+func ensureUserKeypair(passphrase string) *failures.Failure {
 	keypairRes, failure := keypairs.FetchRaw(secretsapi.Get())
 	if failure == nil {
 		failure = processExistingKeypairForUser(keypairRes, passphrase)
@@ -21,10 +21,12 @@ func ensureUserKeypair(passphrase string) {
 	}
 
 	if failure != nil {
-		failures.Handle(failure, locale.T("keypair_err"))
 		Logout()
 		print.Line(locale.T("auth_unresolved_keypair_issue_message"))
+		return failure
 	}
+
+	return nil
 }
 
 // generateKeypairForUser attempts to generate and save a Keypair for the currently authenticated user.

@@ -352,17 +352,19 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
-	execErr := Command.Execute()
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
 
-	require.NoError(t, execErr, "Executed without error")
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	execErr = Command.Execute()
+	execErr := Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -405,17 +407,19 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
-	execErr := Command.Execute()
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
 
-	require.NoError(t, execErr, "Executed without error")
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	execErr = Command.Execute()
+	execErr := Command.Execute()
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")

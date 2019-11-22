@@ -7,11 +7,20 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+)
+
+var (
+	// FailInvalidPassword indicates the users desired password is invalid
+	FailInvalidPassword = failures.Type("auth.failure.invalidpassword")
+
+	// FailAddUserConflict indicates a failure due to an existing user
+	FailAddUserConflict = failures.Type("auth.failure.adduserconflict")
 )
 
 type signupInput struct {
@@ -41,21 +50,20 @@ func Signup() {
 	}
 }
 
-func signupFromLogin(username string, password string) {
+func signupFromLogin(username string, password string) *failures.Failure {
 	input := &signupInput{}
 
 	input.Username = username
 	input.Password = password
 	err := promptForSignup(input)
 	if err != nil {
-		failures.Handle(err, locale.T("err_prompt_unkown"))
-		return
+		return failures.FailUserInput.Wrap(err)
 	}
 
-	doSignup(input)
+	return doSignup(input)
 }
 
-func promptForSignup(input *signupInput) error {
+func promptForSignup(input *signupInput) *failures.Failure {
 	var fail *failures.Failure
 
 	if input.Username != "" {
@@ -63,11 +71,11 @@ func promptForSignup(input *signupInput) error {
 	} else {
 		input.Username, fail = Prompter.Input(locale.T("username_prompt_signup"), "", prompt.InputRequired)
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 		input.Password, fail = Prompter.InputSecret(locale.T("password_prompt_signup"), prompt.InputRequired)
 		if fail != nil {
-			return fail.ToError()
+			return fail
 		}
 	}
 
@@ -75,33 +83,33 @@ func promptForSignup(input *signupInput) error {
 	var passwordValidator = func(val interface{}) error {
 		value := val.(string)
 		if value != input.Password {
-			return errors.New(locale.T("err_password_confirmation_failed"))
+			return FailInvalidPassword.New(locale.T("err_password_confirmation_failed"))
 		}
 		return nil
 	}
 
 	input.Password2, fail = Prompter.InputSecret(locale.T("password_prompt_confirm"), prompt.InputRequired)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 	err := passwordValidator(input.Password2)
 	if err != nil {
-		return err
+		return FailInvalidPassword.Wrap(err)
 	}
 
 	input.Name, fail = Prompter.Input(locale.T("name_prompt"), "", prompt.InputRequired)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 
 	input.Email, fail = Prompter.Input(locale.T("email_prompt"), "", prompt.InputRequired)
 	if fail != nil {
-		return fail.ToError()
+		return fail
 	}
 	return nil
 }
 
-func doSignup(input *signupInput) {
+func doSignup(input *signupInput) *failures.Failure {
 	params := users.NewAddUserParams()
 	params.SetUser(&mono_models.UserEditable{
 		Email:    input.Email,
@@ -116,11 +124,12 @@ func doSignup(input *signupInput) {
 		switch err.(type) {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
-			failures.Handle(err, locale.T("err_auth_signup_email_exists"))
+			logging.Error("Encountered add user conflict: %v", err)
+			return FailAddUserConflict.New(locale.T("err_auth_signup_email_exists"))
 		default:
-			failures.Handle(err, locale.T("err_auth_failed_unknown_cause"))
+			logging.Error("Encountered unknown error adding user: %v", err)
+			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause"))
 		}
-		return
 	}
 
 	fail := AuthenticateWithCredentials(&mono_models.Credentials{
@@ -128,12 +137,14 @@ func doSignup(input *signupInput) {
 		Password: input.Password,
 	})
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+		return fail
 	}
 
 	print.Line(locale.T("signup_success", map[string]string{
 		"Email": addUserOK.Payload.User.Email,
 	}))
+
+	return nil
 }
 
 // UsernameValidator verifies whether the chosen username is usable
