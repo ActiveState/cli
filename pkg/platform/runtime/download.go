@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -129,6 +130,13 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 
 	logging.Debug("sending request to head-chef")
 	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
+
+	projectID := buildRequest.Requester.ProjectID.String()
+	logging.Debug("sending project id to analytics: %s", projectID)
+	analytics.EventWithLabel(
+		analytics.CatBuild, analytics.ActBuildProject, projectID,
+	)
+
 	var artifacts []*HeadChefArtifact
 
 	for {
