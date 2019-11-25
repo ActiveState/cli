@@ -44,7 +44,6 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 
 		print.Line(string(data))
-		// return
 	default:
 		listOrganizations(orgs)
 	}

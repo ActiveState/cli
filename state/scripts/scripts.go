@@ -54,7 +54,6 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		}
 
 		print.Line(string(data))
-		// return
 	default:
 		listAllScripts(name, owner, scripts)
 	}

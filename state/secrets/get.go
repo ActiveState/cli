@@ -52,7 +52,6 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 	switch commands.Output(strings.ToLower(*Flags.Output)) {
 	case commands.JSON, commands.EditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
-		// return
 	default:
 		if valuePtr == nil {
 			err := "secrets_err_project_not_defined"
