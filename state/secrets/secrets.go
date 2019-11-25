@@ -34,7 +34,6 @@ type Command struct {
 	}
 
 	Flags struct {
-		JSON   *bool
 		Filter *string
 		Output *string
 	}

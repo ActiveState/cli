@@ -130,7 +130,8 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"--json"})
+		output := "json"
+		cmd.Flags.Output = &output
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)
