@@ -2,13 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/state"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -75,19 +75,20 @@ func init() {
 func Execute(cmd *cobra.Command, args []string) {
 	auth := authentication.Get()
 
-	output := state.Output(*Flags.Output)
+	output := commands.Output(strings.ToLower(*Flags.Output))
 	var user []byte
 	var fail *failures.Failure
 	if auth.Authenticated() {
 		logging.Debug("Already authenticated")
-		if output == state.JSON {
+		switch output {
+		case commands.JSON, commands.EditorV0:
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				failures.Handle(fail, locale.T("login_err_output"))
 				return
 			}
 			print.Line(string(user))
-		} else {
+		default:
 			print.Line(locale.T("logged_in_as", map[string]string{
 				"Name": auth.WhoAmI(),
 			}))
@@ -102,14 +103,15 @@ func Execute(cmd *cobra.Command, args []string) {
 		tokenAuth()
 	}
 
-	if output == state.JSON {
+	switch output {
+	case commands.JSON, commands.EditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
 			failures.Handle(fail, locale.T("login_err_output"))
 			return
 		}
 		print.Line(string(user))
-	} else {
+	default:
 		print.Line(locale.T("login_success_welcome_back", map[string]string{
 			"Name": auth.WhoAmI(),
 		}))

@@ -2,11 +2,11 @@ package organizations
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -35,7 +35,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if state.Output(*Flags.Output) == state.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			failures.Handle(fail, locale.T("organizations_err_output"))
@@ -43,10 +44,10 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 
 		print.Line(string(data))
-		return
+		// return
+	default:
+		listOrganizations(orgs)
 	}
-
-	listOrganizations(orgs)
 }
 
 func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {

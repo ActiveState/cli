@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -114,7 +113,8 @@ func (cmd *Command) Execute(ccmd *cobra.Command, args []string) {
 		return
 	}
 
-	if state.Output(*cmd.Flags.Output) == state.JSON {
+	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))
@@ -123,19 +123,19 @@ func (cmd *Command) Execute(ccmd *cobra.Command, args []string) {
 
 		print.Line(string(data))
 		return
-	}
+	default:
+		rows, fail := secretsToRows(secretExports)
+		if fail != nil {
+			failures.Handle(fail, locale.T("secrets_err_output"))
+			return
+		}
 
-	rows, fail := secretsToRows(secretExports)
-	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err_output"))
-		return
+		t := gotabulate.Create(rows)
+		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
+		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
+		t.SetAlign("left")
+		print.Line(t.Render("simple"))
 	}
-
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-	t.SetAlign("left")
-	print.Line(t.Render("simple"))
 }
 
 func definedSecrets(secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {

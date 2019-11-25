@@ -3,6 +3,7 @@ package scripts
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -11,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -45,7 +45,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if state.Output(*Flags.Output) == state.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))
@@ -53,10 +54,10 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		}
 
 		print.Line(string(data))
-		return
+		// return
+	default:
+		listAllScripts(name, owner, scripts)
 	}
-
-	listAllScripts(name, owner, scripts)
 }
 
 func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {

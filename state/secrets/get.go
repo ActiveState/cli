@@ -2,13 +2,13 @@ package secrets
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
 
@@ -49,23 +49,22 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	if state.Output(*Flags.Output) == state.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
-		return
-	}
-
-	if valuePtr == nil {
-		err := "secrets_err_project_not_defined"
-		if secret.IsUser() {
-			err = "secrets_err_user_not_defined"
+		// return
+	default:
+		if valuePtr == nil {
+			err := "secrets_err_project_not_defined"
+			if secret.IsUser() {
+				err = "secrets_err_user_not_defined"
+			}
+			print.Error(locale.Tr(err, cmd.Args.Name))
+			cmd.config.Exiter(1)
+			return
 		}
-		print.Error(locale.Tr(err, cmd.Args.Name))
-		cmd.config.Exiter(1)
-		return
+		print.Line(*valuePtr)
 	}
-	print.Line(*valuePtr)
-
-	return
 }
 
 func printJSON(secretJSON *SecretExport) {
