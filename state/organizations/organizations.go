@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -15,7 +16,7 @@ import (
 
 // Flags captures values for any of the flags used with the organizations command.
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 // Command is the organization command's definition.
@@ -24,14 +25,6 @@ var Command = &commands.Command{
 	Aliases:     []string{"orgs"},
 	Description: "organizations_description",
 	Run:         Execute,
-	Flags: []*commands.Flag{
-		{
-			Name:        "json",
-			Description: "flag_json_desc",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.JSON,
-		},
-	},
 }
 
 // Execute the organizations command.
@@ -42,7 +35,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if Flags.JSON {
+	if state.Output(*Flags.Output) == state.JSON {
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			failures.Handle(fail, locale.T("organizations_err_output"))

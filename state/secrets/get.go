@@ -8,12 +8,13 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
 
 // Flags holds the flag values passed through the command line
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 func buildGetCommand(cmd *Command) *commands.Command {
@@ -28,14 +29,6 @@ func buildGetCommand(cmd *Command) *commands.Command {
 				Description: "secrets_get_arg_name_description",
 				Variable:    &cmd.Args.Name,
 				Required:    true,
-			},
-		},
-		Flags: []*commands.Flag{
-			{
-				Name:        "json",
-				Description: "flag_json_desc",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.JSON,
 			},
 		},
 	}
@@ -56,7 +49,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	if Flags.JSON {
+	if state.Output(*Flags.Output) == state.JSON {
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 		return
 	}

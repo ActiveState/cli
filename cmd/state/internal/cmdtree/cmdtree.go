@@ -12,14 +12,16 @@ type CmdTree struct {
 }
 
 func New() *CmdTree {
-	stateCmd := newStateCommand()
+	globals := newGlobalOptions()
+
+	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(),
 		newInitCommand(),
 		newPushCommand(),
 	)
 
-	applyLegacyChildren(stateCmd)
+	applyLegacyChildren(stateCmd, globals)
 
 	return &CmdTree{
 		cmd: stateCmd,
@@ -28,14 +30,14 @@ func New() *CmdTree {
 
 type globalOptions struct {
 	Verbose bool
+	Output  string
 }
 
 func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
 }
 
-func newStateCommand() *captain.Command {
-	globals := newGlobalOptions()
+func newStateCommand(globals *globalOptions) *captain.Command {
 	opts := state.NewOptions()
 
 	runner := state.New(opts)
@@ -68,7 +70,7 @@ func newStateCommand() *captain.Command {
 				Description: locale.T("flag_state_output_description"),
 				Type:        captain.TypeString,
 				Persist:     true,
-				StringVar:   &opts.Output,
+				StringVar:   &globals.Output,
 			},
 			{
 				Name:        "version",

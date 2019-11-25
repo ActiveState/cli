@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -35,6 +36,7 @@ type Command struct {
 	Flags struct {
 		JSON   *bool
 		Filter *string
+		Output *string
 	}
 }
 
@@ -47,8 +49,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client) *Command {
-	var flagJSON bool
+func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -59,12 +60,6 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 			Description: "secrets_cmd_description",
 			Flags: []*commands.Flag{
 				{
-					Name:        "json",
-					Description: "secrets_flag_json",
-					Type:        commands.TypeBool,
-					BoolVar:     &flagJSON,
-				},
-				{
 					Name:        "filter-usedby",
 					Description: "secrets_flag_filter",
 					Type:        commands.TypeString,
@@ -74,8 +69,8 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		},
 	}
 
-	c.Flags.JSON = &flagJSON
 	c.Flags.Filter = &flagFilter
+	c.Flags.Output = output
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -103,7 +98,7 @@ func (cmd *Command) Config() *commands.Command {
 }
 
 // Execute processes the secrets command.
-func (cmd *Command) Execute(_ *cobra.Command, args []string) {
+func (cmd *Command) Execute(ccmd *cobra.Command, args []string) {
 	if strings.HasPrefix(os.Args[1], "var") {
 		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}
@@ -120,7 +115,7 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	if *cmd.Flags.JSON {
+	if state.Output(*cmd.Flags.Output) == state.JSON {
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))

@@ -11,13 +11,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Flags captures values for any of the flags used with the scripts command.
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 // Command holds the definition for "state scripts".
@@ -25,14 +26,6 @@ var Command = &commands.Command{
 	Name:        "scripts",
 	Description: "scripts_description",
 	Run:         Execute,
-	Flags: []*commands.Flag{
-		{
-			Name:        "json",
-			Description: "flag_json_desc",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.JSON,
-		},
-	},
 }
 
 func init() {
@@ -52,7 +45,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if Flags.JSON {
+	if state.Output(*Flags.Output) == state.JSON {
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))

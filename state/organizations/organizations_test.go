@@ -26,6 +26,8 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+
+	Flags.Output = new(string)
 }
 
 func setupOrgTest(t *testing.T) *apiMock.Mock {
@@ -71,7 +73,8 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := "json"
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})
@@ -91,7 +94,8 @@ func TestOrganizationsJSONFree(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := "json"
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})
@@ -111,7 +115,8 @@ func TestOrganizationsJSONBad(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := "json"
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})

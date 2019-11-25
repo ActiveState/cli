@@ -42,6 +42,7 @@ func setup(t *testing.T) {
 	Flags.Token = ""
 	Flags.Username = ""
 	Flags.Password = ""
+	Flags.Output = new(string)
 }
 
 func setupUser() *mono_models.UserEditable {

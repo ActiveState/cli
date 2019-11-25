@@ -2,13 +2,13 @@ package auth
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/state"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -41,12 +41,6 @@ var Command = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &Flags.Password,
 		},
-		&commands.Flag{
-			Name:        "json",
-			Description: "flag_json_desc",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.JSON,
-		},
 	},
 }
 
@@ -69,7 +63,7 @@ var Flags struct {
 	Token    string
 	Username string
 	Password string
-	JSON     bool
+	Output   *string
 }
 
 func init() {
@@ -80,13 +74,13 @@ func init() {
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
 	auth := authentication.Get()
+
+	output := state.Output(*Flags.Output)
 	var user []byte
 	var fail *failures.Failure
 	if auth.Authenticated() {
 		logging.Debug("Already authenticated")
-		// TODO: Might be a better way to do this
-		output := cmd.Flag("output")
-		if strings.ToLower(output.Value.String()) == "json" {
+		if output == state.JSON {
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				failures.Handle(fail, locale.T("login_err_output"))
@@ -108,7 +102,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		tokenAuth()
 	}
 
-	if Flags.JSON {
+	if output == state.JSON {
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
 			failures.Handle(fail, locale.T("login_err_output"))

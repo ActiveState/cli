@@ -7,10 +7,18 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 )
 
+// TODO: Move this to cmdtree?
+type Output string
+
+const (
+	UnknownOutput Output = ""
+	JSON          Output = "json"
+	EditorV0      Output = "editor.v0"
+)
+
 type Options struct {
 	Locale  string
 	Version bool
-	Output  string
 }
 
 func NewOptions() *Options {

@@ -49,7 +49,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *SecretsAccessTestSuite) runCommand(expectedExitCode int, expectedOutput string) {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	ex := exiter.New()
 	cmd.Config().Exiter = ex.Exit

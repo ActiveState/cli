@@ -47,6 +47,7 @@ func setup(t *testing.T) {
 	authCmd.Flags.Token = ""
 	authCmd.Flags.Username = ""
 	authCmd.Flags.Password = ""
+	authCmd.Flags.Output = new(string)
 	authlet.OpenURI = func(uri string) error { return nil }
 }
 

@@ -108,7 +108,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 
 	expected := string(data)
 	suite.LoginAsPersistentUser()
-	suite.Spawn("auth", "--json")
+	suite.Spawn("auth", "--output", "json")
 	if runtime.GOOS != "windows" {
 		suite.Expect(expected)
 	}
