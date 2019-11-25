@@ -17,6 +17,7 @@ func New() *CmdTree {
 		newActivateCommand(),
 		newInitCommand(),
 		newPushCommand(),
+		newRunCommand(),
 	)
 
 	applyLegacyChildren(stateCmd)
