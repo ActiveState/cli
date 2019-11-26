@@ -96,7 +96,7 @@ func (cmd *Command) Config() *commands.Command {
 }
 
 // Execute processes the secrets command.
-func (cmd *Command) Execute(ccmd *cobra.Command, args []string) {
+func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 	if strings.HasPrefix(os.Args[1], "var") {
 		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}
