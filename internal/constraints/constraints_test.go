@@ -156,6 +156,19 @@ func TestOsVersionMatches(t *testing.T) {
 	osVersionOverride = "" // reset
 }
 
+func TestMatchesGlobbed(t *testing.T) {
+	assert.True(t, matchesGlobbed("This might test it out", "*test*it*"))
+	assert.True(t, matchesGlobbed("testit", "test*it"))
+	assert.True(t, matchesGlobbed("test it", "test*it"))
+	assert.False(t, matchesGlobbed("This might zest it out", "*test*it*"))
+	assert.True(t, matchesGlobbed("zThis it test it out", "*test*it*"))
+	assert.False(t, matchesGlobbed("This test it out", "test*it"))
+	assert.True(t, matchesGlobbed("test out it", "test*it"))
+	assert.True(t, matchesGlobbed("test out it test", "test*it*"))
+	assert.False(t, matchesGlobbed("test out it test", "test*it"))
+	assert.True(t, matchesGlobbed("test it out it test", "*it*test*"))
+}
+
 func TestArchMatches(t *testing.T) {
 	archNames := []string{"i386", "x86_64", "arm", "I386", "X86_64", "ARM"}
 	for _, name := range archNames {
