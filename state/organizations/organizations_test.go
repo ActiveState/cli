@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -73,7 +74,7 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	output := "json"
+	output := string(commands.JSON)
 	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
@@ -94,7 +95,7 @@ func TestOrganizationsJSONFree(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	output := "json"
+	output := string(commands.JSON)
 	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
