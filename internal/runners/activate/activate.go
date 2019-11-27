@@ -4,10 +4,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Activate struct {
@@ -24,6 +27,24 @@ func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutA
 
 func (r *Activate) Run(namespace string, preferredPath string) error {
 	return r.run(namespace, preferredPath, activationLoop)
+}
+
+func sendProjectIDToAnalytics(namespace string, configFile string) {
+	names, fail := project.ParseNamespaceOrConfigfile(namespace, configFile)
+	if fail != nil {
+		logging.Debug("error resolving namespace: %v", fail.ToError())
+		return
+	}
+
+	platProject, fail := model.FetchProjectByName(names.Owner, names.Project)
+	if fail != nil {
+		logging.Debug("error getting platform project: %v", fail.ToError())
+		return
+	}
+	projectID := platProject.ProjectID.String()
+	analytics.EventWithLabel(
+		analytics.CatBuild, analytics.ActBuildProject, projectID,
+	)
 }
 
 func (r *Activate) run(namespace string, preferredPath string, activatorLoop activationLoopFunc) error {
@@ -45,6 +66,8 @@ func (r *Activate) run(namespace string, preferredPath string, activatorLoop act
 			return err
 		}
 	}
+
+	go sendProjectIDToAnalytics(namespace, configFile)
 
 	return activatorLoop(targetPath, activate)
 }

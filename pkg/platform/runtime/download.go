@@ -129,6 +129,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 
 	logging.Debug("sending request to head-chef")
 	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
+
 	var artifacts []*HeadChefArtifact
 
 	for {

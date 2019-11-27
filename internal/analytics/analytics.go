@@ -15,6 +15,12 @@ var client *ga.Client
 // CatRunCmd is the event category used for running commands
 const CatRunCmd = "run-command"
 
+// CatBuild is the event category used for headchef builds
+const CatBuild = "build"
+
+// ActBuildProject is the event action for requesting a build for a specific project
+const ActBuildProject = "project"
+
 func init() {
 	setup()
 }
@@ -68,6 +74,20 @@ func event(category string, action string) error {
 	return client.Send(ga.NewEvent(category, action))
 }
 
+// EventWithLabel logs an event with a label to google analytics
+func EventWithLabel(category string, action string, label string) {
+	go eventWithLabel(category, action, label)
+}
+
+func eventWithLabel(category, action, label string) error {
+	if client == nil || condition.InTest() {
+		return nil
+	}
+
+	logging.Debug("Event+label: %s, %s, %s", category, action, label)
+	return client.Send(ga.NewEvent(category, action).Label(label))
+}
+
 // EventWithValue logs an event with an integer value to google analytics
 func EventWithValue(category string, action string, value int64) {
 	go eventWithValue(category, action, value)
@@ -78,6 +98,6 @@ func eventWithValue(category string, action string, value int64) error {
 		return nil
 	}
 
-	logging.Debug("Event: %s, %s", category, action)
+	logging.Debug("Event+value: %s, %s, %s", category, action, value)
 	return client.Send(ga.NewEvent(category, action).Value(value))
 }
