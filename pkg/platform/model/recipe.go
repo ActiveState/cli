@@ -22,7 +22,7 @@ import (
 
 // Fail types for this package
 var (
-	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown, failures.FailNonFatal)
+	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown)
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 )
 
