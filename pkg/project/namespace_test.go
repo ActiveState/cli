@@ -47,6 +47,9 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 				assert.Error(t, fail.ToError())
 				return
 			}
+			if fail != nil {
+				t.Fatalf("expected no error, got: %v", fail.ToError())
+			}
 			assert.Equal(t, *ns, *tt.expected)
 		})
 	}
