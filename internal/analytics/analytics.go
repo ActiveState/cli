@@ -18,9 +18,6 @@ const CatRunCmd = "run-command"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
-// ActBuildRequest is the event action for requesting a build
-const ActBuildRequest = "request"
-
 // ActBuildProject is the event action for requesting a build for a specific project
 const ActBuildProject = "project"
 
