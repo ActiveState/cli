@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -292,7 +291,7 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FileMode)
 	if err != nil {
 		if !fileExists {
-			target := path.Dir(filePath)
+			target := filepath.Dir(filePath)
 			err = fmt.Errorf("access to target %q is denied", target)
 		}
 		return failures.FailIO.Wrap(err)
@@ -376,7 +375,7 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 func walkPathAndFindFile(dir, filename string) string {
 	if file := filepath.Join(dir, filename); FileExists(file) {
 		return file
-	} else if parentDir := path.Dir(dir); parentDir != dir {
+	} else if parentDir := filepath.Dir(dir); parentDir != dir {
 		return walkPathAndFindFile(parentDir, filename)
 	}
 	return ""
@@ -435,7 +434,7 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 
 	// any found files and dirs
 	for _, fileInfo := range fileInfos {
-		err := os.Rename(path.Join(fromPath, fileInfo.Name()), path.Join(toPath, fileInfo.Name()))
+		err := os.Rename(filepath.Join(fromPath, fileInfo.Name()), filepath.Join(toPath, fileInfo.Name()))
 		if err != nil {
 			return failures.FailOS.Wrap(err)
 		}
