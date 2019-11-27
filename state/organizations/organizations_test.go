@@ -116,7 +116,7 @@ func TestOrganizationsJSONBad(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	output := "json"
+	output := string(commands.JSON)
 	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
