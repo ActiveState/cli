@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
@@ -32,4 +33,22 @@ func ParseNamespace(raw string) (*Namespace, *failures.Failure) {
 		Owner:   groups[1],
 		Project: groups[2],
 	}, nil
+}
+
+// ParseNamespaceOrConfigfile returns a valid project namespace.
+// This version prefers to create a namespace from a configFile if it exists
+func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespace, *failures.Failure) {
+
+	if fileutils.FileExists(configFile) {
+		prj, fail := FromPath(configFile)
+		if fail != nil {
+			return nil, FailInputSecretValue.New(locale.Tr("err_invalid_namespace", raw))
+		}
+		var names Namespace
+		names.Owner = prj.Owner()
+		names.Project = prj.Name()
+		return &names, nil
+	}
+
+	return ParseNamespace(raw)
 }
