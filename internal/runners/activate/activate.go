@@ -32,13 +32,14 @@ func (r *Activate) Run(namespace string, preferredPath string) error {
 func sendProjectIDToAnalytics() {
 	prj := project.Get()
 	platProject, fail := model.FetchProjectByName(prj.Owner(), prj.Name())
-	if fail != nil && platProject != nil {
-		projectID := platProject.ProjectID.String()
-		logging.Debug("sending project id to analytics: %s", projectID)
-		analytics.EventWithLabel(
-			analytics.CatBuild, analytics.ActBuildProject, projectID,
-		)
+	if fail != nil {
+		return
 	}
+	projectID := platProject.ProjectID.String()
+	logging.Debug("sending project id to analytics: %s", projectID)
+	analytics.EventWithLabel(
+		analytics.CatBuild, analytics.ActBuildProject, projectID,
+	)
 }
 
 func (r *Activate) run(namespace string, preferredPath string, activatorLoop activationLoopFunc) error {
