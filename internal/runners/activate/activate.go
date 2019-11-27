@@ -4,10 +4,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Activate struct {
@@ -24,6 +27,18 @@ func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutA
 
 func (r *Activate) Run(namespace string, preferredPath string) error {
 	return r.run(namespace, preferredPath, activationLoop)
+}
+
+func sendProjectIDToAnalytics() {
+	prj := project.Get()
+	platProject, fail := model.FetchProjectByName(prj.Owner(), prj.Name())
+	if fail != nil && platProject != nil {
+		projectID := platProject.ProjectID.String()
+		logging.Debug("sending project id to analytics: %s", projectID)
+		analytics.EventWithLabel(
+			analytics.CatBuild, analytics.ActBuildProject, projectID,
+		)
+	}
 }
 
 func (r *Activate) run(namespace string, preferredPath string, activatorLoop activationLoopFunc) error {
@@ -45,6 +60,8 @@ func (r *Activate) run(namespace string, preferredPath string, activatorLoop act
 			return err
 		}
 	}
+
+	go sendProjectIDToAnalytics()
 
 	return activatorLoop(targetPath, activate)
 }
