@@ -3,6 +3,7 @@ package scripts
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -17,7 +18,7 @@ import (
 
 // Flags captures values for any of the flags used with the scripts command.
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 // Command holds the definition for "state scripts".
@@ -25,14 +26,6 @@ var Command = &commands.Command{
 	Name:        "scripts",
 	Description: "scripts_description",
 	Run:         Execute,
-	Flags: []*commands.Flag{
-		{
-			Name:        "json",
-			Description: "flag_json_desc",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.JSON,
-		},
-	},
 }
 
 func init() {
@@ -52,7 +45,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if Flags.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))
@@ -60,10 +54,9 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		}
 
 		print.Line(string(data))
-		return
+	default:
+		listAllScripts(name, owner, scripts)
 	}
-
-	listAllScripts(name, owner, scripts)
 }
 
 func scriptsAsJSON(scripts []*project.Script) ([]byte, *failures.Failure) {

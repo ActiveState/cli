@@ -15,7 +15,13 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+func setup(t *testing.T) {
+	Flags.Output = new(string)
+}
+
 func TestExecute(t *testing.T) {
+	setup(t)
+
 	project := &projectfile.Project{}
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
@@ -43,6 +49,8 @@ scripts:
 }
 
 func TestScriptsTable(t *testing.T) {
+	setup(t)
+
 	hdrs := []string{"Name", "Description"}
 	rows := [][]string{
 		{"name0", "desc0"},

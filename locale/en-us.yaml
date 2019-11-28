@@ -82,6 +82,8 @@ flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:
   other: Verbose output
+flag_state_output_description:
+  other: Set the output method
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:

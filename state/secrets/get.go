@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -13,7 +14,7 @@ import (
 
 // Flags holds the flag values passed through the command line
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 func buildGetCommand(cmd *Command) *commands.Command {
@@ -28,14 +29,6 @@ func buildGetCommand(cmd *Command) *commands.Command {
 				Description: "secrets_get_arg_name_description",
 				Variable:    &cmd.Args.Name,
 				Required:    true,
-			},
-		},
-		Flags: []*commands.Flag{
-			{
-				Name:        "json",
-				Description: "flag_json_desc",
-				Type:        commands.TypeBool,
-				BoolVar:     &Flags.JSON,
 			},
 		},
 	}
@@ -56,23 +49,21 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	if Flags.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
-		return
-	}
-
-	if valuePtr == nil {
-		err := "secrets_err_project_not_defined"
-		if secret.IsUser() {
-			err = "secrets_err_user_not_defined"
+	default:
+		if valuePtr == nil {
+			err := "secrets_err_project_not_defined"
+			if secret.IsUser() {
+				err = "secrets_err_user_not_defined"
+			}
+			print.Error(locale.Tr(err, cmd.Args.Name))
+			cmd.config.Exiter(1)
+			return
 		}
-		print.Error(locale.Tr(err, cmd.Args.Name))
-		cmd.config.Exiter(1)
-		return
+		print.Line(*valuePtr)
 	}
-	print.Line(*valuePtr)
-
-	return
 }
 
 func printJSON(secretJSON *SecretExport) {
