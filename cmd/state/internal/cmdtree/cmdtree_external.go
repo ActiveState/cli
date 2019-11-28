@@ -21,10 +21,12 @@ import (
 )
 
 // applyLegacyChildren will register any commands and expanders
-func applyLegacyChildren(cmd *captain.Command) {
+func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	logging.Debug("register external")
 
 	secretsapi.InitializeClient()
+
+	setLegacyOutput(globals)
 
 	cmd.AddLegacyChildren(
 		events.Command,
@@ -37,7 +39,14 @@ func applyLegacyChildren(cmd *captain.Command) {
 		scripts.Command,
 		pull.Command,
 		export.Command,
-		secrets.NewCommand(secretsapi.Get()).Config(),
+		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
 		fork.Command,
 	)
+}
+
+func setLegacyOutput(globals *globalOptions) {
+	auth.Flags.Output = &globals.Output
+	organizations.Flags.Output = &globals.Output
+	scripts.Flags.Output = &globals.Output
+	secrets.Flags.Output = &globals.Output
 }
