@@ -172,6 +172,13 @@ func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
 	if inheritEnv {
 		for _, value := range os.Environ() {
 			split := strings.Split(value, "=")
+			// Windows allows environment variables that are not uppercase.
+			// This can lead to duplicate path entries. At this point we
+			// have already constructed a PATH so it's safe to discard the
+			// os Path.
+			if rt.GOOS == "windows" && split[0] == "Path" {
+				continue
+			}
 			if _, ok := envMap[split[0]]; !ok {
 				env = append(env, value)
 			}
