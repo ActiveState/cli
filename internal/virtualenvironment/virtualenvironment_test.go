@@ -130,7 +130,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
-	env := venv.GetEnv()
+	env := venv.GetEnv(false)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])

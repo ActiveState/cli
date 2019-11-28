@@ -100,7 +100,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		}
 
 		subs.SetEnv(venv.GetEnvSlice(true))
-		path = venv.GetEnv()["PATH"]
+		path = venv.GetEnv(false)["PATH"]
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
