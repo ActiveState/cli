@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
-	"regexp"
 	rt "runtime"
 	"strings"
 
@@ -98,7 +97,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inheritEnv bool) map[string]string {
+func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
 	pjfile := projectfile.Get()
 
@@ -158,37 +157,22 @@ func (v *VirtualEnvironment) GetEnv(inheritEnv bool) map[string]string {
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
-	if inheritEnv {
-		for _, kv := range os.Environ() {
-			split := strings.Split(kv, "=")
-			key := split[0]
-			value := split[1]
-			if rt.GOOS == "windows" {
-				// Windows allows environment variables that are not uppercase.
-				// This can lead to duplicate path entries. At this point we
-				// have already constructed a PATH so it's safe to discard the
-				// os Path.
-				if strings.ToLower(key) == "path" {
-					continue
-				}
-
-				// cmd.exe on Windows uses some dynamic environment variables
-				// that begin with an '='. We want to make sure we include
-				// these in the virtual environment. For more information see:
-				// https://devblogs.microsoft.com/oldnewthing/20100506-00/?p=14133
-				dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
-				groups := dynamicEnvVarRe.FindStringSubmatch(kv)
-				if len(groups) == 0 {
-					continue
-				}
-				env[groups[1]] = groups[2]
-			}
-			if _, ok := env[key]; !ok {
-				env[key] = value
-			}
-		}
+	if inherit {
+		return inheritEnv(env)
 	}
 
+	return env
+}
+
+func inheritEnv(env map[string]string) map[string]string {
+	for _, kv := range os.Environ() {
+		split := strings.Split(kv, "=")
+		key := split[0]
+		value := split[1]
+		if _, ok := env[key]; !ok {
+			env[key] = value
+		}
+	}
 	return env
 }
 
