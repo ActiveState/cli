@@ -164,18 +164,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 	return env
 }
 
-func inheritEnv(env map[string]string) map[string]string {
-	for _, kv := range os.Environ() {
-		split := strings.Split(kv, "=")
-		key := split[0]
-		value := split[1]
-		if _, ok := env[key]; !ok {
-			env[key] = value
-		}
-	}
-	return env
-}
-
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
 func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
 	envMap := v.GetEnv(inheritEnv)
