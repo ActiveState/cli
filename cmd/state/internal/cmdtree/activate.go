@@ -54,12 +54,15 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 }
 
 func newAcivateRunParams(args ActivateArgs, globals *globalOptions) (*activate.ActivateParams, error) {
-	output := commands.Output(globals.Output)
-	switch output {
-	case commands.JSON, commands.EditorV0:
-		// Input is correct
-	default:
-		return nil, failures.FailUserInput.New("TODO:")
+	var output commands.Output
+	if globals.Output != "" {
+		output = commands.Output(globals.Output)
+		switch output {
+		case commands.JSON, commands.EditorV0:
+			// Input is correct
+		default:
+			return nil, failures.FailUserInput.New("TODO:")
+		}
 	}
 
 	return &activate.ActivateParams{
