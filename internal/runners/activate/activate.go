@@ -1,14 +1,18 @@
 package activate
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -18,6 +22,12 @@ type Activate struct {
 	activateCheckout CheckoutAble
 }
 
+type ActivateParams struct {
+	Namespace     string
+	PreferredPath string
+	Output        commands.Output
+}
+
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
 		namespaceSelect,
@@ -25,8 +35,8 @@ func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutA
 	}
 }
 
-func (r *Activate) Run(namespace string, preferredPath string) error {
-	return r.run(namespace, preferredPath, activationLoop)
+func (r *Activate) Run(params *ActivateParams) error {
+	return r.run(params, activationLoop)
 }
 
 func sendProjectIDToAnalytics(namespace string, configFile string) {
@@ -47,10 +57,24 @@ func sendProjectIDToAnalytics(namespace string, configFile string) {
 	)
 }
 
-func (r *Activate) run(namespace string, preferredPath string, activatorLoop activationLoopFunc) error {
-	logging.Debug("Activate %v, %v", namespace, preferredPath)
+func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
+	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	targetPath, err := r.setupPath(namespace, preferredPath)
+	// TODO: Switch to if?
+	switch params.Output {
+	case commands.JSON, commands.EditorV0:
+		env := virtualenvironment.Get().GetEnvSlice(true)
+		envJSON := make([]string, len(env))
+
+		for i, kv := range env {
+			split := strings.Split(kv, "=")
+			envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", split[0], split[1])
+		}
+		fmt.Printf("{ %s }\n", strings.Join(envJSON, ", "))
+		return nil
+	}
+
+	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return err
 	}
@@ -58,16 +82,16 @@ func (r *Activate) run(namespace string, preferredPath string, activatorLoop act
 	// Checkout the project if it doesn't already exist at the target path
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		if namespace == "" {
+		if params.Namespace == "" {
 			return failures.FailUserInput.New("err_project_notexist_asyaml")
 		}
-		err := r.activateCheckout.Run(namespace, targetPath)
+		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
 			return err
 		}
 	}
 
-	go sendProjectIDToAnalytics(namespace, configFile)
+	go sendProjectIDToAnalytics(params.Namespace, configFile)
 
 	return activatorLoop(targetPath, activate)
 }
