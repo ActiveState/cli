@@ -84,7 +84,10 @@ func TestActivate_run(t *testing.T) {
 				namespaceSelect:  tt.fields.namespaceSelect,
 				activateCheckout: tt.fields.checkout,
 			}
-			if err := r.run(tt.args.namespace, tt.args.preferredPath, tt.args.activatorLoop); (err != nil) != tt.wantErr {
+			if err := r.run(&ActivateParams{
+				Namespace:     tt.args.namespace,
+				PreferredPath: tt.args.preferredPath,
+			}, tt.args.activatorLoop); (err != nil) != tt.wantErr {
 				t.Errorf("Activate.run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if checkoutCalled := r.activateCheckout.(*checkoutMock).called; checkoutCalled != tt.wantCheckout {
