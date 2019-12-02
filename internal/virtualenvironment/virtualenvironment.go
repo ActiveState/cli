@@ -97,7 +97,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv() map[string]string {
+func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
 	pjfile := projectfile.Get()
 
@@ -157,25 +157,19 @@ func (v *VirtualEnvironment) GetEnv() map[string]string {
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID
 
+	if inherit {
+		return inheritEnv(env)
+	}
+
 	return env
 }
 
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
-func (v *VirtualEnvironment) GetEnvSlice(inheritEnv bool) []string {
-	envMap := v.GetEnv()
+func (v *VirtualEnvironment) GetEnvSlice(inherit bool) []string {
+	envMap := v.GetEnv(inherit)
 	var env []string
 	for k, v := range envMap {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	// Append the global env
-	if inheritEnv {
-		for _, value := range os.Environ() {
-			split := strings.Split(value, "=")
-			if _, ok := envMap[split[0]]; !ok {
-				env = append(env, value)
-			}
-		}
 	}
 
 	return env

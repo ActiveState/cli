@@ -136,7 +136,7 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 	rcData := map[string]interface{}{
 		"Owner":       prj.Owner(),
 		"Name":        prj.Name(),
-		"Env":         virtualenvironment.Get().GetEnv(),
+		"Env":         virtualenvironment.Get().GetEnv(false),
 		"WD":          virtualenvironment.Get().WorkingDirectory(),
 		"UserScripts": userScripts,
 		"Scripts":     scripts,
