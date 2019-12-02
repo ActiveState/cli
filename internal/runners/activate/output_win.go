@@ -10,11 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
-func output() error {
+func output() (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
-		return fail
+		return "", fail
 	}
 
 	env := virtualenvironment.Get().GetEnvSlice(true)
@@ -40,6 +40,5 @@ func output() error {
 		envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", key, value)
 	}
 
-	fmt.Printf("{ %s }\n", strings.Join(envJSON, ", "))
-	return nil
+	return fmt.Sprintf("{ %s }", strings.Join(envJSON, ", ")), nil
 }

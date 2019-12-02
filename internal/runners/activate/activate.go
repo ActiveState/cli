@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -80,7 +81,12 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if err != nil {
 			return err
 		}
-		return output()
+		jsonString, err := output()
+		if err != nil {
+			return err
+		}
+		print.Line(jsonString)
+		return nil
 	}
 
 	go sendProjectIDToAnalytics(params.Namespace, configFile)
