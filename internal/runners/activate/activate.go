@@ -1,17 +1,14 @@
 package activate
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -62,24 +59,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	switch params.Output {
 	case commands.JSON, commands.EditorV0:
-		venv := virtualenvironment.Get()
-		fail := venv.Activate()
-		if fail != nil {
-			return fail
-		}
-
-		env := virtualenvironment.Get().GetEnvSlice(true)
-		envJSON := make([]string, len(env))
-		for i, kv := range env {
-			eq := strings.Index(kv, "=")
-			if eq < 0 {
-				continue
-			}
-			envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", kv[:eq], kv[eq+1:])
-		}
-
-		fmt.Printf("{ %s }\n", strings.Join(envJSON, ", "))
-		return nil
+		return output()
 	}
 
 	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
