@@ -60,16 +60,24 @@ func sendProjectIDToAnalytics(namespace string, configFile string) {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	// TODO: Switch to if?
 	switch params.Output {
 	case commands.JSON, commands.EditorV0:
+		venv := virtualenvironment.Get()
+		fail := venv.Activate()
+		if fail != nil {
+			return fail
+		}
+
 		env := virtualenvironment.Get().GetEnvSlice(true)
 		envJSON := make([]string, len(env))
-
 		for i, kv := range env {
-			split := strings.Split(kv, "=")
-			envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", split[0], split[1])
+			eq := strings.Index(kv, "=")
+			if eq < 0 {
+				continue
+			}
+			envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", kv[:eq], kv[eq+1:])
 		}
+
 		fmt.Printf("{ %s }\n", strings.Join(envJSON, ", "))
 		return nil
 	}
