@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
-func output() (string, error) {
+func envOutput() (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
