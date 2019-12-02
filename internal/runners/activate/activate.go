@@ -85,6 +85,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if err != nil {
 			return err
 		}
+		print.Line("[activated-JSON]")
 		print.Line(jsonString)
 		return nil
 	}

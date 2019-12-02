@@ -140,6 +140,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Output() {
 	suite.Spawn("activate", "ActiveState-CLI/Python3", "--output", "json")
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
+	suite.Expect("[activated-JSON]")
 	suite.Wait()
 	suite.Contains(suite.Output(), "ACTIVESTATE_PROJECT")
 }
