@@ -76,12 +76,6 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	switch params.Output {
 	case commands.JSON, commands.EditorV0:
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		defer os.Chdir(cwd)
-		
 		err = os.Chdir(targetPath)
 		if err != nil {
 			return err
