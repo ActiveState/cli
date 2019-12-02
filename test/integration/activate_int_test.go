@@ -132,6 +132,18 @@ version: %s
 	suite.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Output() {
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
+	defer cb()
+
+	suite.LoginAsPersistentUser()
+	suite.Spawn("activate", "ActiveState-CLI/Python3", "--output", "json")
+	suite.Expect("Where would you like to checkout")
+	suite.SendLine(tempDir)
+	suite.Wait()
+	suite.Contains(suite.Output(), "ACTIVESTATE_PROJECT")
+}
+
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 

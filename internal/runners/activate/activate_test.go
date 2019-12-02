@@ -76,13 +76,6 @@ func TestActivate_run(t *testing.T) {
 			true,
 			false,
 		},
-		{
-			"expect output",
-			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{"foo", tempDir, "json"}, activatorMock},
-			false,
-			false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

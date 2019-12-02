@@ -16,7 +16,7 @@ func output() error {
 		return fail
 	}
 
-	env := virtualenvironment.Get().GetEnvSlice(true)
+	env := venv.GetEnvSlice(true)
 	envJSON := make([]string, len(env))
 	for i, kv := range env {
 		eq := strings.Index(kv, "=")

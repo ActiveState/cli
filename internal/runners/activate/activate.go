@@ -57,11 +57,6 @@ func sendProjectIDToAnalytics(namespace string, configFile string) {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	switch params.Output {
-	case commands.JSON, commands.EditorV0:
-		return output()
-	}
-
 	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return err
@@ -77,6 +72,21 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if err != nil {
 			return err
 		}
+	}
+
+	switch params.Output {
+	case commands.JSON, commands.EditorV0:
+		cwd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		defer os.Chdir(cwd)
+		
+		err = os.Chdir(targetPath)
+		if err != nil {
+			return err
+		}
+		return output()
 	}
 
 	go sendProjectIDToAnalytics(params.Namespace, configFile)
