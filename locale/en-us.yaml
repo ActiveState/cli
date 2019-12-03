@@ -108,7 +108,7 @@ error_deactivating_subshell:
   other: Failed to deactivate subshell properly
 error_in_active_subshell:
   other: Failure encountered in active subshell
-err_activate_unknown_output:
+err_output_flag_value_invalid:
   other: Could not recognize output type
 info_reactivating:
   other: Reactivating state

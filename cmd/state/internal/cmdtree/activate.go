@@ -61,7 +61,7 @@ func newAcivateRunParams(args ActivateArgs, globals *globalOptions) (*activate.A
 		case commands.JSON, commands.EditorV0:
 			// Input is correct
 		default:
-			return nil, failures.FailUserInput.New("err_activate_unknown_output")
+			return nil, failures.FailUserInput.New("err_output_flag_value_invalid")
 		}
 	}
 
