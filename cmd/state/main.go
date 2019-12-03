@@ -29,14 +29,6 @@ import (
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
-type resultWrap struct {
-	Error struct {
-		Code    int32  `json:"code,omitempty"`
-		Message string `json:"message,omitempty"`
-		Data    string `json:"data,omitempty"`
-	} `json:"error,omitempty"`
-}
-
 func main() {
 	exiter := func(code int) {
 		os.Exit(code)

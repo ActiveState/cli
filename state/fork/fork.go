@@ -29,13 +29,29 @@ var (
 	failEditProject = failures.Type("fork.fail.editproject")
 
 	// FailForkProjectConflict represents a failure while creating a project
-	FailForkProjectConflict = failures.Type("fork.fail.forkprojectconflict", failures.FailUser)
+	FailForkProjectConflict = failures.Type(
+		"fork.fail.forkprojectconflict", failures.FailUser,
+	)
 )
+
+type errorData struct {
+	Code    int32  `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Data    string `json:"data,omitempty"`
+}
+
+type resultWrap struct {
+	Result map[string]string `json:"result,omitempty"`
+	Error  *errorData        `json:"error,omitempty"`
+}
 
 var prompter prompt.Prompter
 
 func init() {
 	prompter = prompt.New()
+
+	s := ""
+	Flags.Output = &s
 }
 
 // Command holds the fork command definition
@@ -117,8 +133,29 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	output := commands.Output(strings.ToLower(*Flags.Output))
+
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {
+		outputJSON := (output == commands.JSON || output == commands.EditorV0)
+
+		if outputJSON && fail.Type.Matches(FailForkProjectConflict) {
+			fail = failures.FailSilent.Wrap(fail)
+			payload := resultWrap{
+				Error: &errorData{
+					Code:    -16,
+					Message: fail.Error(),
+				},
+			}
+			data, err := json.Marshal(&payload)
+			if err != nil {
+				failures.Handle(err, locale.T("err_cannot_marshal_data"))
+				return
+			}
+
+			print.Line(string(data))
+		}
+
 		failures.Handle(fail, locale.T("err_fork_create_fork"))
 		return
 	}
@@ -130,12 +167,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		"NewName":       newName,
 	}
 
-	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	switch output {
 	case commands.JSON, commands.EditorV0:
-		type resultWrap struct {
-			Result map[string]string `json:"result,omitempty"`
-		}
-
 		payload := resultWrap{Result: applyToKeys(lowerFirst, result)}
 		data, err := json.Marshal(&payload)
 		if err != nil {
@@ -268,6 +301,11 @@ func lowerFirst(s string) string {
 	if s == "" {
 		return ""
 	}
+
 	r, size := utf8.DecodeRuneInString(s)
+	if r == 0 {
+		return s
+	}
+
 	return string(unicode.ToLower(r)) + s[size:]
 }
