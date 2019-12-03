@@ -86,7 +86,7 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /usr/local/go
-      GOFLAGS: -p=8 -mod=vendor
+      GOFLAGS: '-p=8 -mod=vendor'
       SHELL: bash
     docker:
       - image: circleci/golang:1.12
@@ -106,7 +106,7 @@ jobs:
       GOBIN: /go/bin
       GOPATH: /go
       GOROOT: /c/go
-      GOFLAGS: -p=8 -mod=vendor
+      GOFLAGS: '-p=8 -mod=vendor'
       TEST_RESULTS: /c/tmp/test-results
     executor:
       name: win/vs2019
@@ -134,7 +134,7 @@ jobs:
       GOPATH: /private/tmp/gohome
       GOBIN: /private/tmp/gohome/bin
       GOROOT: /private/tmp/go
-      GOFLAGS: -p=8 -mod=vendor
+      GOFLAGS: '-p=8 -mod=vendor'
       SHELL: bash
     macos:
       xcode: 9.3.0
