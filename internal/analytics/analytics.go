@@ -75,7 +75,6 @@ func setup() {
 	}
 
 	client.ClientID(id)
-	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	if id == "unknown" {
 		Event("error", "unknown machine id")
@@ -91,6 +90,7 @@ func event(category string, action string) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event: %s, %s", category, action)
 	if category == CatRunCmd {
@@ -108,6 +108,7 @@ func eventWithLabel(category, action, label string) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event+label: %s, %s, %s", category, action, label)
 	return client.Send(ga.NewEvent(category, action).Label(label))
@@ -122,6 +123,7 @@ func eventWithValue(category string, action string, value int64) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event+value: %s, %s, %s", category, action, value)
 	return client.Send(ga.NewEvent(category, action).Value(value))
