@@ -134,6 +134,10 @@ func (c *Command) FlagByName(name string, persistOnly bool) *Flag {
 
 // runner wraps the Run command
 func (c *Command) runner(cmd *cobra.Command, args []string) {
+	outputFlag := cmd.Flag("output")
+	if outputFlag != nil && outputFlag.Changed {
+		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
+	}
 	analytics.Event(analytics.CatRunCmd, c.Name)
 
 	// Run OnUse functions for flags
