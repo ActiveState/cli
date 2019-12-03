@@ -206,8 +206,8 @@ func addNewProject(owner, name string) (*mono_models.Project, *failures.Failure)
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 
-		if apcErr, ok := err.(*projects.AddProjectConflict); ok {
-			return nil, FailForkConflict.New(msg)
+		if _, ok := err.(*projects.AddProjectConflict); ok {
+			return nil, FailForkProjectConflict.New(msg)
 		}
 
 		return nil, api.FailUnknown.New(msg)
