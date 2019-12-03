@@ -1,6 +1,13 @@
 package fork
 
 import (
+	"encoding/json"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -14,13 +21,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 var (
 	failUpdateBranch = failures.Type("fork.fail.updatebranch")
 
 	failEditProject = failures.Type("fork.fail.editproject")
+
+	// FailForkProjectConflict represents a failure while creating a project
+	FailForkProjectConflict = failures.Type("fork.fail.forkprojectconflict", failures.FailUser)
 )
 
 var prompter prompt.Prompter
@@ -69,6 +78,7 @@ var Flags struct {
 	Organization string
 	Private      bool
 	Name         string
+	Output       *string
 }
 
 // Args holds the values passed through the command line
@@ -113,12 +123,31 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	print.Info(locale.T("state_fork_success", map[string]string{
+	result := map[string]string{
 		"OriginalOwner": originalOwner,
 		"OriginalName":  originalName,
 		"NewOwner":      newOwner,
 		"NewName":       newName,
-	}))
+	}
+
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
+		type resultWrap struct {
+			Result map[string]string `json:"result,omitempty"`
+		}
+
+		payload := resultWrap{Result: applyToKeys(lowerFirst, result)}
+		data, err := json.Marshal(&payload)
+		if err != nil {
+			failures.Handle(err, locale.T("err_cannot_marshal_data"))
+			return
+		}
+
+		print.Line(string(data))
+
+	default:
+		print.Info(locale.T("state_fork_success", result))
+	}
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -175,7 +204,13 @@ func addNewProject(owner, name string) (*mono_models.Project, *failures.Failure)
 	addParams.SetProject(&mono_models.Project{Name: name})
 	addOK, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
-		return nil, api.FailUnknown.New(api.ErrorMessageFromPayload(err))
+		msg := api.ErrorMessageFromPayload(err)
+
+		if apcErr, ok := err.(*projects.AddProjectConflict); ok {
+			return nil, FailForkConflict.New(msg)
+		}
+
+		return nil, api.FailUnknown.New(msg)
 	}
 
 	return addOK.Payload, nil
@@ -219,4 +254,20 @@ func editProjectDetails(originalOwner, newOwner, name string) *failures.Failure 
 	}
 
 	return nil
+}
+
+func applyToKeys(fn func(string) string, in map[string]string) map[string]string {
+	out := make(map[string]string)
+	for key, val := range in {
+		out[fn(key)] = val
+	}
+	return out
+}
+
+func lowerFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, size := utf8.DecodeRuneInString(s)
+	return string(unicode.ToLower(r)) + s[size:]
 }
