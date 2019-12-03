@@ -141,8 +141,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Output() {
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
 	suite.Expect("[activated-JSON]")
-	suite.Wait()
-	suite.Contains(suite.Output(), "ACTIVESTATE_PROJECT")
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
