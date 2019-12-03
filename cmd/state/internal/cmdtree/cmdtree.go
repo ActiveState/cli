@@ -16,7 +16,7 @@ func New() *CmdTree {
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(),
+		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
 	)
