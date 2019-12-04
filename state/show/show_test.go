@@ -10,11 +10,14 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestShow(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	src := filepath.Join(root, "test", constants.ConfigFileName)
@@ -37,6 +40,7 @@ func TestShow(t *testing.T) {
 
 func TestShowLocal(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 
@@ -49,6 +53,7 @@ func TestShowLocal(t *testing.T) {
 
 func TestShowFailDirDoesNotExist(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"/:does-not-exist"})
 	err := Command.Execute()
@@ -58,6 +63,7 @@ func TestShowFailDirDoesNotExist(t *testing.T) {
 
 func TestShowFailNoConfigFile(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 
@@ -72,6 +78,7 @@ func TestShowFailNoConfigFile(t *testing.T) {
 
 func TestShowFailParseConfig(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 
@@ -85,4 +92,17 @@ func TestShowFailParseConfig(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	os.RemoveAll(tmpdir)
+}
+
+func TestPrintProjectJSON(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err)
+	projectFile, fail := projectfile.Parse(filepath.Join(root, "state", "show", "testdata", "generated", "config", constants.ConfigFileName))
+	assert.NoError(t, fail.ToError())
+
+	project, fail := project.New(projectFile)
+	assert.NoError(t, fail.ToError())
+
+	fail = printProjectJSON(project)
+	assert.NoError(t, err)
 }
