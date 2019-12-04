@@ -139,7 +139,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		if outputJSON && fail.Type.Matches(FailForkProjectConflict) {
 			payload := resultWrap{
 				Error: &errorData{
-					Code:    16,
+					Code:    -16,
 					Message: fail.Error(),
 				},
 			}
