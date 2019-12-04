@@ -12,9 +12,9 @@ func inheritEnv(env map[string]string) map[string]string {
 	dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
 
 	for _, kv := range os.Environ() {
-		split := strings.Split(kv, "=")
-		key := split[0]
-		value := split[1]
+		eq := strings.Index(kv, "=")
+		key := kv[:eq]
+		value := kv[eq+1:]
 
 		// cmd.exe on Windows uses some dynamic environment variables
 		// that begin with an '='. We want to make sure we include
