@@ -577,6 +577,8 @@ err_state_show_no_config:
   other: activestate.yaml file not found in the given location.
 err_state_show_project_parse:
   other: Could not parse activestate.yaml.
+err_state_show_print_json:
+  other: Could not print project data as JSON
 print_state_show_name:
   other: Name
 print_state_show_organization:

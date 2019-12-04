@@ -53,4 +53,5 @@ func setLegacyOutput(globals *globalOptions) {
 	organizations.Flags.Output = &globals.Output
 	scripts.Flags.Output = &globals.Output
 	secrets.Flags.Output = &globals.Output
+	show.Flags.Output = &globals.Output
 }

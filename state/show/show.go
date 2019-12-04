@@ -1,9 +1,11 @@
 package show
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -40,11 +42,39 @@ var Args struct {
 	Remote string
 }
 
+var Flags struct {
+	Output *string
+}
+
+type platform struct {
+	Name         string `json:"name"`
+	Os           string `json:"os,omitempty"`
+	Version      string `json:"version,omitempty"`
+	Architecture string `json:"architecture,omitempty"`
+}
+
+type language struct {
+	Name    string `json:"name"`
+	Version string `json:"version,omitemtpy"`
+}
+
+type script struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+type projectData struct {
+	Name         string     `json:"name"`
+	Organization string     `json:"organization"`
+	Platforms    []platform `json:"platforms,omitempty"`
+	Languages    []language `json:"languages,omitempty"`
+	Scripts      []script   `json:"scripts,omitempty"`
+	Events       []string   `json:"events,omitempty"`
+}
+
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
-
-	updater.PrintUpdateMessage()
 
 	var project *prj.Project
 	if Args.Remote == "" {
@@ -73,6 +103,72 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	updater.PrintUpdateMessage()
+
+	output := commands.Output(strings.ToLower(*Flags.Output))
+	switch output {
+	case commands.JSON, commands.EditorV0:
+		fail := printProjectJSON(project)
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_state_show_print_json"))
+		}
+	default:
+		printProject(project)
+	}
+}
+
+func printProjectJSON(project *prj.Project) *failures.Failure {
+	resultData, err := json.Marshal(newProject(project))
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	print.Line(string(resultData))
+	return nil
+}
+
+func newProject(proj *prj.Project) projectData {
+	r := projectData{
+		Name:         proj.Name(),
+		Organization: proj.Owner(),
+	}
+	source := proj.Source()
+
+	for _, plat := range source.Platforms {
+		r.Platforms = append(r.Platforms, platform{
+			Name:         plat.Name,
+			Os:           plat.Os,
+			Version:      plat.Version,
+			Architecture: plat.Architecture,
+		})
+	}
+
+	for _, lang := range source.Languages {
+		r.Languages = append(r.Languages, language{
+			Name:    lang.Name,
+			Version: lang.Version,
+		})
+	}
+
+	for _, s := range source.Scripts {
+		if !constraints.IsConstrained(s.Constraints) {
+			r.Scripts = append(r.Scripts, script{
+				Name:        s.Name,
+				Description: s.Description,
+			})
+		}
+	}
+
+	for _, event := range source.Events {
+		if !constraints.IsConstrained(event.Constraints) {
+			r.Events = append(r.Events, event.Name)
+		}
+	}
+
+	return r
+}
+
+func printProject(project *prj.Project) {
 	print.BoldInline("%s: ", locale.T("print_state_show_name"))
 	print.Line("%s", project.Name())
 
