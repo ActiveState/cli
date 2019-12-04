@@ -142,7 +142,7 @@ func Execute(cmd *cobra.Command, args []string) {
 			fail = failures.FailSilent.Wrap(fail)
 			payload := resultWrap{
 				Error: &errorData{
-					Code:    -16,
+					Code:    16,
 					Message: fail.Error(),
 				},
 			}
