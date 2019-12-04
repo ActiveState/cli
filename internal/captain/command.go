@@ -123,6 +123,10 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+	outputFlag := cobraCmd.Flag("output")
+	if outputFlag != nil && outputFlag.Changed {
+		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
+	}
 	analytics.Event(analytics.CatRunCmd, c.cobra.Name())
 
 	// Run OnUse functions for flags
