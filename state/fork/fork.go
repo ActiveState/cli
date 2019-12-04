@@ -132,13 +132,11 @@ func Execute(cmd *cobra.Command, args []string) {
 	}
 
 	output := commands.Output(strings.ToLower(*Flags.Output))
+	outputJSON := (output == commands.JSON || output == commands.EditorV0)
 
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {
-		outputJSON := (output == commands.JSON || output == commands.EditorV0)
-
 		if outputJSON && fail.Type.Matches(FailForkProjectConflict) {
-			fail = failures.FailSilent.Wrap(fail)
 			payload := resultWrap{
 				Error: &errorData{
 					Code:    16,
@@ -152,6 +150,8 @@ func Execute(cmd *cobra.Command, args []string) {
 			}
 
 			print.Line(string(data))
+
+			fail = failures.FailSilent.Wrap(fail)
 		}
 
 		failures.Handle(fail, locale.T("err_fork_create_fork"))
@@ -165,8 +165,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		"NewName":       newName,
 	}
 
-	switch output {
-	case commands.JSON, commands.EditorV0:
+	if outputJSON {
 		payload := resultWrap{Result: result}
 		data, err := json.Marshal(&payload)
 		if err != nil {
@@ -175,10 +174,10 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 
 		print.Line(string(data))
-
-	default:
-		print.Info(locale.T("state_fork_success", result))
+		return
 	}
+
+	print.Info(locale.T("state_fork_success", result))
 }
 
 func promptForOwner() (string, *failures.Failure) {
