@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 
@@ -169,7 +168,8 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	switch output {
 	case commands.JSON, commands.EditorV0:
-		payload := resultWrap{Result: applyToKeys(lowerFirst, result)}
+		result := applyToKeys(lowerFirst, result)
+		payload := resultWrap{Result: result}
 		data, err := json.Marshal(&payload)
 		if err != nil {
 			failures.Handle(err, locale.T("err_cannot_marshal_data"))
@@ -298,14 +298,13 @@ func applyToKeys(fn func(string) string, in map[string]string) map[string]string
 }
 
 func lowerFirst(s string) string {
-	if s == "" {
-		return ""
-	}
+	transform := unicode.ToLower
+	pass := func(r rune) rune { return r }
 
-	r, size := utf8.DecodeRuneInString(s)
-	if r == 0 {
-		return s
+	fn := func(r rune) rune {
+		r = transform(r)
+		transform = pass
+		return r
 	}
-
-	return string(unicode.ToLower(r)) + s[size:]
+	return strings.Map(fn, s)
 }
