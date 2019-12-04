@@ -68,7 +68,9 @@ defaults:
           set -e
           BRANCH=$(git rev-parse --abbrev-ref HEAD)
           if [[ "$BRANCH" == "master" ]]; then
-            state run deploy-updates
+            # Revert this back to `state run deploy-updates` after this
+            # fix has merged
+            ./build/state run deploy-updates
           fi
     storeArtifacts: &storeArtifacts
       store_artifacts:
