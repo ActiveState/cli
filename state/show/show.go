@@ -63,13 +63,17 @@ type script struct {
 	Description string `json:"description,omitempty"`
 }
 
+type event struct {
+	Name string `json:"name"`
+}
+
 type projectData struct {
 	Name         string     `json:"name"`
 	Organization string     `json:"organization"`
 	Platforms    []platform `json:"platforms,omitempty"`
 	Languages    []language `json:"languages,omitempty"`
 	Scripts      []script   `json:"scripts,omitempty"`
-	Events       []string   `json:"events,omitempty"`
+	Events       []event    `json:"events,omitempty"`
 }
 
 // Execute the show command.
@@ -159,9 +163,9 @@ func newProject(proj *prj.Project) projectData {
 		}
 	}
 
-	for _, event := range source.Events {
-		if !constraints.IsConstrained(event.Constraints) {
-			r.Events = append(r.Events, event.Name)
+	for _, e := range source.Events {
+		if !constraints.IsConstrained(e.Constraints) {
+			r.Events = append(r.Events, event{Name: e.Name})
 		}
 	}
 
