@@ -3,7 +3,6 @@ package fork
 import (
 	"encoding/json"
 	"strings"
-	"unicode"
 
 	"github.com/spf13/cobra"
 
@@ -168,7 +167,6 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	switch output {
 	case commands.JSON, commands.EditorV0:
-		result := applyToKeys(lowerFirst, result)
 		payload := resultWrap{Result: result}
 		data, err := json.Marshal(&payload)
 		if err != nil {
@@ -287,24 +285,4 @@ func editProjectDetails(originalOwner, newOwner, name string) *failures.Failure 
 	}
 
 	return nil
-}
-
-func applyToKeys(fn func(string) string, in map[string]string) map[string]string {
-	out := make(map[string]string)
-	for key, val := range in {
-		out[fn(key)] = val
-	}
-	return out
-}
-
-func lowerFirst(s string) string {
-	transform := unicode.ToLower
-	pass := func(r rune) rune { return r }
-
-	fn := func(r rune) rune {
-		r = transform(r)
-		transform = pass
-		return r
-	}
-	return strings.Map(fn, s)
 }
