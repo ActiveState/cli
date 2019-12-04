@@ -43,10 +43,3 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 		fork.Command,
 	)
 }
-
-func setLegacyOutput(globals *globalOptions) {
-	auth.Flags.Output = &globals.Output
-	organizations.Flags.Output = &globals.Output
-	scripts.Flags.Output = &globals.Output
-	secrets.Flags.Output = &globals.Output
-}
