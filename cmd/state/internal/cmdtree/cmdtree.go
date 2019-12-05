@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/show"
 )
 
 type CmdTree struct {
@@ -109,4 +110,5 @@ func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
 	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
+	show.Flags.Output = &globals.Output
 }
