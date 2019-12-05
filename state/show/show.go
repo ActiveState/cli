@@ -132,44 +132,65 @@ func printProjectJSON(project *prj.Project) *failures.Failure {
 }
 
 func newProject(proj *prj.Project) projectData {
-	r := projectData{
+	p := projectData{
 		Name:         proj.Name(),
 		Organization: proj.Owner(),
 	}
-	source := proj.Source()
 
-	for _, plat := range source.Platforms {
-		r.Platforms = append(r.Platforms, platform{
+	source := proj.Source()
+	p.Platforms = getPlatforms(source)
+	p.Languages = getLanguages(source)
+	p.Scripts = getScripts(source)
+	p.Events = getEvents(source)
+
+	return p
+}
+
+func getPlatforms(project *projectfile.Project) []platform {
+	var platforms []platform
+	for _, plat := range project.Platforms {
+		platforms = append(platforms, platform{
 			Name:         plat.Name,
 			Os:           plat.Os,
 			Version:      plat.Version,
 			Architecture: plat.Architecture,
 		})
 	}
+	return platforms
+}
 
-	for _, lang := range source.Languages {
-		r.Languages = append(r.Languages, language{
+func getLanguages(project *projectfile.Project) []language {
+	var languages []language
+	for _, lang := range project.Languages {
+		languages = append(languages, language{
 			Name:    lang.Name,
 			Version: lang.Version,
 		})
 	}
+	return languages
+}
 
-	for _, s := range source.Scripts {
+func getScripts(project *projectfile.Project) []script {
+	var scripts []script
+	for _, s := range project.Scripts {
 		if !constraints.IsConstrained(s.Constraints) {
-			r.Scripts = append(r.Scripts, script{
+			scripts = append(scripts, script{
 				Name:        s.Name,
 				Description: s.Description,
 			})
 		}
 	}
+	return scripts
+}
 
-	for _, e := range source.Events {
+func getEvents(project *projectfile.Project) []event {
+	var events []event
+	for _, e := range project.Events {
 		if !constraints.IsConstrained(e.Constraints) {
-			r.Events = append(r.Events, event{Name: e.Name})
+			events = append(events, event{Name: e.Name})
 		}
 	}
-
-	return r
+	return events
 }
 
 func printProject(project *prj.Project) {
