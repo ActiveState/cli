@@ -1,7 +1,6 @@
 package show
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -46,36 +45,6 @@ var Flags struct {
 	Output *string
 }
 
-type platform struct {
-	Name         string `json:"name"`
-	Os           string `json:"os,omitempty"`
-	Version      string `json:"version,omitempty"`
-	Architecture string `json:"architecture,omitempty"`
-}
-
-type language struct {
-	Name    string `json:"name"`
-	Version string `json:"version,omitemtpy"`
-}
-
-type script struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-}
-
-type event struct {
-	Name string `json:"name"`
-}
-
-type projectData struct {
-	Name         string     `json:"name"`
-	Organization string     `json:"organization"`
-	Platforms    []platform `json:"platforms,omitempty"`
-	Languages    []language `json:"languages,omitempty"`
-	Scripts      []script   `json:"scripts,omitempty"`
-	Events       []event    `json:"events,omitempty"`
-}
-
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
@@ -112,100 +81,21 @@ func Execute(cmd *cobra.Command, args []string) {
 	output := commands.Output(strings.ToLower(*Flags.Output))
 	switch output {
 	case commands.JSON, commands.EditorV0:
-		fail := printProjectJSON(project)
-		if fail != nil {
-			failures.Handle(fail, locale.T("err_state_show_print_json"))
-		}
+		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
 	default:
-		printProject(project)
+		print.BoldInline("%s: ", locale.T("print_state_show_name"))
+		print.Line("%s", project.Name())
+
+		print.BoldInline("%s: ", locale.T("print_state_show_organization"))
+		print.Line("%s", project.Owner())
+
+		print.Line("")
+
+		printPlatforms(project.Source())
+		printLanguages(project.Source())
+		printScripts(project.Source())
+		printEvents(project.Source())
 	}
-}
-
-func printProjectJSON(project *prj.Project) *failures.Failure {
-	resultData, err := json.Marshal(newProject(project))
-	if err != nil {
-		return failures.FailOS.Wrap(err)
-	}
-
-	print.Line(string(resultData))
-	return nil
-}
-
-func newProject(proj *prj.Project) projectData {
-	p := projectData{
-		Name:         proj.Name(),
-		Organization: proj.Owner(),
-	}
-
-	source := proj.Source()
-	p.Platforms = getPlatforms(source)
-	p.Languages = getLanguages(source)
-	p.Scripts = getScripts(source)
-	p.Events = getEvents(source)
-
-	return p
-}
-
-func getPlatforms(project *projectfile.Project) []platform {
-	var platforms []platform
-	for _, plat := range project.Platforms {
-		platforms = append(platforms, platform{
-			Name:         plat.Name,
-			Os:           plat.Os,
-			Version:      plat.Version,
-			Architecture: plat.Architecture,
-		})
-	}
-	return platforms
-}
-
-func getLanguages(project *projectfile.Project) []language {
-	var languages []language
-	for _, lang := range project.Languages {
-		languages = append(languages, language{
-			Name:    lang.Name,
-			Version: lang.Version,
-		})
-	}
-	return languages
-}
-
-func getScripts(project *projectfile.Project) []script {
-	var scripts []script
-	for _, s := range project.Scripts {
-		if !constraints.IsConstrained(s.Constraints) {
-			scripts = append(scripts, script{
-				Name:        s.Name,
-				Description: s.Description,
-			})
-		}
-	}
-	return scripts
-}
-
-func getEvents(project *projectfile.Project) []event {
-	var events []event
-	for _, e := range project.Events {
-		if !constraints.IsConstrained(e.Constraints) {
-			events = append(events, event{Name: e.Name})
-		}
-	}
-	return events
-}
-
-func printProject(project *prj.Project) {
-	print.BoldInline("%s: ", locale.T("print_state_show_name"))
-	print.Line("%s", project.Name())
-
-	print.BoldInline("%s: ", locale.T("print_state_show_organization"))
-	print.Line("%s", project.Owner())
-
-	print.Line("")
-
-	printPlatforms(project.Source())
-	printLanguages(project.Source())
-	printScripts(project.Source())
-	printEvents(project.Source())
 }
 
 func printPlatforms(project *projectfile.Project) {

@@ -10,8 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,17 +90,4 @@ func TestShowFailParseConfig(t *testing.T) {
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	os.RemoveAll(tmpdir)
-}
-
-func TestPrintProjectJSON(t *testing.T) {
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err)
-	projectFile, fail := projectfile.Parse(filepath.Join(root, "state", "show", "testdata", "generated", "config", constants.ConfigFileName))
-	assert.NoError(t, fail.ToError())
-
-	project, fail := project.New(projectFile)
-	assert.NoError(t, fail.ToError())
-
-	fail = printProjectJSON(project)
-	assert.NoError(t, err)
 }
