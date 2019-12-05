@@ -263,7 +263,7 @@ function install()
     }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+    if ([System.Environment]::Is64BitOperatingSystem) {
         $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
         $stateexe="windows-amd64.exe"
