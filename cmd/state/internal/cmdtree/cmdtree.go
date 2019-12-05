@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/organizations"
+	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
@@ -111,4 +112,5 @@ func setLegacyOutput(globals *globalOptions) {
 	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
 	show.Flags.Output = &globals.Output
+	pull.Flags.Output = &globals.Output
 }
