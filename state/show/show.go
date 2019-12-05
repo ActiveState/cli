@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -40,11 +41,13 @@ var Args struct {
 	Remote string
 }
 
+var Flags struct {
+	Output *string
+}
+
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
 	logging.Debug("Execute")
-
-	updater.PrintUpdateMessage()
 
 	var project *prj.Project
 	if Args.Remote == "" {
@@ -73,18 +76,26 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	print.BoldInline("%s: ", locale.T("print_state_show_name"))
-	print.Line("%s", project.Name())
+	updater.PrintUpdateMessage()
 
-	print.BoldInline("%s: ", locale.T("print_state_show_organization"))
-	print.Line("%s", project.Owner())
+	output := commands.Output(strings.ToLower(*Flags.Output))
+	switch output {
+	case commands.JSON, commands.EditorV0:
+		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
+	default:
+		print.BoldInline("%s: ", locale.T("print_state_show_name"))
+		print.Line("%s", project.Name())
 
-	print.Line("")
+		print.BoldInline("%s: ", locale.T("print_state_show_organization"))
+		print.Line("%s", project.Owner())
 
-	printPlatforms(project.Source())
-	printLanguages(project.Source())
-	printScripts(project.Source())
-	printEvents(project.Source())
+		print.Line("")
+
+		printPlatforms(project.Source())
+		printLanguages(project.Source())
+		printScripts(project.Source())
+		printEvents(project.Source())
+	}
 }
 
 func printPlatforms(project *projectfile.Project) {
