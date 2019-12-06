@@ -75,7 +75,7 @@ func RunFuncByBinary(binary string) RunFunc {
 	switch {
 	case strings.Contains(bin, "bash"):
 		return runWithBash
-	case strings.Contains(bin, "cmd.exe"):
+	case strings.Contains(bin, "cmd"):
 		return runWithCmd
 	default:
 		return runDirect
