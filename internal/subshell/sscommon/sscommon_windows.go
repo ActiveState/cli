@@ -19,3 +19,37 @@ func stop(cmd *exec.Cmd) *failures.Failure {
 
 	return nil
 }
+
+func RunFuncByBinary(binary string) RunFunc {
+	bin := strings.ToLower(binary)
+	if strings.Contains(bin, "cmd.exe") {
+		return runWithCmd
+	}
+	return runDirect
+}
+
+func runWithCmd(env []string, name string, args ...string) (int, error) {
+	ext := filepath.Ext(name)
+	switch ext {
+	case ".py":
+		args = append([]string{name}, args...)
+		pythonPath, err := binaryPathCMD(env, "python")
+		if err != nil {
+			return -1, err
+		}
+		name = pythonPath
+	case ".pl":
+		args = append([]string{name}, args...)
+		perlPath, err := binaryPathCMD(env, "perl")
+		if err != nil {
+			return -1, err
+		}
+		name = perlPath
+	case ".bat":
+		// No action required
+	default:
+		return -1, fmt.Errorf("unsupported language extenstion: %s", ext)
+	}
+
+	return runDirect(env, name, args...)
+}

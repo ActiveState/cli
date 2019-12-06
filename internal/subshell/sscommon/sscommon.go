@@ -3,11 +3,9 @@ package sscommon
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -71,61 +69,6 @@ func Stop(cmd *exec.Cmd) *failures.Failure {
 
 // RunFunc ...
 type RunFunc func(env []string, name string, args ...string) (int, error)
-
-// RunFuncByBinary ...
-func RunFuncByBinary(binary string) RunFunc {
-	bin := strings.ToLower(binary)
-	switch {
-	case strings.Contains(bin, "bash"):
-		return runWithBash
-	case strings.Contains(bin, "cmd.exe"):
-		return runwithCMD
-	default:
-		return runDirect
-	}
-}
-
-func runWithBash(env []string, name string, args ...string) (int, error) {
-	filePath, fail := osutils.BashifyPath(name)
-	if fail != nil {
-		return 1, fail.ToError()
-	}
-
-	esc := osutils.NewBashEscaper()
-
-	quotedArgs := filePath
-	for _, arg := range args {
-		quotedArgs += " " + esc.Quote(arg)
-	}
-
-	return runDirect(env, "bash", "-c", quotedArgs)
-}
-
-func runwithCMD(env []string, name string, args ...string) (int, error) {
-	ext := filepath.Ext(name)
-	switch ext {
-	case ".py":
-		args = append([]string{name}, args...)
-		pythonPath, err := binaryPathCMD(env, "python")
-		if err != nil {
-			return -1, err
-		}
-		name = pythonPath
-	case ".pl":
-		args = append([]string{name}, args...)
-		perlPath, err := binaryPathCMD(env, "perl")
-		if err != nil {
-			return -1, err
-		}
-		name = perlPath
-	case ".bat":
-		// No action required
-	default:
-		return -1, fmt.Errorf("unsupported language extenstion: %s", ext)
-	}
-
-	return runDirect(env, name, args...)
-}
 
 func binaryPathCMD(env []string, name string) (string, error) {
 	cmd := exec.Command("where", "python")
