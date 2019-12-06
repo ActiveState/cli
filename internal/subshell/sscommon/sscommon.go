@@ -2,7 +2,6 @@ package sscommon
 
 import (
 	"context"
-	"errors"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -69,23 +68,6 @@ func Stop(cmd *exec.Cmd) *failures.Failure {
 
 // RunFunc ...
 type RunFunc func(env []string, name string, args ...string) (int, error)
-
-func binaryPathCMD(env []string, name string) (string, error) {
-	cmd := exec.Command("where", "python")
-	cmd.Env = env
-
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	split := strings.Split(string(out), "\r\n")
-	if len(split) == 0 {
-		return "", errors.New("could not find python executable in PATH")
-	}
-
-	return split[0], nil
-}
 
 func ignoreInterrupts(ctx context.Context) {
 	c := make(chan os.Signal, 1)
