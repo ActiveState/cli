@@ -2,9 +2,12 @@ package sscommon
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -72,10 +75,14 @@ type RunFunc func(env []string, name string, args ...string) (int, error)
 // RunFuncByBinary ...
 func RunFuncByBinary(binary string) RunFunc {
 	bin := strings.ToLower(binary)
-	if strings.Contains(bin, "bash") {
+	switch {
+	case strings.Contains(bin, "bash"):
 		return runWithBash
+	case strings.Contains(bin, "cmd.exe"):
+		return runwithCMD
+	default:
+		return runDirect
 	}
-	return runDirect
 }
 
 func runWithBash(env []string, name string, args ...string) (int, error) {
@@ -92,6 +99,49 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 	}
 
 	return runDirect(env, "bash", "-c", quotedArgs)
+}
+
+func runwithCMD(env []string, name string, args ...string) (int, error) {
+	ext := filepath.Ext(name)
+	switch ext {
+	case ".py":
+		args = append([]string{name}, args...)
+		pythonPath, err := binaryPathCMD(env, "python")
+		if err != nil {
+			return -1, err
+		}
+		name = pythonPath
+	case ".pl":
+		args = append([]string{name}, args...)
+		perlPath, err := binaryPathCMD(env, "perl")
+		if err != nil {
+			return -1, err
+		}
+		name = perlPath
+	case ".bat":
+		// No action required
+	default:
+		return -1, fmt.Errorf("unsupported language extenstion: %s", ext)
+	}
+
+	return runDirect(env, name, args...)
+}
+
+func binaryPathCMD(env []string, name string) (string, error) {
+	cmd := exec.Command("where", "python")
+	cmd.Env = env
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	split := strings.Split(string(out), "\r\n")
+	if len(split) == 0 {
+		return "", errors.New("could not find python executable in PATH")
+	}
+
+	return split[0], nil
 }
 
 func ignoreInterrupts(ctx context.Context) {
