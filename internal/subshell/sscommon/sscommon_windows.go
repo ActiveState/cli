@@ -1,7 +1,10 @@
 package sscommon
 
 import (
+	"fmt"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/ActiveState/cli/internal/failures"
