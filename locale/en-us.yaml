@@ -511,6 +511,10 @@ error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
   other: Failed to obtain shell info.
+err_sscommon_binary_path:
+  other: Could not find {{.V0}} in PATH
+err_sscommon_unsupported_language:
+  other: Unsupported language extension {{.V0}}
 env_description:
   other: Manage Project Variables
 env_add_description:
