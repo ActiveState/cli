@@ -26,5 +26,5 @@ func envOutput() (string, error) {
 		envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", kv[:eq], kv[eq+1:])
 	}
 
-	return fmt.Sprintf("{ %s }", strings.Join(envJSON, ", ")), nil
+	return formatJSON(envJSON), nil
 }
