@@ -8,14 +8,14 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
-func envOutput() (string, error) {
+func envOutput(inherit bool) (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
 		return "", fail
 	}
 
-	env := virtualenvironment.Get().GetEnv(true)
+	env := virtualenvironment.Get().GetEnv(inherit)
 	envJSON, err := json.Marshal(env)
 	if err != nil {
 		return "", err
