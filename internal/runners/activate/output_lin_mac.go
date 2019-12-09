@@ -16,7 +16,7 @@ func envOutput() (string, error) {
 		return "", fail
 	}
 
-	env := venv.GetEnvSlice(true)
+	env := venv.GetEnvSlice(false)
 	envJSON := make([]string, len(env))
 	for i, kv := range env {
 		eq := strings.Index(kv, "=")
