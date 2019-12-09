@@ -1,5 +1,3 @@
-// +build windows
-
 package activate
 
 import (
@@ -15,7 +13,7 @@ func envOutput(inherit bool) (string, error) {
 		return "", fail
 	}
 
-	env := virtualenvironment.Get().GetEnv(inherit)
+	env := venv.GetEnv(inherit)
 	envJSON, err := json.Marshal(env)
 	if err != nil {
 		return "", err
