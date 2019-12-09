@@ -23,8 +23,12 @@ func envOutput() (string, error) {
 		if eq < 0 {
 			continue
 		}
-		envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", kv[:eq], kv[eq+1:])
+		envJSON[i] = fmt.Sprintf(
+			"\"%s\": \"%s\"",
+			strings.ReplaceAll(kv[:eq], "\\", "\\\\"),
+			strings.ReplaceAll(kv[eq+1:], "\\", "\\\\"),
+		)
 	}
 
-	return formatJSON(envJSON), nil
+	return fmt.Sprintf("{ %s }", strings.Join(envJSON, ", ")), nil
 }
