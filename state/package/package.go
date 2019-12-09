@@ -23,6 +23,14 @@ var Command = &commands.Command{
 	Description: "package_description",
 	Run:         Execute,
 	Aliases:     []string{"pkg", "package"},
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "commit",
+			Description: "flag_package_list_commit_description",
+			Type:        commands.TypeString,
+			StringVar:   &ListFlags.Commit,
+		},
+	},
 }
 
 func init() {
@@ -34,10 +42,7 @@ func init() {
 // Execute is ran when `state package` is ran
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-	err := cmd.Help()
-	if err != nil {
-		failures.Handle(err, locale.T("package_err_help"))
-	}
+	ExecuteList(cmd, allArgs)
 }
 
 func executeAddUpdate(cmd *commands.Command, language, name, version string, operation model.Operation) {

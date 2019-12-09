@@ -1133,6 +1133,8 @@ package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+flag_package_list_commit_description:
+  other: The commit that the listing should be based on
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
