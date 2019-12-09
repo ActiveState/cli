@@ -17,7 +17,7 @@ func envOutput() (string, error) {
 		return "", fail
 	}
 
-	env := virtualenvironment.Get().GetEnvSlice(true)
+	env := virtualenvironment.Get().GetEnvSlice(false)
 	envJSON := make([]string, len(env))
 	dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
 	var key, value string
@@ -37,11 +37,7 @@ func envOutput() (string, error) {
 			key = kv[:eq]
 			value = kv[eq+1:]
 		}
-		envJSON[i] = fmt.Sprintf(
-			"\"%s\": \"%s\"",
-			strings.ReplaceAll(key, "\\", "\\\\"),
-			strings.ReplaceAll(value, "\\", "\\\\"),
-		)
+		envJSON[i] = fmt.Sprintf("\"%s\": \"%s\"", key, value)
 	}
 
 	return fmt.Sprintf("{ %s }", strings.Join(envJSON, ", ")), nil
