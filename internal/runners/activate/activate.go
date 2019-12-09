@@ -81,7 +81,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		if err != nil {
 			return err
 		}
-		jsonString, err := envOutput()
+		jsonString, err := envOutput(false)
 		if err != nil {
 			return err
 		}

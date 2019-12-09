@@ -9,14 +9,14 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
-func envOutput() (string, error) {
+func envOutput(inherit bool) (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
 		return "", fail
 	}
 
-	env := venv.GetEnvSlice(false)
+	env := venv.GetEnvSlice(inherit)
 	envJSON := make([]string, len(env))
 	for i, kv := range env {
 		eq := strings.Index(kv, "=")
