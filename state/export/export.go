@@ -19,6 +19,7 @@ var Command = &commands.Command{
 func init() {
 	Command.Append(RecipeCommand)
 	Command.Append(JWTCommand)
+	Command.Append(PrivKeyCommand)
 }
 
 // Execute the export command.

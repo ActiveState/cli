@@ -1220,3 +1220,7 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+export_privkey_cmd_description:
+  other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
+err_read_privkey:
+  other: Could not read private key file
