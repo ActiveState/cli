@@ -3,8 +3,7 @@
 package activate
 
 import (
-	"fmt"
-	"strings"
+	"encoding/json"
 
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
@@ -16,19 +15,11 @@ func envOutput() (string, error) {
 		return "", fail
 	}
 
-	env := venv.GetEnvSlice(true)
-	envJSON := make([]string, len(env))
-	for i, kv := range env {
-		eq := strings.Index(kv, "=")
-		if eq < 0 {
-			continue
-		}
-		envJSON[i] = fmt.Sprintf(
-			"\"%s\": \"%s\"",
-			strings.ReplaceAll(kv[:eq], "\\", "\\\\"),
-			strings.ReplaceAll(kv[eq+1:], "\\", "\\\\"),
-		)
+	env := venv.GetEnv(true)
+	envJSON, err := json.Marshal(env)
+	if err != nil {
+		return "", err
 	}
 
-	return fmt.Sprintf("{ %s }", strings.Join(envJSON, ", ")), nil
+	return string(envJSON), nil
 }
