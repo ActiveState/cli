@@ -10,14 +10,14 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
-func envOutput() (string, error) {
+func envOutput(inherit bool) (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
 		return "", fail
 	}
 
-	env := virtualenvironment.Get().GetEnvSlice(true)
+	env := virtualenvironment.Get().GetEnvSlice(inherit)
 	envJSON := make([]string, len(env))
 	dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
 	var key, value string
