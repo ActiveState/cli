@@ -103,8 +103,6 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.Expect("Watching file changes")
 	suite.Expect("Are you done editing?")
-	// Can't consistently get this line detected on CI
-	// suite.Expect("Script changes detected")
 	suite.SendLine("Y")
 	suite.Wait()
 
