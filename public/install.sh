@@ -315,12 +315,12 @@ done
 # If the installation is not in $PATH then we attempt to update the users rc file
 if [ ! -z "$ZSH_VERSION" ]; then
   info "Zsh shell detected"
-  rc_file="$HOME/.zshrc"
+  RC_FILE="$HOME/.zshrc"
 elif [ ! -z "$BASH_VERSION" ]; then
   info "Bash shell detected"
-  rc_file="$HOME/.bashrc"
+  RC_FILE="$HOME/.bashrc"
 else
-  rc_file="$HOME/.profile"
+  RC_FILE="$HOME/.profile"
 fi
 
 manual_installation_instructions() {
@@ -336,7 +336,7 @@ manual_installation_instructions() {
 
 manual_update_instructions() {
   info "State tool installation complete."
-  echo "Please either run 'source $rc_file' or start a new login shell in "
+  echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
   activation_warning
   exit 1
@@ -355,14 +355,14 @@ activation_warning() {
 update_rc_file() {
   # Check if we can write to the users rcfile, if not give manual
   # insallation instructions
-  if [ ! -w "$rc_file" ]; then
-    warn "Could not write to $rc_file. Please ensure it exists and is writeable"
+  if [ ! -w "$RC_FILE" ]; then
+    warn "Could not write to $RC_FILE. Please ensure it exists and is writeable"
     manual_installation_instructions
   fi
 
   info "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "\n$pathenv" >> "$rc_file"
+  echo "\n$pathenv" >> "$RC_FILE"
 }
 
 # Check if the installation is in $PATH, if so we also check if the activate
@@ -385,7 +385,7 @@ if $NOPROMPT; then
 else
   # Prompt user to update users path, otherwise present manual
   # installation instructions
-  userprompt "Allow \$PATH to be appended to in your $rc_file? [y/N]"
+  userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
   RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
   if [ "$RESPONSE" != "y" ]; then
     manual_installation_instructions
