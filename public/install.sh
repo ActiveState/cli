@@ -312,6 +312,17 @@ while "true"; do
   esac
 done
 
+# If the installation is not in $PATH then we attempt to update the users rc file
+if [ ! -z "$ZSH_VERSION" ]; then
+  info "Zsh shell detected"
+  rc_file="$HOME/.zshrc"
+elif [ ! -z "$BASH_VERSION" ]; then
+  info "Bash shell detected"
+  rc_file="$HOME/.bashrc"
+else
+  rc_file="$HOME/.profile"
+fi
+
 manual_installation_instructions() {
   info "State tool installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
@@ -319,6 +330,14 @@ manual_installation_instructions() {
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  activation_warning
+  exit 1
+}
+
+source_rc_file_instructions() {
+  info "State tool installation complete."
+  echo "Please either run 'source $rc_file' or start a new login shell in "
+  echo "order to start using the '$STATEEXE' program."
   activation_warning
   exit 1
 }
@@ -344,15 +363,6 @@ update_rc_file() {
   info "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
   echo "\n$pathenv" >> "$rc_file"
-  installation_complete
-}
-
-installation_complete() {
-  info "State tool installation complete."
-  echo "Please either run 'source $rc_file' or start a new login shell in "
-  echo "order to start using the '$STATEEXE' program."
-  activation_warning
-  exit 1
 }
 
 # Check if the installation is in $PATH, if so we also check if the activate
@@ -369,19 +379,9 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
   exit 0
 fi
 
-# If the installation is not in $PATH then we attempt to update the users rc file
-if [ ! -z "$ZSH_VERSION" ]; then
-  info "Zsh shell detected"
-  rc_file="$HOME/.zshrc"
-elif [ ! -z "$BASH_VERSION" ]; then
-  info "Bash shell detected"
-  rc_file="$HOME/.bashrc"
-else
-  rc_file="$HOME/.profile"
-fi
-
 if $NOPROMPT; then
   update_rc_file
+  source_rc_file_instructions
 else
   # Prompt user to update users path, otherwise present manual
   # installation instructions
@@ -391,5 +391,6 @@ else
     manual_installation_instructions
   else
     update_rc_file
+    source_rc_file_instructions
   fi
 fi
