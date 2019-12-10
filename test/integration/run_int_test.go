@@ -114,12 +114,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
-	if runtime.GOOS == "windows" {
-		suite.SpawnCustom("dir")
-		suite.SpawnCustom("type", "activestate.yaml")
-		suite.Wait()
-		fmt.Println(suite.Output())
-	}
+	suite.Spawn("scripts")
+	suite.Wait()
+	fmt.Println(suite.Output())
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
