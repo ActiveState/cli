@@ -111,7 +111,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 Should install to the provided directory
 
-You should see a message instructing you on to source your RC file.
+You should see a message instructing you to source your RC file.
 
 ## Previous installation detected
 
