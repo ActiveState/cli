@@ -271,7 +271,7 @@ else
 fi
 
 if [ -z "$INSTALLDIR" ]; then
-  error "Could not determine installion directory on PATH."
+  error "Could not install state tool to PATH."
   error "You can use the '-t' flag to denote an install target."
   exit 1
 fi
