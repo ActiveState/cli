@@ -273,7 +273,7 @@ else
 fi
 
 if [ -z "$INSTALLDIR" ]; then
-  error "Could not install state tool to PATH."
+  error "Could not determine installion directory on PATH."
   error "You can use the '-t' flag to denote an install target."
   exit 1
 fi
@@ -349,32 +349,51 @@ activation_warning() {
   fi
 }
 
-# Check if we can write to the users profile, if not give manual
-# insallation instructions
-profile="`info $HOME`/.profile"
-if [ ! -w "$profile" ]; then
-  manual_installation_instructions
-fi
+update_rc_file() {
+  # Check if we can write to the users rcfile, if not give manual
+  # insallation instructions
+  if [ ! -w "$rc_file" ]; then
+    warn "Could not write to $rc_file. Please ensure it exists and is writeable"
+    manual_installation_instructions
+  fi
 
-# Prompt user to update users path, otherwise present manual
-# installation instructions
-userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
-RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-if [ "$RESPONSE" != "y" ]; then
-  manual_installation_instructions
-fi
-info "Updating environment..."
-pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
-if [ -z "`grep -no \"\#$STATEID\" \"$profile\"`" ]; then
-  info "Adding to \$PATH in $profile"
-  info "\n$pathenv" >> "$profile"
+  info "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
+  if [ -z "`grep -no \"\#$STATEID\" \"$rc_file\"`" ]; then
+    info "Adding to \$PATH in $rc_file"
+    echo "\n$pathenv" >> "$rc_file"
+  else
+    info "Updating \$PATH in $rc_file"
+    sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$rc_file"
+  fi
+
+  info "State tool installation complete."
+  echo "Please either run 'source $rc_file' or start a new login shell in "
+  echo "order to start using the '$STATEEXE' program."
+  activation_warning
+  exit 1
+}
+
+if [ ! -z "$ZSH_VERSION" ]; then
+  info "Zsh shell detected"
+  rc_file="$HOME/.zshrc"
+elif [ ! -z "$BASH_VERSION" ]; then
+  info "Bash shell detected"
+  rc_file="$HOME/.bashrc"
 else
-  info "Updating \$PATH in $profile"
-  sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$profile"
+  rc_file="$HOME/.profile"
 fi
 
-info "State tool installation complete."
-echo "Please either run 'source ~/.profile' or start a new login shell in "
-echo "order to start using the '$STATEEXE' program."
-activation_warning
-exit 1
+if $NOPROMPT; then
+  update_rc_file
+else
+  # Prompt user to update users path, otherwise present manual
+  # installation instructions
+  userprompt "Allow \$PATH to be appended to in your $rc_file? [y/N]"
+  RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
+  if [ "$RESPONSE" != "y" ]; then
+    manual_installation_instructions
+  else
+    update_rc_file
+  fi
+fi
