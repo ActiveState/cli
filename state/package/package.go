@@ -26,7 +26,7 @@ var Command = &commands.Command{
 	Flags: []*commands.Flag{
 		&commands.Flag{
 			Name:        "commit",
-			Description: "flag_package_list_commit_description",
+			Description: "package_list_flag_commit_description",
 			Type:        commands.TypeString,
 			StringVar:   &ListFlags.Commit,
 		},

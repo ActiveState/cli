@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"runtime"
 
 	"github.com/bndr/gotabulate"
@@ -28,13 +29,13 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 
 	commit, fail := targetedCommit(proj, ListFlags.Commit)
 	if fail != nil {
-		failures.Handle(fail, locale.T("packages_cannot_obtain_commit"))
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
 		return
 	}
 
 	recipe, fail := fetchRecipe(proj, commit)
 	if fail != nil {
-		failures.Handle(fail, locale.T("packages_cannot_fetch_recipe"))
+		failures.Handle(fail, locale.T("package_err_cannot_fetch_recipe"))
 		return
 	}
 
@@ -51,6 +52,11 @@ func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *fai
 	commit := commitOpt
 	if commit == "" {
 		commit = proj.CommitID()
+	}
+
+	if ok := strfmt.Default.Validates("uuid", commit); !ok {
+		err := errors.New("invalid uuid value")
+		return nil, failures.FailMarshal.Wrap(err)
 	}
 
 	var uuid strfmt.UUID
@@ -105,7 +111,7 @@ func makePacks(recipe *model.Recipe) packs {
 
 func (ps packs) table() string {
 	if ps == nil {
-		return locale.T("packages_no_data")
+		return locale.T("package_no_data")
 	}
 
 	var rows [][]string
@@ -117,7 +123,7 @@ func (ps packs) table() string {
 		rows = append(rows, row)
 	}
 	if len(rows) == 0 {
-		return locale.T("packages_no_packages")
+		return locale.T("package_no_packages")
 	}
 
 	headers := []string{
