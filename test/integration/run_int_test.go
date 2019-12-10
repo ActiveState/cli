@@ -33,7 +33,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 	configFileContent := strings.TrimSpace(`
 project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=40f4903a-e8a8-44a1-b2fd-eb1a2396a2f2
 scripts:
-  - name: test
+  - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
@@ -41,7 +41,7 @@ scripts:
         ./interrupt
     constraints:
         os: linux,macos
-  - name: test
+  - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
@@ -114,7 +114,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
-	suite.Spawn("run", "test")
+	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
 	suite.SendCtrlC()
@@ -127,7 +127,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.Spawn("run", "test")
+	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
