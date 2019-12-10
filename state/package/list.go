@@ -3,10 +3,12 @@ package pkg
 import (
 	"runtime"
 
+	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -26,23 +28,19 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 
 	commit, fail := targetedCommit(proj, ListFlags.Commit)
 	if fail != nil {
-		failures.Handle(fail, "")
+		failures.Handle(fail, locale.T("packages_cannot_obtain_commit"))
 		return
 	}
 
 	recipe, fail := fetchRecipe(proj, commit)
 	if fail != nil {
-		failures.Handle(fail, "")
+		failures.Handle(fail, locale.T("packages_cannot_fetch_recipe"))
 		return
 	}
 
-	pkgs, fail := makePacks(recipe)
-	if fail != nil {
-		failures.Handle(fail, "")
-		return
-	}
+	pkgs := makePacks(recipe)
 
-	print.Info(pkgs.table())
+	print.Line(pkgs.table())
 }
 
 func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *failures.Failure) {
@@ -83,14 +81,9 @@ type pack struct {
 
 type packs []*pack
 
-func (ps packs) table() string {
-	// TODO: table logic
-	return ""
-}
-
-func makePacks(recipe *model.Recipe) (packs, *failures.Failure) {
+func makePacks(recipe *model.Recipe) packs {
 	if recipe == nil {
-		return nil, nil
+		return nil
 	}
 
 	filter := func(s *string) string {
@@ -107,7 +100,36 @@ func makePacks(recipe *model.Recipe) (packs, *failures.Failure) {
 		pkgs = append(pkgs, &pkg)
 	}
 
-	return pkgs, nil
+	return pkgs
+}
+
+func (ps packs) table() string {
+	if ps == nil {
+		return locale.T("packages_no_data")
+	}
+
+	var rows [][]string
+	for _, p := range ps {
+		row := []string{
+			p.Name,
+			p.Version,
+		}
+		rows = append(rows, row)
+	}
+	if len(rows) == 0 {
+		return locale.T("packages_no_packages")
+	}
+
+	headers := []string{
+		locale.T("package_name"),
+		locale.T("package_version"),
+	}
+
+	t := gotabulate.Create(rows)
+	t.SetHeaders(headers)
+	t.SetAlign("left")
+
+	return t.Render("simple")
 }
 
 func filterNilString(fallback string, s *string) string {
