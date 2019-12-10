@@ -97,7 +97,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.Expect("ActiveState-CLI/Python3", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
-	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
+	suite.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
 	suite.Expect("Start of script", 5*time.Second)
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
