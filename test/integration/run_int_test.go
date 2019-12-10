@@ -114,6 +114,8 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 
+	suite.SpawnCustom("dir")
+	suite.SpawnCustom("type", "activestate.yaml")
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
