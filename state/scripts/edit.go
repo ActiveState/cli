@@ -80,7 +80,6 @@ var EditCommand = &commands.Command{
 // ExecuteEdit runs the edit command
 func ExecuteEdit(cmd *cobra.Command, args []string) {
 	script := project.Get().ScriptByName(EditArgs.Name)
-	// TODO: Need to check if it's constrained by the OS?
 	if script == nil {
 		print.Line(locale.Tr("edit_scripts_no_name", EditArgs.Name))
 		return
