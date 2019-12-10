@@ -56,6 +56,7 @@ scripts:
     constraints:
         os: windows
 `)
+	projectfile.Reset()
 	projectFile := &projectfile.Project{}
 	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
