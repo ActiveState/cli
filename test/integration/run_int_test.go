@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -21,10 +22,15 @@ import (
 type RunIntegrationTestSuite struct {
 	integration.Suite
 	tmpDirCleanup func()
+	originalWd    string
+	projectDir    string
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 
+	var err error
+	suite.originalWd, err = os.Getwd()
+	suite.Require().NoError(err)
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
@@ -51,12 +57,15 @@ scripts:
         os: windows
 `)
 	projectFile := &projectfile.Project{}
-	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(projectDir, constants.ConfigFileName))
 	fail := projectFile.Save()
 	suite.Require().NoError(fail.ToError())
+
+	err = os.Chdir(projectDir)
+	suite.Require().NoError(err)
 
 }
 
@@ -76,6 +85,7 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
 	suite.tmpDirCleanup()
+	os.Chdir(suite.originalWd)
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
