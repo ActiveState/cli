@@ -334,7 +334,7 @@ manual_installation_instructions() {
   exit 1
 }
 
-source_rc_file_instructions() {
+manual_update_instructions() {
   info "State tool installation complete."
   echo "Please either run 'source $rc_file' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
@@ -381,7 +381,7 @@ fi
 
 if $NOPROMPT; then
   update_rc_file
-  source_rc_file_instructions
+  manual_update_instructions
 else
   # Prompt user to update users path, otherwise present manual
   # installation instructions
@@ -391,6 +391,6 @@ else
     manual_installation_instructions
   else
     update_rc_file
-    source_rc_file_instructions
+    manual_update_instructions
   fi
 fi
