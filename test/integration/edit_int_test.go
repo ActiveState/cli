@@ -49,7 +49,7 @@ scripts:
     constraints:
       os: macos,linux
   - name: test-script
-    value: echo "hello test"
+    value: echo hello test
     constraints:
       os: windows
 `)
