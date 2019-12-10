@@ -31,6 +31,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 	var err error
 	suite.originalWd, err = os.Getwd()
 	suite.Require().NoError(err)
+
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
@@ -124,10 +125,6 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-
-	suite.Spawn("scripts")
-	suite.Wait()
-	fmt.Println(suite.Output())
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
@@ -141,6 +138,10 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
+
+	suite.Spawn("scripts")
+	suite.Wait()
+	fmt.Println(suite.Output())
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	suite.SendCtrlC()
@@ -157,6 +158,5 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 func TestRunIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
 	integration.RunParallel(t, new(RunIntegrationTestSuite))
 }

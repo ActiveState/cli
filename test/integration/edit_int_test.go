@@ -77,6 +77,11 @@ scripts:
 	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension))})
 }
 
+func (suite *EditIntegrationTestSuite) TearDownTest() {
+	suite.Suite.TearDownTest()
+	projectfile.Reset()
+}
+
 func (suite *EditIntegrationTestSuite) TestEdit() {
 	defer os.Chdir(suite.originalWd)
 	suite.Spawn("scripts", "edit", "test-script")
