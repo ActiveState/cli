@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
@@ -79,6 +80,7 @@ var EditCommand = &commands.Command{
 // ExecuteEdit runs the edit command
 func ExecuteEdit(cmd *cobra.Command, args []string) {
 	script := project.Get().ScriptByName(EditArgs.Name)
+	// TODO: Need to check if it's constrained by the OS?
 	if script == nil {
 		print.Line(locale.Tr("edit_scripts_no_name", EditArgs.Name))
 		return
@@ -329,8 +331,10 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	projectFile := project.Get().Source()
 	for i, projectScript := range projectFile.Scripts {
 		if projectScript.Name == EditArgs.Name {
-			projectFile.Scripts[i].Value = string(updatedScript)
-			break
+			if !constraints.IsConstrained(projectScript.Constraints) {
+				projectFile.Scripts[i].Value = string(updatedScript)
+				break
+			}
 		}
 	}
 
