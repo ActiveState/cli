@@ -101,8 +101,6 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	defer os.Chdir(suite.originalWd)
 	suite.Spawn("scripts", "edit", "test-script")
-	suite.Expect("Watching file changes")
-	suite.Expect("Are you done editing?")
 	suite.SendLine("Y")
 	suite.Wait()
 
