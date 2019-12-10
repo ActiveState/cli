@@ -3,6 +3,7 @@ package pkg
 import (
 	"errors"
 	"runtime"
+	"sort"
 
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
@@ -125,6 +126,7 @@ func (ps packs) table() string {
 	if len(rows) == 0 {
 		return locale.T("package_no_packages")
 	}
+	rowsByFirstCol(rows).Sort()
 
 	headers := []string{
 		locale.T("package_name"),
@@ -143,4 +145,26 @@ func filterNilString(fallback string, s *string) string {
 		return fallback
 	}
 	return *s
+}
+
+type rowsByFirstCol [][]string
+
+func (rs rowsByFirstCol) Len() int {
+	return len(rs)
+}
+
+func (rs rowsByFirstCol) Less(i, j int) bool {
+	if len(rs[i]) < 1 || len(rs[j]) < 1 {
+		return false
+	}
+
+	return rs[i][0] < rs[j][0]
+}
+
+func (rs rowsByFirstCol) Swap(i, j int) {
+	rs[i], rs[j] = rs[j], rs[i]
+}
+
+func (rs rowsByFirstCol) Sort() {
+	sort.Sort(rs)
 }
