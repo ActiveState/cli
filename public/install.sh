@@ -23,8 +23,6 @@ EOF
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
-# ID of the $PATH entry in the user's ~/.profile for the executable.
-STATEID="ActiveStateCLI"
 # Optional target directory
 TARGET=""
 # Optionally download and activate a project after install in the current directory
@@ -314,20 +312,6 @@ while "true"; do
   esac
 done
 
-# Check if the installation is in $PATH, if not, update user's profile if
-# permitted to.
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State tool installation complete."
-  if [ -n "${ACTIVATE}" ]; then
-    # switch this shell to interactive mode
-    set -i
-    # control flow of this script ends with this line: replace the shell with the activated project's shell
-    exec $STATEEXE activate ${ACTIVATE}
-  fi
-  info "You may now start using the '$STATEEXE' program."
-  exit 0
-fi
-
 manual_installation_instructions() {
   info "State tool installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
@@ -358,15 +342,12 @@ update_rc_file() {
   fi
 
   info "Updating environment..."
-  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
-  if [ -z "`grep -no \"\#$STATEID\" \"$rc_file\"`" ]; then
-    info "Adding to \$PATH in $rc_file"
-    echo "\n$pathenv" >> "$rc_file"
-  else
-    info "Updating \$PATH in $rc_file"
-    sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$rc_file"
-  fi
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
+  echo "\n$pathenv" >> "$rc_file"
+  installation_complete
+}
 
+installation_complete() {
   info "State tool installation complete."
   echo "Please either run 'source $rc_file' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
@@ -374,6 +355,21 @@ update_rc_file() {
   exit 1
 }
 
+# Check if the installation is in $PATH, if so we also check if the activate
+# flag was passed and attempt to activate the project
+if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
+  info "State tool installation complete."
+  if [ -n "${ACTIVATE}" ]; then
+    # switch this shell to interactive mode
+    set -i
+    # control flow of this script ends with this line: replace the shell with the activated project's shell
+    exec $STATEEXE activate ${ACTIVATE}
+  fi
+  info "You may now start using the '$STATEEXE' program."
+  exit 0
+fi
+
+# If the installation is not in $PATH then we attempt to update the users rc file
 if [ ! -z "$ZSH_VERSION" ]; then
   info "Zsh shell detected"
   rc_file="$HOME/.zshrc"
