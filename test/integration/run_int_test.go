@@ -23,7 +23,6 @@ type RunIntegrationTestSuite struct {
 	integration.Suite
 	tmpDirCleanup func()
 	originalWd    string
-	projectDir    string
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
@@ -88,6 +87,7 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
 	suite.tmpDirCleanup()
 	os.Chdir(suite.originalWd)
+	projectfile.Reset()
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
