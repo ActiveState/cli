@@ -99,6 +99,10 @@ func makePacks(recipe *model.Recipe) packs {
 
 	var pkgs packs
 	for _, ing := range recipe.ResolvedIngredients {
+		if ing.Ingredient == nil || ing.IngredientVersion == nil {
+			continue
+		}
+
 		pkg := pack{
 			Name:    filter(ing.Ingredient.Name),
 			Version: filter(ing.IngredientVersion.Version),
