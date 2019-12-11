@@ -1,8 +1,10 @@
 package project
 
 import (
+	"fmt"
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
@@ -164,10 +166,26 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 	}
 
 	if meta == "path" && isFunction {
-		sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Value())
-		return sf.Filename(), fail
+		return expandPath(name, script)
 	}
 	return script.Raw(), nil
+}
+
+func expandPath(name string, script *Script) (string, *failures.Failure) {
+	regex := regexp.MustCompile(fmt.Sprintf("\\${?scripts\\.%s\\.path\\(\\)\\}?", name))
+	if regex.MatchString(script.Raw()) {
+		sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Raw())
+		if fail != nil {
+			return "", fail
+		}
+
+		updated := regex.ReplaceAllString(script.Raw(), sf.Filename())
+		fail = fileutils.WriteFile(sf.Filename(), []byte(updated))
+		return sf.Filename(), fail
+	}
+
+	sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Value())
+	return sf.Filename(), fail
 }
 
 // ConstantExpander expands constants defined in the project-file.
