@@ -53,6 +53,10 @@ func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *fai
 	commit := commitOpt
 	if commit == "" {
 		commit = proj.CommitID()
+
+		if commit == "" {
+			return model.LatestCommitID(proj.Owner(), proj.Name())
+		}
 	}
 
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
