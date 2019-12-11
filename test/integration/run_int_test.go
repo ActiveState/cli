@@ -138,10 +138,6 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-
-	suite.Spawn("scripts")
-	suite.Wait()
-	fmt.Println(suite.Output())
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	suite.SendCtrlC()
