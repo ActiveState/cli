@@ -78,7 +78,14 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	return response.Requirements, response.Commit.AtTime, nil
+	var atTime strfmt.DateTime
+	if response.Commit != nil {
+		atTime = response.Commit.AtTime
+	} else {
+		atTime = strfmt.NewDateTime()
+	}
+
+	return response.Requirements, atTime, nil
 }
 
 // CheckpointToOrder converts a checkpoint to an order
