@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
@@ -329,8 +330,10 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	projectFile := project.Get().Source()
 	for i, projectScript := range projectFile.Scripts {
 		if projectScript.Name == EditArgs.Name {
-			projectFile.Scripts[i].Value = string(updatedScript)
-			break
+			if !constraints.IsConstrained(projectScript.Constraints) {
+				projectFile.Scripts[i].Value = string(updatedScript)
+				break
+			}
 		}
 	}
 
