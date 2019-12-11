@@ -78,6 +78,7 @@ func fetchRecipe(proj *project.Project, commit *strfmt.UUID) (*model.Recipe, *fa
 		return nil, fail
 	}
 
+	//panic(*commit)
 	return model.FetchRecipeForCommitAndHostPlatform(mproj, *commit, runtime.GOOS)
 }
 
@@ -92,6 +93,7 @@ func makePacks(recipe *model.Recipe) packs {
 	if recipe == nil {
 		return nil
 	}
+	//panic(*recipe.RecipeID)
 
 	filter := func(s *string) string {
 		return filterNilString("none", s)

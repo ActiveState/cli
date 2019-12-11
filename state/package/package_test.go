@@ -44,6 +44,8 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.authMock.MockLoggedin()
 	suite.invMock.MockIngredientsByName()
+	suite.invMock.MockOrderRecipes()
+	suite.invMock.MockPlatforms()
 	suite.apiMock.MockCommit()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	suite.graphMock.Checkpoint(graphMock.NoOptions)

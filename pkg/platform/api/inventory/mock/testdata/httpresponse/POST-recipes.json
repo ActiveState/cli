@@ -38,6 +38,12 @@
                             "ingredient_version_id": "00010001-0001-0001-0001-000100010001"
                         }
                     ],
+                    "ingredient": {
+                        "name": "camel"
+                    },
+                    "ingredient_version": {
+                        "version": "20191104.122300.432e1938"
+                    },
                     "patches": [
                         null
                     ],
