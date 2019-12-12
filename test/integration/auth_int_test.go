@@ -98,14 +98,14 @@ func (suite *AuthIntegrationTestSuite) loginFlags() {
 	suite.Wait()
 }
 
-func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
-	type userJSON struct {
-		Username        string `json:"username,omitempty"`
-		URLName         string `json:"urlname,omitempty"`
-		Tier            string `json:"tier,omitempty"`
-		PrivateProjects bool   `json:"privateProjects"`
-	}
+type userJSON struct {
+	Username        string `json:"username,omitempty"`
+	URLName         string `json:"urlname,omitempty"`
+	Tier            string `json:"tier,omitempty"`
+	PrivateProjects bool   `json:"privateProjects"`
+}
 
+func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	user := userJSON{
 		Username:        "cli-integration-tests",
 		URLName:         "cli-integration-tests",
@@ -131,6 +131,24 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
 		suite.Equal(expected, actual)
 	}
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
+	user := userJSON{
+		Username:        "cli-integration-tests",
+		URLName:         "cli-integration-tests",
+		Tier:            "free",
+		PrivateProjects: false,
+	}
+	data, err := json.Marshal(user)
+	suite.Require().NoError(err)
+	expected := string(data)
+
+	// TODO: Find a different way to pass the persistent user credentials from
+	// the integration package
+	suite.Spawn("auth", "--username", "cli-integration-tests", "--password", "test-cli-integration", "--output", "editor.v0")
+	suite.Expect(expected)
+	suite.Wait()
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
