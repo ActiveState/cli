@@ -23,8 +23,6 @@ EOF
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
-# ID of the $PATH entry in the user's ~/.profile for the executable.
-STATEID="ActiveStateCLI"
 # Optional target directory
 TARGET=""
 # Optionally download and activate a project after install in the current directory
@@ -314,18 +312,15 @@ while "true"; do
   esac
 done
 
-# Check if the installation is in $PATH, if not, update user's profile if
-# permitted to.
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State tool installation complete."
-  if [ -n "${ACTIVATE}" ]; then
-    # switch this shell to interactive mode
-    set -i
-    # control flow of this script ends with this line: replace the shell with the activated project's shell
-    exec $STATEEXE activate ${ACTIVATE}
-  fi
-  info "You may now start using the '$STATEEXE' program."
-  exit 0
+# If the installation is not in $PATH then we attempt to update the users rc file
+if [ ! -z "$ZSH_VERSION" ]; then
+  info "Zsh shell detected"
+  RC_FILE="$HOME/.zshrc"
+elif [ ! -z "$BASH_VERSION" ]; then
+  info "Bash shell detected"
+  RC_FILE="$HOME/.bashrc"
+else
+  RC_FILE="$HOME/.profile"
 fi
 
 manual_installation_instructions() {
@@ -335,6 +330,14 @@ manual_installation_instructions() {
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  activation_warning
+  exit 1
+}
+
+manual_update_instructions() {
+  info "State tool installation complete."
+  echo "Please either run 'source $RC_FILE' or start a new login shell in "
+  echo "order to start using the '$STATEEXE' program."
   activation_warning
   exit 1
 }
@@ -349,32 +352,45 @@ activation_warning() {
   fi
 }
 
-# Check if we can write to the users profile, if not give manual
-# insallation instructions
-profile="`info $HOME`/.profile"
-if [ ! -w "$profile" ]; then
-  manual_installation_instructions
+update_rc_file() {
+  # Check if we can write to the users rcfile, if not give manual
+  # insallation instructions
+  if [ ! -w "$RC_FILE" ]; then
+    warn "Could not write to $RC_FILE. Please ensure it exists and is writeable"
+    manual_installation_instructions
+  fi
+
+  info "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
+  echo "\n$pathenv" >> "$RC_FILE"
+}
+
+# Check if the installation is in $PATH, if so we also check if the activate
+# flag was passed and attempt to activate the project
+if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
+  info "State tool installation complete."
+  if [ -n "${ACTIVATE}" ]; then
+    # switch this shell to interactive mode
+    set -i
+    # control flow of this script ends with this line: replace the shell with the activated project's shell
+    exec $STATEEXE activate ${ACTIVATE}
+  fi
+  info "You may now start using the '$STATEEXE' program."
+  exit 0
 fi
 
-# Prompt user to update users path, otherwise present manual
-# installation instructions
-userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
-RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-if [ "$RESPONSE" != "y" ]; then
-  manual_installation_instructions
-fi
-info "Updating environment..."
-pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
-if [ -z "`grep -no \"\#$STATEID\" \"$profile\"`" ]; then
-  info "Adding to \$PATH in $profile"
-  info "\n$pathenv" >> "$profile"
+if $NOPROMPT; then
+  update_rc_file
+  manual_update_instructions
 else
-  info "Updating \$PATH in $profile"
-  sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$profile"
+  # Prompt user to update users path, otherwise present manual
+  # installation instructions
+  userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
+  RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
+  if [ "$RESPONSE" != "y" ]; then
+    manual_installation_instructions
+  else
+    update_rc_file
+    manual_update_instructions
+  fi
 fi
-
-info "State tool installation complete."
-echo "Please either run 'source ~/.profile' or start a new login shell in "
-echo "order to start using the '$STATEEXE' program."
-activation_warning
-exit 1
