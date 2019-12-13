@@ -134,7 +134,7 @@ func (ps packs) table() string {
 	if len(rows) == 0 {
 		return locale.T("package_no_packages")
 	}
-	rowsByFirstCol(rows).Sort()
+	sortByFirstCol(rows)
 
 	headers := []string{
 		locale.T("package_name"),
@@ -155,24 +155,9 @@ func filterNilString(fallback string, s *string) string {
 	return *s
 }
 
-type rowsByFirstCol [][]string
-
-func (rs rowsByFirstCol) Len() int {
-	return len(rs)
-}
-
-func (rs rowsByFirstCol) Less(i, j int) bool {
-	if len(rs[i]) < 1 || len(rs[j]) < 1 {
-		return false
+func sortByFirstCol(ss [][]string) {
+	fn := func(i, j int) bool {
+		return ss[i][0] < ss[j][0]
 	}
-
-	return rs[i][0] < rs[j][0]
-}
-
-func (rs rowsByFirstCol) Swap(i, j int) {
-	rs[i], rs[j] = rs[j], rs[i]
-}
-
-func (rs rowsByFirstCol) Sort() {
-	sort.Sort(rs)
+	sort.Slice(ss, fn)
 }
