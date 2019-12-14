@@ -98,7 +98,10 @@ func makePacks(recipe *model.Recipe) packs {
 	}
 
 	filter := func(s *string) string {
-		return filterNilString("none", s)
+		if s == nil {
+			return "none"
+		}
+		return *s
 	}
 
 	var pkgs packs
@@ -146,13 +149,6 @@ func (ps packs) table() string {
 	t.SetAlign("left")
 
 	return t.Render("simple")
-}
-
-func filterNilString(fallback string, s *string) string {
-	if s == nil {
-		return fallback
-	}
-	return *s
 }
 
 func sortByFirstCol(ss [][]string) {
