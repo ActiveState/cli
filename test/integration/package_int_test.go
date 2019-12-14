@@ -16,11 +16,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listing() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("package_no_args")
 	defer cleanup()
 
-	suite.LoginAsPersistentUser()
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
 
 	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Python3"`
-
 	suite.Require().NoError(setupASY(tempDir, asyData))
 
 	suite.Run("simple", func() {
