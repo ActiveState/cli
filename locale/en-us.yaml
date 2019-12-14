@@ -409,6 +409,8 @@ installing:
   other: Installing
 none:
   other: None
+invalid_uuid_val:
+  other: Invalid UUID value
 total:
   other: Total
 projects_description:

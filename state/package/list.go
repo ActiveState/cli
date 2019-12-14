@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -64,8 +63,7 @@ func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *fai
 	}
 
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
-		err := errors.New("invalid uuid value")
-		return nil, failures.FailMarshal.Wrap(err)
+		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
 	}
 
 	var uuid strfmt.UUID
