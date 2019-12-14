@@ -23,21 +23,29 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listing() {
 
 	suite.Require().NoError(setupASY(tempDir, asyData))
 
-	suite.Spawn("package")
-	suite.Expect("Name")
-	suite.Wait()
+	suite.Run("simple", func() {
+		suite.Spawn("package")
+		suite.Expect("Name")
+		suite.Wait()
+	})
 
-	suite.Spawn("package", "--commit", "c780f643-724b-49bb-aca9-194e3c072f64")
-	suite.Expect("Name")
-	suite.Wait()
+	suite.Run("with commit", func() {
+		suite.Spawn("package", "--commit", "c780f643-724b-49bb-aca9-194e3c072f64")
+		suite.Expect("Name")
+		suite.Wait()
+	})
 
-	suite.Spawn("package", "--commit", "junk")
-	suite.Expect("Cannot obtain")
-	suite.Wait()
+	suite.Run("with commit junk val", func() {
+		suite.Spawn("package", "--commit", "junk")
+		suite.Expect("Cannot obtain")
+		suite.Wait()
+	})
 
-	suite.Spawn("package", "--commit", "00010001-0001-0001-0001-000100010001")
-	suite.Expect("Cannot fetch")
-	suite.Wait()
+	suite.Run("with commit unknown id", func() {
+		suite.Spawn("package", "--commit", "00010001-0001-0001-0001-000100010001")
+		suite.Expect("Cannot fetch")
+		suite.Wait()
+	})
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
