@@ -27,9 +27,7 @@ var ListFlags struct {
 func ExecuteList(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteList")
 
-	proj := project.Get()
-
-	commit, fail := targetedCommit(proj, ListFlags.Commit)
+	commit, fail := targetedCommit(ListFlags.Commit)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
 		return
@@ -48,26 +46,30 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 	print.Line(table)
 }
 
-func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *failures.Failure) {
+func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 	if commitOpt == "latest" {
+		proj := project.Get()
 		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
 
-	commit := commitOpt
-	if commit == "" {
-		commit = proj.CommitID()
+	if commitOpt == "" {
+		proj, fail := project.GetSafe()
+		if fail != nil {
+			return nil, fail
+		}
+		commitOpt = proj.CommitID()
 
-		if commit == "" {
+		if commitOpt == "" {
 			return model.LatestCommitID(proj.Owner(), proj.Name())
 		}
 	}
 
-	if ok := strfmt.Default.Validates("uuid", commit); !ok {
+	if ok := strfmt.Default.Validates("uuid", commitOpt); !ok {
 		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
 	}
 
 	var uuid strfmt.UUID
-	if err := uuid.UnmarshalText([]byte(commit)); err != nil {
+	if err := uuid.UnmarshalText([]byte(commitOpt)); err != nil {
 		return nil, failures.FailMarshal.Wrap(err)
 	}
 
