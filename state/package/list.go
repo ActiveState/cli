@@ -2,8 +2,9 @@ package pkg
 
 import (
 	"errors"
-	"runtime"
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -34,15 +36,17 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	recipe, fail := fetchRecipe(proj, commit)
+	reqs, fail := fetchRequirements(commit)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_fetch_recipe"))
+		failures.Handle(fail, locale.T("package_err_cannot_fetch_requirements"))
 		return
 	}
 
-	pkgs := makePacks(recipe)
+	rows := makeRequirementsRows(reqs)
+	sortByFirstCol(rows)
+	table := requirementsTable(rows)
 
-	print.Line(pkgs.table())
+	print.Line(table)
 }
 
 func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *failures.Failure) {
@@ -72,88 +76,88 @@ func targetedCommit(proj *project.Project, commitOpt string) (*strfmt.UUID, *fai
 	return &uuid, nil
 }
 
-func fetchRecipe(proj *project.Project, commit *strfmt.UUID) (*model.Recipe, *failures.Failure) {
+func fetchRequirements(commit *strfmt.UUID) (model.OrderRequirements, *failures.Failure) {
 	if commit == nil {
 		return nil, nil
 	}
 
-	mproj, fail := model.FetchProjectByName(proj.Owner(), proj.Name())
-	if fail != nil {
-		return nil, fail
-	}
-
-	return model.FetchRecipeForCommitAndHostPlatform(mproj, *commit, runtime.GOOS)
+	return model.FetchOrderRequirementsByCommit(*commit)
 }
 
-type pack struct {
-	Name    string
-	Version string
-}
+type versionRequirements = []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems
 
-type packs []*pack
-
-func makePacks(recipe *model.Recipe) packs {
-	if recipe == nil {
+func makeRequirementsRows(reqs model.OrderRequirements) [][]string {
+	if reqs == nil {
 		return nil
 	}
 
-	filter := func(s *string) string {
-		if s == nil {
-			return "none"
+	if len(reqs) == 0 {
+		return [][]string{}
+	}
+
+	filterFn := func(fallback string) func(*string) string {
+		return func(s *string) string {
+			if s == nil || *s == "" {
+				return fallback
+			}
+			return *s
 		}
-		return *s
 	}
 
-	var pkgs packs
-	for _, ing := range recipe.ResolvedIngredients {
-		if ing.Ingredient == nil || ing.IngredientVersion == nil {
-			continue
+	expandVrsReqs := func(vrsReqs versionRequirements) string {
+		filterEmpty := filterFn("")
+
+		var bldr strings.Builder
+		for _, vrsReq := range vrsReqs {
+			fmt.Fprintf(&bldr,
+				"%6s %-11s",
+				filterEmpty(vrsReq.Comparator),
+				filterEmpty(vrsReq.Version),
+			)
 		}
-
-		pkg := pack{
-			Name:    filter(ing.Ingredient.Name),
-			Version: filter(ing.IngredientVersion.Version),
-		}
-
-		pkgs = append(pkgs, &pkg)
+		return bldr.String()
 	}
 
-	return pkgs
-}
+	filterNone := filterFn(locale.T("none"))
 
-func (ps packs) table() string {
-	if ps == nil {
-		return locale.T("package_no_data")
-	}
-
-	var rows [][]string
-	for _, p := range ps {
-		row := []string{
-			p.Name,
-			p.Version,
-		}
-		rows = append(rows, row)
-	}
-	if len(rows) == 0 {
-		return locale.T("package_no_packages")
-	}
-	sortByFirstCol(rows)
+	rows := make([][]string, 0, len(reqs)+1)
 
 	headers := []string{
 		locale.T("package_name"),
 		locale.T("package_version"),
 	}
+	rows = append(rows, headers)
 
-	t := gotabulate.Create(rows)
-	t.SetHeaders(headers)
+	for _, req := range reqs {
+		row := []string{
+			filterNone(req.Feature),
+			expandVrsReqs(req.VersionRequirements),
+		}
+		rows = append(rows, row)
+	}
+
+	return rows
+}
+
+func requirementsTable(rows [][]string) string {
+	if rows == nil {
+		return locale.T("package_no_data")
+	}
+
+	if len(rows) == 0 {
+		return locale.T("package_no_packages")
+	}
+
+	t := gotabulate.Create(rows[1:])
+	t.SetHeaders(rows[0])
 	t.SetAlign("left")
 
 	return t.Render("simple")
 }
 
 func sortByFirstCol(ss [][]string) {
-	fn := func(i, j int) bool {
+	less := func(i, j int) bool {
 		return ss[i][0] < ss[j][0]
 	}
-	sort.Slice(ss, fn)
+	sort.Slice(ss, less)
 }

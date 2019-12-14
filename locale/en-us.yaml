@@ -407,6 +407,8 @@ downloading:
   other: Downloading
 installing:
   other: Installing
+none:
+  other: None
 total:
   other: Total
 projects_description:
@@ -1152,7 +1154,7 @@ package_err_cannot_fetch_recipe:
 package_err_cannot_obtain_commit:
   other: Cannot obtain commit for package listing
 package_no_data:
-  other: No data found (possibly due to lacking commits)
+  other: No data found - Please verify the provided commit id
 package_no_packages:
   other: No packages to list
 package_name:
