@@ -98,6 +98,19 @@ func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint 
 	}
 }
 
+// OrderRequirements alias *inventory_models.V1OrderRequirementsItems
+type OrderRequirements = []*inventory_models.V1OrderRequirementsItems
+
+// FetchOrderRequirementsByCommit fetches the order requirements for the given commit
+func FetchOrderRequirementsByCommit(commitID strfmt.UUID) (OrderRequirements, *failures.Failure) {
+	chkPt, _, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return CheckpointToRequirements(chkPt), nil
+}
+
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
 func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
 	result := []*inventory_models.V1OrderRequirementsItems{}
