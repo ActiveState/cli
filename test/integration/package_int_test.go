@@ -41,7 +41,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listing() {
 
 	suite.Run("with commit unknown id", func() {
 		suite.Spawn("package", "--commit", "00010001-0001-0001-0001-000100010001")
-		suite.Expect("Cannot fetch")
+		suite.Expect("No data")
 		suite.Wait()
 	})
 }
