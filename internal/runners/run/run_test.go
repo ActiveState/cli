@@ -2,10 +2,7 @@ package run
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -15,9 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -31,7 +26,6 @@ func init() {
 }
 
 func TestRunStandaloneCommand(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -57,9 +51,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"run"})
-	err = Command.Execute()
+	err = run("run", nil)
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -71,7 +63,6 @@ func TestEnvIsSet(t *testing.T) {
 		// as it's not worth the time and effort to debug.
 		return
 	}
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -95,17 +86,14 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"run"})
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
 
 	ex := exiter.New()
 	var exitCode int
-	Command.Exiter = ex.Exit
 	out := capturer.CaptureOutput(func() {
 		exitCode = ex.WaitForExit(func() {
-			err = Command.Execute()
+			err = run("run", nil)
 		})
 	})
 
@@ -117,7 +105,6 @@ scripts:
 }
 
 func TestRunNoProjectInheritance(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -143,11 +130,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"run"})
-
 	out, err := osutil.CaptureStdout(func() {
-		err := Command.Execute()
+		err := run("run", nil)
 		require.NoError(t, err)
 	})
 	require.NoError(t, err, "Executed without error")
@@ -156,7 +140,6 @@ scripts:
 }
 
 func TestRunMissingCommandName(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -170,21 +153,11 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{""})
-
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
-	assert.Equal(t, 1, exitCode, "Exited with code 1")
-
-	handled := failures.Handled()
-	require.NotNil(t, handled, "expected a failure")
-	assert.Equal(t, failures.FailUserInput, handled.(*failures.Failure).Type, "Use input failure occurred")
+	err = run("", nil)
+	assert.Error(t, err, "Executed with error")
 }
 
+/*
 func TestRunUnknownCommandName(t *testing.T) {
 	Args.Name = "" // reset
 	failures.ResetHandled()
@@ -303,3 +276,4 @@ func TestPathProvidesExec(t *testing.T) {
 	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
 	assert.False(t, pathProvidesExec(temp, exec, ""))
 }
+*/
