@@ -1151,8 +1151,8 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
-package_err_cannot_fetch_recipe:
-  other: Cannot fetch recipe for package listing
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
 package_err_cannot_obtain_commit:
   other: Cannot obtain commit for package listing
 package_no_data:

@@ -88,6 +88,25 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	return response.Requirements, atTime, nil
 }
 
+// FilterCheckpointNoPlatformMatch filters a Checkpoint removing requirements
+// with namespaces that match the platform namespace.
+func FilterCheckpointNoPlatformMatch(chkPt Checkpoint) Checkpoint {
+	if chkPt == nil {
+		return nil
+	}
+
+	var cp Checkpoint
+	for _, req := range chkPt {
+		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
+			continue
+		}
+
+		cp = append(cp, req)
+	}
+
+	return cp
+}
+
 // CheckpointToOrder converts a checkpoint to an order
 func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
 	return &inventory_models.V1Order{
@@ -96,19 +115,6 @@ func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint 
 		Requirements: CheckpointToRequirements(checkpoint),
 		Timestamp:    &atTime,
 	}
-}
-
-// OrderRequirements alias *inventory_models.V1OrderRequirementsItems
-type OrderRequirements = []*inventory_models.V1OrderRequirementsItems
-
-// FetchOrderRequirementsByCommit fetches the order requirements for the given commit
-func FetchOrderRequirementsByCommit(commitID strfmt.UUID) (OrderRequirements, *failures.Failure) {
-	chkPt, _, fail := FetchCheckpointForCommit(commitID)
-	if fail != nil {
-		return nil, fail
-	}
-
-	return CheckpointToRequirements(chkPt), nil
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
