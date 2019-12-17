@@ -407,6 +407,10 @@ downloading:
   other: Downloading
 installing:
   other: Installing
+unknown_value:
+  other: Unknown value
+invalid_uuid_val:
+  other: Invalid UUID value
 total:
   other: Total
 projects_description:
@@ -1133,6 +1137,8 @@ package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+package_list_flag_commit_description:
+  other: The commit that the listing should be based on
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1145,6 +1151,18 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
+package_err_cannot_obtain_commit:
+  other: Cannot obtain commit for package listing
+package_no_data:
+  other: No data found - Please verify the provided commit id
+package_no_packages:
+  other: No packages to list
+package_name:
+  other: Name
+package_version:
+  other: Version
 package_add:
   other: "Package added: {{.V0}}"
 package_version_add:

@@ -73,12 +73,38 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, strfmt.NewDateTime(), api.FailUnknown.Wrap(err)
+		return nil, strfmt.DateTime{}, api.FailUnknown.Wrap(err)
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	return response.Requirements, response.Commit.AtTime, nil
+	var atTime strfmt.DateTime
+	if response.Commit != nil {
+		atTime = response.Commit.AtTime
+	} else {
+		atTime = strfmt.DateTime{}
+	}
+
+	return response.Requirements, atTime, nil
+}
+
+// FilterCheckpointPackages filters a Checkpoint removing requirements that
+// are not packages.
+func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
+	if chkPt == nil {
+		return nil
+	}
+
+	var checkpoint Checkpoint
+	for _, requirement := range chkPt {
+		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
+			continue
+		}
+
+		checkpoint = append(checkpoint, requirement)
+	}
+
+	return checkpoint
 }
 
 // CheckpointToOrder converts a checkpoint to an order

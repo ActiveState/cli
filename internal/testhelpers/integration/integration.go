@@ -8,17 +8,20 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/vt10x"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/expect"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var persistentUsername = "cli-integration-tests"
@@ -97,6 +100,23 @@ func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string,
 	return tempDir, func() {
 		os.RemoveAll(tempDir)
 	}
+}
+
+// PrepareActiveStateYAML creates a projectfile.Project instance from the
+// provided contents and saves the output to an as.y file within the named
+// directory.
+func (s *Suite) PrepareActiveStateYAML(dir, contents string) {
+	msg := "cannot setup activestate.yaml file"
+
+	contents = strings.TrimSpace(contents)
+	projectFile := &projectfile.Project{}
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	s.Require().NoError(err, msg)
+
+	projectFile.SetPath(filepath.Join(dir, "activestate.yaml"))
+	fail := projectFile.Save()
+	s.Require().NoError(fail.ToError(), msg)
 }
 
 // Executable returns the path to the executable under test (state tool)
