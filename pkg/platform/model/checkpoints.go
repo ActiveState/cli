@@ -73,7 +73,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, strfmt.NewDateTime(), api.FailUnknown.Wrap(err)
+		return nil, strfmt.DateTime{}, api.FailUnknown.Wrap(err)
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
@@ -82,7 +82,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	if response.Commit != nil {
 		atTime = response.Commit.AtTime
 	} else {
-		atTime = strfmt.NewDateTime()
+		atTime = strfmt.DateTime{}
 	}
 
 	return response.Requirements, atTime, nil
