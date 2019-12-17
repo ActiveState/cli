@@ -20,6 +20,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 
 	suite.Spawn("package")
 	suite.Expect("Name")
+	suite.Expect("pytest")
 	suite.Expect("python")
 	suite.Wait()
 }
@@ -30,8 +31,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("package", "--commit", "c780f643-724b-49bb-aca9-194e3c072f64")
+	suite.Spawn("package", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
 	suite.Expect("Name")
+	suite.Expect("numpy")
 	suite.Expect("python")
 	suite.Wait()
 }
