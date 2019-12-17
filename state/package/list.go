@@ -81,7 +81,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
 
-	return model.FilterCheckpointNoPlatformMatch(checkpoint), fail
+	return model.FilterCheckpointPackages(checkpoint), fail
 }
 
 type requirementsRows struct {

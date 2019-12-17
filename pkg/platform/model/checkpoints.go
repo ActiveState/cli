@@ -88,23 +88,23 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	return response.Requirements, atTime, nil
 }
 
-// FilterCheckpointNoPlatformMatch filters a Checkpoint removing requirements
-// with namespaces that match the platform namespace.
-func FilterCheckpointNoPlatformMatch(chkPt Checkpoint) Checkpoint {
+// FilterCheckpointPackages filters a Checkpoint removing requirements that
+// are not packages.
+func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 	if chkPt == nil {
 		return nil
 	}
 
-	var cp Checkpoint
-	for _, req := range chkPt {
-		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
+	var checkpoint Checkpoint
+	for _, requirement := range chkPt {
+		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
 			continue
 		}
 
-		cp = append(cp, req)
+		checkpoint = append(checkpoint, requirement)
 	}
 
-	return cp
+	return checkpoint
 }
 
 // CheckpointToOrder converts a checkpoint to an order
