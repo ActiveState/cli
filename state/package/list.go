@@ -31,13 +31,13 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	chkPt, fail := fetchCheckpoint(commit)
+	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
 		return
 	}
 
-	reqsRows := makeRequirementsRows(chkPt)
+	reqsRows := makeRequirementsRows(checkpoint)
 	sortByFirstCol(reqsRows.rows)
 	table := requirementsTable(reqsRows)
 
@@ -79,30 +79,30 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 		return nil, nil
 	}
 
-	chkPt, _, fail := model.FetchCheckpointForCommit(*commit)
+	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
 
-	return model.FilterCheckpointNoPlatformMatch(chkPt), fail
+	return model.FilterCheckpointNoPlatformMatch(checkpoint), fail
 }
 
 type requirementsRows struct {
-	hdrs []string
-	rows [][]string
+	headers []string
+	rows    [][]string
 }
 
-func makeRequirementsRows(reqs model.Checkpoint) requirementsRows {
+func makeRequirementsRows(requirements model.Checkpoint) requirementsRows {
 	reqsRows := requirementsRows{}
 
-	if reqs == nil {
+	if requirements == nil {
 		return reqsRows
 	}
 
-	reqsRows.hdrs = []string{
+	reqsRows.headers = []string{
 		locale.T("package_name"),
 		locale.T("package_version"),
 	}
 
-	reqsRows.rows = make([][]string, 0, len(reqs))
-	for _, req := range reqs {
+	reqsRows.rows = make([][]string, 0, len(requirements))
+	for _, req := range requirements {
 		row := []string{
 			req.Requirement,
 			req.VersionConstraint,
@@ -123,18 +123,18 @@ func requirementsTable(reqsRows requirementsRows) string {
 	}
 
 	t := gotabulate.Create(reqsRows.rows)
-	t.SetHeaders(reqsRows.hdrs)
+	t.SetHeaders(reqsRows.headers)
 	t.SetAlign("left")
 
 	return t.Render("simple")
 }
 
-func sortByFirstCol(ss [][]string) {
+func sortByFirstCol(rows [][]string) {
 	less := func(i, j int) bool {
-		if strings.ToLower(ss[i][0]) < strings.ToLower(ss[j][0]) {
+		if strings.ToLower(rows[i][0]) < strings.ToLower(rows[j][0]) {
 			return true
 		}
-		return ss[i][0] < ss[j][0]
+		return rows[i][0] < rows[j][0]
 	}
-	sort.Slice(ss, less)
+	sort.Slice(rows, less)
 }
