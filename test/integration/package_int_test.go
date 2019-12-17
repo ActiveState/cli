@@ -21,7 +21,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.Spawn("package")
 	suite.Expect("Name")
 	suite.Expect("pytest")
-	suite.Expect("python")
 	suite.Wait()
 }
 
@@ -34,7 +33,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 	suite.Spawn("package", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
 	suite.Expect("Name")
 	suite.Expect("numpy")
-	suite.Expect("python")
 	suite.Wait()
 }
 
