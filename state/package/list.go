@@ -39,9 +39,9 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	rows := makeRequirementsRows(reqs)
+	hdrs, rows := makeRequirementsRows(reqs)
 	sortByFirstCol(rows)
-	table := requirementsTable(rows)
+	table := requirementsTable(hdrs, rows)
 
 	print.Line(table)
 }
@@ -86,16 +86,21 @@ func fetchRequirements(commit *strfmt.UUID) (model.OrderRequirements, *failures.
 
 type versionRequirements = []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems
 
-func makeRequirementsRows(reqs model.OrderRequirements) [][]string {
+func makeRequirementsRows(reqs model.OrderRequirements) (hdrsRow []string, rows [][]string) {
 	if reqs == nil {
-		return nil
+		return nil, nil
+	}
+
+	hdrsRow = []string{
+		locale.T("package_name"),
+		locale.T("package_version"),
 	}
 
 	if len(reqs) == 0 {
-		return [][]string{}
+		return hdrsRow, [][]string{}
 	}
 
-	filterFn := func(fallback string) func(*string) string {
+	filterNilStringFn := func(fallback string) func(*string) string {
 		return func(s *string) string {
 			if s == nil || *s == "" {
 				return fallback
@@ -105,7 +110,7 @@ func makeRequirementsRows(reqs model.OrderRequirements) [][]string {
 	}
 
 	expandVrsReqs := func(vrsReqs versionRequirements) string {
-		filterEmpty := filterFn("")
+		filterEmpty := filterNilStringFn("")
 
 		var bldr strings.Builder
 		for _, vrsReq := range vrsReqs {
@@ -118,16 +123,9 @@ func makeRequirementsRows(reqs model.OrderRequirements) [][]string {
 		return bldr.String()
 	}
 
-	filterNone := filterFn(locale.T("none"))
+	filterNone := filterNilStringFn(locale.T("unknown_value"))
 
-	rows := make([][]string, 0, len(reqs)+1)
-
-	headers := []string{
-		locale.T("package_name"),
-		locale.T("package_version"),
-	}
-	rows = append(rows, headers)
-
+	rows = make([][]string, 0, len(reqs))
 	for _, req := range reqs {
 		row := []string{
 			filterNone(req.Feature),
@@ -136,10 +134,10 @@ func makeRequirementsRows(reqs model.OrderRequirements) [][]string {
 		rows = append(rows, row)
 	}
 
-	return rows
+	return hdrsRow, rows
 }
 
-func requirementsTable(rows [][]string) string {
+func requirementsTable(hdrsRow []string, rows [][]string) string {
 	if rows == nil {
 		return locale.T("package_no_data")
 	}
@@ -148,8 +146,8 @@ func requirementsTable(rows [][]string) string {
 		return locale.T("package_no_packages")
 	}
 
-	t := gotabulate.Create(rows[1:])
-	t.SetHeaders(rows[0])
+	t := gotabulate.Create(rows)
+	t.SetHeaders(hdrsRow)
 	t.SetAlign("left")
 
 	return t.Render("simple")
