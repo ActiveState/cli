@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
@@ -36,7 +37,7 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	reqsRows := makeRequirementsRows(reqs)
+	reqsRows := makeRequirementsRows(chkPt)
 	sortByFirstCol(reqsRows.rows)
 	table := requirementsTable(reqsRows)
 
@@ -130,6 +131,9 @@ func requirementsTable(reqsRows requirementsRows) string {
 
 func sortByFirstCol(ss [][]string) {
 	less := func(i, j int) bool {
+		if strings.ToLower(ss[i][0]) < strings.ToLower(ss[j][0]) {
+			return true
+		}
 		return ss[i][0] < ss[j][0]
 	}
 	sort.Slice(ss, less)
