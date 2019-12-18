@@ -61,6 +61,41 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
+	results, fail := SearchIngredients(language, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	var ingredient *IngredientAndVersion
+	var latest *IngredientAndVersion
+	for _, res := range results {
+		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
+			continue
+		}
+		ingredient = res
+
+		switch {
+		case latest == nil || latest.Version.ReleaseTimestamp == nil:
+			// If latest is not valid, just make the current value latest
+			latest = res
+
+		case res.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
+			// If the release dates equal (or are both nil) just assume that the later entry it the latest
+			latest = res
+
+		case res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
+			// If the release date is later then this entry is latest
+			latest = res
+		}
+
+		break // We found our ingredient, no need to keep looping
+	}
+
+	return ingredient, nil
+}
+
+// SearchIngredients will return all ingredients+ingredientVersions that match the ingredient name
+func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
@@ -79,32 +114,7 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 		return nil, FailIngredients.Wrap(err)
 	}
 
-	var ingredient *IngredientAndVersion
-	var latest *IngredientAndVersion
-	for _, i := range res.Payload.IngredientsAndVersions {
-		if i.Ingredient.Name == nil || *i.Ingredient.Name != name {
-			continue
-		}
-		ingredient = i
-
-		switch {
-		case latest == nil || latest.Version.ReleaseTimestamp == nil:
-			// If latest is not valid, just make the current value latest
-			latest = i
-
-		case i.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
-			// If the release dates equal (or are both nil) just assume that the later entry it the latest
-			latest = i
-
-		case i.Version.ReleaseTimestamp != nil && time.Time(*i.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
-			// If the release date is later then this entry is latest
-			latest = i
-		}
-
-		break // We found our ingredient, no need to keep looping
-	}
-
-	return ingredient, nil
+	return res.Payload.IngredientsAndVersions, nil
 }
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {

@@ -55,20 +55,24 @@ func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 
 	language, fail := targetedLanguage(SearchFlags.Language)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_language")) // TODO: l10n
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_language"))
 		return
 	}
 
 	packages, fail := fetchSearchResultPackages(language, SearchArgs.Name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results")) // TODO: l10n
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results"))
+		return
+	}
+	if len(packages) == 0 {
+		print.Line(locale.T("package_no_packages"))
 		return
 	}
 
-	// TODO: use packages to make table
+	table := newPackagesTable(packages)
+	sortByFirstCol(table.data)
 
-	// TODO: print table
-	print.Line(*packages.Ingredient.Name)
+	print.Line(table.output())
 }
 
 func targetedLanguage(languageOpt string) (string, *failures.Failure) {
@@ -89,6 +93,35 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	return languageOpt, nil
 }
 
-func fetchSearchResultPackages(language, term string) (*model.IngredientAndVersion, *failures.Failure) {
-	return model.IngredientWithLatestVersion(language, term)
+func fetchSearchResultPackages(language, term string) ([]*model.IngredientAndVersion, *failures.Failure) {
+	return model.SearchIngredients(language, term)
+}
+
+func newPackagesTable(packages []*model.IngredientAndVersion) *table {
+	if packages == nil {
+		return nil
+	}
+
+	headers := []string{
+		locale.T("package_name"),
+		locale.T("package_version"),
+	}
+
+	filterNilStr := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+
+	rows := make([][]string, 0, len(packages))
+	for _, pack := range packages {
+		row := []string{
+			filterNilStr(pack.Ingredient.Name),
+			filterNilStr(pack.Version.Version),
+		}
+		rows = append(rows, row)
+	}
+
+	return newTable(headers, rows)
 }
