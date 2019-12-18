@@ -588,3 +588,13 @@ func (script *Script) Raw() string {
 
 // Standalone returns if the script is standalone or not
 func (script *Script) Standalone() bool { return script.script.Standalone }
+
+// SetFilename allows this script to have an associated file
+func (script *Script) SetFilename(filename string) {
+	script.script.Filename = filename
+}
+
+// Filename returns the name of the file associated with this script
+func (script *Script) Filename() string {
+	return script.script.Filename
+}
