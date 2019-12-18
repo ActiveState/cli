@@ -59,13 +59,13 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 	return nil, nil
 }
 
-// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingradient name
+// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetQ(&name)
-	params.SetNamespace(language)
+	params.SetNamespace("language/" + language)
 
 	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
 	limit := int64(99999)
@@ -73,6 +73,9 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
+		if gniErr, ok := err.(*inventory_operations.GetNamespaceIngredientsDefault); ok {
+			return nil, FailIngredients.New(*gniErr.Payload.Message)
+		}
 		return nil, FailIngredients.Wrap(err)
 	}
 

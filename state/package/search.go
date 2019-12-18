@@ -3,9 +3,12 @@ package pkg
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -50,7 +53,42 @@ func init() {
 func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteSearch")
 
-	proj := project.Get()
-	_ = proj
-	print.Line(SearchArgs.Name, SearchFlags.Language)
+	language, fail := targetedLanguage(SearchFlags.Language)
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_language")) // TODO: l10n
+		return
+	}
+
+	packages, fail := fetchSearchResultPackages(language, SearchArgs.Name)
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results")) // TODO: l10n
+		return
+	}
+
+	// TODO: use packages to make table
+
+	// TODO: print table
+	print.Line(*packages.Ingredient.Name)
+}
+
+func targetedLanguage(languageOpt string) (string, *failures.Failure) {
+	if languageOpt == "" {
+		proj, fail := project.GetSafe()
+		if fail != nil {
+			return "", fail
+		}
+
+		language, fail := model.DefaultLanguageForProject(proj.Owner(), proj.Name())
+		if fail != nil {
+			return "", fail
+		}
+
+		languageOpt = language
+	}
+
+	return languageOpt, nil
+}
+
+func fetchSearchResultPackages(language, term string) (*model.IngredientAndVersion, *failures.Failure) {
+	return model.IngredientWithLatestVersion(language, term)
 }
