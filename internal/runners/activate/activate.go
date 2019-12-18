@@ -117,7 +117,7 @@ func (r *Activate) setupConfigFile(targetPath string, params *ActivateParams) (s
 			}
 			logging.Debug("Updating namespace parameters to: %s", proj.Namespace())
 			params.Namespace = proj.Namespace()
-			r.targetPath = filepath.Dir(proj.ProjectFilePath())
+			r.targetPath = filepath.Dir(proj.Source().Path())
 		}
 		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
