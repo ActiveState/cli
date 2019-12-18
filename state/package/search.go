@@ -70,7 +70,7 @@ func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 	}
 
 	table := newPackagesTable(packages)
-	sortByFirstCol(table.data)
+	sortByFirstTwoCols(table.data)
 
 	print.Line(table.output())
 }
