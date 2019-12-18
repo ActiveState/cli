@@ -197,10 +197,18 @@ func (p *Project) Version() string { return p.projectfile.Version }
 func (p *Project) Branch() string { return p.projectfile.Branch }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() string { return p.projectfile.Namespace }
+func (p *Project) Namespace() string {
+	if p.projectfile.Namespace == "" {
+		return fmt.Sprintf("%s/%s", p.owner, p.name)
+	}
+	return p.projectfile.Namespace
+}
 
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }
+
+// ProjectFilePath returns the filepath for this projects project file
+func (p *Project) ProjectFilePath() string { return p.projectfile.Path() }
 
 // New creates a new Project struct
 func New(p *projectfile.Project) (*Project, *failures.Failure) {

@@ -67,7 +67,14 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		if params.Namespace == "" {
-			return failures.FailUserInput.New("err_project_notexist_asyaml")
+			proj, err := project.FromPath(targetPath)
+			if err != nil {
+				// The default failure returned by the project package is a big too vague,
+				// we want to give the user something more actionable for the context they're in
+				return failures.FailUserInput.New("err_project_notexist_asyaml")
+			}
+			params.Namespace = proj.Namespace()
+			targetPath = filepath.Dir(proj.ProjectFilePath())
 		}
 		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
