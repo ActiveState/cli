@@ -1,10 +1,8 @@
 package project
 
 import (
-	"fmt"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 
 	"github.com/ActiveState/cli/internal/rxutils"
@@ -172,20 +170,17 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 }
 
 func expandPath(name string, script *Script) (string, *failures.Failure) {
-	if script.Filename() != "" {
+	if script.HasFile() {
 		return script.Filename(), nil
 	}
 
-	sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Raw())
+	sf, fail := scriptfile.NewEmpty(script.LanguageSafe(), name)
 	if fail != nil {
 		return "", fail
 	}
-	script.SetFilename(sf.Filename())
+	script.CacheFile(sf.Filename())
 
-	fail = fileutils.WriteFile(
-		sf.Filename(),
-		[]byte(fmt.Sprintf("%s\n\n%s", script.LanguageSafe().Header(), script.Value())),
-	)
+	fail = sf.Write(script.Value())
 	if fail != nil {
 		return "", fail
 	}

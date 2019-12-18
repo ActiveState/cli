@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -589,12 +590,17 @@ func (script *Script) Raw() string {
 // Standalone returns if the script is standalone or not
 func (script *Script) Standalone() bool { return script.script.Standalone }
 
-// SetFilename allows this script to have an associated file
-func (script *Script) SetFilename(filename string) {
+// CacheFile allows this script to have an associated file
+func (script *Script) CacheFile(filename string) {
 	script.script.Filename = filename
 }
 
 // Filename returns the name of the file associated with this script
 func (script *Script) Filename() string {
 	return script.script.Filename
+}
+
+// HasFile returns true if this script has an associated file
+func (script *Script) HasFile() bool {
+	return fileutils.FileExists(script.script.Filename)
 }
