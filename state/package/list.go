@@ -1,10 +1,6 @@
 package pkg
 
 import (
-	"sort"
-	"strings"
-
-	"github.com/bndr/gotabulate"
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 
@@ -36,12 +32,19 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
 		return
 	}
+	if checkpoint == nil {
+		print.Line(locale.T("package_no_data"))
+		return
+	}
+	if len(checkpoint) == 0 {
+		print.Line(locale.T("package_no_packages"))
+		return
+	}
 
-	reqsRows := makeRequirementsRows(checkpoint)
-	sortByFirstCol(reqsRows.rows)
-	table := requirementsTable(reqsRows)
+	table := newRequirementsTable(checkpoint)
+	sortByFirstCol(table.data)
 
-	print.Line(table)
+	print.Line(table.output())
 }
 
 func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
@@ -84,57 +87,24 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	return model.FilterCheckpointPackages(checkpoint), fail
 }
 
-type requirementsRows struct {
-	headers []string
-	rows    [][]string
-}
-
-func makeRequirementsRows(requirements model.Checkpoint) requirementsRows {
-	reqsRows := requirementsRows{}
-
+func newRequirementsTable(requirements model.Checkpoint) *table {
 	if requirements == nil {
-		return reqsRows
+		return nil
 	}
 
-	reqsRows.headers = []string{
+	headers := []string{
 		locale.T("package_name"),
 		locale.T("package_version"),
 	}
 
-	reqsRows.rows = make([][]string, 0, len(requirements))
+	rows := make([][]string, 0, len(requirements))
 	for _, req := range requirements {
 		row := []string{
 			req.Requirement,
 			req.VersionConstraint,
 		}
-		reqsRows.rows = append(reqsRows.rows, row)
+		rows = append(rows, row)
 	}
 
-	return reqsRows
-}
-
-func requirementsTable(reqsRows requirementsRows) string {
-	if reqsRows.rows == nil {
-		return locale.T("package_no_data")
-	}
-
-	if len(reqsRows.rows) == 0 {
-		return locale.T("package_no_packages")
-	}
-
-	t := gotabulate.Create(reqsRows.rows)
-	t.SetHeaders(reqsRows.headers)
-	t.SetAlign("left")
-
-	return t.Render("simple")
-}
-
-func sortByFirstCol(rows [][]string) {
-	less := func(i, j int) bool {
-		if strings.ToLower(rows[i][0]) < strings.ToLower(rows[j][0]) {
-			return true
-		}
-		return rows[i][0] < rows[j][0]
-	}
-	sort.Slice(rows, less)
+	return newTable(headers, rows)
 }
