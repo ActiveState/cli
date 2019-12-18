@@ -18,7 +18,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("package")
+	suite.Spawn("packages")
 	suite.Expect("Name")
 	suite.Expect("pytest")
 	suite.Wait()
@@ -30,7 +30,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("package", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
+	suite.Spawn("packages", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
 	suite.Expect("Name")
 	suite.Expect("numpy")
 	suite.Wait()
@@ -42,7 +42,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("package", "--commit", "junk")
+	suite.Spawn("packages", "--commit", "junk")
 	suite.Expect("Cannot obtain")
 	suite.Wait()
 }
@@ -53,8 +53,48 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("package", "--commit", "00010001-0001-0001-0001-000100010001")
+	suite.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
 	suite.Expect("No data")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "numpy")
+	suite.Expect("Name")
+	suite.Expect("msgpack-numpy")
+	suite.Expect("numpy")
+	suite.Expect("1.14.3")
+	suite.Expect("1.16.1")
+	suite.Expect("1.16.2")
+	suite.Expect("numpy-stl")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "moose", "--language=perl")
+	suite.Expect("Name")
+	suite.Expect("moose")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "numpy", "--language=perl")
+	suite.Expect("No packages")
 	suite.Wait()
 }
 
