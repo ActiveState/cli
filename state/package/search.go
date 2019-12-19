@@ -76,21 +76,16 @@ func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 }
 
 func targetedLanguage(languageOpt string) (string, *failures.Failure) {
-	if languageOpt == "" {
-		proj, fail := project.GetSafe()
-		if fail != nil {
-			return "", fail
-		}
-
-		language, fail := model.DefaultLanguageForProject(proj.Owner(), proj.Name())
-		if fail != nil {
-			return "", fail
-		}
-
-		languageOpt = language
+	if languageOpt != "" {
+		return languageOpt, nil
 	}
 
-	return languageOpt, nil
+	proj, fail := project.GetSafe()
+	if fail != nil {
+		return "", fail
+	}
+
+	return model.DefaultLanguageForProject(proj.Owner(), proj.Name())
 }
 
 func fetchSearchResultPackages(language, term string) ([]*model.IngredientAndVersion, *failures.Failure) {
