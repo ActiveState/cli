@@ -36,7 +36,7 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 		return nil, fail
 	}
 
-	for _, ingredient := range res.Payload.IngredientsAndVersions {
+	for _, ingredient := range results {
 		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
 			continue
 		}
