@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -18,7 +17,6 @@ import (
 type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
-	targetPath       string
 }
 
 type ActivateParams struct {
@@ -29,8 +27,8 @@ type ActivateParams struct {
 
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
 	return &Activate{
-		namespaceSelect:  namespaceSelect,
-		activateCheckout: activateCheckout,
+		namespaceSelect,
+		activateCheckout,
 	}
 }
 
@@ -59,20 +57,31 @@ func sendProjectIDToAnalytics(namespace string, configFile string) {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	var err error
-	r.targetPath, err = r.setupPath(params.Namespace, params.PreferredPath)
+	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return err
 	}
 
-	configFile, err := r.setupConfigFile(r.targetPath, params)
+	configFile, err := r.setupConfigFile(targetPath)
 	if err != nil {
-		return err
+		if params.Namespace == "" {
+			logging.Error("Error finding projectfile during activation: %v", err)
+			// The default failure returned by the project package is a big too vague,
+			// we want to give the user something more actionable for the context they're in
+			return failures.FailUserInput.New("err_project_notexist_asyaml")
+		}
+		err := r.activateCheckout.Run(params.Namespace, targetPath)
+		if err != nil {
+			return err
+		}
+	}
+	if filepath.Dir(configFile) != targetPath {
+		targetPath = filepath.Dir(configFile)
 	}
 
 	switch params.Output {
 	case commands.JSON, commands.EditorV0:
-		err = os.Chdir(r.targetPath)
+		err = os.Chdir(targetPath)
 		if err != nil {
 			return err
 		}
@@ -87,7 +96,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	go sendProjectIDToAnalytics(params.Namespace, configFile)
 
-	return activatorLoop(r.targetPath, activate)
+	return activatorLoop(targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
@@ -104,26 +113,10 @@ func (r *Activate) setupPath(namespace string, preferredPath string) (string, er
 	}
 }
 
-func (r *Activate) setupConfigFile(targetPath string, params *ActivateParams) (string, error) {
-	// Checkout the project if it doesn't already exist at the target path
-	configFile := filepath.Join(targetPath, constants.ConfigFileName)
-	if !fileutils.FileExists(configFile) {
-		if params.Namespace == "" {
-			proj, err := project.FromPath(targetPath)
-			if err != nil {
-				// The default failure returned by the project package is a big too vague,
-				// we want to give the user something more actionable for the context they're in
-				return "", failures.FailUserInput.New("err_project_notexist_asyaml")
-			}
-			logging.Debug("Updating namespace parameters to: %s", proj.Namespace())
-			params.Namespace = proj.Namespace()
-			r.targetPath = filepath.Dir(proj.Source().Path())
-		}
-		err := r.activateCheckout.Run(params.Namespace, targetPath)
-		if err != nil {
-			return "", err
-		}
+func (r *Activate) setupConfigFile(targetPath string) (string, error) {
+	proj, err := project.FromPath(targetPath)
+	if err != nil {
+		return filepath.Join(targetPath, constants.ConfigFileName), err
 	}
-
-	return configFile, nil
+	return proj.Source().Path(), nil
 }
