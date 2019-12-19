@@ -590,17 +590,17 @@ func (script *Script) Raw() string {
 // Standalone returns if the script is standalone or not
 func (script *Script) Standalone() bool { return script.script.Standalone }
 
-// CacheFile allows this script to have an associated file
-func (script *Script) CacheFile(filename string) {
+// cacheFile allows this script to have an associated file
+func (script *Script) cacheFile(filename string) {
 	script.script.Filename = filename
 }
 
-// Filename returns the name of the file associated with this script
-func (script *Script) Filename() string {
+// filename returns the name of the file associated with this script
+func (script *Script) filename() string {
 	return script.script.Filename
 }
 
-// HasFile returns true if this script has an associated file
-func (script *Script) HasFile() bool {
+// hasFile returns true if this script has an associated file
+func (script *Script) hasFile() bool {
 	return fileutils.FileExists(script.script.Filename)
 }

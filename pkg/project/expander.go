@@ -170,15 +170,15 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 }
 
 func expandPath(name string, script *Script) (string, *failures.Failure) {
-	if script.HasFile() {
-		return script.Filename(), nil
+	if script.hasFile() {
+		return script.filename(), nil
 	}
 
 	sf, fail := scriptfile.NewEmpty(script.LanguageSafe(), name)
 	if fail != nil {
 		return "", fail
 	}
-	script.CacheFile(sf.Filename())
+	script.cacheFile(sf.Filename())
 
 	fail = sf.Write(script.Value())
 	if fail != nil {
