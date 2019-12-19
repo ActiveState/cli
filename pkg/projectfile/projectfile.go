@@ -163,6 +163,7 @@ type Script struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description,omitempty"`
 	Value       string            `yaml:"value"`
+	Filename    string            `yaml:"filename,omitempty"`
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
