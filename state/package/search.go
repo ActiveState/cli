@@ -59,7 +59,7 @@ func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	packages, fail := fetchSearchResultPackages(language, SearchArgs.Name)
+	packages, fail := model.SearchIngredients(language, SearchArgs.Name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results"))
 		return
@@ -86,10 +86,6 @@ func targetedLanguage(languageOpt string) (string, *failures.Failure) {
 	}
 
 	return model.DefaultLanguageForProject(proj.Owner(), proj.Name())
-}
-
-func fetchSearchResultPackages(language, term string) ([]*model.IngredientAndVersion, *failures.Failure) {
-	return model.SearchIngredients(language, term)
 }
 
 func newPackagesTable(packages []*model.IngredientAndVersion) *table {
