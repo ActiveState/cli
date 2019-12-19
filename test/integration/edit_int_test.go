@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -108,6 +109,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.SendLine("Y")
 	suite.Wait()
+
+	time.Sleep(time.Second * 2) // let CI env catch up
 
 	project := projectfile.Get()
 	for _, script := range project.Scripts {
