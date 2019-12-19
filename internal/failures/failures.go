@@ -76,6 +76,9 @@ var (
 
 	// FailSilent identifies failures that should not produce visible output.
 	FailSilent = Type("failures.fail.silent")
+
+	// FailWrap identifies wrapped failures
+	FailWrap = Type("failures.fail.wrap")
 )
 
 var handled error
@@ -125,7 +128,7 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 // Wrap wraps another error
 func (f *FailureType) Wrap(err error, message ...string) *Failure {
 	if len(message) > 0 {
-		err = fmt.Errorf("%s: %v", err, strings.Join(message, ": "))
+		err = fmt.Errorf("%s: %v", strings.Join(message, ": "), err)
 	}
 	logging.Debug("Failure '%s' wrapped: %v", f.Name, err)
 	fail := f.New(err.Error())
@@ -164,7 +167,6 @@ func (e *Failure) ToError() error {
 //
 // If description is empty, only the error message is printed
 func (e *Failure) Handle(description string) {
-	logging.Debug("Handling failure, Trace:\n %s", e.Trace.String())
 
 	if e.Type.Matches(FailSilent) {
 		logging.Debug("Silent failure:\n %s", description)
@@ -177,8 +179,6 @@ func (e *Failure) Handle(description string) {
 		// Descriptions are always communicated to the user
 		print.Error(description)
 	}
-
-	print.Error(e.Error())
 }
 
 // Type returns a FailureType that can be used to create your own failure types
@@ -199,17 +199,16 @@ func Type(name string, parents ...*FailureType) *FailureType {
 //
 // If description is empty, only the error message is printed
 func Handle(err error, description string) {
-	handled = err
 	switch t := err.(type) {
 	case *Failure:
-		t.Handle(description)
-		return
+		logging.Debug("Handling failure, Trace:\n %s", t.Trace.String())
+		handled = FailWrap.Wrap(t, description)
 	default:
-		failure := failLegacy.New(err.Error())
+		logging.Debug("Handling failure, No Trace")
 		if description == "" {
 			description = "Unknown Error:"
 		}
-		failure.Handle(description)
+		handled = fmt.Errorf("%s: %w", description, err)
 	}
 }
 
