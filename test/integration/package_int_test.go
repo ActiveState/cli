@@ -83,7 +83,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 
 	suite.Spawn("packages", "search", "moose", "--language=perl")
 	suite.Expect("Name")
-	suite.Expect("moose")
+	suite.Expect("MooseX-Getopt")
+	suite.Expect("MooseX-Role-Parameterized")
+	suite.Expect("MooseX-Role-WithOverloading")
+	suite.Expect("MooX-Types-MooseLike")
 	suite.Wait()
 }
 
@@ -95,6 +98,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 
 	suite.Spawn("packages", "search", "numpy", "--language=perl")
 	suite.Expect("No packages")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "numpy", "--language=bad")
+	suite.Expect("Cannot obtain search")
 	suite.Wait()
 }
 
