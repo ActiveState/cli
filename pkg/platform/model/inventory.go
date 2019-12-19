@@ -31,19 +31,9 @@ var platformCache []*Platform
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, *failures.Failure) {
-	client := inventory.Get()
-
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetQ(&name)
-	params.SetNamespace(language)
-
-	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
-	limit := int64(99999)
-	params.SetLimit(&limit)
-
-	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, FailIngredients.Wrap(err)
+	results, fail := searchIngredients(9001, language, name)
+	if fail != nil {
+		return nil, fail
 	}
 
 	for _, ingredient := range res.Payload.IngredientsAndVersions {
@@ -61,7 +51,7 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 
 // IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
-	results, fail := SearchIngredients(language, name)
+	results, fail := searchIngredients(9001, language, name)
 	if fail != nil {
 		return nil, fail
 	}
@@ -96,15 +86,18 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 
 // SearchIngredients will return all ingredients+ingredientVersions that match the ingredient name
 func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	return searchIngredients(99, language, name)
+}
+
+func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	lim := int64(limit)
+
 	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetQ(&name)
 	params.SetNamespace("language/" + language)
-
-	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
-	limit := int64(99999)
-	params.SetLimit(&limit)
+	params.SetLimit(&lim)
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
