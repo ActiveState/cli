@@ -40,11 +40,14 @@ func sortByFirstCol(rows [][]string) {
 			return false
 		}
 
-		if strings.ToLower(rows[i][0]) < strings.ToLower(rows[j][0]) {
+		a := rows[i][0]
+		b := rows[j][0]
+
+		if strings.ToLower(a) < strings.ToLower(b) {
 			return true
 		}
 
-		return rows[i][0] < rows[j][0]
+		return a < b
 	}
 
 	sort.Slice(rows, less)
@@ -59,15 +62,22 @@ func sortByFirstTwoCols(rows [][]string) {
 			return false
 		}
 
-		if strings.ToLower(rows[i][0]) < strings.ToLower(rows[j][0]) {
+		aa, ab := rows[i][0], rows[i][1]
+		ba, bb := rows[j][0], rows[j][1]
+
+		if strings.ToLower(aa) < strings.ToLower(ba) {
 			return true
 		}
 
-		if strings.ToLower(rows[i][1]) < strings.ToLower(rows[j][1]) {
+		if aa >= ba {
+			return false
+		}
+
+		if strings.ToLower(ab) < strings.ToLower(bb) {
 			return true
 		}
 
-		return rows[i][0]+rows[i][1] < rows[j][0]+rows[j][1]
+		return ab < bb
 	}
 
 	sort.Slice(rows, less)
