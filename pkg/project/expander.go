@@ -164,10 +164,28 @@ func ScriptExpander(name string, meta string, isFunction bool, project *Project)
 	}
 
 	if meta == "path" && isFunction {
-		sf, fail := scriptfile.New(script.LanguageSafe(), name, script.Value())
-		return sf.Filename(), fail
+		return expandPath(name, script)
 	}
 	return script.Raw(), nil
+}
+
+func expandPath(name string, script *Script) (string, *failures.Failure) {
+	if script.cachedFile() != "" {
+		return script.cachedFile(), nil
+	}
+
+	sf, fail := scriptfile.NewEmpty(script.LanguageSafe(), name)
+	if fail != nil {
+		return "", fail
+	}
+	script.setCachedFile(sf.Filename())
+
+	fail = sf.Write(script.Value())
+	if fail != nil {
+		return "", fail
+	}
+
+	return sf.Filename(), nil
 }
 
 // ConstantExpander expands constants defined in the project-file.

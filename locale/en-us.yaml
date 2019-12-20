@@ -377,6 +377,10 @@ error_state_activate_copy_project_url:
   other: Could not get project URL
 err_activate_path:
   other: Could not get project file with given path '{{.V0}}'
+err_activate_output_build_failed:
+  other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
+err_activate_output_build_in_progress:
+  other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
@@ -407,6 +411,10 @@ downloading:
   other: Downloading
 installing:
   other: Installing
+unknown_value:
+  other: Unknown value
+invalid_uuid_val:
+  other: Invalid UUID value
 total:
   other: Total
 projects_description:
@@ -1123,6 +1131,8 @@ package_update_description:
   other: Update a package in your project to the latest available version
 package_remove_description:
   other: Remove a package from your project
+package_search_description:
+  other: Search for available packages that can be added to your project
 package_err_help:
   other: Error occurred while trying to produce help information
 package_arg_name:
@@ -1133,6 +1143,10 @@ package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+package_list_flag_commit_description:
+  other: The commit that the listing should be based on
+package_search_flag_language_description:
+  other: The language used to constrain search results
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1145,6 +1159,22 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
+package_err_cannot_obtain_commit:
+  other: Cannot obtain commit for package listing
+package_err_cannot_obtain_language:
+  other: Cannot obtain language for package search
+package_err_cannot_obtain_search_results:
+  other: Cannot obtain search results
+package_no_data:
+  other: No data found - Please verify the provided commit id
+package_no_packages:
+  other: No packages to list
+package_name:
+  other: Name
+package_version:
+  other: Version
 package_add:
   other: "Package added: {{.V0}}"
 package_version_add:

@@ -57,7 +57,7 @@ const (
 	NamespaceLanguageMatch = `^language$`
 
 	// NamespacePackageMatch is the namespace used for package requirements
-	NamespacePackageMatch = `/package$`
+	NamespacePackageMatch = `^language\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`

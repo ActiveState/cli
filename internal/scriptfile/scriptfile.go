@@ -21,6 +21,12 @@ func New(l language.Language, name, script string) (*ScriptFile, *failures.Failu
 	return new(l, name, []byte(l.Header()+script))
 }
 
+// NewEmpty receives a language that is used to construct a runnable, but empty,
+// on-disk file that is tracked by the return value.
+func NewEmpty(l language.Language, name string) (*ScriptFile, *failures.Failure) {
+	return new(l, name, []byte(""))
+}
+
 // NewAsSource recieves a language and script body that are used to construct an
 // on-disk file that is tracked by the return value. This file is not guaranteed
 // to be runnable
@@ -50,4 +56,9 @@ func (sf *ScriptFile) Clean() {
 // Filename returns the on-disk filename of the tracked script file.
 func (sf *ScriptFile) Filename() string {
 	return sf.file
+}
+
+// Write updates the on-disk scriptfile with the script value
+func (sf *ScriptFile) Write(value string) *failures.Failure {
+	return fileutils.WriteFile(sf.file, []byte(sf.lang.Header()+value))
 }
