@@ -31,22 +31,12 @@ var platformCache []*Platform
 // IngredientByNameAndVersion fetches an ingredient that matches the given name and version. If version is empty the first
 // matching ingredient will be returned.
 func IngredientByNameAndVersion(language, name, version string) (*IngredientAndVersion, *failures.Failure) {
-	client := inventory.Get()
-
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetQ(&name)
-	params.SetNamespace(language)
-
-	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
-	limit := int64(99999)
-	params.SetLimit(&limit)
-
-	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, FailIngredients.Wrap(err)
+	results, fail := searchIngredients(9001, language, name)
+	if fail != nil {
+		return nil, fail
 	}
 
-	for _, ingredient := range res.Payload.IngredientsAndVersions {
+	for _, ingredient := range results {
 		if ingredient.Ingredient.Name == nil || *ingredient.Ingredient.Name != name {
 			continue
 		}
@@ -59,49 +49,65 @@ func IngredientByNameAndVersion(language, name, version string) (*IngredientAndV
 	return nil, nil
 }
 
-// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingradient name
+// IngredientWithLatestVersion will grab the latest available ingredient and ingredientVersion that matches the ingredient name
 func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, *failures.Failure) {
-	client := inventory.Get()
-
-	params := inventory_operations.NewGetNamespaceIngredientsParams()
-	params.SetQ(&name)
-	params.SetNamespace(language)
-
-	// Very unlikely we'd get many results, not a use-case we want to go out of our way to facilitate at this stage
-	limit := int64(99999)
-	params.SetLimit(&limit)
-
-	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
-	if err != nil {
-		return nil, FailIngredients.Wrap(err)
+	results, fail := searchIngredients(9001, language, name)
+	if fail != nil {
+		return nil, fail
 	}
 
 	var ingredient *IngredientAndVersion
 	var latest *IngredientAndVersion
-	for _, i := range res.Payload.IngredientsAndVersions {
-		if i.Ingredient.Name == nil || *i.Ingredient.Name != name {
+	for _, res := range results {
+		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
 			continue
 		}
-		ingredient = i
+		ingredient = res
 
 		switch {
 		case latest == nil || latest.Version.ReleaseTimestamp == nil:
 			// If latest is not valid, just make the current value latest
-			latest = i
+			latest = res
 
-		case i.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
+		case res.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
 			// If the release dates equal (or are both nil) just assume that the later entry it the latest
-			latest = i
+			latest = res
 
-		case i.Version.ReleaseTimestamp != nil && time.Time(*i.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
+		case res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
 			// If the release date is later then this entry is latest
-			latest = i
+			latest = res
 		}
 
 		break // We found our ingredient, no need to keep looping
 	}
 
 	return ingredient, nil
+}
+
+// SearchIngredients will return all ingredients+ingredientVersions that match the ingredient name
+func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	return searchIngredients(99, language, name)
+}
+
+func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	lim := int64(limit)
+
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetQ(&name)
+	params.SetNamespace("language/" + language)
+	params.SetLimit(&lim)
+
+	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
+	if err != nil {
+		if gniErr, ok := err.(*inventory_operations.GetNamespaceIngredientsDefault); ok {
+			return nil, FailIngredients.New(*gniErr.Payload.Message)
+		}
+		return nil, FailIngredients.Wrap(err)
+	}
+
+	return res.Payload.IngredientsAndVersions, nil
 }
 
 func FetchPlatforms() ([]*Platform, *failures.Failure) {

@@ -37,6 +37,7 @@ func init() {
 	Command.Append(AddCommand)
 	Command.Append(RemoveCommand)
 	Command.Append(UpdateCommand)
+	Command.Append(SearchCommand)
 }
 
 // Execute is ran when `state package` is ran

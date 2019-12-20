@@ -143,7 +143,7 @@ func TestClientError(t *testing.T) {
 
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -152,7 +152,9 @@ func TestClientError(t *testing.T) {
 	require.NoError(t, outErr)
 
 	// Should not be able to fetch organizations without mock
-	assert.Contains(t, outStr, "no responder found")
+	handledFail := failures.Handled()
+	assert.Error(t, handledFail)
+	assert.Contains(t, handledFail.Error(), "no responder found")
 }
 
 func TestAuthError(t *testing.T) {
@@ -167,7 +169,7 @@ func TestAuthError(t *testing.T) {
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -175,7 +177,9 @@ func TestAuthError(t *testing.T) {
 	})
 	require.NoError(t, outErr)
 
-	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
+	handledFail := failures.Handled()
+	assert.Error(t, handledFail)
+	assert.Contains(t, handledFail.Error(), locale.T("err_api_not_authenticated"))
 }
 
 func TestAliases(t *testing.T) {

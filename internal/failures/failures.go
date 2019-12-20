@@ -177,8 +177,6 @@ func (e *Failure) Handle(description string) {
 		// Descriptions are always communicated to the user
 		print.Error(description)
 	}
-
-	print.Error(e.Error())
 }
 
 // Type returns a FailureType that can be used to create your own failure types
