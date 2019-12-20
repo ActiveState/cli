@@ -377,6 +377,10 @@ error_state_activate_copy_project_url:
   other: Could not get project URL
 err_activate_path:
   other: Could not get project file with given path '{{.V0}}'
+err_activate_output_build_failed:
+  other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
+err_activate_output_build_in_progress:
+  other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
