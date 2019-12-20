@@ -58,6 +58,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
+	suite.Expect("No packages")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
