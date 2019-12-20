@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -75,19 +74,8 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	switch params.Output {
-	case commands.JSON, commands.EditorV0:
-		err = os.Chdir(targetPath)
-		if err != nil {
-			return err
-		}
-		jsonString, err := envOutput(false)
-		if err != nil {
-			return err
-		}
-		print.Line("[activated-JSON]")
-		print.Line(jsonString)
-		return nil
+	if params.Output != "" {
+		return activateOutput(targetPath, params.Output)
 	}
 
 	go sendProjectIDToAnalytics(params.Namespace, configFile)
