@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -13,6 +14,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -141,6 +143,51 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Output() {
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
 	suite.Expect("[activated-JSON]")
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
+	defer cb()
+
+	fail := fileutils.Mkdir(tempDir, "foo", "bar", "baz")
+	suite.Require().NoError(fail.ToError())
+
+	// Create the project file at the root of the temp dir
+	content := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+branch: %s
+version: %s
+`, constants.BranchName, constants.Version))
+
+	projectFile := &projectfile.Project{}
+	err := yaml.Unmarshal([]byte(content), projectFile)
+	suite.Require().NoError(err)
+
+	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
+	fail = projectFile.Save()
+	suite.Require().NoError(fail.ToError())
+
+	// Pull to ensure we have an up to date config file
+	suite.Spawn("pull")
+	suite.Expect("Your activestate.yaml has been updated to the latest version available")
+	suite.Expect("Please reactivate any activated instances of the State Tool")
+	suite.ExpectExitCode(0)
+
+	originalWd, err := os.Getwd()
+	suite.Require().NoError(err)
+
+	// Change directories to a sub directory
+	err = os.Chdir(filepath.Join(tempDir, "foo", "bar", "baz"))
+	suite.Require().NoError(err)
+	defer os.Chdir(originalWd)
+
+	// Activate in the subdirectory
+	suite.Spawn("activate")
+	suite.Expect("Activating state: ActiveState-CLI/Python3")
+
+	suite.WaitForInput()
+	suite.SendLine("exit")
+	suite.ExpectExitCode(0)
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
