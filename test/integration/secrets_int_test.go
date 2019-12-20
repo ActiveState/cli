@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -14,34 +15,64 @@ import (
 type SecretsIntegrationTestSuite struct {
 	integration.Suite
 	originalWd string
+	secret     secrets.SecretExport
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrets_EditorV0() {
+func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
 	defer cb()
-	suite.SetWd(tempDir)
 
 	suite.PrepareActiveStateYAML(
 		tempDir,
 		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
 	)
 
-	secret := secrets.SecretExport{
+	suite.secret = secrets.SecretExport{
 		Name:        "test-secret",
 		Scope:       "project",
 		Description: "",
 		HasValue:    true,
 	}
 
-	expected, err := json.Marshal(secret)
-	suite.Require().NoError(err)
-
 	suite.LoginAsPersistentUser()
 	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
 	suite.Wait()
 	suite.Spawn("secrets", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(fmt.Sprintf("[%s]", expected), strings.TrimSpace(suite.Output()))
+	suite.Equal(fmt.Sprintf("[%s]", suite.TestSecretsJSON()), strings.TrimSpace(suite.Output()))
+}
+
+func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
+	defer cb()
+
+	suite.PrepareActiveStateYAML(
+		tempDir,
+		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
+	)
+
+	suite.secret = secrets.SecretExport{
+		Name:        "test-secret",
+		Scope:       "project",
+		Description: "",
+		HasValue:    true,
+		Value:       "test-value",
+	}
+
+	suite.LoginAsPersistentUser()
+	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
+	suite.Wait()
+	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
+	suite.Wait()
+	newlineRe := regexp.MustCompile(`\r?\n`)
+	output := newlineRe.ReplaceAllString(strings.TrimSpace(suite.Output()), "")
+	suite.Equal(suite.TestSecretsJSON(), output)
+}
+
+func (suite *SecretsIntegrationTestSuite) TestSecretsJSON() string {
+	jsonSecret, err := json.Marshal(suite.secret)
+	suite.Require().NoError(err)
+	return strings.TrimSpace(string(jsonSecret))
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
