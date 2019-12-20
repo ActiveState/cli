@@ -64,14 +64,28 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("packages", "search", "numpy")
-	suite.Expect("Name")
-	suite.Expect("msgpack-numpy")
-	suite.Expect("numpy")
-	suite.Expect("1.14.3")
-	suite.Expect("1.16.1")
-	suite.Expect("1.16.2")
-	suite.Expect("numpy-stl")
+	suite.Spawn("packages", "search", "request")
+	expectations := []string{
+		"Name",
+		"aws-requests-auth",
+		"django-request-logging",
+		"requests",
+		"2.10.0",
+		"2.18.4",
+		"2.21.0",
+		"2.22.0",
+		"2.3",
+		"2.7.0",
+		"requests-cache",
+		"requests-oauthlib",
+		"requests3",
+		"requests_gpgauthlib",
+		"requestsexceptions",
+		"robotframework-requests",
+	}
+	for _, expectation := range expectations {
+		suite.Expect(expectation)
+	}
 	suite.Wait()
 }
 
