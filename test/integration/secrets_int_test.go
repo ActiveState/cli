@@ -3,16 +3,12 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
 
 type SecretsIntegrationTestSuite struct {
@@ -25,26 +21,10 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_EditorV0() {
 	defer cb()
 	suite.SetWd(tempDir)
 
-	projectFile := &projectfile.Project{}
-	contents := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/cli-integration-tests/Python3"
-branch: %s
-version: %s
-`, constants.BranchName, constants.Version))
-
-	err := yaml.Unmarshal([]byte(contents), projectFile)
-	suite.Require().NoError(err)
-
-	projectFile.SetPath(filepath.Join(tempDir, "activestate.yaml"))
-	fail := projectFile.Save()
-	suite.Require().NoError(fail.ToError())
-	suite.Require().FileExists(filepath.Join(tempDir, "activestate.yaml"))
-
-	suite.LoginAsPersistentUser()
-
-	// Ensure we have the most up to date version of the project before activating
-	suite.Spawn("pull")
-	suite.ExpectExitCode(0)
+	suite.PrepareActiveStateYAML(
+		tempDir,
+		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
+	)
 
 	secret := secrets.SecretExport{
 		Name:        "test-secret",
@@ -56,6 +36,7 @@ version: %s
 	expected, err := json.Marshal(secret)
 	suite.Require().NoError(err)
 
+	suite.LoginAsPersistentUser()
 	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
 	suite.Wait()
 	suite.Spawn("secrets", "--output", "editor.v0")
