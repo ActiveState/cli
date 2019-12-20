@@ -89,13 +89,14 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 }
 
 // FilterCheckpointPackages filters a Checkpoint removing requirements that
-// are not packages.
+// are not packages. If nil data is provided, a nil slice is returned. If no
+// packages remain after filtering, an empty slice is returned.
 func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 	if chkPt == nil {
 		return nil
 	}
 
-	var checkpoint Checkpoint
+	checkpoint := Checkpoint{}
 	for _, requirement := range chkPt {
 		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
 			continue

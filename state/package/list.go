@@ -49,6 +49,7 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 
 func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 	if commitOpt == "latest" {
+		logging.Debug("latest commit selected")
 		proj := project.Get()
 		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
@@ -61,10 +62,12 @@ func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 		commitOpt = proj.CommitID()
 
 		if commitOpt == "" {
+			logging.Debug("latest commit used as fallback selection")
 			return model.LatestCommitID(proj.Owner(), proj.Name())
 		}
 	}
 
+	logging.Debug("commit %s selected", commitOpt)
 	if ok := strfmt.Default.Validates("uuid", commitOpt); !ok {
 		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
 	}
@@ -79,6 +82,7 @@ func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 
 func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) {
 	if commit == nil {
+		logging.Debug("commit id is nil")
 		return nil, nil
 	}
 
@@ -89,6 +93,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 
 func newRequirementsTable(requirements model.Checkpoint) *table {
 	if requirements == nil {
+		logging.Debug("requirements is nil")
 		return nil
 	}
 
