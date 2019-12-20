@@ -897,6 +897,8 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_no_data_found:
+  other: No data found
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
 err_project_no_languages:
