@@ -17,6 +17,9 @@ import (
 var (
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
+
+	// FailNoData represents an error due to lacking returned data
+	FailNoData = failures.Type("model.fail.nodata", failures.FailNonFatal)
 )
 
 // Checkpoint represents a collection of requirements
@@ -78,14 +81,11 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	var atTime strfmt.DateTime
-	if response.Commit != nil {
-		atTime = response.Commit.AtTime
-	} else {
-		atTime = strfmt.DateTime{}
+	if response.Commit == nil {
+		return nil, strfmt.DateTime{}, FailNoData.New(locale.T("err_no_data_found"))
 	}
 
-	return response.Requirements, atTime, nil
+	return response.Requirements, response.Commit.AtTime, nil
 }
 
 // FilterCheckpointPackages filters a Checkpoint removing requirements that

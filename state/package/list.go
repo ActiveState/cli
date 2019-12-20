@@ -32,10 +32,6 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
 		return
 	}
-	if checkpoint == nil {
-		print.Line(locale.T("package_no_data"))
-		return
-	}
 	if len(checkpoint) == 0 {
 		print.Line(locale.T("package_no_packages"))
 		return
@@ -87,6 +83,9 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) 
 	}
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
+	if fail != nil && fail.Type.Matches(model.FailNoData) {
+		return nil, model.FailNoData.New(locale.T("package_no_data"))
+	}
 
 	return model.FilterCheckpointPackages(checkpoint), fail
 }
