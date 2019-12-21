@@ -1,8 +1,6 @@
 package exiter
 
 import (
-	"fmt"
-
 	"github.com/kami-zh/go-capturer"
 )
 
@@ -35,7 +33,7 @@ func (e *Exiter) WaitForExit(f func()) (exitCode int) {
 	e.exitCode = -1
 	defer func() {
 		if r := recover(); r != nil {
-			if fmt.Sprintf("%v", r) != "exiter" {
+			if msg, ok := r.(string); ok && msg != "exiter" {
 				panic(r)
 			}
 			exitCode = e.exitCode
