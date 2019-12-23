@@ -100,6 +100,30 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "requests", "--exact-term")
+	expectations := []string{
+		"Name",
+		"requests",
+		"2.10.0",
+		"2.18.4",
+		"2.21.0",
+		"2.22.0",
+		"2.3",
+		"2.7.0",
+		"---",
+	}
+	for _, expectation := range expectations {
+		suite.Expect(expectation)
+	}
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()

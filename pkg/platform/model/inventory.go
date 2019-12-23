@@ -84,9 +84,31 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 	return ingredient, nil
 }
 
-// SearchIngredients will return all ingredients+ingredientVersions that match the ingredient name
+// SearchIngredients will return all ingredients+ingredientVersions that fuzzily
+// match the ingredient name.
 func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	return searchIngredients(99, language, name)
+}
+
+// SearchIngredientsStrict will return all ingredients+ingredientVersions that
+// strictly match the ingredient name.
+func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	ingredients, fail := searchIngredients(99, language, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	ings := ingredients[:0]
+	for _, ing := range ingredients {
+		if ing.Ingredient.Name != nil && *ing.Ingredient.Name == name {
+			ings = append(ings, ing)
+		}
+	}
+	for i := len(ings); i < len(ingredients); i++ {
+		ingredients[i] = nil
+	}
+
+	return ings, nil
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
