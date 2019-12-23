@@ -124,6 +124,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
+	suite.Expect("No packages")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
