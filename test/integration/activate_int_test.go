@@ -132,15 +132,23 @@ version: %s
 	suite.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivate_Output() {
+func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
 	defer cb()
 
 	suite.LoginAsPersistentUser()
-	suite.Spawn("activate", "ActiveState-CLI/Python3", "--output", "json")
+	suite.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
 	suite.Expect("Where would you like to checkout")
 	suite.SendLine(tempDir)
 	suite.Expect("[activated-JSON]")
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
+	suite.testOutput("json")
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
+	suite.testOutput("editor.v0")
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {

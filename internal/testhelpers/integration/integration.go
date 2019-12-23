@@ -284,7 +284,7 @@ func (s *Suite) Stop() error {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
-	s.Expect("successfully Puthenticated")
+	s.Expect("successfully authenticated")
 	state, err := s.Wait()
 	s.Require().NoError(err)
 	s.Require().Equal(0, state.ExitCode())
