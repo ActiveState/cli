@@ -1149,6 +1149,8 @@ package_list_flag_commit_description:
   other: The commit that the listing should be based on
 package_search_flag_language_description:
   other: The language used to constrain search results
+package_search_flag_exact-term_description:
+  other: Ensures that search results match search term exactly
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
