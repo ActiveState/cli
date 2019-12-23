@@ -2,7 +2,6 @@ package integration
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -31,35 +30,15 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 	suite.NotContains(suite.Output(), "Successfully forked project")
 }
 
-func (suite *ForkIntegrationTestSuite) createNewUser() {
-	suite.username = fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := suite.username
-	email := fmt.Sprintf("%s@test.tld", suite.username)
-
-	suite.Spawn("auth", "signup")
-	suite.Expect("username:")
-	suite.SendLine(suite.username)
-	suite.Expect("password:")
-	suite.SendLine(password)
-	suite.Expect("again:")
-	suite.SendLine(password)
-	suite.Expect("name:")
-	suite.SendLine(suite.username)
-	suite.Expect("email:")
-	suite.SendLine(email)
-	suite.Expect("account has been registered", 20*time.Second)
-	suite.Wait()
-}
-
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
-	suite.createNewUser()
+	username := suite.CreateNewUser()
 
 	results := struct {
 		Result map[string]string `json:"result,omitempty"`
 	}{
 		map[string]string{
 			"NewName":       "Test-Python3",
-			"NewOwner":      suite.username,
+			"NewOwner":      username,
 			"OriginalName":  "Python3",
 			"OriginalOwner": "ActiveState-CLI",
 		},
@@ -67,7 +46,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 	expected, err := json.Marshal(results)
 	suite.Require().NoError(err)
 
-	suite.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", suite.username, "--output", "editor.v0")
+	suite.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
 	suite.Wait()
 	suite.Equal(string(expected), suite.TrimSpaceOutput())
 }

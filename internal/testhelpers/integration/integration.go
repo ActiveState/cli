@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/vt10x"
+	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
@@ -345,4 +346,31 @@ func (s *Suite) TrimSpaceOutput() string {
 	// the cleaning we must do here.
 	newlineRe := regexp.MustCompile(`\r?\n`)
 	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
+}
+
+func (s *Suite) CreateNewUser() string {
+	uid, err := uuid.NewRandom()
+	if err != nil {
+		panic(fmt.Sprintf("Could not generate uuid, error: %v", err))
+	}
+
+	username := fmt.Sprintf("user-%s", uid.String()[0:8])
+	password := username
+	email := fmt.Sprintf("%s@test.tld", username)
+
+	s.Spawn("auth", "signup")
+	s.Expect("username:")
+	s.SendLine(username)
+	s.Expect("password:")
+	s.SendLine(password)
+	s.Expect("again:")
+	s.SendLine(password)
+	s.Expect("name:")
+	s.SendLine(username)
+	s.Expect("email:")
+	s.SendLine(email)
+	s.Expect("account has been registered", 20*time.Second)
+	s.Wait()
+
+	return username
 }
