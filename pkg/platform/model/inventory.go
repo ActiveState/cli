@@ -93,22 +93,19 @@ func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failure
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
-	ingredients, fail := searchIngredients(99, language, name)
+	results, fail := searchIngredients(99, language, name)
 	if fail != nil {
 		return nil, fail
 	}
 
-	ings := ingredients[:0]
-	for _, ing := range ingredients {
+	ingredients := results[:0]
+	for _, ing := range results {
 		if ing.Ingredient.Name != nil && *ing.Ingredient.Name == name {
-			ings = append(ings, ing)
+			ingredients = append(ingredients, ing)
 		}
 	}
-	for i := len(ings); i < len(ingredients); i++ {
-		ingredients[i] = nil
-	}
 
-	return ings, nil
+	return ingredients, nil
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {
