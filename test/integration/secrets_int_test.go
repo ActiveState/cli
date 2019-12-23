@@ -41,7 +41,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	suite.Equal(fmt.Sprintf("[%s]", suite.TestSecretsJSON()), strings.TrimSpace(suite.Output()))
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrets_EditorV0() {
+func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
 	defer cb()
 
