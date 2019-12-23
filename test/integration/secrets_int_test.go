@@ -41,7 +41,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	suite.Equal(fmt.Sprintf("[%s]", suite.TestSecretsJSON()), strings.TrimSpace(suite.Output()))
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
+func (suite *SecretsIntegrationTestSuite) TestSecrets_EditorV0() {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
 	defer cb()
 
@@ -59,11 +59,12 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	}
 
 	suite.LoginAsPersistentUser()
-	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
+	suite.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
 	suite.Wait()
+	suite.Empty(suite.TrimSpaceOutput())
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(suite.TestSecretsJSON(), suite.TrimOutput())
+	suite.Equal(suite.TestSecretsJSON(), suite.TrimSpaceOutput())
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsJSON() string {

@@ -120,7 +120,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 		suite.Expect(expected)
 	}
 	suite.Wait()
-	suite.Equal(expected, suite.TrimOutput())
+	suite.Equal(expected, suite.TrimSpaceOutput())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {

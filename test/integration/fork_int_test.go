@@ -69,7 +69,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 
 	suite.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", suite.username, "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(string(expected), suite.TrimOutput())
+	suite.Equal(string(expected), suite.TrimSpaceOutput())
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {

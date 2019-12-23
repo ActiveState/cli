@@ -32,7 +32,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), suite.TrimOutput())
+	suite.Equal(fmt.Sprintf("[%s]", string(expected)), suite.TrimSpaceOutput())
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {

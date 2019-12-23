@@ -338,7 +338,7 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	}
 }
 
-func (s *Suite) TrimOutput() string {
+func (s *Suite) TrimSpaceOutput() string {
 	// When the PTY reaches 80 characters it continues output on a new line.
 	// On Windows this means both a carriage return and a new line. Windows
 	// also picks up any spaces at the end of the console output, hence all
