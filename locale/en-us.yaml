@@ -1150,7 +1150,7 @@ package_list_flag_commit_description:
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
-  other: Ensures search results must match search term exactly
+  other: Ensures that search results match search term exactly
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
