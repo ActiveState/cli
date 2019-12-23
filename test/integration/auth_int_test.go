@@ -143,8 +143,8 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	expected := string(data)
 
 	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
-	suite.Expect(expected)
 	suite.Wait()
+	suite.Equal(expected, suite.TrimSpaceOutput())
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
