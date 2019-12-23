@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
@@ -15,7 +16,8 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 	suite.LoginAsPersistentUser()
 	suite.Spawn("export", "jwt", "--output", "editor.v0")
 	suite.Wait()
-	suite.NotEmpty(suite.Output())
+	jwtRe := regexp.MustCompile("^[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*$")
+	suite.True(jwtRe.Match([]byte(suite.TrimSpaceOutput())))
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
