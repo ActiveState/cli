@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -335,4 +336,9 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	case <-time.After(t):
 		return nil, fmt.Errorf("i/o error")
 	}
+}
+
+func (s *Suite) TrimOutput() string {
+	newlineRe := regexp.MustCompile(`\r?\n`)
+	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
 }

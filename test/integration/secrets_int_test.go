@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -64,9 +63,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	suite.Wait()
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	suite.Wait()
-	newlineRe := regexp.MustCompile(`\r?\n`)
-	output := newlineRe.ReplaceAllString(strings.TrimSpace(suite.Output()), "")
-	suite.Equal(suite.TestSecretsJSON(), output)
+	suite.Equal(suite.TestSecretsJSON(), suite.TrimOutput())
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsJSON() string {
