@@ -103,7 +103,7 @@ type userJSON struct {
 	PrivateProjects bool   `json:"privateProjects"`
 }
 
-func (suite *AuthIntegrationTestSuite) auth_output(method string) {
+func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	user := userJSON{
 		Username:        "cli-integration-tests",
 		URLName:         "cli-integration-tests",
@@ -124,11 +124,11 @@ func (suite *AuthIntegrationTestSuite) auth_output(method string) {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
-	suite.auth_output("json")
+	suite.authOutput("json")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
-	suite.auth_output("editor.v0")
+	suite.authOutput("editor.v0")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
