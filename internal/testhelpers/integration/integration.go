@@ -25,8 +25,8 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var persistentUsername = "cli-integration-tests"
-var persistentPassword = "test-cli-integration"
+var PersistentUsername = "cli-integration-tests"
+var PersistentPassword = "test-cli-integration"
 
 var defaultTimeout = 10 * time.Second
 
@@ -283,8 +283,8 @@ func (s *Suite) Stop() error {
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
-	s.Spawn("auth", "--username", persistentUsername, "--password", persistentPassword)
-	s.Expect("successfully authenticated")
+	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	s.Expect("successfully Puthenticated")
 	state, err := s.Wait()
 	s.Require().NoError(err)
 	s.Require().Equal(0, state.ExitCode())
@@ -339,6 +339,10 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 }
 
 func (s *Suite) TrimOutput() string {
+	// When the PTY reaches 80 characters it continues output on a new line.
+	// On Windows this means both a carriage return and a new line. Windows
+	// also picks up any spaces at the end of the console output, hence all
+	// the cleaning we must do here.
 	newlineRe := regexp.MustCompile(`\r?\n`)
 	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
 }

@@ -3,9 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -105,7 +103,7 @@ type userJSON struct {
 	PrivateProjects bool   `json:"privateProjects"`
 }
 
-func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+func (suite *AuthIntegrationTestSuite) auth_output(method string) {
 	user := userJSON{
 		Username:        "cli-integration-tests",
 		URLName:         "cli-integration-tests",
@@ -117,20 +115,20 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 
 	expected := string(data)
 	suite.LoginAsPersistentUser()
-	suite.Spawn("auth", "--output", "json")
+	suite.Spawn("auth", "--output", method)
 	if runtime.GOOS != "windows" {
 		suite.Expect(expected)
 	}
 	suite.Wait()
-	if runtime.GOOS == "windows" {
-		// When the PTY reaches 80 characters it continues output on a new line.
-		// On Windows this means both a carriage return and a new line. Windows
-		// also picks up any spaces at the end of the console output, hence all
-		// the cleaning we must do here.
-		re := regexp.MustCompile("\r?\n")
-		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
-		suite.Equal(expected, actual)
-	}
+	suite.Equal(expected, suite.TrimOutput())
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+	suite.auth_output("json")
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
+	suite.auth_output("editor.v0")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
@@ -144,9 +142,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	suite.Require().NoError(err)
 	expected := string(data)
 
-	// TODO: Find a different way to pass the persistent user credentials from
-	// the integration package
-	suite.Spawn("auth", "--username", "cli-integration-tests", "--password", "test-cli-integration", "--output", "editor.v0")
+	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
 	suite.Expect(expected)
 	suite.Wait()
 }
