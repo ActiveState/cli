@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -26,6 +27,8 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+
+	Flags.Output = new(string)
 }
 
 func setupOrgTest(t *testing.T) *apiMock.Mock {
@@ -71,7 +74,8 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := string(commands.JSON)
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})
@@ -91,7 +95,8 @@ func TestOrganizationsJSONFree(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := string(commands.JSON)
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})
@@ -111,7 +116,8 @@ func TestOrganizationsJSONBad(t *testing.T) {
 
 	var execErr error
 	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{"--json"})
+	output := string(commands.JSON)
+	Flags.Output = &output
 	outStr, outErr := osutil.CaptureStdout(func() {
 		execErr = cc.Execute()
 	})
@@ -137,7 +143,7 @@ func TestClientError(t *testing.T) {
 
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -146,7 +152,9 @@ func TestClientError(t *testing.T) {
 	require.NoError(t, outErr)
 
 	// Should not be able to fetch organizations without mock
-	assert.Contains(t, outStr, "no responder found")
+	handledFail := failures.Handled()
+	assert.Error(t, handledFail)
+	assert.Contains(t, handledFail.Error(), "no responder found")
 }
 
 func TestAuthError(t *testing.T) {
@@ -161,7 +169,7 @@ func TestAuthError(t *testing.T) {
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 	ex := exiter.New()
 	Command.Exiter = ex.Exit
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -169,7 +177,9 @@ func TestAuthError(t *testing.T) {
 	})
 	require.NoError(t, outErr)
 
-	assert.Contains(t, outStr, locale.T("err_api_not_authenticated"))
+	handledFail := failures.Handled()
+	assert.Error(t, handledFail)
+	assert.Contains(t, handledFail.Error(), locale.T("err_api_not_authenticated"))
 }
 
 func TestAliases(t *testing.T) {

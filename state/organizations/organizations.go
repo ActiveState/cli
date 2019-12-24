@@ -2,6 +2,7 @@ package organizations
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -15,7 +16,7 @@ import (
 
 // Flags captures values for any of the flags used with the organizations command.
 var Flags struct {
-	JSON bool
+	Output *string
 }
 
 // Command is the organization command's definition.
@@ -24,14 +25,6 @@ var Command = &commands.Command{
 	Aliases:     []string{"orgs"},
 	Description: "organizations_description",
 	Run:         Execute,
-	Flags: []*commands.Flag{
-		{
-			Name:        "json",
-			Description: "flag_json_desc",
-			Type:        commands.TypeBool,
-			BoolVar:     &Flags.JSON,
-		},
-	},
 }
 
 // Execute the organizations command.
@@ -42,7 +35,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if Flags.JSON {
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			failures.Handle(fail, locale.T("organizations_err_output"))
@@ -50,10 +44,9 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 
 		print.Line(string(data))
-		return
+	default:
+		listOrganizations(orgs)
 	}
-
-	listOrganizations(orgs)
 }
 
 func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {

@@ -129,7 +129,7 @@ func (s *Auth) updateRollbarPerson() {
 	if uid == nil {
 		return
 	}
-	logging.UpdateRollbarPerson(uid.String())
+	logging.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
 }
 
 // Authenticate will try to authenticate using stored credentials
@@ -202,6 +202,14 @@ func (s *Auth) AuthenticateWithToken(token string) *failures.Failure {
 func (s *Auth) WhoAmI() string {
 	if s.user != nil {
 		return s.user.Username
+	}
+	return ""
+}
+
+// Email return the email of the authenticated user
+func (s *Auth) Email() string {
+	if s.user != nil {
+		return s.user.Email
 	}
 	return ""
 }

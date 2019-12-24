@@ -1,6 +1,11 @@
 package fork
 
 import (
+	"encoding/json"
+	"strings"
+
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -14,19 +19,37 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 var (
 	failUpdateBranch = failures.Type("fork.fail.updatebranch")
 
 	failEditProject = failures.Type("fork.fail.editproject")
+
+	// FailForkProjectConflict represents a failure while creating a project
+	FailForkProjectConflict = failures.Type(
+		"fork.fail.forkprojectconflict", failures.FailUser,
+	)
 )
+
+type errorData struct {
+	Code    int32  `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Data    string `json:"data,omitempty"`
+}
+
+type resultWrap struct {
+	Result map[string]string `json:"result,omitempty"`
+	Error  *errorData        `json:"error,omitempty"`
+}
 
 var prompter prompt.Prompter
 
 func init() {
 	prompter = prompt.New()
+
+	s := ""
+	Flags.Output = &s
 }
 
 // Command holds the fork command definition
@@ -69,6 +92,7 @@ var Flags struct {
 	Organization string
 	Private      bool
 	Name         string
+	Output       *string
 }
 
 // Args holds the values passed through the command line
@@ -87,6 +111,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	namespace, fail := project.ParseNamespace(Args.Namespace)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_invalid_namespace"))
+		return
 	}
 
 	originalOwner := namespace.Owner
@@ -106,17 +131,53 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	output := commands.Output(strings.ToLower(*Flags.Output))
+	outputJSON := (output == commands.JSON || output == commands.EditorV0)
+
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {
+		if outputJSON && fail.Type.Matches(FailForkProjectConflict) {
+			payload := resultWrap{
+				Error: &errorData{
+					Code:    -16,
+					Message: fail.Error(),
+				},
+			}
+			data, err := json.Marshal(&payload)
+			if err != nil {
+				failures.Handle(err, locale.T("err_cannot_marshal_data"))
+				return
+			}
+
+			print.Line(string(data))
+
+			fail = failures.FailSilent.Wrap(fail)
+		}
+
 		failures.Handle(fail, locale.T("err_fork_create_fork"))
+		return
 	}
 
-	print.Info(locale.T("state_fork_success", map[string]string{
+	result := map[string]string{
 		"OriginalOwner": originalOwner,
 		"OriginalName":  originalName,
 		"NewOwner":      newOwner,
 		"NewName":       newName,
-	}))
+	}
+
+	if outputJSON {
+		payload := resultWrap{Result: result}
+		data, err := json.Marshal(&payload)
+		if err != nil {
+			failures.Handle(err, locale.T("err_cannot_marshal_data"))
+			return
+		}
+
+		print.Line(string(data))
+		return
+	}
+
+	print.Info(locale.T("state_fork_success", result))
 }
 
 func promptForOwner() (string, *failures.Failure) {
@@ -173,7 +234,13 @@ func addNewProject(owner, name string) (*mono_models.Project, *failures.Failure)
 	addParams.SetProject(&mono_models.Project{Name: name})
 	addOK, err := authentication.Client().Projects.AddProject(addParams, authentication.ClientAuth())
 	if err != nil {
-		return nil, api.FailUnknown.New(api.ErrorMessageFromPayload(err))
+		msg := api.ErrorMessageFromPayload(err)
+
+		if _, ok := err.(*projects.AddProjectConflict); ok {
+			return nil, FailForkProjectConflict.New(msg)
+		}
+
+		return nil, api.FailUnknown.New(msg)
 	}
 
 	return addOK.Payload, nil

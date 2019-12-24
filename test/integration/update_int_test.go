@@ -47,7 +47,9 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	// We need a projectfile to be able to version lock
 	dir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
-	os.Chdir(dir)
+	err = os.Chdir(dir)
+	suite.Require().NoError(err)
+	suite.SetWd(dir)
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
@@ -65,6 +67,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
+	suite.Spawn("--version")
 	suite.Spawn("update")
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {

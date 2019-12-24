@@ -49,7 +49,7 @@ func (r *Push) Run() *failures.Failure {
 		if !fail.Type.Matches(model.FailNoValidProject) {
 			return fail
 		}
-		// We have to rest handled failures since our legacy command handling still relies on this
+		// We have to reset handled failures since our legacy command handling still relies on this
 		// ie. failure occurred equals unsuccesful command
 		failures.ResetHandled()
 	}

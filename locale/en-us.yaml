@@ -82,6 +82,8 @@ flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:
   other: Verbose output
+flag_state_output_description:
+  other: Set the output method
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -106,6 +108,8 @@ error_deactivating_subshell:
   other: Failed to deactivate subshell properly
 error_in_active_subshell:
   other: Failure encountered in active subshell
+err_output_flag_value_invalid:
+  other: Could not recognize output type
 info_reactivating:
   other: Reactivating state
 info_deactivated:
@@ -235,8 +239,6 @@ prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
 err_auth_failed:
   other: Authentication failed
-err_auth_signup_failed:
-  other: Could not authenticate, signup failed
 err_auth_username_check:
   other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
@@ -267,6 +269,8 @@ login_cancelled:
   other: Authentication Cancelled
 login_err_output:
   other: Failed to display user output
+login_err_auth:
+  other: Authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
@@ -289,6 +293,10 @@ err_fork_create_fork:
   other: Could not create the forked project
 err_fork_invalid_namespace:
   other: Could not fork the given project as the namespace is incorrect
+err_fork_get_owner:
+  other: Could not fork project, owner required.
+err_cannot_marshal_data:
+  other: Cannot marshal data properly
 fork_select_org:
   other: Please select an owner for the forked project
 state_fork_success:
@@ -369,6 +377,10 @@ error_state_activate_copy_project_url:
   other: Could not get project URL
 err_activate_path:
   other: Could not get project file with given path '{{.V0}}'
+err_activate_output_build_failed:
+  other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
+err_activate_output_build_in_progress:
+  other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
@@ -399,6 +411,10 @@ downloading:
   other: Downloading
 installing:
   other: Installing
+unknown_value:
+  other: Unknown value
+invalid_uuid_val:
+  other: Invalid UUID value
 total:
   other: Total
 projects_description:
@@ -460,7 +476,7 @@ edit_script_cmd_expand_flag:
 edit_scripts_no_name:
   other: Could not find script with the given name {{.V0}}
 edit_scripts_project_file_saved:
-  other: Script changes dectect, updating activestate.yaml. Press (Y/y) when done editing
+  other: Script changes detected, updating activestate.yaml
 error_open_not_installed_lin:
   other: Please install '{{.V0}}' to edit scripts
 error_edit_script:
@@ -503,6 +519,10 @@ error_state_run_error:
   other: Failed to run script.
 error_state_run_no_shell:
   other: Failed to obtain shell info.
+err_sscommon_binary_path:
+  other: Could not find {{.V0}} in PATH
+err_sscommon_unsupported_language:
+  other: Unsupported language extension {{.V0}}
 env_description:
   other: Manage Project Variables
 env_add_description:
@@ -706,6 +726,8 @@ secrets_err_user_not_defined:
   other: "Secret has not been defined: {{.V0}}. Define it by running 'state secrets set {{.V0}}'."
 secrets_err_project_not_defined:
   other: "Secret has not been defined: {{.V0}}. Either define it by running 'state secrets set {{.V0}}' or have someone in your organization sync with you by having them run 'state secrets sync'."
+secrets_err_not_authenticated:
+  other: You are running a command that requires access to secrets, please authenticate by running 'state auth'.
 secrets_header_name:
   other: Name
 secrets_header_scope:
@@ -742,8 +764,6 @@ keypair_generate_success:
   other: Keypair generated successfully
 keypair_auth_cmd_description:
   other: Authenticate existing Keypair for future sessions
-keypair_err:
-  other: Unable to access user's Keypair
 keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
@@ -753,8 +773,7 @@ keypair_err_publickey_not_found:
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
-  other: Your keypair is not authenticated, run `state auth` first
-
+  other: You need to be authenticated to run this command, please run `state auth` first
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
@@ -804,7 +823,7 @@ forward_fail:
 forward_fail_with_error:
   other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
 forward_fail_info:
-  other: Could not forward command to the appropriate state tool version, the specified version is not available
+  other: The requested version of the state tool does not exist, please ensure the version and branch are correct.
 flag_update_lock_description:
   other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
 err_lock_failed:
@@ -878,6 +897,8 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_no_data_found:
+  other: No data found
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
 err_project_no_languages:
@@ -914,10 +935,6 @@ err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
   other: "Invalid namespace: {{.V0}}. Should be in the format of ORGANISATION_NAME/PROJECT_NAME. Names should be alphanumeric and may contain dashes and periods."
-err_namespace_dir_inuse:
-  other: "Target directory already contains an activestate.yaml"
-err_namespace_and_project_do_not_match:
-  other: "Target directory already contains an activestate.yaml.  activestate.yaml namespace does not match namespace provided."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
@@ -998,8 +1015,8 @@ installing_artifacts:
   other: Installing required artifacts
 fileutils_err_ammend_file:
   other: "Could not edit file: '{{.V0}}'"
-err_auth_fail_totp:
-  other: Failed to receive Authentication Token input
+err_auth_empty_token:
+  other: The provided token is empty
 fail_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
@@ -1030,9 +1047,15 @@ err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
   other: A project already exists in the specified directory
+err_projectfile_invalid_url:
+  other: The provided URL is invalid
 err_project_require_path:
   other: A project path was not supplied
-error_git_project_url_mistmatch:
+err_project_require_owner:
+  other: A project owner was not supplied
+err_project_require_name:
+  other: A project name was not supplied
+error_git_project_url_mismatch:
   other: The project URL in the cloned activestate.yaml does not match the platfom project
 error_git_target_dir_not_empty:
   other: Target directory for cloning already exists and is not empty
@@ -1072,6 +1095,34 @@ sample_yaml:
           echo To expand your language and/or package selection, or to define client-side encrypted secrets, please visit https://platform.activestate.com/{{.Owner}}/{{.Project}}.
           echo. 
           echo To try out scripts with client-side encrypted secrets we've created a simple script for you in your activestate.yaml, try it out by running 'helloWorld'
+editor_yaml:
+  other: |
+    scripts:
+      - name: helloWorld
+        constraints: 
+          os: macos,linux
+        value: echo "Hello World!"
+      - name: helloWorld
+        constraints: 
+          os: windows
+        value: echo Hello World!
+      - name: intro
+        constraints: 
+          os: macos,linux
+        value: |
+          echo "Your runtime environment is now ready!"
+          echo ""
+          echo "To see how scripts work and add your own, open up the activestate.yaml file with your editor."
+      - name: intro
+        constraints: 
+          os: windows
+        value: |
+          echo Your runtime environment is now ready!
+          echo.
+          echo To see how scripts work and add your own, open up the activestate.yaml file with your editor.
+    events:
+      - name: ACTIVATE
+        value: $scripts.intro
 package_description:
   other: Manage packages used in your project
 users_plural:
@@ -1082,6 +1133,8 @@ package_update_description:
   other: Update a package in your project to the latest available version
 package_remove_description:
   other: Remove a package from your project
+package_search_description:
+  other: Search for available packages that can be added to your project
 package_err_help:
   other: Error occurred while trying to produce help information
 package_arg_name:
@@ -1092,6 +1145,12 @@ package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+package_list_flag_commit_description:
+  other: The commit that the listing should be based on
+package_search_flag_language_description:
+  other: The language used to constrain search results
+package_search_flag_exact-term_description:
+  other: Ensures that search results match search term exactly
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1104,6 +1163,22 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
+package_err_cannot_obtain_commit:
+  other: Cannot obtain commit for package listing
+package_err_cannot_obtain_language:
+  other: Cannot obtain language for package search
+package_err_cannot_obtain_search_results:
+  other: Cannot obtain search results
+package_no_data:
+  other: No data found - Please verify the provided commit id
+package_no_packages:
+  other: No packages to list
+package_name:
+  other: Name
+package_version:
+  other: Version
 package_add:
   other: "Package added: {{.V0}}"
 package_version_add:
@@ -1136,19 +1211,27 @@ err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
   other: No activestate.yaml exists at the target directory, you should run 'state init' first.
+err_project_from_path:
+  other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
 err_init_must_provide_namespace:
   other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
+err_init_owner_missing:
+  other: Owner name is required to initialize a project
+err_init_project_missing:
+  other: Project name is required to initialize a project
 init_success:
   other: |
-    Project '{{.V0}}' has been succesfully initialized at '{{.V1}}'.
+    Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_language_description:
   other: The language that this project should use
+flag_state_init_skeleton_description:
+  other: The activestate.yaml template to use with project file creation. Accepts two values 'base' and 'editor'.
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
@@ -1173,3 +1256,7 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+export_privkey_cmd_description:
+  other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
+err_read_privkey:
+  other: Could not read private key file

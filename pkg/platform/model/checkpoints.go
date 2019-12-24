@@ -1,8 +1,6 @@
 package model
 
 import (
-	"time"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -19,6 +17,9 @@ import (
 var (
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
+
+	// FailNoData represents an error due to lacking returned data
+	FailNoData = failures.Type("model.fail.nodata", failures.FailNonFatal)
 )
 
 // Checkpoint represents a collection of requirements
@@ -50,7 +51,7 @@ func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Fa
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
 func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure) {
-	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	checkpoint, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -66,7 +67,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure)
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failure) {
+func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, *failures.Failure) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
@@ -75,22 +76,45 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, *failures.Failu
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, api.FailUnknown.Wrap(err)
+		return nil, strfmt.DateTime{}, api.FailUnknown.Wrap(err)
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	return response.Requirements, nil
+	if response.Commit == nil {
+		return nil, strfmt.DateTime{}, FailNoData.New(locale.T("err_no_data_found"))
+	}
+
+	return response.Requirements, response.Commit.AtTime, nil
+}
+
+// FilterCheckpointPackages filters a Checkpoint removing requirements that
+// are not packages. If nil data is provided, a nil slice is returned. If no
+// packages remain after filtering, an empty slice is returned.
+func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
+	if chkPt == nil {
+		return nil
+	}
+
+	checkpoint := Checkpoint{}
+	for _, requirement := range chkPt {
+		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
+			continue
+		}
+
+		checkpoint = append(checkpoint, requirement)
+	}
+
+	return checkpoint
 }
 
 // CheckpointToOrder converts a checkpoint to an order
-func CheckpointToOrder(commitID strfmt.UUID, checkpoint Checkpoint) *inventory_models.V1Order {
-	timestamp := strfmt.DateTime(time.Now())
+func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint Checkpoint) *inventory_models.V1Order {
 	return &inventory_models.V1Order{
 		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),
 		Requirements: CheckpointToRequirements(checkpoint),
-		Timestamp:    &timestamp,
+		Timestamp:    &atTime,
 	}
 }
 

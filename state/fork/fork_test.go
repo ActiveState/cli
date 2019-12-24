@@ -3,8 +3,10 @@ package fork
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
@@ -13,7 +15,7 @@ import (
 )
 
 const ProjectNamespace = "string/string"
-const OrgFlag = "--org=test"
+const OrgFlag = "--org"
 
 type ForkTestSuite struct {
 	suite.Suite
@@ -55,11 +57,21 @@ func (suite *ForkTestSuite) TestExecute() {
 	httpmock.Register("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001")
 	httpmock.Register("POST", "/organizations/test/projects/string")
 
+	var execErr error
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{ProjectNamespace})
-	Command.Execute()
-	Cc.SetArgs([]string{ProjectNamespace, OrgFlag})
-	Command.Execute()
+	outStr, outErr := osutil.CaptureStdout(func() {
+		execErr = Command.Execute()
+	})
+	suite.Require().NoError(outErr)
+	suite.Require().NoError(execErr)
+
+	suite.Equal(locale.T("state_fork_success", map[string]string{
+		"OriginalOwner": "string",
+		"OriginalName":  "string",
+		"NewOwner":      "test",
+		"NewName":       "string",
+	})+"\n", outStr)
 }
 
 func TestForkSuite(t *testing.T) {

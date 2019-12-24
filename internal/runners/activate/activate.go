@@ -4,15 +4,25 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Activate struct {
 	namespaceSelect  namespaceSelectAble
 	activateCheckout CheckoutAble
+}
+
+type ActivateParams struct {
+	Namespace     string
+	PreferredPath string
+	Output        commands.Output
 }
 
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
@@ -22,14 +32,32 @@ func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutA
 	}
 }
 
-func (r *Activate) Run(namespace string, preferredPath string) error {
-	return r.run(namespace, preferredPath, activationLoop)
+func (r *Activate) Run(params *ActivateParams) error {
+	return r.run(params, activationLoop)
 }
 
-func (r *Activate) run(namespace string, preferredPath string, activatorLoop activationLoopFunc) error {
-	logging.Debug("Activate %v, %v", namespace, preferredPath)
+func sendProjectIDToAnalytics(namespace string, configFile string) {
+	names, fail := project.ParseNamespaceOrConfigfile(namespace, configFile)
+	if fail != nil {
+		logging.Debug("error resolving namespace: %v", fail.ToError())
+		return
+	}
 
-	targetPath, err := r.setupPath(namespace, preferredPath)
+	platProject, fail := model.FetchProjectByName(names.Owner, names.Project)
+	if fail != nil {
+		logging.Debug("error getting platform project: %v", fail.ToError())
+		return
+	}
+	projectID := platProject.ProjectID.String()
+	analytics.EventWithLabel(
+		analytics.CatBuild, analytics.ActBuildProject, projectID,
+	)
+}
+
+func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
+	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
+
+	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return err
 	}
@@ -37,14 +65,20 @@ func (r *Activate) run(namespace string, preferredPath string, activatorLoop act
 	// Checkout the project if it doesn't already exist at the target path
 	configFile := filepath.Join(targetPath, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		if namespace == "" {
+		if params.Namespace == "" {
 			return failures.FailUserInput.New("err_project_notexist_asyaml")
 		}
-		err := r.activateCheckout.Run(namespace, targetPath)
+		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
 			return err
 		}
 	}
+
+	if params.Output != "" {
+		return activateOutput(targetPath, params.Output)
+	}
+
+	go sendProjectIDToAnalytics(params.Namespace, configFile)
 
 	return activatorLoop(targetPath, activate)
 }

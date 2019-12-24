@@ -1,12 +1,15 @@
 package model
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
@@ -35,7 +38,7 @@ func init() {
 
 // FetchRecipesForCommit returns a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
-	checkpoint, fail := FetchCheckpointForCommit(commitID)
+	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -43,18 +46,25 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	client := inventory.Get()
 
 	params := inventory_operations.NewResolveRecipesParams()
-	params.Order = CheckpointToOrder(commitID, checkpoint)
+	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
+		recipeBody, err2 := json.Marshal(params.Order)
+		if err2 != nil {
+			recipeBody = []byte(fmt.Sprintf("Could not marshal recipe, error: %v", err2))
+		}
 		switch rrErr := err.(type) {
 		case *inventory_operations.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
+			logging.Error("Could not resolve recipe, error: %s, recipe: %s", msg, string(recipeBody))
 			return nil, FailOrderRecipes.New(msg)
 		case *inventory_operations.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
+			logging.Error("Bad request while resolving recipe, error: %s, recipe: %s", msg, string(recipeBody))
 			return nil, FailOrderRecipes.New(msg)
 		default:
+			logging.Error("Unknown error while resolving recipe, error: %v, recipe: %s", err, string(recipeBody))
 			return nil, FailOrderRecipes.Wrap(err)
 		}
 	}

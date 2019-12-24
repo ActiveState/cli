@@ -78,7 +78,7 @@ func (suite *VarSetCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *VarSetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[1]
+	cc := secrets.NewCommand(suite.secretsClient, new(string)).Config().GetCobraCmd().Commands()[1]
 
 	suite.Equal("set", cc.Name())
 	suite.Equal(locale.T("secrets_set_cmd_description"), cc.Short, "translation")
@@ -89,7 +89,7 @@ func (suite *VarSetCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *VarSetCommandTestSuite) TestExecute_SetSecret() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)

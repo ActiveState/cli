@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -40,6 +40,7 @@ func main() {
 	if err != nil {
 		print.Error(err.Error())
 	}
+
 	exiter(code)
 }
 
@@ -101,12 +102,43 @@ func run(args []string) (int, error) {
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
-	if err2 := normalizeError(failures.Handled()); err2 != nil {
+	errFail := failures.Handled()
+	if isSilentFail(errFail) {
+		logging.Debug("returning as silent failure")
+		return unwrapExitCode(errFail), nil
+	}
+	if err2 := normalizeError(errFail); err2 != nil {
 		logging.Debug("Returning error from failures.Handled")
 		return 1, err2
 	}
 
 	return 0, nil
+}
+
+// unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
+// returns the ExitCode of the process that failed with this error
+func unwrapExitCode(errFail error) int {
+	fail, ok := errFail.(*failures.Failure)
+	if !ok {
+		return 1
+	}
+
+	if !fail.Type.Matches(sscommon.FailExecCmdExit) {
+		return 1
+	}
+	err := fail.ToError()
+
+	eerr, ok := err.(*exec.ExitError)
+	if !ok {
+		return 1
+	}
+
+	return eerr.ExitCode()
+}
+
+func isSilentFail(errFail error) bool {
+	fail, ok := errFail.(*failures.Failure)
+	return ok && fail.Type.Matches(failures.FailSilent)
 }
 
 // Can't pass failures as errors and still assert them as nil, so we have to typecase.
@@ -121,12 +153,15 @@ func normalizeError(err error) error {
 
 func handlePanics(exiter func(int)) {
 	if r := recover(); r != nil {
-		if fmt.Sprintf("%v", r) == "exiter" {
+		if msg, ok := r.(string); ok && msg == "exiter" {
 			panic(r) // don't capture exiter panics
 		}
-		failures.Handle(FailMainPanic.New("err_main_panic"), "")
+
 		logging.Error("%v - caught panic", r)
 		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
+
+		print.Error(strings.TrimSpace(locale.T("err_main_panic")))
+
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)
 	}

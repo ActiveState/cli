@@ -1,6 +1,7 @@
 package project
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/access"
@@ -24,6 +25,9 @@ var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", fai
 
 // FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
 var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess")
+
+// FailNotAuthenticated is used when trying to access secrets while not being authenticated
+var FailNotAuthenticated = failures.Type("project.fail.secrets.noauth", failures.FailUserInput)
 
 // UserCategory is the string used when referencing user secrets (eg. $secrets.user.foo)
 const UserCategory = "user"
@@ -88,6 +92,10 @@ func NewSecretPromptingExpander(secretsClient *secretsapi.Client) ExpanderFunc {
 func (e *SecretExpander) KeyPair() (keypairs.Keypair, *failures.Failure) {
 	if e.projectFile == nil {
 		return nil, FailExpandNoProjectDefined.New(locale.T("secrets_err_expand_noproject"))
+	}
+
+	if !authentication.Get().Authenticated() {
+		return nil, FailNotAuthenticated.New(locale.T("secrets_err_not_authenticated"))
 	}
 
 	var fail *failures.Failure

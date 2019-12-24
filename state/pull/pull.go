@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"encoding/json"
 	"os"
 	"path"
 
@@ -18,6 +19,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+var Flags struct {
+	Output *string
+}
 
 // Command is the pull command's definition.
 var Command = &commands.Command{
@@ -44,13 +49,12 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	output := commands.Output(filterNilString(Flags.Output))
 	if !updated {
-		print.Line(locale.T("pull_not_updated"))
+		printNotUpdated(output)
 		return
 	}
-
-	print.Line(locale.T("pull_is_updated"))
-	print.Line(locale.T("notify_user_to_reactivate_instances"))
+	printUpdated(output)
 
 	actID := os.Getenv(constants.ActivatedStateIDEnvVarName)
 	if actID == "" {
@@ -63,6 +67,13 @@ func Execute(cmd *cobra.Command, args []string) {
 	if fail := hail.Send(fname, []byte(actID)); fail != nil {
 		logging.Error("failed to send hail via %q: %s", fname, fail)
 	}
+}
+
+func filterNilString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func latestCommitID(owner, project string) (string, *failures.Failure) {
@@ -87,4 +98,50 @@ func updateCommitID(setCommit setCommitFunc, oldID, newID string) (bool, *failur
 	}
 
 	return false, nil
+}
+
+type resultData struct {
+	Changed bool `json:"changed"`
+}
+
+type resultWrap struct {
+	Result *resultData `json:"result,omitempty"`
+}
+
+func printJSON(changed bool) {
+	res := resultWrap{
+		Result: &resultData{
+			Changed: changed,
+		},
+	}
+
+	data, err := json.Marshal(&res)
+	if err != nil {
+		fail := failures.FailMarshal.Wrap(err)
+		failures.Handle(fail, locale.T("err_cannot_marshal_data"))
+		return
+	}
+
+	print.Line(string(data))
+}
+
+func printNotUpdated(output commands.Output) {
+	switch output {
+	case commands.JSON, commands.EditorV0:
+		printJSON(false)
+
+	default:
+		print.Info(locale.T("pull_not_updated"))
+	}
+}
+
+func printUpdated(output commands.Output) {
+	switch output {
+	case commands.JSON, commands.EditorV0:
+		printJSON(true)
+
+	default:
+		print.Info(locale.T("pull_is_updated"))
+		print.Info(locale.T("notify_user_to_reactivate_instances"))
+	}
 }

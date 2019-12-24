@@ -1,8 +1,8 @@
 package scriptfile
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -21,6 +21,12 @@ func New(l language.Language, name, script string) (*ScriptFile, *failures.Failu
 	return new(l, name, []byte(l.Header()+script))
 }
 
+// NewEmpty receives a language that is used to construct a runnable, but empty,
+// on-disk file that is tracked by the return value.
+func NewEmpty(l language.Language, name string) (*ScriptFile, *failures.Failure) {
+	return new(l, name, []byte(""))
+}
+
 // NewAsSource recieves a language and script body that are used to construct an
 // on-disk file that is tracked by the return value. This file is not guaranteed
 // to be runnable
@@ -29,21 +35,16 @@ func NewAsSource(l language.Language, name, script string) (*ScriptFile, *failur
 }
 
 func new(l language.Language, name string, script []byte) (*ScriptFile, *failures.Failure) {
-	file, fail := fileutils.WriteTempFile("", "", []byte(script), 0700)
+	file, fail := fileutils.WriteTempFile(
+		"", fmt.Sprintf("%s*%s", name, l.Ext()), []byte(script), 0700,
+	)
 	if fail != nil {
 		return nil, fail
 	}
 
-	dir, _ := filepath.Split(file)
-	updatedFilepath := filepath.Join(dir, name+l.Ext())
-	err := os.Rename(file, updatedFilepath)
-	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
-	}
-
 	return &ScriptFile{
 		lang: l,
-		file: updatedFilepath,
+		file: file,
 	}, nil
 }
 
@@ -55,4 +56,9 @@ func (sf *ScriptFile) Clean() {
 // Filename returns the on-disk filename of the tracked script file.
 func (sf *ScriptFile) Filename() string {
 	return sf.file
+}
+
+// Write updates the on-disk scriptfile with the script value
+func (sf *ScriptFile) Write(value string) *failures.Failure {
+	return fileutils.WriteFile(sf.file, []byte(sf.lang.Header()+value))
 }

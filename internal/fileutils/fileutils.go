@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -292,7 +291,7 @@ func WriteFile(filePath string, data []byte) *failures.Failure {
 	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FileMode)
 	if err != nil {
 		if !fileExists {
-			target := path.Dir(filePath)
+			target := filepath.Dir(filePath)
 			err = fmt.Errorf("access to target %q is denied", target)
 		}
 		return failures.FailIO.Wrap(err)
@@ -376,7 +375,7 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 func walkPathAndFindFile(dir, filename string) string {
 	if file := filepath.Join(dir, filename); FileExists(file) {
 		return file
-	} else if parentDir := path.Dir(dir); parentDir != dir {
+	} else if parentDir := filepath.Dir(dir); parentDir != dir {
 		return walkPathAndFindFile(parentDir, filename)
 	}
 	return ""
@@ -405,6 +404,7 @@ func IsEmptyDir(path string) (bool, *failures.Failure) {
 	}
 
 	files, err := dir.Readdir(1)
+	dir.Close()
 	if err != nil && err != io.EOF {
 		return false, failures.FailIO.Wrap(err)
 	}
@@ -426,16 +426,15 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
-	defer dir.Close()
-
 	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
 	if err != nil {
 		return failures.FailOS.Wrap(err)
 	}
 
 	// any found files and dirs
 	for _, fileInfo := range fileInfos {
-		err := os.Rename(path.Join(fromPath, fileInfo.Name()), path.Join(toPath, fileInfo.Name()))
+		err := os.Rename(filepath.Join(fromPath, fileInfo.Name()), filepath.Join(toPath, fileInfo.Name()))
 		if err != nil {
 			return failures.FailOS.Wrap(err)
 		}
@@ -470,7 +469,11 @@ func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, 
 
 // CopyFiles will copy all of the files/dirs within one directory to another.
 // Both directories must already exist
-func CopyFiles(src, dest string) *failures.Failure {
+func CopyFiles(src, dst string) *failures.Failure {
+	return copyFiles(src, dst, false)
+}
+
+func copyFiles(src, dest string, remove bool) *failures.Failure {
 	if !DirExists(src) {
 		return failures.FailOS.New("err_os_not_a_directory", src)
 	}
@@ -515,6 +518,12 @@ func CopyFiles(src, dest string) *failures.Failure {
 		}
 	}
 
+	if remove {
+		if err := os.RemoveAll(src); err != nil {
+			return failures.FailOS.Wrap(err)
+		}
+	}
+
 	return nil
 }
 
@@ -552,4 +561,42 @@ func TempDirUnsafe() string {
 		panic(fmt.Sprintf("Could not create tempDir: %v", err))
 	}
 	return f
+}
+
+func trialRename(src, dst string) bool {
+	if !DirExists(src) {
+		return false
+	}
+	if !DirExists(dst) {
+		return false
+	}
+
+	tmpFileBase := "test.ext"
+	tmpFileData := []byte("data")
+	tmpSrcName := filepath.Join(src, tmpFileBase)
+
+	if err := ioutil.WriteFile(tmpSrcName, tmpFileData, 0660); err != nil {
+		return false
+	}
+
+	cleanupFile := tmpSrcName
+	defer func() { _ = os.Remove(cleanupFile) }()
+
+	tmpDstFile := filepath.Join(dst, tmpFileBase)
+	if err := os.Rename(tmpSrcName, tmpDstFile); err != nil {
+		return false
+	}
+	cleanupFile = tmpDstFile
+
+	return true
+}
+
+// MoveAllFilesCrossDisk will move all of the files/dirs within one directory
+// to another directory even across disks. Both directories must already exist.
+func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
+	if trialRename(src, dst) {
+		return MoveAllFiles(src, dst)
+	}
+
+	return copyFiles(src, dst, true)
 }

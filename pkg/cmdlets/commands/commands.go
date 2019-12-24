@@ -34,6 +34,16 @@ const (
 	TypeBool
 )
 
+// Output represents the output type of a command
+type Output string
+
+const (
+	// JSON is the output type that represents JSON output
+	JSON Output = "json"
+	// EditorV0 is the output type that represents Komodo output
+	EditorV0 Output = "editor.v0"
+)
+
 // Flag is used to define flags in our Command struct
 type Flag struct {
 	Name        string
@@ -124,6 +134,10 @@ func (c *Command) FlagByName(name string, persistOnly bool) *Flag {
 
 // runner wraps the Run command
 func (c *Command) runner(cmd *cobra.Command, args []string) {
+	outputFlag := cmd.Flag("output")
+	if outputFlag != nil && outputFlag.Changed {
+		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
+	}
 	analytics.Event(analytics.CatRunCmd, c.Name)
 
 	// Run OnUse functions for flags

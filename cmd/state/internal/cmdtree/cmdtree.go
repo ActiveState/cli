@@ -5,6 +5,13 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runners/state"
+	"github.com/ActiveState/cli/state/auth"
+	"github.com/ActiveState/cli/state/fork"
+	"github.com/ActiveState/cli/state/organizations"
+	"github.com/ActiveState/cli/state/pull"
+	"github.com/ActiveState/cli/state/scripts"
+	"github.com/ActiveState/cli/state/secrets"
+	"github.com/ActiveState/cli/state/show"
 )
 
 type CmdTree struct {
@@ -12,14 +19,16 @@ type CmdTree struct {
 }
 
 func New() *CmdTree {
-	stateCmd := newStateCommand()
+	globals := newGlobalOptions()
+
+	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
-		newActivateCommand(),
+		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
 	)
 
-	applyLegacyChildren(stateCmd)
+	applyLegacyChildren(stateCmd, globals)
 
 	return &CmdTree{
 		cmd: stateCmd,
@@ -28,14 +37,14 @@ func New() *CmdTree {
 
 type globalOptions struct {
 	Verbose bool
+	Output  string
 }
 
 func newGlobalOptions() *globalOptions {
 	return &globalOptions{}
 }
 
-func newStateCommand() *captain.Command {
-	globals := newGlobalOptions()
+func newStateCommand(globals *globalOptions) *captain.Command {
 	opts := state.NewOptions()
 
 	runner := state.New(opts)
@@ -63,6 +72,14 @@ func newStateCommand() *captain.Command {
 				BoolVar: &globals.Verbose,
 			},
 			{
+				Name:        "output",
+				Shorthand:   "o",
+				Description: locale.T("flag_state_output_description"),
+				Type:        captain.TypeString,
+				Persist:     true,
+				StringVar:   &globals.Output,
+			},
+			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Type:        captain.TypeBool,
@@ -86,4 +103,14 @@ func newStateCommand() *captain.Command {
 
 func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
+}
+
+func setLegacyOutput(globals *globalOptions) {
+	auth.Flags.Output = &globals.Output
+	organizations.Flags.Output = &globals.Output
+	scripts.Flags.Output = &globals.Output
+	secrets.Flags.Output = &globals.Output
+	fork.Flags.Output = &globals.Output
+	show.Flags.Output = &globals.Output
+	pull.Flags.Output = &globals.Output
 }

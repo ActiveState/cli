@@ -26,14 +26,14 @@ type activationLoopFunc func(targetPath string, activator activateFunc) error
 func activationLoop(targetPath string, activator activateFunc) error {
 	// activate should be continually called while returning true
 	// looping here provides a layer of scope to handle printing output
-	var fail *failures.Failure
 	var proj *project.Project
 	for {
+		var fail *failures.Failure
 		proj, fail = project.FromPath(targetPath)
 		if fail != nil {
 			// The default failure returned by the project package is a big too vague, we want to give the user
 			// something more actionable for the context they're in
-			return failures.FailUserInput.New("err_project_notexist_asyaml")
+			return failures.FailUserInput.New("err_project_from_path")
 		}
 		print.Info(locale.T("info_activating_state", proj))
 

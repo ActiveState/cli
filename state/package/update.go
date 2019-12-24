@@ -44,7 +44,7 @@ func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fetch_languages"))
-		AddCommand.Exiter(1)
+		return
 	}
 
 	name, version := splitNameAndVersion(UpdateArgs.Name)
@@ -52,13 +52,11 @@ func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 		ingredientVersion, fail := model.IngredientWithLatestVersion(language, name)
 		if ingredientVersion.Version.Version == nil {
 			print.Error(locale.T("package_ingredient_version_not_available"))
-			AddCommand.Exiter(1)
 			return
 		}
 		version = *ingredientVersion.Version.Version
 		if fail != nil {
 			failures.Handle(fail, locale.T("package_ingredient_not_found"))
-			AddCommand.Exiter(1)
 			return
 		}
 	}

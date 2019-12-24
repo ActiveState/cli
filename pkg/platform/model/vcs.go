@@ -57,7 +57,7 @@ const (
 	NamespaceLanguageMatch = `^language$`
 
 	// NamespacePackageMatch is the namespace used for package requirements
-	NamespacePackageMatch = `/package$`
+	NamespacePackageMatch = `^language\/\w+$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
@@ -77,7 +77,7 @@ type Namespace string
 
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
-	return Namespace(fmt.Sprintf("language/%s/package", language))
+	return Namespace(fmt.Sprintf("language/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -273,6 +273,11 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) (*mo
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return nil, "", FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
+	}
+
+	fail = UpdateBranchCommit(branch.BranchID, res.Payload.CommitID)
+	if fail != nil {
+		return nil, "", fail
 	}
 
 	return proj, res.Payload.CommitID, nil

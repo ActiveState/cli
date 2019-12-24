@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/fsnotify/fsnotify"
 
@@ -77,13 +81,14 @@ var EditCommand = &commands.Command{
 func ExecuteEdit(cmd *cobra.Command, args []string) {
 	script := project.Get().ScriptByName(EditArgs.Name)
 	if script == nil {
-		fmt.Println(locale.Tr("edit_scripts_no_name", EditArgs.Name))
+		print.Line(locale.Tr("edit_scripts_no_name", EditArgs.Name))
 		return
 	}
 
 	fail := editScript(script)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_edit_script"))
+		return
 	}
 }
 
@@ -99,31 +104,13 @@ func editScript(script *project.Script) *failures.Failure {
 		return fail
 	}
 	defer watcher.close()
-	go watcher.run()
 
 	fail = openEditor(scriptFile.Filename())
 	if fail != nil {
 		return fail
 	}
 
-	prompter := prompt.New()
-	for {
-		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
-		if fail != nil {
-			return fail
-		}
-		if doneEditing {
-			watcher.done <- true
-			break
-		}
-	}
-
-	select {
-	case fail = <-watcher.fails:
-		return fail
-	default:
-		return nil
-	}
+	return start(watcher)
 }
 
 func createScriptFile(script *project.Script) (*scriptfile.ScriptFile, *failures.Failure) {
@@ -212,6 +199,65 @@ func verifyPathEditor(editor string) (string, *failures.Failure) {
 	return editor, nil
 }
 
+func start(sw *scriptWatcher) *failures.Failure {
+	print.Line("Watching file changes at: %s", sw.scriptFile.Filename())
+	if strings.ToLower(os.Getenv(constants.NonInteractive)) == "true" {
+		startNoninteractive(sw)
+	} else {
+		fail := startInteractive(sw)
+		if fail != nil {
+			return fail
+		}
+	}
+
+	return nil
+}
+
+func startNoninteractive(sw *scriptWatcher) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		sig := <-c
+		logging.Debug(fmt.Sprintf("Detected: %s handling any failures encountered while watching file", sig))
+		defer func() {
+			sw.done <- true
+			sw.close()
+			sw.scriptFile.Clean()
+			Command.Exiter(1)
+		}()
+		select {
+		case fail := <-sw.fails:
+			failures.Handle(fail, locale.T("error_edit_watcher_fail"))
+		default:
+			// Do nothing and let defer take over
+		}
+	}()
+	sw.run()
+}
+
+func startInteractive(sw *scriptWatcher) *failures.Failure {
+	go sw.run()
+
+	prompter := prompt.New()
+	for {
+		doneEditing, fail := prompter.Confirm(locale.T("prompt_done_editing"), true)
+		if fail != nil {
+			return fail
+		}
+		if doneEditing {
+			sw.done <- true
+			break
+		}
+	}
+
+	select {
+	case fail := <-sw.fails:
+		return fail
+	default:
+		return nil
+	}
+}
+
 type scriptWatcher struct {
 	watcher    *fsnotify.Watcher
 	scriptFile *scriptfile.ScriptFile
@@ -284,8 +330,10 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	projectFile := project.Get().Source()
 	for i, projectScript := range projectFile.Scripts {
 		if projectScript.Name == EditArgs.Name {
-			projectFile.Scripts[i].Value = string(updatedScript)
-			break
+			if !constraints.IsConstrained(projectScript.Constraints) {
+				projectFile.Scripts[i].Value = string(updatedScript)
+				break
+			}
 		}
 	}
 

@@ -41,12 +41,11 @@ func TestActivate_run(t *testing.T) {
 	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
 
 	type fields struct {
-		namespaceSelect namespaceSelectAble
-		checkout        CheckoutAble
+		namespaceSelect  namespaceSelectAble
+		activateCheckout CheckoutAble
 	}
 	type args struct {
-		namespace     string
-		preferredPath string
+		params        *ActivateParams
 		activatorLoop activationLoopFunc
 	}
 	tests := []struct {
@@ -59,21 +58,21 @@ func TestActivate_run(t *testing.T) {
 		{
 			"expect no error",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{"foo", tempDir, activatorMock},
+			args{&ActivateParams{"foo", tempDir, ""}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect no error, expect checkout",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{"foo", tempDir, activatorMock},
+			args{&ActivateParams{"foo", tempDir, ""}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect error",
 			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{}},
-			args{"foo", "", activatorMock},
+			args{&ActivateParams{"foo", "", ""}, activatorMock},
 			true,
 			false,
 		},
@@ -82,9 +81,9 @@ func TestActivate_run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Activate{
 				namespaceSelect:  tt.fields.namespaceSelect,
-				activateCheckout: tt.fields.checkout,
+				activateCheckout: tt.fields.activateCheckout,
 			}
-			if err := r.run(tt.args.namespace, tt.args.preferredPath, tt.args.activatorLoop); (err != nil) != tt.wantErr {
+			if err := r.run(tt.args.params, tt.args.activatorLoop); (err != nil) != tt.wantErr {
 				t.Errorf("Activate.run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if checkoutCalled := r.activateCheckout.(*checkoutMock).called; checkoutCalled != tt.wantCheckout {

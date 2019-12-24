@@ -60,7 +60,7 @@ func (suite *SecretsSyncCommandTestSuite) AfterTest(suiteName, testName string) 
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient).Config().GetCobraCmd().Commands()[2]
+	cc := secrets.NewCommand(suite.secretsClient, new(string)).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("sync", cc.Name())
 	suite.Equal(locale.T("secrets_sync_cmd_description"), cc.Short, "translation")
@@ -69,7 +69,7 @@ func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 	suite.platformMock.Register("GET", "/organizations/ActiveState/members")
@@ -78,7 +78,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	ex := exiter.New()
 	cmd.Config().Exiter = ex.Exit
 
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		exitCode = ex.WaitForExit(func() {
 			cmd.Config().Execute()
@@ -87,11 +87,13 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	suite.Equal(1, exitCode, "Exit code matches")
 	suite.Require().NoError(outErr)
 
-	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
+	handledFail := failures.Handled()
+	suite.Error(handledFail)
+	suite.Contains(handledFail.Error(), locale.T("err_api_not_authenticated"))
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -112,7 +114,7 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -149,7 +151,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"

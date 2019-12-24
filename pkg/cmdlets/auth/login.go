@@ -30,6 +30,12 @@ var (
 
 	// FailBrowserOpen indicates a failure to open the users browser
 	FailBrowserOpen = failures.Type("auth.failure.browseropen")
+
+	// FailAuthUnknown conveys a failure to authenticated with unknown cause
+	FailAuthUnknown = failures.Type("auth.failure.unknown")
+
+	// FailEmptyToken indicates the token provided by the user was empty
+	FailEmptyToken = failures.Type("auth.failure.emptytoken")
 )
 
 // Authenticate will prompt the user for authentication
@@ -38,12 +44,11 @@ func Authenticate() {
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username string, password string) {
+func AuthenticateWithInput(username string, password string) *failures.Failure {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password}
 	if err := promptForLogin(credentials); err != nil {
-		failures.Handle(err, locale.T("err_prompt_unkown"))
-		return
+		return failures.FailUserInput.Wrap(err)
 	}
 
 	fail := AuthenticateWithCredentials(credentials)
@@ -51,24 +56,37 @@ func AuthenticateWithInput(username string, password string) {
 		switch fail.Type {
 		case authentication.FailAuthUnauthorized:
 			if !uniqueUsername(credentials) {
-				failures.Handle(fail, locale.T("err_auth_failed"))
-				return
+				return fail
 			}
-			promptSignup(credentials)
+			fail = promptSignup(credentials)
+			if fail != nil {
+				return fail
+			}
 		case authentication.FailAuthNeedToken:
-			promptToken(credentials)
+			fail = promptToken(credentials)
+			if fail != nil {
+				return fail
+			}
 		default:
-			failures.Handle(fail, locale.T("err_auth_failed_unknown_cause"))
+			return FailAuthUnknown.New(locale.T("err_auth_failed_unknown_cause"))
 		}
 	}
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
-		ensureUserKeypair(credentials.Password)
+		fail = ensureUserKeypair(credentials.Password)
+		if fail != nil {
+			return fail
+		}
 	}
 
 	// ensure changes are propagated
-	config.Save()
+	err := config.Save()
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	return nil
 }
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
@@ -150,31 +168,33 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials) {
+func promptSignup(credentials *mono_models.Credentials) *failures.Failure {
 	yesSignup, fail := Prompter.Confirm(locale.T("prompt_login_to_signup"), true)
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_auth_signup_failed"))
-		return
+		return fail
 	}
 	if yesSignup {
-		signupFromLogin(credentials.Username, credentials.Password)
+		return signupFromLogin(credentials.Username, credentials.Password)
 	}
+
+	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials) {
+func promptToken(credentials *mono_models.Credentials) *failures.Failure {
 	var fail *failures.Failure
 	credentials.Totp, fail = Prompter.Input(locale.T("totp_prompt"), "")
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_auth_fail_totp"))
-		return
+		return fail
 	}
 	if credentials.Totp == "" {
 		print.Line(locale.T("login_cancelled"))
-		return
+		return FailEmptyToken.New(locale.T("err_auth_empty_token"))
 	}
 
 	fail = AuthenticateWithCredentials(credentials)
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_ath_failed_unknown_cause"))
+		return fail
 	}
+
+	return nil
 }

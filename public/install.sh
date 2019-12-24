@@ -10,9 +10,10 @@ install.sh [flags]
 
 Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
- -n                    Don't prompt for anything, just install and override any existing executables
- -t <dir>              Install target directory
- -f <file>              Default 'state'.  Binary filename to use
+ -n                    Don't prompt for anything when installing into a new location
+ -f                    Forces overwrite.  Overwrite existing state tool
+ -t <dir>              Install into target directory <dir>
+ -e <file>             Default 'state'. Filename to use for the executable
  --activate <project>  Activate a project when state tools is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
@@ -22,8 +23,6 @@ EOF
 STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/"
 # Name of the executable to ultimately use.
 STATEEXE="state"
-# ID of the $PATH entry in the user's ~/.profile for the executable.
-STATEID="ActiveStateCLI"
 # Optional target directory
 TARGET=""
 # Optionally download and activate a project after install in the current directory
@@ -38,6 +37,7 @@ ARCH="amd64"
 TERM="${TERM:=xterm}"
 
 NOPROMPT=false
+FORCEOVERWRITE=false
 
 info () {
   echo "$(tput bold)==> ${1}$(tput sgr0)"
@@ -109,7 +109,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:f:?h-:" opt; do
+while getopts "nb:t:e:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -127,6 +127,9 @@ while getopts "nb:t:f:?h-:" opt; do
     TARGET=$OPTARG
     ;;
   f)
+    FORCEOVERWRITE=true
+    ;;
+  e)
     STATEEXE=$OPTARG
     ;;
   n)
@@ -146,6 +149,12 @@ if $NOPROMPT && [ -n "$ACTIVATE" ]; then
   exit 1
 fi
 
+# force overwrite requires no prompt flag
+if $FORCEOVERWRITE && ( ! $NOPROMPT ); then
+  error "Flag -f also requires -n"
+  exit 1
+fi
+
 # Construct system-dependent filenames.
 STATEJSON=$OS-$ARCH.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
@@ -155,7 +164,7 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
-  FETCH="wget -nv -O"
+  FETCH="wget -q -O"
 elif [ ! -z "`command -v curl`" ]; then
   FETCH="curl -sS -o"
 else
@@ -163,6 +172,7 @@ else
   exit 1
 fi
 
+# remove previous installation in temp dir
 if [ -f $TMPDIR/$STATEPKG ]; then
   rm $TMPDIR/$STATEPKG
 fi
@@ -171,46 +181,55 @@ if [ -f $TMPDIR/$TMPEXE ]; then
   rm $TMPDIR/$TMPEXE
 fi
 
-info "Determining latest version..."
-# Determine the latest version to fetch.
-$FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
-VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-rm $TMPDIR/$STATEJSON
-if [ -z "$VERSION" ]; then
-  error "Unable to retrieve the latest version number"
-  exit 1
-fi
-info "Fetching the latest version: $VERSION..."
-# Fetch it.
-$FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
+fetchArtifact () {
+  info "Determining latest version..."
+  # Determine the latest version to fetch.
+  $FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
+  VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
+  SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  rm $TMPDIR/$STATEJSON
 
-# Extract the State binary after verifying its checksum.
-# Verify checksum.
-info "Verifying checksum..."
-SUM=`$FETCH - $STATEURL$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
-if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
-  error "SHA256 sum did not match:"
-  error "Expected: $SUM"
-  error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
-  error "Aborting installation."
-  exit 1
-fi
+  if [ -z "$VERSION" ]; then
+    error "Unable to retrieve the latest version number"
+    exit 1
+  fi
+  info "Fetching the latest version: $VERSION..."
+  # Fetch it.
+  $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG} || exit 1
 
-info "Extracting $STATEPKG..."
-if [ $OS = "windows" ]; then
-  # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
-  TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
-else
-  tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
-fi
-chmod +x $TMPDIR/$TMPEXE
+  # Extract the State binary after verifying its checksum.
+  # Verify checksum.
+  info "Verifying checksum..."
+  if [ "`$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`" != "$SUM" ]; then
+    error "SHA256 sum did not match:"
+    error "Expected: $SUM"
+    error "Received: `$SHA256SUM -b $TMPDIR/$STATEPKG | cut -d ' ' -f1`"
+    error "Aborting installation."
+    exit 1
+  fi
+
+  info "Extracting $STATEPKG..."
+  if [ $OS = "windows" ]; then
+    # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
+    TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
+    powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$STATEPKG' '$TMPDIRW'}"
+  else
+    tar -xzf $TMPDIR/$STATEPKG -C $TMPDIR || exit 1
+  fi
+  chmod +x $TMPDIR/$TMPEXE
+}
 
 INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
-if [ ! -z "$INSTALLDIR" ]; then
+
+# stop if previous installation is detected unless
+# - FORCEOVERWRITE is specified OR
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ $TARGET == $INSTALLDIR ] \
+   ); then
   warn "Previous installation detected at $INSTALLDIR"
-  echo "If you would like to reinstall the state tool please first uninstall it."
-  echo "You can do this by running 'rm $INSTALLDIR/$STATEEXE'"
+  echo "To update the state tool to the latest version, please run 'state update'."
+  echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
 fi
 
@@ -280,6 +299,7 @@ while "true"; do
       if [ ! -e "$INSTALLDIR" ]; then
         mkdir -p "$INSTALLDIR" || continue
       fi
+      fetchArtifact
       info "Installing to $INSTALLDIR..."
       mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
       if [ $? -eq 0 ]; then
@@ -292,18 +312,15 @@ while "true"; do
   esac
 done
 
-# Check if the installation is in $PATH, if not, update user's profile if
-# permitted to.
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State tool installation complete."
-  if [ -n "${ACTIVATE}" ]; then
-    # switch this shell to interactive mode
-    set -i
-    # control flow of this script ends with this line: replace the shell with the activated project's shell
-    exec $STATEEXE activate ${ACTIVATE}
-  fi
-  info "You may now start using the '$STATEEXE' program."
-  exit 0
+# If the installation is not in $PATH then we attempt to update the users rc file
+if [ ! -z "$ZSH_VERSION" ]; then
+  info "Zsh shell detected"
+  RC_FILE="$HOME/.zshrc"
+elif [ ! -z "$BASH_VERSION" ]; then
+  info "Bash shell detected"
+  RC_FILE="$HOME/.bashrc"
+else
+  RC_FILE="$HOME/.profile"
 fi
 
 manual_installation_instructions() {
@@ -313,6 +330,14 @@ manual_installation_instructions() {
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  activation_warning
+  exit 1
+}
+
+manual_update_instructions() {
+  info "State tool installation complete."
+  echo "Please either run 'source $RC_FILE' or start a new login shell in "
+  echo "order to start using the '$STATEEXE' program."
   activation_warning
   exit 1
 }
@@ -327,32 +352,45 @@ activation_warning() {
   fi
 }
 
-# Check if we can write to the users profile, if not give manual
-# insallation instructions
-profile="`info $HOME`/.profile"
-if [ ! -w "$profile" ]; then
-  manual_installation_instructions
+update_rc_file() {
+  # Check if we can write to the users rcfile, if not give manual
+  # insallation instructions
+  if [ ! -w "$RC_FILE" ]; then
+    warn "Could not write to $RC_FILE. Please ensure it exists and is writeable"
+    manual_installation_instructions
+  fi
+
+  info "Updating environment..."
+  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
+  echo "\n$pathenv" >> "$RC_FILE"
+}
+
+# Check if the installation is in $PATH, if so we also check if the activate
+# flag was passed and attempt to activate the project
+if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
+  info "State tool installation complete."
+  if [ -n "${ACTIVATE}" ]; then
+    # switch this shell to interactive mode
+    set -i
+    # control flow of this script ends with this line: replace the shell with the activated project's shell
+    exec $STATEEXE activate ${ACTIVATE}
+  fi
+  info "You may now start using the '$STATEEXE' program."
+  exit 0
 fi
 
-# Prompt user to update users path, otherwise present manual
-# installation instructions
-userprompt "Allow \$PATH to be appended to in your $profile? [y/N]"
-RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-if [ "$RESPONSE" != "y" ]; then
-  manual_installation_instructions
-fi
-info "Updating environment..."
-pathenv="export PATH=\"\$PATH:$INSTALLDIR\" #$STATEID"
-if [ -z "`grep -no \"\#$STATEID\" \"$profile\"`" ]; then
-  info "Adding to \$PATH in $profile"
-  info "\n$pathenv" >> "$profile"
+if $NOPROMPT; then
+  update_rc_file
+  manual_update_instructions
 else
-  info "Updating \$PATH in $profile"
-  sed -i -e "s|^export PATH=[^\#]\+\#$STATEID|$pathenv|;" "$profile"
+  # Prompt user to update users path, otherwise present manual
+  # installation instructions
+  userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
+  RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
+  if [ "$RESPONSE" != "y" ]; then
+    manual_installation_instructions
+  else
+    update_rc_file
+    manual_update_instructions
+  fi
 fi
-
-info "State tool installation complete."
-echo "Please either run 'source ~/.profile' or start a new login shell in "
-echo "order to start using the '$STATEEXE' program."
-activation_warning
-exit 1

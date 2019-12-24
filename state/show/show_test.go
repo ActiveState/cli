@@ -15,6 +15,7 @@ import (
 
 func TestShow(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	src := filepath.Join(root, "test", constants.ConfigFileName)
@@ -37,6 +38,7 @@ func TestShow(t *testing.T) {
 
 func TestShowLocal(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 
@@ -49,6 +51,7 @@ func TestShowLocal(t *testing.T) {
 
 func TestShowFailDirDoesNotExist(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"/:does-not-exist"})
 	err := Command.Execute()
@@ -58,6 +61,7 @@ func TestShowFailDirDoesNotExist(t *testing.T) {
 
 func TestShowFailNoConfigFile(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 
@@ -72,6 +76,7 @@ func TestShowFailNoConfigFile(t *testing.T) {
 
 func TestShowFailParseConfig(t *testing.T) {
 	Args.Remote = "" // reset
+	Flags.Output = new(string)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 

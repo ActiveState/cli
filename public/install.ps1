@@ -15,20 +15,29 @@ param (
         [string]
         $t
     ,[Parameter(Mandatory=$False)][switch]$n
+    ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
         [string]
-        $f = "state.exe"
+        $e = "state.exe"
     ,[Parameter(Mandatory=$False)][string]$activate = ""
 )
 
 $script:NOPROMPT = $n
+$script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($f).Trim()
-$script:STATE = $f.Substring(0, $f.IndexOf("."))
+$script:STATEEXE = ($e).Trim()
+$script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:ACTIVATE =($activate).Trim()
+
+# For recipe installation without prompts we need to be able to disable
+# prompots through an environment variable.
+if ($Env:NOPROMPT_INSTALL -eq "true") {
+    $script:NOPROMPT = $true
+    $script:FORCEOVERWRITE = $true
+}
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
@@ -50,7 +59,7 @@ function notifySettingChange(){
 "@
     }
     # notify all windows of environment block change
-    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result);
+    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result) | Out-Null;
 
 }
 
@@ -145,7 +154,7 @@ function isStateToolInstallationOnPath($installDirectory) {
 
 function getExistingOnPath(){
     $path = (get-command $script:STATEEXE -ErrorAction 'silentlycontinue').Source
-    if ($path -eq $null) {
+    if ($null -eq $path) {
         ""
     } else {
        (Resolve-Path (split-path -Path $path -Parent)).Path
@@ -164,6 +173,90 @@ function warningIfadmin() {
     if (IsAdmin) {
         Write-Warning "It's recommended that you close this command prompt and start a new one without admin privileges.`n"
     }
+}
+
+function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+
+    # State tool binary base dir
+    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
+    
+    Write-Host "Preparing for installation...`n"
+    
+    $downloader = new-object System.Net.WebClient
+
+    # Get version and checksum
+    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
+    Write-Host "Determining latest version...`n"
+    try{
+        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
+        $latestVersion = $branchJson.Version
+        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+    } catch [System.Exception] {
+        Write-Warning "Unable to retrieve the latest version number"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+    $latestChecksum = $versionedJson.Sha256v2
+
+    # Download pkg file
+    $zipPath = Join-Path $downloadDir $statepkg
+    # Clean it up to start but leave it behind when done 
+    if(Test-Path $downloadDir){
+        Remove-Item $downloadDir -Recurse
+    }
+    New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
+    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
+    Write-Host "Fetching the latest version: $latestVersion...`n"
+    try{
+        $downloader.DownloadFile($zipURL, $zipPath)
+    } catch [System.Exception] {
+        Write-Warning "Could not install state tool"
+        Write-Warning "Could not access $zipURL"
+        Write-Error $_.Exception.Message
+        exit 1
+    }
+
+    # Check the sums
+    Write-Host "Verifying checksums...`n"
+    $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+    if ($hash -ne $latestChecksum){
+        Write-Warning "SHA256 sum did not match:"
+        Write-Warning "Expected: $latestChecksum"
+        Write-Warning "Received: $hash"
+        Write-Warning "Aborting installation"
+        exit 1
+    }
+
+    # Extract binary from pkg and confirm checksum
+    Write-Host "Extracting $statepkg...`n"
+    Expand-Archive $zipPath $downloadDir
+}
+
+function test-64Bit() {
+    return (test-is64bitOS -or test-wow64 -or test-64bitWMI -or test-64bitPtr)
+}
+
+function test-is64bitOS() {
+    return [System.Environment]::Is64BitOperatingSystem
+}
+
+function test-wow64() {
+    # Only 64 bit Operating Systems should have this directory
+    return test-path (join-path $env:WinDir "SysWow64") 
+}
+
+function test-64bitWMI() {
+    if ((Get-WmiObject Win32_OperatingSystem).OSArchitecture -eq "64-bit") {
+        return $True
+    } else {
+        return $False
+    }
+}
+
+function test-64bitPtr() {
+    # The int pointer size is 8 for 64 bit Operating Systems and
+    # 4 for 32 bit
+    return [IntPtr]::size -eq 8
 }
 
 function install()
@@ -190,14 +283,14 @@ function install()
         Write-Error "Flags -n and -activate cannot be set at the same time."
         exit 1
     }
-    
-    # State tool binary base dir
-    $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
-    
-    Write-Host "Preparing for installation...`n"
+
+    if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
+        Write-Error "Flag -f also requires -n"
+        exit 1
+    }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+    if (test-64Bit) {
         $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
         $stateexe="windows-amd64.exe"
@@ -209,75 +302,37 @@ function install()
         exit 1
     }
 
-    $downloader = new-object System.Net.WebClient
-
-    # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
-    Write-Host "Determining latest version...`n"
-    try{
-        $branchJson = ConvertFrom-Json -InputObject $downloader.DownloadString($jsonurl)
-        $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
-    } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number"
-        Write-Error $_.Exception.Message
-        exit 1
-    }
-    $latestChecksum = $versionedJson.Sha256v2
-
-    # Download pkg file
-    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $zipPath = Join-Path $tmpParentPath $statepkg
-    # Clean it up to start but leave it behind when done 
-    if(Test-Path $tmpParentPath){
-        Remove-Item $tmpParentPath -Recurse
-    }
-    New-Item -Path $tmpParentPath -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
-    Write-Host "Fetching the latest version: $latestVersion...`n"
-    try{
-        $downloader.DownloadFile($zipURL, $zipPath)
-    } catch [System.Exception] {
-        Write-Warning "Could not install state tool"
-        Write-Warning "Could not access $zipURL"
-        Write-Error $_.Exception.Message
-        exit 1
-    }
-
-    # Check the sums
-    Write-Host "Verifying checksums...`n"
-    $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-    if ($hash -ne $latestChecksum){
-        Write-Warning "SHA256 sum did not match:"
-        Write-Warning "Expected: $latestChecksum"
-        Write-Warning "Received: $hash"
-        Write-Warning "Aborting installation"
-        exit 1
-    }
-
-    # Extract binary from pkg and confirm checksum
-    Write-Host "Extracting $statepkg...`n"
-    Expand-Archive $zipPath $tmpParentPath
-
     # Get the install directory and ensure we have permissions on it.
     # If the user provided an install dir we do no verification.
     if ($script:TARGET) {
         $installDir = $script:TARGET
-   } else {
+    } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
             Write-Error "Do not have write permissions to: '$Env:APPDATA'"
             Write-Error "Aborting installation"
             exit 1
         }
-   }
+    }
 
+    # stop if previous installation is detected, unless
+    # - A. a different target directory has been specified
+    # - B. FORCEOVERWRITE is true
     if (get-command $script:STATEEXE -ErrorAction 'silentlycontinue') {
         $existing = getExistingOnPath
-        Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-        Write-Host "If you would like to reinstall the state tool please first uninstall it."
-        Write-Host "You can do this by running 'Remove-Item $existing'"
-        exit 0
+    
+        # check for A
+        if (-not $script:TARGET -or ( $script:TARGET -eq $existing )) {
+            # check for B
+            if ($script:FORCEOVERWRITE) {
+                Write-Warning "Overwriting previous installation."
+            } else {
+                Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
+                Write-Host "To update the state tool to the latest version, please run 'state update'."
+                Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
+                exit 0
+            }
+        }
     }
 
     # Install binary
@@ -303,6 +358,9 @@ function install()
             }
         }
     }
+
+    $tmpParentPath = Join-Path $env:TEMP "ActiveState"
+    fetchArtifacts $tmpParentPath $statejson $statepkg
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Check if installation is in $PATH

@@ -43,7 +43,7 @@ func ExecuteAdd(cmd *cobra.Command, allArgs []string) {
 	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fetch_languages"))
-		AddCommand.Exiter(1)
+		return
 	}
 
 	name, version := splitNameAndVersion(AddArgs.Name)
