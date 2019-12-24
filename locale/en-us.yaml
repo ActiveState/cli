@@ -1211,6 +1211,8 @@ err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
   other: No activestate.yaml exists at the target directory, you should run 'state init' first.
+err_project_from_path:
+  other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
 err_init_must_provide_namespace:
