@@ -1129,6 +1129,8 @@ users_plural:
   other: users
 package_add_description:
   other: Add a new package to your project
+package_list_description:
+  other: List the packages currently used by this project
 package_update_description:
   other: Update a package in your project to the latest available version
 package_remove_description:

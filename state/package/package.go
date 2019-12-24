@@ -23,14 +23,6 @@ var Command = &commands.Command{
 	Description: "package_description",
 	Run:         Execute,
 	Aliases:     []string{"pkg", "package"},
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "commit",
-			Description: "package_list_flag_commit_description",
-			Type:        commands.TypeString,
-			StringVar:   &ListFlags.Commit,
-		},
-	},
 }
 
 func init() {
@@ -38,6 +30,7 @@ func init() {
 	Command.Append(RemoveCommand)
 	Command.Append(UpdateCommand)
 	Command.Append(SearchCommand)
+	Command.Append(ListCommand)
 }
 
 // Execute is ran when `state package` is ran
