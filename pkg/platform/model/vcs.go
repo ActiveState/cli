@@ -77,7 +77,7 @@ type Namespace string
 
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
-	return Namespace(fmt.Sprintf("language/%s/package", language))
+	return Namespace(fmt.Sprintf("language/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
