@@ -350,9 +350,7 @@ func (s *Suite) TrimSpaceOutput() string {
 
 func (s *Suite) CreateNewUser() string {
 	uid, err := uuid.NewRandom()
-	if err != nil {
-		panic(fmt.Sprintf("Could not generate uuid, error: %v", err))
-	}
+	s.Require().NoError(err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
 	password := username
