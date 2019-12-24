@@ -19,7 +19,8 @@ var SearchArgs struct {
 
 // SearchFlags holds the search-related flag values passed through the command line
 var SearchFlags struct {
-	Language string
+	Language  string
+	ExactTerm bool
 }
 
 // SearchCommand is the `packages search` command struct
@@ -28,7 +29,7 @@ var SearchCommand = &commands.Command{
 	Description: "package_search_description",
 
 	Arguments: []*commands.Argument{
-		&commands.Argument{
+		{
 			Name:        "package_arg_name",
 			Description: "package_arg_name_description",
 			Variable:    &SearchArgs.Name,
@@ -36,11 +37,17 @@ var SearchCommand = &commands.Command{
 		},
 	},
 	Flags: []*commands.Flag{
-		&commands.Flag{
+		{
 			Name:        "language",
 			Description: "package_search_flag_language_description",
 			Type:        commands.TypeString,
 			StringVar:   &SearchFlags.Language,
+		},
+		{
+			Name:        "exact-term",
+			Description: "package_search_flag_exact-term_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &SearchFlags.ExactTerm,
 		},
 	},
 }
@@ -59,7 +66,12 @@ func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	packages, fail := model.SearchIngredients(language, SearchArgs.Name)
+	searchIngredients := model.SearchIngredients
+	if SearchFlags.ExactTerm {
+		searchIngredients = model.SearchIngredientsStrict
+	}
+
+	packages, fail := searchIngredients(language, SearchArgs.Name)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results"))
 		return
