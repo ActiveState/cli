@@ -27,6 +27,10 @@ type projectWithOrg struct {
 	Organization string
 }
 
+func init() {
+	Command.Append(ListCommand)
+}
+
 func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
