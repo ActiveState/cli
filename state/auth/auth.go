@@ -107,12 +107,8 @@ func Execute(cmd *cobra.Command, args []string) {
 		fail = tokenAuth()
 		if fail != nil {
 			failures.Handle(fail, locale.T("login_err_auth_token"))
+			return
 		}
-	}
-
-	handled := failures.Handled()
-	if handled != nil {
-		return
 	}
 
 	switch output {
