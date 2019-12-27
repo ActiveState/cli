@@ -20,8 +20,9 @@ type Command struct {
 
 	name string
 
-	flags     []*Flag
-	arguments []*Argument
+	flags      []*Flag
+	arguments  []*Argument
+	parentCmds []*Command
 
 	execute func(cmd *Command, args []string) error
 }
@@ -103,6 +104,7 @@ func (c *Command) Arguments() []*Argument {
 
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
+		child.parentCmds = append(child.parentCmds, c)
 		c.cobra.AddCommand(child.cobra)
 	}
 }
@@ -116,6 +118,11 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 	for _, flag := range c.flags {
 		if flag.Name == name && (!persistOnly || flag.Persist) {
+			return flag
+		}
+	}
+	for _, parent := range c.parentCmds {
+		if flag := parent.flagByName(name, true); flag != nil {
 			return flag
 		}
 	}
