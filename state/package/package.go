@@ -95,6 +95,9 @@ func executeAddUpdate(cmd *commands.Command, language, name, version string, ope
 	} else {
 		print.Line(locale.Tr("package_"+operationStr, name))
 	}
+
+	// Remind user to update their activestate.yaml
+	print.Warning(locale.T("package_update_config_file"))
 }
 
 func splitNameAndVersion(input string) (string, string) {

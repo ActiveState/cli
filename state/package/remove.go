@@ -54,4 +54,7 @@ func ExecuteRemove(cmd *cobra.Command, allArgs []string) {
 
 	// Print the result
 	print.Line(locale.Tr("package_removed", RemoveArgs.Name))
+
+	// Remind user to update their activestate.yaml
+	print.Warning(locale.T("package_update_config_file"))
 }
