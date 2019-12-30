@@ -79,6 +79,7 @@ var EditCommand = &commands.Command{
 
 // ExecuteEdit runs the edit command
 func ExecuteEdit(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	script := project.Get().ScriptByName(EditArgs.Name)
 	if script == nil {
 		print.Line(locale.Tr("edit_scripts_no_name", EditArgs.Name))

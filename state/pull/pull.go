@@ -21,7 +21,8 @@ import (
 )
 
 var Flags struct {
-	Output *string
+	Output  *string
+	Verbose *bool
 }
 
 // Command is the pull command's definition.
@@ -33,6 +34,7 @@ var Command = &commands.Command{
 
 // Execute the pull command.
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	proj := project.Get()

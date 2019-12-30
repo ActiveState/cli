@@ -28,6 +28,7 @@ import (
 func init() {
 	mock := rtMock.Init()
 	mock.MockFullRuntime()
+	Flags.Verbose = new(bool)
 }
 
 func TestRunStandaloneCommand(t *testing.T) {

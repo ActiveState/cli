@@ -21,6 +21,7 @@ var JWTCommand = &commands.Command{
 
 // ExecuteJWT processes the `export recipe` command.
 func ExecuteJWT(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	if !authentication.Get().Authenticated() {

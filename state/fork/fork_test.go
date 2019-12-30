@@ -34,6 +34,7 @@ func (suite *ForkTestSuite) BeforeTest(suiteName, testName string) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+	Flags.Verbose = new(bool)
 }
 
 func (suite *ForkTestSuite) AfterTest(suiteName, testName string) {

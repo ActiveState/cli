@@ -38,6 +38,7 @@ func init() {
 
 // ExecuteUpdate is ran when `state package update` is ran
 func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("ExecuteUpdate")
 
 	pj := project.Get()

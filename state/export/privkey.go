@@ -25,6 +25,7 @@ var PrivKeyCommand = &commands.Command{
 
 // ExecutePrivKey processes the `export recipe` command.
 func ExecutePrivKey(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	if !authentication.Get().Authenticated() {

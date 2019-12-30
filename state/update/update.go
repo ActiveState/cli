@@ -33,11 +33,13 @@ var Command = &commands.Command{
 
 // Flags hold the flag values passed through the command line.
 var Flags struct {
-	Lock bool
+	Lock    bool
+	Verbose *bool
 }
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	if Flags.Lock {
 		ExecuteLock(cmd, args)
 		return

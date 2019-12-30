@@ -23,6 +23,7 @@ func setup(t *testing.T) {
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{})
+	Flags.Verbose = new(bool)
 }
 
 func TestProjects(t *testing.T) {

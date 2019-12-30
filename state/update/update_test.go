@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -31,6 +31,7 @@ func testdir(t *testing.T) string {
 
 func TestExecute(t *testing.T) {
 	assert := assert.New(t)
+	Flags.Verbose = new(bool)
 
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
@@ -48,6 +49,7 @@ func TestExecute(t *testing.T) {
 
 func TestLock(t *testing.T) {
 	assert := assert.New(t)
+	Flags.Verbose = new(bool)
 
 	testdir := testdir(t)
 	os.Chdir(testdir)

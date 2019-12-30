@@ -42,11 +42,13 @@ var Args struct {
 }
 
 var Flags struct {
-	Output *string
+	Output  *string
+	Verbose *bool
 }
 
 // Execute the show command.
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	var project *prj.Project

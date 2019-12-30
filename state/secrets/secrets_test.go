@@ -69,7 +69,7 @@ func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string), new(bool))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -94,7 +94,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string), new(bool))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -119,7 +119,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string), new(bool))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)

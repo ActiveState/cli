@@ -33,6 +33,10 @@ var Command = &commands.Command{
 	},
 }
 
+var Flags struct {
+	Verbose *bool
+}
+
 func init() {
 	Command.Append(AddCommand)
 	Command.Append(RemoveCommand)
@@ -42,6 +46,7 @@ func init() {
 
 // Execute is ran when `state package` is ran
 func Execute(cmd *cobra.Command, allArgs []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 	ExecuteList(cmd, allArgs)
 }

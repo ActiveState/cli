@@ -47,8 +47,13 @@ var Args struct {
 	Name string
 }
 
+var Flags struct {
+	Verbose *bool
+}
+
 // Execute the run command.
 func Execute(cmd *cobra.Command, allArgs []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")

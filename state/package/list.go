@@ -19,6 +19,7 @@ var ListFlags struct {
 
 // ExecuteList lists the current packages in a project
 func ExecuteList(cmd *cobra.Command, allArgs []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("ExecuteList")
 
 	commit, fail := targetedCommit(ListFlags.Commit)

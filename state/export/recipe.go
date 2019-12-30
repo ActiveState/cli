@@ -64,6 +64,7 @@ var RecipeCommand = &commands.Command{
 
 // ExecuteRecipe processes the `export recipe` command.
 func ExecuteRecipe(cmd *cobra.Command, _ []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	proj := project.Get()

@@ -47,6 +47,7 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	suite.apiMock.MockCommit()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
+	Flags.Verbose = new(bool)
 }
 
 func (suite *PkgTestSuite) AfterTest(suiteName, testName string) {

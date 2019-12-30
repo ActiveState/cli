@@ -29,6 +29,7 @@ func setup(t *testing.T) {
 	Cc.SetArgs([]string{})
 
 	Flags.Output = new(string)
+	Flags.Verbose = new(bool)
 }
 
 func setupOrgTest(t *testing.T) *apiMock.Mock {

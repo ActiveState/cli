@@ -16,6 +16,10 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
+var Flags struct {
+	Verbose *bool
+}
+
 func init() {
 	Command.Append(RecipeCommand)
 	Command.Append(JWTCommand)
@@ -24,6 +28,7 @@ func init() {
 
 // Execute the export command.
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 	err := cmd.Help()
 	if err != nil {

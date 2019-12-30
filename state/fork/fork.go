@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -93,6 +94,7 @@ var Flags struct {
 	Private      bool
 	Name         string
 	Output       *string
+	Verbose      *bool
 }
 
 // Args holds the values passed through the command line
@@ -102,6 +104,7 @@ var Args struct {
 
 // Execute the fork command
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_fork_auth_required"))

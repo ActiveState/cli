@@ -26,7 +26,7 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 
 	secretsapi.InitializeClient()
 
-	setLegacyOutput(globals)
+	setLegacyFlags(globals)
 
 	cmd.AddLegacyChildren(
 		events.Command,
@@ -39,7 +39,7 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 		scripts.Command,
 		pull.Command,
 		export.Command,
-		secrets.NewCommand(secretsapi.Get(), &globals.Output).Config(),
+		secrets.NewCommand(secretsapi.Get(), &globals.Output, &globals.Verbose).Config(),
 		fork.Command,
 	)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -50,6 +51,10 @@ var Command = &commands.Command{
 			Variable:    &Args.EmailList,
 		},
 	},
+}
+
+var Flags struct {
+	Verbose *bool
 }
 
 var prompter prompt.Prompter
@@ -199,6 +204,7 @@ func sendInvites(org *mono_models.Organization, orgRole OrgRole, emails []string
 
 // Execute the organizations command.
 func Execute(cmd *cobra.Command, args []string) {
+	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	prj := project.Get()
 
 	orgName := prj.Owner()
