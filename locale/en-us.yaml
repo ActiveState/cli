@@ -1193,14 +1193,14 @@ package_ingredient_err:
   other: Could not verify package name
 package_ingredient_not_found:
   other: The provided package does not exist
-package_ingredient_version_not_available:
-  other: The provided package does not have any versions available
 err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
+inventory_ingredient_version_not_available:
+  other: The ingredient {{.V0}} does not have any versions available
 err_cmdtree:
   other: Could not run the requested command
 err_fetch_languages:

@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -36,7 +35,7 @@ func init() {
 	UpdateCommand.Run = ExecuteUpdate // Work around initialization loop
 }
 
-// ExecuteUpdate is ran when `state package update` is ran
+// ExecuteUpdate is run when `state package update` is run
 func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteUpdate")
 
@@ -50,15 +49,11 @@ func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
 	name, version := splitNameAndVersion(UpdateArgs.Name)
 	if version == "" {
 		ingredientVersion, fail := model.IngredientWithLatestVersion(language, name)
-		if ingredientVersion.Version.Version == nil {
-			print.Error(locale.T("package_ingredient_version_not_available"))
-			return
-		}
-		version = *ingredientVersion.Version.Version
 		if fail != nil {
 			failures.Handle(fail, locale.T("package_ingredient_not_found"))
 			return
 		}
+		version = *ingredientVersion.Version.Version
 	}
 
 	executeAddUpdate(UpdateCommand, language, name, version, model.OperationUpdated)
