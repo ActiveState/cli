@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
@@ -42,6 +43,7 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	}
 	pjfile.Persist()
 
+	httpmock.Register("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001")
 	suite.authMock.MockLoggedin()
 	suite.invMock.MockIngredientsByName()
 	suite.apiMock.MockCommit()

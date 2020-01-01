@@ -217,7 +217,10 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		return fail
 	}
 
-	UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	if fail != nil {
+		return fail
+	}
 
 	return nil
 }
