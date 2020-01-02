@@ -73,6 +73,7 @@ func (suite *PkgTestSuite) runsCommand(cmdArgs []string, expectExitCode int, exp
 		})
 		suite.Equal(expectExitCode, code, fmt.Sprintf("Expects exit code %d", expectExitCode))
 	})
+	fmt.Println(out)
 
 	suite.Contains(out, expectOutput)
 }
