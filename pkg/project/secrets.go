@@ -1,8 +1,9 @@
 package project
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"strings"
+
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 
 	"github.com/ActiveState/cli/internal/access"
 	"github.com/ActiveState/cli/internal/failures"
@@ -24,7 +25,7 @@ var FailExpandNoProjectDefined = failures.Type("project.fail.secrets.expand.nopr
 var FailInputSecretValue = failures.Type("project.fail.secrets.input.value", failures.FailUserInput)
 
 // FailExpandNoAccess is used when the currently authorized user does not have access to project secrets
-var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess")
+var FailExpandNoAccess = failures.Type("project.fail.secrets.expand.noaccess", failures.FailUser)
 
 // FailNotAuthenticated is used when trying to access secrets while not being authenticated
 var FailNotAuthenticated = failures.Type("project.fail.secrets.noauth", failures.FailUserInput)
