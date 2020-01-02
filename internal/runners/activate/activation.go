@@ -140,7 +140,7 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 		case fail, ok := <-subs.Failures():
 			if !ok {
-				logging.Error("subshell failure channel closed")
+				logging.Info("subshell failure channel closed")
 				return false
 			}
 
