@@ -17,7 +17,7 @@ type SecretsIntegrationTestSuite struct {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_output_editorv0")
 	defer cb()
 
 	suite.PrepareActiveStateYAML(
@@ -44,7 +44,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_get_editorv0")
 	defer cb()
 
 	suite.PrepareActiveStateYAML(
@@ -73,7 +73,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_json")
 	defer cb()
 
 	suite.PrepareActiveStateYAML(
