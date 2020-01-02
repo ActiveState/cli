@@ -55,6 +55,16 @@ scripts:
         .\interrupt.exe
     constraints:
         os: windows
+  - name: helloWorld
+    value: echo "Hello World!"
+    standalone: true
+    constraints:
+      os: linux,macos
+  - name: helloWorld
+    standalone: true
+    value: echo Hello World!
+    constraints:
+      os: windows
 `)
 	projectfile.Reset()
 	projectFile := &projectfile.Project{}
@@ -149,6 +159,11 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.Require().NotContains(
 		suite.TerminalSnapshot(), "not printed after second interrupt",
 	)
+}
+
+func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
+	suite.Spawn("run", "helloWorld")
+	suite.Expect("Hello World!")
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
