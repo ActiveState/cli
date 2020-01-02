@@ -8,9 +8,17 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+// ListCommand is the `package list` command struct
+var ListCommand = &commands.Command{
+	Name:        "list",
+	Description: "package_list_description",
+	Flags:       listFlags,
+}
 
 // ListFlags holds the list-related flag values passed through the command line
 var ListFlags struct {
