@@ -17,7 +17,7 @@ import (
 var ListCommand = &commands.Command{
 	Name:        "list",
 	Description: "package_list_description",
-	Flags:       flags,
+	Flags:       listFlags,
 }
 
 // ListFlags holds the list-related flag values passed through the command line

@@ -23,10 +23,10 @@ var Command = &commands.Command{
 	Description: "package_description",
 	Run:         Execute,
 	Aliases:     []string{"pkg", "package"},
-	Flags:       flags,
+	Flags:       listFlags,
 }
 
-var flags = []*commands.Flag{
+var listFlags = []*commands.Flag{
 	&commands.Flag{
 		Name:        "commit",
 		Description: "package_list_flag_commit_description",
