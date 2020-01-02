@@ -23,14 +23,16 @@ var Command = &commands.Command{
 	Description: "package_description",
 	Run:         Execute,
 	Aliases:     []string{"pkg", "package"},
-	Flags:       []*commands.Flag{commitFlag},
+	Flags:       flags,
 }
 
-var commitFlag = &commands.Flag{
-	Name:        "commit",
-	Description: "package_list_flag_commit_description",
-	Type:        commands.TypeString,
-	StringVar:   &ListFlags.Commit,
+var flags = []*commands.Flag{
+	&commands.Flag{
+		Name:        "commit",
+		Description: "package_list_flag_commit_description",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Commit,
+	},
 }
 
 func init() {
