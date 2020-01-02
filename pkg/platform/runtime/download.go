@@ -38,7 +38,7 @@ var (
 	FailBuildFailed = failures.Type("runtime.fail.buildfailed")
 
 	// FailBuildInProgress indicates a failure due to the build being in progress
-	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress")
+	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress", failures.FailUser)
 
 	// FailBuildBadResponse indicates a failure due to the build req/resp malfunctioning
 	FailBuildBadResponse = failures.Type("runtime.fail.buildbadresponse")
