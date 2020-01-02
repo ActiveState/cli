@@ -17,6 +17,14 @@ import (
 var ListCommand = &commands.Command{
 	Name:        "list",
 	Description: "package_list_description",
+	Flags: []*commands.Flag{
+		&commands.Flag{
+			Name:        "commit",
+			Description: "package_list_flag_commit_description",
+			Type:        commands.TypeString,
+			StringVar:   &ListFlags.Commit,
+		},
+	},
 }
 
 // ListFlags holds the list-related flag values passed through the command line
