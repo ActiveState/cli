@@ -23,21 +23,10 @@ import (
 var forceFileExt string
 
 // forward will forward the call to the appropriate state tool version if necessary
-func forward(args []string) (int, *failures.Failure) {
-	versionInfo, fail := projectfile.ParseVersionInfo()
-	if fail != nil {
-		return 1, fail
-	}
-	if versionInfo == nil {
-		return -1, nil
-	}
-	if !shouldForward(versionInfo) {
-		return -1, nil
-	}
-
+func forward(args []string, versionInfo *projectfile.VersionInfo) (int, *failures.Failure) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)
-	fail = ensureForwardExists(binary, versionInfo)
+	fail := ensureForwardExists(binary, versionInfo)
 	if fail != nil {
 		return 1, fail
 	}
@@ -57,6 +46,9 @@ func execForward(binary string, args []string) (int, *failures.Failure) {
 }
 
 func shouldForward(versionInfo *projectfile.VersionInfo) bool {
+	if versionInfo == nil {
+		return false
+	}
 	return versionInfo != nil && (versionInfo.Version != constants.Version || versionInfo.Branch != constants.BranchName)
 }
 
