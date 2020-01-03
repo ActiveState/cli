@@ -843,7 +843,7 @@ update_available:
     Your version: {{.V0}}
     Available Version: {{.V1}}
 
-    You can update by running `state self-update`
+    You can update by running `state update`
 runtime_update_notice_known_count:
   other: Your activestate.yaml is {{.V0}} commits behind.
 runtime_update_notice_unknown_count:
