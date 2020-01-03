@@ -24,6 +24,18 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "list")
+	suite.Expect("Name")
+	suite.Expect("pytest")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()

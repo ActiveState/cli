@@ -18,6 +18,7 @@ var ListCommand = &commands.Command{
 	Name:        "list",
 	Description: "package_list_description",
 	Flags:       listFlags,
+	Run:         ExecuteList,
 }
 
 // ListFlags holds the list-related flag values passed through the command line
