@@ -23,6 +23,7 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -70,15 +71,24 @@ func run(args []string) (int, error) {
 		return relaunch() // will not return
 	}
 
-	code, fail := forward(args)
+	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
-		print.Error(locale.T("forward_fail"))
-		return 1, fail
-	}
-	if code != -1 {
-		return code, nil
+		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
+		return 1, failures.FailUser.New(locale.T("err_version_parse"))
 	}
 
+	if shouldForward(versionInfo) {
+		code, fail := forward(args, versionInfo)
+		if fail != nil {
+			print.Error(locale.T("forward_fail"))
+			return 1, fail
+		}
+		if code != -1 {
+			return code, nil
+		}
+	}
+
+	logging.Debug("Check for deprecation...")
 	// Check for deprecation
 	deprecated, fail := deprecation.Check()
 	if fail != nil && !fail.Type.Matches(failures.FailNonFatal) {
