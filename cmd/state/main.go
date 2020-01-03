@@ -73,8 +73,6 @@ func run(args []string) (int, error) {
 
 	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
-		// The error returned when parsing a project file is not user friendly.
-		// Log the error and return a more actionable error for the user.
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
 		return 1, failures.FailUser.New(locale.T("err_version_parse"))
 	}
