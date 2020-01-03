@@ -24,7 +24,7 @@ import (
 
 var (
 	// FailScriptNotDefined indicates the user provided a script name that is not in the activestate.yaml
-	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailNonFatal, failures.FailUser)
+	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
 )
 
 // Command holds the definition for "state run".
