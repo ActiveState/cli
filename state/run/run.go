@@ -22,6 +22,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+var (
+	// FailScriptNotDefined indicates the user provided a script name that is not in the activestate.yaml
+	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailNonFatal, failures.FailUser)
+)
+
 // Command holds the definition for "state run".
 var Command *commands.Command
 
@@ -53,8 +58,13 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	logging.Debug("Execute")
 
-	if Args.Name == "" || strings.HasPrefix(Args.Name, "-") {
+	if Args.Name == "" {
 		failures.Handle(failures.FailUserInput.New("error_state_run_undefined_name"), "")
+		return
+	}
+
+	if Args.Name == "-h" || Args.Name == "--help" {
+		print.Line(cmd.UsageString())
 		return
 	}
 
@@ -63,7 +73,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	// Determine which project script to run based on the given script name.
 	script := project.Get().ScriptByName(Args.Name)
 	if script == nil {
-		print.Error(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name}))
+		failures.Handle(FailScriptNotDefined.New(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name})), "")
 		return
 	}
 
