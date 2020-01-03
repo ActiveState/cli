@@ -135,7 +135,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	for {
 		select {
 		case resp := <-buildStatus.Completed:
-			logging.Debug("BuildCompleted:", resp)
+			logging.Debug(resp.Message)
 
 			if len(resp.Artifacts) == 0 {
 				return nil, FailNoArtifacts.New(locale.T("err_no_artifacts"))
