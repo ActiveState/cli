@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runners/state"
@@ -67,7 +68,9 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Type:        captain.TypeBool,
 				Persist:     true,
 				OnUse: func() {
-					logging.CurrentHandler().SetVerbose(true)
+					if !condition.InTest() {
+						logging.CurrentHandler().SetVerbose(true)
+					}
 				},
 				BoolVar: &globals.Verbose,
 			},
