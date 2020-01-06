@@ -125,7 +125,7 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 
 func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	// Run OnUse functions for persistent flags
-	c.runFlags(cobraCmd, true)
+	c.runFlags(true)
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
@@ -136,7 +136,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	analytics.Event(analytics.CatRunCmd, c.cobra.Name())
 
 	// Run OnUse functions for non-persistent flags
-	c.runFlags(cobraCmd, false)
+	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
 		if len(args) > idx {
@@ -146,21 +146,24 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	return c.execute(c, args)
 }
 
-func (c *Command) runFlags(cobraCmd *cobra.Command, persistOnly bool) {
-	if !cobraCmd.DisableFlagParsing {
-		cobraCmd.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
-			if !cobraFlag.Changed {
-				return
-			}
-
-			flag := c.flagByName(cobraFlag.Name, persistOnly)
-			if flag == nil || flag.OnUse == nil {
-				return
-			}
-
-			flag.OnUse()
-		})
+func (c *Command) runFlags(persistOnly bool) {
+	if c.cobra.DisableFlagParsing {
+		return
 	}
+
+	c.cobra.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
+		if !cobraFlag.Changed {
+			return
+		}
+
+		flag := c.flagByName(cobraFlag.Name, persistOnly)
+		if flag == nil || flag.OnUse == nil {
+			return
+		}
+
+		flag.OnUse()
+	})
+
 }
 
 func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
