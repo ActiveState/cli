@@ -3,7 +3,6 @@ package projects
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -19,10 +18,6 @@ var Command = &commands.Command{
 	Name:        "projects",
 	Description: "projects_description",
 	Run:         Execute,
-}
-
-var Flags struct {
-	Verbose *bool
 }
 
 // Holds a union of project and organization parameters.
@@ -62,7 +57,6 @@ func fetchProjects() ([]projectWithOrg, *failures.Failure) {
 
 // Execute the projects command.
 func Execute(cmd *cobra.Command, args []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	projectsList, fail := fetchProjects()
 	if fail != nil {
 		failures.Handle(fail, locale.T("project_err"))

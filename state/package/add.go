@@ -37,7 +37,6 @@ func init() {
 
 // ExecuteAdd is executed with `state package add` is ran
 func ExecuteAdd(cmd *cobra.Command, allArgs []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("ExecuteAdd")
 
 	pj := project.Get()

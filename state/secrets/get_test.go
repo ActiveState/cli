@@ -84,7 +84,7 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType, expectedExitCode int) {
 	suite.prepareWorkingExpander()
 
-	cmd := secrets.NewCommand(suite.secretsClient, new(string), new(bool))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
 
 	ex := exiter.New()
@@ -103,7 +103,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 
 func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expectedExpansionValue string, expectedExitCode int) {
 	suite.prepareWorkingExpander()
-	cmd := secrets.NewCommand(suite.secretsClient, new(string), new(bool))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	secrets.Flags.Output = new(string)
 
 	var exitCode int
@@ -124,7 +124,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expe
 }
 
 func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient, new(string), new(bool)).Config().GetCobraCmd().Commands()[0]
+	cc := secrets.NewCommand(suite.secretsClient, new(string)).Config().GetCobraCmd().Commands()[0]
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")

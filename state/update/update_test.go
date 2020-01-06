@@ -31,7 +31,6 @@ func testdir(t *testing.T) string {
 
 func TestExecute(t *testing.T) {
 	assert := assert.New(t)
-	Flags.Verbose = new(bool)
 
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
@@ -49,7 +48,6 @@ func TestExecute(t *testing.T) {
 
 func TestLock(t *testing.T) {
 	assert := assert.New(t)
-	Flags.Verbose = new(bool)
 
 	testdir := testdir(t)
 	os.Chdir(testdir)

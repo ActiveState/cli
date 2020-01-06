@@ -55,7 +55,6 @@ func (s *InviteTestSuite) BeforeTest(suiteName, testName string) {
 
 	s.ex = exiter.New()
 	Command.Exiter = s.ex.Exit
-	Flags.Verbose = new(bool)
 
 }
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -17,8 +16,7 @@ import (
 
 // Flags captures values for any of the flags used with the organizations command.
 var Flags struct {
-	Output  *string
-	Verbose *bool
+	Output *string
 }
 
 // Command is the organization command's definition.
@@ -31,7 +29,6 @@ var Command = &commands.Command{
 
 // Execute the organizations command.
 func Execute(cmd *cobra.Command, args []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
 		failures.Handle(fail, locale.T("organizations_err"))

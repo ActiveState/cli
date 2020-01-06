@@ -48,7 +48,6 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.ex = exiter.New()
 	Command.Exiter = suite.ex.Exit
-	Flags.Verbose = new(bool)
 }
 
 func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {

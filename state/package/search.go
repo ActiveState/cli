@@ -58,7 +58,6 @@ func init() {
 
 // ExecuteSearch is executed when `state packages search` is ran
 func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("ExecuteSearch")
 
 	language, fail := targetedLanguage(SearchFlags.Language)

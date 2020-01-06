@@ -46,9 +46,10 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	}
 
 	cmd.cobra = &cobra.Command{
-		Use:   name,
-		Short: description,
-		RunE:  cmd.runner,
+		Use:              name,
+		Short:            description,
+		PersistentPreRun: cmd.globalRunner,
+		RunE:             cmd.runner,
 
 		// Silence errors and usage, we handle that ourselves
 		SilenceErrors: true,
@@ -121,12 +122,12 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 			return flag
 		}
 	}
-	for _, parent := range c.parentCmds {
-		if flag := parent.flagByName(name, true); flag != nil {
-			return flag
-		}
-	}
 	return nil
+}
+
+func (c *Command) globalRunner(cobraCmd *cobra.Command, args []string) {
+	// Run OnUse functions for persistent flags
+	c.runFlags(cobraCmd, true)
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
@@ -136,21 +137,8 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 	analytics.Event(analytics.CatRunCmd, c.cobra.Name())
 
-	// Run OnUse functions for flags
-	if !cobraCmd.DisableFlagParsing {
-		cobraCmd.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
-			if !cobraFlag.Changed {
-				return
-			}
-
-			flag := c.flagByName(cobraFlag.Name, false)
-			if flag == nil || flag.OnUse == nil {
-				return
-			}
-
-			flag.OnUse()
-		})
-	}
+	// Run OnUse functions for non-persistent flags
+	c.runFlags(cobraCmd, false)
 
 	for idx, arg := range c.arguments {
 		if len(args) > idx {
@@ -158,6 +146,23 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		}
 	}
 	return c.execute(c, args)
+}
+
+func (c *Command) runFlags(cobraCmd *cobra.Command, persistOnly bool) {
+	if !cobraCmd.DisableFlagParsing {
+		cobraCmd.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
+			if !cobraFlag.Changed {
+				return
+			}
+
+			flag := c.flagByName(cobraFlag.Name, persistOnly)
+			if flag == nil || flag.OnUse == nil {
+				return
+			}
+
+			flag.OnUse()
+		})
+	}
 }
 
 func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {

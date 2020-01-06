@@ -33,9 +33,8 @@ type Command struct {
 	}
 
 	Flags struct {
-		Filter  *string
-		Output  *string
-		Verbose *bool
+		Filter *string
+		Output *string
 	}
 }
 
@@ -48,7 +47,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, output *string, verbose *bool) *Command {
+func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -70,7 +69,6 @@ func NewCommand(secretsClient *secretsapi.Client, output *string, verbose *bool)
 
 	c.Flags.Filter = &flagFilter
 	c.Flags.Output = output
-	c.Flags.Verbose = verbose
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -99,7 +97,6 @@ func (cmd *Command) Config() *commands.Command {
 
 // Execute processes the secrets command.
 func (cmd *Command) Execute(_ *cobra.Command, args []string) {
-	logging.CurrentHandler().SetVerbose(*cmd.Flags.Verbose)
 	if strings.HasPrefix(os.Args[1], "var") {
 		print.Warning(locale.T("secrets_warn_deprecated_var"))
 	}

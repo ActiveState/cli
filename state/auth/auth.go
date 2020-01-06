@@ -64,7 +64,6 @@ var Flags struct {
 	Username string
 	Password string
 	Output   *string
-	Verbose  *bool
 }
 
 func init() {
@@ -74,7 +73,6 @@ func init() {
 
 // Execute runs our command
 func Execute(cmd *cobra.Command, args []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	auth := authentication.Get()
 
 	output := commands.Output(strings.ToLower(*Flags.Output))

@@ -12,7 +12,6 @@ import (
 
 func TestExecute(t *testing.T) {
 	projectfile.Reset()
-	Flags.Verbose = new(bool)
 
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")

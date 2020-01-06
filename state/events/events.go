@@ -17,15 +17,10 @@ var Command = &commands.Command{
 	Run:         Execute,
 }
 
-var Flags struct {
-	Verbose *bool
-}
-
 // Execute List configured eventss
 // If no events trigger name given, lists all
 // Otherwise shows configured eventss for given events trigger
 func Execute(cmd *cobra.Command, args []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Events")
 	var T = locale.T
 

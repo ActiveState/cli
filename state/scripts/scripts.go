@@ -18,8 +18,7 @@ import (
 
 // Flags captures values for any of the flags used with the scripts command.
 var Flags struct {
-	Output  *string
-	Verbose *bool
+	Output *string
 }
 
 // Command holds the definition for "state scripts".
@@ -35,7 +34,6 @@ func init() {
 
 // Execute the scripts command.
 func Execute(cmd *cobra.Command, allArgs []string) {
-	logging.CurrentHandler().SetVerbose(*Flags.Verbose)
 	logging.Debug("Execute")
 
 	prj := project.Get()

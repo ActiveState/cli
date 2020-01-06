@@ -17,7 +17,6 @@ import (
 
 func setup(t *testing.T) {
 	Flags.Output = new(string)
-	Flags.Verbose = new(bool)
 }
 
 func TestExecute(t *testing.T) {

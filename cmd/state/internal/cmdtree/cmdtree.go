@@ -6,19 +6,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/state/auth"
-	"github.com/ActiveState/cli/state/events"
-	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/fork"
-	"github.com/ActiveState/cli/state/invite"
 	"github.com/ActiveState/cli/state/organizations"
-	pkg "github.com/ActiveState/cli/state/package"
-	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/pull"
-	"github.com/ActiveState/cli/state/run"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
-	"github.com/ActiveState/cli/state/update"
 )
 
 type CmdTree struct {
@@ -112,11 +105,6 @@ func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
 }
 
-func setLegacyFlags(globals *globalOptions) {
-	setLegacyOutput(globals)
-	setLegacyVerbose(globals)
-}
-
 func setLegacyOutput(globals *globalOptions) {
 	auth.Flags.Output = &globals.Output
 	organizations.Flags.Output = &globals.Output
@@ -125,20 +113,4 @@ func setLegacyOutput(globals *globalOptions) {
 	fork.Flags.Output = &globals.Output
 	show.Flags.Output = &globals.Output
 	pull.Flags.Output = &globals.Output
-}
-
-func setLegacyVerbose(globals *globalOptions) {
-	auth.Flags.Verbose = &globals.Verbose
-	events.Flags.Verbose = &globals.Verbose
-	export.Flags.Verbose = &globals.Verbose
-	fork.Flags.Verbose = &globals.Verbose
-	invite.Flags.Verbose = &globals.Verbose
-	organizations.Flags.Verbose = &globals.Verbose
-	pkg.Flags.Verbose = &globals.Verbose
-	projects.Flags.Verbose = &globals.Verbose
-	pull.Flags.Verbose = &globals.Verbose
-	run.Flags.Verbose = &globals.Verbose
-	scripts.Flags.Verbose = &globals.Verbose
-	show.Flags.Verbose = &globals.Verbose
-	update.Flags.Verbose = &globals.Verbose
 }
