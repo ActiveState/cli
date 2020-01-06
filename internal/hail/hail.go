@@ -27,7 +27,8 @@ type Received struct {
 }
 
 func newReceived(openedAt time.Time, data []byte, fail *failures.Failure) *Received {
-	return &Received{Open: openedAt,
+	return &Received{
+		Open: openedAt,
 		Time: time.Now(),
 		Data: data,
 		Fail: fail,
