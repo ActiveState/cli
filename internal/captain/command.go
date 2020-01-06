@@ -20,9 +20,8 @@ type Command struct {
 
 	name string
 
-	flags      []*Flag
-	arguments  []*Argument
-	parentCmds []*Command
+	flags     []*Flag
+	arguments []*Argument
 
 	execute func(cmd *Command, args []string) error
 }
