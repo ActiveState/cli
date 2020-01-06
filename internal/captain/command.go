@@ -104,7 +104,6 @@ func (c *Command) Arguments() []*Argument {
 
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
-		child.parentCmds = append(child.parentCmds, c)
 		c.cobra.AddCommand(child.cobra)
 	}
 }
