@@ -47,7 +47,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 	cmd.cobra = &cobra.Command{
 		Use:              name,
 		Short:            description,
-		PersistentPreRun: cmd.globalRunner,
+		PersistentPreRun: cmd.persistRunner,
 		RunE:             cmd.runner,
 
 		// Silence errors and usage, we handle that ourselves
@@ -123,7 +123,7 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 	return nil
 }
 
-func (c *Command) globalRunner(cobraCmd *cobra.Command, args []string) {
+func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	// Run OnUse functions for persistent flags
 	c.runFlags(cobraCmd, true)
 }
