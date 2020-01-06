@@ -2,7 +2,6 @@ package events
 
 import (
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
@@ -21,7 +20,6 @@ var Command = &commands.Command{
 // If no events trigger name given, lists all
 // Otherwise shows configured eventss for given events trigger
 func Execute(cmd *cobra.Command, args []string) {
-	logging.Debug("Events")
 	var T = locale.T
 
 	pj := project.Get()
