@@ -17,6 +17,9 @@ import (
 var (
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
+
+	// FailNoData represents an error due to lacking returned data
+	FailNoData = failures.Type("model.fail.nodata", failures.FailNonFatal)
 )
 
 // Checkpoint represents a collection of requirements
@@ -78,24 +81,22 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
-	var atTime strfmt.DateTime
-	if response.Commit != nil {
-		atTime = response.Commit.AtTime
-	} else {
-		atTime = strfmt.DateTime{}
+	if response.Commit == nil {
+		return nil, strfmt.DateTime{}, FailNoData.New(locale.T("err_no_data_found"))
 	}
 
-	return response.Requirements, atTime, nil
+	return response.Requirements, response.Commit.AtTime, nil
 }
 
 // FilterCheckpointPackages filters a Checkpoint removing requirements that
-// are not packages.
+// are not packages. If nil data is provided, a nil slice is returned. If no
+// packages remain after filtering, an empty slice is returned.
 func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 	if chkPt == nil {
 		return nil
 	}
 
-	var checkpoint Checkpoint
+	checkpoint := Checkpoint{}
 	for _, requirement := range chkPt {
 		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
 			continue

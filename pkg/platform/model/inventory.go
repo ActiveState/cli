@@ -6,6 +6,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -56,37 +57,51 @@ func IngredientWithLatestVersion(language, name string) (*IngredientAndVersion, 
 		return nil, fail
 	}
 
-	var ingredient *IngredientAndVersion
+	if len(results) == 0 {
+		return nil, FailIngredients.New(locale.T("inventory_ingredient_version_not_available"), name)
+	}
+
 	var latest *IngredientAndVersion
 	for _, res := range results {
 		if res.Ingredient.Name == nil || *res.Ingredient.Name != name {
 			continue
 		}
-		ingredient = res
 
-		switch {
-		case latest == nil || latest.Version.ReleaseTimestamp == nil:
-			// If latest is not valid, just make the current value latest
+		if latest == nil {
 			latest = res
-
-		case res.Version.ReleaseTimestamp.String() == latest.Version.ReleaseTimestamp.String():
-			// If the release dates equal (or are both nil) just assume that the later entry it the latest
-			latest = res
-
-		case res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)):
-			// If the release date is later then this entry is latest
-			latest = res
+			continue
 		}
 
-		break // We found our ingredient, no need to keep looping
+		if res.Version.ReleaseTimestamp != nil && time.Time(*res.Version.ReleaseTimestamp).After(time.Time(*latest.Version.ReleaseTimestamp)) {
+			latest = res
+		}
 	}
 
-	return ingredient, nil
+	return latest, nil
 }
 
-// SearchIngredients will return all ingredients+ingredientVersions that match the ingredient name
+// SearchIngredients will return all ingredients+ingredientVersions that fuzzily
+// match the ingredient name.
 func SearchIngredients(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
 	return searchIngredients(99, language, name)
+}
+
+// SearchIngredientsStrict will return all ingredients+ingredientVersions that
+// strictly match the ingredient name.
+func SearchIngredientsStrict(language, name string) ([]*IngredientAndVersion, *failures.Failure) {
+	results, fail := searchIngredients(99, language, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	ingredients := results[:0]
+	for _, ing := range results {
+		if ing.Ingredient.Name != nil && *ing.Ingredient.Name == name {
+			ingredients = append(ingredients, ing)
+		}
+	}
+
+	return ingredients, nil
 }
 
 func searchIngredients(limit int, language, name string) ([]*IngredientAndVersion, *failures.Failure) {

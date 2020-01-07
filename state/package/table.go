@@ -69,7 +69,7 @@ func sortByFirstTwoCols(rows [][]string) {
 			return true
 		}
 
-		if aa >= ba {
+		if aa > ba {
 			return false
 		}
 

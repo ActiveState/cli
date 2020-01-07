@@ -202,9 +202,12 @@ scripts:
 
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"unknown"})
-	err = Command.Execute()
-	assert.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	ex := exiter.New()
+	Command.Exiter = ex.Exit
+	exitCode := ex.WaitForExit(func() {
+		Command.Execute()
+	})
+	assert.Equal(t, 1, exitCode, "Exited with code 1")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
@@ -302,4 +305,15 @@ func TestPathProvidesExec(t *testing.T) {
 	assert.True(t, pathProvidesExec(temp, exec, pathStr))
 	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
 	assert.False(t, pathProvidesExec(temp, exec, ""))
+}
+
+func TestRun_Help(t *testing.T) {
+	Cc := Command.GetCobraCmd()
+	Cc.SetArgs([]string{"--help"})
+	outStr, err := osutil.CaptureStdout(func() {
+		err := Cc.Execute()
+		require.NoError(t, err, "error executing command")
+	})
+	require.NoError(t, err, "error capturing stdout")
+	assert.Equal(t, Cc.UsageString(), strings.TrimSuffix(outStr, "\n"))
 }

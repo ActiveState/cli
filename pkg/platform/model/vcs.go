@@ -77,7 +77,7 @@ type Namespace string
 
 // NamespacePackage creates a new package namespace
 func NamespacePackage(language string) Namespace {
-	return Namespace(fmt.Sprintf("language/%s/package", language))
+	return Namespace(fmt.Sprintf("language/%s", language))
 }
 
 // NamespaceLanguage provides the base language namespace.
@@ -217,7 +217,10 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 		return fail
 	}
 
-	UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	fail = UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	if fail != nil {
+		return fail
+	}
 
 	return nil
 }

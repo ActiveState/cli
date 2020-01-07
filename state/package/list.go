@@ -8,9 +8,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+// ListCommand is the `package list` command struct
+var ListCommand = &commands.Command{
+	Name:        "list",
+	Description: "package_list_description",
+	Flags:       listFlags,
+	Run:         ExecuteList,
+}
 
 // ListFlags holds the list-related flag values passed through the command line
 var ListFlags struct {
@@ -32,10 +41,6 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
 		return
 	}
-	if checkpoint == nil {
-		print.Line(locale.T("package_no_data"))
-		return
-	}
 	if len(checkpoint) == 0 {
 		print.Line(locale.T("package_no_packages"))
 		return
@@ -49,6 +54,7 @@ func ExecuteList(cmd *cobra.Command, allArgs []string) {
 
 func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 	if commitOpt == "latest" {
+		logging.Debug("latest commit selected")
 		proj := project.Get()
 		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
@@ -61,10 +67,12 @@ func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 		commitOpt = proj.CommitID()
 
 		if commitOpt == "" {
+			logging.Debug("latest commit used as fallback selection")
 			return model.LatestCommitID(proj.Owner(), proj.Name())
 		}
 	}
 
+	logging.Debug("commit %s selected", commitOpt)
 	if ok := strfmt.Default.Validates("uuid", commitOpt); !ok {
 		return nil, failures.FailMarshal.New(locale.T("invalid_uuid_val"))
 	}
@@ -79,16 +87,21 @@ func targetedCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
 
 func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, *failures.Failure) {
 	if commit == nil {
+		logging.Debug("commit id is nil")
 		return nil, nil
 	}
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(*commit)
+	if fail != nil && fail.Type.Matches(model.FailNoData) {
+		return nil, model.FailNoData.New(locale.T("package_no_data"))
+	}
 
 	return model.FilterCheckpointPackages(checkpoint), fail
 }
 
 func newRequirementsTable(requirements model.Checkpoint) *table {
 	if requirements == nil {
+		logging.Debug("requirements is nil")
 		return nil
 	}
 

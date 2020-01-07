@@ -183,7 +183,7 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 	project.path = filepath
 
 	if err != nil {
-		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
 	if project.Variables != nil {

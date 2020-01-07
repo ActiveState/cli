@@ -38,7 +38,7 @@ var (
 	FailBuildFailed = failures.Type("runtime.fail.buildfailed")
 
 	// FailBuildInProgress indicates a failure due to the build being in progress
-	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress")
+	FailBuildInProgress = failures.Type("runtime.fail.buildinprogress", failures.FailUser)
 
 	// FailBuildBadResponse indicates a failure due to the build req/resp malfunctioning
 	FailBuildBadResponse = failures.Type("runtime.fail.buildbadresponse")
@@ -135,7 +135,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	for {
 		select {
 		case resp := <-buildStatus.Completed:
-			logging.Debug("BuildCompleted:", resp)
+			logging.Debug(resp.Message)
 
 			if len(resp.Artifacts) == 0 {
 				return nil, FailNoArtifacts.New(locale.T("err_no_artifacts"))

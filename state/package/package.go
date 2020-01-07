@@ -23,13 +23,15 @@ var Command = &commands.Command{
 	Description: "package_description",
 	Run:         Execute,
 	Aliases:     []string{"pkg", "package"},
-	Flags: []*commands.Flag{
-		&commands.Flag{
-			Name:        "commit",
-			Description: "package_list_flag_commit_description",
-			Type:        commands.TypeString,
-			StringVar:   &ListFlags.Commit,
-		},
+	Flags:       listFlags,
+}
+
+var listFlags = []*commands.Flag{
+	&commands.Flag{
+		Name:        "commit",
+		Description: "package_list_flag_commit_description",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Commit,
 	},
 }
 
@@ -38,6 +40,7 @@ func init() {
 	Command.Append(RemoveCommand)
 	Command.Append(UpdateCommand)
 	Command.Append(SearchCommand)
+	Command.Append(ListCommand)
 }
 
 // Execute is ran when `state package` is ran
@@ -95,6 +98,9 @@ func executeAddUpdate(cmd *commands.Command, language, name, version string, ope
 	} else {
 		print.Line(locale.Tr("package_"+operationStr, name))
 	}
+
+	// Remind user to update their activestate.yaml
+	print.Warning(locale.T("package_update_config_file"))
 }
 
 func splitNameAndVersion(input string) (string, string) {

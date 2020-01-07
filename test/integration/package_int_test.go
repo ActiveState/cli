@@ -24,6 +24,18 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "list")
+	suite.Expect("Name")
+	suite.Expect("pytest")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
@@ -58,20 +70,80 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
+	suite.Expect("No packages")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("packages", "search", "numpy")
-	suite.Expect("Name")
-	suite.Expect("msgpack-numpy")
-	suite.Expect("numpy")
-	suite.Expect("1.14.3")
-	suite.Expect("1.16.1")
-	suite.Expect("1.16.2")
-	suite.Expect("numpy-stl")
+	suite.Spawn("packages", "search", "request")
+	expectations := []string{
+		"Name",
+		"aws-requests-auth",
+		"django-request-logging",
+		"requests",
+		"2.10.0",
+		"2.18.4",
+		"2.21.0",
+		"2.22.0",
+		"2.3",
+		"2.7.0",
+		"requests-cache",
+		"requests-oauthlib",
+		"requests3",
+		"requests_gpgauthlib",
+		"requestsexceptions",
+		"robotframework-requests",
+	}
+	for _, expectation := range expectations {
+		suite.Expect(expectation)
+	}
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "requests", "--exact-term")
+	expectations := []string{
+		"Name",
+		"requests",
+		"2.10.0",
+		"2.18.4",
+		"2.21.0",
+		"2.22.0",
+		"2.3",
+		"2.7.0",
+		"---",
+	}
+	for _, expectation := range expectations {
+		suite.Expect(expectation)
+	}
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
+	suite.Expect("No packages")
 	suite.Wait()
 }
 

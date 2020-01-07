@@ -7,11 +7,13 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/vt10x"
+	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
@@ -24,8 +26,8 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var persistentUsername = "cli-integration-tests"
-var persistentPassword = "test-cli-integration"
+var PersistentUsername = "cli-integration-tests"
+var PersistentPassword = "test-cli-integration"
 
 var defaultTimeout = 10 * time.Second
 
@@ -282,7 +284,7 @@ func (s *Suite) Stop() error {
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
-	s.Spawn("auth", "--username", persistentUsername, "--password", persistentPassword)
+	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
 	s.Expect("successfully authenticated")
 	state, err := s.Wait()
 	s.Require().NoError(err)
@@ -335,4 +337,38 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	case <-time.After(t):
 		return nil, fmt.Errorf("i/o error")
 	}
+}
+
+func (s *Suite) TrimSpaceOutput() string {
+	// When the PTY reaches 80 characters it continues output on a new line.
+	// On Windows this means both a carriage return and a new line. Windows
+	// also picks up any spaces at the end of the console output, hence all
+	// the cleaning we must do here.
+	newlineRe := regexp.MustCompile(`\r?\n`)
+	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
+}
+
+func (s *Suite) CreateNewUser() string {
+	uid, err := uuid.NewRandom()
+	s.Require().NoError(err)
+
+	username := fmt.Sprintf("user-%s", uid.String()[0:8])
+	password := username
+	email := fmt.Sprintf("%s@test.tld", username)
+
+	s.Spawn("auth", "signup")
+	s.Expect("username:")
+	s.SendLine(username)
+	s.Expect("password:")
+	s.SendLine(password)
+	s.Expect("again:")
+	s.SendLine(password)
+	s.Expect("name:")
+	s.SendLine(username)
+	s.Expect("email:")
+	s.SendLine(email)
+	s.Expect("account has been registered", 20*time.Second)
+	s.Wait()
+
+	return username
 }
