@@ -2,7 +2,10 @@ package run
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -12,7 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -157,9 +162,7 @@ scripts:
 	assert.Error(t, err, "Executed with error")
 }
 
-/*
 func TestRunUnknownCommandName(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -173,15 +176,12 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"unknown"})
-	err = Command.Execute()
+	err = run("unknown", nil)
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -196,19 +196,12 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	Command.Register()
-	Command.Exiter = exiter.Exit
+	err = run("run", nil)
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"run"})
-	exitCode := exiter.WaitForExit(func() { Command.Execute() })
-
-	assert.NotEqual(t, 0, exitCode, "Execution caused exit")
 	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
-	Args.Name = "" // reset
 	failures.ResetHandled()
 
 	// Prepare an empty activated environment.
@@ -244,10 +237,8 @@ scripts:
 	project.Persist()
 
 	// Run the command.
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"run"})
 	failures.ResetHandled()
-	err = Command.Execute()
+	err = run("run", nil)
 	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
@@ -276,4 +267,3 @@ func TestPathProvidesExec(t *testing.T) {
 	assert.False(t, pathProvidesExec(temp, "junk", pathStr))
 	assert.False(t, pathProvidesExec(temp, exec, ""))
 }
-*/
