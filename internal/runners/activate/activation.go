@@ -1,6 +1,7 @@
 package activate
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"path"
@@ -79,11 +80,11 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	done := make(chan struct{})
-	defer close(done)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
 
-	hails, fail := hail.Open(done, fname)
+	hails, fail := hail.Open(ctx, fname)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
 		return false
