@@ -41,6 +41,7 @@ func ExecuteRemove(cmd *cobra.Command, allArgs []string) {
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
 	}
 
 	// Commit the package
@@ -48,10 +49,12 @@ func ExecuteRemove(cmd *cobra.Command, allArgs []string) {
 	fail = model.CommitPackage(pj.Owner(), pj.Name(), model.OperationRemoved, RemoveArgs.Name, "")
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_package_removed"))
-		RemoveCommand.Exiter(1)
 		return
 	}
 
 	// Print the result
 	print.Line(locale.Tr("package_removed", RemoveArgs.Name))
+
+	// Remind user to update their activestate.yaml
+	print.Warning(locale.T("package_update_config_file"))
 }

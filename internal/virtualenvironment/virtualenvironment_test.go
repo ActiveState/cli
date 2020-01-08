@@ -130,9 +130,22 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
-	env := venv.GetEnv()
+	env := venv.GetEnv(false)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
 	assert.NotEmpty(t, venv.ActivationID())
+}
+
+func TestInheritEnv_MultipleEquals(t *testing.T) {
+	key := "MULTIPLEEQUALS"
+	value := "one=two two=three three=four"
+
+	os.Setenv(key, value)
+	defer os.Unsetenv(key)
+
+	env := map[string]string{}
+	updated := inheritEnv(env)
+
+	assert.Equal(t, value, updated[key])
 }

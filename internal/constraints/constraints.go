@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/sysinfo"
 )
 
@@ -31,6 +30,11 @@ func osMatches(os string) bool {
 // An example version constraint is "4.1.0".
 func osVersionMatches(version string) bool {
 	osVersion, err := sysinfo.OSVersion()
+
+	if osVersionMatchesGlobbed(osVersion.Version, version) {
+		return true
+	}
+
 	if osVersionOverride != "" {
 		// When writing tests, this string should be of the form:
 		// [major].[minor].[micro] [os free-form name]
@@ -55,6 +59,56 @@ func osVersionMatches(version string) bool {
 			return true
 		}
 	}
+	return true
+}
+
+func osVersionMatchesGlobbed(version, globbed string) bool {
+	return matchesGlobbed(version, globbed)
+}
+
+func matchesGlobbed(value, term string) bool {
+	if !strings.Contains(term, "*") {
+		return term == value
+	}
+
+	chunks := strings.Split(term, "*")
+
+	var mark int
+	var indexes []int
+	for _, chunk := range chunks {
+		if chunk == "" {
+			continue
+		}
+
+		index := strings.Index(value[mark:], chunk)
+		if index < 0 {
+			return false
+		}
+		index += mark
+
+		mark = index + len(chunk)
+		indexes = append(indexes, index, mark)
+
+	}
+
+	for iter, index := range indexes {
+		if iter == 0 {
+			continue
+		}
+
+		if index < indexes[iter-1] {
+			return false
+		}
+	}
+
+	if chunks[0] != "" && !strings.HasPrefix(value, chunks[0]) {
+		return false
+	}
+
+	if chunks[len(chunks)-1] != "" && !strings.HasSuffix(value, chunks[len(chunks)-1]) {
+		return false
+	}
+
 	return true
 }
 

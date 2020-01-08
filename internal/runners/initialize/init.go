@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -83,6 +84,7 @@ func (r *Init) Run(params *RunParams) error {
 }
 
 func run(config configAble, runParams *RunParams) (string, error) {
+	logging.Debug("Init: %s/%s", runParams.Owner, runParams.Project)
 	err := runParams.Prepare()
 	if err != nil {
 		return "", err

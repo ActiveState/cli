@@ -33,8 +33,8 @@ type Command struct {
 	}
 
 	Flags struct {
-		JSON   *bool
 		Filter *string
+		Output *string
 	}
 }
 
@@ -47,8 +47,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client) *Command {
-	var flagJSON bool
+func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -59,12 +58,6 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 			Description: "secrets_cmd_description",
 			Flags: []*commands.Flag{
 				{
-					Name:        "json",
-					Description: "secrets_flag_json",
-					Type:        commands.TypeBool,
-					BoolVar:     &flagJSON,
-				},
-				{
 					Name:        "filter-usedby",
 					Description: "secrets_flag_filter",
 					Type:        commands.TypeString,
@@ -74,8 +67,8 @@ func NewCommand(secretsClient *secretsapi.Client) *Command {
 		},
 	}
 
-	c.Flags.JSON = &flagJSON
 	c.Flags.Filter = &flagFilter
+	c.Flags.Output = output
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -120,7 +113,8 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	if *cmd.Flags.JSON {
+	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))
@@ -129,19 +123,19 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 
 		print.Line(string(data))
 		return
-	}
+	default:
+		rows, fail := secretsToRows(secretExports)
+		if fail != nil {
+			failures.Handle(fail, locale.T("secrets_err_output"))
+			return
+		}
 
-	rows, fail := secretsToRows(secretExports)
-	if fail != nil {
-		failures.Handle(fail, locale.T("secrets_err_output"))
-		return
+		t := gotabulate.Create(rows)
+		t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
+		t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
+		t.SetAlign("left")
+		print.Line(t.Render("simple"))
 	}
-
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{locale.T("secrets_header_name"), locale.T("secrets_header_scope"), locale.T("secrets_header_value"), locale.T("secrets_header_description"), locale.T("secrets_header_usage")})
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"}) // Don't print whitespace lines
-	t.SetAlign("left")
-	print.Line(t.Render("simple"))
 }
 
 func definedSecrets(secCli *secretsapi.Client, filter string) ([]*secretsModels.SecretDefinition, *failures.Failure) {

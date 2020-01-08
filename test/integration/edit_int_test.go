@@ -8,8 +8,10 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
@@ -45,6 +47,12 @@ project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001
 scripts:
   - name: test-script
     value: echo "hello test"
+    constraints:
+      os: macos,linux
+  - name: test-script
+    value: echo hello test
+    constraints:
+      os: windows
 `)
 
 	projectFile := &projectfile.Project{}
@@ -70,6 +78,11 @@ scripts:
 	suite.AppendEnv([]string{fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension))})
 }
 
+func (suite *EditIntegrationTestSuite) TearDownTest() {
+	suite.Suite.TearDownTest()
+	projectfile.Reset()
+}
+
 func (suite *EditIntegrationTestSuite) TestEdit() {
 	defer os.Chdir(suite.originalWd)
 	suite.Spawn("scripts", "edit", "test-script")
@@ -89,6 +102,24 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	// Can't consistently get this line detected on CI
 	// suite.Expect("Script changes detected")
 	suite.Quit()
+}
+
+func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
+	defer os.Chdir(suite.originalWd)
+	suite.Spawn("scripts", "edit", "test-script")
+	suite.SendLine("Y")
+	suite.Wait()
+
+	time.Sleep(time.Second * 2) // let CI env catch up
+
+	project := projectfile.Get()
+	for _, script := range project.Scripts {
+		if script.Name == "test-script" {
+			if !constraints.IsConstrained(script.Constraints) {
+				suite.Contains(script.Value, "more info!")
+			}
+		}
+	}
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

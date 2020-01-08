@@ -69,7 +69,7 @@ func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -94,7 +94,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -119,7 +119,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
-	cmd := secrets.NewCommand(suite.secretsClient)
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -130,7 +130,8 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		cmd.Config().GetCobraCmd().SetArgs([]string{"--json"})
+		output := "json"
+		cmd.Flags.Output = &output
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)

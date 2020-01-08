@@ -1,6 +1,7 @@
 package activate
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"path"
@@ -32,7 +33,7 @@ func activationLoop(targetPath string, activator activateFunc) error {
 		if fail != nil {
 			// The default failure returned by the project package is a big too vague, we want to give the user
 			// something more actionable for the context they're in
-			return failures.FailUserInput.New("err_project_notexist_asyaml")
+			return failures.FailUserInput.New("err_project_from_path")
 		}
 		print.Info(locale.T("info_activating_state", proj))
 
@@ -79,11 +80,11 @@ func activate(owner, name, srcPath string) bool {
 		return false
 	}
 
-	done := make(chan struct{})
-	defer close(done)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	fname := path.Join(config.ConfigPath(), constants.UpdateHailFileName)
 
-	hails, fail := hail.Open(done, fname)
+	hails, fail := hail.Open(ctx, fname)
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_unable_to_monitor_pulls"))
 		return false
@@ -140,7 +141,7 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 
 		case fail, ok := <-subs.Failures():
 			if !ok {
-				logging.Error("subshell failure channel closed")
+				logging.Info("subshell failure channel closed")
 				return false
 			}
 

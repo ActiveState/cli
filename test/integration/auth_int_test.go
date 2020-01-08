@@ -3,9 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -98,14 +96,14 @@ func (suite *AuthIntegrationTestSuite) loginFlags() {
 	suite.Wait()
 }
 
-func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
-	type userJSON struct {
-		Username        string `json:"username,omitempty"`
-		URLName         string `json:"urlname,omitempty"`
-		Tier            string `json:"tier,omitempty"`
-		PrivateProjects bool   `json:"privateProjects"`
-	}
+type userJSON struct {
+	Username        string `json:"username,omitempty"`
+	URLName         string `json:"urlname,omitempty"`
+	Tier            string `json:"tier,omitempty"`
+	PrivateProjects bool   `json:"privateProjects"`
+}
 
+func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	user := userJSON{
 		Username:        "cli-integration-tests",
 		URLName:         "cli-integration-tests",
@@ -117,20 +115,35 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 
 	expected := string(data)
 	suite.LoginAsPersistentUser()
-	suite.Spawn("auth", "--json")
+	suite.Spawn("auth", "--output", method)
 	if runtime.GOOS != "windows" {
 		suite.Expect(expected)
 	}
 	suite.Wait()
-	if runtime.GOOS == "windows" {
-		// When the PTY reaches 80 characters it continues output on a new line.
-		// On Windows this means both a carriage return and a new line. Windows
-		// also picks up any spaces at the end of the console output, hence all
-		// the cleaning we must do here.
-		re := regexp.MustCompile("\r?\n")
-		actual := strings.TrimSpace(re.ReplaceAllString(suite.Output(), ""))
-		suite.Equal(expected, actual)
+	suite.Equal(expected, suite.TrimSpaceOutput())
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
+	suite.authOutput("json")
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
+	suite.authOutput("editor.v0")
+}
+
+func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
+	user := userJSON{
+		Username: "cli-integration-tests",
+		URLName:  "cli-integration-tests",
+		Tier:     "free",
 	}
+	data, err := json.Marshal(user)
+	suite.Require().NoError(err)
+	expected := string(data)
+
+	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
+	suite.Wait()
+	suite.Equal(expected, suite.TrimSpaceOutput())
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {

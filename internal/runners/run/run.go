@@ -19,6 +19,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+var (
+	// FailScriptNotDefined indicates the user provided a script name that is not in the activestate.yaml
+	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
+)
+
 type Run struct {
 }
 
@@ -45,7 +50,7 @@ func run(name string, args []string) error {
 	// Determine which project script to run based on the given script name.
 	script := project.Get().ScriptByName(name)
 	if script == nil {
-		fail := failures.FailUserInput.New(
+		fail := FailScriptNotDefined.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
 		failures.Handle(fail, "")
@@ -85,7 +90,7 @@ func run(name string, args []string) error {
 		}
 
 		subs.SetEnv(venv.GetEnvSlice(true))
-		path = venv.GetEnv()["PATH"]
+		path = venv.GetEnv(false)["PATH"]
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {

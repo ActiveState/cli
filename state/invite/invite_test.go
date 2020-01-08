@@ -128,7 +128,7 @@ func (s *InviteTestSuite) TestInviteUserLimit() {
 	s.apiMock.MockGetOrganization()
 	s.apiMock.MockGetOrganizationLimitsReached()
 
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -137,7 +137,9 @@ func (s *InviteTestSuite) TestInviteUserLimit() {
 	s.NoError(outErr)
 
 	// Should not be able to invite users without mock
-	s.Contains(outStr, "The request exceeds the limit")
+	handledFail := failures.Handled()
+	s.Error(handledFail)
+	s.Contains(handledFail.Error(), "The request exceeds the limit")
 }
 
 func (s *InviteTestSuite) TestCallInParallel() {
@@ -229,7 +231,7 @@ func (s *InviteTestSuite) TestAuthError() {
 	// ... so we are not authorized to get the testOrg
 	s.apiMock.MockGetOrganization401()
 
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -237,7 +239,9 @@ func (s *InviteTestSuite) TestAuthError() {
 	})
 	s.NoError(outErr)
 
-	s.Contains(outStr, locale.T("err_api_not_authenticated"))
+	handledFail := failures.Handled()
+	s.Error(handledFail)
+	s.Contains(handledFail.Error(), locale.T("err_api_not_authenticated"))
 }
 
 func (s *InviteTestSuite) TestForbiddenError() {
@@ -248,7 +252,7 @@ func (s *InviteTestSuite) TestForbiddenError() {
 	// we are not allowed to get the testOrg limits
 	s.apiMock.MockGetOrganization()
 	s.apiMock.MockGetOrganizationLimits403()
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		exitCode := s.ex.WaitForExit(func() {
 			Command.Execute()
 		})
@@ -256,7 +260,9 @@ func (s *InviteTestSuite) TestForbiddenError() {
 	})
 	s.NoError(outErr)
 
-	s.Contains(outStr, locale.T("invite_limit_fetch_err"))
+	handledFail := failures.Handled()
+	s.Error(handledFail)
+	s.Contains(handledFail.Error(), locale.T("invite_limit_fetch_err"))
 }
 
 func TestInviteSuite(t *testing.T) {

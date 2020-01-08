@@ -111,7 +111,7 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 Should install to the provided directory
 
-You should see a message instructing you on how to update your PATH
+You should see a message instructing you to source your RC file.
 
 ## Previous installation detected
 
@@ -155,7 +155,7 @@ The state tool artifact was **NOT** downloaded.
 Run in the same docker container
 
 ```sh
-./scripts/install.sh -n -f
+/scripts/install.sh -n -f
 ```
 
 #### Expected behavior
@@ -167,7 +167,7 @@ When installing, it should warn the user that it is overwriting an existing solu
 Run in the same docker container
 
 ```sh
-./scripts/install.sh -t /opt/state
+/scripts/install.sh -t /opt/state
 ```
 
 #### Expected behavior

@@ -48,12 +48,12 @@ languages:
 	assert.NotEmpty(t, venv.artifactPaths, "Pulled in artifacts")
 
 	for _, path := range venv.artifactPaths {
-		assert.Contains(t, venv.GetEnv()["PATH"], path, "Artifact path is added to PATH")
+		assert.Contains(t, venv.GetEnv(false)["PATH"], path, "Artifact path is added to PATH")
 	}
 
-	assert.Equal(t, ".", venv.GetEnv()["PYTHONPATH"], "Sets PythonPath to project dir")
+	assert.Equal(t, ".", venv.GetEnv(false)["PYTHONPATH"], "Sets PythonPath to project dir")
 
-	env := venv.GetEnv()
+	env := venv.GetEnv(false)
 	for k := range env {
 		assert.NotEmpty(t, k, "Does not return any empty env keys")
 	}

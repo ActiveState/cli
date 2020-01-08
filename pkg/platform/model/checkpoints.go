@@ -17,6 +17,9 @@ import (
 var (
 	// FailGetCheckpoint is a failure in the call to api.GetCheckpoint
 	FailGetCheckpoint = failures.Type("model.fail.getcheckpoint")
+
+	// FailNoData represents an error due to lacking returned data
+	FailNoData = failures.Type("model.fail.nodata", failures.FailNonFatal)
 )
 
 // Checkpoint represents a collection of requirements
@@ -73,12 +76,36 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	response := model.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
-		return nil, strfmt.NewDateTime(), api.FailUnknown.Wrap(err)
+		return nil, strfmt.DateTime{}, api.FailUnknown.Wrap(err)
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
 
+	if response.Commit == nil {
+		return nil, strfmt.DateTime{}, FailNoData.New(locale.T("err_no_data_found"))
+	}
+
 	return response.Requirements, response.Commit.AtTime, nil
+}
+
+// FilterCheckpointPackages filters a Checkpoint removing requirements that
+// are not packages. If nil data is provided, a nil slice is returned. If no
+// packages remain after filtering, an empty slice is returned.
+func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
+	if chkPt == nil {
+		return nil
+	}
+
+	checkpoint := Checkpoint{}
+	for _, requirement := range chkPt {
+		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) {
+			continue
+		}
+
+		checkpoint = append(checkpoint, requirement)
+	}
+
+	return checkpoint
 }
 
 // CheckpointToOrder converts a checkpoint to an order

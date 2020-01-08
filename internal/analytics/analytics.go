@@ -12,8 +12,39 @@ import (
 
 var client *ga.Client
 
+// CustomDimensions represents the custom dimensions sent with each event
+var CustomDimensions *customDimensions
+
 // CatRunCmd is the event category used for running commands
 const CatRunCmd = "run-command"
+
+// CatBuild is the event category used for headchef builds
+const CatBuild = "build"
+
+// ActBuildProject is the event action for requesting a build for a specific project
+const ActBuildProject = "project"
+
+type customDimensions struct {
+	version    string
+	branchName string
+	userID     string
+	output     string
+}
+
+func (d *customDimensions) SetOutput(output string) {
+	d.output = output
+}
+
+func (d *customDimensions) toMap() map[string]string {
+	return map[string]string{
+		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
+		// "1": "hostname (deprected)"
+		"2": d.version,
+		"3": d.branchName,
+		"4": d.userID,
+		"5": d.output,
+	}
+}
 
 func init() {
 	setup()
@@ -37,14 +68,13 @@ func setup() {
 		userIDString = userID.String()
 	}
 
+	CustomDimensions = &customDimensions{
+		version:    constants.Version,
+		branchName: constants.BranchName,
+		userID:     userIDString,
+	}
+
 	client.ClientID(id)
-	client.CustomDimensionMap(map[string]string{
-		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
-		// "1": "hostname (deprected)"
-		"2": constants.Version,
-		"3": constants.BranchName,
-		"4": userIDString,
-	})
 
 	if id == "unknown" {
 		Event("error", "unknown machine id")
@@ -60,12 +90,28 @@ func event(category string, action string) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
 
 	logging.Debug("Event: %s, %s", category, action)
 	if category == CatRunCmd {
 		client.Send(ga.NewPageview())
 	}
 	return client.Send(ga.NewEvent(category, action))
+}
+
+// EventWithLabel logs an event with a label to google analytics
+func EventWithLabel(category string, action string, label string) {
+	go eventWithLabel(category, action, label)
+}
+
+func eventWithLabel(category, action, label string) error {
+	if client == nil || condition.InTest() {
+		return nil
+	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
+
+	logging.Debug("Event+label: %s, %s, %s", category, action, label)
+	return client.Send(ga.NewEvent(category, action).Label(label))
 }
 
 // EventWithValue logs an event with an integer value to google analytics
@@ -77,7 +123,8 @@ func eventWithValue(category string, action string, value int64) error {
 	if client == nil || condition.InTest() {
 		return nil
 	}
+	client.CustomDimensionMap(CustomDimensions.toMap())
 
-	logging.Debug("Event: %s, %s", category, action)
+	logging.Debug("Event+value: %s, %s, %s", category, action, value)
 	return client.Send(ga.NewEvent(category, action).Value(value))
 }

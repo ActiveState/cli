@@ -232,6 +232,33 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     Expand-Archive $zipPath $downloadDir
 }
 
+function test-64Bit() {
+    return (test-is64bitOS -or test-wow64 -or test-64bitWMI -or test-64bitPtr)
+}
+
+function test-is64bitOS() {
+    return [System.Environment]::Is64BitOperatingSystem
+}
+
+function test-wow64() {
+    # Only 64 bit Operating Systems should have this directory
+    return test-path (join-path $env:WinDir "SysWow64") 
+}
+
+function test-64bitWMI() {
+    if ((Get-WmiObject Win32_OperatingSystem).OSArchitecture -eq "64-bit") {
+        return $True
+    } else {
+        return $False
+    }
+}
+
+function test-64bitPtr() {
+    # The int pointer size is 8 for 64 bit Operating Systems and
+    # 4 for 32 bit
+    return [IntPtr]::size -eq 8
+}
+
 function install()
 {
     $USAGE="install.ps1 [flags]
@@ -263,7 +290,7 @@ function install()
     }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-    if ($ENV:PROCESSOR_ARCHITECTURE -eq "AMD64") {
+    if (test-64Bit) {
         $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
         $stateexe="windows-amd64.exe"

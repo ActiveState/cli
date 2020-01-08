@@ -52,6 +52,8 @@ scripts:
     value: scriptValue
   - name: scriptPath
     value: $scripts.pythonScript.path()
+  - name: scriptRecursive
+    value: $scripts.scriptRecursive.path()
 `)
 
 	err := yaml.Unmarshal([]byte(contents), pjFile)
@@ -205,4 +207,15 @@ func TestExpandScriptPath(t *testing.T) {
 	require.NoError(t, fail.ToError())
 	assert.Contains(t, string(contents), language.Python3.Header(), "Has Python3 header")
 	assert.Contains(t, string(contents), "scriptValue", "Contains intended script value")
+}
+
+func TestExpandScriptPathRecursive(t *testing.T) {
+	prj := loadProject(t)
+
+	expanded := project.ExpandFromProject("$scripts.scriptRecursive", prj)
+	assert.NoError(t, project.Failure().ToError(), "Ran without failure")
+
+	contents, fail := fileutils.ReadFile(expanded)
+	require.NoError(t, fail.ToError())
+	assert.NotContains(t, contents, "$scripts.scriptRecursive.path()")
 }

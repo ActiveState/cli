@@ -35,6 +35,24 @@ func copyFileToTempDir(t *testing.T, filename string) string {
 	return tmpfile
 }
 
+func TestFindFileInPath(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err, "should detect root path")
+
+	expectpath := filepath.Join(root, "internal", "fileutils", "testdata")
+	expectfile := filepath.Join(expectpath, "test.go")
+	testpath := filepath.Join(expectpath, "extra-dir", "another-dir")
+	resultpath, fail := FindFileInPath(testpath, "test.go")
+	assert.Nilf(t, fail, "No failure expected")
+	assert.Equal(t, resultpath, expectfile)
+
+	nonExistentPath := filepath.FromSlash("/dir1/dir2")
+	_, fail = FindFileInPath(nonExistentPath, "FILE_THAT_SHOULD_NOT_EXIST")
+
+	assert.Error(t, fail.ToError())
+	assert.Equal(t, fail.Type.Name, FailFindInPathNotFound.Name)
+}
+
 func TestReplaceAllTextFile(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
