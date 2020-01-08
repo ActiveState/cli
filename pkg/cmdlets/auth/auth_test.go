@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
+	"github.com/ActiveState/cli/internal/runners/auth"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -28,10 +28,13 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	authCmd "github.com/ActiveState/cli/state/auth"
 )
 
-var Command = authCmd.Command
+var (
+	AuthRunner   = auth.NewAuth()
+	SignupRunner = auth.NewSignup()
+	LogoutRunner = auth.NewLogout()
+)
 
 func setup(t *testing.T) {
 	failures.ResetHandled()
@@ -42,12 +45,6 @@ func setup(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{})
-	authCmd.Flags.Token = ""
-	authCmd.Flags.Username = ""
-	authCmd.Flags.Password = ""
-	authCmd.Flags.Output = new(string)
 	authlet.OpenURI = func(uri string) error { return nil }
 }
 
@@ -73,13 +70,9 @@ func TestExecuteNoArgs(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("baduser", nil)
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
+	err := AuthRunner.Run(&auth.AuthParams{})
 
-	assert.Equal(t, 1, exitCode, "Exited with code 1")
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 
@@ -103,7 +96,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, fail.ToError())
 
-	assert.NoError(t, Command.Execute(), "Executed without error")
+	assert.NoError(t, AuthRunner.Run(&auth.AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -125,7 +118,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	execErr := Command.Execute()
+	execErr := AuthRunner.Run(&auth.AuthParams{})
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -158,7 +151,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	execErr := Command.Execute()
+	execErr := AuthRunner.Run(&auth.AuthParams{})
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -208,7 +201,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
-	execErr := Command.Execute()
+	execErr := AuthRunner.Run(&auth.AuthParams{})
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -245,14 +238,11 @@ func TestExecuteSignup(t *testing.T) {
 
 	user := setupUser()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"signup"})
-
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	execErr := Command.Execute()
+	execErr := SignupRunner.Run()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -284,10 +274,7 @@ func TestExecuteToken(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--token", token})
-
-	err := Command.Execute()
+	err := AuthRunner.Run(&auth.AuthParams{Token: token})
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -313,10 +300,7 @@ func TestExecuteLogout(t *testing.T) {
 	require.NoError(t, fail.ToError())
 	assert.True(t, a.Authenticated(), "Authenticated")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"logout"})
-
-	err := Command.Execute()
+	err := LogoutRunner.Run()
 	assert.NoError(t, err, "Executed without error")
 	assert.False(t, a.Authenticated(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -353,19 +337,15 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
 
-	assert.Equal(t, 1, exitCode, "Exited with code 1")
+	err := AuthRunner.Run(&auth.AuthParams{})
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	execErr := Command.Execute()
+	execErr := AuthRunner.Run(&auth.AuthParams{})
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -408,19 +388,15 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	exitCode := ex.WaitForExit(func() {
-		Command.Execute()
-	})
 
-	assert.Equal(t, 1, exitCode, "Exited with code 1")
+	err := AuthRunner.Run(&auth.AuthParams{})
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
-	execErr := Command.Execute()
+	execErr := AuthRunner.Run(&auth.AuthParams{})
 
 	require.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")

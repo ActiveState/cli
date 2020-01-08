@@ -28,7 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func setup(t *testing.T) {
+func setup(t *testing.T) *Auth {
 	failures.ResetHandled()
 	authentication.Logout()
 	secretsapi_test.InitializeTestClient("bearer123")
@@ -37,12 +37,7 @@ func setup(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{})
-	Flags.Token = ""
-	Flags.Username = ""
-	Flags.Password = ""
-	Flags.Output = new(string)
+	return NewAuth()
 }
 
 func setupUser() *mono_models.UserEditable {
@@ -56,7 +51,7 @@ func setupUser() *mono_models.UserEditable {
 }
 
 func TestExecuteNoArgsAuthenticated(t *testing.T) {
-	setup(t)
+	runner := setup(t)
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
@@ -78,7 +73,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, fail.ToError())
 
-	assert.NoError(t, Command.Execute(), "Executed without error")
+	assert.NoError(t, runner.Run(&AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -100,13 +95,14 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{})
+	// Cc := Command.GetCobraCmd()
+	// Cc.SetArgs([]string{})
+	runner := NewAuth()
 
 	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	execErr = Command.Execute()
+	execErr = runner.Run(&AuthParams{})
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -129,14 +125,17 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--username", user.Username, "--password", user.Password})
-	err := Command.Execute()
+	runner := NewAuth()
+	err := runner.Run(&AuthParams{
+		Username: user.Username,
+		Password: user.Password,
+	})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
+
 func TestExecuteSignup(t *testing.T) {
 	setup(t)
 	pmock := promptMock.Init()
@@ -163,15 +162,14 @@ func TestExecuteSignup(t *testing.T) {
 
 	user := setupUser()
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"signup"})
+	runner := NewSignup()
 
 	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	execErr = Command.Execute()
+	execErr = runner.Run()
 
 	assert.NoError(t, execErr, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -203,10 +201,9 @@ func TestExecuteToken(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"--token", token})
+	runner := NewAuth()
+	err := runner.Run(&AuthParams{Token: token})
 
-	err := Command.Execute()
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -232,10 +229,9 @@ func TestExecuteLogout(t *testing.T) {
 	require.NoError(t, fail.ToError())
 	assert.True(t, auth.Authenticated(), "Authenticated")
 
-	Cc := Command.GetCobraCmd()
-	Cc.SetArgs([]string{"logout"})
+	runner := NewLogout()
 
-	err := Command.Execute()
+	err := runner.Run()
 	assert.NoError(t, err, "Executed without error")
 	assert.False(t, auth.Authenticated(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")

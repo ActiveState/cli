@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/fork"
@@ -33,7 +32,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	cmd.AddLegacyChildren(
 		events.Command,
 		update.Command,
-		auth.Command,
 		organizations.Command,
 		projects.Command,
 		show.Command,
