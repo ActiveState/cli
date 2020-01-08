@@ -64,10 +64,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 	configFile, err := r.setupConfigFile(targetPath)
 	if err != nil {
 		if params.Namespace == "" {
-			logging.Error("Error finding projectfile during activation: %v", err)
-			// The default failure returned by the project package is a big too vague,
-			// we want to give the user something more actionable for the context they're in
-			return failures.FailUserInput.New("err_project_notexist_asyaml")
+			return failures.FailUserInput.Wrap(err)
 		}
 		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
