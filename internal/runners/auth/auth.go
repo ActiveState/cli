@@ -21,7 +21,6 @@ func NewAuth() *Auth {
 }
 
 type AuthParams struct {
-	// TODO: Invesitage how the output param will work until the new mechanism is ready
 	Output   string
 	Token    string
 	Username string
@@ -42,8 +41,6 @@ func (a *Auth) Run(params *AuthParams) error {
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				return fail
-				// failures.Handle(fail, locale.T("login_err_output"))
-				// return nil
 			}
 			print.Line(string(user))
 		default:
@@ -59,15 +56,11 @@ func (a *Auth) Run(params *AuthParams) error {
 		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
 		if fail != nil {
 			return fail
-			// failures.Handle(fail, locale.T("login_err_auth"))
-			// return nil
 		}
 	} else {
 		fail = tokenAuth(params.Token)
 		if fail != nil {
 			return fail
-			// failures.Handle(fail, locale.T("login_err_auth_token"))
-			// return nil
 		}
 	}
 
@@ -76,8 +69,6 @@ func (a *Auth) Run(params *AuthParams) error {
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
 			return fail
-			// failures.Handle(fail, locale.T("login_err_output"))
-			// return nil
 		}
 		print.Line(string(user))
 	default:

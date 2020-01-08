@@ -9,7 +9,6 @@ func NewSignup() *Signup {
 }
 
 func (s *Signup) Run() error {
-	// TODO: Update signup to return error
 	authlet.Signup()
 	return nil
 }

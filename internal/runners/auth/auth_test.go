@@ -95,8 +95,6 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	// Cc := Command.GetCobraCmd()
-	// Cc.SetArgs([]string{})
 	runner := NewAuth()
 
 	var execErr error
