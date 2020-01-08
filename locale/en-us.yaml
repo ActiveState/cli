@@ -1007,10 +1007,6 @@ export_recipe_flag_pretty:
   other: Enables export format beautification
 export_recipe_flag_platform:
   other: Sets target platform
-err_fetching_recipe_data:
-  other: Cannot fetch recipe data
-err_processing_recipe_data:
-  other: Cannot process recipe data
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
@@ -1266,5 +1262,3 @@ push_description:
   other: Push your latest changes to the platform
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
-err_read_privkey:
-  other: Could not read private key file
