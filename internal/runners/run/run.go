@@ -1,7 +1,6 @@
 package run
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -38,20 +37,25 @@ func run(name string, args []string) error {
 	logging.Debug("Execute")
 
 	if name == "" {
-		return failures.FailUserInput.New("error_state_run_undefined_name")
+		fail := failures.FailUserInput.New("error_state_run_undefined_name")
+		failures.Handle(fail, "")
+		return nil
 	}
 
 	// Determine which project script to run based on the given script name.
 	script := project.Get().ScriptByName(name)
 	if script == nil {
-		return failures.FailUserInput.New(
+		fail := failures.FailUserInput.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
+		failures.Handle(fail, "")
+		return nil
 	}
 
 	subs, fail := subshell.Get()
 	if fail != nil {
-		return fail.WithDescription("error_state_run_no_shell")
+		failures.Handle(fail, locale.T("error_state_run_no_shell"))
+		return nil
 	}
 
 	lang := script.Language()
@@ -76,7 +80,8 @@ func run(name string, args []string) error {
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
-			return fail.WithDescription("error_state_run_activate")
+			failures.Handle(fail, locale.T("error_state_run_activate"))
+			return nil
 		}
 
 		subs.SetEnv(venv.GetEnvSlice(true))
@@ -92,7 +97,8 @@ func run(name string, args []string) error {
 	scriptBlock := project.Expand(script.Value())
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
-		return fail.WithDescription("error_state_run_setup_scriptfile")
+		failures.Handle(fail, locale.T("error_state_run_setup_scriptfile"))
+		return nil
 	}
 	defer sf.Clean()
 
@@ -100,7 +106,8 @@ func run(name string, args []string) error {
 	// ignore code for now, passing via failure
 	_, err := subs.Run(sf.Filename(), args...)
 	if err != nil {
-		return fmt.Errorf("%s\n%v", locale.T("errors_state_run_error"), err)
+		failures.Handle(err, locale.T("error_state_run_error"))
+		return nil
 	}
 
 	return nil

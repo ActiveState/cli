@@ -62,20 +62,18 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	project.Persist()
 	defer projectfile.Reset()
 
-	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		err = run(cmdName, cmdArgs)
+		run(cmdName, cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
 
-	return outStr, err
+	return outStr, failures.Handled()
 }
 
 func assertExecCommandProcessesArgs(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string, expectedStdout string) {
 	outStr, err := captureExecCommand(t, tmplCmdName, cmdName, cmdArgs)
 
 	require.NoError(t, err, "unexpected error occurred")
-	require.Nil(t, failures.Handled(), "unexpected failure occurred")
 
 	assert.Contains(t, outStr, expectedStdout)
 }
@@ -87,8 +85,6 @@ func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs [
 	fail, ok := err.(*failures.Failure)
 	require.True(t, ok, "error must be failure (for now)")
 	assert.Equal(t, failureType, fail.Type, "run error: No failure occurred")
-
-	require.Nil(t, failures.Handled(), "unexpected failure")
 }
 
 func TestArgs_NoArgsProvided(t *testing.T) {

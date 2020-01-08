@@ -54,8 +54,7 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("run", nil)
-	assert.NoError(t, err, "Run without error")
+	run("run", nil)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -93,8 +92,7 @@ scripts:
 	os.Setenv(constants.DisableRuntime, "true")
 
 	out := capturer.CaptureOutput(func() {
-		err = run("run", nil)
-		assert.NoError(t, err, "Run without error")
+		run("run", nil)
 	})
 
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -129,8 +127,7 @@ scripts:
 	project.Persist()
 
 	out, err := osutil.CaptureStdout(func() {
-		err := run("run", nil)
-		require.NoError(t, err)
+		run("run", nil)
 	})
 	require.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
@@ -151,8 +148,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("", nil)
-	assert.Error(t, err, "Run with error")
+	run("", nil)
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
@@ -169,9 +166,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("unknown", nil)
-	assert.Error(t, err, "Run with error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	run("unknown", nil)
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunUnknownCommand(t *testing.T) {
@@ -189,10 +185,9 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	err = run("run", nil)
+	run("run", nil)
 
-	assert.Error(t, err, "Run with error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
+	assert.Error(t, failures.Handled(), "Failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -232,8 +227,7 @@ scripts:
 
 	// Run the command.
 	failures.ResetHandled()
-	err = run("run", nil)
-	assert.NoError(t, err, "Run without error")
+	run("run", nil)
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.

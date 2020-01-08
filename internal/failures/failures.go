@@ -159,11 +159,6 @@ func (e *Failure) ToError() error {
 	return errors.New(e.Error())
 }
 
-func (e *Failure) WithDescription(message string) *Failure {
-	e.Message = locale.T(message) + "\n" + e.Message
-	return e
-}
-
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 //
