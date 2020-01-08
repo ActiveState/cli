@@ -97,12 +97,11 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	runner := NewAuth()
 
-	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	execErr = runner.Run(&AuthParams{})
+	err := runner.Run(&AuthParams{})
 
-	assert.NoError(t, execErr, "Executed without error")
+	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
@@ -162,14 +161,13 @@ func TestExecuteSignup(t *testing.T) {
 
 	runner := NewSignup()
 
-	var execErr error
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	execErr = runner.Run()
+	err := runner.Run()
 
-	assert.NoError(t, execErr, "Executed without error")
+	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
