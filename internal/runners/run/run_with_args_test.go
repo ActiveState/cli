@@ -12,7 +12,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -56,96 +55,78 @@ scripts:
 	return project
 }
 
-func captureExecCommand(t *testing.T, cmdName string, cmdArgs []string) (int, string) {
-	Args.Name = "" // reset
+func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string) (string, error) {
 	failures.ResetHandled()
 
-	project := setupProjectWithScriptsExpectingArgs(t, cmdName)
+	project := setupProjectWithScriptsExpectingArgs(t, tmplCmdName)
 	project.Persist()
 	defer projectfile.Reset()
 
-	Cc := Command.GetCobraCmd()
-	// without this Unregister call, positional arg state is persisted between tests
-	defer Command.Unregister()
-
-	Cc.SetArgs(cmdArgs)
-
-	var outStr string
-	Command.Exiter = exiter.Exit
-	exitCode := exiter.WaitForExit(func() {
-		var outErr error
-		outStr, outErr = osutil.CaptureStdout(func() {
-			err := Command.Execute()
-			require.NoError(t, err, "error executing command")
-		})
-		require.NoError(t, outErr, "error capturing stdout")
+	var err error
+	outStr, outErr := osutil.CaptureStdout(func() {
+		err = run(cmdName, cmdArgs)
 	})
-	return exitCode, outStr
+	require.NoError(t, outErr, "error capturing stdout")
+
+	return outStr, err
 }
 
-func assertExecCommandProcessesArgs(t *testing.T, cmdName string, cmdArgs []string, expectedStdout string) {
-	exitCode, outStr := captureExecCommand(t, cmdName, cmdArgs)
+func assertExecCommandProcessesArgs(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string, expectedStdout string) {
+	outStr, err := captureExecCommand(t, tmplCmdName, cmdName, cmdArgs)
 
-	require.Equal(t, -1, exitCode, "Exits normally")
+	require.NoError(t, err, "unexpected error occurred")
 	require.Nil(t, failures.Handled(), "unexpected failure occurred")
+
 	assert.Contains(t, outStr, expectedStdout)
 }
 
-func assertExecCommandFails(t *testing.T, cmdName string, cmdArgs []string, failureType *failures.FailureType) {
-	exitCode, _ := captureExecCommand(t, cmdName, cmdArgs)
+func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string, failureType *failures.FailureType) {
+	_, err := captureExecCommand(t, tmplCmdName, cmdName, cmdArgs)
+	require.Error(t, err, "run with error")
 
-	require.Equal(t, 1, exitCode, "Exits with code 1")
-	handled := failures.Handled()
-	require.NotNil(t, handled, "expected a failure")
-	assert.Equal(t, failureType, handled.(*failures.Failure).Type, "No failure occurred")
+	fail, ok := err.(*failures.Failure)
+	require.True(t, ok, "error must be failure (for now)")
+	assert.Equal(t, failureType, fail.Type, "run error: No failure occurred")
+
+	require.Nil(t, failures.Handled(), "unexpected failure")
 }
 
 func TestArgs_NoArgsProvided(t *testing.T) {
-	// state run
-	assertExecCommandFails(t, "run", []string{}, failures.FailUserInput)
+	assertExecCommandFails(t, "junk", "", []string{}, failures.FailUserInput)
 }
 
 func TestArgs_NoCmd_OnlyDash(t *testing.T) {
-	// state run --
-	assertExecCommandFails(t, "run", []string{"--"}, failures.FailUserInput)
+	assertExecCommandFails(t, "junk", "--", []string{}, failures.FailUserInput)
 }
 
 func TestArgs_NameAndDashOnly(t *testing.T) {
-	// state run foo --
-	assertExecCommandProcessesArgs(t, "foo", []string{"foo", "--"}, "ARGS|--||||")
+	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"--"}, "ARGS|--||||")
 }
 
 func TestArgs_MultipleArgs_NoDash(t *testing.T) {
-	// state run bar baz bee
-	assertExecCommandProcessesArgs(t, "bar", []string{"bar", "baz", "bee"}, "ARGS|baz|bee|||")
+	assertExecCommandProcessesArgs(t, "bar", "bar", []string{"baz", "bee"}, "ARGS|baz|bee|||")
 }
 
-func TestArgs_NoCmd_AllArgsAfterDash(t *testing.T) {
-	// state run -- foo geez
-	assertExecCommandFails(t, "run", []string{"--", "foo", "geez"}, failures.FailUserInput)
+func TestArgs_NoCmd_DashAsScriptName(t *testing.T) {
+	assertExecCommandFails(t, "junk", "--", []string{"foo", "geez"}, failures.FailUserInput)
 }
 
-func TestArgs_NoCmd_FlagAsFirstArg(t *testing.T) {
-	// state run -- foo geez
-	assertExecCommandFails(t, "run", []string{"-f", "--foo", "geez"}, failures.FailUserInput)
+func TestArgs_NoCmd_FlagAsScriptName(t *testing.T) {
+	assertExecCommandFails(t, "junk", "-f", []string{"--foo", "geez"}, failures.FailUserInput)
 }
 
 func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {
-	// state run release -- the kraken
-	assertExecCommandProcessesArgs(t, "release", []string{"release", "--", "the", "kraken"}, "ARGS|--|the|kraken||")
+	assertExecCommandProcessesArgs(t, "release", "release", []string{"--", "the", "kraken"}, "ARGS|--|the|kraken||")
 }
 
 func TestArgs_WithCmd_WithArgs_NoDash(t *testing.T) {
-	// state run release the kraken
-	assertExecCommandProcessesArgs(t, "release", []string{"release", "the", "kraken"}, "ARGS|the|kraken|||")
+	assertExecCommandProcessesArgs(t, "release", "release", []string{"the", "kraken"}, "ARGS|the|kraken|||")
 }
 
 func TestArgs_WithCmd_WithArgs_BeforeAndAfterDash(t *testing.T) {
-	// state run foo bar -- bees wax
-	assertExecCommandProcessesArgs(t, "foo", []string{"foo", "bar", "--", "bees", "wax"}, "ARGS|bar|--|bees|wax|")
+	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"bar", "--", "bees", "wax"}, "ARGS|bar|--|bees|wax|")
 }
 
 func TestArgs_WithCmd_WithFlags_BeforeAndAfterDash(t *testing.T) {
-	// state run foo --bar -- bees --wax
-	assertExecCommandProcessesArgs(t, "foo", []string{"foo", "--bar", "--", "bees", "--wax"}, "ARGS|--bar|--|bees|--wax|")
+	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"--bar", "--", "bees", "--wax"}, "ARGS|--bar|--|bees|--wax|")
 }

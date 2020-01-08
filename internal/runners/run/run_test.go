@@ -1,7 +1,6 @@
 package run
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -19,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -57,7 +55,7 @@ scripts:
 	project.Persist()
 
 	err = run("run", nil)
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, err, "Run without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -94,16 +92,11 @@ scripts:
 	os.Setenv("TEST_KEY_EXISTS", "true")
 	os.Setenv(constants.DisableRuntime, "true")
 
-	ex := exiter.New()
-	var exitCode int
 	out := capturer.CaptureOutput(func() {
-		exitCode = ex.WaitForExit(func() {
-			err = run("run", nil)
-		})
+		err = run("run", nil)
+		assert.NoError(t, err, "Run without error")
 	})
 
-	assert.Equal(t, -1, exitCode, fmt.Sprintf("Exited with code %d, output: %s", exitCode, out))
-	assert.NoError(t, err, "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
 	assert.Contains(t, out, "TEST_KEY_EXISTS")
@@ -159,7 +152,7 @@ scripts:
 	project.Persist()
 
 	err = run("", nil)
-	assert.Error(t, err, "Executed with error")
+	assert.Error(t, err, "Run with error")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
@@ -177,7 +170,7 @@ scripts:
 	project.Persist()
 
 	err = run("unknown", nil)
-	assert.NoError(t, err, "Executed without error")
+	assert.Error(t, err, "Run with error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -198,7 +191,8 @@ scripts:
 
 	err = run("run", nil)
 
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	assert.Error(t, err, "Run with error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -239,7 +233,7 @@ scripts:
 	// Run the command.
 	failures.ResetHandled()
 	err = run("run", nil)
-	assert.NoError(t, err, "Executed without error")
+	assert.NoError(t, err, "Run without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.
