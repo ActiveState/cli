@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -61,54 +61,50 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		return err
 	}
 
+	configFile, err := r.setupConfigFile(targetPath)
+	if err != nil {
+		if params.Namespace == "" {
+			logging.Error("Error finding projectfile during activation: %v", err)
+			// The default failure returned by the project package is a big too vague,
+			// we want to give the user something more actionable for the context they're in
+			return failures.FailUserInput.New("err_project_notexist_asyaml")
+		}
+		err := r.activateCheckout.Run(params.Namespace, targetPath)
+		if err != nil {
+			return err
+		}
+	}
+	if filepath.Dir(configFile) != targetPath {
+		targetPath = filepath.Dir(configFile)
+	}
+
 	if params.Output != "" {
 		return activateOutput(targetPath, params.Output)
 	}
 
-	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
+	go sendProjectIDToAnalytics(params.Namespace, configFile)
 
 	return activatorLoop(targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
-	var (
-		targetPath string
-		err        error
-	)
-
 	switch {
 	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
+		return r.namespaceSelect.Run(namespace, preferredPath)
 	// Use the user provided path
 	case preferredPath != "":
-		targetPath, err = preferredPath, nil
+		return preferredPath, nil
 	// Get path from working directory
 	default:
-		targetPath, err = os.Getwd()
+		return os.Getwd()
 	}
-	if err != nil {
-		return "", err
-	}
-
-	return r.setupConfigFile(namespace, targetPath)
 }
 
-func (r *Activate) setupConfigFile(namespace, targetPath string) (string, error) {
-	proj, fail := project.FromPath(targetPath)
-	if fail != nil {
-		if fail.Type.Matches(fileutils.FailFindInPathNotFound) {
-			if namespace == "" {
-				return "", fail
-			}
-			err := r.activateCheckout.Run(namespace, targetPath)
-			if err != nil {
-				return "", err
-			}
-			return targetPath, nil
-		}
-		return "", fail
+func (r *Activate) setupConfigFile(targetPath string) (string, error) {
+	proj, err := project.FromPath(targetPath)
+	if err != nil {
+		return filepath.Join(targetPath, constants.ConfigFileName), err
 	}
-
-	return filepath.Dir(proj.Source().Path()), nil
+	return proj.Source().Path(), nil
 }

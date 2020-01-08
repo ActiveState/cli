@@ -95,12 +95,9 @@ func TestActivate_run(t *testing.T) {
 
 func TestActivate_setupPath(t *testing.T) {
 	var tempDir = fileutils.TempDirUnsafe()
-	var tempDirWithConfig = fileutils.TempDirUnsafe()
-	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte("project: https://platform.activestate.com/foo/foo"))
 
 	type fields struct {
-		namespaceSelect  namespaceSelectAble
-		activateCheckout CheckoutAble
+		namespaceSelect namespaceSelectAble
 	}
 	type args struct {
 		namespace     string
@@ -115,28 +112,28 @@ func TestActivate_setupPath(t *testing.T) {
 	}{
 		{
 			"namespace with preferred path",
-			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
+			fields{&namespaceSelectMock{"defer", nil}},
 			args{"foo", filepath.Join(tempDir, "1")},
 			filepath.Join(tempDir, "1"),
 			false,
 		},
 		{
 			"namespace no path",
-			fields{&namespaceSelectMock{filepath.Join(tempDir, "2"), nil}, &checkoutMock{}},
+			fields{&namespaceSelectMock{filepath.Join(tempDir, "2"), nil}},
 			args{"foo", ""},
 			filepath.Join(tempDir, "2"),
 			false,
 		},
 		{
 			"no namespace with path",
-			fields{&namespaceSelectMock{}, &checkoutMock{}},
-			args{"", tempDirWithConfig},
-			tempDirWithConfig,
+			fields{&namespaceSelectMock{}},
+			args{"", filepath.Join(tempDir, "3")},
+			filepath.Join(tempDir, "3"),
 			false,
 		},
 		{
 			"errors",
-			fields{&namespaceSelectMock{"", errors.New("mocked error")}, &checkoutMock{}},
+			fields{&namespaceSelectMock{"", errors.New("mocked error")}},
 			args{"foo", ""},
 			"",
 			true,
@@ -145,8 +142,7 @@ func TestActivate_setupPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Activate{
-				namespaceSelect:  tt.fields.namespaceSelect,
-				activateCheckout: tt.fields.activateCheckout,
+				namespaceSelect: tt.fields.namespaceSelect,
 			}
 			got, err := r.setupPath(tt.args.namespace, tt.args.preferredPath)
 			if (err != nil) != tt.wantErr {
