@@ -100,7 +100,7 @@ func run(name string, args []string) error {
 	// ignore code for now, passing via failure
 	_, err := subs.Run(sf.Filename(), args...)
 	if err != nil {
-		return fmt.Errorf("%s\n%w", locale.T("errors_state_run_error"), err)
+		return fmt.Errorf("%s\n%v", locale.T("errors_state_run_error"), err)
 	}
 
 	return nil
