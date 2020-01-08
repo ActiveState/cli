@@ -44,12 +44,7 @@ func newAuthCommand() *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return authRunner.Run(&auth.AuthParams{
-				// Output:   globals.Output,
-				Token:    opts.Token,
-				Username: opts.Username,
-				Password: opts.Password,
-			})
+			return authRunner.Run(newAuthRunParams(ccmd, opts))
 		},
 	)
 
@@ -59,6 +54,22 @@ func newAuthCommand() *captain.Command {
 	)
 
 	return authCmd
+}
+
+func newAuthRunParams(ccmd *captain.Command, opts AuthOpts) *auth.AuthParams {
+	outputFlag := ccmd.FlagByName("output", true)
+
+	var output string
+	if outputFlag != nil {
+		output = *outputFlag.StringVar
+	}
+
+	return &auth.AuthParams{
+		Output:   output,
+		Token:    opts.Token,
+		Username: opts.Username,
+		Password: opts.Password,
+	}
 }
 
 func newSignupCommand() *captain.Command {
