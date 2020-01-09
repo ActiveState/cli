@@ -12,11 +12,19 @@ type Outputer interface {
 	Close() error
 }
 
-func New(formatName string, outWriter, errWriter io.Writer) (Outputer, *failures.Failure) {
+func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 	switch formatName {
 	case PlainFormatName:
-		return NewPlain(outWriter, errWriter)
+		plain, fail := NewPlain(config)
+		return &plain, fail
 	}
 
 	return nil, nil
+}
+
+type Config struct {
+	OutWriter   io.Writer
+	ErrWriter   io.Writer
+	Colored     bool
+	Interactive bool
 }

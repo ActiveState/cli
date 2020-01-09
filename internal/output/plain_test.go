@@ -99,10 +99,12 @@ func TestPlain_Print(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := Plain{
-				outWriter: outWriter,
-				errWriter: errWriter,
-			}
+			f := &Plain{&Config{
+				OutWriter:   outWriter,
+				ErrWriter:   errWriter,
+				Colored:     false,
+				Interactive: false,
+			}}
 
 			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")

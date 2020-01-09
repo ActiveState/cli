@@ -15,35 +15,42 @@ const PlainFormatName = "plain"
 
 // Plain ..
 type Plain struct {
-	outWriter io.Writer
-	errWriter io.Writer
+	cfg *Config
 }
 
 // NewPlain ..
-func NewPlain(outWriter, errWriter io.Writer) (Plain, *failures.Failure) {
-	return Plain{outWriter, errWriter}, nil
+func NewPlain(config *Config) (Plain, *failures.Failure) {
+	return Plain{config}, nil
 }
 
-func (f Plain) Print(value interface{}) {
-	f.write(f.outWriter, value)
+func (f *Plain) Print(value interface{}) {
+	f.write(f.cfg.OutWriter, value)
 }
 
-func (f Plain) Error(value interface{}) {
-	f.write(f.errWriter, fmt.Sprintf("[RED]%s[/RESET]", value))
+func (f *Plain) Error(value interface{}) {
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", value))
 }
 
-func (f Plain) Close() error {
+func (f *Plain) Close() error {
 	return nil
 }
 
-func (f Plain) write(writer io.Writer, value interface{}) {
+func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
 		logging.Errorf("Could not sprint value: %v, error: %v", value, err)
-		writeColorized(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.errWriter)
+		writeColorized(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.cfg.ErrWriter)
 		return
 	}
-	writeColorized(v, f.outWriter)
+	writeColorized(v, f.cfg.OutWriter)
+}
+
+func (f *Plain) writeNow(writer io.Writer, value string) {
+	if f.cfg.Colored {
+		writeColorized(value, writer)
+	} else {
+		writer.Write([]byte(value))
+	}
 }
 
 func sprint(value interface{}) (string, error) {
