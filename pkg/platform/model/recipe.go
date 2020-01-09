@@ -51,6 +51,10 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
+		if err == context.DeadlineExceeded {
+			return nil, FailOrderRecipes.New("request_timed_out")
+		}
+
 		recipeBody, err2 := json.Marshal(params.Order)
 		if err2 != nil {
 			recipeBody = []byte(fmt.Sprintf("Could not marshal recipe, error: %v", err2))
@@ -65,10 +69,6 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 			logging.Error("Bad request while resolving recipe, error: %s, recipe: %s", msg, string(recipeBody))
 			return nil, FailOrderRecipes.New(msg)
 		default:
-			if err == context.DeadlineExceeded {
-				return nil, FailOrderRecipes.New("request_timed_out")
-			}
-
 			logging.Error("Unknown error while resolving recipe, error: %v, recipe: %s", err, string(recipeBody))
 			return nil, FailOrderRecipes.Wrap(err)
 		}
