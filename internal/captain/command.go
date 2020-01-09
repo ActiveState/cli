@@ -20,9 +20,8 @@ type Command struct {
 
 	name string
 
-	flags      []*Flag
-	arguments  []*Argument
-	parentCmds []*Command
+	flags     []*Flag
+	arguments []*Argument
 
 	execute func(cmd *Command, args []string) error
 }
@@ -119,11 +118,6 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 func (c *Command) FlagByName(name string, persistOnly bool) *Flag {
 	for _, flag := range c.flags {
 		if flag.Name == name && (!persistOnly || flag.Persist) {
-			return flag
-		}
-	}
-	for _, parent := range c.parentCmds {
-		if flag := parent.FlagByName(name, true); flag != nil {
 			return flag
 		}
 	}
