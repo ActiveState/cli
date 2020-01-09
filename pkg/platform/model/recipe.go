@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -64,6 +65,10 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 			logging.Error("Bad request while resolving recipe, error: %s, recipe: %s", msg, string(recipeBody))
 			return nil, FailOrderRecipes.New(msg)
 		default:
+			if err == context.DeadlineExceeded {
+				return nil, FailOrderRecipes.New("request_timed_out")
+			}
+
 			logging.Error("Unknown error while resolving recipe, error: %v, recipe: %s", err, string(recipeBody))
 			return nil, FailOrderRecipes.Wrap(err)
 		}
