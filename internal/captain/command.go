@@ -65,7 +65,7 @@ func (c *Command) Usage() error {
 	return c.cobra.Usage()
 }
 
-func (c *Command) UsageString() string {
+func (c *Command) UsageText() string {
 	return c.cobra.UsageString()
 }
 
@@ -100,6 +100,10 @@ func (c *Command) SetUsageTemplate(usageTemplate string) {
 	c.cobra.SetUsageTemplate(locale.Tt(usageTemplate, map[string]interface{}{
 		"Arguments": localizedArgs,
 	}))
+}
+
+func (c *Command) SetDisableFlagParsing(b bool) {
+	c.cobra.DisableFlagParsing = b
 }
 
 func (c *Command) Arguments() []*Argument {

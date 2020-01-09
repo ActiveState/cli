@@ -1,6 +1,8 @@
 package cmdtree
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -11,7 +13,7 @@ func newRunCommand() *captain.Command {
 	runRunner := run.New()
 
 	var name string
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"run",
 		locale.T("run_description"),
 		nil,
@@ -24,7 +26,8 @@ func newRunCommand() *captain.Command {
 		},
 		func(ccmd *captain.Command, args []string) error {
 			if name == "-h" || name == "--help" {
-				print.Line(ccmd.UsageString())
+				fmt.Println("test")
+				print.Line(ccmd.UsageText())
 				return nil
 			}
 
@@ -35,4 +38,7 @@ func newRunCommand() *captain.Command {
 			return runRunner.Run(name, args)
 		},
 	)
+	cmd.SetDisableFlagParsing(true)
+
+	return cmd
 }
