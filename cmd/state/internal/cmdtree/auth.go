@@ -12,11 +12,11 @@ type AuthOpts struct {
 	Password string
 }
 
-func newAuthCommand() *captain.Command {
+func newAuthCommand(globals *globalOptions) *captain.Command {
 	authRunner := auth.NewAuth()
 
 	opts := AuthOpts{}
-	authCmd := captain.NewCommand(
+	return captain.NewCommand(
 		"auth",
 		locale.T("auth_description"),
 		[]*captain.Flag{
@@ -44,28 +44,14 @@ func newAuthCommand() *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return authRunner.Run(newAuthRunParams(ccmd, opts))
+			return authRunner.Run(newAuthRunParams(opts, globals))
 		},
 	)
-
-	authCmd.AddChildren(
-		newSignupCommand(),
-		newLogoutCommand(),
-	)
-
-	return authCmd
 }
 
-func newAuthRunParams(ccmd *captain.Command, opts AuthOpts) *auth.AuthParams {
-	outputFlag := ccmd.FlagByName("output", true)
-
-	var output string
-	if outputFlag != nil {
-		output = *outputFlag.StringVar
-	}
-
+func newAuthRunParams(opts AuthOpts, globals *globalOptions) *auth.AuthParams {
 	return &auth.AuthParams{
-		Output:   output,
+		Output:   globals.Output,
 		Token:    opts.Token,
 		Username: opts.Username,
 		Password: opts.Password,

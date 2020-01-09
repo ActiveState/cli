@@ -21,12 +21,18 @@ type CmdTree struct {
 func New() *CmdTree {
 	globals := newGlobalOptions()
 
+	authCmd := newAuthCommand(globals)
+	authCmd.AddChildren(
+		newSignupCommand(),
+		newLogoutCommand(),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
-		newAuthCommand(),
+		authCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)
