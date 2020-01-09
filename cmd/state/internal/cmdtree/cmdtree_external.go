@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/state/events"
 	"github.com/ActiveState/cli/state/export"
 	"github.com/ActiveState/cli/state/fork"
-	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/run"
@@ -32,7 +31,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 		events.Command,
 		update.Command,
 		auth.Command,
-		organizations.Command,
 		projects.Command,
 		show.Command,
 		run.Command,
