@@ -9,6 +9,10 @@ func NewSignup() *Signup {
 }
 
 func (s *Signup) Run() error {
+	return runSignup()
+}
+
+func runSignup() error {
 	authlet.Signup()
 	return nil
 }

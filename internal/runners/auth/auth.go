@@ -29,6 +29,10 @@ type AuthParams struct {
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
+	return runAuth(params)
+}
+
+func runAuth(params *AuthParams) error {
 	auth := authentication.Get()
 
 	output := commands.Output(strings.ToLower(params.Output))
@@ -40,7 +44,8 @@ func (a *Auth) Run(params *AuthParams) error {
 		case commands.JSON, commands.EditorV0:
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
-				return fail
+				failures.Handle(fail, locale.T("login_err_output"))
+				return nil
 			}
 			print.Line(string(user))
 		default:
@@ -55,12 +60,14 @@ func (a *Auth) Run(params *AuthParams) error {
 	if params.Token == "" {
 		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
 		if fail != nil {
-			return fail
+			failures.Handle(fail, locale.T("login_err_auth"))
+			return nil
 		}
 	} else {
 		fail = tokenAuth(params.Token)
 		if fail != nil {
-			return fail
+			failures.Handle(fail, locale.T("login_err_auth_token"))
+			return nil
 		}
 	}
 
@@ -68,7 +75,8 @@ func (a *Auth) Run(params *AuthParams) error {
 	case commands.JSON, commands.EditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
-			return fail
+			failures.Handle(fail, locale.T("login_err_output"))
+			return nil
 		}
 		print.Line(string(user))
 	default:

@@ -28,7 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func setup(t *testing.T) *Auth {
+func setup(t *testing.T) {
 	failures.ResetHandled()
 	authentication.Logout()
 	secretsapi_test.InitializeTestClient("bearer123")
@@ -36,8 +36,6 @@ func setup(t *testing.T) *Auth {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
-
-	return NewAuth()
 }
 
 func setupUser() *mono_models.UserEditable {
@@ -51,7 +49,6 @@ func setupUser() *mono_models.UserEditable {
 }
 
 func TestExecuteNoArgsAuthenticated(t *testing.T) {
-	runner := setup(t)
 	user := setupUser()
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
@@ -73,7 +70,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, fail.ToError())
 
-	assert.NoError(t, runner.Run(&AuthParams{}), "Executed without error")
+	assert.NoError(t, runAuth(&AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -95,11 +92,9 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	runner := NewAuth()
-
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err := runner.Run(&AuthParams{})
+	err := runAuth(&AuthParams{})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -122,8 +117,7 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	runner := NewAuth()
-	err := runner.Run(&AuthParams{
+	err := runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,
 	})
@@ -159,13 +153,11 @@ func TestExecuteSignup(t *testing.T) {
 
 	user := setupUser()
 
-	runner := NewSignup()
-
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	err := runner.Run()
+	err := runSignup()
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -197,8 +189,7 @@ func TestExecuteToken(t *testing.T) {
 	assert.NoError(t, fail.ToError(), "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	runner := NewAuth()
-	err := runner.Run(&AuthParams{Token: token})
+	err := runAuth(&AuthParams{Token: token})
 
 	assert.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -225,9 +216,7 @@ func TestExecuteLogout(t *testing.T) {
 	require.NoError(t, fail.ToError())
 	assert.True(t, auth.Authenticated(), "Authenticated")
 
-	runner := NewLogout()
-
-	err := runner.Run()
+	err := runLogout()
 	assert.NoError(t, err, "Executed without error")
 	assert.False(t, auth.Authenticated(), "Not Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")

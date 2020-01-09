@@ -14,6 +14,10 @@ func NewLogout() *Logout {
 }
 
 func (l *Logout) Run() error {
+	return runLogout()
+}
+
+func runLogout() error {
 	authentication.Logout()
 	keypairs.DeleteWithDefaults()
 	print.Line(locale.T("logged_out"))

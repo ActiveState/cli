@@ -91,6 +91,7 @@ func (suite *AuthIntegrationTestSuite) login() {
 
 func (suite *AuthIntegrationTestSuite) loginFlags() {
 	suite.Spawn("auth", "--username", suite.username, "--password", "bad-password")
+	suite.Expect("Authentication failed")
 	suite.Expect("You are not authorized, did you provide valid login credentials?")
 	suite.Wait()
 }
