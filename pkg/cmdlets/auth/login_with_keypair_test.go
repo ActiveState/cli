@@ -238,7 +238,8 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 
 	runner := auth.NewAuth()
 	err := runner.Run(&auth.AuthParams{})
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
+	suite.Require().Error(failures.Handled())
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
 	// very local keypair does not exist
