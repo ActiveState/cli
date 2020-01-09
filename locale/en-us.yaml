@@ -1224,3 +1224,11 @@ export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
   other: Could not read private key file
+err_unknown_format:
+  other: "Unknown format: {{.V0}}"
+err_unknown_type:
+  other: "Unknown type: {{.V0}}"
+err_sprint:
+  other: "Could not construct output. Encountered the following error: {{.V0}}"
+localized_field:
+  other: "Localized Field"
