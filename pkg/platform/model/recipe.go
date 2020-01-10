@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -50,6 +51,10 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
+		if err == context.DeadlineExceeded {
+			return nil, FailOrderRecipes.New("request_timed_out")
+		}
+
 		recipeBody, err2 := json.Marshal(params.Order)
 		if err2 != nil {
 			recipeBody = []byte(fmt.Sprintf("Could not marshal recipe, error: %v", err2))
