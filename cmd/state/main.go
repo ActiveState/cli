@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -39,12 +38,6 @@ func main() {
 
 	// Handle panics gracefully
 	defer handlePanics(exiter)
-
-	// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-	var formatName string
-	flag.StringVar(&formatName, "output", output.PlainFormatName, "")
-	flag.StringVar(&formatName, "o", output.PlainFormatName, "")
-	flag.Parse()
 
 	outputer, fail := initOutputer(os.Args, "")
 	if fail != nil {

@@ -1,23 +1,27 @@
 package output
 
 import (
+	"fmt"
 	"io"
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/logging"
 	ct "github.com/ActiveState/go-colortext"
 )
 
+var colorRx *regexp.Regexp
+
+func init() {
+	var err error
+	colorRx, err = regexp.Compile(`\[(BOLD|UNDERLINE|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE|/RESET)!?\]`)
+	if err != nil {
+		panic(fmt.Sprintf("Could not compile regex: %v", err))
+	}
+}
+
 // writeColorized will replace `[COLORNAME]foo[/RESET]` with shell colors, or strip color tags if stripColors=true
 func writeColorized(value string, writer io.Writer, stripColors bool) (int, error) {
-	r, err := regexp.Compile(`\[(BOLD|UNDERLINE|BLACK|RED|GREEN|YELLOW|BLUE|MAGENTA|CYAN|WHITE|/RESET)!?\]`)
-	if err != nil {
-		logging.Errorf("Could not compile regex: %v", err)
-		writer.Write([]byte(value)) // write as is
-	}
-
 	pos := 0
-	matches := r.FindAllStringSubmatchIndex(value, -1)
+	matches := colorRx.FindAllStringSubmatchIndex(value, -1)
 	for _, match := range matches {
 		start, end, groupStart, groupEnd := match[0], match[1], match[2], match[3]
 		n, err := writer.Write([]byte(value[pos:start]))
@@ -35,6 +39,11 @@ func writeColorized(value string, writer io.Writer, stripColors bool) (int, erro
 	}
 
 	return writer.Write([]byte(value[pos:len(value)]))
+}
+
+// StripColorCodes strips color codes from a string
+func StripColorCodes(value string) string {
+	return colorRx.ReplaceAllString(value, "")
 }
 
 func colorize(writer io.Writer, colorName string, brighten bool) {
