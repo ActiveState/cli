@@ -47,31 +47,31 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutputer([]string{}, "")
+		outputer, fail := initOutputer([]string{"state", "foo"}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"--output", output.PlainFormatName}, "")
+		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.PlainFormatName}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"--output", output.JSONFormatName}, "")
+		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.JSONFormatName}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{}, output.JSONFormatName)
+		outputer, fail := initOutputer([]string{"state", "foo"}, output.JSONFormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{}, output.EditorV0FormatName)
+		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorV0FormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer, as editor.v0 is not supported at this level")
 	}
