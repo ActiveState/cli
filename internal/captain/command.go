@@ -114,7 +114,7 @@ func (c *Command) AddLegacyChildren(children ...cobraCommander) {
 	}
 }
 
-func (c *Command) FlagByName(name string, persistOnly bool) *Flag {
+func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 	for _, flag := range c.flags {
 		if flag.Name == name && (!persistOnly || flag.Persist) {
 			return flag
@@ -156,7 +156,7 @@ func (c *Command) runFlags(persistOnly bool) {
 			return
 		}
 
-		flag := c.FlagByName(cobraFlag.Name, persistOnly)
+		flag := c.flagByName(cobraFlag.Name, persistOnly)
 		if flag == nil || flag.OnUse == nil {
 			return
 		}
