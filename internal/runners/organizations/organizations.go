@@ -27,14 +27,14 @@ type OrgParams struct {
 func (o *Organizations) Run(params *OrgParams) error {
 	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
-		return fail
+		return fail.WithDescription("organizations_err")
 	}
 
 	switch commands.Output(strings.ToLower(params.Output)) {
 	case commands.JSON, commands.EditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
-			return fail
+			return fail.WithDescription("organizations_err_output")
 		}
 
 		print.Line(string(data))
