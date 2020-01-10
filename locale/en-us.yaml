@@ -309,7 +309,7 @@ organization:
   other: Organization
 organizations_description:
   other: List member organizations on the ActiveState platform
-organizations_err:	
+organizations_err:
 other: Unable to list member organizations
 organizations_unknown_tier:
   other: Unknown tier `{{.Tier}}` in organization `{{.Organization}}`
@@ -467,7 +467,7 @@ scripts_no_name:
   other: No script with name {{.V0}}
 scripts_err_output:
   other: Failed to display scripts output
-organizations_err_output:	
+organizations_err_output:
   other: Failed to display organizations output
 edit_description:
   other: Edit a given script
