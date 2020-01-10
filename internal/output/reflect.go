@@ -6,12 +6,14 @@ import (
 	"strings"
 )
 
+// structMeta holds the basic meta information required by the Plain outputer
 type structMeta struct {
 	fields       []string
 	localeFields []string
 	values       []interface{}
 }
 
+// parseStructMeta will use reflect to populate structMeta for the given struct
 func parseStructMeta(v interface{}) (structMeta, error) {
 	structRfl := reflect.ValueOf(v)
 
@@ -42,6 +44,7 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 	return info, nil
 }
 
+// parseSlice will turn an interface that is a slice into a slice with interface entries
 func parseSlice(v interface{}) ([]interface{}, error) {
 	structRfl := reflect.ValueOf(v)
 
