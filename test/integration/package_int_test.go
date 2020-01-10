@@ -98,8 +98,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"2.21.0",
 		"2.22.0",
 		"2.3",
-		"2.7.0",
-		"requests-cache",
 		"requests-oauthlib",
 		"requests3",
 		"requests_gpgauthlib",
@@ -127,7 +125,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"2.21.0",
 		"2.22.0",
 		"2.3",
-		"2.7.0",
 		"---",
 	}
 	for _, expectation := range expectations {

@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -59,14 +58,8 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
-		return err
-	}
-
-	// Checkout the project if it doesn't already exist at the target path
-	configFile := filepath.Join(targetPath, constants.ConfigFileName)
-	if !fileutils.FileExists(configFile) {
 		if params.Namespace == "" {
-			return failures.FailUserInput.New("err_project_notexist_asyaml")
+			return failures.FailUserInput.Wrap(err)
 		}
 		err := r.activateCheckout.Run(params.Namespace, targetPath)
 		if err != nil {
@@ -78,21 +71,36 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		return activateOutput(targetPath, params.Output)
 	}
 
-	go sendProjectIDToAnalytics(params.Namespace, configFile)
+	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
 
 	return activatorLoop(targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
+	var (
+		targetPath string
+		err        error
+	)
+
 	switch {
 	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		return r.namespaceSelect.Run(namespace, preferredPath)
+		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
 	// Use the user provided path
 	case preferredPath != "":
-		return preferredPath, nil
+		targetPath, err = preferredPath, nil
 	// Get path from working directory
 	default:
-		return os.Getwd()
+		targetPath, err = os.Getwd()
 	}
+	if err != nil {
+		return "", err
+	}
+
+	proj, fail := project.FromPath(targetPath)
+	if fail != nil {
+		return targetPath, fail
+	}
+
+	return filepath.Dir(proj.Source().Path()), nil
 }
