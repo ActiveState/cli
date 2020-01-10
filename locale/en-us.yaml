@@ -1137,8 +1137,6 @@ package_remove_description:
   other: Remove a package from your project
 package_search_description:
   other: Search for available packages that can be added to your project
-package_err_help:
-  other: Error occurred while trying to produce help information
 package_arg_name:
   other: name
 package_arg_name_description:
