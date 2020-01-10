@@ -58,11 +58,6 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
 	if err != nil {
-		return err
-	}
-
-	configFile, err := r.setupConfigFile(targetPath)
-	if err != nil {
 		if params.Namespace == "" {
 			return failures.FailUserInput.Wrap(err)
 		}
@@ -71,37 +66,41 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 			return err
 		}
 	}
-	if filepath.Dir(configFile) != targetPath {
-		targetPath = filepath.Dir(configFile)
-	}
 
 	if params.Output != "" {
 		return activateOutput(targetPath, params.Output)
 	}
 
-	go sendProjectIDToAnalytics(params.Namespace, configFile)
+	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))
 
 	return activatorLoop(targetPath, activate)
 }
 
 func (r *Activate) setupPath(namespace string, preferredPath string) (string, error) {
+	var (
+		targetPath string
+		err        error
+	)
+
 	switch {
 	// Checkout via namespace (eg. state activate org/project) and set resulting path
 	case namespace != "":
-		return r.namespaceSelect.Run(namespace, preferredPath)
+		targetPath, err = r.namespaceSelect.Run(namespace, preferredPath)
 	// Use the user provided path
 	case preferredPath != "":
-		return preferredPath, nil
+		targetPath, err = preferredPath, nil
 	// Get path from working directory
 	default:
-		return os.Getwd()
+		targetPath, err = os.Getwd()
 	}
-}
-
-func (r *Activate) setupConfigFile(targetPath string) (string, error) {
-	proj, err := project.FromPath(targetPath)
 	if err != nil {
-		return filepath.Join(targetPath, constants.ConfigFileName), err
+		return "", err
 	}
-	return proj.Source().Path(), nil
+
+	proj, fail := project.FromPath(targetPath)
+	if fail != nil {
+		return targetPath, fail
+	}
+
+	return filepath.Dir(proj.Source().Path()), nil
 }
