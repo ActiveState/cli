@@ -25,6 +25,10 @@ type OrgParams struct {
 
 // Run the organizations command.
 func (o *Organizations) Run(params *OrgParams) error {
+	return run(params)
+}
+
+func run(params *OrgParams) error {
 	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
 		return fail.WithDescription("organizations_err")

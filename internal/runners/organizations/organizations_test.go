@@ -47,9 +47,8 @@ func TestOrganizations(t *testing.T) {
 	setupOrgTest(t)
 
 	var execErr error
-	runner := NewOrganizations()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = runner.Run(&OrgParams{})
+		execErr = run(&OrgParams{})
 	})
 	require.NoError(t, outErr)
 	require.NoError(t, execErr)
@@ -65,9 +64,8 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 	aMock.MockGetPaidTiers()
 
 	var execErr error
-	runner := NewOrganizations()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = runner.Run(&OrgParams{Output: "json"})
+		execErr = run(&OrgParams{Output: "json"})
 	})
 
 	require.NoError(t, outErr)
@@ -84,9 +82,8 @@ func TestOrganizationsJSONFree(t *testing.T) {
 	aMock.MockGetFreeTiers()
 
 	var execErr error
-	runner := NewOrganizations()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = runner.Run(&OrgParams{Output: "json"})
+		execErr = run(&OrgParams{Output: "json"})
 	})
 
 	require.NoError(t, outErr)
@@ -102,9 +99,8 @@ func TestOrganizationsJSONBad(t *testing.T) {
 	aMock := setupOrgTest(t)
 	aMock.MockGetBadTiers()
 
-	runner := NewOrganizations()
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr := runner.Run(&OrgParams{Output: "json"})
+		execErr := run(&OrgParams{Output: "json"})
 		require.Error(t, execErr)
 	})
 	require.NoError(t, outErr)
@@ -122,8 +118,7 @@ func TestClientError(t *testing.T) {
 	httpmock.Register("POST", "/login")
 	authentication.Get().AuthenticateWithToken("")
 
-	runner := NewOrganizations()
-	err := runner.Run(&OrgParams{})
+	err := run(&OrgParams{})
 	require.Error(t, err)
 }
 
@@ -138,7 +133,6 @@ func TestAuthError(t *testing.T) {
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 
-	runner := NewOrganizations()
-	err := runner.Run(&OrgParams{})
+	err := run(&OrgParams{})
 	require.Error(t, err)
 }
