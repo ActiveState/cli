@@ -71,8 +71,7 @@ func TestExecuteNoArgs(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 
 	err := AuthRunner.Run(&auth.AuthParams{})
-	assert.NoError(t, err)
-	assert.Error(t, failures.Handled())
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
 
@@ -339,8 +338,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("", nil)
 
 	err := AuthRunner.Run(&auth.AuthParams{})
-	assert.NoError(t, err)
-	assert.Error(t, failures.Handled())
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
@@ -392,8 +390,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("", nil)
 
 	err := AuthRunner.Run(&auth.AuthParams{})
-	assert.NoError(t, err)
-	assert.Error(t, failures.Handled())
+	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	failures.ResetHandled()
 
