@@ -310,7 +310,7 @@ organization:
 organizations_description:
   other: List member organizations on the ActiveState platform
 organizations_err:
-other: Unable to list member organizations
+  other: Unable to list member organizations
 organizations_unknown_tier:
   other: Unknown tier `{{.Tier}}` in organization `{{.Organization}}`
 organization_name:
