@@ -10,7 +10,7 @@ import (
 )
 
 func newRunCommand() *captain.Command {
-	runRunner := run.New()
+	runner := run.New()
 
 	var name string
 	cmd := captain.NewCommand(
@@ -35,7 +35,7 @@ func newRunCommand() *captain.Command {
 				args = args[1:]
 			}
 
-			return runRunner.Run(name, args)
+			return runner.Run(name, args)
 		},
 	)
 	cmd.SetDisableFlagParsing(true)
