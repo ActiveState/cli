@@ -42,6 +42,9 @@ if ($Env:NOPROMPT_INSTALL -eq "true") {
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
 
+# Default fail msg
+$AbortMsg = "Installation aborted: "
+
 # Helpers
 function notifySettingChange(){
     $HWND_BROADCAST = [IntPtr] 0xffff;
@@ -193,8 +196,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         $versionedJson = ConvertFrom-Json -InputObject $downloader.DownloadString("$STATEURL/$script:BRANCH/$latestVersion/$statejson")
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
-        Write-Error $_.Exception.Message
-        return 1
+        Throw "$AbortMsg $_.Exception.Message"
     }
     $latestChecksum = $versionedJson.Sha256v2
 
@@ -212,19 +214,15 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     } catch [System.Exception] {
         Write-Warning "Could not install state tool"
         Write-Warning "Could not access $zipURL"
-        Write-Error $_.Exception.Message
-        return 1
+        Throw "$AbortMsg $_.Exception.Message"
     }
 
     # Check the sums
     Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
     if ($hash -ne $latestChecksum){
-        Write-Warning "SHA256 sum did not match:"
-        Write-Warning "Expected: $latestChecksum"
-        Write-Warning "Received: $hash"
-        Write-Warning "Aborting installation"
-        return 1
+        $msg = "SHA256 sum did not match:`nExpected: $latestChecksum`nReceived: $hash"
+        Throw "$AbortMsg $msg"
     }
 
     # Extract binary from pkg and confirm checksum
@@ -280,13 +278,11 @@ function install()
     }
 
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
-        Write-Error "Flags -n and -activate cannot be set at the same time."
-        return
+        Throw "$AbortMsg Flags -n and -activate cannot be set at the same time."
     }
 
     if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
-        Write-Error "Flag -f also requires -n"
-        return
+        Throw "$AbortMsg Flag -f also requires -n"
     }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
@@ -296,10 +292,10 @@ function install()
         $stateexe="windows-amd64.exe"
 
     } else {
-        Write-Warning "x86 processors are not supported at this time"
+        $msg = "x86 processors are not supported at this time"
+        Write-Warning "$msg"
         Write-Warning "Contact ActiveState Support for assistance"
-        Write-Warning "Aborting installation"
-        return
+        Throw "$AbortMsg $msg"
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -309,9 +305,7 @@ function install()
     } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
-            Write-Error "Do not have write permissions to: '$Env:APPDATA'"
-            Write-Error "Aborting installation"
-            return
+            Throw "$AbortMsg Do not have write permissions to: '$Env:APPDATA'"
         }
     }
 
@@ -339,6 +333,7 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
+            Write-Warning $AbortMsg.Substring(0, $AbortMsg.Length() - 1)
             return
         }
     }
@@ -353,17 +348,13 @@ function install()
             Remove-Item $installPath -Erroraction 'silentlycontinue'
             $occurance = errorOccured $False
             if($occurance[0]){
-                Write-Host "Aborting Installation" -ForegroundColor Yellow
-                return
+                Throw "$AbortMsg " + $occurance[1]
             }
         }
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
-    if ($err -eq 1){
-        return
-    }
+    fetchArtifacts $tmpParentPath $statejson $statepkg
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Check if installation is in $PATH
