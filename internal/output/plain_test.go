@@ -66,13 +66,13 @@ func TestPlain_Print(t *testing.T) {
 		{
 			"struct",
 			args{struct {
-				Name  string
-				Value string `locale:"value"`
-				Field string `locale:"localized_field"`
+				TestName string
+				Value    string `locale:"test_value"`
+				Field    string `locale:"localized_field"`
 			}{
 				"hello", "world", "value",
 			}},
-			"field_name: hello\nfield_value: world\nLocalized Field: value",
+			"field_testname: hello\nfield_test_value: world\nLocalized Field: value",
 			"",
 		},
 		{
@@ -109,6 +109,7 @@ func TestPlain_Print(t *testing.T) {
 				{"valueC.1", "valueC.2", "valueC.3"},
 			}},
 			" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
 				" valueA.1            valueA.2            valueA.3         \n" +
 				" valueB.1            valueB.2            valueB.3         \n" +
 				" valueC.1            valueC.2            valueC.3         \n",
