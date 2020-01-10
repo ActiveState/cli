@@ -29,8 +29,9 @@ func (suite *UpdateIntegrationTestSuite) SetupTest() {
 func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Spawn("--version")
 	suite.Wait()
-	version := strings.Split(suite.Output(), "-")
-	return version[len(version)-1]
+	versionString := strings.Split(strings.TrimSpace(suite.Output()), "\n")[0]
+	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
+	return versionNumber[len(versionNumber)-1]
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
@@ -67,7 +68,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
-	suite.Spawn("--version")
+	fmt.Println("Version before update: ", suite.getVersion())
 	suite.Spawn("update")
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
@@ -76,6 +77,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 		suite.Expect("Update completed", 60*time.Second)
 	}
 	suite.Wait()
+	fmt.Println("Version after update: ", suite.getVersion())
 
 	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as we ran update")
 }

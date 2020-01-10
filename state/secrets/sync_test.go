@@ -78,7 +78,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	ex := exiter.New()
 	cmd.Config().Exiter = ex.Exit
 
-	outStr, outErr := osutil.CaptureStderr(func() {
+	_, outErr := osutil.CaptureStderr(func() {
 		cmd.Config().GetCobraCmd().SetArgs([]string{"sync"})
 		exitCode = ex.WaitForExit(func() {
 			cmd.Config().Execute()
@@ -87,7 +87,9 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 	suite.Equal(1, exitCode, "Exit code matches")
 	suite.Require().NoError(outErr)
 
-	suite.Contains(outStr, locale.T("err_api_not_authenticated"))
+	handledFail := failures.Handled()
+	suite.Error(handledFail)
+	suite.Contains(handledFail.Error(), locale.T("err_api_not_authenticated"))
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {

@@ -271,6 +271,8 @@ login_err_output:
   other: Failed to display user output
 login_err_auth:
   other: Authentication failed
+login_err_auth_token:
+  other: Token authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
@@ -377,6 +379,10 @@ error_state_activate_copy_project_url:
   other: Could not get project URL
 err_activate_path:
   other: Could not get project file with given path '{{.V0}}'
+err_activate_output_build_failed:
+  other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
+err_activate_output_build_in_progress:
+  other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
@@ -407,10 +413,16 @@ downloading:
   other: Downloading
 installing:
   other: Installing
+unknown_value:
+  other: Unknown value
+invalid_uuid_val:
+  other: Invalid UUID value
 total:
   other: Total
 projects_description:
   other: Manage Your Projects
+projects_list_description:
+  other: List your platform projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with `state auth`. For more information run `state auth --help`.
 err_api_forbidden:
@@ -805,7 +817,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other: Could not parse the version field from your activestate.yaml
+  other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{number}"
 downloading_state_version:
@@ -831,7 +843,7 @@ update_available:
     Your version: {{.V0}}
     Available Version: {{.V1}}
 
-    You can update by running `state self-update`
+    You can update by running `state update`
 runtime_update_notice_known_count:
   other: Your activestate.yaml is {{.V0}} commits behind.
 runtime_update_notice_unknown_count:
@@ -889,6 +901,8 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_no_data_found:
+  other: No data found
 err_get_checkpoint:
   other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
 err_project_no_languages:
@@ -1119,10 +1133,14 @@ users_plural:
   other: users
 package_add_description:
   other: Add a new package to your project
+package_list_description:
+  other: List the packages currently used by this project
 package_update_description:
   other: Update a package in your project to the latest available version
 package_remove_description:
   other: Remove a package from your project
+package_search_description:
+  other: Search for available packages that can be added to your project
 package_err_help:
   other: Error occurred while trying to produce help information
 package_arg_name:
@@ -1133,6 +1151,12 @@ package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
   other: Package name and optionally the desired version
+package_list_flag_commit_description:
+  other: The commit that the listing should be based on
+package_search_flag_language_description:
+  other: The language used to constrain search results
+package_search_flag_exact-term_description:
+  other: Ensures that search results match search term exactly
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1145,6 +1169,22 @@ err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
   other: Failed to add package
+package_err_cannot_fetch_checkpoint:
+  other: Cannot fetch checkpoint for package listing
+package_err_cannot_obtain_commit:
+  other: Cannot obtain commit for package listing
+package_err_cannot_obtain_language:
+  other: Cannot obtain language for package search
+package_err_cannot_obtain_search_results:
+  other: Cannot obtain search results
+package_no_data:
+  other: No data found - Please verify the provided commit id
+package_no_packages:
+  other: No packages to list
+package_name:
+  other: Name
+package_version:
+  other: Version
 package_add:
   other: "Package added: {{.V0}}"
 package_version_add:
@@ -1159,12 +1199,14 @@ package_ingredient_err:
   other: Could not verify package name
 package_ingredient_not_found:
   other: The provided package does not exist
-package_ingredient_version_not_available:
-  other: The provided package does not have any versions available
 err_package_removed:
   other: Failed to remove package
 package_removed:
   other: "Package removed: {{.V0}}"
+package_update_config_file:
+  other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
+inventory_ingredient_version_not_available:
+  other: The ingredient {{.V0}} does not have any versions available
 err_cmdtree:
   other: Could not run the requested command
 err_fetch_languages:
@@ -1177,6 +1219,8 @@ err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
   other: No activestate.yaml exists at the target directory, you should run 'state init' first.
+err_project_from_path:
+  other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
 err_init_must_provide_namespace:
@@ -1233,4 +1277,5 @@ err_sprint:
 field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
+  other: "Could not marshal the value being printed, please check the error log for more information."
   other: "Could not marshal the value being printed, please check the error log for more information."

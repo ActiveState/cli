@@ -107,7 +107,7 @@ func TestArgs_NoArgsProvided(t *testing.T) {
 
 func TestArgs_NoCmd_OnlyDash(t *testing.T) {
 	// state run --
-	assertExecCommandFails(t, "run", []string{"--"}, failures.FailUserInput)
+	assertExecCommandFails(t, "run", []string{"--"}, FailScriptNotDefined)
 }
 
 func TestArgs_NameAndDashOnly(t *testing.T) {
@@ -122,12 +122,12 @@ func TestArgs_MultipleArgs_NoDash(t *testing.T) {
 
 func TestArgs_NoCmd_AllArgsAfterDash(t *testing.T) {
 	// state run -- foo geez
-	assertExecCommandFails(t, "run", []string{"--", "foo", "geez"}, failures.FailUserInput)
+	assertExecCommandFails(t, "run", []string{"--", "foo", "geez"}, FailScriptNotDefined)
 }
 
 func TestArgs_NoCmd_FlagAsFirstArg(t *testing.T) {
 	// state run -- foo geez
-	assertExecCommandFails(t, "run", []string{"-f", "--foo", "geez"}, failures.FailUserInput)
+	assertExecCommandFails(t, "run", []string{"-f", "--foo", "geez"}, FailScriptNotDefined)
 }
 
 func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {

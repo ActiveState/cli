@@ -163,6 +163,7 @@ type Script struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description,omitempty"`
 	Value       string            `yaml:"value"`
+	Filename    string            `yaml:"filename,omitempty"`
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
@@ -182,7 +183,7 @@ func Parse(filepath string) (*Project, *failures.Failure) {
 	project.path = filepath
 
 	if err != nil {
-		return nil, FailNoProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
+		return nil, FailParseProject.New(locale.T("err_project_parse", map[string]interface{}{"Error": err.Error()}))
 	}
 
 	if project.Variables != nil {

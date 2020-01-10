@@ -33,6 +33,19 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 	suite.runInitTest("", locale.T("editor_yaml"), "--skeleton", "editor")
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
+	tempDir, err := ioutil.TempDir("", suite.T().Name())
+	suite.Require().NoError(err)
+
+	suite.runInitTest(
+		tempDir,
+		locale.T("editor_yaml"),
+		"--language", "python3",
+		"--path", filepath.Join(tempDir, namespace),
+		"--skeleton", "editor",
+	)
+}
+
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
 	suite.Require().NoError(err)
@@ -70,7 +83,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, f
 	suite.Wait()
 
 	configFilepath := filepath.Join(path, namespace, constants.ConfigFileName)
-	suite.FileExists(configFilepath)
+	suite.Require().FileExists(configFilepath)
 
 	content, err := ioutil.ReadFile(configFilepath)
 	suite.Require().NoError(err)

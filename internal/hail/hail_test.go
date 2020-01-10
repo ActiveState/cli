@@ -1,6 +1,7 @@
 package hail
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -34,20 +35,20 @@ func TestSend(t *testing.T) {
 
 func TestOpen(t *testing.T) {
 	start := time.Now()
-	done := make(chan struct{})
-	defer close(done)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	_, fail := Open(done, "/")
+	_, fail := Open(ctx, "/")
 	assert.Error(t, fail.ToError())
 
 	file := "garbage"
-	rcvs, fail := Open(done, file)
-	require.NoError(t, fail.ToError())
+	rcvs, fail := Open(ctx, file)
 	defer func() {
 		assert.NoError(t, os.Remove(file))
 	}()
-	postOpen := time.Now()
+	require.NoError(t, fail.ToError())
 
+	postOpen := time.Now()
 	data := []byte("some data")
 
 	ready := make(chan struct{})
@@ -59,7 +60,6 @@ func TestOpen(t *testing.T) {
 		assert.NoError(t, f.Close())
 		close(ready)
 	}()
-
 	<-ready
 
 	var r *Received
@@ -76,4 +76,27 @@ func TestOpen(t *testing.T) {
 		assert.True(t, r.Time.After(postOpen))
 	}
 	require.NoError(t, r.Fail.ToError())
+}
+
+func TestOpen_ReceivesClosed(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	file := "garbage"
+	rcvs, fail := Open(ctx, file)
+	require.NoError(t, fail.ToError())
+	defer func() {
+		assert.NoError(t, os.Remove(file))
+	}()
+
+	cancel()
+
+	var malfunc bool
+	select {
+	case _, malfunc = <-rcvs:
+	case <-time.After(time.Second * 2):
+		malfunc = true
+	}
+
+	assert.False(t, malfunc, "rcvs should be closed")
 }

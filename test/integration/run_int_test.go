@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -21,9 +22,14 @@ import (
 type RunIntegrationTestSuite struct {
 	integration.Suite
 	tmpDirCleanup func()
+	originalWd    string
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
+
+	var err error
+	suite.originalWd, err = os.Getwd()
+	suite.Require().NoError(err)
 
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
@@ -33,7 +39,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 	configFileContent := strings.TrimSpace(`
 project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=40f4903a-e8a8-44a1-b2fd-eb1a2396a2f2
 scripts:
-  - name: test
+  - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
@@ -41,7 +47,7 @@ scripts:
         ./interrupt
     constraints:
         os: linux,macos
-  - name: test
+  - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
@@ -49,14 +55,28 @@ scripts:
         .\interrupt.exe
     constraints:
         os: windows
+  - name: helloWorld
+    value: echo "Hello World!"
+    standalone: true
+    constraints:
+      os: linux,macos
+  - name: helloWorld
+    standalone: true
+    value: echo Hello World!
+    constraints:
+      os: windows
 `)
+	projectfile.Reset()
 	projectFile := &projectfile.Project{}
-	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(projectDir, constants.ConfigFileName))
 	fail := projectFile.Save()
 	suite.Require().NoError(fail.ToError())
+
+	err = os.Chdir(projectDir)
+	suite.Require().NoError(err)
 
 }
 
@@ -76,6 +96,8 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
 	suite.tmpDirCleanup()
+	os.Chdir(suite.originalWd)
+	projectfile.Reset()
 }
 
 func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
@@ -97,7 +119,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.Expect("ActiveState-CLI/Python3", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
-	suite.SendLine(fmt.Sprintf("%s run test", suite.Executable()))
+	suite.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
 	suite.Expect("Start of script", 5*time.Second)
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
@@ -113,8 +135,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-
-	suite.Spawn("run", "test")
+	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
 	suite.SendCtrlC()
@@ -127,7 +148,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.Spawn("run", "test")
+	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	suite.SendCtrlC()
 	suite.Expect("received interrupt", 3*time.Second)
@@ -140,9 +161,13 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	)
 }
 
+func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
+	suite.Spawn("run", "helloWorld")
+	suite.Expect("Hello World!")
+}
+
 func TestRunIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
 	integration.RunParallel(t, new(RunIntegrationTestSuite))
 }
