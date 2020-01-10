@@ -1,13 +1,12 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
-
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
@@ -18,12 +17,15 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/jessevdk/go-flags"
+	"github.com/thoas/go-funk"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -37,15 +39,67 @@ func main() {
 	// Handle panics gracefully
 	defer handlePanics(exiter)
 
-	code, err := run(os.Args)
+	// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
+	var formatName string
+	flag.StringVar(&formatName, "output", output.PlainFormatName, "")
+	flag.StringVar(&formatName, "o", output.PlainFormatName, "")
+	flag.Parse()
+
+	outputer, fail := initOutputer(os.Args, "")
+	if fail != nil {
+		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
+		exiter(1)
+	}
+
+	code, err := run(os.Args, outputer)
 	if err != nil {
-		print.Error(err.Error())
+		outputer.Error(err.Error())
 	}
 
 	exiter(code)
 }
 
-func run(args []string) (int, error) {
+func initOutputer(args []string, formatName string) (output.Outputer, *failures.Failure) {
+	if formatName == "" {
+		formatName = parseOutputFlag(args)
+	}
+
+	logging.Debug("output flag: %s", formatName)
+	logging.Debug("args: %v", args)
+	logging.Debug("args2: %v", os.Args)
+
+	outputer, fail := output.New(formatName, &output.Config{
+		OutWriter:   os.Stdout,
+		ErrWriter:   os.Stderr,
+		Colored:     true,
+		Interactive: true,
+	})
+	if fail != nil {
+		if fail.Type.Matches(output.FailNotRecognized) {
+			// The formatter might still be registered, so default to plain for now
+			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
+			return initOutputer(args, output.PlainFormatName)
+		}
+		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
+	}
+	return outputer, fail
+}
+
+func parseOutputFlag(args []string) string {
+	var flagSet struct {
+		// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
+		Output string `short:"o" long:"output"`
+	}
+
+	_, err := flags.ParseArgs(&flagSet, args)
+	if err != nil {
+		logging.Warningf("Could not parse output flag: %s", err.Error())
+	}
+
+	return flagSet.Output
+}
+
+func run(args []string, outputer output.Outputer) (int, error) {
 	logging.Debug("main")
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
@@ -59,7 +113,7 @@ func run(args []string) (int, error) {
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanUpCPUProf, fail := profile.CPU()
 		if fail != nil {
-			print.Error(locale.T("cpu_profiling_setup_failed"))
+			outputer.Error(locale.Tr("cpu_profiling_setup_failed", fail.Error()))
 			return 1, fail
 		}
 		defer cleanUpCPUProf()
@@ -80,7 +134,7 @@ func run(args []string) (int, error) {
 	if shouldForward(versionInfo) {
 		code, fail := forward(args, versionInfo)
 		if fail != nil {
-			print.Error(locale.T("forward_fail"))
+			outputer.Error(locale.T("forward_fail"))
 			return 1, fail
 		}
 		if code != -1 {
@@ -97,13 +151,13 @@ func run(args []string) (int, error) {
 	if deprecated != nil {
 		date := deprecated.Date.Format(constants.DateFormatUser)
 		if !deprecated.DateReached {
-			print.Warning(locale.Tr("warn_deprecation", date, deprecated.Reason))
+			outputer.Print(locale.Tr("warn_deprecation", date, deprecated.Reason))
 		} else {
-			print.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
+			outputer.Error(locale.Tr("err_deprecation", date, deprecated.Reason))
 		}
 	}
 
-	cmds := cmdtree.New()
+	cmds := cmdtree.New(outputer)
 	err := cmds.Execute(args[1:])
 
 	if err2 := normalizeError(err); err2 != nil {

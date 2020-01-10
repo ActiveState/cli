@@ -45,3 +45,8 @@ func (f *JSON) Error(value interface{}) {
 	}
 	f.cfg.OutWriter.Write(b)
 }
+
+// Config returns the Config struct for the active instance
+func (f *JSON) Config() *Config {
+	return f.cfg
+}

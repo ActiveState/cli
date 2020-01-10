@@ -39,6 +39,11 @@ func (f *Plain) Error(value interface{}) {
 	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", value))
 }
 
+// Config returns the Config struct for the active instance
+func (f *Plain) Config() *Config {
+	return f.cfg
+}
+
 // write is a little helper that just takes care of marshalling the value and sending it to the requested writer
 func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
@@ -47,7 +52,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 		f.writeNow(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.cfg.ErrWriter)
 		return
 	}
-	f.writeNow(v, f.cfg.OutWriter)
+	f.writeNow(v, writer)
 }
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
@@ -174,12 +179,13 @@ func sprintTable(slice []interface{}) (string, error) {
 
 	t := gotabulate.Create(rows)
 	t.SetHeaders(headers)
+	t.SetWrapStrings(true)
 
 	// Don't print whitespace lines
-	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "belowheader", "LineTop", "LineBottom", "bottomLine"})
+	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
 
-	return t.Render("plain"), nil
+	return t.Render("simple"), nil
 }
 
 // localizedField is a little helper that will return the localized version of the given string

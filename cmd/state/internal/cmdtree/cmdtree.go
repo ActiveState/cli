@@ -5,7 +5,9 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/state"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/organizations"
@@ -19,14 +21,17 @@ type CmdTree struct {
 	cmd *captain.Command
 }
 
-func New() *CmdTree {
+func New(outputer output.Outputer) *CmdTree {
 	globals := newGlobalOptions()
+
+	auth := authentication.Get()
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
+		newProjectsCommand(outputer, auth),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -75,7 +80,7 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				BoolVar: &globals.Verbose,
 			},
 			{
-				Name:        "output",
+				Name:        "output", // Name and Shorthand should be kept in sync with cmd/state/main.go
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
 				Type:        captain.TypeString,

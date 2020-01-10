@@ -135,6 +135,8 @@ github.com/inconshreveable/mousetrap
 github.com/jarcoal/httpmock
 # github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99
 github.com/jbenet/go-context/io
+# github.com/jessevdk/go-flags v1.4.0
+github.com/jessevdk/go-flags
 # github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
 github.com/jmespath/go-jmespath
 # github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d

@@ -34,7 +34,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 		update.Command,
 		auth.Command,
 		organizations.Command,
-		projects.Command,
 		show.Command,
 		run.Command,
 		scripts.Command,
