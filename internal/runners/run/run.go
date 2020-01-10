@@ -52,10 +52,10 @@ func run(name string, args []string) error {
 	// Determine which project script to run based on the given script name.
 	script := project.Get().ScriptByName(name)
 	if script == nil {
-		err := FailScriptNotDefined.New(
+		fail := FailScriptNotDefined.New(
 			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
 		)
-		return err
+		return fail
 	}
 
 	subs, fail := subshell.Get()
