@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -26,7 +24,6 @@ func newRunCommand() *captain.Command {
 		},
 		func(ccmd *captain.Command, args []string) error {
 			if name == "-h" || name == "--help" {
-				fmt.Println("test")
 				print.Line(ccmd.UsageText())
 				return nil
 			}
