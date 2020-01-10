@@ -159,6 +159,15 @@ func (e *Failure) ToError() error {
 	return errors.New(e.Error())
 }
 
+// WithDescription is a convenience method that emulates the behavior of using Handle()
+// while allowing the normal propagation of errors up the stack. Instead of sending a
+// failure to Handle() and then returning, please add the description with this method
+// and use the modified failures as the return argument.
+func (e *Failure) WithDescription(message string) *Failure {
+	e.Message = locale.T(message) + "\n" + e.Message
+	return e
+}
+
 // Handle handles the error message, this is used to communicate that the error occurred in whatever fashion is
 // most relevant to the current error type
 //
