@@ -54,7 +54,7 @@ func TestPlain_Print(t *testing.T) {
 		{
 			"pointer",
 			args{&struct{ V string }{"hello"}},
-			"v: hello",
+			"field_v: hello",
 			"",
 		},
 		{
@@ -66,13 +66,13 @@ func TestPlain_Print(t *testing.T) {
 		{
 			"struct",
 			args{struct {
-				Tt_Name string
-				Value   string `serialized:"tt_value"`
-				Field   string `serialized:"localized_field"`
+				Name  string
+				Value string `locale:"value"`
+				Field string `locale:"localized_field"`
 			}{
 				"hello", "world", "value",
 			}},
-			"tt_Name: hello\ntt_value: world\nLocalized Field: value",
+			"field_name: hello\nfield_value: world\nLocalized Field: value",
 			"",
 		},
 		{
@@ -90,7 +90,28 @@ func TestPlain_Print(t *testing.T) {
 				},
 				struct{ V string }{"value"},
 			}},
-			"value1: 1\nvalue2: 1.10\nvalue3: false\nvalue4: \n - 1\n - true\n - 1.10\n - v: value\n - \n - 1\n - 2\nvalue5: v: value",
+			"field_value1: 1\n" +
+				"field_value2: 1.10\n" +
+				"field_value3: false\n" +
+				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - \n - 1\n - 2\n" +
+				"field_value5: field_v: value",
+			"",
+		},
+		{
+			"table",
+			args{[]struct {
+				Header1 string
+				Header2 string
+				Header3 string
+			}{
+				{"valueA.1", "valueA.2", "valueA.3"},
+				{"valueB.1", "valueB.2", "valueB.3"},
+				{"valueC.1", "valueC.2", "valueC.3"},
+			}},
+			" field_header1       field_header2       field_header3    \n" +
+				" valueA.1            valueA.2            valueA.3         \n" +
+				" valueB.1            valueB.2            valueB.3         \n" +
+				" valueC.1            valueC.2            valueC.3         \n",
 			"",
 		},
 	}
@@ -107,6 +128,42 @@ func TestPlain_Print(t *testing.T) {
 			}}
 
 			f.Print(tt.args.value)
+			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
+			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
+		})
+	}
+}
+
+func TestPlain_Error(t *testing.T) {
+	type args struct {
+		value interface{}
+	}
+	tests := []struct {
+		name        string
+		args        args
+		expectedOut string
+		expectedErr string
+	}{
+		{
+			"simple string",
+			args{"hello"},
+			"hello",
+			"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outWriter := &bytes.Buffer{}
+			errWriter := &bytes.Buffer{}
+
+			f := &Plain{&Config{
+				OutWriter:   outWriter,
+				ErrWriter:   errWriter,
+				Colored:     false,
+				Interactive: false,
+			}}
+
+			f.Error(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
 		})

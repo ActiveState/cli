@@ -1,6 +1,7 @@
 package output
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/bndr/gotabulate"
 )
 
 const PlainFormatName = "plain"
@@ -31,25 +33,20 @@ func (f *Plain) Error(value interface{}) {
 	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", value))
 }
 
-func (f *Plain) Close() error {
-	return nil
-}
-
 func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
 		logging.Errorf("Could not sprint value: %v, error: %v", value, err)
-		writeColorized(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.cfg.ErrWriter)
+		f.writeNow(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.cfg.ErrWriter)
 		return
 	}
-	writeColorized(v, f.cfg.OutWriter)
+	f.writeNow(v, f.cfg.OutWriter)
 }
 
-func (f *Plain) writeNow(writer io.Writer, value string) {
-	if f.cfg.Colored {
-		writeColorized(value, writer)
-	} else {
-		writer.Write([]byte(value))
+func (f *Plain) writeNow(value string, writer io.Writer) {
+	_, err := writeColorized(value, writer, !f.cfg.Colored)
+	if err != nil {
+		logging.Errorf("Writing colored output failed: %v", err)
 	}
 }
 
@@ -99,7 +96,7 @@ func sprintStruct(value interface{}) (string, error) {
 			return "", err
 		}
 
-		key := locale.T(structMeta.serializedFields[i])
+		key := localizedField(structMeta.localeFields[i])
 		result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
 	}
 	return strings.Join(result, "\n"), nil
@@ -109,6 +106,12 @@ func sprintSlice(value interface{}) (string, error) {
 	slice, err := parseSlice(value)
 	if err != nil {
 		return "", err
+	}
+
+	if len(slice) > 0 {
+		if isStruct(slice[0]) {
+			return sprintTable(slice)
+		}
 	}
 
 	result := []string{}
@@ -122,4 +125,53 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	return "\n - " + strings.Join(result, "\n - "), nil
+}
+
+func sprintTable(slice []interface{}) (string, error) {
+	if len(slice) == 0 {
+		return "", nil
+	}
+
+	headers := []string{}
+	rows := [][]interface{}{}
+	for _, v := range slice {
+		if !isStruct(v) {
+			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
+		}
+
+		structMeta, err := parseStructMeta(v)
+		if err != nil {
+			return "", err
+		}
+
+		setHeaders := len(headers) == 0
+		row := []interface{}{}
+		for i, value := range structMeta.values {
+			stringValue, err := sprint(value)
+			if err != nil {
+				return "", err
+			}
+
+			row = append(row, stringValue)
+
+			if setHeaders {
+				headers = append(headers, localizedField(structMeta.localeFields[i]))
+			}
+		}
+
+		rows = append(rows, row)
+	}
+
+	t := gotabulate.Create(rows)
+	t.SetHeaders(headers)
+
+	// Don't print whitespace lines
+	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "belowheader", "LineTop", "LineBottom", "bottomLine"})
+	t.SetAlign("left")
+
+	return t.Render("plain"), nil
+}
+
+func localizedField(input string) string {
+	return locale.T("field_" + strings.ToLower(input))
 }

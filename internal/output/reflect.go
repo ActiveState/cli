@@ -7,16 +7,16 @@ import (
 )
 
 type structMeta struct {
-	fields           []string
-	serializedFields []string
-	values           []interface{}
+	fields       []string
+	localeFields []string
+	values       []interface{}
 }
 
 func parseStructMeta(v interface{}) (structMeta, error) {
 	structRfl := reflect.ValueOf(v)
 
 	// Fail if the passed type is not a struct
-	if structRfl.Kind() != reflect.Struct {
+	if !isStruct(structRfl) {
 		return structMeta{}, fmt.Errorf("Expected struct, got: %s", structRfl.Kind().String())
 	}
 
@@ -33,10 +33,10 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 		info.values = append(info.values, valueRfl.Interface())
 
 		serialized := strings.ToLower(string(fieldRfl.Name[0:1])) + fieldRfl.Name[1:(len(fieldRfl.Name))]
-		if v, ok := fieldRfl.Tag.Lookup("serialized"); ok {
+		if v, ok := fieldRfl.Tag.Lookup("locale"); ok {
 			serialized = v
 		}
-		info.serializedFields = append(info.serializedFields, serialized)
+		info.localeFields = append(info.localeFields, serialized)
 	}
 
 	return info, nil
@@ -45,10 +45,21 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 func parseSlice(v interface{}) ([]interface{}, error) {
 	structRfl := reflect.ValueOf(v)
 
+	result := []interface{}{}
+
 	// Fail if the passed type is not a slice
 	if structRfl.Kind() != reflect.Slice {
-		return []interface{}{}, fmt.Errorf("Expected slice, got: %s", structRfl.Kind().String())
+		return result, fmt.Errorf("Expected slice, got: %s", structRfl.Kind().String())
 	}
 
-	return v.([]interface{}), nil
+	for i := 0; i < structRfl.Len(); i++ {
+		result = append(result, structRfl.Index(i).Interface())
+	}
+
+	return result, nil
+}
+
+func isStruct(v interface{}) bool {
+	valueRfl := reflect.ValueOf(v)
+	return valueRfl.Kind() == reflect.Struct
 }

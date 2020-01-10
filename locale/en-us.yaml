@@ -1230,5 +1230,7 @@ err_unknown_type:
   other: "Unknown type: {{.V0}}"
 err_sprint:
   other: "Could not construct output. Encountered the following error: {{.V0}}"
-localized_field:
+field_localized_field:
   other: "Localized Field"
+err_could_not_marshal_print:
+  other: "Could not marshal the value being printed, please check the error log for more information."
