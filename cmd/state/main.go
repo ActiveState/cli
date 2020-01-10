@@ -58,10 +58,6 @@ func initOutputer(args []string, formatName string) (output.Outputer, *failures.
 		formatName = parseOutputFlag(args)
 	}
 
-	logging.Debug("output flag: %s", formatName)
-	logging.Debug("args: %v", args)
-	logging.Debug("args2: %v", os.Args)
-
 	outputer, fail := output.New(formatName, &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
