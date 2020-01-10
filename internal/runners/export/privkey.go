@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type PrivateKey struct{}
@@ -17,14 +18,14 @@ func NewPrivateKey() *PrivateKey {
 }
 
 type PrivateKeyParams struct {
-	Authenticated bool
+	Auth *authentication.Auth
 }
 
 // Run processes the `export recipe` command.
 func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	logging.Debug("Execute")
 
-	if !params.Authenticated {
+	if !params.Auth.Authenticated() {
 		return failures.FailUser.New(locale.T("err_command_requires_auth"))
 	}
 

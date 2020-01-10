@@ -78,7 +78,7 @@ func newJWTCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return jwt.Run(&export.JWTParams{Authenticated: authentication.Get().Authenticated()})
+			return jwt.Run(&export.JWTParams{Auth: authentication.Get()})
 		})
 }
 
@@ -91,6 +91,6 @@ func newPrivateKeyCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return privateKey.Run(&export.PrivateKeyParams{Authenticated: authentication.Get().Authenticated()})
+			return privateKey.Run(&export.PrivateKeyParams{Auth: authentication.Get()})
 		})
 }
