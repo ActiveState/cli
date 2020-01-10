@@ -44,7 +44,7 @@ func runAuth(params *AuthParams) error {
 		case commands.JSON, commands.EditorV0:
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
-				return fail.WithDescription(locale.T("login_err_output"))
+				return fail.WithDescription("login_err_output")
 			}
 			print.Line(string(user))
 		default:
@@ -59,12 +59,12 @@ func runAuth(params *AuthParams) error {
 	if params.Token == "" {
 		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
 		if fail != nil {
-			return fail.WithDescription(locale.T("login_err_auth"))
+			return fail.WithDescription("login_err_auth")
 		}
 	} else {
 		fail = tokenAuth(params.Token)
 		if fail != nil {
-			return fail.WithDescription(locale.T("login_err_auth_token"))
+			return fail.WithDescription("login_err_auth_token")
 		}
 	}
 
@@ -72,7 +72,7 @@ func runAuth(params *AuthParams) error {
 	case commands.JSON, commands.EditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
-			return fail.WithDescription(locale.T("login_err_output"))
+			return fail.WithDescription("login_err_output")
 		}
 		print.Line(string(user))
 	default:
