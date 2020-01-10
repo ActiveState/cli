@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/pflag"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -24,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/jessevdk/go-flags"
 	"github.com/thoas/go-funk"
 )
 
@@ -86,17 +87,16 @@ func initOutputer(args []string, formatName string) (output.Outputer, *failures.
 }
 
 func parseOutputFlag(args []string) string {
-	var flagSet struct {
-		// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-		Output string `short:"o" long:"output"`
-	}
+	var outputName string
+	flagSet := pflag.NewFlagSet(args[0], pflag.ContinueOnError)
+	flagSet.StringVarP(&outputName, "output", "o", "", "")
 
-	_, err := flags.ParseArgs(&flagSet, args)
+	err := flagSet.Parse(args[1:])
 	if err != nil {
 		logging.Warningf("Could not parse output flag: %s", err.Error())
 	}
 
-	return flagSet.Output
+	return outputName
 }
 
 func run(args []string, outputer output.Outputer) (int, error) {
