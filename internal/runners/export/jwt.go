@@ -15,11 +15,15 @@ func NewJWT() *JWT {
 	return &JWT{}
 }
 
+type JWTParams struct {
+	Authenticated bool
+}
+
 // Run processes the `export recipe` command.
-func (j *JWT) Run() error {
+func (j *JWT) Run(params *JWTParams) error {
 	logging.Debug("Execute")
 
-	if !authentication.Get().Authenticated() {
+	if !params.Authenticated {
 		return failures.FailUser.New(locale.T("err_command_requires_auth"))
 	}
 
