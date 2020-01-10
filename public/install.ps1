@@ -395,7 +395,7 @@ function install()
 
     warningIfAdmin
     Write-Host "State tool successfully installed to: $installDir." -ForegroundColor Yellow
-    Write-Host "Please close your Powershell prompt and open a CMD terminal in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
+    Write-Host "Please close your Powershell prompt and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
     activateIfRequested
 
 }
