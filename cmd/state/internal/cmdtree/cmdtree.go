@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/fork"
-	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
@@ -35,6 +34,7 @@ func New() *CmdTree {
 		newInitCommand(),
 		newPushCommand(),
 		exportCmd,
+		newOrganizationsCommand(globals),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -118,7 +118,6 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	auth.Flags.Output = &globals.Output
-	organizations.Flags.Output = &globals.Output
 	scripts.Flags.Output = &globals.Output
 	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
