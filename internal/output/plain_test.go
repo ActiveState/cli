@@ -148,8 +148,8 @@ func TestPlain_Error(t *testing.T) {
 		{
 			"simple string",
 			args{"hello"},
-			"hello",
 			"",
+			"hello",
 		},
 	}
 	for _, tt := range tests {
