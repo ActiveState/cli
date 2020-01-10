@@ -22,12 +22,19 @@ type CmdTree struct {
 func New() *CmdTree {
 	globals := newGlobalOptions()
 
+	exportCmd := newExportCommand()
+	exportCmd.AddChildren(
+		newRecipeCommand(),
+		newJWTCommand(),
+		newPrivateKeyCommand(),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
-		newExportCommand(),
+		exportCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)

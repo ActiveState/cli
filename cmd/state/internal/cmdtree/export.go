@@ -4,26 +4,20 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/export"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func newExportCommand() *captain.Command {
-	exportCmd := captain.NewCommand(
+	runner := export.NewExport()
+
+	return captain.NewCommand(
 		"export",
 		locale.T("export_cmd_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			// No runner as there are only subcommands
-			return nil
+			return runner.Run(ccmd)
 		})
-
-	exportCmd.AddChildren(
-		newRecipeCommand(),
-		newJWTCommand(),
-		newPrivateKeyCommand(),
-	)
-
-	return exportCmd
 }
 
 type RecipeArgs struct {
@@ -84,7 +78,7 @@ func newJWTCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return jwt.Run()
+			return jwt.Run(&export.JWTParams{Authenticated: authentication.Get().Authenticated()})
 		})
 }
 
@@ -97,6 +91,6 @@ func newPrivateKeyCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return privateKey.Run()
+			return privateKey.Run(&export.PrivateKeyParams{Authenticated: authentication.Get().Authenticated()})
 		})
 }
