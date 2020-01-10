@@ -80,7 +80,8 @@ func parseOutputFlag(args []string) string {
 		Output string `short:"o" long:"output"`
 	}
 
-	_, err := flags.ParseArgs(&flagSet, args)
+	parser := flags.NewParser(&flagSet, flags.IgnoreUnknown)
+	_, err := parser.ParseArgs(args)
 	if err != nil {
 		logging.Warningf("Could not parse output flag: %s", err.Error())
 	}
