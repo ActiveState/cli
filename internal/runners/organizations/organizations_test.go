@@ -99,10 +99,12 @@ func TestOrganizationsJSONBad(t *testing.T) {
 	aMock := setupOrgTest(t)
 	aMock.MockGetBadTiers()
 
+	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr := run(&OrgParams{Output: "json"})
-		require.Error(t, execErr)
+		execErr = run(&OrgParams{Output: "json"})
 	})
+
+	require.Error(t, execErr)
 	require.NoError(t, outErr)
 	assert.Equal(t, "", outStr, "Expect no output")
 
