@@ -54,7 +54,8 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	run("run", nil)
+	err = run("run", nil)
+	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
@@ -92,10 +93,11 @@ scripts:
 	os.Setenv(constants.DisableRuntime, "true")
 
 	out := capturer.CaptureOutput(func() {
-		run("run", nil)
+		err = run("run", nil)
+		assert.NoError(t, err, "No error occurred")
+		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
 
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)
 	assert.Contains(t, out, "TEST_KEY_EXISTS")
 }
@@ -127,10 +129,11 @@ scripts:
 	project.Persist()
 
 	out, err := osutil.CaptureStdout(func() {
-		run("run", nil)
+		rerr := run("run", nil)
+		assert.NoError(t, rerr, "No error occurred")
+		assert.NoError(t, failures.Handled(), "No failure occurred")
 	})
 	require.NoError(t, err, "Executed without error")
-	assert.NoError(t, failures.Handled(), "No failure occurred")
 	assert.Contains(t, out, "Running user-defined script: run")
 }
 
@@ -148,8 +151,9 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	run("", nil)
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	err = run("", nil)
+	assert.Error(t, err, "Error occurred")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunUnknownCommandName(t *testing.T) {
@@ -166,11 +170,12 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	run("unknown", nil)
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	err = run("unknown", nil)
+	assert.Error(t, err, "Error occurred")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
-func TestRunUnknownCommand(t *testing.T) {
+func estRunUnknownCommand(t *testing.T) {
 	failures.ResetHandled()
 
 	project := &projectfile.Project{}
@@ -185,9 +190,9 @@ scripts:
 	assert.Nil(t, err, "Unmarshalled YAML")
 	project.Persist()
 
-	run("run", nil)
-
-	assert.Error(t, failures.Handled(), "Failure occurred")
+	err = run("run", nil)
+	assert.Error(t, err, "Error occurred")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestRunActivatedCommand(t *testing.T) {
@@ -226,8 +231,8 @@ scripts:
 	project.Persist()
 
 	// Run the command.
-	failures.ResetHandled()
-	run("run", nil)
+	err = run("run", nil)
+	assert.NoError(t, err, "No error occurred")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
 
 	// Reset.

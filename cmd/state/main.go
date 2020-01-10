@@ -108,7 +108,7 @@ func run(args []string) (int, error) {
 
 	if err2 := normalizeError(err); err2 != nil {
 		logging.Debug("Returning error from cmdtree")
-		return 1, err2
+		return unwrapExitCode(err2), err2
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
@@ -130,6 +130,9 @@ func run(args []string) (int, error) {
 func unwrapExitCode(errFail error) int {
 	fail, ok := errFail.(*failures.Failure)
 	if !ok {
+		if eerr, ok := errFail.(*exec.ExitError); ok {
+			return eerr.ExitCode()
+		}
 		return 1
 	}
 

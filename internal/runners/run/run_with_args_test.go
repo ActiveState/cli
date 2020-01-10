@@ -62,12 +62,14 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	project.Persist()
 	defer projectfile.Reset()
 
+	var err error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		run(cmdName, cmdArgs)
+		err = run(cmdName, cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
+	require.NoError(t, failures.Handled(), "No failures handled")
 
-	return outStr, failures.Handled()
+	return outStr, err
 }
 
 func assertExecCommandProcessesArgs(t *testing.T, tmplCmdName, cmdName string, cmdArgs []string, expectedStdout string) {

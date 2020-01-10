@@ -127,8 +127,8 @@ func TestRunCommand(t *testing.T) {
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(filename)
-		require.NoError(t, err)
+		rerr := subs.Run(filename)
+		require.NoError(t, rerr)
 	})
 	require.NoError(t, err)
 
