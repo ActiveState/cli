@@ -1268,3 +1268,5 @@ export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
   other: Could not read private key file
+request_timed_out:
+  other: A request for data took too long - Trying again may help
