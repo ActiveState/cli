@@ -128,11 +128,12 @@ func run(args []string) (int, error) {
 // unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func unwrapExitCode(errFail error) int {
+	if eerr, ok := errFail.(*exec.ExitError); ok {
+		return eerr.ExitCode()
+	}
+
 	fail, ok := errFail.(*failures.Failure)
 	if !ok {
-		if eerr, ok := errFail.(*exec.ExitError); ok {
-			return eerr.ExitCode()
-		}
 		return 1
 	}
 
