@@ -167,7 +167,5 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	integration.RunParallel(t, new(RunIntegrationTestSuite))
+	suite.Run(t, new(RunIntegrationTestSuite))
 }

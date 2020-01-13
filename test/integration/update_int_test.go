@@ -83,15 +83,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
 	}
-
 	suite.Run(t, new(UpdateIntegrationTestSuite))
-
-	// parallel doesn't work with these due to contamination. The RunParallel function does not seem to allow for
-	// setting up individual tests
-	// integration.RunParallel(t, new(UpdateIntegrationTestSuite))
 }

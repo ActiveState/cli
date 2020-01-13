@@ -91,7 +91,5 @@ func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, f
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(InitIntegrationTestSuite))
+	suite.Run(t, new(InitIntegrationTestSuite))
 }

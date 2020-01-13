@@ -187,7 +187,5 @@ func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(PackageIntegrationTestSuite))
+	suite.Run(t, new(PackageIntegrationTestSuite))
 }

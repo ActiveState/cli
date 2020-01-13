@@ -71,7 +71,5 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 }
 
 func TestScriptsIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(ScriptsIntegrationTestSuite))
+	suite.Run(t, new(ScriptsIntegrationTestSuite))
 }

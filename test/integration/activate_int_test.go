@@ -200,8 +200,5 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
-	integration.RunParallel(t, new(ActivateIntegrationTestSuite))
+	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
