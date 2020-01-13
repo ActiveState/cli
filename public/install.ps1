@@ -280,13 +280,13 @@ function install()
     }
 
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
-        Write-Error "Flags -n and -activate cannot be set at the same time."
-        return
+        Write-Warning "Flags -n and -activate cannot be set at the same time."
+        return 1
     }
 
     if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
-        Write-Error "Flag -f also requires -n"
-        return
+        Write-Warning "Flag -f also requires -n"
+        return 1
     }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
@@ -299,7 +299,7 @@ function install()
         Write-Warning "x86 processors are not supported at this time"
         Write-Warning "Contact ActiveState Support for assistance"
         Write-Warning "Aborting installation"
-        return
+        return 1
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -309,9 +309,9 @@ function install()
     } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
-            Write-Error "Do not have write permissions to: '$Env:APPDATA'"
-            Write-Error "Aborting installation"
-            return
+            Write-Warning "Do not have write permissions to: '$Env:APPDATA'"
+            Write-Warning "Aborting installation"
+            return 1
         }
     }
 
@@ -354,7 +354,7 @@ function install()
             $occurance = errorOccured $False
             if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
-                return
+                return 1
             }
         }
     }
@@ -362,7 +362,7 @@ function install()
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
     $err = fetchArtifacts $tmpParentPath $statejson $statepkg
     if ($err -eq 1){
-        return
+        return 1
     }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
@@ -403,4 +403,8 @@ function install()
 
 }
 
-install
+$err = install
+if (-not $script:NOPROMPT){
+    pause
+}
+exit($err)
