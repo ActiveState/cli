@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -72,6 +73,159 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 
 	assert.NoError(t, runAuth(&AuthParams{}), "Executed without error")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
+	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithCode("POST", "/login", 401)
+
+	pmock.OnMethod("Input").Once().Return("baduser", nil)
+	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
+
+	err := runAuth(&AuthParams{})
+	assert.Error(t, err)
+	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
+}
+
+func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+	httpmock.Register("GET", "/renew")
+
+	fail := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+		Username: user.Username,
+		Password: user.Password,
+	})
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	require.NoError(t, fail.ToError())
+
+	assert.NoError(t, runAuth(&AuthParams{}), "Executed without error")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
+	setup(t)
+	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+	secretsapiMock.Register("GET", "/keypair")
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	err := runAuth(&AuthParams{})
+
+	assert.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+}
+
+func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
+	setup(t)
+	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+
+	var bodyKeypair *secretsModels.KeypairChange
+	var bodyErr error
+	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
+		return 204, "empty"
+	})
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	err := runAuth(&AuthParams{})
+
+	assert.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	require.NoError(t, bodyErr, "unmarshalling keypair save response")
+	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
+	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
+}
+
+func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
+	setup(t)
+	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	defer httpmock.DeActivate()
+
+	var secondRequest bool
+	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
+		if !secondRequest {
+			secondRequest = true
+			return 401, "login"
+		}
+		return 200, "login"
+	})
+	httpmock.Register("GET", "/users/uniqueUsername/test")
+	httpmock.Register("POST", "/users")
+
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+
+	var bodyKeypair *secretsModels.KeypairChange
+	var bodyErr error
+	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
+		return 204, "empty"
+	})
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
+	pmock.OnMethod("Confirm").Once().Return(true, nil)
+	pmock.OnMethod("Input").Once().Return(user.Email, nil)
+	pmock.OnMethod("Input").Once().Return(user.Name, nil)
+	err := runAuth(&AuthParams{})
+
+	assert.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	require.NoError(t, bodyErr, "unmarshalling keypair save response")
+	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
+	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
 
 func TestExecuteAuthenticatedByPrompts(t *testing.T) {
@@ -229,4 +383,102 @@ func TestExecuteLogout(t *testing.T) {
 		assert.Regexp(t, "The system cannot find the file specified", err.Error())
 
 	}
+}
+
+func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
+	setup(t)
+	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	defer httpmock.DeActivate()
+
+	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
+		bodyBytes, _ := ioutil.ReadAll(req.Body)
+		bodyString := string(bodyBytes)
+		if !strings.Contains(bodyString, "totp") {
+			return 449, "login"
+		}
+		return 200, "login"
+	})
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+	secretsapiMock.Register("GET", "/keypair")
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("", nil)
+
+	err := runAuth(&AuthParams{})
+	assert.Error(t, err)
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("foo", nil)
+	err = runAuth(&AuthParams{})
+	failures.ResetHandled()
+
+	require.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+	failures.ResetHandled()
+}
+
+func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
+	setup(t)
+	user := setupUser()
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	defer httpmock.DeActivate()
+	defer failures.ResetHandled()
+
+	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
+		bodyBytes, _ := ioutil.ReadAll(req.Body)
+		bodyString := string(bodyBytes)
+		if !strings.Contains(bodyString, "totp") {
+			return 449, "login"
+		}
+		return 200, "login"
+	})
+	httpmock.Register("GET", "/apikeys")
+	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
+	httpmock.Register("POST", "/apikeys")
+
+	var bodyKeypair *secretsModels.KeypairChange
+	var bodyErr error
+	secretsapiMock.RegisterWithCode("GET", "/keypair", 404)
+	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
+		reqBody, _ := ioutil.ReadAll(req.Body)
+		bodyErr = json.Unmarshal(reqBody, &bodyKeypair)
+		return 204, "empty"
+	})
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("", nil)
+
+	err := runAuth(&AuthParams{})
+	assert.Error(t, err)
+	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
+	failures.ResetHandled()
+
+	pmock.OnMethod("Input").Once().Return(user.Username, nil)
+	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
+	pmock.OnMethod("Input").Once().Return("foo", nil)
+	err = runAuth(&AuthParams{})
+
+	require.NoError(t, err, "Executed without error")
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
+
+	require.NoError(t, bodyErr, "unmarshalling keypair save response")
+	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
+	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
