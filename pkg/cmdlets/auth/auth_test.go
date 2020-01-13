@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
-	"github.com/ActiveState/cli/internal/runners/auth"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -22,12 +21,6 @@ import (
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-)
-
-var (
-	AuthRunner   = auth.NewAuth()
-	SignupRunner = auth.NewSignup()
-	LogoutRunner = auth.NewLogout()
 )
 
 func setup(t *testing.T) {

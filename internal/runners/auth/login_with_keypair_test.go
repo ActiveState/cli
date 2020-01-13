@@ -1,4 +1,4 @@
-package auth_test
+package auth
 
 import (
 	"encoding/json"
@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
-	"github.com/ActiveState/cli/internal/runners/auth"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -67,8 +66,7 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -96,8 +94,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -129,8 +126,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -164,8 +160,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -204,8 +199,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
@@ -236,8 +230,7 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	runner := auth.NewAuth()
-	err := runner.Run(&auth.AuthParams{})
+	err := runAuth(&AuthParams{})
 	suite.Require().Error(err)
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
 
