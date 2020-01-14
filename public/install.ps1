@@ -403,8 +403,4 @@ function install()
 
 }
 
-$err = install
-if (-not $script:NOPROMPT){
-    pause
-}
-exit($err)
+install
