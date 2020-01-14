@@ -13,6 +13,10 @@ func (s *Signup) Run() error {
 }
 
 func runSignup() error {
-	authlet.Signup()
+	fail := authlet.Signup()
+	if fail != nil {
+		return fail.ToError()
+	}
+
 	return nil
 }

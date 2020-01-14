@@ -420,12 +420,10 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 	err = runAuth(&AuthParams{})
-	failures.ResetHandled()
 
 	require.NoError(t, err, "Executed without error")
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.NoError(t, failures.Handled(), "No failure occurred")
-	failures.ResetHandled()
 }
 
 func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
@@ -437,7 +435,6 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
 	defer httpmock.DeActivate()
-	defer failures.ResetHandled()
 
 	httpmock.RegisterWithResponder("POST", "/login", func(req *http.Request) (int, string) {
 		bodyBytes, _ := ioutil.ReadAll(req.Body)
@@ -467,7 +464,6 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	err := runAuth(&AuthParams{})
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
-	failures.ResetHandled()
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)

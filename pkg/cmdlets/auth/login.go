@@ -39,8 +39,8 @@ var (
 )
 
 // Authenticate will prompt the user for authentication
-func Authenticate() {
-	AuthenticateWithInput("", "")
+func Authenticate() *failures.Failure {
+	return AuthenticateWithInput("", "")
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
@@ -106,9 +106,9 @@ func RequireAuthentication(message string) *failures.Failure {
 
 	switch choice {
 	case locale.T("prompt_login_action"):
-		Authenticate()
+		fail = Authenticate()
 	case locale.T("prompt_signup_action"):
-		Signup()
+		fail = Signup()
 	case locale.T("prompt_signup_browser_action"):
 		err := OpenURI(constants.PlatformSignupURL)
 		if err != nil {
