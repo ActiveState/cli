@@ -26,12 +26,20 @@ func New() *CmdTree {
 		newLogoutCommand(),
 	)
 
+	exportCmd := newExportCommand()
+	exportCmd.AddChildren(
+		newRecipeCommand(),
+		newJWTCommand(),
+		newPrivateKeyCommand(),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
 		authCmd,
+		exportCmd,
 		newOrganizationsCommand(globals),
 	)
 

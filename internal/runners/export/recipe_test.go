@@ -45,9 +45,6 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.invm.MockOrderRecipes()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
-
-	suite.ex = exiter.New()
-	Command.Exiter = suite.ex.Exit
 }
 
 func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
@@ -56,44 +53,36 @@ func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
 	suite.apim.Close()
 	suite.graphMock.Close()
 
-	RecipeArgs = recipeArgs{}
-	RecipeFlags = recipeFlags{}
-
-	cc := Command.GetCobraCmd()
-	cc.SetArgs([]string{})
-
 	projectfile.Reset()
 	failures.ResetHandled()
 }
 
 func (suite *RecipeCommandTestSuite) TestNoArg() {
-	suite.runRecipeCommandTest(-1)
+	suite.runRecipeCommandTest(false, &RecipeParams{})
 }
 
 func (suite *RecipeCommandTestSuite) TestValidArg() {
-	cmt := "00020002-0002-0002-0002-000200020002"
-	suite.runRecipeCommandTest(-1, cmt)
+	suite.runRecipeCommandTest(false, &RecipeParams{CommitID: "00020002-0002-0002-0002-000200020002"})
 }
 
 func (suite *RecipeCommandTestSuite) TestValidPlatform() {
-	suite.runRecipeCommandTest(-1, "--platform", "linux")
+	suite.runRecipeCommandTest(false, &RecipeParams{Platform: "linux"})
 }
 
 func (suite *RecipeCommandTestSuite) TestValidPlatformWithCaps() {
-	suite.runRecipeCommandTest(-1, "--platform", "Linux")
+	suite.runRecipeCommandTest(false, &RecipeParams{Platform: "Linux"})
 }
 
 func (suite *RecipeCommandTestSuite) TestInvalidPlatform() {
-	suite.runRecipeCommandTest(1, "--platform", "junk")
+	suite.runRecipeCommandTest(true, &RecipeParams{Platform: "junk"})
 }
 
 func (suite *RecipeCommandTestSuite) TestOtherPlatform() {
-	suite.runRecipeCommandTest(-1, "--platform", "macos")
+	suite.runRecipeCommandTest(false, &RecipeParams{Platform: "macos"})
 }
 
-func (suite *RecipeCommandTestSuite) runRecipeCommandTest(code int, args ...string) {
-	cc := Command.GetCobraCmd()
-	cc.SetArgs(append([]string{"recipe"}, args...))
+func (suite *RecipeCommandTestSuite) runRecipeCommandTest(wantErr bool, params *RecipeParams) {
+	runner := NewRecipe()
 
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
@@ -101,11 +90,12 @@ func (suite *RecipeCommandTestSuite) runRecipeCommandTest(code int, args ...stri
 	}
 	pjfile.Persist()
 
-	exitCode := suite.ex.WaitForExit(func() {
-		Command.Execute()
-	})
-
-	suite.Equal(code, exitCode, "exited with wrong exitcode")
+	err := runner.Run(params)
+	if wantErr {
+		suite.Require().Error(err)
+	} else {
+		suite.Require().NoError(err)
+	}
 }
 
 func TestRecipeCommandTestSuite(t *testing.T) {
