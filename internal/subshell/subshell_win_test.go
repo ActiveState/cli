@@ -80,19 +80,16 @@ func TestRunCommandError(t *testing.T) {
 	require.NoError(t, fail.ToError())
 
 	err := subs.Run("some-file-that-doesnt-exist.bat")
-	require.IsType(t, err, &exec.Error{}, "Error is exec error")
-	eerr := err.(*exec.Error).Unwrap()
-	require.IsType(t, eerr, &exec.ExitError{}, "Error is exec exit error")
-	assert.Equal(t, eerr.(*exec.ExitError).ExitCode(), 128, "Returns exit code 128")
+	assert.Error(t, err, "Returns an error")
 
-	data := []byte("exit 1")
+	data := []byte("exit 2")
 	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(filename)
 
 	err = subs.Run(filename)
 	require.IsType(t, err, &exec.ExitError{}, "Error is exec exit error")
-	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 1, "Returns exit code 1")
+	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 2, "Returns exit code 2")
 
 	projectfile.Reset()
 }
