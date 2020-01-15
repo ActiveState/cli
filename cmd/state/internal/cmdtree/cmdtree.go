@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runners/state"
-	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
@@ -21,6 +20,12 @@ type CmdTree struct {
 func New() *CmdTree {
 	globals := newGlobalOptions()
 
+	authCmd := newAuthCommand(globals)
+	authCmd.AddChildren(
+		newSignupCommand(),
+		newLogoutCommand(),
+	)
+
 	exportCmd := newExportCommand()
 	exportCmd.AddChildren(
 		newRecipeCommand(),
@@ -33,6 +38,7 @@ func New() *CmdTree {
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
+		authCmd,
 		exportCmd,
 		newOrganizationsCommand(globals),
 	)
@@ -117,7 +123,6 @@ func (ct *CmdTree) Execute(args []string) error {
 }
 
 func setLegacyOutput(globals *globalOptions) {
-	auth.Flags.Output = &globals.Output
 	scripts.Flags.Output = &globals.Output
 	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output

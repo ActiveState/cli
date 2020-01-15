@@ -6,9 +6,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func tokenAuth() *failures.Failure {
+func tokenAuth(token string) *failures.Failure {
 	auth := authentication.Get()
 	return auth.AuthenticateWithModel(&mono_models.Credentials{
-		Token: Flags.Token,
+		Token: token,
 	})
 }

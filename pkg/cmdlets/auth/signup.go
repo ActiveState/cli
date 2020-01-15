@@ -32,22 +32,23 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup() {
+func Signup() *failures.Failure {
 	input := &signupInput{}
 
-	err := promptForSignup(input)
-	if err != nil {
-		failures.Handle(err, locale.T("err_prompt_unkown"))
-		return
+	fail := promptForSignup(input)
+	if fail != nil {
+		return fail.WithDescription("err_prompt_unkown")
 	}
 
 	doSignup(input)
 
 	if authentication.Get().Authenticated() {
 		if failure := generateKeypairForUser(input.Password); failure != nil {
-			failures.Handle(failure, locale.T("keypair_err_save"))
+			return failure.WithDescription("keypair_err_save")
 		}
 	}
+
+	return nil
 }
 
 func signupFromLogin(username string, password string) *failures.Failure {
