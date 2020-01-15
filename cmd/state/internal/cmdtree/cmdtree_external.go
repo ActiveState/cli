@@ -11,7 +11,6 @@ import (
 	pkg "github.com/ActiveState/cli/state/package"
 	"github.com/ActiveState/cli/state/projects"
 	"github.com/ActiveState/cli/state/pull"
-	"github.com/ActiveState/cli/state/run"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
@@ -31,7 +30,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 		update.Command,
 		projects.Command,
 		show.Command,
-		run.Command,
 		scripts.Command,
 		pull.Command,
 		pkg.Command,

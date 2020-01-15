@@ -41,6 +41,7 @@ func New() *CmdTree {
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(globals),
+		newRunCommand(),
 	)
 
 	applyLegacyChildren(stateCmd, globals)

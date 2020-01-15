@@ -42,7 +42,7 @@ type SubShell interface {
 	Deactivate() *failures.Failure
 
 	// Run a script string, passing the provided command-line arguments, that assumes this shell and returns the exit code
-	Run(filename string, args ...string) (int, error)
+	Run(filename string, args ...string) error
 
 	// IsActive returns whether the given subshell is active
 	IsActive() bool

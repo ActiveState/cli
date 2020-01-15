@@ -5,6 +5,7 @@ package subshell
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -56,8 +57,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(filename)
-		require.NoError(t, err)
+		rerr := subs.Run(filename)
+		require.NoError(t, rerr)
 	})
 	require.NoError(t, err)
 	assert.Contains(t, out, "--EMPTY--  --EMPTY--", strings.TrimSpace(out),
@@ -78,18 +79,17 @@ func TestRunCommandError(t *testing.T) {
 	subs, fail := Get()
 	require.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-file-that-doesnt-exist.bat")
-	assert.Equal(t, 128, code, "Returns exit code 128")
+	err := subs.Run("some-file-that-doesnt-exist.bat")
 	assert.Error(t, err, "Returns an error")
 
-	data := []byte("exit 1")
+	data := []byte("exit 2")
 	filename, fail := fileutils.WriteTempFile("", "test*.bat", data, 0700)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(filename)
 
-	code, err = subs.Run(filename)
-	assert.Equal(t, 1, code, "Returns exit code 1")
-	assert.Error(t, err, "Returns an error")
+	err = subs.Run(filename)
+	require.IsType(t, err, &exec.ExitError{}, "Error is exec exit error")
+	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 2, "Returns exit code 2")
 
 	projectfile.Reset()
 }

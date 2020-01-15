@@ -166,6 +166,12 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 	suite.Expect("Hello World!")
 }
 
+func (suite *RunIntegrationTestSuite) TestRun_Help() {
+	suite.Spawn("run", "-h")
+	suite.Expect("Usage")
+	suite.Expect("Arguments")
+}
+
 func TestRunIntegrationTestSuite(t *testing.T) {
 	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
 

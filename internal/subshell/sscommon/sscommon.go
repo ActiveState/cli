@@ -68,7 +68,7 @@ func Stop(cmd *exec.Cmd) *failures.Failure {
 }
 
 // RunFunc ...
-type RunFunc func(env []string, name string, args ...string) (int, error)
+type RunFunc func(env []string, name string, args ...string) error
 
 func RunFuncByBinary(binary string) RunFunc {
 	bin := strings.ToLower(binary)
@@ -82,10 +82,10 @@ func RunFuncByBinary(binary string) RunFunc {
 	}
 }
 
-func runWithBash(env []string, name string, args ...string) (int, error) {
+func runWithBash(env []string, name string, args ...string) error {
 	filePath, fail := osutils.BashifyPath(name)
 	if fail != nil {
-		return 1, fail.ToError()
+		return fail.ToError()
 	}
 
 	esc := osutils.NewBashEscaper()
@@ -98,27 +98,27 @@ func runWithBash(env []string, name string, args ...string) (int, error) {
 	return runDirect(env, "bash", "-c", quotedArgs)
 }
 
-func runWithCmd(env []string, name string, args ...string) (int, error) {
+func runWithCmd(env []string, name string, args ...string) error {
 	ext := filepath.Ext(name)
 	switch ext {
 	case ".py":
 		args = append([]string{name}, args...)
 		pythonPath, fail := binaryPathCmd(env, "python")
 		if fail != nil {
-			return 1, fail
+			return fail
 		}
 		name = pythonPath
 	case ".pl":
 		args = append([]string{name}, args...)
 		perlPath, fail := binaryPathCmd(env, "perl")
 		if fail != nil {
-			return 1, fail
+			return fail
 		}
 		name = perlPath
 	case ".bat":
 		// No action required
 	default:
-		return 1, failures.FailUser.New("err_sscommon_unsupported_language", ext)
+		return failures.FailUser.New("err_sscommon_unsupported_language", ext)
 	}
 
 	return runDirect(env, name, args...)
@@ -158,7 +158,7 @@ func ignoreInterrupts(ctx context.Context) {
 	}()
 }
 
-func runDirect(env []string, name string, args ...string) (int, error) {
+func runDirect(env []string, name string, args ...string) error {
 	logging.Debug("Running command: %s %s", name, strings.Join(args, " "))
 
 	runCmd := exec.Command(name, args...)
@@ -179,14 +179,5 @@ func runDirect(env []string, name string, args ...string) (int, error) {
 	// - https://www.pivotaltracker.com/story/show/167523128
 	ignoreInterrupts(ctx)
 
-	err := runCmd.Run()
-	code := osutils.CmdExitCode(runCmd)
-	if err != nil {
-		if eerr, ok := err.(*exec.ExitError); ok {
-			return code, FailExecCmdExit.Wrap(eerr)
-		}
-		return code, FailExecCmd.Wrap(err)
-	}
-
-	return code, nil
+	return runCmd.Run()
 }

@@ -5,6 +5,7 @@ package subshell
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -53,8 +54,8 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	defer os.Remove(filename)
 
 	out, err := osutil.CaptureStdout(func() {
-		_, err := subs.Run(filename)
-		require.NoError(t, err)
+		rerr := subs.Run(filename)
+		require.NoError(t, rerr)
 	})
 	require.NoError(t, err)
 	assert.Empty(t, strings.TrimSpace(out), "Should not echo anything cause the ACTIVESTATE_PROJECT should be undefined by the run command")
@@ -74,18 +75,18 @@ func TestRunCommandError(t *testing.T) {
 	subs, fail := Get()
 	require.NoError(t, fail.ToError())
 
-	code, err := subs.Run("some-file-that-doesnt-exist")
+	err := subs.Run("some-file-that-doesnt-exist")
 	assert.Error(t, err, "Returns an error")
-	assert.Equal(t, 1, code, "Returns exit code 1")
 
 	data := []byte("#!/usr/bin/env bash\nexit 2")
 	filename, fail := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
 	require.NoError(t, fail.ToError())
 	defer os.Remove(filename)
 
-	code, err = subs.Run(filename)
-	assert.Error(t, err)
-	assert.Equal(t, 2, code, "Returns exit code 2")
+	err = subs.Run(filename)
+	require.Error(t, err, "Returns an error")
+	require.IsType(t, err, &exec.ExitError{}, "Error is exec exit error")
+	assert.Equal(t, err.(*exec.ExitError).ExitCode(), 2, "Returns exit code 2")
 
 	projectfile.Reset()
 }
