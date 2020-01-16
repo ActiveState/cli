@@ -16,6 +16,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
 	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
 	github.com/aws/aws-sdk-go v1.13.8
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 	github.com/creack/pty v1.1.7
 	github.com/dave/jennifer v0.18.0
@@ -36,6 +37,8 @@ require (
 	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 	github.com/gobuffalo/packr v1.10.7
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/google/go-github v17.0.0+incompatible // indirect
+	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-version v1.1.0
@@ -82,6 +85,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
 	golang.org/x/net v0.0.0-20191003171128-d98b1b443823
+	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sys v0.0.0-20191003212358-c178f38b412c
 	gopkg.in/AlecAivazis/survey.v1 v1.4.2
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
