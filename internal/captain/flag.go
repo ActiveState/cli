@@ -6,8 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 )
 
-type FlagType int
-
 type FlagMarshaler interface {
 	String() string
 	Set(string) error

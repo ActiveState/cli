@@ -1203,8 +1203,8 @@ inventory_ingredient_version_not_available:
   other: The ingredient {{.V0}} does not have any versions available
 command_flag_no_such_flag:
   other: "No such flag: {{.V0}}"
-command_flag_invalid_arg:
-  other: "Invalid argument for {{.V0}} flag: {{.V1}}"
+command_flag_invalid_value:
+  other: "Invalid value for {{.V0}} flag: {{.V1}}"
 err_cmdtree:
   other: Could not run the requested command
 err_fetch_languages:

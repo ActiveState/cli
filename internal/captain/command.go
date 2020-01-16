@@ -208,7 +208,7 @@ func setupSensibleErrors(err error) error {
 		}
 
 		return failures.FailUserInput.New(
-			"command_flag_invalid_arg", flagText, msg,
+			"command_flag_invalid_value", flagText, msg,
 		)
 	}
 
