@@ -31,8 +31,7 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 				Name:        "path",
 				Shorthand:   "",
 				Description: locale.T("flag_state_activate_path_description"),
-				Type:        captain.TypeString,
-				StringVar:   &args.Path,
+				Value:       &args.Path,
 			},
 		},
 		[]*captain.Argument{

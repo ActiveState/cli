@@ -72,36 +72,32 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Name:        "locale",
 				Shorthand:   "l",
 				Description: locale.T("flag_state_locale_description"),
-				Type:        captain.TypeString,
 				Persist:     true,
-				StringVar:   &opts.Locale,
+				Value:       &opts.Locale,
 			},
 			{
 				Name:        "verbose",
 				Shorthand:   "v",
 				Description: locale.T("flag_state_verbose_description"),
-				Type:        captain.TypeBool,
 				Persist:     true,
 				OnUse: func() {
 					if !condition.InTest() {
 						logging.CurrentHandler().SetVerbose(true)
 					}
 				},
-				BoolVar: &globals.Verbose,
+				Value: &globals.Verbose,
 			},
 			{
 				Name:        "output",
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
-				Type:        captain.TypeString,
 				Persist:     true,
-				StringVar:   &globals.Output,
+				Value:       &globals.Output,
 			},
 			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
-				Type:        captain.TypeBool,
-				BoolVar:     &opts.Version,
+				Value:       &opts.Version,
 			},
 		},
 		[]*captain.Argument{},

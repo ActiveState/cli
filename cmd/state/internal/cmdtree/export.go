@@ -42,15 +42,13 @@ func newRecipeCommand() *captain.Command {
 			{
 				Name:        "pretty",
 				Description: locale.T("export_recipe_flag_pretty"),
-				Type:        captain.TypeBool,
-				BoolVar:     &flags.Pretty,
+				Value:       &flags.Pretty,
 			},
 			{
 				Name:        "platform",
 				Shorthand:   "p",
 				Description: locale.T("export_recipe_flag_platform"),
-				Type:        captain.TypeString,
-				StringVar:   &flags.Platform,
+				Value:       &flags.Platform,
 			},
 		},
 		[]*captain.Argument{
