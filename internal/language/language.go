@@ -126,6 +126,9 @@ func (l Language) data() languageData {
 
 // String implements the fmt.Stringer interface.
 func (l *Language) String() string {
+	if l == nil {
+		return ""
+	}
 	return l.data().name
 }
 
@@ -189,6 +192,28 @@ func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
 func (l Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
+}
+
+func (l *Language) Set(v string) error {
+	lang := MakeByName(v)
+	if lang == Unknown {
+		return fmt.Errorf(locale.Tr(
+			"err_init_invalid_language",
+			v, strings.Join(AvailableNames(), ", "),
+		))
+	}
+
+	if l == nil {
+		l = &lang
+		return nil
+	}
+
+	*l = lang
+	return nil
+}
+
+func (l *Language) Type() string {
+	return "language"
 }
 
 // Executable contains details about an executable program used to interpret a

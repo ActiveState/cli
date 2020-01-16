@@ -2,8 +2,10 @@ package captain
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -73,7 +75,7 @@ func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
-	return err
+	return setupSensibleErrors(err)
 }
 
 func (c *Command) SetAliases(aliases []string) {
@@ -175,5 +177,50 @@ func (c *Command) runFlags(persistOnly bool) {
 }
 
 func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
+	return nil
+}
+
+func setupSensibleErrors(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	errMsg := err.Error()
+
+	// pflag - flag.go
+	// fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
+	invalidArg := "invalid argument "
+	if strings.Contains(errMsg, invalidArg) {
+		ss := strings.SplitN(errMsg, ": ", 2)
+
+		flagText := "{unknown flag}"
+		msg := "unknown error"
+
+		if len(ss) > 0 {
+			subss := strings.SplitN(ss[0], "for ", 2)
+			if len(subss) > 1 {
+				flagText = strings.TrimSuffix(subss[1], " flag")
+			}
+		}
+
+		if len(ss) > 1 {
+			msg = ss[1]
+		}
+
+		return failures.FailUserInput.New(
+			"command_flag_invalid_arg", flagText, msg,
+		)
+	}
+
+	// pflag - flag.go
+	// fmt.Errorf("no such flag -%v", name)
+	noSuch := "no such flag "
+	if strings.Contains(errMsg, noSuch) {
+		flagText := strings.TrimPrefix(errMsg, noSuch)
+		return failures.FailUserInput.New(
+			"command_flag_no_such_flag", flagText,
+		)
+	}
+
 	return nil
 }

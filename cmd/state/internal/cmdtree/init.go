@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -25,7 +23,7 @@ func (args *InitArgs) Prepare() error {
 }
 
 type InitOpts struct {
-	Language string
+	Language *language.Language
 	Skeleton string
 	Path     string
 }
@@ -51,7 +49,7 @@ func newInitCommand() *captain.Command {
 				Name:        "language",
 				Shorthand:   "",
 				Description: locale.T("flag_state_init_language_description"),
-				Value:       &opts.Language,
+				Value:       opts.Language,
 			},
 			{
 				Name:        "skeleton",
@@ -90,23 +88,11 @@ func newInitRunParams(args InitArgs, opts InitOpts) (*initialize.RunParams, erro
 		return nil, fail
 	}
 
-	var runLang *language.Language
-	if opts.Language != "" {
-		lang := language.MakeByName(opts.Language)
-		if lang == language.Unknown {
-			return nil, failures.FailUserInput.New(
-				"err_init_invalid_language",
-				opts.Language, strings.Join(language.AvailableNames(), ", "),
-			)
-		}
-		runLang = &lang
-	}
-
 	return &initialize.RunParams{
 		Owner:    ns.Owner,
 		Project:  ns.Project,
 		Path:     opts.Path,
-		Language: runLang,
+		Language: opts.Language,
 		Skeleton: initialize.SkeletonStyle(opts.Skeleton),
 	}, nil
 }
