@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -19,6 +20,21 @@ const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 type Namespace struct {
 	Owner   string
 	Project string
+}
+
+// Set implements the captain argmarshaler interface.
+func (ns *Namespace) Set(v string) error {
+	if ns == nil {
+		return fmt.Errorf("cannot set nil value")
+	}
+
+	nsx, fail := ParseNamespace(v)
+	if fail != nil {
+		return fail
+	}
+
+	*ns = *nsx
+	return nil
 }
 
 // ParseNamespace returns a valid project namespace

@@ -55,7 +55,7 @@ func newRecipeCommand() *captain.Command {
 			{
 				Name:        locale.T("export_recipe_cmd_commitid_arg"),
 				Description: locale.T("export_recipe_cmd_commitid_arg_description"),
-				Variable:    &args.CommitID,
+				Value:       &args.CommitID,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

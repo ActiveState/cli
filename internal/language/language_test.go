@@ -35,6 +35,7 @@ func TestLanguage(t *testing.T) {
 func TestMakeLanguage(t *testing.T) {
 	assert.Equal(t, Python3, MakeByName("python3"), "python3")
 	assert.Equal(t, Unknown, MakeByName("python4"), "unknown language")
+	assert.Equal(t, Unset, MakeByName(""), "unset language")
 }
 
 func TestUnmarshal(t *testing.T) {

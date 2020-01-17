@@ -6,40 +6,78 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/runners/initialize/skeleton"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/ActiveState/cli/internal/failures"
 )
 
-type configAble interface {
+type setter interface {
 	Set(key string, value interface{})
 }
 
-type SkeletonStyle string
-
-const (
-	Simple SkeletonStyle = ""
-	Editor SkeletonStyle = "editor"
-)
-
-type Init struct {
-	config configAble
-}
-
 type RunParams struct {
-	Owner    string
-	Project  string
-	Path     string
-	Skeleton SkeletonStyle
-	Language *language.Language
+	Namespace *project.Namespace
+	Path      string
+	Style     skeleton.Style
+	Language  language.Language
 }
 
-func (params *RunParams) Prepare() error {
+type Initialize struct {
+	config setter
+}
+
+func New(config setter) *Initialize {
+	return &Initialize{config}
+}
+
+func (r *Initialize) Run(params *RunParams) error {
+	_, err := run(r.config, params)
+	return err
+}
+
+func run(config setter, params *RunParams) (string, error) {
+	if err := prepare(params); err != nil {
+		return "", err
+	}
+
+	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
+
+	if params.Language.Recognized() && params.Language.Executable().Available() {
+		// Store language for when we run 'state push'
+		config.Set(params.Path+"_language", params.Language)
+	}
+
+	createParams := &projectfile.CreateParams{
+		Owner:     params.Namespace.Owner,
+		Project:   params.Namespace.Project,
+		Directory: params.Path,
+	}
+	if params.Style == skeleton.Editor {
+		createParams.Content = locale.T("editor_yaml")
+	}
+
+	fail := projectfile.Create(createParams)
+	if fail != nil {
+		return "", fail
+	}
+
+	print.Line(locale.Tr(
+		"init_success",
+		params.Namespace.Owner,
+		params.Namespace.Project,
+		params.Path,
+	))
+
+	return params.Path, nil
+}
+
+func prepare(params *RunParams) error {
 	// Fail if target dir already has an activestate.yaml
 	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
 		absPath, err := filepath.Abs(params.Path)
@@ -49,17 +87,17 @@ func (params *RunParams) Prepare() error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	switch params.Skeleton {
-	case Editor, Simple:
-		// We're good
-	default:
+	if !params.Style.Recognized() {
 		return failures.FailUserInput.New("err_init_invalid_skeleton_flag")
 	}
 
-	if params.Owner == "" {
+	if params.Namespace == nil {
+		return failures.FailUserInput.New("err_init_must_provide_namespace")
+	}
+	if params.Namespace.Owner == "" {
 		return failures.FailUserInput.New("err_init_owner_missing")
 	}
-	if params.Project == "" {
+	if params.Namespace.Project == "" {
 		return failures.FailUserInput.New("err_init_project_missing")
 	}
 
@@ -68,50 +106,10 @@ func (params *RunParams) Prepare() error {
 		if err != nil {
 			return err
 		}
-		params.Path = filepath.Join(wd, fmt.Sprintf("%s/%s", params.Owner, params.Project))
+		params.Path = filepath.Join(wd, fmt.Sprintf(
+			"%s/%s", params.Namespace.Owner, params.Namespace.Project,
+		))
 	}
 
 	return nil
-}
-
-func NewInit(config configAble) *Init {
-	return &Init{config}
-}
-
-func (r *Init) Run(params *RunParams) error {
-	_, err := run(r.config, params)
-	return err
-}
-
-func run(config configAble, runParams *RunParams) (string, error) {
-	logging.Debug("Init: %s/%s", runParams.Owner, runParams.Project)
-	err := runParams.Prepare()
-	if err != nil {
-		return "", err
-	}
-
-	if runParams.Language != nil && *runParams.Language != language.Unknown {
-		// Store language for when we run 'state push'
-		config.Set(runParams.Path+"_language", runParams.Language)
-	}
-
-	createParams := &projectfile.CreateParams{
-		Owner:     runParams.Owner,
-		Project:   runParams.Project,
-		Directory: runParams.Path,
-	}
-
-	if runParams.Skeleton == Editor {
-		createParams.Content = locale.T("editor_yaml")
-	}
-
-	// Create the activestate.yaml
-	fail := projectfile.Create(createParams)
-	if fail != nil {
-		return "", fail
-	}
-
-	print.Line(locale.Tr("init_success", runParams.Owner, runParams.Project, runParams.Path))
-
-	return runParams.Path, nil
 }

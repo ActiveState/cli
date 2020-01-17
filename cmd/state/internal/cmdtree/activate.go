@@ -38,7 +38,7 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 			&captain.Argument{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
-				Variable:    &args.Namespace,
+				Value:       &args.Namespace,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

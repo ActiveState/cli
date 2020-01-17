@@ -149,10 +149,24 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
-		if len(args) > idx {
-			(*arg.Variable) = args[idx]
+		if idx >= len(args) {
+			break
+		}
+
+		switch v := arg.Value.(type) {
+		case *string:
+			*v = args[idx]
+		case ArgMarshaler:
+			if err := v.Set(args[idx]); err != nil {
+				return err
+			}
+		default:
+			return failures.FailDeveloper.New(
+				"arg value must be *string, or ArgMarshaler",
+			)
 		}
 	}
+
 	return c.execute(c, args)
 }
 
@@ -222,5 +236,5 @@ func setupSensibleErrors(err error) error {
 		)
 	}
 
-	return nil
+	return err
 }
