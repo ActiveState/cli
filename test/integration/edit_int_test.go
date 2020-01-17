@@ -27,7 +27,7 @@ func (suite *EditIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
 
 	err := os.MkdirAll(os.TempDir(), 0655)
-	suite.Require().Error(err)
+	suite.Require().NoError(err)
 
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
