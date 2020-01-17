@@ -21,6 +21,7 @@ type setter interface {
 	Set(key string, value interface{})
 }
 
+// RunParams stores run func parameters.
 type RunParams struct {
 	Namespace *project.Namespace
 	Path      string
@@ -28,14 +29,17 @@ type RunParams struct {
 	Language  language.Language
 }
 
+// Initialize stores scope-related dependencies.
 type Initialize struct {
 	config setter
 }
 
+// New returns a prepared ptr to Initialize instance.
 func New(config setter) *Initialize {
 	return &Initialize{config}
 }
 
+// Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
 	_, err := run(r.config, params)
 	return err
@@ -87,8 +91,8 @@ func prepare(params *RunParams) error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	if !params.Style.Recognized() {
-		return failures.FailUserInput.New("err_init_invalid_skeleton_flag")
+	if params.Style == skeleton.Unknown {
+		return failures.FailUserInput.New("err_init_invalid_skeleton_style")
 	}
 
 	if params.Namespace == nil {

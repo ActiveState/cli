@@ -1229,6 +1229,8 @@ err_init_owner_missing:
   other: Owner name is required to initialize a project
 err_init_project_missing:
   other: Project name is required to initialize a project
+err_init_invalid_skeleton_style:
+  other: Skeleton style is invalid
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
