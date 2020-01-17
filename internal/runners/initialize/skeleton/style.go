@@ -68,7 +68,7 @@ func (s *Style) Text() string {
 
 // Recognized returns whether the style is a known useful value.
 func (s *Style) Recognized() bool {
-	return s != nil && s != Unset && s != Unknown
+	return s != nil && *s != Unset && *s != Unknown
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.

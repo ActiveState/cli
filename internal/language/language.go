@@ -119,7 +119,7 @@ func (l *Language) Text() string {
 
 // Recognized returns whether the language is a known useful value.
 func (l *Language) Recognized() bool {
-	return l != nil && l != Unset && l != Unknown
+	return l != nil && *l != Unset && *l != Unknown
 }
 
 // Ext return the file extension for the language.
@@ -222,7 +222,7 @@ func (e Executable) Builtin() bool {
 // Available returns whether the executable is not "builtin" and also has a
 // defined name.
 func (e Executable) Available() bool {
-	return !d.exec.base && d.exec.name != ""
+	return !e.base && e.name != ""
 }
 
 // Available returns all languages that are not "builtin" and also have a
