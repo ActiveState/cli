@@ -52,7 +52,7 @@ scripts:
 `)
 
 	projectFile := &projectfile.Project{}
-	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
