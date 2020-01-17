@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -173,13 +172,9 @@ version: %s
 	suite.Expect("Please reactivate any activated instances of the State Tool")
 	suite.ExpectExitCode(0)
 
-	originalWd, err := os.Getwd()
-	suite.Require().NoError(err)
-
 	// Change directories to a sub directory
-	err = os.Chdir(filepath.Join(tempDir, "foo", "bar", "baz"))
+	suite.SetWd(filepath.Join(tempDir, "foo", "bar", "baz"))
 	suite.Require().NoError(err)
-	defer os.Chdir(originalWd)
 
 	// Activate in the subdirectory
 	suite.Spawn("activate")

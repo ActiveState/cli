@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -22,7 +21,6 @@ import (
 
 type EditIntegrationTestSuite struct {
 	integration.Suite
-	originalWd string
 }
 
 func (suite *EditIntegrationTestSuite) SetupTest() {
@@ -31,10 +29,7 @@ func (suite *EditIntegrationTestSuite) SetupTest() {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
 	suite.Require().NoError(err)
 
-	suite.originalWd, err = os.Getwd()
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
+	suite.SetWd(tempDir)
 
 	root := environment.GetRootPathUnsafe()
 	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
@@ -84,7 +79,6 @@ func (suite *EditIntegrationTestSuite) TearDownTest() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
-	defer os.Chdir(suite.originalWd)
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.Expect("Watching file changes")
 	suite.Expect("Are you done editing?")
@@ -95,7 +89,6 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
-	defer os.Chdir(suite.originalWd)
 	suite.AppendEnv([]string{"ACTIVESTATE_NONINTERACTIVE=true"})
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.Expect("Watching file changes")
@@ -105,7 +98,6 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
-	defer os.Chdir(suite.originalWd)
 	suite.Spawn("scripts", "edit", "test-script")
 	suite.SendLine("Y")
 	suite.Wait()

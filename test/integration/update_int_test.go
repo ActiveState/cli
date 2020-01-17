@@ -48,8 +48,6 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	// We need a projectfile to be able to version lock
 	dir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
-	err = os.Chdir(dir)
-	suite.Require().NoError(err)
 	suite.SetWd(dir)
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{

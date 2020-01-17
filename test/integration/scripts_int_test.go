@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -17,7 +16,6 @@ import (
 
 type ScriptsIntegrationTestSuite struct {
 	integration.Suite
-	originalWd string
 }
 
 func (suite *ScriptsIntegrationTestSuite) SetupTest() {
@@ -26,10 +24,7 @@ func (suite *ScriptsIntegrationTestSuite) SetupTest() {
 	tempDir, err := ioutil.TempDir("", suite.T().Name())
 	suite.Require().NoError(err)
 
-	suite.originalWd, err = os.Getwd()
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
+	suite.SetWd(tempDir)
 
 	configFileContent := strings.TrimSpace(`
 project: "https://platform.activestate.com/ScriptOrg/ScriptProject?commitID=00010001-0001-0001-0001-000100010001"
@@ -61,7 +56,6 @@ scripts:
 
 func (suite *ScriptsIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
-	os.Chdir(suite.originalWd)
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {

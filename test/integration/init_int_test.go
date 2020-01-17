@@ -63,13 +63,8 @@ func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, f
 		suite.SetWd(path)
 	}
 
-	originalWd, err := os.Getwd()
-	suite.Require().NoError(err)
-	err = os.Chdir(path)
-	suite.Require().NoError(err)
-
+	suite.SetWd(path)
 	defer func() {
-		os.Chdir(originalWd)
 		os.RemoveAll(path)
 	}()
 
