@@ -29,7 +29,7 @@ func (suite *EditIntegrationTestSuite) SetupTest() {
 	err := os.MkdirAll(os.TempDir(), 0655)
 	suite.Require().NoError(err)
 
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("foo")
 	defer cleanup()
 
 	root := environment.GetRootPathUnsafe()
