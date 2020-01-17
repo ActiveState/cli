@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -24,6 +25,9 @@ type EditIntegrationTestSuite struct {
 
 func (suite *EditIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
+
+	err := os.MkdirAll(os.TempDir(), 0655)
+	suite.Require().Error(err)
 
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
 	defer cleanup()
