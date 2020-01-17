@@ -2,20 +2,15 @@ package secrets
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
-
-// Flags holds the flag values passed through the command line
-var Flags struct {
-	Output *string
-}
 
 func buildGetCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
@@ -49,8 +44,12 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	switch commands.Output(strings.ToLower(*Flags.Output)) {
-	case commands.JSON, commands.EditorV0:
+	outfmt := output.Unset
+	if cmd.Flags.Output != nil {
+		outfmt = *cmd.Flags.Output
+	}
+	switch outfmt {
+	case output.JSON, output.EditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 	default:
 		if valuePtr == nil {

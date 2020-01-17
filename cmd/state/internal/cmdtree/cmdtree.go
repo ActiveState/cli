@@ -5,11 +5,11 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/state"
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
-	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
 )
 
@@ -53,7 +53,7 @@ func New() *CmdTree {
 
 type globalOptions struct {
 	Verbose bool
-	Output  string
+	Output  output.Format
 }
 
 func newGlobalOptions() *globalOptions {
@@ -121,7 +121,6 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
-	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
 	show.Flags.Output = &globals.Output
 	pull.Flags.Output = &globals.Output

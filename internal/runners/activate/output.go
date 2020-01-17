@@ -6,13 +6,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
-func activateOutput(targetPath string, output commands.Output) error {
+func activateOutput(targetPath string, outfmt output.Format) error {
 	err := os.Chdir(targetPath)
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func activateOutput(targetPath string, output commands.Output) error {
 
 	jsonString, err := envOutput(false)
 	if err != nil {
-		if output == commands.EditorV0 {
+		if outfmt == output.EditorV0 {
 			return updateOutputError(err)
 		}
 		return err

@@ -2,12 +2,12 @@ package fork
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -47,9 +47,6 @@ var prompter prompt.Prompter
 
 func init() {
 	prompter = prompt.New()
-
-	s := ""
-	Flags.Output = &s
 }
 
 // Command holds the fork command definition
@@ -92,7 +89,7 @@ var Flags struct {
 	Organization string
 	Private      bool
 	Name         string
-	Output       *string
+	Output       *output.Format
 }
 
 // Args holds the values passed through the command line
@@ -131,8 +128,11 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	output := commands.Output(strings.ToLower(*Flags.Output))
-	outputJSON := (output == commands.JSON || output == commands.EditorV0)
+	outfmt := output.Unset
+	if Flags.Output != nil {
+		outfmt = *Flags.Output
+	}
+	outputJSON := (outfmt == output.JSON || outfmt == output.EditorV0)
 
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -34,7 +35,7 @@ type Command struct {
 
 	Flags struct {
 		Filter *string
-		Output *string
+		Output *output.Format
 	}
 }
 
@@ -47,7 +48,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
+func NewCommand(secretsClient *secretsapi.Client, outfmt *output.Format) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -68,7 +69,7 @@ func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	}
 
 	c.Flags.Filter = &flagFilter
-	c.Flags.Output = output
+	c.Flags.Output = outfmt
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
@@ -113,8 +114,12 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
-	case commands.JSON, commands.EditorV0:
+	outfmt := output.Unset
+	if cmd.Flags.Output != nil {
+		outfmt = *cmd.Flags.Output
+	}
+	switch outfmt {
+	case output.JSON, output.EditorV0:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))

@@ -34,16 +34,6 @@ const (
 	TypeBool
 )
 
-// Output represents the output type of a command
-type Output string
-
-const (
-	// JSON is the output type that represents JSON output
-	JSON Output = "json"
-	// EditorV0 is the output type that represents Komodo output
-	EditorV0 Output = "editor.v0"
-)
-
 // Flag is used to define flags in our Command struct
 type Flag struct {
 	Name        string

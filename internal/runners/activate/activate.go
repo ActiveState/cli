@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -21,7 +21,7 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     string
 	PreferredPath string
-	Output        commands.Output
+	Output        output.Format
 }
 
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
@@ -67,7 +67,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	if params.Output != "" {
+	if params.Output.Recognized() {
 		return activateOutput(targetPath, params.Output)
 	}
 

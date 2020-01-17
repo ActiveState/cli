@@ -1250,10 +1250,12 @@ flag_state_init_path_description:
   other: Where to initialize the project
 err_wd:
   other: Could not retrieve the working directory
+err_invalid_output_format:
+  other: "Invalid output format specified: {{.V0}}; Supported formats: {{.V1}}"
 err_invalid_skeleton_style:
-  other: "Invalid skeleton style specified: {{.V0}}; Supported styles: {{.V1}}."
+  other: "Invalid skeleton style specified: {{.V0}}; Supported styles: {{.V1}}"
 err_invalid_language:
-  other: "Invalid language specified: {{.V0}}; Supported languages: {{.V1}}."
+  other: "Invalid language specified: {{.V0}}; Supported languages: {{.V1}}"
 err_push_invalid_language:
   other: "Invalid language specified: {{.V0}}, please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:

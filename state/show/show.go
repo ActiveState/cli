@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -42,7 +42,7 @@ var Args struct {
 }
 
 var Flags struct {
-	Output *string
+	Output *output.Format
 }
 
 // Execute the show command.
@@ -78,9 +78,12 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	updater.PrintUpdateMessage()
 
-	output := commands.Output(strings.ToLower(*Flags.Output))
-	switch output {
-	case commands.JSON, commands.EditorV0:
+	outfmt := output.Unset
+	if Flags.Output != nil {
+		outfmt = *Flags.Output
+	}
+	switch outfmt {
+	case output.JSON, output.EditorV0:
 		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
 	default:
 		print.BoldInline("%s: ", locale.T("print_state_show_name"))

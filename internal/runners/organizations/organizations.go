@@ -2,12 +2,11 @@ package organizations
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/bndr/gotabulate"
@@ -20,7 +19,7 @@ func NewOrganizations() *Organizations {
 }
 
 type OrgParams struct {
-	Output string
+	Output output.Format
 }
 
 // Run the organizations command.
@@ -34,8 +33,8 @@ func run(params *OrgParams) error {
 		return fail.WithDescription("organizations_err")
 	}
 
-	switch commands.Output(strings.ToLower(params.Output)) {
-	case commands.JSON, commands.EditorV0:
+	switch params.Output {
+	case output.JSON, output.EditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			return fail.WithDescription("organizations_err_output")
