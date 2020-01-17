@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -26,10 +25,8 @@ type EditIntegrationTestSuite struct {
 func (suite *EditIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
 
-	tempDir, err := ioutil.TempDir("", suite.T().Name())
-	suite.Require().NoError(err)
-
-	suite.SetWd(tempDir)
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	defer cleanup()
 
 	root := environment.GetRootPathUnsafe()
 	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
@@ -51,7 +48,7 @@ scripts:
 `)
 
 	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))

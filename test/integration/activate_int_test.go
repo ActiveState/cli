@@ -98,7 +98,6 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
 	defer cb()
-	suite.SetWd(tempDir)
 
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(fmt.Sprintf(`
