@@ -9,9 +9,7 @@ import (
 func newOrganizationsCommand(globals *globalOptions) *captain.Command {
 	runner := organizations.NewOrganizations()
 
-	params := organizations.OrgParams{
-		Output: globals.Output,
-	}
+	params := organizations.OrgParams{}
 
 	cmd := captain.NewCommand(
 		"organizations",
@@ -19,6 +17,7 @@ func newOrganizationsCommand(globals *globalOptions) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
+			params.Output = globals.Output
 			return runner.Run(&params)
 		},
 	)
