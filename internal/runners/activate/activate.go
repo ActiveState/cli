@@ -58,7 +58,7 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 
 	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
-		if params.Namespace == nil {
+		if !params.Namespace.IsValid() {
 			return failures.FailUserInput.Wrap(err)
 		}
 		err := r.activateCheckout.Run(params.Namespace.String(), targetPath)

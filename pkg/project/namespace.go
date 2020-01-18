@@ -39,11 +39,20 @@ func (ns *Namespace) Set(v string) error {
 
 // String implements the fmt.Stringer interface.
 func (ns *Namespace) String() string {
+	if ns == nil {
+		return ""
+	}
+
 	var sep string
-	if ns.Owner != "" && ns.Project != "" {
+	if ns.IsValid() {
 		sep = "/"
 	}
 	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
+}
+
+// IsValid returns whether or not the namespace is set sufficiently.
+func (ns *Namespace) IsValid() bool {
+	return ns != nil && ns.Owner != "" && ns.Project != ""
 }
 
 // ParseNamespace returns a valid project namespace
