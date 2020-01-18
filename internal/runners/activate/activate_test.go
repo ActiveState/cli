@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type checkoutMock struct {
@@ -59,21 +60,21 @@ func TestActivate_run(t *testing.T) {
 		{
 			"expect no error",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{"foo", tempDir, output.Unset}, activatorMock},
+			args{&ActivateParams{&project.Namespace{"foo", "bar"}, tempDir, output.Unset}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect no error, expect checkout",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{"foo", tempDir, output.Unset}, activatorMock},
+			args{&ActivateParams{&project.Namespace{"foo", "bar"}, tempDir, output.Unset}, activatorMock},
 			false,
 			true,
 		},
 		{
 			"expect error",
 			fields{&namespaceSelectMock{tempDir, errors.New("mocked error")}, &checkoutMock{errors.New("mocked error"), true}},
-			args{&ActivateParams{"foo", "", output.Unset}, activatorMock},
+			args{&ActivateParams{&project.Namespace{"foo", "bar"}, "", output.Unset}, activatorMock},
 			true,
 			true,
 		},

@@ -37,6 +37,11 @@ func (ns *Namespace) Set(v string) error {
 	return nil
 }
 
+// String implements the fmt.Stringer interface.
+func (ns *Namespace) String() string {
+	return fmt.Sprintf("%s/%s", ns.Owner, ns.Project)
+}
+
 // ParseNamespace returns a valid project namespace
 func ParseNamespace(raw string) (*Namespace, *failures.Failure) {
 	rx := regexp.MustCompile(NamespaceRegex)
