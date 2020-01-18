@@ -9,13 +9,17 @@ import (
 func newOrganizationsCommand(globals *globalOptions) *captain.Command {
 	runner := organizations.NewOrganizations()
 
+	params := organizations.OrgParams{
+		Output: globals.Output,
+	}
+
 	cmd := captain.NewCommand(
 		"organizations",
 		locale.T("organizations_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run(&organizations.OrgParams{Output: globals.Output})
+			return runner.Run(&params)
 		},
 	)
 

@@ -9,18 +9,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-type ActivateArgs struct {
-	Path      string
-	Namespace string
-}
-
 func newActivateCommand(globals *globalOptions) *captain.Command {
 	prompter := prompt.New()
 	checkout := activate.NewCheckout(git.NewRepo())
 	namespaceSelect := activate.NewNamespaceSelect(viper.GetViper(), prompter)
 	runner := activate.NewActivate(namespaceSelect, checkout)
 
-	var args = ActivateArgs{}
+	params := activate.ActivateParams{
+		Output: globals.Output,
+	}
+
 	return captain.NewCommand(
 		"activate",
 		locale.T("activate_project"),
@@ -29,31 +27,18 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 				Name:        "path",
 				Shorthand:   "",
 				Description: locale.T("flag_state_activate_path_description"),
-				Value:       &args.Path,
+				Value:       &params.PreferredPath,
 			},
 		},
 		[]*captain.Argument{
 			&captain.Argument{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
-				Value:       &args.Namespace,
+				Value:       &params.Namespace,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			params, err := newAcivateRunParams(args, globals)
-			if err != nil {
-				return err
-			}
-
-			return runner.Run(params)
+			return runner.Run(&params)
 		},
 	)
-}
-
-func newAcivateRunParams(args ActivateArgs, globals *globalOptions) (*activate.ActivateParams, error) {
-	return &activate.ActivateParams{
-		Namespace:     args.Namespace,
-		PreferredPath: args.Path,
-		Output:        globals.Output,
-	}, nil
 }

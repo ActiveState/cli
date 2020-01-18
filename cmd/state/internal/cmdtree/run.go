@@ -11,6 +11,7 @@ func newRunCommand() *captain.Command {
 	runner := run.New()
 
 	var name string
+
 	cmd := captain.NewCommand(
 		"run",
 		locale.T("run_description"),
