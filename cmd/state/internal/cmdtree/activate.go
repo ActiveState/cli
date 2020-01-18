@@ -18,7 +18,6 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 
 	params := activate.ActivateParams{
 		Namespace: &project.Namespace{},
-		Output:    globals.Output,
 	}
 
 	return captain.NewCommand(
@@ -40,6 +39,8 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.Output = globals.Output
+
 			return runner.Run(&params)
 		},
 	)

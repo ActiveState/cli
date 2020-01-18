@@ -9,9 +9,7 @@ import (
 func newAuthCommand(globals *globalOptions) *captain.Command {
 	authRunner := auth.NewAuth()
 
-	params := auth.AuthParams{
-		Output: globals.Output,
-	}
+	params := auth.AuthParams{}
 
 	return captain.NewCommand(
 		"auth",
@@ -38,6 +36,8 @@ func newAuthCommand(globals *globalOptions) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
+			params.Output = globals.Output
+
 			return authRunner.Run(&params)
 		},
 	)
