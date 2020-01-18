@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -69,7 +70,7 @@ func (suite *VariablesCommandTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -94,7 +95,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAll() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -119,7 +120,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListFilter() {
 }
 
 func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 200)
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState/members", 200)
@@ -130,8 +131,8 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		output := "json"
-		cmd.Flags.Output = &output
+		outfmt := output.JSON
+		cmd.Flags.Output = &outfmt
 		execErr = cmd.Config().Execute()
 	})
 	suite.Require().NoError(outErr)

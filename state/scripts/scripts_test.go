@@ -10,13 +10,14 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/output"
 	osutil "github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func setup(t *testing.T) {
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 }
 
 func TestExecute(t *testing.T) {

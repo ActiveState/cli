@@ -10,12 +10,13 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestShow(t *testing.T) {
 	Args.Remote = "" // reset
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 	src := filepath.Join(root, "test", constants.ConfigFileName)
@@ -38,7 +39,7 @@ func TestShow(t *testing.T) {
 
 func TestShowLocal(t *testing.T) {
 	Args.Remote = "" // reset
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
 
@@ -51,7 +52,7 @@ func TestShowLocal(t *testing.T) {
 
 func TestShowFailDirDoesNotExist(t *testing.T) {
 	Args.Remote = "" // reset
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 	Cc := Command.GetCobraCmd()
 	Cc.SetArgs([]string{"/:does-not-exist"})
 	err := Command.Execute()
@@ -61,7 +62,7 @@ func TestShowFailDirDoesNotExist(t *testing.T) {
 
 func TestShowFailNoConfigFile(t *testing.T) {
 	Args.Remote = "" // reset
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 
@@ -76,7 +77,7 @@ func TestShowFailNoConfigFile(t *testing.T) {
 
 func TestShowFailParseConfig(t *testing.T) {
 	Args.Remote = "" // reset
-	Flags.Output = new(string)
+	Flags.Output = new(output.Format)
 	tmpdir, err := ioutil.TempDir("", "cli-show-test")
 	assert.NoError(t, err, "Created temp directory")
 

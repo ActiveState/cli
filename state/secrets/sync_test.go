@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -60,7 +61,7 @@ func (suite *SecretsSyncCommandTestSuite) AfterTest(suiteName, testName string) 
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient, new(string)).Config().GetCobraCmd().Commands()[2]
+	cc := secrets.NewCommand(suite.secretsClient, new(output.Format)).Config().GetCobraCmd().Commands()[2]
 
 	suite.Equal("sync", cc.Name())
 	suite.Equal(locale.T("secrets_sync_cmd_description"), cc.Short, "translation")
@@ -69,7 +70,7 @@ func (suite *SecretsSyncCommandTestSuite) TestCommandConfig() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 
 	suite.platformMock.RegisterWithCode("GET", "/organizations/ActiveState", 401)
 	suite.platformMock.Register("GET", "/organizations/ActiveState/members")
@@ -93,7 +94,7 @@ func (suite *SecretsSyncCommandTestSuite) TestExecute_FetchOrg_NotAuthenticated(
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -114,7 +115,7 @@ func (suite *SecretsSyncCommandTestSuite) TestNoDiffForAnyMember() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
@@ -151,7 +152,7 @@ func (suite *SecretsSyncCommandTestSuite) TestDiffsForSomeMembers() {
 }
 
 func (suite *SecretsSyncCommandTestSuite) TestSkipsAuthenticatedUser() {
-	cmd := secrets.NewCommand(suite.secretsClient, new(string))
+	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
 	osutil.CopyTestFileToConfigDir("self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	orgID := "00010001-0001-0001-0001-000100010001"
