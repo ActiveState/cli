@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/activate"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/spf13/viper"
 )
 
@@ -16,7 +17,8 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 	runner := activate.NewActivate(namespaceSelect, checkout)
 
 	params := activate.ActivateParams{
-		Output: globals.Output,
+		Namespace: &project.Namespace{},
+		Output:    globals.Output,
 	}
 
 	return captain.NewCommand(
@@ -34,7 +36,7 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 			&captain.Argument{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
-				Value:       &params.Namespace,
+				Value:       params.Namespace,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
