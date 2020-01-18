@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -65,7 +66,7 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
+		execErr = run(&OrgParams{Output: output.JSON})
 	})
 
 	require.NoError(t, outErr)
@@ -83,7 +84,7 @@ func TestOrganizationsJSONFree(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
+		execErr = run(&OrgParams{Output: output.JSON})
 	})
 
 	require.NoError(t, outErr)
@@ -101,7 +102,7 @@ func TestOrganizationsJSONBad(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: "json"})
+		execErr = run(&OrgParams{Output: output.JSON})
 	})
 
 	require.Error(t, execErr)
