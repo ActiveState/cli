@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-// Language tracks the languages potentially used for scripts.
+// Language tracks the languages potentially used.
 type Language int
 
 // Language constants are provided for safety/reference.
@@ -82,7 +82,7 @@ func MakeByShell(shell string) Language {
 	return Bash
 }
 
-// MakeByName will retrieve a language by a given name
+// MakeByName will retrieve a language by a given name after lower-casing.
 func MakeByName(name string) Language {
 	for i, v := range lookup {
 		if strings.ToLower(name) == v.name {
@@ -184,8 +184,8 @@ func (l *Language) Set(v string) error {
 	}
 
 	lbn := MakeByName(v)
-	if lbn == Unset || lbn == Unknown {
-		names := AvailableNames()
+	if !lbn.Recognized() {
+		names := RecognizedNames()
 
 		return fmt.Errorf(locale.Tr(
 			"err_invalid_language", v, strings.Join(names, ", "),
@@ -225,23 +225,95 @@ func (e Executable) Available() bool {
 	return !e.base && e.name != ""
 }
 
-// Available returns all languages that are not "builtin" and also have a
-// defined executable name.
-func Available() []Language {
+// Recognized returns all languages that are supported.
+func Recognized() []Language {
 	var ls []Language
-	for _, name := range AvailableNames() {
-		ls = append(ls, MakeByName(name))
+	for i := range lookup {
+		if l := Language(i); l.Recognized() {
+			ls = append(ls, l)
+		}
 	}
 	return ls
 }
 
-// AvailableNames returns all languages that are not "builtin" and also have a
-// defined executable name.
-func AvailableNames() []string {
+// RecognizedNames returns all language names that are supported.
+func RecognizedNames() []string {
 	var ls []string
-	for _, d := range lookup {
-		if d.exec.Available() {
-			ls = append(ls, d.name)
+	for i, v := range lookup {
+		if l := Language(i); l.Recognized() {
+			ls = append(ls, v.name)
+		}
+	}
+	return ls
+}
+
+// Supported tracks the languages potentially used for projects.
+type Supported struct {
+	Language
+}
+
+// Recognized returns whether the supported language is a known useful value.
+func (l *Supported) Recognized() bool {
+	if l == nil {
+		return false
+	}
+	return l.Language.Recognized() && l.Executable().Available()
+}
+
+// UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
+func (l *Supported) UnmarshalYAML(f func(interface{}) error) error {
+	if l == nil {
+		return fmt.Errorf("cannot unmarshal to nil supported language")
+	}
+
+	var s string
+	if err := f(&s); err != nil {
+		return err
+	}
+
+	return l.Set(s)
+}
+
+// Set implements the captain marshaler interfaces.
+func (l *Supported) Set(v string) error {
+	if l == nil {
+		return fmt.Errorf("cannot set nil supported language")
+	}
+
+	lbn := Supported{MakeByName(v)}
+	if !lbn.Recognized() {
+		names := RecognizedSupportedsNames()
+
+		return fmt.Errorf(locale.Tr(
+			"err_invalid_language", v, strings.Join(names, ", "),
+		))
+	}
+
+	*l = lbn
+	return nil
+}
+
+// RecognizedSupporteds returns all languages that are not "builtin"
+// and also have a defined executable name.
+func RecognizedSupporteds() []Supported {
+	var ls []Supported
+	for i := range lookup {
+		l := Supported{Language(i)}
+		if l.Recognized() {
+			ls = append(ls, l)
+		}
+	}
+	return ls
+}
+
+// RecognizedSupportedsNames returns all languages that are not
+// "builtin" and also have a defined executable name.
+func RecognizedSupportedsNames() []string {
+	var ls []string
+	for i, v := range lookup {
+		l := Supported{Language(i)}
+		if l.Recognized() {
+			ls = append(ls, v.name)
 		}
 	}
 	return ls
