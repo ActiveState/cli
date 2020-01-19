@@ -53,7 +53,7 @@ func TestInitialize_Run(t *testing.T) {
 	type args struct {
 		namespace *project.Namespace
 		path      string
-		language  language.Language
+		language  language.Supported
 	}
 	tests := []struct {
 		name     string
@@ -97,7 +97,7 @@ func TestInitialize_Run(t *testing.T) {
 					Project: "bar",
 				},
 				path:     filepath.Join(tempDir, "2"),
-				language: language.Python2,
+				language: language.Supported{language.Python2},
 			},
 			false,
 			filepath.Join(tempDir, "2"),
