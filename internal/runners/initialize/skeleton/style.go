@@ -19,16 +19,15 @@ const (
 )
 
 type styleData struct {
-	name  string
-	text  string
-	avail bool
+	name string
+	text string
 }
 
 var styleLookup = [...]styleData{
 	{},
-	{"unknown", "Unknown", false},
-	{"simple", "Simple", true},
-	{"editor", "Editor", true},
+	{"unknown", "Unknown"},
+	{"simple", "Simple"},
+	{"editor", "Editor"},
 }
 
 // MakeStyleByName will retrieve a by a given name
@@ -97,8 +96,8 @@ func (s *Style) Set(v string) error {
 	}
 
 	sbn := MakeStyleByName(v)
-	if sbn == Unset || sbn == Unknown {
-		names := AvailableStylesNames()
+	if !sbn.Recognized() {
+		names := RecognizedStylesNames()
 
 		return fmt.Errorf(locale.Tr(
 			"err_invalid_skeleton_style", v, strings.Join(names, ", "),
@@ -114,26 +113,24 @@ func (s *Style) Type() string {
 	return "skeleton-style"
 }
 
-// AvailableStyles returns all skeleton styles that are supported.
-func AvailableStyles() []Style {
+// RecognizedStyles returns all skeleton styles that are supported.
+func RecognizedStyles() []Style {
 	var ss []Style
-	for i, v := range styleLookup {
-		if !v.avail {
-			continue
+	for i := range styleLookup {
+		if s := Style(i); s.Recognized() {
+			ss = append(ss, s)
 		}
-		ss = append(ss, Style(i))
 	}
 	return ss
 }
 
-// AvailableStylesNames returns all skeleton style names that are supported.
-func AvailableStylesNames() []string {
+// RecognizedStylesNames returns all skeleton style names that are supported.
+func RecognizedStylesNames() []string {
 	var ss []string
 	for i, v := range styleLookup {
-		if !v.avail {
-			continue
+		if s := Style(i); s.Recognized() {
+			ss = append(ss, v.name)
 		}
-		ss = append(ss, styleLookup[i].name)
 	}
 	return ss
 }
