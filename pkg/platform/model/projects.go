@@ -91,7 +91,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 }
 
 // CreateProject will create the project on the platform
-func CreateProject(owner, name string, lang *language.Language) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+func CreateProject(owner, name string, lang *language.Supported) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name})

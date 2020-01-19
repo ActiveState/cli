@@ -26,7 +26,7 @@ type RunParams struct {
 	Namespace *project.Namespace
 	Path      string
 	Style     skeleton.Style
-	Language  language.Language
+	Language  language.Supported
 }
 
 // Initialize stores scope-related dependencies.
@@ -52,7 +52,7 @@ func run(config setter, params *RunParams) (string, error) {
 
 	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
 
-	if params.Language.Recognized() && params.Language.Executable().Available() {
+	if params.Language.Recognized() {
 		// Store language for when we run 'state push'
 		config.Set(params.Path+"_language", params.Language)
 	}
