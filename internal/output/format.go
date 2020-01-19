@@ -30,7 +30,7 @@ var formatLookup = [...]formatData{
 	{"editor.v0", "Editor V0"},
 }
 
-// MakeFormatByName will retrieve a format by a given name
+// MakeFormatByName will retrieve a format by a given name after lower-casing.
 func MakeFormatByName(name string) Format {
 	for i, v := range formatLookup {
 		if strings.ToLower(name) == v.name {
@@ -97,7 +97,7 @@ func (f *Format) Set(v string) error {
 
 	fbn := MakeFormatByName(v)
 	if !fbn.Recognized() {
-		names := AvailableFormatsNames()
+		names := RecognizedFormatsNames()
 
 		return fmt.Errorf(locale.Tr(
 			"err_invalid_output_format", v, strings.Join(names, ", "),
@@ -113,8 +113,8 @@ func (f *Format) Type() string {
 	return "format"
 }
 
-// AvailableFormats returns all formats that are supported.
-func AvailableFormats() []Format {
+// RecognizedFormats returns all formats that are supported.
+func RecognizedFormats() []Format {
 	var fs []Format
 	for i := range formatLookup {
 		if f := Format(i); f.Recognized() {
@@ -124,14 +124,13 @@ func AvailableFormats() []Format {
 	return fs
 }
 
-// AvailableFormatsNames returns all format names that are supported.
-func AvailableFormatsNames() []string {
+// RecognizedFormatsNames returns all format names that are supported.
+func RecognizedFormatsNames() []string {
 	var fs []string
 	for i, v := range formatLookup {
-		if f := Format(i); !f.Recognized() {
-			continue
+		if f := Format(i); f.Recognized() {
+			fs = append(fs, v.name)
 		}
-		fs = append(fs, v.name)
 	}
 	return fs
 }
