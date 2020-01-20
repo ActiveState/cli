@@ -25,25 +25,30 @@ type Command struct {
 	flags     []*Flag
 	arguments []*Argument
 
+	requiredArgErr error
+	flagSetupErr   error
+
 	execute func(cmd *Command, args []string) error
 }
 
 func NewCommand(name, description string, flags []*Flag, args []*Argument, executor Executor) *Command {
 	// Validate args
+	var requiredArgErr error
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
 			msg := fmt.Sprintf(
 				"Cannot have a non-required argument followed by a required argument.\n\n%v\n\n%v",
 				arg, args[len(args)-1],
 			)
-			panic(msg)
+			requiredArgErr = failures.FailDeveloper.New(msg)
 		}
 	}
 
 	cmd := &Command{
-		execute:   executor,
-		arguments: args,
-		flags:     flags,
+		execute:        executor,
+		arguments:      args,
+		flags:          flags,
+		requiredArgErr: requiredArgErr, // check in runner
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -57,7 +62,7 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		SilenceUsage:  true,
 	}
 
-	cmd.setFlags(flags)
+	cmd.flagSetupErr = cmd.setFlags(flags) // check in runner
 	cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
@@ -139,6 +144,13 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+	if c.requiredArgErr != nil {
+		return c.requiredArgErr
+	}
+	if c.flagSetupErr != nil {
+		return c.flagSetupErr
+	}
+
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
 		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
