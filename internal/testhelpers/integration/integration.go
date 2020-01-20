@@ -40,6 +40,7 @@ type Suite struct {
 	cmd        *exec.Cmd
 	env        []string
 	wd         *string
+	cleaners   []func()
 }
 
 // SetupTest sets up an integration test suite for testing the state tool executable
@@ -56,12 +57,12 @@ func (s *Suite) SetupTest() {
 		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
 	}
 
-	configDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
-	cacheDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
-	binDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
+	configDir, cleanup1 := s.PrepareTemporaryWorkingDirectory("")
+	s.cleaners = append(s.cleaners, cleanup1)
+	cacheDir, cleanup2 := s.PrepareTemporaryWorkingDirectory("")
+	s.cleaners = append(s.cleaners, cleanup2)
+	binDir, cleanup3 := s.PrepareTemporaryWorkingDirectory("")
+	s.cleaners = append(s.cleaners, cleanup3)
 
 	fmt.Println("Configdir: " + configDir)
 	fmt.Println("Cachedir: " + cacheDir)
@@ -73,7 +74,7 @@ func (s *Suite) SetupTest() {
 
 	permissions, _ := permbits.Stat(s.executable)
 	permissions.SetUserExecute(true)
-	err = permbits.Chmod(s.executable, permissions)
+	err := permbits.Chmod(s.executable, permissions)
 	s.Require().NoError(err)
 
 	s.ClearEnv()
@@ -132,6 +133,10 @@ func (s *Suite) TearDownTest() {
 	if s.console != nil {
 		s.console.Close()
 	}
+
+	for _, f := range s.cleaners {
+		f()
+	}
 }
 
 // ClearEnv removes all environment variables
@@ -153,17 +158,25 @@ func (s *Suite) SetWd(dir string) {
 
 // Spawn executes the state tool executable under test in a pseudo-terminal
 func (s *Suite) Spawn(args ...string) {
-	s.SpawnCustom(s.executable, args...)
+	executable := s.executable
+	if runtime.GOOS != "windows" {
+		args = append([]string{"-c", "--", executable}, args...)
+		executable = "bash"
+	}
+	s.SpawnCustom(executable, args...)
 }
 
 // SpawnCustom executes an executable in a pseudo-terminal for integration tests
 func (s *Suite) SpawnCustom(executable string, args ...string) {
 	var wd string
+	var cleanup func()
 	if s.wd == nil {
-		wd = os.TempDir()
+		wd, cleanup = s.PrepareTemporaryWorkingDirectory("SpawnCustom")
+		defer cleanup()
 	} else {
 		wd = *s.wd
 	}
+
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
