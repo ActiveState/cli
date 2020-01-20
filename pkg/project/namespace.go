@@ -28,12 +28,12 @@ func (ns *Namespace) Set(v string) error {
 		return fmt.Errorf("cannot set nil value")
 	}
 
-	nsx, fail := ParseNamespace(v)
+	parsedNs, fail := ParseNamespace(v)
 	if fail != nil {
 		return fail
 	}
 
-	*ns = *nsx
+	*ns = *parsedNs
 	return nil
 }
 
