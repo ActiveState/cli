@@ -70,8 +70,6 @@ func branchName() (string, string) {
 }
 
 func getVersion(branchName string) string {
-	// TODO: State tool is not installed on CI!
-	// Could run the install scripts as a build step...
 	output := getCmdOutput("state --version")
 	versionString := strings.Split(strings.TrimSpace(output), "\n")[0]
 	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
@@ -88,9 +86,6 @@ func getVersion(branchName string) string {
 	}
 	currentSemver.Pre = []semver.PRVersion{prVersion}
 
-	// TODO: Maybe update this to be a verification step
-	// Deals with if we are on CI, if there is a pull request,
-	// and if there are labels
 	if !onCI() {
 		return currentSemver.String()
 	}
@@ -132,9 +127,7 @@ func onCI() bool {
 
 func getVersionLabel(branchName string) string {
 	ts := oauth2.StaticTokenSource(
-		// TODO: Get access token from environment on CI. This will not be called
-		// if we are not on CI so it shouldn't fail in that case
-		&oauth2.Token{AccessToken: "36ed5dfe82d00e0b874dec5ee434f03e407d73ca"},
+		&oauth2.Token{AccessToken: os.Getenv("GITHUB_REPO_TOKEN")},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
 
@@ -148,7 +141,7 @@ func getVersionLabel(branchName string) string {
 }
 
 func getVersionLabelMaster(client *github.Client) string {
-	pullReqests, _, err := client.PullRequests.List(context.Background(), "MDrakos", "gcd-calculator-gui", &github.PullRequestListOptions{State: "closed", Sort: "updated", Direction: "desc"})
+	pullReqests, _, err := client.PullRequests.List(context.Background(), "ActiveState", constants.LibraryName, &github.PullRequestListOptions{State: "closed", Sort: "updated", Direction: "desc"})
 	if err != nil {
 		log.Fatalf("Could not list pull requests: %v", err)
 	}
@@ -172,7 +165,7 @@ func getVersionLabelMaster(client *github.Client) string {
 }
 
 func isMerged(number int, client *github.Client) bool {
-	merged, _, err := client.PullRequests.IsMerged(context.Background(), "MDrakos", "gcd-calculator-gui", number)
+	merged, _, err := client.PullRequests.IsMerged(context.Background(), "ActiveState", constants.LibraryName, number)
 	if err != nil {
 		log.Fatalf("Could not confirm pull request #%d has been merged: %v", number, err)
 	}
@@ -185,7 +178,6 @@ func getVersionLabelPR(client *github.Client) string {
 		return Constants["BranchName"]()
 	}
 
-	// TODO: What if we are on CI and there isn't a PR yet?
 	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
 	if err != nil {
 		log.Fatal(err)
@@ -215,6 +207,7 @@ func getPRNumber() int {
 		return getPRNumberAzure(prInfo)
 	}
 
+	// Pull request info not set, we are on a branch but no PR has been created
 	return -1
 }
 
