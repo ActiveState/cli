@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +70,8 @@ func branchName() (string, string) {
 }
 
 func getVersion(branchName string) string {
+	// TODO: State tool is not installed on CI!
+	// Could run the install scripts as a build step...
 	output := getCmdOutput("state --version")
 	versionString := strings.Split(strings.TrimSpace(output), "\n")[0]
 	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
@@ -103,6 +106,8 @@ func getVersion(branchName string) string {
 		currentSemver.Major++
 		currentSemver.Minor = 0
 		currentSemver.Patch = 0
+	case label == Constants["BranchName"]():
+		// We are on a branch and there is no PR associated. Use current version.
 	default:
 		log.Fatalf("Encountered an unexepected Github PR label: %s", label)
 	}
@@ -126,41 +131,108 @@ func onCI() bool {
 }
 
 func getVersionLabel(branchName string) string {
-	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		// TODO: Get access token from environment on CI. This will not be called
 		// if we are not on CI so it shouldn't fail in that case
 		&oauth2.Token{AccessToken: "36ed5dfe82d00e0b874dec5ee434f03e407d73ca"},
 	)
-	tc := oauth2.NewClient(ctx, ts)
+	tc := oauth2.NewClient(context.Background(), ts)
 
 	client := github.NewClient(tc)
 
-	// TODO: What if we are on CI and there isn't a PR yet? Or the case for the master branch
-	pullRequests, _, err := client.PullRequests.List(ctx, "MDrakos", "gcd-calculator-gui", &github.PullRequestListOptions{})
-	if err != nil {
-		log.Fatal(err)
+	if branchName == "master" {
+		return getVersionLabelMaster(client)
 	}
 
-	// TODO: What if we are in a PR but missing a label
-	var versionLabel string
-	for _, pr := range pullRequests {
-		branchLabel := strings.Split(pr.GetHead().GetLabel(), ":")
-		if len(branchLabel) < 2 {
-			continue
-		}
-		prBranchName := branchLabel[1]
+	return getVersionLabelPR(client)
+}
 
-		if prBranchName == branchName {
+func getVersionLabelMaster(client *github.Client) string {
+	pullReqests, _, err := client.PullRequests.List(context.Background(), "MDrakos", "gcd-calculator-gui", &github.PullRequestListOptions{State: "closed", Sort: "updated", Direction: "desc"})
+	if err != nil {
+		log.Fatalf("Could not list pull requests: %v", err)
+	}
+
+	var versionLabel string
+	for _, pr := range pullReqests {
+		if isMerged(*pr.Number, client) {
 			if len(pr.Labels) > 1 {
 				log.Fatalf("More than one PR label found %v", pr.Labels)
 			}
+
 			versionLabel = *pr.Labels[0].Name
 			break
 		}
 	}
+	if versionLabel == "" {
+		log.Fatal("No version label associated with this branch")
+	}
 
 	return versionLabel
+}
+
+func isMerged(number int, client *github.Client) bool {
+	merged, _, err := client.PullRequests.IsMerged(context.Background(), "MDrakos", "gcd-calculator-gui", number)
+	if err != nil {
+		log.Fatalf("Could not confirm pull request #%d has been merged: %v", number, err)
+	}
+	return merged
+}
+
+func getVersionLabelPR(client *github.Client) string {
+	prNumber := getPRNumber()
+	if prNumber == -1 {
+		return Constants["BranchName"]()
+	}
+
+	// TODO: What if we are on CI and there isn't a PR yet?
+	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(pullRequest.Labels) > 1 {
+		log.Fatalf("More than one PR label found %v", pullRequest.Labels)
+	}
+
+	versionLabel := *pullRequest.Labels[0].Name
+	if versionLabel == "" {
+		log.Fatal("No version label associated with this branch")
+	}
+
+	return versionLabel
+}
+
+func getPRNumber() int {
+	// CircleCI
+	prInfo := os.Getenv("CI_PULL_REQUEST")
+	if prInfo != "" {
+		return getPRNumberCircle(prInfo)
+	}
+
+	// Azure
+	prInfo = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
+	if prInfo != "" {
+		return getPRNumberAzure(prInfo)
+	}
+
+	return -1
+}
+
+func getPRNumberCircle(info string) int {
+	info = strings.TrimPrefix(info, "https://github.com/ActiveState/cli/pull/")
+	prNumber, err := strconv.Atoi(info)
+	if err != nil {
+		log.Fatalf("Could not convert pull request number: %v", err)
+	}
+	return prNumber
+}
+
+func getPRNumberAzure(info string) int {
+	prNumber, err := strconv.Atoi(info)
+	if err != nil {
+		log.Fatalf("Could not convert pull request number: %v", err)
+	}
+	return prNumber
 }
 
 func buildNumber() string {
