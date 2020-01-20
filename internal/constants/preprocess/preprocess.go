@@ -186,8 +186,8 @@ func getVersionLabelPR(client *github.Client) string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(pullRequest.Labels) > 1 {
-		log.Fatalf("More than one PR label found %v", pullRequest.Labels)
+	if len(pullRequest.Labels) != 1 {
+		log.Fatalf("Pull requests must have one label")
 	}
 
 	versionLabel := *pullRequest.Labels[0].Name
