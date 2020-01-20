@@ -194,6 +194,8 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// setupSensibleErrors inspects an error value for certain errors and returns a
+// wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error) error {
 	if err == nil {
 		return nil
@@ -205,20 +207,20 @@ func setupSensibleErrors(err error) error {
 	// fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
 	invalidArg := "invalid argument "
 	if strings.Contains(errMsg, invalidArg) {
-		ss := strings.SplitN(errMsg, ": ", 2)
+		segments := strings.SplitN(errMsg, ": ", 2)
 
 		flagText := "{unknown flag}"
 		msg := "unknown error"
 
-		if len(ss) > 0 {
-			subss := strings.SplitN(ss[0], "for ", 2)
-			if len(subss) > 1 {
-				flagText = strings.TrimSuffix(subss[1], " flag")
+		if len(segments) > 0 {
+			subsegs := strings.SplitN(segments[0], "for ", 2)
+			if len(subsegs) > 1 {
+				flagText = strings.TrimSuffix(subsegs[1], " flag")
 			}
 		}
 
-		if len(ss) > 1 {
-			msg = ss[1]
+		if len(segments) > 1 {
+			msg = segments[1]
 		}
 
 		return failures.FailUserInput.New(
