@@ -29,7 +29,8 @@ func init() {
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
-	Constants["Version"] = func() string { return getVersion(branchName) }
+	Constants["Version"] = func() string { return getVersion(branchName, true) }
+	Constants["VersionNumber"] = func() string { return getVersion(branchName, false) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -66,10 +67,9 @@ func branchName() (string, string) {
 	}
 
 	return releaseName, branch
-
 }
 
-func getVersion(branchName string) string {
+func getVersion(branchName string, preRelease bool) string {
 	output := getCmdOutput("state --version")
 	versionString := strings.Split(strings.TrimSpace(output), "\n")[0]
 	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
@@ -80,11 +80,15 @@ func getVersion(branchName string) string {
 		log.Fatalf("Failed to create semver from version string: %s", err)
 	}
 
-	prVersion, err := semver.NewPRVersion((Constants["RevisionHashShort"]()))
-	if err != nil {
-		log.Fatalf("Could not create pre-release version number: %v", err)
+	if preRelease {
+		prVersion, err := semver.NewPRVersion((Constants["RevisionHashShort"]()))
+		if err != nil {
+			log.Fatalf("Could not create pre-release version number: %v", err)
+		}
+		currentSemver.Pre = []semver.PRVersion{prVersion}
+	} else {
+		currentSemver.Pre = nil
 	}
-	currentSemver.Pre = []semver.PRVersion{prVersion}
 
 	if !onCI() {
 		return currentSemver.String()
@@ -178,7 +182,7 @@ func getVersionLabelPR(client *github.Client) string {
 		return Constants["BranchName"]()
 	}
 
-	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
+	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", constants.LibraryName, prNumber)
 	if err != nil {
 		log.Fatal(err)
 	}

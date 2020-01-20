@@ -69,7 +69,7 @@ func (checker *Checker) Check() (*Info, *failures.Failure) {
 		return nil, fail
 	}
 
-	versionInfo, err := version.NewVersion(constants.Version)
+	versionInfo, err := version.NewVersion(constants.VersionNumber)
 	if err != nil {
 		return nil, FailParseVersion.Wrap(err)
 	}
