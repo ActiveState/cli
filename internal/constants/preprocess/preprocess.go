@@ -95,17 +95,17 @@ func getVersion(branchName string, preRelease bool) string {
 	}
 
 	label := getVersionLabel(branchName)
-	switch {
-	case label == "version: patch":
+	switch label {
+	case "version: patch":
 		currentSemver.Patch++
-	case label == "version: minor":
+	case "version: minor":
 		currentSemver.Minor++
 		currentSemver.Patch = 0
-	case label == "version: major":
+	case "version: major":
 		currentSemver.Major++
 		currentSemver.Minor = 0
 		currentSemver.Patch = 0
-	case label == Constants["BranchName"]():
+	case Constants["BranchName"]():
 		// We are on a branch and there is no PR associated. Use current version.
 	default:
 		log.Fatalf("Encountered an unexepected Github PR label: %s", label)
@@ -151,18 +151,18 @@ func getVersionLabelMaster(client *github.Client) string {
 	}
 
 	var versionLabel string
-	for _, pr := range pullReqests {
-		if isMerged(*pr.Number, client) {
-			if len(pr.Labels) > 1 {
-				log.Fatalf("More than one PR label found %v", pr.Labels)
+	for _, pullRequest := range pullReqests {
+		if isMerged(*pullRequest.Number, client) {
+			if len(pullRequest.Labels) != 1 {
+				log.Fatalf("Pull reqests must have one label")
 			}
 
-			versionLabel = *pr.Labels[0].Name
+			versionLabel = *pullRequest.Labels[0].Name
 			break
 		}
 	}
 	if versionLabel == "" {
-		log.Fatal("No version label associated with this branch")
+		log.Fatal("No version label from latest merged pull request")
 	}
 
 	return versionLabel
