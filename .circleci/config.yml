@@ -16,16 +16,15 @@ defaults:
           $GOROOT/bin/go get github.com/gobuffalo/packr/packr
           popd
 
+          ./public/install.sh -n -b master
+
           GOFLAGS=$GOFLAGSTMP
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
-
-          ./public/install.sh -n -b master
 
           echo "export PATH=\$HOME/.local/bin:\$GOROOT/bin:\$GOPATH/bin:\$PATH" >> $BASH_ENV
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
 
-          which state
           state auth --token $PLATFORM_API_TOKEN
           $GOROOT/bin/go version
     runTests: &runTests
