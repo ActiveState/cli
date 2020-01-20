@@ -47,7 +47,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	suite.Equal(0, ps.ExitCode(), "Exits with code 0")
 
 	suite.SpawnCustom(filepath.Join(tempPath, platform+exe), "--version")
-	suite.Expect(constants.BuildNumber)
+	suite.Expect(constants.RevisionHashShort)
 	suite.Wait()
 }
 
