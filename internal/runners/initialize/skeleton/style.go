@@ -95,8 +95,8 @@ func (s *Style) Set(v string) error {
 		return fmt.Errorf("cannot set nil style")
 	}
 
-	styleByName := MakeStyleByName(v)
-	if !styleByName.Recognized() {
+	style := MakeStyleByName(v)
+	if !style.Recognized() {
 		names := RecognizedStylesNames()
 
 		return fmt.Errorf(locale.Tr(
@@ -104,7 +104,7 @@ func (s *Style) Set(v string) error {
 		))
 	}
 
-	*s = styleByName
+	*s = style
 	return nil
 }
 
