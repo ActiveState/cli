@@ -21,6 +21,14 @@ import (
 // package as actual constants, using the build-time interpretations
 var Constants = map[string]func() string{}
 
+const (
+	unknown = iota
+	local
+	master
+	branch
+	pullRequest
+)
+
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
@@ -70,12 +78,28 @@ func branchName() (string, string) {
 }
 
 func getVersion(branchName string, preRelease bool) string {
+	currentSemver := getCurrentVersion(preRelease)
+
+	state := buildState(branchName)
+	switch state {
+	case local, branch:
+		return currentSemver.String()
+	case master, pullRequest:
+		return updateVersion(branchName, currentSemver)
+	default:
+		log.Fatalf("Build state is not local, remote branch, remote master, or pull request")
+	}
+
+	return ""
+}
+
+func getCurrentVersion(preRelease bool) *semver.Version {
 	output := getCmdOutput("state --version")
 	versionString := strings.Split(strings.TrimSpace(output), "\n")[0]
 	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
 	masterVersion := versionNumber[len(versionNumber)-1]
 
-	currentSemver, err := semver.Parse(masterVersion)
+	currentSemver, err := semver.New(masterVersion)
 	if err != nil {
 		log.Fatalf("Failed to create semver from version string: %s", err)
 	}
@@ -90,31 +114,24 @@ func getVersion(branchName string, preRelease bool) string {
 		currentSemver.Pre = nil
 	}
 
+	return currentSemver
+}
+
+func buildState(branchName string) int {
 	if !onCI() {
-		return currentSemver.String()
+		return local
 	}
 
-	label := getVersionLabel(branchName)
-	switch label {
-	case "version: patch":
-		currentSemver.Patch++
-	case "version: minor":
-		currentSemver.Minor++
-		currentSemver.Patch = 0
-	case "version: major":
-		currentSemver.Major++
-		currentSemver.Minor = 0
-		currentSemver.Patch = 0
-	case Constants["BranchName"]():
-		// We are on a branch and there is no PR associated. Use current version.
-	default:
-		log.Fatalf("Encountered an unexepected Github PR label: %s", label)
-	}
-	if err != nil {
-		log.Fatalf("Could not increment version number: %s", err)
+	if branchName == "master" {
+		return master
 	}
 
-	return currentSemver.String()
+	prNum := getPRNumber()
+	if prNum == 0 {
+		return branch
+	}
+
+	return pullRequest
 }
 
 func onCI() bool {
@@ -122,6 +139,42 @@ func onCI() bool {
 		return true
 	}
 	return false
+}
+
+func getPRNumber() int {
+	// CircleCI
+	prInfo := os.Getenv("CI_PULL_REQUEST")
+	if prInfo != "" {
+		return getPRNumberCircle(prInfo)
+	}
+
+	// Azure
+	prInfo = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
+	if prInfo != "" {
+		return getPRNumberAzure(prInfo)
+	}
+
+	// Pull request info not set, we are on a branch but no PR has been created
+	return 0
+}
+
+func updateVersion(branchName string, current *semver.Version) string {
+	label := getVersionLabel(branchName)
+	switch label {
+	case "version: patch":
+		current.Patch++
+	case "version: minor":
+		current.Minor++
+		current.Patch = 0
+	case "version: major":
+		current.Major++
+		current.Minor = 0
+		current.Patch = 0
+	default:
+		log.Fatalf("Encountered an unexepected Github label: %s", label)
+	}
+
+	return current.String()
 }
 
 func getVersionLabel(branchName string) string {
@@ -191,23 +244,6 @@ func getVersionLabelPR(client *github.Client) string {
 	}
 
 	return versionLabel
-}
-
-func getPRNumber() int {
-	// CircleCI
-	prInfo := os.Getenv("CI_PULL_REQUEST")
-	if prInfo != "" {
-		return getPRNumberCircle(prInfo)
-	}
-
-	// Azure
-	prInfo = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
-	if prInfo != "" {
-		return getPRNumberAzure(prInfo)
-	}
-
-	// Pull request info not set, we are on a branch but no PR has been created
-	return -1
 }
 
 func getPRNumberCircle(info string) int {
