@@ -238,13 +238,13 @@ func Recognized() []Language {
 
 // RecognizedNames returns all language names that are supported.
 func RecognizedNames() []string {
-	var ls []string
+	var langs []string
 	for i, data := range lookup {
 		if l := Language(i); l.Recognized() {
-			ls = append(ls, data.name)
+			langs = append(langs, data.name)
 		}
 	}
-	return ls
+	return langs
 }
 
 // Supported tracks the languages potentially used for projects.
@@ -261,17 +261,17 @@ func (l *Supported) Recognized() bool {
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
-func (l *Supported) UnmarshalYAML(f func(interface{}) error) error {
+func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
 	if l == nil {
 		return fmt.Errorf("cannot unmarshal to nil supported language")
 	}
 
-	var s string
-	if err := f(&s); err != nil {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
 		return err
 	}
 
-	return l.Set(s)
+	return l.Set(payload)
 }
 
 // Set implements the captain marshaler interfaces.
@@ -280,8 +280,8 @@ func (l *Supported) Set(v string) error {
 		return fmt.Errorf("cannot set nil supported language")
 	}
 
-	lbn := Supported{MakeByName(v)}
-	if !lbn.Recognized() {
+	supported := Supported{MakeByName(v)}
+	if !supported.Recognized() {
 		names := RecognizedSupportedsNames()
 
 		return fmt.Errorf(locale.Tr(
@@ -289,32 +289,32 @@ func (l *Supported) Set(v string) error {
 		))
 	}
 
-	*l = lbn
+	*l = supported
 	return nil
 }
 
 // RecognizedSupporteds returns all languages that are not "builtin"
 // and also have a defined executable name.
 func RecognizedSupporteds() []Supported {
-	var ls []Supported
+	var supporteds []Supported
 	for i := range lookup {
 		l := Supported{Language(i)}
 		if l.Recognized() {
-			ls = append(ls, l)
+			supporteds = append(supporteds, l)
 		}
 	}
-	return ls
+	return supporteds
 }
 
 // RecognizedSupportedsNames returns all languages that are not
 // "builtin" and also have a defined executable name.
 func RecognizedSupportedsNames() []string {
-	var ls []string
-	for i, v := range lookup {
+	var supporteds []string
+	for i, data := range lookup {
 		l := Supported{Language(i)}
 		if l.Recognized() {
-			ls = append(ls, v.name)
+			supporteds = append(supporteds, data.name)
 		}
 	}
-	return ls
+	return supporteds
 }
