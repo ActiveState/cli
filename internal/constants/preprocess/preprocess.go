@@ -118,12 +118,7 @@ func getVersion(branchName string, preRelease bool) string {
 }
 
 func onCI() bool {
-	// Check if we are running on CircleCI
-	if os.Getenv("CIRCLE_JOB") != "" {
-		return true
-	}
-	// Check if we are running on Azure
-	if os.Getenv("CI") == "azure" {
+	if os.Getenv("CI") != "" {
 		return true
 	}
 	return false
