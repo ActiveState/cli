@@ -32,8 +32,8 @@ var formatLookup = [...]formatData{
 
 // MakeFormatByName will retrieve a format by a given name after lower-casing.
 func MakeFormatByName(name string) Format {
-	for i, v := range formatLookup {
-		if strings.ToLower(name) == v.name {
+	for i, data := range formatLookup {
+		if strings.ToLower(name) == data.name {
 			return Format(i)
 		}
 	}
@@ -71,17 +71,17 @@ func (f *Format) Recognized() bool {
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
-func (f *Format) UnmarshalYAML(fn func(interface{}) error) error {
+func (f *Format) UnmarshalYAML(applyPayload func(interface{}) error) error {
 	if f == nil {
 		return fmt.Errorf("cannot unmarshal to nil format")
 	}
 
-	var v string
-	if err := fn(&v); err != nil {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
 		return err
 	}
 
-	return f.Set(v)
+	return f.Set(payload)
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
@@ -95,8 +95,8 @@ func (f *Format) Set(v string) error {
 		return fmt.Errorf("cannot set nil format")
 	}
 
-	fbn := MakeFormatByName(v)
-	if !fbn.Recognized() {
+	format := MakeFormatByName(v)
+	if !format.Recognized() {
 		names := RecognizedFormatsNames()
 
 		return fmt.Errorf(locale.Tr(
@@ -104,7 +104,7 @@ func (f *Format) Set(v string) error {
 		))
 	}
 
-	*f = fbn
+	*f = format
 	return nil
 }
 
@@ -115,22 +115,22 @@ func (f *Format) Type() string {
 
 // RecognizedFormats returns all formats that are supported.
 func RecognizedFormats() []Format {
-	var fs []Format
+	var formats []Format
 	for i := range formatLookup {
 		if f := Format(i); f.Recognized() {
-			fs = append(fs, f)
+			formats = append(formats, f)
 		}
 	}
-	return fs
+	return formats
 }
 
 // RecognizedFormatsNames returns all format names that are supported.
 func RecognizedFormatsNames() []string {
-	var fs []string
-	for i, v := range formatLookup {
+	var formats []string
+	for i, data := range formatLookup {
 		if f := Format(i); f.Recognized() {
-			fs = append(fs, v.name)
+			formats = append(formats, data.name)
 		}
 	}
-	return fs
+	return formats
 }
