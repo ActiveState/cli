@@ -32,8 +32,8 @@ var styleLookup = [...]styleData{
 
 // MakeStyleByName will retrieve a by a given name
 func MakeStyleByName(name string) Style {
-	for i, v := range styleLookup {
-		if strings.ToLower(name) == v.name {
+	for i, data := range styleLookup {
+		if strings.ToLower(name) == data.name {
 			return Style(i)
 		}
 	}
@@ -71,17 +71,17 @@ func (s *Style) Recognized() bool {
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
-func (s *Style) UnmarshalYAML(f func(interface{}) error) error {
+func (s *Style) UnmarshalYAML(applyPayload func(interface{}) error) error {
 	if s == nil {
 		return fmt.Errorf("cannot unmarshal to nil style")
 	}
 
-	var v string
-	if err := f(&v); err != nil {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
 		return err
 	}
 
-	return s.Set(v)
+	return s.Set(payload)
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
@@ -95,8 +95,8 @@ func (s *Style) Set(v string) error {
 		return fmt.Errorf("cannot set nil style")
 	}
 
-	sbn := MakeStyleByName(v)
-	if !sbn.Recognized() {
+	styleByName := MakeStyleByName(v)
+	if !styleByName.Recognized() {
 		names := RecognizedStylesNames()
 
 		return fmt.Errorf(locale.Tr(
@@ -104,7 +104,7 @@ func (s *Style) Set(v string) error {
 		))
 	}
 
-	*s = sbn
+	*s = styleByName
 	return nil
 }
 
@@ -115,22 +115,22 @@ func (s *Style) Type() string {
 
 // RecognizedStyles returns all skeleton styles that are supported.
 func RecognizedStyles() []Style {
-	var ss []Style
+	var styles []Style
 	for i := range styleLookup {
 		if s := Style(i); s.Recognized() {
-			ss = append(ss, s)
+			styles = append(styles, s)
 		}
 	}
-	return ss
+	return styles
 }
 
 // RecognizedStylesNames returns all skeleton style names that are supported.
 func RecognizedStylesNames() []string {
-	var ss []string
-	for i, v := range styleLookup {
+	var styles []string
+	for i, data := range styleLookup {
 		if s := Style(i); s.Recognized() {
-			ss = append(ss, v.name)
+			styles = append(styles, data.name)
 		}
 	}
-	return ss
+	return styles
 }
