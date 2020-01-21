@@ -80,7 +80,7 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory("RunIntegrationTestSuite")
 	suite.tmpDirCleanup = cleanup
 
 	suite.createProjectFile(tmpDir)

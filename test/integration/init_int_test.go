@@ -34,7 +34,7 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
-	tempDir, err := ioutil.TempDir("", suite.T().Name())
+	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
 	suite.runInitTest(
@@ -47,7 +47,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
-	tempDir, err := ioutil.TempDir("", suite.T().Name())
+	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
 	suite.runInitTest(tempDir, locale.T("sample_yaml", map[string]interface{}{
@@ -58,7 +58,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, flags ...string) {
 	if path == "" {
 		var err error
-		path, err = ioutil.TempDir("", suite.T().Name())
+		path, err = ioutil.TempDir("", "InitIntegrationTestSuite")
 		suite.Require().NoError(err)
 		suite.SetWd(path)
 	}
