@@ -84,8 +84,8 @@ func MakeByShell(shell string) Language {
 
 // MakeByName will retrieve a language by a given name after lower-casing.
 func MakeByName(name string) Language {
-	for i, v := range lookup {
-		if strings.ToLower(name) == v.name {
+	for i, data := range lookup {
+		if strings.ToLower(name) == data.name {
 			return Language(i)
 		}
 	}
@@ -159,17 +159,17 @@ func (l Language) Executable() Executable {
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
-func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
+func (l *Language) UnmarshalYAML(applyPayload func(interface{}) error) error {
 	if l == nil {
 		return fmt.Errorf("cannot unmarshal to nil language")
 	}
 
-	var s string
-	if err := f(&s); err != nil {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
 		return err
 	}
 
-	return l.Set(s)
+	return l.Set(payload)
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
@@ -183,8 +183,8 @@ func (l *Language) Set(v string) error {
 		return fmt.Errorf("cannot set nil language")
 	}
 
-	lbn := MakeByName(v)
-	if !lbn.Recognized() {
+	lang := MakeByName(v)
+	if !lang.Recognized() {
 		names := RecognizedNames()
 
 		return fmt.Errorf(locale.Tr(
@@ -192,7 +192,7 @@ func (l *Language) Set(v string) error {
 		))
 	}
 
-	*l = lbn
+	*l = lang
 	return nil
 }
 
@@ -227,21 +227,21 @@ func (e Executable) Available() bool {
 
 // Recognized returns all languages that are supported.
 func Recognized() []Language {
-	var ls []Language
+	var langs []Language
 	for i := range lookup {
 		if l := Language(i); l.Recognized() {
-			ls = append(ls, l)
+			langs = append(langs, l)
 		}
 	}
-	return ls
+	return langs
 }
 
 // RecognizedNames returns all language names that are supported.
 func RecognizedNames() []string {
 	var ls []string
-	for i, v := range lookup {
+	for i, data := range lookup {
 		if l := Language(i); l.Recognized() {
-			ls = append(ls, v.name)
+			ls = append(ls, data.name)
 		}
 	}
 	return ls
