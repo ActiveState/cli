@@ -21,6 +21,7 @@ import (
 
 type EditIntegrationTestSuite struct {
 	integration.Suite
+	cleanup func()
 }
 
 func (suite *EditIntegrationTestSuite) SetupTest() {
@@ -29,8 +30,8 @@ func (suite *EditIntegrationTestSuite) SetupTest() {
 	err := os.MkdirAll(os.TempDir(), 0655)
 	suite.Require().NoError(err)
 
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("EditIntegrationTest")
-	defer cleanup()
+	var tempDir string
+	tempDir, suite.cleanup = suite.PrepareTemporaryWorkingDirectory("EditIntegrationTest")
 
 	root := environment.GetRootPathUnsafe()
 	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
@@ -77,6 +78,7 @@ scripts:
 func (suite *EditIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
 	projectfile.Reset()
+	suite.cleanup()
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit() {
