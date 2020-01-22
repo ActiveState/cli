@@ -147,8 +147,5 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	//suite.Run(t, new(AuthIntegrationTestSuite))
-	integration.RunParallel(t, new(AuthIntegrationTestSuite))
+	suite.Run(t, new(AuthIntegrationTestSuite))
 }
