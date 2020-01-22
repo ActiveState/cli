@@ -329,7 +329,7 @@ manual_installation_instructions() {
   echo "using the '$STATEEXE' program."
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
-  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/$RC_FILE file"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
   activation_warning
   exit 1
 }
