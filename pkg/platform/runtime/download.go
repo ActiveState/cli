@@ -88,24 +88,17 @@ func (r *Download) fetchBuildRequest() (*headchef_models.V1BuildRequest, *failur
 	}
 
 	commitID := strfmt.UUID(r.project.CommitID())
-	var recipes []*model.Recipe
 	if commitID == "" {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipes, fail = model.FetchRecipesForCommit(platProject, commitID)
-	if fail != nil {
-		return nil, fail
-	}
-
-	// Get the effective recipe from the list of recipes, this is the first recipe that matches our current platform
-	effectiveRecipe, fail := model.RecipeByHostPlatform(recipes, model.HostPlatform)
+	recipe, fail := model.FetchRecipeForCommitAndHostPlatform(platProject, commitID, model.HostPlatform)
 	if fail != nil {
 		return nil, fail
 	}
 
 	// Turn it into a build recipe (same data, differently typed)
-	buildRecipe, fail := model.RecipeToBuildRecipe(effectiveRecipe)
+	buildRecipe, fail := model.RecipeToBuildRecipe(recipe)
 	if fail != nil {
 		return nil, fail
 	}

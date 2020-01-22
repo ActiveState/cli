@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -39,6 +40,10 @@ func init() {
 
 // FetchRecipesForCommit returns a list of recipes from a project based off a commitID
 func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
+	return fetchRecipes(pj, commitID, nil)
+}
+
+func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, platformID *strfmt.UUID) ([]*Recipe, *failures.Failure) {
 	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
@@ -48,6 +53,13 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 
 	params := inventory_operations.NewResolveRecipesParams()
 	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
+
+	if platformID != nil && containsUUID(params.Order.Platforms, *platformID) {
+		params.Order.Platforms = []strfmt.UUID{*platformID}
+	}
+	for _, pid := range params.Order.Platforms {
+		logging.Debug(pid.String())
+	}
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
@@ -104,7 +116,12 @@ func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failure
 
 // FetchRecipeForCommitAndHostPlatform returns the available recipe matching the commit id and platform string
 func FetchRecipeForCommitAndHostPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
-	recipes, fail := FetchRecipesForCommit(pj, commitID)
+	platformID, fail := hostPlatformToUUID(platform)
+	if fail != nil {
+		return nil, fail
+	}
+
+	recipes, fail := fetchRecipes(pj, commitID, &platformID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -140,6 +157,23 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe,
 	return buildRecipe, nil
 }
 
+func hostPlatformToUUID(os string) (strfmt.UUID, *failures.Failure) {
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
+		return linux64UUID, nil
+
+	//case strings.ToLower(sysinfo.Mac.String()):
+
+	case strings.ToLower(sysinfo.Windows.String()):
+		return windows64UUID, nil
+
+	default:
+		msg := fmt.Sprintf("bad host os/platform name used %q", os)
+		return strfmt.UUID(""), failures.FailDeveloper.New(msg)
+
+	}
+}
+
 func hostPlatformToKernelName(os string) string {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
@@ -151,4 +185,26 @@ func hostPlatformToKernelName(os string) string {
 	default:
 		return ""
 	}
+}
+
+var (
+	linux64UUID   = mustParseUUID(constants.LinuxBit64UUID)
+	windows64UUID = mustParseUUID(constants.Win10Bit64UUID)
+)
+
+func mustParseUUID(text string) strfmt.UUID {
+	var uid strfmt.UUID
+	if err := uid.UnmarshalText([]byte(text)); err != nil {
+		panic(err)
+	}
+	return uid
+}
+
+func containsUUID(uids []strfmt.UUID, refUID strfmt.UUID) bool {
+	for _, uid := range uids {
+		if uid == refUID {
+			return true
+		}
+	}
+	return false
 }
