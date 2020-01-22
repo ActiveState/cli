@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -27,9 +26,6 @@ type EditIntegrationTestSuite struct {
 func (suite *EditIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
 
-	err := os.MkdirAll(os.TempDir(), 0655)
-	suite.Require().NoError(err)
-
 	var tempDir string
 	tempDir, suite.cleanup = suite.PrepareTemporaryWorkingDirectory("EditIntegrationTest")
 
@@ -53,7 +49,7 @@ scripts:
 `)
 
 	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
