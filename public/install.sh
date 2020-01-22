@@ -312,6 +312,17 @@ while "true"; do
   esac
 done
 
+# If the installation is not in $PATH then we attempt to update the users rc file
+if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
+  info "Zsh shell detected"
+  RC_FILE="$HOME/.zshrc"
+elif [ ! -z "$BASH_VERSION" ] && [ -w "$HOME/.bashrc" ]; then
+  info "Bash shell detected"
+  RC_FILE="$HOME/.bashrc"
+else
+  RC_FILE="$HOME/.profile"
+fi
+
 manual_installation_instructions() {
   info "State tool installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
@@ -322,20 +333,6 @@ manual_installation_instructions() {
   activation_warning
   exit 1
 }
-
-# If the installation is not in $PATH then we attempt to update the users rc file
-if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
-  info "Zsh shell detected"
-  RC_FILE="$HOME/.zshrc"
-elif [ ! -z "$BASH_VERSION" ] && [ -w "$HOME/.bashrc" ]; then
-  info "Bash shell detected"
-  RC_FILE="$HOME/.bashrc"
-elif [ -w "$HOME/.profile" ]; then
-  RC_FILE="$HOME/.profile"
-else
-  error "Could not write to $RC_FILE. Please ensure it exists and is writeable"
-  manual_installation_instructions
-fi
 
 manual_update_instructions() {
   info "State tool installation complete."
@@ -356,6 +353,13 @@ activation_warning() {
 }
 
 update_rc_file() {
+  # Check if we can write to the users rcfile, if not give manual
+  # insallation instructions
+  if [ ! -w "$RC_FILE" ]; then
+    warn "Could not write to $RC_FILE. Please ensure it exists and is writeable"
+    manual_installation_instructions
+  fi
+
   info "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
   echo "" >> "$RC_FILE"
