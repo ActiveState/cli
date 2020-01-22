@@ -313,10 +313,10 @@ while "true"; do
 done
 
 # If the installation is not in $PATH then we attempt to update the users rc file
-if [ ! -z "$ZSH_VERSION" ]; then
+if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
   info "Zsh shell detected"
   RC_FILE="$HOME/.zshrc"
-elif [ ! -z "$BASH_VERSION" ]; then
+elif [ ! -z "$BASH_VERSION" ] && [ -w "$HOME/.bashrc" ]; then
   info "Bash shell detected"
   RC_FILE="$HOME/.bashrc"
 else
