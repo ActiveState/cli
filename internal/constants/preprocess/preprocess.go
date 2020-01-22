@@ -27,6 +27,10 @@ const (
 	master
 	branch
 	pullRequest
+
+	patch = "version: patch"
+	minor = "version: minor"
+	major = "version: major"
 )
 
 func init() {
@@ -161,12 +165,12 @@ func getPRNumber() int {
 func updateVersion(branchName string, current *semver.Version) string {
 	label := getVersionLabel(branchName)
 	switch label {
-	case "version: patch":
+	case patch:
 		current.Patch++
-	case "version: minor":
+	case minor:
 		current.Minor++
 		current.Patch = 0
-	case "version: major":
+	case major:
 		current.Major++
 		current.Minor = 0
 		current.Patch = 0
@@ -225,17 +229,18 @@ func isMerged(number int, client *github.Client) bool {
 }
 
 func getVersionLabelPR(client *github.Client) string {
-	prNumber := getPRNumber()
-	if prNumber == -1 {
-		return Constants["BranchName"]()
-	}
-
-	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", constants.LibraryName, prNumber)
+	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", constants.LibraryName, getPRNumber())
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), "ActiveState:")
+	if target != "master" && len(pullRequest.Labels) != 1 {
+		return patch
+	}
+
 	if len(pullRequest.Labels) != 1 {
-		log.Fatalf("Pull requests must have one label")
+		log.Fatalf("Pull requests targeted to master must have one label")
 	}
 
 	versionLabel := *pullRequest.Labels[0].Name
