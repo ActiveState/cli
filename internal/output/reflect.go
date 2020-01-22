@@ -34,7 +34,7 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 		info.fields = append(info.fields, fieldRfl.Name)
 		info.values = append(info.values, valueRfl.Interface())
 
-		serialized := strings.ToLower(string(fieldRfl.Name[0:1])) + fieldRfl.Name[1:(len(fieldRfl.Name))]
+		serialized := strings.ToLower(string(fieldRfl.Name[0:1])) + fieldRfl.Name[1:]
 		if v, ok := fieldRfl.Tag.Lookup("locale"); ok {
 			serialized = v
 		}

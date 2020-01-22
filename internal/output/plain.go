@@ -122,10 +122,8 @@ func sprintSlice(value interface{}) (string, error) {
 		return "", err
 	}
 
-	if len(slice) > 0 {
-		if isStruct(slice[0]) {
-			return sprintTable(slice)
-		}
+	if len(slice) > 0 && isStruct(slice[0]) {
+		return sprintTable(slice)
 	}
 
 	result := []string{}
