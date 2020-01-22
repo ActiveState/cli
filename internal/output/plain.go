@@ -49,14 +49,14 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
 		logging.Errorf("Could not sprint value: %v, error: %v", value, err)
-		f.writeNow(fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())), f.cfg.ErrWriter)
+		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
 		return
 	}
-	f.writeNow(v, writer)
+	f.writeNow(writer, v)
 }
 
 // writeNow is a little helper that just writes the given value to the requested writer (no marshalling)
-func (f *Plain) writeNow(value string, writer io.Writer) {
+func (f *Plain) writeNow(writer io.Writer, value string) {
 	_, err := writeColorized(value, writer, !f.cfg.Colored)
 	if err != nil {
 		logging.Errorf("Writing colored output failed: %v", err)
