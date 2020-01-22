@@ -36,7 +36,5 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(OrganizationsIntegrationTestSuite))
+	suite.Run(t, new(OrganizationsIntegrationTestSuite))
 }
