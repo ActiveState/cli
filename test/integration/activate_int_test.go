@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -173,13 +172,8 @@ version: %s
 	suite.Expect("Please reactivate any activated instances of the State Tool")
 	suite.ExpectExitCode(0)
 
-	originalWd, err := os.Getwd()
-	suite.Require().NoError(err)
-
 	// Change directories to a sub directory
-	err = os.Chdir(filepath.Join(tempDir, "foo", "bar", "baz"))
-	suite.Require().NoError(err)
-	defer os.Chdir(originalWd)
+	suite.SetWd(filepath.Join(tempDir, "foo", "bar", "baz"))
 
 	// Activate in the subdirectory
 	suite.Spawn("activate")
@@ -200,8 +194,5 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
-	integration.RunParallel(t, new(ActivateIntegrationTestSuite))
+	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
