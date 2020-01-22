@@ -362,7 +362,8 @@ update_rc_file() {
 
   info "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "\n$pathenv" >> "$RC_FILE"
+  echo "" >> "$RC_FILE"
+  echo "$pathenv" >> "$RC_FILE"
 }
 
 # Check if the installation is in $PATH, if so we also check if the activate
