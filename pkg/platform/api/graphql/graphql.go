@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -43,8 +45,13 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 		timeout = time.Second * 60
 	}
 
+	gqlClient := graphql.NewClient(url)
+	gqlClient.Log = func(s string) {
+		fmt.Fprintln(os.Stderr, s)
+	}
+
 	return &GQLClient{
-		graphqlClient: graphql.NewClient(url),
+		graphqlClient: gqlClient,
 		common:        common,
 		tokenProvider: bearerToken,
 		timeout:       timeout,
