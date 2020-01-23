@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -22,15 +21,11 @@ import (
 type RunIntegrationTestSuite struct {
 	integration.Suite
 	tmpDirCleanup func()
-	originalWd    string
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
 
 	var err error
-	suite.originalWd, err = os.Getwd()
-	suite.Require().NoError(err)
-
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
 	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
@@ -75,9 +70,7 @@ scripts:
 	fail := projectFile.Save()
 	suite.Require().NoError(fail.ToError())
 
-	err = os.Chdir(projectDir)
-	suite.Require().NoError(err)
-
+	suite.SetWd(projectDir)
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
@@ -87,7 +80,7 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory("RunIntegrationTestSuite")
 	suite.tmpDirCleanup = cleanup
 
 	suite.createProjectFile(tmpDir)
@@ -96,7 +89,6 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
 	suite.tmpDirCleanup()
-	os.Chdir(suite.originalWd)
 	projectfile.Reset()
 }
 
@@ -166,8 +158,12 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 	suite.Expect("Hello World!")
 }
 
-func TestRunIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
+func (suite *RunIntegrationTestSuite) TestRun_Help() {
+	suite.Spawn("run", "-h")
+	suite.Expect("Usage")
+	suite.Expect("Arguments")
+}
 
-	integration.RunParallel(t, new(RunIntegrationTestSuite))
+func TestRunIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(RunIntegrationTestSuite))
 }

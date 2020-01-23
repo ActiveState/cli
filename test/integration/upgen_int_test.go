@@ -52,11 +52,5 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 }
 
 func TestUpdateGenIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
 	suite.Run(t, new(UpdateGenIntegrationTestSuite))
-
-	// parallel doesn't work with these due to contamination. The RunParallel function does not seem to allow for
-	// setting up individual tests
-	//integration.RunParallel(t, new(UpdateGenIntegrationTestSuite))
 }

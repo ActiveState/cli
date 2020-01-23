@@ -1,4 +1,4 @@
-package auth_test
+package auth
 
 import (
 	"encoding/json"
@@ -14,9 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
-	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -65,12 +63,11 @@ func (suite *LoginWithKeypairTestSuite) TestSuccessfulPassphraseMatch() {
 	suite.mockSuccessfulLogin()
 	suite.secretsapiMock.Register("GET", "/keypair")
 
-	var execErr error
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
-	execErr = Command.Execute()
 
-	suite.Require().NoError(execErr, "Executed with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -94,12 +91,11 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasLocalPrivateKe
 		return 204, "empty"
 	})
 
-	var execErr error
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
-	execErr = Command.Execute()
 
-	suite.Require().NoError(execErr, "Executed with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -124,15 +120,14 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_NoLocalPrivateKey
 		return 204, "empty"
 	})
 
-	var execErr error
 	// login
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
-	execErr = Command.Execute()
 
-	suite.Require().NoError(execErr, "Executed with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -159,16 +154,14 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_HasMismatchedLoca
 		return 204, "empty"
 	})
 
-	var execErr error
-
 	// login
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("bar", nil)
 	// passphrase mismatch, prompt for old passphrase
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
-	execErr = Command.Execute()
 
-	suite.Require().NoError(execErr, "Executed with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -198,7 +191,6 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 		return 204, "empty"
 	})
 
-	var execErr error
 	// login
 	suite.promptMock.OnMethod("Input").Once().Return("testuser", nil)
 	suite.promptMock.OnMethod("InputSecret").Once().Return("newpassword", nil)
@@ -206,9 +198,9 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	suite.promptMock.OnMethod("InputSecret").Once().Return("foo", nil)
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
-	execErr = Command.Execute()
 
-	suite.Require().NoError(execErr, "Executed with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().NoError(err, "Executed with error")
 	suite.Require().NoError(failures.Handled(), "Unexpected Failure")
 	suite.NotNil(authentication.ClientAuth(), "Should have been authenticated")
 
@@ -238,19 +230,9 @@ func (suite *LoginWithKeypairTestSuite) TestPassphraseMismatch_OldPasswordMismat
 	// user wants to generate a new keypair
 	suite.promptMock.OnMethod("Confirm").Once().Return(true, nil)
 
-	ex := exiter.New()
-	Command.Exiter = ex.Exit
-	execOut, execOutErr := osutil.CaptureStdout(func() {
-		exitCode := ex.WaitForExit(func() {
-			Command.Execute()
-		})
-		suite.Require().Equal(1, exitCode, "Exited with code 1")
-	})
-
-	suite.Require().NoError(execOutErr, "Captured stdout with error")
+	err := runAuth(&AuthParams{})
+	suite.Require().Error(err)
 	suite.Nil(authentication.ClientAuth(), "Should not have been authenticated")
-
-	suite.Contains(execOut, locale.T("auth_unresolved_keypair_issue_message"))
 
 	// very local keypair does not exist
 	localKeypair, failure := keypairs.LoadWithDefaults()

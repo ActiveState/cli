@@ -194,7 +194,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     } catch [System.Exception] {
         Write-Warning "Unable to retrieve the latest version number"
         Write-Error $_.Exception.Message
-        exit 1
+        return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
 
@@ -213,7 +213,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Write-Warning "Could not install state tool"
         Write-Warning "Could not access $zipURL"
         Write-Error $_.Exception.Message
-        exit 1
+        return 1
     }
 
     # Check the sums
@@ -224,7 +224,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Write-Warning "Expected: $latestChecksum"
         Write-Warning "Received: $hash"
         Write-Warning "Aborting installation"
-        exit 1
+        return 1
     }
 
     # Extract binary from pkg and confirm checksum
@@ -276,17 +276,17 @@ function install()
 
     if ($h) {
         Write-Host $USAGE
-        exit 0
+        return
     }
 
     if ($script:NOPROMPT -and $script:ACTIVATE -ne "" ) {
-        Write-Error "Flags -n and -activate cannot be set at the same time."
-        exit 1
+        Write-Warning "Flags -n and -activate cannot be set at the same time."
+        return 1
     }
 
     if ($script:FORCEOVERWRITE -and ( -not $script:NOPROMPT) ) {
-        Write-Error "Flag -f also requires -n"
-        exit 1
+        Write-Warning "Flag -f also requires -n"
+        return 1
     }
     
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
@@ -299,7 +299,7 @@ function install()
         Write-Warning "x86 processors are not supported at this time"
         Write-Warning "Contact ActiveState Support for assistance"
         Write-Warning "Aborting installation"
-        exit 1
+        return 1
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -309,9 +309,9 @@ function install()
     } else {
         $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
         if (-Not (hasWritePermission $Env:APPDATA)){
-            Write-Error "Do not have write permissions to: '$Env:APPDATA'"
-            Write-Error "Aborting installation"
-            exit 1
+            Write-Warning "Do not have write permissions to: '$Env:APPDATA'"
+            Write-Warning "Aborting installation"
+            return 1
         }
     }
 
@@ -330,7 +330,7 @@ function install()
                 Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
                 Write-Host "To update the state tool to the latest version, please run 'state update'."
                 Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
-                exit 0
+                return
             }
         }
     }
@@ -339,7 +339,7 @@ function install()
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
-            exit 1
+            return
         }
     }
 
@@ -354,13 +354,16 @@ function install()
             $occurance = errorOccured $False
             if($occurance[0]){
                 Write-Host "Aborting Installation" -ForegroundColor Yellow
-                exit 1
+                return 1
             }
         }
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    if ($err -eq 1){
+        return 1
+    }
     Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
 
     # Check if installation is in $PATH
@@ -369,7 +372,7 @@ function install()
         Write-Host "You may now start using the '$script:STATEEXE' program."
         warningIfAdmin
         activateIfRequested
-        exit 0
+        return
     }
 
     # Update PATH for state tool installation directory
@@ -395,7 +398,7 @@ function install()
 
     warningIfAdmin
     Write-Host "State tool successfully installed to: $installDir." -ForegroundColor Yellow
-    Write-Host "Please restart your command prompt in order to start using the 'state.exe' program." -ForegroundColor Yellow
+    Write-Host "Please close your Powershell prompt and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
     activateIfRequested
 
 }

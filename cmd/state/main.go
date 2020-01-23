@@ -152,7 +152,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 
 	if err2 := normalizeError(err); err2 != nil {
 		logging.Debug("Returning error from cmdtree")
-		return 1, err2
+		return unwrapExitCode(err2), err2
 	}
 
 	// For legacy code we still use failures.Handled(). It can be removed once the failure package is fully deprecated.
@@ -172,6 +172,10 @@ func run(args []string, outputer output.Outputer) (int, error) {
 // unwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
 // returns the ExitCode of the process that failed with this error
 func unwrapExitCode(errFail error) int {
+	if eerr, ok := errFail.(*exec.ExitError); ok {
+		return eerr.ExitCode()
+	}
+
 	fail, ok := errFail.(*failures.Failure)
 	if !ok {
 		return 1

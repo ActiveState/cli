@@ -13,7 +13,7 @@ type PackageIntegrationTestSuite struct {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -25,7 +25,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -37,7 +37,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -49,7 +49,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -60,7 +60,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -71,7 +71,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -82,7 +82,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPa
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -98,8 +98,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"2.21.0",
 		"2.22.0",
 		"2.3",
-		"2.7.0",
-		"requests-cache",
 		"requests-oauthlib",
 		"requests3",
 		"requests_gpgauthlib",
@@ -113,7 +111,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -127,7 +125,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"2.21.0",
 		"2.22.0",
 		"2.3",
-		"2.7.0",
 		"---",
 	}
 	for _, expectation := range expectations {
@@ -137,7 +134,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -148,7 +145,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -163,7 +160,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -174,7 +171,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory(suite.T().Name())
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
 
 	suite.PrepareActiveStateYAML(tempDir)
@@ -190,7 +187,5 @@ func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(PackageIntegrationTestSuite))
+	suite.Run(t, new(PackageIntegrationTestSuite))
 }

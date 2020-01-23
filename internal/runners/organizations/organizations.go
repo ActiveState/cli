@@ -11,41 +11,41 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/bndr/gotabulate"
-	"github.com/spf13/cobra"
 )
 
-// Flags captures values for any of the flags used with the organizations command.
-var Flags struct {
-	Output *string
+type Organizations struct{}
+
+func NewOrganizations() *Organizations {
+	return &Organizations{}
 }
 
-// Command is the organization command's definition.
-var Command = &commands.Command{
-	Name:        "organizations",
-	Aliases:     []string{"orgs"},
-	Description: "organizations_description",
-	Run:         Execute,
+type OrgParams struct {
+	Output string
 }
 
-// Execute the organizations command.
-func Execute(cmd *cobra.Command, args []string) {
+// Run the organizations command.
+func (o *Organizations) Run(params *OrgParams) error {
+	return run(params)
+}
+
+func run(params *OrgParams) error {
 	orgs, fail := model.FetchOrganizations()
 	if fail != nil {
-		failures.Handle(fail, locale.T("organizations_err"))
-		return
+		return fail.WithDescription("organizations_err")
 	}
 
-	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	switch commands.Output(strings.ToLower(params.Output)) {
 	case commands.JSON, commands.EditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
-			failures.Handle(fail, locale.T("organizations_err_output"))
-			return
+			return fail.WithDescription("organizations_err_output")
 		}
 
 		print.Line(string(data))
+		return nil
 	default:
 		listOrganizations(orgs)
+		return nil
 	}
 }
 

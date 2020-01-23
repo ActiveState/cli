@@ -6,8 +6,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/cobra"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -18,69 +16,51 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 var (
-	// FailScriptNotDefined indicates the user provided a script name that is not in the activestate.yaml
+	// FailScriptNotDefined indicates the user provided a script name that is not defined
 	FailScriptNotDefined = failures.Type("run.fail.scriptnotfound", failures.FailUser)
+	// FailStandalonConflict indicates when a script is run standalone, but unable to be so
+	FailStandalonConflict = failures.Type("run.fail.standaloneconflict", failures.FailUser)
+	// FailExecNotFound indicates when the builtin language exec is not available
+	FailExecNotFound = failures.Type("run.fail.execnotfound", failures.FailUser)
 )
 
-// Command holds the definition for "state run".
-var Command *commands.Command
-
-func init() {
-	Command = &commands.Command{
-		Name:               "run",
-		Description:        "run_description",
-		Run:                Execute,
-		DisableFlagParsing: true,
-
-		Arguments: []*commands.Argument{
-			&commands.Argument{
-				Name:        "arg_state_run_name",
-				Description: "arg_state_run_name_description",
-				Variable:    &Args.Name,
-			},
-		},
-	}
+type Run struct {
 }
 
-// Args hold the arg values passed through the command line.
-var Args struct {
-	Name string
+func New() *Run {
+	return &Run{}
 }
 
 // Execute the run command.
-func Execute(cmd *cobra.Command, allArgs []string) {
+func (r *Run) Run(name string, args []string) error {
+	return run(name, args)
+}
+
+func run(name string, args []string) error {
 	checker.RunCommitsBehindNotifier()
 
 	logging.Debug("Execute")
 
-	if Args.Name == "" {
-		failures.Handle(failures.FailUserInput.New("error_state_run_undefined_name"), "")
-		return
+	if name == "" {
+		return failures.FailUserInput.New("error_state_run_undefined_name")
 	}
-
-	if Args.Name == "-h" || Args.Name == "--help" {
-		print.Line(cmd.UsageString())
-		return
-	}
-
-	scriptArgs := allArgs[1:]
 
 	// Determine which project script to run based on the given script name.
-	script := project.Get().ScriptByName(Args.Name)
+	script := project.Get().ScriptByName(name)
 	if script == nil {
-		failures.Handle(FailScriptNotDefined.New(locale.T("error_state_run_unknown_name", map[string]string{"Name": Args.Name})), "")
-		return
+		fail := FailScriptNotDefined.New(
+			locale.T("error_state_run_unknown_name", map[string]string{"Name": name}),
+		)
+		return fail
 	}
 
 	subs, fail := subshell.Get()
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_no_shell"))
-		return
+		return fail.WithDescription("error_state_run_no_shell")
 	}
 
 	lang := script.Language()
@@ -90,8 +70,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 	langExec := lang.Executable()
 	if script.Standalone() && !langExec.Builtin() {
-		print.Error(locale.T("error_state_run_standalone_conflict"))
-		return
+		return FailStandalonConflict.New("error_state_run_standalone_conflict")
 	}
 
 	path := os.Getenv("PATH")
@@ -105,8 +84,7 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 
 		if fail := venv.Activate(); fail != nil {
 			logging.Errorf("Unable to activate state: %s", fail.Error())
-			failures.Handle(fail, locale.T("error_state_run_activate"))
-			return
+			return fail.WithDescription("error_state_run_activate")
 		}
 
 		subs.SetEnv(venv.GetEnvSlice(true))
@@ -114,25 +92,20 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {
-		print.Error(locale.T("error_state_run_unknown_exec"))
-		return
+		return FailExecNotFound.New("error_state_run_unknown_exec")
 	}
 
 	// Run the script.
 	scriptBlock := project.Expand(script.Value())
 	sf, fail := scriptfile.New(lang, script.Name(), scriptBlock)
 	if fail != nil {
-		failures.Handle(fail, locale.T("error_state_run_setup_scriptfile"))
-		return
+		return fail.WithDescription("error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
 
 	print.Info(locale.Tr("info_state_run_running", script.Name(), script.Source().Path()))
 	// ignore code for now, passing via failure
-	_, err := subs.Run(sf.Filename(), scriptArgs...)
-	if err != nil {
-		failures.Handle(err, locale.T("error_state_run_error"))
-	}
+	return subs.Run(sf.Filename(), args...)
 }
 
 func configCachePath() string {

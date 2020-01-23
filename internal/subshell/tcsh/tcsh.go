@@ -107,7 +107,7 @@ func (v *SubShell) Deactivate() *failures.Failure {
 }
 
 // Run - see subshell.SubShell
-func (v *SubShell) Run(filename string, args ...string) (int, error) {
+func (v *SubShell) Run(filename string, args ...string) error {
 	return sscommon.RunFuncByBinary(v.Binary())(v.env, filename, args...)
 }
 

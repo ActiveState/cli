@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -143,6 +144,47 @@ func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 	suite.Expect("[activated-JSON]")
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test")
+	defer cb()
+
+	fail := fileutils.Mkdir(tempDir, "foo", "bar", "baz")
+	suite.Require().NoError(fail.ToError())
+
+	// Create the project file at the root of the temp dir
+	content := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+branch: %s
+version: %s
+`, constants.BranchName, constants.Version))
+
+	projectFile := &projectfile.Project{}
+	err := yaml.Unmarshal([]byte(content), projectFile)
+	suite.Require().NoError(err)
+
+	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
+	fail = projectFile.Save()
+	suite.Require().NoError(fail.ToError())
+
+	// Pull to ensure we have an up to date config file
+	suite.Spawn("pull")
+	suite.Expect("Your activestate.yaml has been updated to the latest version available")
+	suite.Expect("Please reactivate any activated instances of the State Tool")
+	suite.ExpectExitCode(0)
+
+	// Change directories to a sub directory
+	suite.SetWd(filepath.Join(tempDir, "foo", "bar", "baz"))
+
+	// Activate in the subdirectory
+	suite.Spawn("activate")
+	suite.Expect("Activating state: ActiveState-CLI/Python3")
+
+	suite.WaitForInput()
+	suite.SendLine("exit")
+	suite.ExpectExitCode(0)
+
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 	suite.testOutput("json")
 }
@@ -152,8 +194,5 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
-	integration.RunParallel(t, new(ActivateIntegrationTestSuite))
+	suite.Run(t, new(ActivateIntegrationTestSuite))
 }

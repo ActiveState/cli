@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/state/auth"
 	"github.com/ActiveState/cli/state/fork"
-	"github.com/ActiveState/cli/state/organizations"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
 	"github.com/ActiveState/cli/state/secrets"
@@ -26,12 +25,29 @@ func New(outputer output.Outputer) *CmdTree {
 
 	auth := authentication.Get()
 
+	authCmd := newAuthCommand(globals)
+	authCmd.AddChildren(
+		newSignupCommand(),
+		newLogoutCommand(),
+	)
+
+	exportCmd := newExportCommand()
+	exportCmd.AddChildren(
+		newRecipeCommand(),
+		newJWTCommand(),
+		newPrivateKeyCommand(),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
 		newInitCommand(),
 		newPushCommand(),
 		newProjectsCommand(outputer, auth),
+		authCmd,
+		exportCmd,
+		newOrganizationsCommand(globals),
+		newRunCommand(),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -114,8 +130,6 @@ func (ct *CmdTree) Execute(args []string) error {
 }
 
 func setLegacyOutput(globals *globalOptions) {
-	auth.Flags.Output = &globals.Output
-	organizations.Flags.Output = &globals.Output
 	scripts.Flags.Output = &globals.Output
 	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
