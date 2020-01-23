@@ -6,9 +6,11 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func totpAuth(totp string) *failures.Failure {
+func totpAuth(params *AuthParams) *failures.Failure {
 	auth := authentication.Get()
 	return auth.AuthenticateWithModel(&mono_models.Credentials{
-		Totp: totp,
+		Username: params.Username,
+		Password: params.Password,
+		Totp:     params.Totp,
 	})
 }

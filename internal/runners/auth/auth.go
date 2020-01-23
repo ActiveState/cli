@@ -64,7 +64,7 @@ func runAuth(params *AuthParams) error {
 			return fail.WithDescription("login_err_auth_token")
 		}
 	case params.Totp != "":
-		fail = totpAuth(params.Totp)
+		fail = totpAuth(params)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth_totp")
 		}
