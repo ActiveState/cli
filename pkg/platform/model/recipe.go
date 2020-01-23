@@ -60,9 +60,6 @@ func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, platform *strin
 			return nil, fail
 		}
 	}
-	for _, pid := range params.Order.Platforms {
-		logging.Debug(pid.String())
-	}
 
 	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
