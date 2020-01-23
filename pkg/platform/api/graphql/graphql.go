@@ -45,16 +45,20 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 		timeout = time.Second * 60
 	}
 
-	gqlClient := graphql.NewClient(url)
-	gqlClient.Log = func(s string) {
-		fmt.Fprintln(os.Stderr, s)
-	}
-
 	return &GQLClient{
-		graphqlClient: gqlClient,
+		graphqlClient: graphql.NewClient(url),
 		common:        common,
 		tokenProvider: bearerToken,
 		timeout:       timeout,
+	}
+}
+
+func (c *GQLClient) SetDebug(b bool) {
+	c.graphqlClient.Log = func(string) {}
+	if b {
+		c.graphqlClient.Log = func(s string) {
+			fmt.Fprintln(os.Stderr, s)
+		}
 	}
 }
 
