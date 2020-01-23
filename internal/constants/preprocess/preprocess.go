@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -22,12 +23,14 @@ import (
 var Constants = map[string]func() string{}
 
 const (
-	unknown = iota
-	local
-	master
-	branch
-	pullRequest
+	unknownEnv = iota
+	localEnv
+	masterEnv
+	branchEnv
+	pullRequestEnv
+)
 
+const (
 	patch = "version: patch"
 	minor = "version: minor"
 	major = "version: major"
@@ -41,8 +44,8 @@ func init() {
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
-	Constants["Version"] = func() string { return getVersion(branchName, true) }
-	Constants["VersionNumber"] = func() string { return getVersion(branchName, false) }
+	Constants["Version"] = func() string { return getVersionPreRelease(branchName, getCurrentVersionPreRelease()) }
+	Constants["VersionNumber"] = func() string { return getVersion(branchName, getCurrentVersion()) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -81,15 +84,50 @@ func branchName() (string, string) {
 	return releaseName, branch
 }
 
-func getVersion(branchName string, preRelease bool) string {
-	currentSemver := getCurrentVersion(preRelease)
+func getVersion(branchName string, current *semver.Version) string {
+	return updateVersion(current, branchName)
+}
 
-	state := buildState(branchName)
+func getVersionPreRelease(branchName string, current *semver.Version) string {
+	return updateVersion(current, branchName)
+}
+
+func getCurrentVersion() *semver.Version {
+	output := getCmdOutput(fmt.Sprintf("%s --version", constants.CommandName))
+	regex := regexp.MustCompile("\\d+\\.\\d+\\.\\d+-[a-f0-9]+")
+	match := regex.FindString(output)
+	if match == "" {
+		log.Fatal("Could not determine current version")
+	}
+
+	currentSemver, err := semver.New(match)
+	if err != nil {
+		log.Fatalf("Failed to create semver from version string: %s", err)
+	}
+	currentSemver.Pre = nil
+
+	return currentSemver
+}
+
+func getCurrentVersionPreRelease() *semver.Version {
+	version := getCurrentVersion()
+
+	prVersion, err := semver.NewPRVersion((Constants["RevisionHashShort"]()))
+	if err != nil {
+		log.Fatalf("Could not create pre-release version number: %v", err)
+	}
+	version.Pre = []semver.PRVersion{prVersion}
+
+	return version
+}
+
+func updateVersion(current *semver.Version, branchName string) string {
+	state := buildEnvironment(branchName)
 	switch state {
-	case local, branch:
-		return currentSemver.String()
-	case master, pullRequest:
-		return updateVersion(branchName, currentSemver)
+	case localEnv, branchEnv:
+		return current.String()
+	case masterEnv, pullRequestEnv:
+		return incrementVersion(branchName, current)
 	default:
 		log.Fatalf("Build state is not local, remote branch, remote master, or pull request")
 	}
@@ -97,45 +135,21 @@ func getVersion(branchName string, preRelease bool) string {
 	return ""
 }
 
-func getCurrentVersion(preRelease bool) *semver.Version {
-	output := getCmdOutput("state --version")
-	versionString := strings.Split(strings.TrimSpace(output), "\n")[0]
-	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
-	masterVersion := versionNumber[len(versionNumber)-1]
-
-	currentSemver, err := semver.New(masterVersion)
-	if err != nil {
-		log.Fatalf("Failed to create semver from version string: %s", err)
-	}
-
-	if preRelease {
-		prVersion, err := semver.NewPRVersion((Constants["RevisionHashShort"]()))
-		if err != nil {
-			log.Fatalf("Could not create pre-release version number: %v", err)
-		}
-		currentSemver.Pre = []semver.PRVersion{prVersion}
-	} else {
-		currentSemver.Pre = nil
-	}
-
-	return currentSemver
-}
-
-func buildState(branchName string) int {
+func buildEnvironment(branchName string) int {
 	if !onCI() {
-		return local
+		return localEnv
 	}
 
 	if branchName == "master" {
-		return master
+		return masterEnv
 	}
 
 	prNum := getPRNumber()
 	if prNum == 0 {
-		return branch
+		return branchEnv
 	}
 
-	return pullRequest
+	return pullRequestEnv
 }
 
 func onCI() bool {
@@ -162,7 +176,7 @@ func getPRNumber() int {
 	return 0
 }
 
-func updateVersion(branchName string, current *semver.Version) string {
+func incrementVersion(branchName string, current *semver.Version) string {
 	label := getVersionLabel(branchName)
 	switch label {
 	case patch:
@@ -197,7 +211,7 @@ func getVersionLabel(branchName string) string {
 }
 
 func getVersionLabelMaster(client *github.Client) string {
-	pullReqests, _, err := client.PullRequests.List(context.Background(), "ActiveState", constants.LibraryName, &github.PullRequestListOptions{State: "closed", Sort: "updated", Direction: "desc"})
+	pullReqests, _, err := client.PullRequests.List(context.Background(), constants.LibraryOwner, constants.LibraryName, &github.PullRequestListOptions{State: "closed", Sort: "updated", Direction: "desc"})
 	if err != nil {
 		log.Fatalf("Could not list pull requests: %v", err)
 	}
@@ -205,8 +219,9 @@ func getVersionLabelMaster(client *github.Client) string {
 	var versionLabel string
 	for _, pullRequest := range pullReqests {
 		if isMerged(*pullRequest.Number, client) {
-			if len(pullRequest.Labels) != 1 {
-				log.Fatalf("Pull reqests must have one label")
+			label := getLabel(pullRequest.Labels)
+			if label == "" {
+				log.Fatalf("Pull request does not have version label")
 			}
 
 			versionLabel = *pullRequest.Labels[0].Name
@@ -221,7 +236,7 @@ func getVersionLabelMaster(client *github.Client) string {
 }
 
 func isMerged(number int, client *github.Client) bool {
-	merged, _, err := client.PullRequests.IsMerged(context.Background(), "ActiveState", constants.LibraryName, number)
+	merged, _, err := client.PullRequests.IsMerged(context.Background(), constants.LibraryOwner, constants.LibraryName, number)
 	if err != nil {
 		log.Fatalf("Could not confirm pull request #%d has been merged: %v", number, err)
 	}
@@ -229,31 +244,32 @@ func isMerged(number int, client *github.Client) bool {
 }
 
 func getVersionLabelPR(client *github.Client) string {
-	pullRequest, _, err := client.PullRequests.Get(context.Background(), "ActiveState", constants.LibraryName, getPRNumber())
+	pullRequest, _, err := client.PullRequests.Get(context.Background(), constants.LibraryOwner, constants.LibraryName, getPRNumber())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), "ActiveState:")
-	if target != "master" && len(pullRequest.Labels) != 1 {
+	label := getLabel(pullRequest.Labels)
+	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryName))
+	if target != "master" && label == "" {
 		return patch
 	}
 
-	if len(pullRequest.Labels) != 1 {
-		log.Fatalf("Pull requests targeted to master must have one label")
+	if label == "" {
+		log.Fatalf("Pull request does not have version label")
 	}
 
-	versionLabel := *pullRequest.Labels[0].Name
-	if versionLabel == "" {
-		log.Fatal("No version label associated with this branch")
-	}
-
-	return versionLabel
+	return label
 }
 
 func getPRNumberCircle(info string) int {
-	info = strings.TrimPrefix(info, "https://github.com/ActiveState/cli/pull/")
-	prNumber, err := strconv.Atoi(info)
+	regex := regexp.MustCompile("/pull/[0-9]+")
+	match := regex.FindString(info)
+	if match == "" {
+		log.Fatalf("Could not determine pull request number from: %s", info)
+	}
+	num := strings.TrimPrefix(match, "/pull/")
+	prNumber, err := strconv.Atoi(num)
 	if err != nil {
 		log.Fatalf("Could not convert pull request number: %v", err)
 	}
@@ -266,6 +282,18 @@ func getPRNumberAzure(info string) int {
 		log.Fatalf("Could not convert pull request number: %v", err)
 	}
 	return prNumber
+}
+
+func getLabel(labels []*github.Label) string {
+	regex := regexp.MustCompile("version: (major|minor|patch)")
+
+	for _, label := range labels {
+		if label.Name != nil && regex.MatchString(*label.Name) {
+			return *label.Name
+		}
+	}
+
+	return ""
 }
 
 func buildNumber() string {
