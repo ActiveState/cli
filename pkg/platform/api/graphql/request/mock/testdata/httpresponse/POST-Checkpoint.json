@@ -6,6 +6,24 @@
                 "namespace": "language",
                 "requirement": "Python",
                 "version_constraint": "string"
+            },
+            {
+                "commit_id": "00010001-0001-0001-0001-000100010001",
+                "namespace": "platform",
+                "requirement": "00010001-0001-0001-0001-000100010001",
+                "version_constraint": ""
+            },
+            {
+                "commit_id": "00010001-0001-0001-0001-000100010001",
+                "namespace": "platform",
+                "requirement": "00020002-0002-0002-0002-000200020002",
+                "version_constraint": ""
+            },
+            {
+                "commit_id": "00010001-0001-0001-0001-000100010001",
+                "namespace": "platform",
+                "requirement": "00030003-0003-0003-0003-000300030003",
+                "version_constraint": ""
             }
         ],
         "vcs_commits_by_pk": {
