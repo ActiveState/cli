@@ -25,6 +25,7 @@ type AuthParams struct {
 	Token    string
 	Username string
 	Password string
+	Totp     string
 }
 
 // Run runs our command
@@ -56,15 +57,21 @@ func runAuth(params *AuthParams) error {
 		return nil
 	}
 
-	if params.Token == "" {
-		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
-		if fail != nil {
-			return fail.WithDescription("login_err_auth")
-		}
-	} else {
+	switch {
+	case params.Token != "":
 		fail = tokenAuth(params.Token)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth_token")
+		}
+	case params.Totp != "":
+		fail = totpAuth(params.Totp)
+		if fail != nil {
+			return fail.WithDescription("login_err_auth_totp")
+		}
+	default:
+		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
+		if fail != nil {
+			return fail.WithDescription("login_err_auth")
 		}
 	}
 

@@ -184,6 +184,8 @@ arg_state_auth_username_description:
   other: The username to authenticate with, will be prompted for otherwise
 arg_state_auth_password_description:
   other: The password to authenticate with, will be prompted for otherwise
+flag_state_auth_totp_description:
+  other: The TOTP token generated via two-factor authentication
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -273,6 +275,8 @@ login_err_auth:
   other: Authentication failed
 login_err_auth_token:
   other: Token authentication failed
+login_err_auth_totp:
+  other: TOTP authentication failed
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
