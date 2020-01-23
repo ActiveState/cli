@@ -3,6 +3,9 @@ package constants
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
 
+// LibraryOwner contains the name of the owner of this library
+const LibraryOwner = "ActiveState"
+
 // LibraryNamespace is the namespace that the library belongs to
 const LibraryNamespace = "github.com/ActiveState/"
 
