@@ -184,7 +184,7 @@ func filterPlatformIDs(platform, arch string, platformIDs []strfmt.UUID) ([]strf
 	}
 
 	if len(pids) == 0 {
-		return nil, FailNoPlatformData.New("no data remains after filtering")
+		return nil, FailNoPlatformData.New("err_no_platform_data_remains")
 	}
 
 	return pids, nil

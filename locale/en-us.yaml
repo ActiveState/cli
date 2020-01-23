@@ -923,6 +923,8 @@ err_commit_count_missing_last:
   other: "Missing last commit id"
 err_recipe_not_found:
   other: Your project does not have a configuration that is compatible with your platform
+err_no_platform_data_remains:
+  other: No platform data remains after filtering; Please contact support
 err_no_artifacts:
   other: Your project does not seem to produce any artifacts
 err_no_valid_artifact:
