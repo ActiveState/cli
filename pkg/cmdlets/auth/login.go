@@ -72,9 +72,27 @@ func AuthenticateWithInput(username string, password string) *failures.Failure {
 		}
 	}
 
+	return saveKeypair(credentials.Password)
+}
+
+func AuthenticateWithoutInput(username, password, totp string) *failures.Failure {
+	logging.Debug("AuthenticateWithoutInput")
+	fail := AuthenticateWithCredentials(&mono_models.Credentials{
+		Username: username,
+		Password: password,
+		Totp:     totp,
+	})
+	if fail != nil {
+		return fail
+	}
+
+	return saveKeypair(password)
+}
+
+func saveKeypair(password string) *failures.Failure {
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
-		fail = ensureUserKeypair(credentials.Password)
+		fail := ensureUserKeypair(password)
 		if fail != nil {
 			return fail
 		}

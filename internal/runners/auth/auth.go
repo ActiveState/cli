@@ -64,7 +64,7 @@ func runAuth(params *AuthParams) error {
 			return fail.WithDescription("login_err_auth_token")
 		}
 	case params.Totp != "":
-		fail = totpAuth(params)
+		fail = authlet.AuthenticateWithoutInput(params.Username, params.Password, params.Totp)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth_totp")
 		}

@@ -487,6 +487,8 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
+	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
+	secretMock.Register("GET", "/keypair")
 
 	err := runAuth(&AuthParams{
 		Username: user.Username,
