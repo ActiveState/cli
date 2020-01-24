@@ -341,7 +341,6 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 }
 
 func (s *Suite) TrimSpaceOutput() string {
-	// When the PTY reaches 80 characters it continues output on a new line.
 	// On Windows this means both a carriage return and a new line. Windows
 	// also picks up any spaces at the end of the console output, hence all
 	// the cleaning we must do here.
@@ -372,4 +371,291 @@ func (s *Suite) CreateNewUser() string {
 	s.Wait()
 
 	return username
+}
+
+type Session struct {
+	s       *suite.Suite
+	console *expect.Console
+	cmd     *exec.Cmd
+}
+
+func (s *Suite) NewSession(workDir, exe string, args ...string) *Session {
+	configDir := mustMkTmpDirNoisy(&s.Suite, "config")
+	cacheDir := mustMkTmpDirNoisy(&s.Suite, "cache")
+	binDir := mustMkTmpDirNoisy(&s.Suite, "bin")
+
+	execu := filepath.Join(binDir, exe)
+	fail := fileutils.CopyFile(exe, execu)
+	s.Require().NoError(fail.ToError())
+
+	permissions, _ := permbits.Stat(execu)
+	permissions.SetUserExecute(true)
+	err := permbits.Chmod(execu, permissions)
+	s.Require().NoError(err)
+
+	var env []string
+	env = append(env, os.Environ()...)
+	env = append(env, []string{
+		"ACTIVESTATE_CLI_CONFIGDIR=" + configDir,
+		"ACTIVESTATE_CLI_CACHEDIR=" + cacheDir,
+		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
+		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
+		"ACTIVESTATE_PROJECT=",
+	}...)
+
+	if workDir == "" {
+		workDir = os.TempDir()
+	}
+
+	cmd := exec.Command(execu, args...)
+	cmd.Dir = workDir
+	cmd.Env = env
+
+	// Create the process in a new process group.
+	// This makes the behavior more consistent, as it isolates the signal handling from
+	// the parent processes, which are dependent on the test environment.
+	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
+	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(cmd), workDir)
+
+	console, err := expect.NewConsole(
+		expect.WithDefaultTimeout(defaultTimeout),
+	)
+	s.Require().NoError(err)
+
+	err = console.Pty.StartProcessInTerminal(cmd)
+	s.Require().NoError(err)
+
+	return &Session{
+		s:       &s.Suite,
+		console: console,
+		cmd:     cmd,
+	}
+}
+
+func (s *Suite) NewDefaultSession(args ...string) *Session {
+	ext := ""
+	if runtime.GOOS == "windows" {
+		ext = ".exe"
+	}
+	name := constants.CommandName + ext
+	root := environment.GetRootPathUnsafe()
+	subdir := "build"
+	exe := filepath.Join(root, subdir, name)
+
+	if !fileutils.FileExists(exe) {
+		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
+	}
+
+	return s.NewSession("", exe, args...)
+}
+
+func (s *Session) Close() {
+	if s.console != nil {
+		err := s.console.Close()
+		s.s.Require().NoError(err)
+	}
+}
+
+// Output returns the current Terminal snapshot.
+func (s *Session) Output() string {
+	return s.console.Pty.State.String()
+}
+
+// ExpectRe listens to the terminal output and returns once the expected regular expression is matched or
+// a timeout occurs
+// Default timeout is 10 seconds
+func (s *Session) ExpectRe(value string, timeout ...time.Duration) {
+	opts := []expect.ExpectOpt{expect.RegexpPattern(value)}
+	if len(timeout) > 0 {
+		opts = append(opts, expect.WithTimeout(timeout[0]))
+	}
+	_, err := s.console.Expect(opts...)
+	if err != nil {
+		s.s.FailNow(
+			"Could not meet expectation",
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
+			value, err, s.Output())
+	}
+}
+
+// Expect listens to the terminal output and returns once the expected value is found or
+// a timeout occurs
+// Default timeout is 10 seconds
+func (s *Session) Expect(value string, timeout ...time.Duration) {
+	opts := []expect.ExpectOpt{expect.String(value)}
+	if len(timeout) > 0 {
+		opts = append(opts, expect.WithTimeout(timeout[0]))
+	}
+	_, err := s.console.Expect(opts...)
+	if err != nil {
+		s.s.FailNow(
+			"Could not meet expectation",
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
+			value, err, s.Output())
+	}
+}
+
+// WaitForInput returns once a shell prompt is active on the terminal
+// Default timeout is 10 seconds
+func (s *Session) WaitForInput(timeout ...time.Duration) {
+	usr, err := user.Current()
+	s.s.Require().NoError(err)
+
+	msg := "echo wait_ready_$HOME"
+	if runtime.GOOS == "windows" {
+		msg = "echo wait_ready_%USERPROFILE%"
+	}
+
+	s.SendLine(msg)
+	s.Expect("wait_ready_"+usr.HomeDir, timeout...)
+}
+
+// SendLine sends a new line to the terminal, as if a user typed it
+func (s *Session) SendLine(value string) {
+	_, err := s.console.SendLine(value)
+	if err != nil {
+		s.s.FailNow("Could not send data to terminal", "error: %v", err)
+	}
+}
+
+// Send sends a string to the terminal as if a user typed it
+func (s *Session) Send(value string) {
+	_, err := s.console.Send(value)
+	if err != nil {
+		s.s.FailNow("Could not send data to terminal", "error: %v", err)
+	}
+}
+
+// Signal sends an arbitrary signal to the running process
+func (s *Session) Signal(sig os.Signal) {
+	err := s.cmd.Process.Signal(sig)
+	s.s.Require().NoError(err)
+}
+
+// SendCtrlC tries to emulate what would happen in an interactive shell, when the user presses Ctrl-C
+func (s *Session) SendCtrlC() {
+	s.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
+}
+
+// Quit sends an interrupt signal to the tested process
+func (s *Session) Quit() {
+	s.Signal(os.Interrupt)
+}
+
+// Stop sends an interrupt signal for the tested process and fails if no process has been started yet.
+func (s *Session) Stop() {
+	if s.cmd == nil || s.cmd.Process == nil {
+		s.s.FailNow("stop called without a spawned process")
+	}
+	s.Quit()
+}
+
+// ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
+func (s *Session) ExpectExitCode(exitCode int, timeout time.Duration) {
+	ps, err := s.WaitFor(timeout)
+	if err != nil {
+		s.s.FailNow(
+			"Error waiting for process:",
+			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
+			err, s.Output())
+	}
+	if ps.ExitCode() != exitCode {
+		s.s.FailNow(
+			"Process terminated with unexpected exit code\n",
+			"Expected: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
+			exitCode, ps.ExitCode(), s.Output())
+	}
+}
+
+// Wait waits for the tested process to finish and returns its state including ExitCode
+func (s *Session) Wait() (*os.ProcessState, error) {
+	return s.wait(0)
+}
+
+func (s *Session) WaitFor(d time.Duration) (*os.ProcessState, error) {
+	return s.wait(d)
+}
+
+func (s *Session) wait(timeout time.Duration) (state *os.ProcessState, err error) {
+	if s.cmd == nil || s.cmd.Process == nil {
+		return
+	}
+
+	t := defaultTimeout
+	if timeout > 0 {
+		t = timeout
+	}
+
+	type processState struct {
+		state *os.ProcessState
+		err   error
+	}
+	states := make(chan processState)
+
+	go func() {
+		defer close(states)
+		s, e := s.cmd.Process.Wait()
+		states <- processState{state: s, err: e}
+	}()
+
+	select {
+	case s := <-states:
+		return s.state, s.err
+	case <-time.After(t):
+		return nil, fmt.Errorf("i/o error")
+	}
+}
+
+func (s *Session) TrimSpaceOutput() string {
+	// When the PTY reaches 80 characters it continues output on a new line.
+	// On Windows this means both a carriage return and a new line. Windows
+	// also picks up any spaces at the end of the console output, hence all
+	// the cleaning we must do here.
+	newlineRe := regexp.MustCompile(`\r?\n`)
+	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
+}
+
+// LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
+func (s *Suite) XLoginAsPersistentUser() {
+	ts := s.NewDefaultSession("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	defer ts.Close()
+
+	ts.Expect("successfully authenticated")
+	state, err := ts.Wait()
+	s.Require().NoError(err)
+	s.Require().Equal(0, state.ExitCode())
+}
+
+func (s *Suite) XCreateNewUser() string {
+	uid, err := uuid.NewRandom()
+	s.Require().NoError(err)
+
+	username := fmt.Sprintf("user-%s", uid.String()[0:8])
+	password := username
+	email := fmt.Sprintf("%s@test.tld", username)
+
+	ts := s.NewDefaultSession("auth", "signup")
+	defer ts.Close()
+
+	ts.Expect("username:")
+	ts.SendLine(username)
+	ts.Expect("password:")
+	ts.SendLine(password)
+	ts.Expect("again:")
+	ts.SendLine(password)
+	ts.Expect("name:")
+	ts.SendLine(username)
+	ts.Expect("email:")
+	ts.SendLine(email)
+	ts.Expect("account has been registered", 20*time.Second)
+	ts.Wait()
+
+	return username
+}
+
+func mustMkTmpDirNoisy(s *suite.Suite, title string) string {
+	dir, err := ioutil.TempDir("", "")
+	s.Require().NoError(err)
+	fmt.Printf("%s dir %q\n", title, dir)
+	return dir
 }
