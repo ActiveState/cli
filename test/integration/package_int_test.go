@@ -12,82 +12,81 @@ type PackageIntegrationTestSuite struct {
 	integration.Suite
 }
 
+func (suite *PackageIntegrationTestSuite) newSession(args ...string) (*integration.Session, func()) {
+	dirs := suite.NewDirs()
+	def := func() { dirs.Close() }
+	defer func() { def() }()
+
+	suite.PrepareActiveStateYAML(dirs.Work)
+
+	ts := suite.NewSession(dirs, suite.ExecutablePath(), args...)
+	cleanUp := func() { dirs.Close(); ts.Close() }
+	def = func() {}
+
+	return ts, cleanUp
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	ts.Expect("Name")
+	ts.Expect("pytest")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "list")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "list")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	ts.Expect("Name")
+	ts.Expect("pytest")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession(
+		"packages", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a",
+	)
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
-	suite.Expect("Name")
-	suite.Expect("numpy")
-	suite.Wait()
+	ts.Expect("Name")
+	ts.Expect("numpy")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "--commit", "junk")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "--commit", "junk")
-	suite.Expect("Cannot obtain")
-	suite.Wait()
+	ts.Expect("Cannot obtain")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession(
+		"packages", "--commit", "00010001-0001-0001-0001-000100010001",
+	)
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
-	suite.Expect("No data")
-	suite.Wait()
+	ts.Expect("No data")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession(
+		"packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b",
+	)
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
-	suite.Expect("No packages")
-	suite.Wait()
+	ts.Expect("No packages")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "request")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "request")
 	expectations := []string{
 		"Name",
 		"aws-requests-auth",
@@ -105,18 +104,15 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"robotframework-requests",
 	}
 	for _, expectation := range expectations {
-		suite.Expect(expectation)
+		ts.Expect(expectation)
 	}
-	suite.Wait()
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "requests", "--exact-term")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "requests", "--exact-term")
 	expectations := []string{
 		"Name",
 		"requests",
@@ -128,57 +124,45 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"---",
 	}
 	for _, expectation := range expectations {
-		suite.Expect(expectation)
+		ts.Expect(expectation)
 	}
-	suite.Wait()
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "xxxrequestsxxx", "--exact-term")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
-	suite.Expect("No packages")
-	suite.Wait()
+	ts.Expect("No packages")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "moose", "--language=perl")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "moose", "--language=perl")
-	suite.Expect("Name")
-	suite.Expect("MooseX-Getopt")
-	suite.Expect("MooseX-Role-Parameterized")
-	suite.Expect("MooseX-Role-WithOverloading")
-	suite.Expect("MooX-Types-MooseLike")
-	suite.Wait()
+	ts.Expect("Name")
+	ts.Expect("MooseX-Getopt")
+	ts.Expect("MooseX-Role-Parameterized")
+	ts.Expect("MooseX-Role-WithOverloading")
+	ts.Expect("MooX-Types-MooseLike")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "numpy", "--language=perl")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "numpy", "--language=perl")
-	suite.Expect("No packages")
-	suite.Wait()
+	ts.Expect("No packages")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts, cleanUp := suite.newSession("packages", "search", "numpy", "--language=bad")
+	defer cleanUp()
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "numpy", "--language=bad")
-	suite.Expect("Cannot obtain search")
-	suite.Wait()
+	ts.Expect("Cannot obtain search")
+	ts.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {

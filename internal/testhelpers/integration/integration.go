@@ -373,66 +373,7 @@ func (s *Suite) CreateNewUser() string {
 	return username
 }
 
-type Session struct {
-	s       *suite.Suite
-	console *expect.Console
-	cmd     *exec.Cmd
-}
-
-func (s *Suite) NewSession(workDir, exe string, args ...string) *Session {
-	configDir := mustMkTmpDirNoisy(&s.Suite, "config")
-	cacheDir := mustMkTmpDirNoisy(&s.Suite, "cache")
-	binDir := mustMkTmpDirNoisy(&s.Suite, "bin")
-
-	execu := filepath.Join(binDir, exe)
-	fail := fileutils.CopyFile(exe, execu)
-	s.Require().NoError(fail.ToError())
-
-	permissions, _ := permbits.Stat(execu)
-	permissions.SetUserExecute(true)
-	err := permbits.Chmod(execu, permissions)
-	s.Require().NoError(err)
-
-	var env []string
-	env = append(env, os.Environ()...)
-	env = append(env, []string{
-		"ACTIVESTATE_CLI_CONFIGDIR=" + configDir,
-		"ACTIVESTATE_CLI_CACHEDIR=" + cacheDir,
-		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
-		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
-		"ACTIVESTATE_PROJECT=",
-	}...)
-
-	if workDir == "" {
-		workDir = os.TempDir()
-	}
-
-	cmd := exec.Command(execu, args...)
-	cmd.Dir = workDir
-	cmd.Env = env
-
-	// Create the process in a new process group.
-	// This makes the behavior more consistent, as it isolates the signal handling from
-	// the parent processes, which are dependent on the test environment.
-	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
-	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(cmd), workDir)
-
-	console, err := expect.NewConsole(
-		expect.WithDefaultTimeout(defaultTimeout),
-	)
-	s.Require().NoError(err)
-
-	err = console.Pty.StartProcessInTerminal(cmd)
-	s.Require().NoError(err)
-
-	return &Session{
-		s:       &s.Suite,
-		console: console,
-		cmd:     cmd,
-	}
-}
-
-func (s *Suite) NewDefaultSession(args ...string) *Session {
+func (s *Suite) ExecutablePath() string {
 	ext := ""
 	if runtime.GOOS == "windows" {
 		ext = ".exe"
@@ -440,19 +381,124 @@ func (s *Suite) NewDefaultSession(args ...string) *Session {
 	name := constants.CommandName + ext
 	root := environment.GetRootPathUnsafe()
 	subdir := "build"
-	exe := filepath.Join(root, subdir, name)
+
+	return filepath.Join(root, subdir, name)
+}
+
+type Dirs struct {
+	s      *suite.Suite
+	base   string
+	Config string
+	Cache  string
+	Bin    string
+	Work   string
+}
+
+func (s *Suite) NewDirs() *Dirs {
+	noErr := s.Require().NoError
+
+	base, err := ioutil.TempDir("", "")
+	noErr(err)
+
+	config := filepath.Join(base, "config")
+	cache := filepath.Join(base, "cache")
+	bin := filepath.Join(base, "bin")
+	work := filepath.Join(base, "work")
+
+	noErr(os.MkdirAll(config, 0700))
+	noErr(os.MkdirAll(cache, 0700))
+	noErr(os.MkdirAll(bin, 0700))
+	noErr(os.MkdirAll(work, 0700))
+
+	return &Dirs{
+		s:      &s.Suite,
+		base:   base,
+		Config: config,
+		Cache:  cache,
+		Bin:    bin,
+		Work:   work,
+	}
+}
+
+func (d *Dirs) Close() {
+	d.s.Require().NoError(os.RemoveAll(d.base))
+}
+
+type Session struct {
+	s       *suite.Suite
+	console *expect.Console
+	cmd     *exec.Cmd
+	dirs    *Dirs
+}
+
+func (s *Suite) NewSession(dirs *Dirs, exe string, args ...string) *Session {
+	noErr := s.Require().NoError
+
+	if dirs == nil {
+		dirs = s.NewDirs()
+	}
+
+	execu := filepath.Join(dirs.Bin, filepath.Base(exe))
+	fail := fileutils.CopyFile(exe, execu)
+	noErr(fail.ToError())
+
+	permissions, _ := permbits.Stat(execu)
+	permissions.SetUserExecute(true)
+	noErr(permbits.Chmod(execu, permissions))
+
+	var env []string
+	env = append(env, os.Environ()...)
+	env = append(env, []string{
+		"ACTIVESTATE_CLI_CONFIGDIR=" + dirs.Config,
+		"ACTIVESTATE_CLI_CACHEDIR=" + dirs.Cache,
+		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
+		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
+		"ACTIVESTATE_PROJECT=",
+	}...)
+
+	cmd := exec.Command(execu, args...)
+	cmd.Dir = dirs.Work
+	cmd.Env = env
+
+	// Create the process in a new process group.
+	// This makes the behavior more consistent, as it isolates the signal handling from
+	// the parent processes, which are dependent on the test environment.
+	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
+	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(cmd), dirs.Work)
+
+	console, err := expect.NewConsole(
+		expect.WithDefaultTimeout(defaultTimeout),
+	)
+	noErr(err)
+
+	noErr(console.Pty.StartProcessInTerminal(cmd))
+
+	return &Session{
+		s:       &s.Suite,
+		console: console,
+		cmd:     cmd,
+		dirs:    dirs,
+	}
+}
+
+func (s *Suite) NewDefaultSession(args ...string) *Session {
+	exe := s.ExecutablePath()
 
 	if !fileutils.FileExists(exe) {
 		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
 	}
 
-	return s.NewSession("", exe, args...)
+	return s.NewSession(nil, exe, args...)
 }
 
 func (s *Session) Close() {
 	if s.console != nil {
 		err := s.console.Close()
 		s.s.Require().NoError(err)
+	}
+
+	if s.dirs != nil {
+		s.dirs.Close()
 	}
 }
 
@@ -581,29 +627,15 @@ func (s *Session) wait(timeout time.Duration) (state *os.ProcessState, err error
 		return
 	}
 
-	t := defaultTimeout
+	d := defaultTimeout
 	if timeout > 0 {
-		t = timeout
+		d = timeout
 	}
 
-	type processState struct {
-		state *os.ProcessState
-		err   error
-	}
-	states := make(chan processState)
+	t := time.AfterFunc(d, func() { s.s.FailNow("wait took too long") })
+	defer t.Stop()
 
-	go func() {
-		defer close(states)
-		s, e := s.cmd.Process.Wait()
-		states <- processState{state: s, err: e}
-	}()
-
-	select {
-	case s := <-states:
-		return s.state, s.err
-	case <-time.After(t):
-		return nil, fmt.Errorf("i/o error")
-	}
+	return s.cmd.Process.Wait()
 }
 
 func (s *Session) TrimSpaceOutput() string {
@@ -651,11 +683,4 @@ func (s *Suite) XCreateNewUser() string {
 	ts.Wait()
 
 	return username
-}
-
-func mustMkTmpDirNoisy(s *suite.Suite, title string) string {
-	dir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
-	fmt.Printf("%s dir %q\n", title, dir)
-	return dir
 }
