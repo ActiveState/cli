@@ -43,7 +43,7 @@ func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Re
 	return fetchRecipes(pj, commitID, nil)
 }
 
-func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, platform *string) ([]*Recipe, *failures.Failure) {
+func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, hostPlatform *string) ([]*Recipe, *failures.Failure) {
 	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
@@ -54,8 +54,8 @@ func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, platform *strin
 	params := inventory_operations.NewResolveRecipesParams()
 	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
 
-	if platform != nil {
-		params.Order.Platforms, fail = filterPlatformIDs(*platform, runtime.GOARCH, params.Order.Platforms)
+	if hostPlatform != nil {
+		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if fail != nil {
 			return nil, fail
 		}
@@ -91,7 +91,7 @@ func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, platform *strin
 
 // RecipeByHostPlatform filters multiple recipes down to one based on it's
 // platform name
-func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failures.Failure) {
+func RecipeByHostPlatform(recipes []*Recipe, hostPlatform string) (*Recipe, *failures.Failure) {
 	for _, recipe := range recipes {
 		if recipe.Platform.PlatformID == nil {
 			continue
@@ -106,7 +106,7 @@ func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failure
 			continue
 		}
 
-		if *pf.Kernel.Name == hostPlatformToKernelName(platform) {
+		if *pf.Kernel.Name == hostPlatformToKernelName(hostPlatform) {
 			return recipe, nil
 		}
 	}
@@ -115,16 +115,16 @@ func RecipeByHostPlatform(recipes []*Recipe, platform string) (*Recipe, *failure
 }
 
 // FetchRecipeForCommitAndHostPlatform returns the available recipe matching the commit id and platform string
-func FetchRecipeForCommitAndHostPlatform(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*Recipe, *failures.Failure) {
-	recipes, fail := fetchRecipes(pj, commitID, &platform)
+func FetchRecipeForCommitAndHostPlatform(pj *mono_models.Project, commitID strfmt.UUID, hostPlatform string) (*Recipe, *failures.Failure) {
+	recipes, fail := fetchRecipes(pj, commitID, &hostPlatform)
 	if fail != nil {
 		return nil, fail
 	}
-	return RecipeByHostPlatform(recipes, platform)
+	return RecipeByHostPlatform(recipes, hostPlatform)
 }
 
 // FetchRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, *failures.Failure) {
+func FetchRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (*Recipe, *failures.Failure) {
 	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
 		return nil, fail
@@ -133,7 +133,7 @@ func FetchRecipeForPlatform(pj *mono_models.Project, platform string) (*Recipe, 
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	return FetchRecipeForCommitAndHostPlatform(pj, *branch.CommitID, platform)
+	return FetchRecipeForCommitAndHostPlatform(pj, *branch.CommitID, hostPlatform)
 }
 
 // RecipeToBuildRecipe converts a *Recipe to the related head chef model
