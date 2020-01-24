@@ -275,10 +275,6 @@ login_err_auth:
   other: Authentication failed
 login_err_auth_token:
   other: Token authentication failed
-login_err_auth_totp:
-  other: TOTP authentication failed
-login_err_auth_totp_params:
-  other: Username and password required with TOTP authentication
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:

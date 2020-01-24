@@ -498,13 +498,3 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }
-
-func TestExecuteWithTOTPFlag_MissingParam(t *testing.T) {
-	setup(t)
-
-	err := runAuth(&AuthParams{
-		Totp: "123456",
-	})
-	require.Error(t, err)
-	assert.Nil(t, authentication.ClientAuth(), "Not authenticated")
-}

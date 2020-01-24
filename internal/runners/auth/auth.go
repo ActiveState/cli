@@ -57,21 +57,15 @@ func runAuth(params *AuthParams) error {
 		return nil
 	}
 
-	switch {
-	case params.Token != "":
+	if params.Token == "" {
+		fail = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp)
+		if fail != nil {
+			return fail.WithDescription("login_err_auth")
+		}
+	} else {
 		fail = tokenAuth(params.Token)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth_token")
-		}
-	case params.Totp != "":
-		fail = authlet.AuthenticateWithoutInput(params.Username, params.Password, params.Totp)
-		if fail != nil {
-			return fail.WithDescription("login_err_auth_totp")
-		}
-	default:
-		fail = authlet.AuthenticateWithInput(params.Username, params.Password)
-		if fail != nil {
-			return fail.WithDescription("login_err_auth")
 		}
 	}
 

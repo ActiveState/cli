@@ -40,13 +40,13 @@ var (
 
 // Authenticate will prompt the user for authentication
 func Authenticate() *failures.Failure {
-	return AuthenticateWithInput("", "")
+	return AuthenticateWithInput("", "", "")
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username string, password string) *failures.Failure {
+func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 	logging.Debug("AuthenticateWithInput")
-	credentials := &mono_models.Credentials{Username: username, Password: password}
+	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials); err != nil {
 		return failures.FailUserInput.Wrap(err)
 	}
@@ -73,20 +73,6 @@ func AuthenticateWithInput(username string, password string) *failures.Failure {
 	}
 
 	return saveKeypair(credentials.Password)
-}
-
-func AuthenticateWithoutInput(username, password, totp string) *failures.Failure {
-	logging.Debug("AuthenticateWithoutInput")
-	fail := AuthenticateWithCredentials(&mono_models.Credentials{
-		Username: username,
-		Password: password,
-		Totp:     totp,
-	})
-	if fail != nil {
-		return fail
-	}
-
-	return saveKeypair(password)
 }
 
 func saveKeypair(password string) *failures.Failure {
