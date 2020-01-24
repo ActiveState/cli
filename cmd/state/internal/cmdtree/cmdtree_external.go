@@ -28,7 +28,6 @@ func applyLegacyChildren(cmd *captain.Command, globals *globalOptions) {
 	cmd.AddLegacyChildren(
 		events.Command,
 		update.Command,
-		projects.Command,
 		show.Command,
 		scripts.Command,
 		pull.Command,

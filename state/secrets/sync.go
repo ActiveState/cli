@@ -78,14 +78,14 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 				}
 			}
 
-			targetShares, failure := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
-			if failure != nil {
-				return failure
+			targetShares, fail := secrets.ShareFromDiff(sourceKeypair, diffPayloadOk.Payload)
+			if fail != nil {
+				return fail
 			}
 
-			failure = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
-			if failure != nil {
-				return failure
+			fail = secretsapi.SaveSecretShares(secretsClient, org, member.User, targetShares)
+			if fail != nil {
+				return fail
 			}
 			updatedCtr++
 		}

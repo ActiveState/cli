@@ -83,7 +83,7 @@ flag_state_locale_description:
 flag_state_verbose_description:
   other: Verbose output
 flag_state_output_description:
-  other: Set the output method
+  other: "Set the output method, possible values: plain, json, editor"
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -951,12 +951,12 @@ activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
   other: | 
-    You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
+    [YELLOW]You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
     
     Reason for deprecation: 
       {{.V1}}
     
-    Please update soon!
+    Please update soon![/RESET]
 err_deprecation:
   other: |
     You are running a version of the state tool that is no longer supported! You will be encountering issues. 
@@ -1262,5 +1262,23 @@ export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
   other: Could not read private key file
+err_unknown_format:
+  other: "Unknown format: {{.V0}}"
+err_unknown_type:
+  other: "Unknown type: {{.V0}}"
+err_sprint:
+  other: "Could not construct output. Encountered the following error: {{.V0}}"
+field_localized_field:
+  other: "Localized Field"
+err_could_not_marshal_print:
+  other: "Could not marshal the value being printed, please check the error log for more information."
+err_main_outputer:
+  other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
+field_name: 
+  other: Name
+field_description:
+  other: Description
+field_organization:
+  other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
