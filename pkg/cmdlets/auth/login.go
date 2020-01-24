@@ -74,7 +74,7 @@ func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 
 	if authentication.Get().Authenticated() {
 		secretsapi.InitializeClient()
-		fail := ensureUserKeypair(credentials.Password)
+		fail = ensureUserKeypair(credentials.Password)
 		if fail != nil {
 			return fail
 		}
