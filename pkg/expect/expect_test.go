@@ -268,7 +268,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error but got '%s'", err)
 		}
-		time.Sleep(200 * time.Millisecond)
+		// time.Sleep(200 * time.Millisecond)
 		c.Tty().Close()
 	}()
 
@@ -276,7 +276,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 	c.SendLine("2")
 	c.ExpectString("What is Netflix backwards?")
 	c.SendLine("xilfteN")
-	c.Expect(EOF, WithTimeout(time.Second))
+	c.ExpectEOF()
 
 	wg.Wait()
 }
@@ -284,7 +284,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 func TestConsoleChain(t *testing.T) {
 	t.Parallel()
 
-	c1, err := NewConsole(expectNoError(t), sendNoError(t))
+	c1, err := NewConsole(expectNoError(t), sendNoError(t), WithDefaultTimeout(time.Second))
 	if err != nil {
 		t.Errorf("Expected no error but got'%s'", err)
 	}
