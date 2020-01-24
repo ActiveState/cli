@@ -52,7 +52,5 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(ForkIntegrationTestSuite))
+	suite.Run(t, new(ForkIntegrationTestSuite))
 }

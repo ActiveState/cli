@@ -35,7 +35,5 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(PullIntegrationTestSuite))
+	suite.Run(t, new(PullIntegrationTestSuite))
 }

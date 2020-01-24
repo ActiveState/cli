@@ -48,8 +48,6 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	// We need a projectfile to be able to version lock
 	dir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
-	err = os.Chdir(dir)
-	suite.Require().NoError(err)
 	suite.SetWd(dir)
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
@@ -83,15 +81,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
 	}
-
 	suite.Run(t, new(UpdateIntegrationTestSuite))
-
-	// parallel doesn't work with these due to contamination. The RunParallel function does not seem to allow for
-	// setting up individual tests
-	// integration.RunParallel(t, new(UpdateIntegrationTestSuite))
 }

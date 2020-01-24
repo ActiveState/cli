@@ -2,8 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -17,19 +15,14 @@ import (
 
 type ScriptsIntegrationTestSuite struct {
 	integration.Suite
-	originalWd string
+	cleanup func()
 }
 
 func (suite *ScriptsIntegrationTestSuite) SetupTest() {
 	suite.Suite.SetupTest()
 
-	tempDir, err := ioutil.TempDir("", suite.T().Name())
-	suite.Require().NoError(err)
-
-	suite.originalWd, err = os.Getwd()
-	suite.Require().NoError(err)
-	err = os.Chdir(tempDir)
-	suite.Require().NoError(err)
+	var tempDir string
+	tempDir, suite.cleanup = suite.PrepareTemporaryWorkingDirectory("ScriptsIntegrationTestSuite")
 
 	configFileContent := strings.TrimSpace(`
 project: "https://platform.activestate.com/ScriptOrg/ScriptProject?commitID=00010001-0001-0001-0001-000100010001"
@@ -48,20 +41,18 @@ scripts:
 `)
 
 	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
+	err := yaml.Unmarshal([]byte(configFileContent), projectFile)
 	suite.Require().NoError(err)
 
 	fmt.Println("config filepath: ", filepath.Join(tempDir, constants.ConfigFileName))
 	projectFile.SetPath(filepath.Join(tempDir, constants.ConfigFileName))
 	fail := projectFile.Save()
 	suite.Require().NoError(fail.ToError())
-
-	suite.SetWd(tempDir)
 }
 
 func (suite *ScriptsIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
-	os.Chdir(suite.originalWd)
+	suite.cleanup()
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
@@ -71,7 +62,5 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 }
 
 func TestScriptsIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(ScriptsIntegrationTestSuite))
+	suite.Run(t, new(ScriptsIntegrationTestSuite))
 }

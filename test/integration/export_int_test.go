@@ -21,7 +21,5 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(ExportIntegrationTestSuite))
+	suite.Run(t, new(ExportIntegrationTestSuite))
 }
