@@ -146,35 +146,35 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	return platformCache, nil
 }
 
-func filterPlatformIDs(platform, arch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
-	platforms, fail := FetchPlatforms()
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
+	runtimePlatforms, fail := FetchPlatforms()
 	if fail != nil {
 		return nil, fail
 	}
 
 	var pids []strfmt.UUID
 	for _, platformID := range platformIDs {
-		for _, pf := range platforms {
-			if pf.PlatformID == nil || platformID != *pf.PlatformID {
+		for _, rtPf := range runtimePlatforms {
+			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
 				continue
 			}
 
-			if pf.Kernel == nil || pf.Kernel.Name == nil {
+			if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
 				continue
 			}
-			if pf.CPUArchitecture == nil || pf.CPUArchitecture.Name == nil {
+			if rtPf.CPUArchitecture == nil || rtPf.CPUArchitecture.Name == nil {
 				continue
 			}
 
-			if *pf.Kernel.Name != hostPlatformToKernelName(platform) {
+			if *rtPf.Kernel.Name != hostPlatformToKernelName(hostPlatform) {
 				continue
 			}
 
 			platformArch := platformArchToHostArch(
-				*pf.CPUArchitecture.Name,
-				pf.CPUArchitecture.BitWidth,
+				*rtPf.CPUArchitecture.Name,
+				rtPf.CPUArchitecture.BitWidth,
 			)
-			if arch != platformArch {
+			if hostArch != platformArch {
 				continue
 			}
 
