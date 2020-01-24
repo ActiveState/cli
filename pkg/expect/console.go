@@ -154,7 +154,7 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 
 	passthroughPipe := NewPassthroughPipe(pty.TerminalOutPipe())
 
-	closers = append(options.Closers)
+	closers = append(options.Closers, passthroughPipe)
 
 	c := &Console{
 		opts:            options,

@@ -16,6 +16,7 @@ func prepare() (w *io.PipeWriter, p *PassthroughPipe, closer func()) {
 	return w, p, func() {
 		r.Close()
 		w.Close()
+		p.Close()
 	}
 }
 
