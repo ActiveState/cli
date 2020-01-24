@@ -5,12 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
+
+const labelPrefix = "version: "
 
 type githubClient struct {
 	client *github.Client
@@ -27,8 +31,20 @@ func newGitHubService() *githubClient {
 	}
 }
 
-func (g *githubClient) getVersionLabelMaster() (string, error) {
-	pullRequests, err := g.getPullRequestList(&github.PullRequestListOptions{
+func (g *githubClient) incrementValue(branchName string) (string, error) {
+	if branchName == "master" {
+		return g.versionLabelMaster()
+	}
+
+	prNum, err := pullRequestNumber()
+	if err != nil {
+		return "", err
+	}
+	return g.versionLabelPullRequest(prNum)
+}
+
+func (g *githubClient) versionLabelMaster() (string, error) {
+	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
 		State:     "closed",
 		Sort:      "updated",
 		Direction: "desc",
@@ -50,14 +66,14 @@ func (g *githubClient) getVersionLabelMaster() (string, error) {
 			return "", errors.New("no pull request label was found")
 		}
 
-		return label, nil
+		return strings.TrimPrefix(label, labelPrefix), nil
 	}
 
 	return "", errors.New("could not find version label from previously merged pull request")
 }
 
-func (g *githubClient) getVersionLabelPullRequest(number int) (string, error) {
-	pullRequest, err := g.getPullRequest(number)
+func (g *githubClient) versionLabelPullRequest(number int) (string, error) {
+	pullRequest, err := g.pullRequest(number)
 	if err != nil {
 		return "", err
 	}
@@ -72,10 +88,10 @@ func (g *githubClient) getVersionLabelPullRequest(number int) (string, error) {
 		return "", errors.New("no pull request label found")
 	}
 
-	return label, nil
+	return strings.TrimPrefix(label, labelPrefix), nil
 }
 
-func (g *githubClient) getPullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
+func (g *githubClient) pullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
 	pullReqests, _, err := g.client.PullRequests.List(
 		context.Background(),
 		constants.LibraryOwner,
@@ -89,7 +105,7 @@ func (g *githubClient) getPullRequestList(options *github.PullRequestListOptions
 	return pullReqests, nil
 }
 
-func (g *githubClient) getPullRequest(number int) (*github.PullRequest, error) {
+func (g *githubClient) pullRequest(number int) (*github.PullRequest, error) {
 	pullRequest, _, err := g.client.PullRequests.Get(context.Background(), constants.LibraryOwner, constants.LibraryName, number)
 	if err != nil {
 		return nil, err
@@ -113,4 +129,59 @@ func (g *githubClient) isMerged(pullRequest *github.PullRequest) (bool, error) {
 	}
 
 	return merged, nil
+}
+
+func pullRequestNumber() (int, error) {
+	// CircleCI
+	prInfo := os.Getenv("CI_PULL_REQUEST")
+	if prInfo != "" {
+		return pullRequestNumberCircle(prInfo)
+	}
+
+	// Azure
+	prInfo = os.Getenv("SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
+	if prInfo != "" {
+		return pullRequestNumberAzure(prInfo)
+	}
+
+	// Pull request info not set, we are on a branch but no PR has been created
+	// Should still be allowed to build in this state hence we do not return
+	// an error here.
+	return 0, nil
+}
+
+func pullRequestNumberCircle(info string) (int, error) {
+	regex := regexp.MustCompile("/pull/[0-9]+")
+	match := regex.FindString(info)
+	if match == "" {
+		return 0, fmt.Errorf("could not determine pull request number from: %s", info)
+	}
+	num := strings.TrimPrefix(match, "/pull/")
+	prNumber, err := strconv.Atoi(num)
+	if err != nil {
+		return 0, err
+	}
+
+	return prNumber, nil
+}
+
+func pullRequestNumberAzure(info string) (int, error) {
+	prNumber, err := strconv.Atoi(info)
+	if err != nil {
+		return 0, err
+	}
+
+	return prNumber, nil
+}
+
+func getLabel(labels []*github.Label) string {
+	regex := regexp.MustCompile("version: (major|minor|patch)")
+
+	for _, label := range labels {
+		if label.Name != nil && regex.MatchString(*label.Name) {
+			return *label.Name
+		}
+	}
+
+	return ""
 }
