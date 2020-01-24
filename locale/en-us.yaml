@@ -178,12 +178,14 @@ panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
   other: Authenticate against the ActiveState platform
-arg_state_auth_token_description:
+flag_state_auth_token_description:
   other: The API Token generated via your control panel
-arg_state_auth_username_description:
+flag_state_auth_username_description:
   other: The username to authenticate with, will be prompted for otherwise
-arg_state_auth_password_description:
+flag_state_auth_password_description:
   other: The password to authenticate with, will be prompted for otherwise
+flag_state_auth_totp_description:
+  other: The TOTP code generated via two-factor authentication
 username_prompt:
   other: "Enter your username:"
 password_prompt:

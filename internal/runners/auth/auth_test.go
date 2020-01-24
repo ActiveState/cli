@@ -478,3 +478,23 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
 	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
 }
+
+func TestExecuteWithTOTPFlag(t *testing.T) {
+	setup(t)
+	user := setupUser()
+
+	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
+	defer httpmock.DeActivate()
+
+	httpmock.Register("POST", "/login")
+	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
+	secretMock.Register("GET", "/keypair")
+
+	err := runAuth(&AuthParams{
+		Username: user.Username,
+		Password: user.Password,
+		Totp:     "123456",
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
+}

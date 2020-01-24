@@ -10,6 +10,7 @@ type AuthOpts struct {
 	Token    string
 	Username string
 	Password string
+	Totp     string
 }
 
 func newAuthCommand(globals *globalOptions) *captain.Command {
@@ -23,23 +24,30 @@ func newAuthCommand(globals *globalOptions) *captain.Command {
 			{
 				Name:        "token",
 				Shorthand:   "",
-				Description: locale.T("arg_state_auth_token_description"),
+				Description: locale.T("flag_state_auth_token_description"),
 				Type:        captain.TypeString,
 				StringVar:   &opts.Token,
 			},
 			{
 				Name:        "username",
 				Shorthand:   "",
-				Description: locale.T("arg_state_auth_username_description"),
+				Description: locale.T("flag_state_auth_username_description"),
 				Type:        captain.TypeString,
 				StringVar:   &opts.Username,
 			},
 			{
 				Name:        "password",
 				Shorthand:   "",
-				Description: locale.T("arg_state_auth_password_description"),
+				Description: locale.T("flag_state_auth_password_description"),
 				Type:        captain.TypeString,
 				StringVar:   &opts.Password,
+			},
+			{
+				Name:        "totp",
+				Shorthand:   "",
+				Description: locale.T("flag_state_auth_totp_description"),
+				Type:        captain.TypeString,
+				StringVar:   &opts.Totp,
 			},
 		},
 		[]*captain.Argument{},
@@ -55,6 +63,7 @@ func newAuthRunParams(opts AuthOpts, globals *globalOptions) *auth.AuthParams {
 		Token:    opts.Token,
 		Username: opts.Username,
 		Password: opts.Password,
+		Totp:     opts.Totp,
 	}
 }
 
