@@ -32,7 +32,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_no_runtime")
 	defer cb()
 
@@ -46,6 +45,31 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	suite.SendLine("exit 123")
 	suite.ExpectExitCode(123)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
+	var projectName string
+	switch runtime.GOOS {
+	case "linux":
+		projectName = "Python-LinuxWorks"
+	//case "windows":
+	//	projectName = "Python-WindowsWorks"
+	default:
+		suite.T().Skip("unsupported OS")
+	}
+
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_only_by_host_test")
+	defer cb()
+
+	suite.LoginAsPersistentUser()
+
+	suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+tempDir)
+
+	suite.Expect("Downloading", 20*time.Second)
+	suite.Expect("Installing", 120*time.Second)
+	suite.Expect("activated state", 120*time.Second)
+
+	suite.Wait()
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
