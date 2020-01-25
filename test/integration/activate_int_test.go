@@ -65,9 +65,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+tempDir)
 
-	suite.Expect("Downloading", 20*time.Second)
-	suite.Expect("Installing", 120*time.Second)
 	suite.Expect("activated state", 120*time.Second)
+	suite.Expect("Active state")
 
 	suite.Wait()
 }
