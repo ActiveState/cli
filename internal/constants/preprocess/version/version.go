@@ -56,15 +56,7 @@ func (s *Service) IncrementVersion() (string, error) {
 		return "", err
 	}
 
-	// TODO: Use common method
-	switch s.environment {
-	case localEnv:
-		return s.master.String(), nil
-	case remoteEnv:
-		return s.incrementVersion()
-	default:
-		return "", errors.New("encountered unknown build environment")
-	}
+	return s.incrementFromEnvironment()
 }
 
 // MustIncrementVersion calls IncrementVersion, any subsequent failures
@@ -87,14 +79,7 @@ func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 		return "", err
 	}
 
-	switch s.environment {
-	case localEnv:
-		return s.master.String(), nil
-	case remoteEnv:
-		return s.incrementVersion()
-	default:
-		return "", errors.New("encountered unknown build environment")
-	}
+	return s.incrementFromEnvironment()
 }
 
 // MustIncrementVersionPreRelease calls IncrementVersionPreRelease, any subsequent
@@ -142,6 +127,17 @@ func (s *Service) masterVersionPreRelease(revision string) (*semver.Version, err
 	version.Pre = []semver.PRVersion{prVersion}
 
 	return version, nil
+}
+
+func (s *Service) incrementFromEnvironment() (string, error) {
+	switch s.environment {
+	case localEnv:
+		return s.master.String(), nil
+	case remoteEnv:
+		return s.incrementVersion()
+	default:
+		return "", errors.New("encountered unknown build environment")
+	}
 }
 
 func (s *Service) incrementVersion() (string, error) {
