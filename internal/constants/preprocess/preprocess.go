@@ -21,11 +21,7 @@ var Constants = map[string]func() string{}
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
-
-	versionService, err := version.New(github.New(), branchName)
-	if err != nil {
-		log.Fatalf("Could not create version service: %s", err)
-	}
+	versionService := version.New(github.New(), branchName)
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }

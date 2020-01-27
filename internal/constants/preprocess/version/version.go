@@ -40,17 +40,12 @@ type IncrementProvider interface {
 }
 
 // New returns a version service initialized with provider and environment information
-func New(provider IncrementProvider, branchName string) (*Service, error) {
-	environment, err := buildEnvironment(branchName)
-	if err != nil {
-		return nil, err
-	}
-
+func New(provider IncrementProvider, branchName string) *Service {
 	return &Service{
 		branch:      branchName,
-		environment: environment,
+		environment: buildEnvironment(branchName),
 		provider:    provider,
-	}, nil
+	}
 }
 
 // IncrementVersion bumps the master version based on the current build
@@ -66,7 +61,7 @@ func (s *Service) IncrementVersion() (string, error) {
 	switch s.environment {
 	case localEnv:
 		return s.master.String(), nil
-	case masterEnv, remoteEnv:
+	case remoteEnv:
 		return s.incrementVersion()
 	default:
 		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
@@ -96,7 +91,7 @@ func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 	switch s.environment {
 	case localEnv:
 		return s.master.String(), nil
-	case masterEnv, remoteEnv:
+	case remoteEnv:
 		return s.incrementVersion()
 	default:
 		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
@@ -173,16 +168,12 @@ func (s *Service) incrementVersion() (string, error) {
 	return s.master.String(), nil
 }
 
-func buildEnvironment(branchName string) (int, error) {
+func buildEnvironment(branchName string) int {
 	if !onCI() {
-		return localEnv, nil
+		return localEnv
 	}
 
-	if branchName == "master" {
-		return masterEnv, nil
-	}
-
-	return remoteEnv, nil
+	return remoteEnv
 }
 
 func onCI() bool {
