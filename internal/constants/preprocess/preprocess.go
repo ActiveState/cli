@@ -10,53 +10,34 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/preprocess/github"
+	"github.com/ActiveState/cli/internal/constants/preprocess/version"
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
 // package as actual constants, using the build-time interpretations
 var Constants = map[string]func() string{}
 
-const (
-	unknownEnv = iota
-	localEnv
-	masterEnv
-	branchEnv
-	pullRequestEnv
-)
-
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
+
+	versionService, err := version.New(github.New(), branchName)
+	if err != nil {
+		log.Fatalf("Could not create version service: %s", err)
+	}
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
+	Constants["Version"] = func() string { return versionService.MustIncrementVersionPreRelease(Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return versionService.MustIncrementVersion() }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
 	}
 	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
-
-	githubClient := newGitHubService()
-	versionService, err := newVersionService(githubClient, branchName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	preRelease, err := versionService.versionPreRelease()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	version, err := versionService.version()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO: Don't like having to declare these here...
-	Constants["Version"] = func() string { return preRelease }
-	Constants["VersionNumber"] = func() string { return version }
 }
 
 // gitBranchName returns the branch name of the current git commit / PR

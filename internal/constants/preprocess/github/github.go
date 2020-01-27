@@ -1,4 +1,4 @@
-package preprocess
+package github
 
 import (
 	"context"
@@ -16,34 +16,40 @@ import (
 
 const labelPrefix = "version: "
 
-type githubClient struct {
+// Client provides methods for getting label values from the Github API
+type Client struct {
 	client *github.Client
 }
 
-func newGitHubService() *githubClient {
+// New returns an initialized Github client. Credentials for API interaction
+// are retrieved from the current environment
+func New() *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GITHUB_REPO_TOKEN")},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
 
-	return &githubClient{
+	return &Client{
 		client: github.NewClient(tc),
 	}
 }
 
-func (g *githubClient) incrementValue(branchName string) (string, error) {
-	if branchName == "master" {
+// Increment returns the increment value string (major, minor, patch) of a
+// pull request label for the current pull request or the most recently
+// merged pull request
+func (g *Client) Increment(branch string) (string, error) {
+	if branch == "master" {
 		return g.versionLabelMaster()
 	}
 
-	prNum, err := pullRequestNumber()
+	prNum, err := PullRequestNumber()
 	if err != nil {
 		return "", err
 	}
 	return g.versionLabelPullRequest(prNum)
 }
 
-func (g *githubClient) versionLabelMaster() (string, error) {
+func (g *Client) versionLabelMaster() (string, error) {
 	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
 		State:     "closed",
 		Sort:      "updated",
@@ -72,7 +78,7 @@ func (g *githubClient) versionLabelMaster() (string, error) {
 	return "", errors.New("could not find version label from previously merged pull request")
 }
 
-func (g *githubClient) versionLabelPullRequest(number int) (string, error) {
+func (g *Client) versionLabelPullRequest(number int) (string, error) {
 	pullRequest, err := g.pullRequest(number)
 	if err != nil {
 		return "", err
@@ -81,7 +87,7 @@ func (g *githubClient) versionLabelPullRequest(number int) (string, error) {
 	label := getLabel(pullRequest.Labels)
 	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryName))
 	if target != "master" && label == "" {
-		return patch, nil
+		return "patch", nil
 	}
 
 	if label == "" {
@@ -91,7 +97,7 @@ func (g *githubClient) versionLabelPullRequest(number int) (string, error) {
 	return strings.TrimPrefix(label, labelPrefix), nil
 }
 
-func (g *githubClient) pullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
+func (g *Client) pullRequestList(options *github.PullRequestListOptions) ([]*github.PullRequest, error) {
 	pullReqests, _, err := g.client.PullRequests.List(
 		context.Background(),
 		constants.LibraryOwner,
@@ -105,7 +111,7 @@ func (g *githubClient) pullRequestList(options *github.PullRequestListOptions) (
 	return pullReqests, nil
 }
 
-func (g *githubClient) pullRequest(number int) (*github.PullRequest, error) {
+func (g *Client) pullRequest(number int) (*github.PullRequest, error) {
 	pullRequest, _, err := g.client.PullRequests.Get(context.Background(), constants.LibraryOwner, constants.LibraryName, number)
 	if err != nil {
 		return nil, err
@@ -114,7 +120,7 @@ func (g *githubClient) pullRequest(number int) (*github.PullRequest, error) {
 	return pullRequest, nil
 }
 
-func (g *githubClient) isMerged(pullRequest *github.PullRequest) (bool, error) {
+func (g *Client) isMerged(pullRequest *github.PullRequest) (bool, error) {
 	if pullRequest.Number == nil {
 		return false, errors.New("could not check if pull request has been merged, invalid pull request received")
 	}
@@ -131,7 +137,10 @@ func (g *githubClient) isMerged(pullRequest *github.PullRequest) (bool, error) {
 	return merged, nil
 }
 
-func pullRequestNumber() (int, error) {
+// PullRequestNumber returns the number of the pull request assocaited
+// with the current branch. This method will only return a valid pull
+// request number on CI
+func PullRequestNumber() (int, error) {
 	// CircleCI
 	prInfo := os.Getenv("CI_PULL_REQUEST")
 	if prInfo != "" {

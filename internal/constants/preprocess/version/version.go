@@ -1,13 +1,24 @@
-package preprocess
+package version
 
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/preprocess/github"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/blang/semver"
+)
+
+const (
+	unknownEnv = iota
+	localEnv
+	masterEnv
+	branchEnv
+	pullRequestEnv
 )
 
 const (
@@ -16,28 +27,37 @@ const (
 	major = "major"
 )
 
-// TODO: Move this and the github type to another package?
-type versionService struct {
-	github      *githubClient
+// Service provides methods for incrementing version numbers
+type Service struct {
 	branch      string
 	environment int
 	master      *semver.Version
+	provider    IncrementProvider
 }
 
-func newVersionService(github *githubClient, branchName string) (*versionService, error) {
+// IncrementProvider represents a client/service that returns
+// strings related to semver values (ie. major, minor, patch)
+type IncrementProvider interface {
+	Increment(branch string) (string, error)
+}
+
+// New returns a version service initialized with provider and environment information
+func New(provider IncrementProvider, branchName string) (*Service, error) {
 	environment, err := buildEnvironment(branchName)
 	if err != nil {
 		return nil, err
 	}
 
-	return &versionService{
-		github:      github,
+	return &Service{
 		branch:      branchName,
 		environment: environment,
+		provider:    provider,
 	}, nil
 }
 
-func (s *versionService) version() (string, error) {
+// IncrementVersion bumps the master version based on the current build
+// environment and the increment provided
+func (s *Service) IncrementVersion() (string, error) {
 	var err error
 	s.master, err = s.masterVersion()
 	if err != nil {
@@ -55,9 +75,22 @@ func (s *versionService) version() (string, error) {
 	}
 }
 
-func (s *versionService) versionPreRelease() (string, error) {
+// MustIncrementVersion calls IncrementVersion, any subsequent failures
+// are logged and the application will exit
+func (s *Service) MustIncrementVersion() string {
+	version, err := s.IncrementVersion()
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
+}
+
+// IncrementVersionPreRelease bumps the master version based on the current build
+// environment, the increment and revision string provided
+func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 	var err error
-	s.master, err = s.masterVersionPreRelease()
+	s.master, err = s.masterVersionPreRelease(revision)
 	if err != nil {
 		return "", err
 	}
@@ -72,8 +105,22 @@ func (s *versionService) versionPreRelease() (string, error) {
 	}
 }
 
-func (s *versionService) masterVersion() (*semver.Version, error) {
-	output := getCmdOutput(fmt.Sprintf("%s --version", constants.CommandName))
+// MustIncrementVersionPreRelease calls IncrementVersionPreRelease, any subsequent
+// failures are logged and the application will exit
+func (s *Service) MustIncrementVersionPreRelease(revision string) string {
+	version, err := s.IncrementVersionPreRelease(revision)
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
+}
+
+func (s *Service) masterVersion() (*semver.Version, error) {
+	output, err := osutils.GetCmdOutput(fmt.Sprintf("%s --version", constants.CommandName))
+	if err != nil {
+		return nil, err
+	}
 	regex := regexp.MustCompile("\\d+\\.\\d+\\.\\d+-[a-f0-9]+")
 	match := regex.FindString(output)
 	if match == "" {
@@ -89,13 +136,13 @@ func (s *versionService) masterVersion() (*semver.Version, error) {
 	return masterVersion, nil
 }
 
-func (s *versionService) masterVersionPreRelease() (*semver.Version, error) {
+func (s *Service) masterVersionPreRelease(revision string) (*semver.Version, error) {
 	version, err := s.masterVersion()
 	if err != nil {
 		return nil, err
 	}
 
-	prVersion, err := semver.NewPRVersion((Constants["RevisionHashShort"]()))
+	prVersion, err := semver.NewPRVersion(revision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pre-release version number: %v", err)
 	}
@@ -104,8 +151,8 @@ func (s *versionService) masterVersionPreRelease() (*semver.Version, error) {
 	return version, nil
 }
 
-func (s *versionService) incrementVersion() (string, error) {
-	increment, err := s.github.incrementValue(s.branch)
+func (s *Service) incrementVersion() (string, error) {
+	increment, err := s.provider.Increment(s.branch)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +183,7 @@ func buildEnvironment(branchName string) (int, error) {
 		return masterEnv, nil
 	}
 
-	prNum, err := pullRequestNumber()
+	prNum, err := github.PullRequestNumber()
 	if err != nil {
 		return unknownEnv, err
 	}
