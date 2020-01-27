@@ -21,9 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -268,7 +265,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 		if err != nil {
 			t.Errorf("Expected no error but got '%s'", err)
 		}
-		time.Sleep(200 * time.Millisecond)
+		// time.Sleep(200 * time.Millisecond)
 		c.Tty().Close()
 	}()
 
@@ -276,7 +273,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 	c.SendLine("2")
 	c.ExpectString("What is Netflix backwards?")
 	c.SendLine("xilfteN")
-	c.Expect(EOF, WithTimeout(time.Second))
+	c.ExpectEOF()
 
 	wg.Wait()
 }
@@ -284,7 +281,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 func TestConsoleChain(t *testing.T) {
 	t.Parallel()
 
-	c1, err := NewConsole(expectNoError(t), sendNoError(t))
+	c1, err := NewConsole(expectNoError(t), sendNoError(t), WithDefaultTimeout(time.Second))
 	if err != nil {
 		t.Errorf("Expected no error but got'%s'", err)
 	}
@@ -324,53 +321,4 @@ func TestConsoleChain(t *testing.T) {
 
 	testCloser(t, c1.Tty())
 	wg1.Wait()
-}
-
-func TestEditor(t *testing.T) {
-	if runtime.GOOS == "darwin" {
-		t.SkipNow()
-	}
-	if _, err := exec.LookPath("vi"); err != nil {
-		t.Skip("vi not found in PATH")
-	}
-	t.Parallel()
-
-	c, err := NewConsole(expectNoError(t), sendNoError(t))
-	if err != nil {
-		t.Errorf("Expected no error but got '%s'", err)
-	}
-	defer testCloser(t, c)
-
-	file, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Errorf("Expected no error but got '%s'", err)
-	}
-
-	cmd := exec.Command("vi", file.Name())
-	c.Pty.StartProcessInTerminal(cmd)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		c.Send("iHello world\x1b")
-		c.SendLine(":wq!")
-		c.ExpectEOF()
-	}()
-
-	err = cmd.Run()
-	if err != nil {
-		t.Errorf("Expected no error but got '%s'", err)
-	}
-
-	testCloser(t, c.Tty())
-	wg.Wait()
-
-	data, err := ioutil.ReadFile(file.Name())
-	if err != nil {
-		t.Errorf("Expected no error but got '%s'", err)
-	}
-	if string(data) != "Hello world\n" {
-		t.Errorf("Expected '%s' to equal '%s'", string(data), "Hello world\n")
-	}
 }
