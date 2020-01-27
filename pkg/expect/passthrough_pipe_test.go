@@ -73,6 +73,9 @@ func TestPassthroughPipe(t *testing.T) {
 	require.Equal(t, 0, n)
 }
 
+// TestPassthroughPipeDrain drains the PassthroughPipe very slowly
+// This is a regression test, ensuring that errors during reading from the pipe
+// are processed *after* all bytes written to the pipe have been read
 func TestPassthroughPipeDrain(t *testing.T) {
 	w, p, close := prepare()
 	defer close()
@@ -83,8 +86,12 @@ func TestPassthroughPipeDrain(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		b[i] = byte(i)
 	}
-	w.Write(b)
+	n, err := w.Write(b)
+	require.Equal(t, 100, n)
+	require.NoError(t, err)
 	w.Close()
+
+	// sleep a very short while to ensure that the pipe fills up after writing to it
 	time.Sleep(10 * time.Millisecond)
 	b = make([]byte, 1)
 	for i := 0; i < 100; i++ {
@@ -93,7 +100,7 @@ func TestPassthroughPipeDrain(t *testing.T) {
 		require.Equal(t, 1, n)
 		require.Equal(t, byte(i), b[0])
 	}
-	n, err := p.Read(b)
+	n, err = p.Read(b)
 	require.Error(t, err, io.EOF)
 	require.Equal(t, 0, n)
 }
