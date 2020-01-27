@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constants/preprocess/github"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/blang/semver"
 )
 
@@ -117,12 +117,13 @@ func (s *Service) MustIncrementVersionPreRelease(revision string) string {
 }
 
 func (s *Service) masterVersion() (*semver.Version, error) {
-	output, err := osutils.GetCmdOutput(fmt.Sprintf("%s --version", constants.CommandName))
+	cmd := exec.Command(constants.CommandName, "--version")
+	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
 	regex := regexp.MustCompile("\\d+\\.\\d+\\.\\d+-[a-f0-9]+")
-	match := regex.FindString(output)
+	match := regex.FindString(string(output))
 	if match == "" {
 		return nil, errors.New("could not determine master version")
 	}

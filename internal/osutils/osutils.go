@@ -1,7 +1,6 @@
 package osutils
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -77,23 +76,4 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 	absolutePath = strings.Replace(absolutePath, `\`, `/`, -1)  // backslash to forward slash
 	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
 	return "/" + absolutePath, nil
-}
-
-// GetCmdOutput runs the given command string with
-// arguments/flags and returns the string output
-func GetCmdOutput(cmdString string) (string, error) {
-	cmdArgs := strings.Split(cmdString, " ")
-
-	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Trim(out.String(), "\n"), nil
 }
