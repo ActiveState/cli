@@ -48,14 +48,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
-	var projectName string
-	switch runtime.GOOS {
-	case "linux":
-		projectName = "Python-LinuxWorks"
-	//case "windows":
-	//	projectName = "Python-WindowsWorks"
-	default:
-		suite.T().Skip("unsupported OS")
+	if runtime.GOOS == "linux" {
+		suite.T().Skip("not currently testing this OS")
 	}
 
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_only_by_host_test")
@@ -63,6 +57,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	suite.LoginAsPersistentUser()
 
+	projectName := "Python-LinuxWorks"
 	suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+tempDir)
 
 	suite.Expect("activated state", 120*time.Second)
