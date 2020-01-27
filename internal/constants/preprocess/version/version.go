@@ -15,7 +15,6 @@ import (
 const (
 	unknownEnv = iota
 	localEnv
-	masterEnv
 	remoteEnv
 )
 
@@ -43,7 +42,7 @@ type IncrementProvider interface {
 func New(provider IncrementProvider, branchName string) *Service {
 	return &Service{
 		branch:      branchName,
-		environment: buildEnvironment(branchName),
+		environment: buildEnvironment(),
 		provider:    provider,
 	}
 }
@@ -64,7 +63,7 @@ func (s *Service) IncrementVersion() (string, error) {
 	case remoteEnv:
 		return s.incrementVersion()
 	default:
-		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
+		return "", errors.New("encountered unknown build environment")
 	}
 }
 
@@ -94,7 +93,7 @@ func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 	case remoteEnv:
 		return s.incrementVersion()
 	default:
-		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
+		return "", errors.New("encountered unknown build environment")
 	}
 }
 
@@ -168,7 +167,7 @@ func (s *Service) incrementVersion() (string, error) {
 	return s.master.String(), nil
 }
 
-func buildEnvironment(branchName string) int {
+func buildEnvironment() int {
 	if !onCI() {
 		return localEnv
 	}
