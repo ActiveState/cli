@@ -9,7 +9,6 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constants/preprocess/github"
 	"github.com/blang/semver"
 )
 
@@ -17,8 +16,7 @@ const (
 	unknownEnv = iota
 	localEnv
 	masterEnv
-	branchEnv
-	pullRequestEnv
+	remoteEnv
 )
 
 const (
@@ -66,12 +64,12 @@ func (s *Service) IncrementVersion() (string, error) {
 
 	// TODO: Use common method
 	switch s.environment {
-	case localEnv, branchEnv:
+	case localEnv:
 		return s.master.String(), nil
-	case masterEnv, pullRequestEnv:
+	case masterEnv, remoteEnv:
 		return s.incrementVersion()
 	default:
-		return "", errors.New("Build state is not local, remote branch, remote master, or pull request")
+		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
 	}
 }
 
@@ -96,9 +94,9 @@ func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 	}
 
 	switch s.environment {
-	case localEnv, branchEnv:
+	case localEnv:
 		return s.master.String(), nil
-	case masterEnv, pullRequestEnv:
+	case masterEnv, remoteEnv:
 		return s.incrementVersion()
 	default:
 		return "", errors.New("build state is not local, remote branch, remote master, or pull request")
@@ -184,15 +182,7 @@ func buildEnvironment(branchName string) (int, error) {
 		return masterEnv, nil
 	}
 
-	prNum, err := github.PullRequestNumber()
-	if err != nil {
-		return unknownEnv, err
-	}
-	if prNum == 0 {
-		return branchEnv, nil
-	}
-
-	return pullRequestEnv, nil
+	return remoteEnv, nil
 }
 
 func onCI() bool {

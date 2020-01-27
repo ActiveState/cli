@@ -42,10 +42,14 @@ func (g *Client) Increment(branch string) (string, error) {
 		return g.versionLabelMaster()
 	}
 
-	prNum, err := PullRequestNumber()
+	prNum, err := pullRequestNumber()
 	if err != nil {
 		return "", err
 	}
+	if prNum == 0 {
+		return "patch", nil
+	}
+
 	return g.versionLabelPullRequest(prNum)
 }
 
@@ -137,10 +141,7 @@ func (g *Client) isMerged(pullRequest *github.PullRequest) (bool, error) {
 	return merged, nil
 }
 
-// PullRequestNumber returns the number of the pull request assocaited
-// with the current branch. This method will only return a valid pull
-// request number on CI
-func PullRequestNumber() (int, error) {
+func pullRequestNumber() (int, error) {
 	// CircleCI
 	prInfo := os.Getenv("CI_PULL_REQUEST")
 	if prInfo != "" {
