@@ -3,7 +3,6 @@ package version
 import (
 	"errors"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/blang/semver"
@@ -296,30 +295,5 @@ func TestService_MustIncrementVersionPreRelease(t *testing.T) {
 				t.Errorf("Service.MustIncrementVersionPreRelease() = %v, want %v", got, tt.want)
 			}
 		})
-	}
-}
-
-func setupRemoteEnv(t *testing.T) func() {
-	t.Helper()
-
-	ci := os.Getenv("CI")
-	if ci == "" {
-		os.Setenv("CI", "true")
-		unset := func() {
-			os.Unsetenv("CI")
-		}
-		return unset
-	}
-
-	return nil
-}
-
-func TestNew_Remote(t *testing.T) {
-	unset := setupRemoteEnv(t)
-	defer unset()
-	service := New(provider{}, "some-branch")
-
-	if service.environment != remoteEnv {
-		t.Error("version service build environment is not remote")
 	}
 }
