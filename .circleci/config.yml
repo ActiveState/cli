@@ -60,7 +60,7 @@ defaults:
           set -e
 
           GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          go test ./test/integration
+          go test ./test/integration -v
     deployBits: &deployBits
       run:
         name: Deploy bits
