@@ -40,7 +40,7 @@ func runAuth(params *AuthParams) error {
 	if auth.Authenticated() {
 		logging.Debug("Already authenticated")
 		switch params.Output {
-		case output.JSON, output.EditorV0:
+		case output.FormatJSON, output.FormatEditorV0:
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				return fail.WithDescription("login_err_output")
@@ -68,7 +68,7 @@ func runAuth(params *AuthParams) error {
 	}
 
 	switch params.Output {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
 			return fail.WithDescription("login_err_output")

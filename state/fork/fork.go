@@ -128,11 +128,11 @@ func Execute(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if Flags.Output != nil {
 		outfmt = *Flags.Output
 	}
-	outputJSON := (outfmt == output.JSON || outfmt == output.EditorV0)
+	outputJSON := (outfmt == output.FormatJSON || outfmt == output.FormatEditorV0)
 
 	fail = createFork(originalOwner, newOwner, originalName, newName)
 	if fail != nil {

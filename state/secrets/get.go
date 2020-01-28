@@ -44,12 +44,12 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if cmd.Flags.Output != nil {
 		outfmt = *cmd.Flags.Output
 	}
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 	default:
 		if valuePtr == nil {

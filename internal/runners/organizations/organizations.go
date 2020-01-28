@@ -34,7 +34,7 @@ func run(params *OrgParams) error {
 	}
 
 	switch params.Output {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		data, fail := orgsAsJSON(orgs)
 		if fail != nil {
 			return fail.WithDescription("organizations_err_output")

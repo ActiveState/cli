@@ -78,12 +78,12 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	updater.PrintUpdateMessage()
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if Flags.Output != nil {
 		outfmt = *Flags.Output
 	}
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		print.Line(fmt.Sprintf("{\"namespace\": \"%s/%s\"}", project.Owner(), project.Name()))
 	default:
 		print.BoldInline("%s: ", locale.T("print_state_show_name"))

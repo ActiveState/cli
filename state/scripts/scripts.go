@@ -45,12 +45,12 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if Flags.Output != nil {
 		outfmt = *Flags.Output
 	}
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))

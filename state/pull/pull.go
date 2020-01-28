@@ -50,7 +50,7 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if Flags.Output != nil {
 		outfmt = *Flags.Output
 	}
@@ -131,7 +131,7 @@ func printJSON(changed bool) {
 
 func printNotUpdated(outfmt output.Format) {
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		printJSON(false)
 
 	default:
@@ -141,7 +141,7 @@ func printNotUpdated(outfmt output.Format) {
 
 func printUpdated(outfmt output.Format) {
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		printJSON(true)
 
 	default:

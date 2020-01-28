@@ -20,7 +20,7 @@ func activateOutput(targetPath string, outfmt output.Format) error {
 
 	jsonString, err := envOutput(false)
 	if err != nil {
-		if outfmt == output.EditorV0 {
+		if outfmt == output.FormatEditorV0 {
 			return updateOutputError(err)
 		}
 		return err

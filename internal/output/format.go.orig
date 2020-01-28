@@ -15,7 +15,7 @@ const (
 	FormatUnset Format = iota
 	FormatUnknown
 	FormatJSON
-	FormatEditorV0 // Komodo
+	EditorV0 // Komodo
 )
 
 type formatData struct {

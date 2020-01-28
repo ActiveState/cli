@@ -114,12 +114,12 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	outfmt := output.Unset
+	outfmt := output.FormatUnset
 	if cmd.Flags.Output != nil {
 		outfmt = *cmd.Flags.Output
 	}
 	switch outfmt {
-	case output.JSON, output.EditorV0:
+	case output.FormatJSON, output.FormatEditorV0:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))
