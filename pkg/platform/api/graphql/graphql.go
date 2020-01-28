@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -48,6 +50,15 @@ func New(url string, common Header, bearerToken BearerTokenProvider, timeout tim
 		common:        common,
 		tokenProvider: bearerToken,
 		timeout:       timeout,
+	}
+}
+
+func (c *GQLClient) SetDebug(b bool) {
+	c.graphqlClient.Log = func(string) {}
+	if b {
+		c.graphqlClient.Log = func(s string) {
+			fmt.Fprintln(os.Stderr, s)
+		}
 	}
 }
 

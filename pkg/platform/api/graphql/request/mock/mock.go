@@ -17,10 +17,9 @@ import (
 
 type Options uint8
 
-const NoOptions Options = 0
-
 const (
-	Once Options = 1 << iota
+	NoOptions Options = iota
+	Once
 )
 
 type Responder struct {

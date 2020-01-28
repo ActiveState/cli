@@ -19,6 +19,8 @@ var (
 	FailIngredients = failures.Type("model.fail.ingredients", api.FailUnknown)
 	// FailPlatforms is a failure in calling the platforms endpoint
 	FailPlatforms = failures.Type("model.fail.platforms", api.FailUnknown)
+	// FailNoPlatformData indicates when no platform data is available after filtering.
+	FailNoPlatformData = failures.Type("model.fail.noplatformdata")
 )
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -142,6 +144,50 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	}
 
 	return platformCache, nil
+}
+
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
+	runtimePlatforms, fail := FetchPlatforms()
+	if fail != nil {
+		return nil, fail
+	}
+
+	var pids []strfmt.UUID
+	for _, platformID := range platformIDs {
+		for _, rtPf := range runtimePlatforms {
+			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
+				continue
+			}
+
+			if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
+				continue
+			}
+			if rtPf.CPUArchitecture == nil || rtPf.CPUArchitecture.Name == nil {
+				continue
+			}
+
+			if *rtPf.Kernel.Name != hostPlatformToKernelName(hostPlatform) {
+				continue
+			}
+
+			platformArch := platformArchToHostArch(
+				*rtPf.CPUArchitecture.Name,
+				rtPf.CPUArchitecture.BitWidth,
+			)
+			if hostArch != platformArch {
+				continue
+			}
+
+			pids = append(pids, platformID)
+			break
+		}
+	}
+
+	if len(pids) == 0 {
+		return nil, FailNoPlatformData.New("err_no_platform_data_remains")
+	}
+
+	return pids, nil
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {

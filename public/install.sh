@@ -313,10 +313,10 @@ while "true"; do
 done
 
 # If the installation is not in $PATH then we attempt to update the users rc file
-if [ ! -z "$ZSH_VERSION" ]; then
+if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
   info "Zsh shell detected"
   RC_FILE="$HOME/.zshrc"
-elif [ ! -z "$BASH_VERSION" ]; then
+elif [ ! -z "$BASH_VERSION" ] && [ -w "$HOME/.bashrc" ]; then
   info "Bash shell detected"
   RC_FILE="$HOME/.bashrc"
 else
@@ -329,7 +329,7 @@ manual_installation_instructions() {
   echo "using the '$STATEEXE' program."
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
   echo "To make the changes to your path permanent please add the line"
-  echo "'export PATH=\$PATH:$INSTALLDIR' to your $HOME/.profile file"
+  echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
   activation_warning
   exit 1
 }
@@ -362,7 +362,8 @@ update_rc_file() {
 
   info "Updating environment..."
   pathenv="export PATH=\"\$PATH:$INSTALLDIR\" # ActiveState State Tool"
-  echo "\n$pathenv" >> "$RC_FILE"
+  echo "" >> "$RC_FILE"
+  echo "$pathenv" >> "$RC_FILE"
 }
 
 # Check if the installation is in $PATH, if so we also check if the activate

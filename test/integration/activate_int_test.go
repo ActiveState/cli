@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -33,7 +32,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_no_runtime")
 	defer cb()
 
@@ -47,6 +45,25 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	suite.SendLine("exit 123")
 	suite.ExpectExitCode(123)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
+	if runtime.GOOS != "linux" {
+		suite.T().Skip("not currently testing this OS")
+	}
+
+	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_only_by_host_test")
+	defer cb()
+
+	suite.LoginAsPersistentUser()
+
+	projectName := "Python-LinuxWorks"
+	suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+tempDir)
+
+	suite.Expect("activated state", 120*time.Second)
+	suite.Expect("Active state")
+
+	suite.Wait()
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
@@ -173,13 +190,8 @@ version: %s
 	suite.Expect("Please reactivate any activated instances of the State Tool")
 	suite.ExpectExitCode(0)
 
-	originalWd, err := os.Getwd()
-	suite.Require().NoError(err)
-
 	// Change directories to a sub directory
-	err = os.Chdir(filepath.Join(tempDir, "foo", "bar", "baz"))
-	suite.Require().NoError(err)
-	defer os.Chdir(originalWd)
+	suite.SetWd(filepath.Join(tempDir, "foo", "bar", "baz"))
 
 	// Activate in the subdirectory
 	suite.Spawn("activate")
@@ -200,8 +212,5 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run // vscode won't show test helpers unless I use this .. -.-
-
-	//suite.Run(t, new(ActivateIntegrationTestSuite))
-	integration.RunParallel(t, new(ActivateIntegrationTestSuite))
+	suite.Run(t, new(ActivateIntegrationTestSuite))
 }

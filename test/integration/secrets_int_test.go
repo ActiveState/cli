@@ -102,7 +102,5 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
-	_ = suite.Run
-
-	integration.RunParallel(t, new(SecretsIntegrationTestSuite))
+	suite.Run(t, new(SecretsIntegrationTestSuite))
 }

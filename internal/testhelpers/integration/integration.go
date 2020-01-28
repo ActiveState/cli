@@ -131,6 +131,7 @@ func (s *Suite) Executable() string {
 func (s *Suite) TearDownTest() {
 	if s.console != nil {
 		s.console.Close()
+		s.console = nil // global nature of this field requires singleton-like behavior
 	}
 }
 
@@ -160,10 +161,11 @@ func (s *Suite) Spawn(args ...string) {
 func (s *Suite) SpawnCustom(executable string, args ...string) {
 	var wd string
 	if s.wd == nil {
-		wd = os.TempDir()
+		wd = fileutils.TempDirUnsafe()
 	} else {
 		wd = *s.wd
 	}
+
 	s.cmd = exec.Command(executable, args...)
 	s.cmd.Dir = wd
 	s.cmd.Env = s.env
