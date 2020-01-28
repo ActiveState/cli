@@ -55,7 +55,7 @@ func TestService_IncrementVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
+			s := &VersionIncrementer{
 				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
@@ -63,11 +63,11 @@ func TestService_IncrementVersion(t *testing.T) {
 			}
 			got, err := s.IncrementVersion()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Service.IncrementVersion() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("VersionIncrementer.IncrementVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("Service.IncrementVersion() = %v, want %v", got, tt.want)
+				t.Errorf("VersionIncrementer.IncrementVersion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -117,7 +117,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
+			s := &VersionIncrementer{
 				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
@@ -125,11 +125,11 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 			}
 			got, err := s.IncrementVersionPreRelease(tt.args.revision)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Service.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("Service.IncrementVersionPreRelease() = %v, want %v", got, tt.want)
+				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -196,14 +196,14 @@ func TestService_MustIncrementVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
+			s := &VersionIncrementer{
 				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
 				provider:    tt.fields.provider,
 			}
 			if got := s.MustIncrementVersion(); got != tt.want {
-				t.Errorf("Service.MustIncrementVersion() = %v, want %v", got, tt.want)
+				t.Errorf("VersionIncrementer.MustIncrementVersion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -285,14 +285,14 @@ func TestService_MustIncrementVersionPreRelease(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Service{
+			s := &VersionIncrementer{
 				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
 				provider:    tt.fields.provider,
 			}
 			if got := s.MustIncrementVersionPreRelease(tt.args.revision); got != tt.want {
-				t.Errorf("Service.MustIncrementVersionPreRelease() = %v, want %v", got, tt.want)
+				t.Errorf("VersionIncrementer.MustIncrementVersionPreRelease() = %v, want %v", got, tt.want)
 			}
 		})
 	}
