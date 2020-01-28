@@ -19,7 +19,7 @@ var Constants = map[string]func() string{}
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
-	versionService := NewVersionService(NewGithubClient(), branchName)
+	versionService := NewVersionService(NewGithubClient(os.Getenv("GITHUB_REPO_TOKEN")), branchName)
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }

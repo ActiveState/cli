@@ -23,9 +23,9 @@ type Client struct {
 
 // NewGithubClient returns an initialized Github client. Credentials for API interaction
 // are retrieved from the current environment
-func NewGithubClient() *Client {
+func NewGithubClient(token string) *Client {
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_REPO_TOKEN")},
+		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(context.Background(), ts)
 
