@@ -38,7 +38,7 @@ type IncrementProvider interface {
 
 // NewVersionIncrementer returns a version service initialized with provider and environment information
 func NewVersionIncrementer(provider IncrementProvider, branchName string, buildEnvironment int) (*VersionIncrementer, error) {
-	master, err := MasterVersion()
+	master, err := masterVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -79,14 +79,13 @@ func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string
 	return version.String(), nil
 }
 
-// MasterVersion returns the current version of the state tool on branch master
-func MasterVersion() (*semver.Version, error) {
+func masterVersion() (*semver.Version, error) {
 	cmd := exec.Command(constants.CommandName, "--version")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
-	regex := regexp.MustCompile("\\d+\\.\\d+\\.\\d+-[a-f0-9]+")
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
 	match := regex.FindString(string(output))
 	if match == "" {
 		return nil, errors.New("could not determine master version")
@@ -99,23 +98,6 @@ func MasterVersion() (*semver.Version, error) {
 	masterVersion.Pre = nil
 
 	return masterVersion, nil
-}
-
-// MasterVersionPreRelease returns the current version of the state tool on branch master
-// with the given pre-release revision
-func MasterVersionPreRelease(revision string) (*semver.Version, error) {
-	version, err := MasterVersion()
-	if err != nil {
-		return nil, err
-	}
-
-	prVersion, err := semver.NewPRVersion(revision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pre-release version number: %v", err)
-	}
-	version.Pre = []semver.PRVersion{prVersion}
-
-	return version, nil
 }
 
 func (s *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
