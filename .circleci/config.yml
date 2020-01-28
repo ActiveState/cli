@@ -60,7 +60,7 @@ defaults:
           set -e
 
           GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          go test ./test/integration
+          go test ./test/integration -v
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -153,8 +153,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
-      #- <<: *runIntegrationTests
+      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
 workflows:
