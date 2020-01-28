@@ -3,7 +3,6 @@ package preprocess
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os/exec"
 	"regexp"
 
@@ -63,17 +62,6 @@ func (s *VersionIncrementer) IncrementVersion() (string, error) {
 	return version.String(), nil
 }
 
-// MustIncrementVersion calls IncrementVersion, any subsequent failures
-// are logged and the application will exit
-func (s *VersionIncrementer) MustIncrementVersion() string {
-	version, err := s.IncrementVersion()
-	if err != nil {
-		log.Fatalf("Failed to increment version: %s", err)
-	}
-
-	return version
-}
-
 // IncrementVersionPreRelease bumps the master version based on the current build
 // environment, the increment and revision string provided
 func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string, error) {
@@ -89,17 +77,6 @@ func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string
 	version.Pre = []semver.PRVersion{prVersion}
 
 	return version.String(), nil
-}
-
-// MustIncrementVersionPreRelease calls IncrementVersionPreRelease, any subsequent
-// failures are logged and the application will exit
-func (s *VersionIncrementer) MustIncrementVersionPreRelease(revision string) string {
-	version, err := s.IncrementVersionPreRelease(revision)
-	if err != nil {
-		log.Fatalf("Failed to increment version: %s", err)
-	}
-
-	return version
 }
 
 // MasterVersion returns the current version of the state tool on branch master

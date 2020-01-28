@@ -29,8 +29,8 @@ func init() {
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
-	Constants["Version"] = func() string { return incrementer.MustIncrementVersionPreRelease(Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return incrementer.MustIncrementVersion() }
+	Constants["Version"] = func() string { return mustIncrementVersionPreRelease(incrementer, Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return mustIncrementVersion(incrementer) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -105,4 +105,22 @@ func onCI() bool {
 		return true
 	}
 	return false
+}
+
+func mustIncrementVersion(incrementer *VersionIncrementer) string {
+	version, err := incrementer.IncrementVersion()
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
+}
+
+func mustIncrementVersionPreRelease(incrementer *VersionIncrementer, revision string) string {
+	version, err := incrementer.IncrementVersionPreRelease(revision)
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
 }
