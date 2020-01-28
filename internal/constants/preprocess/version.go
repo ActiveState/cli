@@ -38,24 +38,29 @@ type IncrementProvider interface {
 }
 
 // NewVersionIncrementer returns a version service initialized with provider and environment information
-func NewVersionIncrementer(provider IncrementProvider, branchName string, buildEnvironment int) *VersionIncrementer {
+func NewVersionIncrementer(provider IncrementProvider, branchName string, buildEnvironment int) (*VersionIncrementer, error) {
+	master, err := MasterVersion()
+	if err != nil {
+		return nil, err
+	}
+
 	return &VersionIncrementer{
 		branch:      branchName,
 		environment: buildEnvironment,
 		provider:    provider,
-	}
+		master:      master,
+	}, nil
 }
 
 // IncrementVersion bumps the master version based on the current build
 // environment and the increment provided
 func (s *VersionIncrementer) IncrementVersion() (string, error) {
-	var err error
-	s.master, err = s.masterVersion()
+	version, err := s.incrementFromEnvironment()
 	if err != nil {
 		return "", err
 	}
 
-	return s.incrementFromEnvironment()
+	return version.String(), nil
 }
 
 // MustIncrementVersion calls IncrementVersion, any subsequent failures
@@ -72,13 +77,18 @@ func (s *VersionIncrementer) MustIncrementVersion() string {
 // IncrementVersionPreRelease bumps the master version based on the current build
 // environment, the increment and revision string provided
 func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string, error) {
-	var err error
-	s.master, err = s.masterVersionPreRelease(revision)
+	version, err := s.incrementFromEnvironment()
 	if err != nil {
 		return "", err
 	}
 
-	return s.incrementFromEnvironment()
+	prVersion, err := semver.NewPRVersion(revision)
+	if err != nil {
+		return "", fmt.Errorf("failed to create pre-release version number: %v", err)
+	}
+	version.Pre = []semver.PRVersion{prVersion}
+
+	return version.String(), nil
 }
 
 // MustIncrementVersionPreRelease calls IncrementVersionPreRelease, any subsequent
@@ -92,7 +102,8 @@ func (s *VersionIncrementer) MustIncrementVersionPreRelease(revision string) str
 	return version
 }
 
-func (s *VersionIncrementer) masterVersion() (*semver.Version, error) {
+// MasterVersion returns the current version of the state tool on branch master
+func MasterVersion() (*semver.Version, error) {
 	cmd := exec.Command(constants.CommandName, "--version")
 	output, err := cmd.Output()
 	if err != nil {
@@ -113,8 +124,10 @@ func (s *VersionIncrementer) masterVersion() (*semver.Version, error) {
 	return masterVersion, nil
 }
 
-func (s *VersionIncrementer) masterVersionPreRelease(revision string) (*semver.Version, error) {
-	version, err := s.masterVersion()
+// MasterVersionPreRelease returns the current version of the state tool on branch master
+// with the given pre-release revision
+func MasterVersionPreRelease(revision string) (*semver.Version, error) {
+	version, err := MasterVersion()
 	if err != nil {
 		return nil, err
 	}
@@ -128,21 +141,21 @@ func (s *VersionIncrementer) masterVersionPreRelease(revision string) (*semver.V
 	return version, nil
 }
 
-func (s *VersionIncrementer) incrementFromEnvironment() (string, error) {
+func (s *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
 	switch s.environment {
 	case localEnv:
-		return s.master.String(), nil
+		return s.master, nil
 	case remoteEnv:
 		return s.incrementVersion()
 	default:
-		return "", errors.New("encountered unknown build environment")
+		return nil, errors.New("encountered unknown build environment")
 	}
 }
 
-func (s *VersionIncrementer) incrementVersion() (string, error) {
+func (s *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 	increment, err := s.provider.IncrementType(s.branch)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	switch increment {
@@ -156,8 +169,8 @@ func (s *VersionIncrementer) incrementVersion() (string, error) {
 		s.master.Minor = 0
 		s.master.Patch = 0
 	default:
-		return "", fmt.Errorf("encountered unexpected increment value: %s", increment)
+		return nil, fmt.Errorf("encountered unexpected increment value: %s", increment)
 	}
 
-	return s.master.String(), nil
+	return s.master, nil
 }

@@ -19,7 +19,11 @@ var Constants = map[string]func() string{}
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
-	incrementer := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+
+	incrementer, err := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+	if err != nil {
+		log.Fatalf("Could not initialize verion incrementer: %s", err)
+	}
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
