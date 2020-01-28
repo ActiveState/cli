@@ -131,6 +131,7 @@ func (s *Suite) Executable() string {
 func (s *Suite) TearDownTest() {
 	if s.console != nil {
 		s.console.Close()
+		s.console = nil // global nature of this field requires singleton-like behavior
 	}
 }
 
