@@ -1,7 +1,7 @@
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
 if [ -z "$PROMPT_COMMAND" ]; then
-    export PROMPT_COMMAND="echo -e '\033[1mActive state: {{.Owner}}/{{.Name}}\\033[0m'"
+    export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 fi
 
 {{range $K, $V := .Env}}
