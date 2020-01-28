@@ -175,6 +175,11 @@ func pullRequestNumberCircle(info string) (int, error) {
 }
 
 func pullRequestNumberAzure(info string) (int, error) {
+	regex := regexp.MustCompile("[0-9]+")
+	if !regex.MatchString(info) {
+		return 0, fmt.Errorf("pull request number contains more non-digits, recieved: %s", info)
+	}
+
 	prNumber, err := strconv.Atoi(info)
 	if err != nil {
 		return 0, err
