@@ -1,4 +1,4 @@
-package version
+package preprocess
 
 import (
 	"errors"
@@ -38,8 +38,8 @@ type IncrementProvider interface {
 	Increment(branch string) (string, error)
 }
 
-// New returns a version service initialized with provider and environment information
-func New(provider IncrementProvider, branchName string) *Service {
+// NewVersionService returns a version service initialized with provider and environment information
+func NewVersionService(provider IncrementProvider, branchName string) *Service {
 	return &Service{
 		branch:      branchName,
 		environment: buildEnvironment(),

@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constants/preprocess/github"
-	"github.com/ActiveState/cli/internal/constants/preprocess/version"
 )
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
@@ -21,7 +19,7 @@ var Constants = map[string]func() string{}
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
-	versionService := version.New(github.New(), branchName)
+	versionService := NewVersionService(NewGithubClient(), branchName)
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }

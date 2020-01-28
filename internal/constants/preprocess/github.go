@@ -1,4 +1,4 @@
-package github
+package preprocess
 
 import (
 	"context"
@@ -21,9 +21,9 @@ type Client struct {
 	client *github.Client
 }
 
-// New returns an initialized Github client. Credentials for API interaction
+// NewGithubClient returns an initialized Github client. Credentials for API interaction
 // are retrieved from the current environment
-func New() *Client {
+func NewGithubClient() *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: os.Getenv("GITHUB_REPO_TOKEN")},
 	)
