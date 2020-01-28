@@ -57,7 +57,7 @@ func TestJSON_Print(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &FormatJSON{&Config{
+			f := &JSON{&Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,

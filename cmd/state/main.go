@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jessevdk/go-flags"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -23,8 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/jessevdk/go-flags"
-	"github.com/thoas/go-funk"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -38,7 +39,7 @@ func main() {
 	// Handle panics gracefully
 	defer handlePanics(exiter)
 
-	outputer, fail := initOutputer(os.Args, "")
+	outputer, fail := initOutputer(os.Args, output.FormatUnset)
 	if fail != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
 		exiter(1)
@@ -52,32 +53,29 @@ func main() {
 	exiter(code)
 }
 
-func initOutputer(args []string, formatName string) (output.Outputer, *failures.Failure) {
-	if formatName == "" {
-		formatName = parseOutputFlag(args)
+func initOutputer(args []string, format output.Format) (output.Outputer, *failures.Failure) {
+	if !format.Recognized() {
+		format = parseOutputFlag(args)
 	}
 
-	outputer, fail := output.New(formatName, &output.Config{
+	config := &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
 		Interactive: true,
-	})
-	if fail != nil {
-		if fail.Type.Matches(output.FailNotRecognized) {
-			// The formatter might still be registered, so default to plain for now
-			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutputer(args, output.PlainFormatName)
-		}
-		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
 	}
+	outputer, fail := output.New(format, config)
+	if fail != nil {
+		logging.Errorf("Could not create outputer, name: %s, error: %s", format.String(), fail.Error())
+	}
+
 	return outputer, fail
 }
 
-func parseOutputFlag(args []string) string {
+func parseOutputFlag(args []string) output.Format {
 	var flagSet struct {
 		// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-		Output string `short:"o" long:"output"`
+		Output output.Format `short:"o" long:"output"`
 	}
 
 	parser := flags.NewParser(&flagSet, flags.IgnoreUnknown)

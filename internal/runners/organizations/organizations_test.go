@@ -66,7 +66,7 @@ func TestOrganizationsJSONPaid(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: output.JSON})
+		execErr = run(&OrgParams{Output: output.FormatJSON})
 	})
 
 	require.NoError(t, outErr)
@@ -84,7 +84,7 @@ func TestOrganizationsJSONFree(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: output.JSON})
+		execErr = run(&OrgParams{Output: output.FormatJSON})
 	})
 
 	require.NoError(t, outErr)
@@ -102,7 +102,7 @@ func TestOrganizationsJSONBad(t *testing.T) {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		execErr = run(&OrgParams{Output: output.JSON})
+		execErr = run(&OrgParams{Output: output.FormatJSON})
 	})
 
 	require.Error(t, execErr)

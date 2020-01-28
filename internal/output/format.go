@@ -14,8 +14,13 @@ type Format int
 const (
 	FormatUnset Format = iota
 	FormatUnknown
+	FormatPlain
 	FormatJSON
-	FormatEditorV0 // Komodo
+	FormatEditor
+	// FormatEditorV0 is the format used for Komodo. We do not implement
+	// the actual formatter at this level as the format is by definition
+	// unstructured (i.e. needs to be handled case by case).
+	FormatEditorV0
 )
 
 type formatData struct {
@@ -26,7 +31,9 @@ type formatData struct {
 var formatLookup = [...]formatData{
 	{},
 	{"unknown", "Unknown"},
+	{"plain", "Plain"},
 	{"json", "JSON"},
+	{"editor", "Editor"},
 	{"editor.v0", "Editor V0"},
 }
 
@@ -87,6 +94,14 @@ func (f *Format) UnmarshalYAML(applyPayload func(interface{}) error) error {
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
 func (f Format) MarshalYAML() (interface{}, error) {
 	return f.String(), nil
+}
+
+// UnmarshalFlag implements the go-flags.Unmarshaler interface.
+func (f *Format) UnmarshalFlag(v string) error {
+	if f == nil {
+		return fmt.Errorf("cannot unmarshal (flag) to nil format")
+	}
+	return f.Set(v)
 }
 
 // Set implements the captain marshaler interfaces.

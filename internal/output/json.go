@@ -8,9 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-const JSONFormatName = "json"
-const EditorFormatName = "editor" // JSON and editor are currently the same thing
-
 // JSON is our JSON outputer, there's not much going on here, just forwards it to the JSON marshaller and provides
 // a basic structure for error
 type JSON struct {
