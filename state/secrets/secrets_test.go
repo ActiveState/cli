@@ -131,7 +131,7 @@ func (suite *VariablesCommandTestSuite) TestExecute_ListAllJSON() {
 
 	var execErr error
 	outStr, outErr := osutil.CaptureStdout(func() {
-		outfmt := output.JSON
+		outfmt := output.FormatJSON
 		cmd.Flags.Output = &outfmt
 		execErr = cmd.Config().Execute()
 	})
