@@ -48,7 +48,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
-	if runtime.GOOS == "linux" {
+	if runtime.GOOS != "linux" {
 		suite.T().Skip("not currently testing this OS")
 	}
 
