@@ -15,6 +15,7 @@ import (
 )
 
 const labelPrefix = "version: "
+const masterBranch = "master"
 
 // Client provides methods for getting label values from the Github API
 type Client struct {
@@ -37,7 +38,7 @@ func NewGithubClient(token string) *Client {
 // pull request label for the current pull request or the most recently
 // merged pull request
 func (g *Client) IncrementType(branch string) (string, error) {
-	if branch == "master" {
+	if branch == masterBranch {
 		return g.versionLabelMaster()
 	}
 
@@ -46,7 +47,7 @@ func (g *Client) IncrementType(branch string) (string, error) {
 		return "", err
 	}
 	if prNum == 0 {
-		return "patch", nil
+		return patch, nil
 	}
 
 	return g.versionLabelPullRequest(prNum)
@@ -89,8 +90,8 @@ func (g *Client) versionLabelPullRequest(number int) (string, error) {
 
 	label := getLabel(pullRequest.Labels)
 	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryName))
-	if target != "master" && label == "" {
-		return "patch", nil
+	if target != masterBranch && label == "" {
+		return patch, nil
 	}
 
 	if label == "" {
