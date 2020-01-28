@@ -21,8 +21,7 @@ type Client struct {
 	client *github.Client
 }
 
-// NewGithubClient returns an initialized Github client. Credentials for API interaction
-// are retrieved from the current environment
+// NewGithubClient returns an initialized Github client
 func NewGithubClient(token string) *Client {
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -34,10 +33,10 @@ func NewGithubClient(token string) *Client {
 	}
 }
 
-// Increment returns the increment value string (major, minor, patch) of a
+// IncrementType returns the increment value string (major, minor, patch) of a
 // pull request label for the current pull request or the most recently
 // merged pull request
-func (g *Client) Increment(branch string) (string, error) {
+func (g *Client) IncrementType(branch string) (string, error) {
 	if branch == "master" {
 		return g.versionLabelMaster()
 	}

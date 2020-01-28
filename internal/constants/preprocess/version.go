@@ -35,7 +35,7 @@ type Service struct {
 // IncrementProvider represents a client/service that returns
 // strings related to semver values (ie. major, minor, patch)
 type IncrementProvider interface {
-	Increment(branch string) (string, error)
+	IncrementType(branch string) (string, error)
 }
 
 // NewVersionService returns a version service initialized with provider and environment information
@@ -141,7 +141,7 @@ func (s *Service) incrementFromEnvironment() (string, error) {
 }
 
 func (s *Service) incrementVersion() (string, error) {
-	increment, err := s.provider.Increment(s.branch)
+	increment, err := s.provider.IncrementType(s.branch)
 	if err != nil {
 		return "", err
 	}

@@ -10,7 +10,7 @@ import (
 
 type provider struct{}
 
-func (p provider) Increment(branch string) (string, error) {
+func (p provider) IncrementType(branch string) (string, error) {
 	switch branch {
 	case patch:
 		return patch, nil
