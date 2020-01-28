@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"regexp"
 
@@ -24,8 +23,8 @@ const (
 	major = "major"
 )
 
-// Service provides methods for incrementing version numbers
-type Service struct {
+// VersionIncrementer provides methods for incrementing version numbers
+type VersionIncrementer struct {
 	branch      string
 	environment int
 	master      *semver.Version
@@ -33,23 +32,23 @@ type Service struct {
 }
 
 // IncrementProvider represents a client/service that returns
-// strings related to semver values (ie. major, minor, patch)
+// strings related to semver increment values (ie. major, minor, patch)
 type IncrementProvider interface {
 	IncrementType(branch string) (string, error)
 }
 
-// NewVersionService returns a version service initialized with provider and environment information
-func NewVersionService(provider IncrementProvider, branchName string) *Service {
-	return &Service{
+// NewVersionIncrementer returns a version service initialized with provider and environment information
+func NewVersionIncrementer(provider IncrementProvider, branchName string, buildEnvironment int) *VersionIncrementer {
+	return &VersionIncrementer{
 		branch:      branchName,
-		environment: buildEnvironment(),
+		environment: buildEnvironment,
 		provider:    provider,
 	}
 }
 
 // IncrementVersion bumps the master version based on the current build
 // environment and the increment provided
-func (s *Service) IncrementVersion() (string, error) {
+func (s *VersionIncrementer) IncrementVersion() (string, error) {
 	var err error
 	s.master, err = s.masterVersion()
 	if err != nil {
@@ -61,7 +60,7 @@ func (s *Service) IncrementVersion() (string, error) {
 
 // MustIncrementVersion calls IncrementVersion, any subsequent failures
 // are logged and the application will exit
-func (s *Service) MustIncrementVersion() string {
+func (s *VersionIncrementer) MustIncrementVersion() string {
 	version, err := s.IncrementVersion()
 	if err != nil {
 		log.Fatalf("Failed to increment version: %s", err)
@@ -72,7 +71,7 @@ func (s *Service) MustIncrementVersion() string {
 
 // IncrementVersionPreRelease bumps the master version based on the current build
 // environment, the increment and revision string provided
-func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
+func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string, error) {
 	var err error
 	s.master, err = s.masterVersionPreRelease(revision)
 	if err != nil {
@@ -84,7 +83,7 @@ func (s *Service) IncrementVersionPreRelease(revision string) (string, error) {
 
 // MustIncrementVersionPreRelease calls IncrementVersionPreRelease, any subsequent
 // failures are logged and the application will exit
-func (s *Service) MustIncrementVersionPreRelease(revision string) string {
+func (s *VersionIncrementer) MustIncrementVersionPreRelease(revision string) string {
 	version, err := s.IncrementVersionPreRelease(revision)
 	if err != nil {
 		log.Fatalf("Failed to increment version: %s", err)
@@ -93,7 +92,7 @@ func (s *Service) MustIncrementVersionPreRelease(revision string) string {
 	return version
 }
 
-func (s *Service) masterVersion() (*semver.Version, error) {
+func (s *VersionIncrementer) masterVersion() (*semver.Version, error) {
 	cmd := exec.Command(constants.CommandName, "--version")
 	output, err := cmd.Output()
 	if err != nil {
@@ -114,7 +113,7 @@ func (s *Service) masterVersion() (*semver.Version, error) {
 	return masterVersion, nil
 }
 
-func (s *Service) masterVersionPreRelease(revision string) (*semver.Version, error) {
+func (s *VersionIncrementer) masterVersionPreRelease(revision string) (*semver.Version, error) {
 	version, err := s.masterVersion()
 	if err != nil {
 		return nil, err
@@ -129,7 +128,7 @@ func (s *Service) masterVersionPreRelease(revision string) (*semver.Version, err
 	return version, nil
 }
 
-func (s *Service) incrementFromEnvironment() (string, error) {
+func (s *VersionIncrementer) incrementFromEnvironment() (string, error) {
 	switch s.environment {
 	case localEnv:
 		return s.master.String(), nil
@@ -140,7 +139,7 @@ func (s *Service) incrementFromEnvironment() (string, error) {
 	}
 }
 
-func (s *Service) incrementVersion() (string, error) {
+func (s *VersionIncrementer) incrementVersion() (string, error) {
 	increment, err := s.provider.IncrementType(s.branch)
 	if err != nil {
 		return "", err
@@ -161,19 +160,4 @@ func (s *Service) incrementVersion() (string, error) {
 	}
 
 	return s.master.String(), nil
-}
-
-func buildEnvironment() int {
-	if !onCI() {
-		return localEnv
-	}
-
-	return remoteEnv
-}
-
-func onCI() bool {
-	if os.Getenv("CI") != "" {
-		return true
-	}
-	return false
 }

@@ -19,14 +19,14 @@ var Constants = map[string]func() string{}
 func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
-	versionService := NewVersionService(NewGithubClient(os.Getenv("GITHUB_REPO_TOKEN")), branchName)
+	incrementer := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
 
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
-	Constants["Version"] = func() string { return versionService.MustIncrementVersionPreRelease(Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return versionService.MustIncrementVersion() }
+	Constants["Version"] = func() string { return incrementer.MustIncrementVersionPreRelease(Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return incrementer.MustIncrementVersion() }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -86,4 +86,19 @@ func getCmdOutput(cmdString string) string {
 		os.Exit(1)
 	}
 	return strings.Trim(out.String(), "\n")
+}
+
+func buildEnvironment() int {
+	if !onCI() {
+		return localEnv
+	}
+
+	return remoteEnv
+}
+
+func onCI() bool {
+	if os.Getenv("CI") != "" {
+		return true
+	}
+	return false
 }
