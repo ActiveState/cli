@@ -1,4 +1,6 @@
-echo - Active state: {{.Owner}}/{{.Name}}
+function fish_prompt
+    echo "[{{.Owner}}/{{.Name}}] % "
+end
 
 {{range $K, $V := .Env}}
 set -xg {{$K}} "{{$V}}"
