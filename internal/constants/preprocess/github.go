@@ -89,7 +89,7 @@ func (g *GithubIncrementProvider) versionLabelPullRequest(number int) (string, e
 	}
 
 	label := getLabel(pullRequest.Labels)
-	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryName))
+	target := strings.TrimPrefix(pullRequest.GetBase().GetLabel(), fmt.Sprintf("%s:", constants.LibraryOwner))
 	if target != masterBranch && label == "" {
 		return patch, nil
 	}
@@ -178,7 +178,7 @@ func pullRequestNumberCircle(info string) (int, error) {
 func pullRequestNumberAzure(info string) (int, error) {
 	regex := regexp.MustCompile("[0-9]+")
 	if !regex.MatchString(info) {
-		return 0, fmt.Errorf("pull request number contains more non-digits, recieved: %s", info)
+		return 0, fmt.Errorf("pull request number contains non-digits, recieved: %s", info)
 	}
 
 	prNumber, err := strconv.Atoi(info)

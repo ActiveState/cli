@@ -62,9 +62,9 @@ func (s *VersionIncrementer) IncrementVersion() (string, error) {
 	return version.String(), nil
 }
 
-// IncrementVersionPreRelease bumps the master version based on the current build
+// IncrementVersionRevision bumps the master version based on the current build
 // environment, the increment and revision string provided
-func (s *VersionIncrementer) IncrementVersionPreRelease(revision string) (string, error) {
+func (s *VersionIncrementer) IncrementVersionRevision(revision string) (string, error) {
 	version, err := s.incrementFromEnvironment()
 	if err != nil {
 		return "", err
@@ -117,19 +117,20 @@ func (s *VersionIncrementer) incrementVersion() (*semver.Version, error) {
 		return nil, err
 	}
 
+	copy := *s.master
 	switch increment {
 	case patch:
-		s.master.Patch++
+		copy.Patch++
 	case minor:
-		s.master.Minor++
-		s.master.Patch = 0
+		copy.Minor++
+		copy.Patch = 0
 	case major:
-		s.master.Major++
-		s.master.Minor = 0
-		s.master.Patch = 0
+		copy.Major++
+		copy.Minor = 0
+		copy.Patch = 0
 	default:
 		return nil, fmt.Errorf("encountered unexpected increment value: %s", increment)
 	}
 
-	return s.master, nil
+	return &copy, nil
 }

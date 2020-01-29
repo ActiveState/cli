@@ -217,7 +217,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				master:      tt.fields.master,
 				provider:    tt.fields.provider,
 			}
-			got, err := s.IncrementVersionPreRelease(tt.args.revision)
+			got, err := s.IncrementVersionRevision(tt.args.revision)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
 				return
