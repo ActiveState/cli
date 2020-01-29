@@ -60,7 +60,7 @@ func TestActivate_run(t *testing.T) {
 		{
 			"expect no error",
 			fields{&namespaceSelectMock{"defer", nil}, &checkoutMock{}},
-			args{&ActivateParams{&project.Namespace{"foo", "bar"}, tempDir, output.FormaUnset}, activatorMock},
+			args{&ActivateParams{&project.Namespace{"foo", "bar"}, tempDir, output.FormatUnset}, activatorMock},
 			false,
 			true,
 		},
