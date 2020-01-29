@@ -34,6 +34,37 @@ type Initialize struct {
 	config setter
 }
 
+func prepare(params *RunParams) error {
+	// Fail if target dir already has an activestate.yaml
+	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
+		absPath, err := filepath.Abs(params.Path)
+		if err != nil {
+			return failures.FailIO.Wrap(err)
+		}
+		return failures.FailUserInput.New("err_init_file_exists", absPath)
+	}
+
+	if !params.Style.Recognized() {
+		params.Style = skeleton.Simple
+	}
+
+	if fail := params.Namespace.Validate(); fail != nil {
+		return fail
+	}
+
+	if params.Path == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		params.Path = filepath.Join(wd, fmt.Sprintf(
+			"%s/%s", params.Namespace.Owner, params.Namespace.Project,
+		))
+	}
+
+	return nil
+}
+
 // New returns a prepared ptr to Initialize instance.
 func New(config setter) *Initialize {
 	return &Initialize{config}
@@ -79,35 +110,4 @@ func run(config setter, params *RunParams) (string, error) {
 	))
 
 	return params.Path, nil
-}
-
-func prepare(params *RunParams) error {
-	// Fail if target dir already has an activestate.yaml
-	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
-		absPath, err := filepath.Abs(params.Path)
-		if err != nil {
-			return failures.FailIO.Wrap(err)
-		}
-		return failures.FailUserInput.New("err_init_file_exists", absPath)
-	}
-
-	if !params.Style.Recognized() {
-		params.Style = skeleton.Simple
-	}
-
-	if fail := params.Namespace.Validate(); fail != nil {
-		return fail
-	}
-
-	if params.Path == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		params.Path = filepath.Join(wd, fmt.Sprintf(
-			"%s/%s", params.Namespace.Owner, params.Namespace.Project,
-		))
-	}
-
-	return nil
 }
