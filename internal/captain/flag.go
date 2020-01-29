@@ -51,7 +51,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 				v, flag.Name, flag.Shorthand, flag.Description,
 			)
 		default:
-			return failures.FailInput.New(
+			return failures.FailDeveloper.New(
 				"Unknown type:" + reflect.TypeOf(v).Name(),
 			)
 		}
