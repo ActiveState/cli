@@ -1225,16 +1225,8 @@ err_project_from_path:
   other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
-err_init_must_provide_namespace:
-  other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
-err_init_owner_missing:
-  other: Owner name is required to initialize a project
-err_init_project_missing:
-  other: Project name is required to initialize a project
-err_init_invalid_skeleton_style:
-  other: Skeleton style is invalid
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.

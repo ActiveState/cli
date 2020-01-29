@@ -55,6 +55,14 @@ func (ns *Namespace) IsValid() bool {
 	return ns != nil && ns.Owner != "" && ns.Project != ""
 }
 
+// Validate returns a failure if the namespace is not valid.
+func (ns *Namespace) Validate() *failures.Failure {
+	if ns == nil || !ns.IsValid() {
+		return FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", ns.String()))
+	}
+	return nil
+}
+
 // ParseNamespace returns a valid project namespace
 func ParseNamespace(raw string) (*Namespace, *failures.Failure) {
 	rx := regexp.MustCompile(NamespaceRegex)

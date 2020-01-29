@@ -91,21 +91,12 @@ func prepare(params *RunParams) error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	if params.Style == skeleton.Unset {
+	if !params.Style.Recognized() {
 		params.Style = skeleton.Simple
 	}
-	if !params.Style.Recognized() {
-		return failures.FailUserInput.New("err_init_invalid_skeleton_style")
-	}
 
-	if params.Namespace == nil {
-		return failures.FailUserInput.New("err_init_must_provide_namespace")
-	}
-	if params.Namespace.Owner == "" {
-		return failures.FailUserInput.New("err_init_owner_missing")
-	}
-	if params.Namespace.Project == "" {
-		return failures.FailUserInput.New("err_init_project_missing")
+	if fail := params.Namespace.Validate(); fail != nil {
+		return fail
 	}
 
 	if params.Path == "" {
