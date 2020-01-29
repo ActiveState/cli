@@ -91,11 +91,11 @@ func prepare(params *RunParams) error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	if !params.Style.Recognized() {
-		if params.Style != skeleton.Unset {
-			return failures.FailUserInput.New("err_init_invalid_skeleton_style")
-		}
+	if params.Style == skeleton.Unset {
 		params.Style = skeleton.Simple
+	}
+	if !params.Style.Recognized() {
+		return failures.FailUserInput.New("err_init_invalid_skeleton_style")
 	}
 
 	if params.Namespace == nil {
