@@ -96,7 +96,7 @@ func MakeByName(name string) Language {
 func (l Language) data() languageData {
 	i := int(l)
 	if i < 0 || i > len(lookup)-1 {
-		i = 0
+		i = 1
 	}
 	return lookup[i]
 }

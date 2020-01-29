@@ -44,7 +44,7 @@ func MakeStyleByName(name string) Style {
 func (s Style) data() styleData {
 	i := int(s)
 	if i < 0 || i > len(styleLookup)-1 {
-		i = 0
+		i = 1
 	}
 	return styleLookup[i]
 }
