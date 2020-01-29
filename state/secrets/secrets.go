@@ -47,7 +47,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, outfmt *string) *Command {
+func NewCommand(secretsClient *secretsapi.Client, output *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -68,7 +68,7 @@ func NewCommand(secretsClient *secretsapi.Client, outfmt *string) *Command {
 	}
 
 	c.Flags.Filter = &flagFilter
-	c.Flags.Output = outfmt
+	c.Flags.Output = output
 	c.config.Run = c.Execute
 	c.config.PersistentPreRun = c.checkSecretsAccess
 
