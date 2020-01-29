@@ -205,7 +205,7 @@ func setupSensibleErrors(err error) error {
 
 	errMsg := err.Error()
 
-	// pflag - flag.go
+	// pflag: flag.go: output being parsed:
 	// fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
 	invalidArg := "invalid argument "
 	if strings.Contains(errMsg, invalidArg) {
@@ -230,7 +230,7 @@ func setupSensibleErrors(err error) error {
 		)
 	}
 
-	// pflag - flag.go
+	// pflag: flag.go: output being parsed:
 	// fmt.Errorf("no such flag -%v", name)
 	noSuch := "no such flag "
 	if strings.Contains(errMsg, noSuch) {
