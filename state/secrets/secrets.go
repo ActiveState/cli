@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
@@ -35,7 +34,7 @@ type Command struct {
 
 	Flags struct {
 		Filter *string
-		Output *output.Format
+		Output *string
 	}
 }
 
@@ -48,7 +47,7 @@ type SecretExport struct {
 }
 
 // NewCommand creates a new Keypair command.
-func NewCommand(secretsClient *secretsapi.Client, outfmt *output.Format) *Command {
+func NewCommand(secretsClient *secretsapi.Client, outfmt *string) *Command {
 	var flagFilter string
 
 	c := Command{
@@ -114,12 +113,8 @@ func (cmd *Command) Execute(_ *cobra.Command, args []string) {
 		return
 	}
 
-	outfmt := output.FormatUnset
-	if cmd.Flags.Output != nil {
-		outfmt = *cmd.Flags.Output
-	}
-	switch outfmt {
-	case output.FormatJSON, output.FormatEditorV0:
+	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := secretsAsJSON(secretExports)
 		if fail != nil {
 			failures.Handle(fail, locale.T("secrets_err_output"))

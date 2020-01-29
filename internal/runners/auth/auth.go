@@ -2,13 +2,14 @@ package auth
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -20,7 +21,7 @@ func NewAuth() *Auth {
 }
 
 type AuthParams struct {
-	Output   output.Format
+	Output   string
 	Token    string
 	Username string
 	Password string
@@ -35,12 +36,13 @@ func (a *Auth) Run(params *AuthParams) error {
 func runAuth(params *AuthParams) error {
 	auth := authentication.Get()
 
+	output := commands.Output(strings.ToLower(params.Output))
 	var user []byte
 	var fail *failures.Failure
 	if auth.Authenticated() {
 		logging.Debug("Already authenticated")
-		switch params.Output {
-		case output.FormatJSON, output.FormatEditorV0:
+		switch output {
+		case commands.JSON, commands.EditorV0:
 			user, fail = userToJSON(auth.WhoAmI())
 			if fail != nil {
 				return fail.WithDescription("login_err_output")
@@ -67,8 +69,8 @@ func runAuth(params *AuthParams) error {
 		}
 	}
 
-	switch params.Output {
-	case output.FormatJSON, output.FormatEditorV0:
+	switch output {
+	case commands.JSON, commands.EditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
 			return fail.WithDescription("login_err_output")

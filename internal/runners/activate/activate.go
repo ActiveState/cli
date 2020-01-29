@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -21,7 +21,7 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespace
 	PreferredPath string
-	Output        output.Format
+	Output        string
 }
 
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
@@ -67,8 +67,11 @@ func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc)
 		}
 	}
 
-	if params.Output.Recognized() {
-		return activateOutput(targetPath, params.Output)
+	if params.Output != "" {
+		output := commands.Output(params.Output)
+		if output == commands.JSON || output == commands.EditorV0 {
+			return activateOutput(targetPath, output)
+		}
 	}
 
 	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))

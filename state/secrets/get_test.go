@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/exiter"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -85,7 +84,7 @@ func (suite *SecretsGetCommandTestSuite) prepareWorkingExpander() {
 func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName string, expectedFailureType *failures.FailureType, expectedExitCode int) {
 	suite.prepareWorkingExpander()
 
-	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 	cmd.Config().GetCobraCmd().SetArgs([]string{"get", secretName})
 
 	ex := exiter.New()
@@ -104,7 +103,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 
 func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expectedExpansionValue string, expectedExitCode int) {
 	suite.prepareWorkingExpander()
-	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	var exitCode int
 	ex := exiter.New()
@@ -124,7 +123,7 @@ func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expe
 }
 
 func (suite *SecretsGetCommandTestSuite) TestCommandConfig() {
-	cc := secrets.NewCommand(suite.secretsClient, new(output.Format)).Config().GetCobraCmd().Commands()[0]
+	cc := secrets.NewCommand(suite.secretsClient, new(string)).Config().GetCobraCmd().Commands()[0]
 
 	suite.Equal("get", cc.Name())
 	suite.Require().Len(cc.Commands(), 0, "number of subcommands")

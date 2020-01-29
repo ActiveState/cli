@@ -47,43 +47,41 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.FormatUnset)
+		outputer, fail := initOutputer([]string{"state", "foo"}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		format := output.FormatPlain
-		outputer, fail := initOutputer([]string{"state", "foo", "--output", format.String()}, output.FormatUnset)
+		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.PlainFormatName}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		format := output.FormatJSON
-		outputer, fail := initOutputer([]string{"state", "foo", "--output", format.String()}, output.FormatUnset)
+		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.JSONFormatName}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.FormatJSON)
+		outputer, fail := initOutputer([]string{"state", "foo"}, output.JSONFormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.FormatEditorV0)
+		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorV0FormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer, as editor.v0 is not supported at this level")
 	}
 }
 
 func (suite *MainTestSuite) TestParseOutputFlag() {
-	suite.Equal(output.FormatPlain, parseOutputFlag([]string{"state", "foo", "-o", "plain"}))
-	suite.Equal(output.FormatJSON, parseOutputFlag([]string{"state", "foo", "--output", "json"}))
-	suite.Equal(output.FormatJSON, parseOutputFlag([]string{"state", "foo", "-o", "json"}))
-	suite.Equal(output.FormatEditorV0, parseOutputFlag([]string{"state", "foo", "-o", "editor.v0"}))
+	suite.Equal("plain", parseOutputFlag([]string{"state", "foo", "-o", "plain"}))
+	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "--output", "json"}))
+	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "-o", "json"}))
+	suite.Equal("editor.v0", parseOutputFlag([]string{"state", "foo", "-o", "editor.v0"}))
 }
 
 func TestMainTestSuite(t *testing.T) {

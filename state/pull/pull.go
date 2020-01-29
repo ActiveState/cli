@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -22,7 +21,7 @@ import (
 )
 
 var Flags struct {
-	Output *output.Format
+	Output *string
 }
 
 // Command is the pull command's definition.
@@ -50,15 +49,12 @@ func Execute(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	outfmt := output.FormatUnset
-	if Flags.Output != nil {
-		outfmt = *Flags.Output
-	}
+	output := commands.Output(filterNilString(Flags.Output))
 	if !updated {
-		printNotUpdated(outfmt)
+		printNotUpdated(output)
 		return
 	}
-	printUpdated(outfmt)
+	printUpdated(output)
 
 	actID := os.Getenv(constants.ActivatedStateIDEnvVarName)
 	if actID == "" {
@@ -129,9 +125,9 @@ func printJSON(changed bool) {
 	print.Line(string(data))
 }
 
-func printNotUpdated(outfmt output.Format) {
-	switch outfmt {
-	case output.FormatJSON, output.FormatEditorV0:
+func printNotUpdated(output commands.Output) {
+	switch output {
+	case commands.JSON, commands.EditorV0:
 		printJSON(false)
 
 	default:
@@ -139,9 +135,9 @@ func printNotUpdated(outfmt output.Format) {
 	}
 }
 
-func printUpdated(outfmt output.Format) {
-	switch outfmt {
-	case output.FormatJSON, output.FormatEditorV0:
+func printUpdated(output commands.Output) {
+	switch output {
+	case commands.JSON, commands.EditorV0:
 		printJSON(true)
 
 	default:

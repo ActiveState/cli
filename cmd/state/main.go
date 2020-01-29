@@ -39,7 +39,7 @@ func main() {
 	// Handle panics gracefully
 	defer handlePanics(exiter)
 
-	outputer, fail := initOutputer(os.Args, output.FormatUnset)
+	outputer, fail := initOutputer(os.Args, "")
 	if fail != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
 		exiter(1)
@@ -53,29 +53,32 @@ func main() {
 	exiter(code)
 }
 
-func initOutputer(args []string, format output.Format) (output.Outputer, *failures.Failure) {
-	if !format.Recognized() {
-		format = parseOutputFlag(args)
+func initOutputer(args []string, formatName string) (output.Outputer, *failures.Failure) {
+	if formatName == "" {
+		formatName = parseOutputFlag(args)
 	}
 
-	config := &output.Config{
+	outputer, fail := output.New(formatName, &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     true,
 		Interactive: true,
-	}
-	outputer, fail := output.New(format, config)
+	})
 	if fail != nil {
-		logging.Errorf("Could not create outputer, name: %s, error: %s", format.String(), fail.Error())
+		if fail.Type.Matches(output.FailNotRecognized) {
+			// The formatter might still be registered, so default to plain for now
+			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
+			return initOutputer(args, output.PlainFormatName)
+		}
+		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
 	}
-
 	return outputer, fail
 }
 
-func parseOutputFlag(args []string) output.Format {
+func parseOutputFlag(args []string) string {
 	var flagSet struct {
 		// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-		Output output.Format `short:"o" long:"output"`
+		Output string `short:"o" long:"output"`
 	}
 
 	parser := flags.NewParser(&flagSet, flags.IgnoreUnknown)

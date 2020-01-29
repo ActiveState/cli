@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -50,7 +49,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *SecretsAccessTestSuite) runCommand(expectedExitCode int, expectedOutput string) {
-	cmd := secrets.NewCommand(suite.secretsClient, new(output.Format))
+	cmd := secrets.NewCommand(suite.secretsClient, new(string))
 
 	ex := exiter.New()
 	cmd.Config().Exiter = ex.Exit

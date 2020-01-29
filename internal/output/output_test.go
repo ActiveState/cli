@@ -11,28 +11,28 @@ import (
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name        string
-		format      Format
+		formatName  string
 		print       interface{}
 		expectedOut string
 		expectedErr string
 	}{
 		{
 			"plain",
-			FormatPlain,
+			"plain",
 			"hello",
 			"hello",
 			"",
 		},
 		{
 			"json",
-			FormatJSON,
+			"json",
 			"hello",
 			"\"hello\"",
 			"",
 		},
 		{
 			"editor",
-			FormatEditor,
+			"editor",
 			"hello",
 			"\"hello\"",
 			"",
@@ -50,7 +50,7 @@ func TestNew(t *testing.T) {
 				Interactive: false,
 			}
 
-			outputer, fail := New(tt.format, cfg)
+			outputer, fail := New(tt.formatName, cfg)
 			require.NoError(t, fail.ToError())
 
 			outputer.Print(tt.print)

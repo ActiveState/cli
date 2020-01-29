@@ -57,7 +57,7 @@ func New(outputer output.Outputer) *CmdTree {
 
 type globalOptions struct {
 	Verbose bool
-	Output  output.Format
+	Output  string
 }
 
 func newGlobalOptions() *globalOptions {

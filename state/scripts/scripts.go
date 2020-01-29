@@ -3,6 +3,7 @@ package scripts
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/bndr/gotabulate"
 	"github.com/spf13/cobra"
@@ -10,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
@@ -18,7 +18,7 @@ import (
 
 // Flags captures values for any of the flags used with the scripts command.
 var Flags struct {
-	Output *output.Format
+	Output *string
 }
 
 // Command holds the definition for "state scripts".
@@ -45,12 +45,8 @@ func Execute(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	outfmt := output.FormatUnset
-	if Flags.Output != nil {
-		outfmt = *Flags.Output
-	}
-	switch outfmt {
-	case output.FormatJSON, output.FormatEditorV0:
+	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	case commands.JSON, commands.EditorV0:
 		data, fail := scriptsAsJSON(scripts)
 		if fail != nil {
 			failures.Handle(fail, locale.T("scripts_err_output"))
