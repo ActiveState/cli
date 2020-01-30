@@ -29,6 +29,7 @@ func (suite *UpdateIntegrationTestSuite) SetupTest() {
 func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Spawn("--version")
 	suite.Expect("ActiveState CLI version ")
+	suite.Expect("Revision")
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
 	return regex.FindString(suite.Output())
 }
