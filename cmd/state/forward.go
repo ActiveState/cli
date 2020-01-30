@@ -46,6 +46,11 @@ func execForward(binary string, args []string) (int, *failures.Failure) {
 }
 
 func shouldForward(versionInfo *projectfile.VersionInfo) bool {
+	logging.Debug("shouldForward")
+	logging.Debug("Version info version: %s", versionInfo.Version)
+	logging.Debug("Constants version: %s", constants.Version)
+	logging.Debug("Version info branch: %s", versionInfo.Branch)
+	logging.Debug("Constants branch: %s", constants.BranchName)
 	return versionInfo != nil && (versionInfo.Version != constants.Version || versionInfo.Branch != constants.BranchName)
 }
 
