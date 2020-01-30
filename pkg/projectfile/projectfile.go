@@ -493,6 +493,7 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 		return nil, nil
 	}
 
+	logging.Debug("Project file path: %s", projectFilePath)
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
@@ -509,6 +510,7 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 	}
 
 	version := strings.TrimSpace(versionStruct.Version)
+	logging.Debug("Version info: %s", version)
 	match, fail := regexp.MatchString("^\\d+\\.\\d+\\.\\d+-[a-f0-9]{8}$", version)
 	if fail != nil || !match {
 		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
