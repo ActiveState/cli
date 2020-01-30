@@ -68,7 +68,8 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	suite.Empty(suite.TrimSpaceOutput())
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	suite.Wait()
-	suite.Expect(string(expected))
+	suite.Expect("test-value\"}")
+	suite.Equal(string(expected), suite.TrimSpaceOutput())
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
@@ -97,7 +98,8 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	suite.Empty(suite.TrimSpaceOutput())
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	suite.Wait()
-	suite.Expect(string(expected))
+	suite.Expect("test-value\"}")
+	suite.Equal(string(expected), suite.TrimSpaceOutput())
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
