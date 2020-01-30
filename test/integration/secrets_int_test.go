@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
@@ -40,7 +39,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	suite.Wait()
 	suite.Spawn("secrets", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(fmt.Sprintf("[%s]", expected), strings.TrimSpace(suite.Output()))
+	suite.Expect(fmt.Sprintf("[%s]", expected))
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {

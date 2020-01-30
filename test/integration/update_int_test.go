@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"testing"
 	"time"
 
@@ -28,10 +28,9 @@ func (suite *UpdateIntegrationTestSuite) SetupTest() {
 
 func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Spawn("--version")
-	suite.Wait()
-	versionString := strings.Split(strings.TrimSpace(suite.Output()), "\n")[0]
-	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
-	return versionNumber[len(versionNumber)-1]
+	suite.Expect("ActiveState CLI version ")
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
+	return regex.FindString(suite.Output())
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
