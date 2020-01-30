@@ -1235,7 +1235,7 @@ init_success:
 flag_state_init_language_description:
   other: The language that this project should use
 flag_state_init_skeleton_description:
-  other: The activestate.yaml template to use with project file creation. Accepts two values 'base' and 'editor'.
+  other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:

@@ -32,10 +32,13 @@ func newInitCommand() *captain.Command {
 				Value:       &params.Language,
 			},
 			{
-				Name:        "skeleton",
-				Shorthand:   "",
-				Description: locale.T("flag_state_init_skeleton_description"),
-				Value:       &params.Style,
+				Name:      "skeleton",
+				Shorthand: "",
+				Description: locale.Tr(
+					"flag_state_init_skeleton_description",
+					initialize.RecognizedSkeletonStyles(),
+				),
+				Value: &params.Style,
 			},
 		},
 		[]*captain.Argument{
