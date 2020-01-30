@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/internal/runners/initialize/skeleton"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -25,7 +24,7 @@ type setter interface {
 type RunParams struct {
 	Namespace *project.Namespace
 	Path      string
-	Style     skeleton.Style
+	Style     string
 	Language  language.Supported
 }
 
@@ -44,8 +43,8 @@ func prepare(params *RunParams) error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	if !params.Style.Recognized() {
-		params.Style = skeleton.Simple
+	if !skeletonRecognized(params.Style) {
+		params.Style = SkeletonSimple
 	}
 
 	if fail := params.Namespace.Validate(); fail != nil {
@@ -93,7 +92,7 @@ func run(config setter, params *RunParams) (string, error) {
 		Project:   params.Namespace.Project,
 		Directory: params.Path,
 	}
-	if params.Style == skeleton.Editor {
+	if params.Style == SkeletonEditor {
 		createParams.Content = locale.T("editor_yaml")
 	}
 
