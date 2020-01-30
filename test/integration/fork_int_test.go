@@ -27,7 +27,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 	suite.Spawn("fork", "ActiveState-CLI/Python3", "--org", integration.PersistentUsername)
 	suite.Expect("Could not create the forked project", 30*time.Second)
 	suite.Expect("The name 'Python3' is no longer available, it was used in a now deleted project.", 30*time.Second)
-	suite.NotContains(suite.Output(), "Successfully forked project")
+	suite.NotContains(suite.UnsyncedOutput(), "Successfully forked project")
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {

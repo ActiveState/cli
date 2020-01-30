@@ -31,7 +31,7 @@ func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Expect("ActiveState CLI version ")
 	suite.Expect("Revision")
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
-	return regex.FindString(suite.Output())
+	return regex.FindString(suite.UnsyncedOutput())
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {

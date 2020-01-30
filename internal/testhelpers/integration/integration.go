@@ -186,8 +186,10 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	s.Require().NoError(err)
 }
 
-// Output returns the current Terminal snapshot.
-func (s *Suite) Output() string {
+// UnsyncedOutput returns the current Terminal snapshot.
+// However the goroutine that creates this output is separate from this
+// function so any output is not synced
+func (s *Suite) UnsyncedOutput() string {
 	return s.console.Pty.State.String()
 }
 
@@ -204,7 +206,7 @@ func (s *Suite) ExpectRe(value string, timeout ...time.Duration) {
 		s.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.Output())
+			value, err, s.UnsyncedOutput())
 	}
 }
 
@@ -226,7 +228,7 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 		s.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.Output())
+			value, err, s.UnsyncedOutput())
 	}
 }
 
@@ -341,13 +343,16 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	}
 }
 
-func (s *Suite) TrimSpaceOutput() string {
+// UnsyncedTrimSpaceOutput displays the terminal output a user would see
+// however the goroutine that creates this output is separate from this
+// function so any output is not synced
+func (s *Suite) UnsyncedTrimSpaceOutput() string {
 	// When the PTY reaches 80 characters it continues output on a new line.
 	// On Windows this means both a carriage return and a new line. Windows
 	// also picks up any spaces at the end of the console output, hence all
 	// the cleaning we must do here.
 	newlineRe := regexp.MustCompile(`\r?\n`)
-	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
+	return newlineRe.ReplaceAllString(strings.TrimSpace(s.UnsyncedOutput()), "")
 }
 
 func (s *Suite) CreateNewUser() string {
