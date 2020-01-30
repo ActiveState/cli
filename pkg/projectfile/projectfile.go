@@ -513,7 +513,7 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 	version := strings.TrimSpace(versionStruct.Version)
 	match, fail := regexp.MatchString("^\\d+\\.\\d+\\.\\d+-[a-f0-9]{8}$", version)
 	if fail != nil || !match {
-		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return &versionStruct, FailInvalidVersion.New(locale.Tr("err_invalid_version", version))
 	}
 
 	return &versionStruct, nil

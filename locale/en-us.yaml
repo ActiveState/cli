@@ -821,7 +821,7 @@ developer_err_project_match:
 err_version_parse:
   other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
 err_invalid_version:
-  other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{number}"
+  other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{number} recieved: {{.V0}}"
 downloading_state_version:
   other: "Downloading state tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:
