@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
@@ -116,11 +115,8 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	expected := string(data)
 	suite.LoginAsPersistentUser()
 	suite.Spawn("auth", "--output", method)
-	if runtime.GOOS != "windows" {
-		suite.Expect(expected)
-	}
-	suite.Wait()
-	suite.Expect(expected)
+	suite.Expect("false}")
+	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
