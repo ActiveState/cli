@@ -120,7 +120,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 		suite.Expect(expected)
 	}
 	suite.Wait()
-	suite.Equal(expected, suite.TrimSpaceOutput())
+	suite.Expect(expected)
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
@@ -143,7 +143,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 
 	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(expected, suite.TrimSpaceOutput())
+	suite.Expect(expected)
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
