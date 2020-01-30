@@ -20,10 +20,17 @@ func init() {
 	branchName, branchNameFull := branchName()
 	buildNumber := buildNumber()
 
+	incrementer, err := NewVersionIncrementer(NewGithubProvider(os.Getenv("GITHUB_REPO_TOKEN")), branchName, buildEnvironment())
+	if err != nil {
+		log.Fatalf("Could not initialize verion incrementer: %s", err)
+	}
+
 	Constants["BranchName"] = func() string { return branchName }
 	Constants["BuildNumber"] = func() string { return buildNumber }
 	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + branchNameFull) }
-	Constants["Version"] = func() string { return fmt.Sprintf("%s-%s", constants.VersionNumber, buildNumber) }
+	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
+	Constants["Version"] = func() string { return mustIncrementVersionRevision(incrementer, Constants["RevisionHashShort"]()) }
+	Constants["VersionNumber"] = func() string { return mustIncrementVersion(incrementer) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -60,7 +67,6 @@ func branchName() (string, string) {
 	}
 
 	return releaseName, branch
-
 }
 
 func buildNumber() string {
@@ -84,4 +90,37 @@ func getCmdOutput(cmdString string) string {
 		os.Exit(1)
 	}
 	return strings.Trim(out.String(), "\n")
+}
+
+func buildEnvironment() int {
+	if !onCI() {
+		return localEnv
+	}
+
+	return remoteEnv
+}
+
+func onCI() bool {
+	if os.Getenv("CI") != "" {
+		return true
+	}
+	return false
+}
+
+func mustIncrementVersion(incrementer *VersionIncrementer) string {
+	version, err := incrementer.IncrementVersion()
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
+}
+
+func mustIncrementVersionRevision(incrementer *VersionIncrementer, revision string) string {
+	version, err := incrementer.IncrementVersionRevision(revision)
+	if err != nil {
+		log.Fatalf("Failed to increment version: %s", err)
+	}
+
+	return version
 }
