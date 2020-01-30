@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
 )
@@ -26,4 +27,29 @@ func loadTemplate(path string, data map[string]interface{}) (*bytes.Buffer, *fai
 	}
 
 	return &out, nil
+}
+
+func sampleContent(goos, owner, project string) string {
+	sampleKey := "sample_yaml"
+	nixKey := "example_event_nix"
+	winKey := "example_event_win"
+
+	data := map[string]interface{}{
+		"Owner":   owner,
+		"Project": project,
+	}
+
+	content := locale.T(sampleKey, data)
+
+	switch goos {
+	case "linux", "darwin":
+		content += locale.T(nixKey, data)
+	case "windows":
+		content += locale.T(winKey, data)
+	default:
+		content += locale.T(nixKey, data)
+		content += locale.T(winKey, data)
+	}
+
+	return content
 }
