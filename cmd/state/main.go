@@ -120,8 +120,8 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
 		return 1, failures.FailUser.New(locale.T("err_version_parse"))
 	}
-	logging.Debug("Version info: %s", versionInfo.Version)
 
+	logging.Debug("Should forward: %s", shouldForward(versionInfo))
 	if shouldForward(versionInfo) {
 		code, fail := forward(args, versionInfo)
 		if fail != nil {
