@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
 	tempfile "github.com/mash/go-tempfile-suffix"
-	ps "github.com/mitchellh/go-ps"
+	"github.com/shirou/gopsutil/process"
 	funk "github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -228,24 +229,52 @@ func Get() (SubShell, *failures.Failure) {
 // IsActivated returns whether or not this process is being run in an activated
 // state.
 func IsActivated() bool {
-	pid := os.Getppid()
-	for true {
-		p, err := ps.FindProcess(pid)
+	pid := int32(os.Getpid())
+	ppid := int32(os.Getppid())
+
+	procInfoErrMsgFmt := "Could not detect process information: %v"
+
+	for pid != ppid {
+		pproc, err := process.NewProcess(ppid)
 		if err != nil {
-			logging.Errorf("Could not detect process information: %s", err)
+			if err != process.ErrorProcessNotRunning {
+				logging.Errorf(procInfoErrMsgFmt, err)
+			}
 			return false
 		}
-		if p == nil {
+
+		cmdArgs, err := pproc.CmdlineSlice()
+		if err != nil {
+			logging.Errorf(procInfoErrMsgFmt, err)
 			return false
 		}
-		if strings.HasPrefix(p.Executable(), constants.CommandName) {
+
+		if isActivateCmdlineArgs(cmdArgs) {
 			return true
 		}
-		ppid := p.PPid()
-		if p.PPid() == pid {
-			break
-		}
+
 		pid = ppid
+		ppid, err = pproc.Ppid()
+		if err != nil {
+			logging.Errorf(procInfoErrMsgFmt, err)
+			return false
+		}
 	}
+
+	return false
+}
+
+func isActivateCmdlineArgs(args []string) bool {
+	exec := path.Base(args[0])
+	if !strings.HasPrefix(exec, constants.CommandName) {
+		return false
+	}
+
+	for _, arg := range args[1:] {
+		if arg == "activate" {
+			return true
+		}
+	}
+
 	return false
 }
