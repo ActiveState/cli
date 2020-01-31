@@ -2,15 +2,16 @@ package clean
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type confirmAble interface {
@@ -30,69 +31,47 @@ func NewClean(confirmer confirmAble) *Clean {
 }
 
 func (c *Clean) Run(params *RunParams) error {
-	// TODO:
-	// Can't run in activated state
-	// Remove language installs
-	// Remove config files
-	// Remove state tool binary
-	// Needs OS Specific implementations to call (Might not be necessary)
+	return c.run(params)
+
+}
+
+func (c *Clean) run(params *RunParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
 		return errors.New(locale.T("err_clean_activated"))
 	}
 
-	ok, fail := c.confirmer.Confirm(locale.T("clean_confirm_remove"), false)
-	if fail != nil {
-		return fail.ToError()
-	}
-	if !ok {
-		return nil
+	if !params.Force {
+		ok, fail := c.confirmer.Confirm(locale.T("clean_confirm_remove"), false)
+		if fail != nil {
+			return fail.ToError()
+		}
+		if !ok {
+			return nil
+		}
 	}
 
-	switch runtime.GOOS {
-	case "linux":
-		return runLinux(params)
-	case "darwin":
-		return runMac(params)
-	case "windows":
-		return runWindows(params)
-	default:
-		return errors.New(locale.Tr("err_clean_unsupported_platform", runtime.GOOS))
-	}
-}
-
-func runLinux(params *RunParams) error {
-	return nil
-}
-
-func runMac(params *RunParams) error {
 	configPath := config.ConfigPath()
 	cachePath := config.CachePath()
 
-	cmd := exec.Command("which", "state")
-	installPath, err := cmd.Output()
+	installPath, err := getInstallPath()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Config Path: ", configPath)
-	fmt.Println("Cache Path: ", cachePath)
-	fmt.Println("Install dir: ", string(installPath))
-
+	logging.Debug("Removing config directory: %s", configPath)
 	err = os.RemoveAll(configPath)
 	if err != nil {
 		return err
 	}
 
+	logging.Debug("Removing cache path: %s", cachePath)
 	err = os.RemoveAll(cachePath)
 	if err != nil {
 		return err
 	}
 
-	// It's currently not finding the state tool at this path for some reason
-	if _, err := os.Stat(string(installPath)); os.IsNotExist(err) {
-		return errors.New("state tool binary does not exist at install path")
-	}
-	err = os.Remove(string(installPath))
+	logging.Debug("Removing state tool binary: %s", installPath)
+	err = os.Remove(installPath)
 	if err != nil {
 		return err
 	}
@@ -100,6 +79,22 @@ func runMac(params *RunParams) error {
 	return nil
 }
 
-func runWindows(params *RunParams) error {
-	return nil
+func getInstallPath() (string, error) {
+	var finder string
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		finder = "which"
+	case "windows":
+		finder = "where"
+	default:
+		return "", errors.New(locale.Tr("err_clean_unsupported_platform", runtime.GOOS))
+	}
+
+	cmd := exec.Command(finder, constants.CommandName)
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
 }
