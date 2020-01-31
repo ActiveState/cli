@@ -47,7 +47,8 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 	suite.Require().NoError(err)
 
 	suite.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
-	suite.Expect(string(expected))
+	suite.Expect(`"OriginalOwner":"ActiveState-CLI"}}`)
+	suite.Equal(string(expected), suite.UnsyncedTrimSpaceOutput())
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {
