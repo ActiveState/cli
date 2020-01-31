@@ -139,7 +139,8 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 
 	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
 	suite.Wait()
-	suite.Expect(expected)
+	suite.Expect(`"privateProjects":false}`)
+	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {
