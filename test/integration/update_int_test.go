@@ -69,13 +69,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	fmt.Println("Version before update: ", suite.getVersion())
 	// suite.AppendEnv([]string{"VERBOSE=true"})
 	suite.Spawn("update")
+	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
 		suite.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
 	} else {
 		suite.Expect("Update completed", 60*time.Second)
 	}
-	suite.Wait()
 	fmt.Println("Version after update: ", suite.getVersion())
 
 	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as we ran update")
