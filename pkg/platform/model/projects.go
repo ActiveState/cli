@@ -91,7 +91,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 }
 
 // CreateProject will create the project on the platform
-func CreateProject(owner, name string, lang *language.Language) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+func CreateProject(owner, name, hostPlatform string, lang *language.Language) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name})
@@ -100,10 +100,13 @@ func CreateProject(owner, name string, lang *language.Language) (*mono_models.Pr
 		return nil, "", api.FailUnknown.New(api.ErrorMessageFromPayload(err))
 	}
 
+	var requirement, recommendedVersion string
 	if lang != nil {
-		return CommitInitial(owner, name, lang.Requirement(), lang.RecommendedVersion())
+		requirement = lang.Requirement()
+		recommendedVersion = lang.RecommendedVersion()
 	}
-	return CommitInitial(owner, name, "", "")
+
+	return CommitInitial(owner, name, hostPlatform, requirement, recommendedVersion)
 }
 
 // ProjectURL creates a valid platform URL for the given project parameters
