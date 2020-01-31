@@ -145,11 +145,17 @@ func (s *Suite) AppendEnv(env []string) {
 	s.env = append(s.env, env...)
 }
 
-// SetWd specifies a working directory for the spawned processes
-// Use this method if you rely on running the test executable in a clean directory
-// By default all tests are run in `os.TempDir()`
-func (s *Suite) SetWd(dir string) {
+// SetWd specifies a working directory for the spawned processes.
+// Use this method if you rely on running the test executable in a clean directory.
+// By default all tests are run in `os.TempDir()`.
+// SetWd returns a function that unsets the working directory. Use this if
+// you do not want other tests to use the set directory.
+func (s *Suite) SetWd(dir string) func() {
 	s.wd = &dir
+
+	return func() {
+		s.wd = nil
+	}
 }
 
 // Spawn executes the state tool executable under test in a pseudo-terminal
