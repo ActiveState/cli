@@ -65,6 +65,9 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
+	dir, err := ioutil.TempDir("", "TestUpdate")
+	suite.Require().NoError(err)
+	suite.SetWd(dir)
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
 	fmt.Println("Version before update: ", suite.getVersion())
 	// suite.AppendEnv([]string{"VERBOSE=true"})
