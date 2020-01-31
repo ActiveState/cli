@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -121,7 +122,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		return 1, failures.FailUser.New(locale.T("err_version_parse"))
 	}
 
-	logging.Debug("Should forward: %s", shouldForward(versionInfo))
+	fmt.Println("Calling should forward...")
 	if shouldForward(versionInfo) {
 		code, fail := forward(args, versionInfo)
 		if fail != nil {
