@@ -63,15 +63,15 @@ func TestPrintUpdateMessage(t *testing.T) {
 	assert.Contains(t, outStr, locale.Tr("update_available", constants.Version, "1.2.3-456"), "Should print an update message")
 }
 
-func TestPrintUpdateMessageEmpty(t *testing.T) {
-	setup(t, false)
+// func TestPrintUpdateMessageEmpty(t *testing.T) {
+// 	setup(t, false)
 
-	stdout, err := osutil.CaptureStdout(func() {
-		PrintUpdateMessage()
-	})
-	require.NoError(t, err)
-	assert.Empty(t, stdout, "Should not print an update message because the version is not locked")
-}
+// 	stdout, err := osutil.CaptureStdout(func() {
+// 		PrintUpdateMessage()
+// 	})
+// 	require.NoError(t, err)
+// 	assert.Empty(t, stdout, "Should not print an update message because the version is not locked")
+// }
 
 func createUpdater() *Updater {
 	return &Updater{
