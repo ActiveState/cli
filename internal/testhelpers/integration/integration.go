@@ -52,6 +52,8 @@ func (s *Suite) SetupTest() {
 	root := environment.GetRootPathUnsafe()
 	executable := filepath.Join(root, "build/"+constants.CommandName+exe)
 
+	s.wd = nil
+
 	if !fileutils.FileExists(executable) {
 		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
 	}
@@ -150,12 +152,8 @@ func (s *Suite) AppendEnv(env []string) {
 // By default all tests are run in `os.TempDir()`.
 // SetWd returns a function that unsets the working directory. Use this if
 // you do not want other tests to use the set directory.
-func (s *Suite) SetWd(dir string) func() {
+func (s *Suite) SetWd(dir string) {
 	s.wd = &dir
-
-	return func() {
-		s.wd = nil
-	}
 }
 
 // Spawn executes the state tool executable under test in a pseudo-terminal

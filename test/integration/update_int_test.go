@@ -30,6 +30,7 @@ func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Spawn("--version")
 	suite.Expect("ActiveState CLI version ")
 	suite.Expect("Revision")
+	suite.Wait()
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
 	return regex.FindString(suite.UnsyncedOutput())
 }
@@ -48,8 +49,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	// We need a projectfile to be able to version lock
 	dir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
-	unset := suite.SetWd(dir)
-	defer unset()
+	suite.SetWd(dir)
 
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
