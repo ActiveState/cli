@@ -493,7 +493,6 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 		return nil, nil
 	}
 
-	fmt.Printf("Reading project file at: %s", projectFilePath)
 	dat, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
