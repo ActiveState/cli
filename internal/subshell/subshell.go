@@ -234,8 +234,7 @@ func IsActivated() bool {
 
 	procInfoErrMsgFmt := "Could not detect process information: %v"
 
-	for pid != 0 && pid != ppid {
-		fmt.Print(pid, ppid, "")
+	for ppid != 0 && pid != ppid {
 		pproc, err := process.NewProcess(ppid)
 		if err != nil {
 			if err != process.ErrorProcessNotRunning {
