@@ -1296,3 +1296,5 @@ clean_confirm_remove:
   other: You are about to remove the state tool, installed laguage runtimes, and all configuration information. Continue?
 err_clean_unsupported_platform:
   other: Cannot clean state tool install. Encountered unsupported platform {{.V0}}
+clean_success_message:
+  other: "Successfully removed state tool and related files\n"

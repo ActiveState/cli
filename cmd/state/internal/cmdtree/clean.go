@@ -2,7 +2,9 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runners/clean"
 )
@@ -11,8 +13,8 @@ type CleanOpts struct {
 	Force bool
 }
 
-func newCleanCommand() *captain.Command {
-	runner := clean.NewClean(prompt.New())
+func newCleanCommand(outputer output.Outputer) *captain.Command {
+	runner := clean.NewClean(outputer, prompt.New())
 
 	opts := CleanOpts{}
 	return captain.NewCommand(
@@ -29,7 +31,11 @@ func newCleanCommand() *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run(&clean.RunParams{Force: opts.Force})
+			return runner.Run(&clean.RunParams{
+				Force:      opts.Force,
+				ConfigPath: config.ConfigPath(),
+				CachePath:  config.CachePath(),
+			})
 		},
 	)
 }

@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 )
 
 type confirmAble interface {
@@ -19,15 +19,21 @@ type confirmAble interface {
 }
 
 type Clean struct {
-	confirmer confirmAble
+	out     output.Outputer
+	confirm confirmAble
 }
 
 type RunParams struct {
-	Force bool
+	Force      bool
+	ConfigPath string
+	CachePath  string
 }
 
-func NewClean(confirmer confirmAble) *Clean {
-	return &Clean{confirmer: confirmer}
+func NewClean(outputer output.Outputer, confirmer confirmAble) *Clean {
+	return &Clean{
+		out:     outputer,
+		confirm: confirmer,
+	}
 }
 
 func (c *Clean) Run(params *RunParams) error {
@@ -41,7 +47,7 @@ func (c *Clean) run(params *RunParams) error {
 	}
 
 	if !params.Force {
-		ok, fail := c.confirmer.Confirm(locale.T("clean_confirm_remove"), false)
+		ok, fail := c.confirm.Confirm(locale.T("clean_confirm_remove"), false)
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -50,29 +56,31 @@ func (c *Clean) run(params *RunParams) error {
 		}
 	}
 
-	configPath := config.ConfigPath()
-	cachePath := config.CachePath()
-
 	installPath, err := getInstallPath()
 	if err != nil {
 		return err
 	}
 
-	logging.Debug("Removing config directory: %s", configPath)
-	logging.Debug("Removing cache path: %s", cachePath)
+	logging.Debug("Removing config directory: %s", params.ConfigPath)
+	logging.Debug("Removing cache path: %s", params.CachePath)
 	logging.Debug("Removing state tool binary: %s", installPath)
-
 	if file, ok := logging.CurrentHandler().Output().(*os.File); ok {
-		file.Sync()
-		file.Close()
+		err = file.Sync()
+		if err != nil {
+			return err
+		}
+		err = file.Close()
+		if err != nil {
+			return err
+		}
 	}
 
-	err = os.RemoveAll(configPath)
+	err = os.RemoveAll(params.ConfigPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(cachePath)
+	err = os.RemoveAll(params.CachePath)
 	if err != nil {
 		return err
 	}
@@ -82,6 +90,7 @@ func (c *Clean) run(params *RunParams) error {
 		return err
 	}
 
+	c.out.Print(locale.T("clean_success_message"))
 	return nil
 }
 
