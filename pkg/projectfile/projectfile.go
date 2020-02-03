@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -440,7 +439,8 @@ func createCustom(params *CreateParams) (*Project, *failures.Failure) {
 	owner, project := match[1], match[2]
 
 	if params.Content == "" {
-		params.Content = sampleContent(runtime.GOOS, owner, project)
+		params.Content = locale.T("sample_yaml",
+			map[string]interface{}{"Owner": owner, "Project": project})
 	}
 
 	data := map[string]interface{}{
