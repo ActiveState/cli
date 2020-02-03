@@ -3,9 +3,7 @@ package clean
 import (
 	"errors"
 	"os"
-	"os/exec"
-	"runtime"
-	"strings"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -37,17 +35,16 @@ func NewClean(outputer output.Outputer, confirmer confirmAble) *Clean {
 }
 
 func (c *Clean) Run(params *RunParams) error {
-	return c.run(params)
-
+	return run(params, c.confirm, c.out)
 }
 
-func (c *Clean) run(params *RunParams) error {
+func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
 		return errors.New(locale.T("err_clean_activated"))
 	}
 
 	if !params.Force {
-		ok, fail := c.confirm.Confirm(locale.T("clean_confirm_remove"), false)
+		ok, fail := confirm.Confirm(locale.T("clean_confirm_remove"), false)
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -90,26 +87,15 @@ func (c *Clean) run(params *RunParams) error {
 		return err
 	}
 
-	c.out.Print(locale.T("clean_success_message"))
+	out.Print(locale.T("clean_success_message"))
 	return nil
 }
 
 func getInstallPath() (string, error) {
-	var finder string
-	switch runtime.GOOS {
-	case "linux", "darwin":
-		finder = "which"
-	case "windows":
-		finder = "where"
-	default:
-		return "", errors.New(locale.Tr("err_clean_unsupported_platform", runtime.GOOS))
-	}
-
-	cmd := exec.Command(finder, constants.CommandName)
-	output, err := cmd.Output()
+	dir, err := filepath.Abs(os.Args[0])
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(string(output)), nil
+	return dir, nil
 }
