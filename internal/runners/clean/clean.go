@@ -3,7 +3,6 @@ package clean
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -22,9 +21,10 @@ type Clean struct {
 }
 
 type RunParams struct {
-	Force      bool
-	ConfigPath string
-	CachePath  string
+	Force       bool
+	ConfigPath  string
+	CachePath   string
+	InstallPath string
 }
 
 func NewClean(outputer output.Outputer, confirmer confirmAble) *Clean {
@@ -53,16 +53,11 @@ func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 		}
 	}
 
-	installPath, err := getInstallPath()
-	if err != nil {
-		return err
-	}
-
 	logging.Debug("Removing config directory: %s", params.ConfigPath)
 	logging.Debug("Removing cache path: %s", params.CachePath)
-	logging.Debug("Removing state tool binary: %s", installPath)
+	logging.Debug("Removing state tool binary: %s", params.InstallPath)
 	if file, ok := logging.CurrentHandler().Output().(*os.File); ok {
-		err = file.Sync()
+		err := file.Sync()
 		if err != nil {
 			return err
 		}
@@ -72,7 +67,7 @@ func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 		}
 	}
 
-	err = os.RemoveAll(params.ConfigPath)
+	err := os.RemoveAll(params.ConfigPath)
 	if err != nil {
 		return err
 	}
@@ -82,20 +77,11 @@ func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 		return err
 	}
 
-	err = os.Remove(installPath)
+	err = os.Remove(params.InstallPath)
 	if err != nil {
 		return err
 	}
 
 	out.Print(locale.T("clean_success_message"))
 	return nil
-}
-
-func getInstallPath() (string, error) {
-	dir, err := filepath.Abs(os.Args[0])
-	if err != nil {
-		return "", err
-	}
-
-	return dir, nil
 }

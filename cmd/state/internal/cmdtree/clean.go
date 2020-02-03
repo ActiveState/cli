@@ -1,6 +1,9 @@
 package cmdtree
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -31,10 +34,16 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
+			installPath, err := filepath.Abs(os.Args[0])
+			if err != nil {
+				return err
+			}
+
 			return runner.Run(&clean.RunParams{
-				Force:      opts.Force,
-				ConfigPath: config.ConfigPath(),
-				CachePath:  config.CachePath(),
+				Force:       opts.Force,
+				ConfigPath:  config.ConfigPath(),
+				CachePath:   config.CachePath(),
+				InstallPath: installPath,
 			})
 		},
 	)
