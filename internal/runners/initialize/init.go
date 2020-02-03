@@ -44,7 +44,7 @@ func prepare(params *RunParams) error {
 	}
 
 	if !skeletonRecognized(params.Style) {
-		params.Style = SkeletonSimple
+		params.Style = SkeletonBase
 	}
 
 	if fail := params.Namespace.Validate(); fail != nil {
