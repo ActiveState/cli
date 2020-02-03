@@ -286,7 +286,7 @@ golang.org/x/net/proxy
 # golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.0.0-20191003212358-c178f38b412c
+# golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
