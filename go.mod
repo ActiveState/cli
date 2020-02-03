@@ -39,7 +39,6 @@ require (
 	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 	github.com/gobuffalo/packr v1.10.7
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-github/v29 v29.0.2
 	github.com/google/uuid v1.1.0
 	github.com/gorilla/websocket v1.4.0
