@@ -59,18 +59,24 @@ func (c *Clean) run(params *RunParams) error {
 	}
 
 	logging.Debug("Removing config directory: %s", configPath)
+	logging.Debug("Removing cache path: %s", cachePath)
+	logging.Debug("Removing state tool binary: %s", installPath)
+
+	if file, ok := logging.CurrentHandler().Output().(*os.File); ok {
+		file.Sync()
+		file.Close()
+	}
+
 	err = os.RemoveAll(configPath)
 	if err != nil {
 		return err
 	}
 
-	logging.Debug("Removing cache path: %s", cachePath)
 	err = os.RemoveAll(cachePath)
 	if err != nil {
 		return err
 	}
 
-	logging.Debug("Removing state tool binary: %s", installPath)
 	err = os.Remove(installPath)
 	if err != nil {
 		return err
