@@ -21,6 +21,7 @@ defaults:
           GOFLAGS=$GOFLAGSTMP
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
 
+          echo "export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $BASH_ENV
           echo "export PATH=\$HOME/.local/bin:\$GOROOT/bin:\$GOPATH/bin:\$PATH" >> $BASH_ENV
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
@@ -59,7 +60,6 @@ defaults:
         command: |
           set -e
 
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           go test ./test/integration -v
     deployBits: &deployBits
       run:
