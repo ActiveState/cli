@@ -32,6 +32,8 @@ import (
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
+	logging.SetupRollbar()
+
 	exiter := func(code int) {
 		os.Exit(code)
 	}
@@ -95,7 +97,6 @@ func run(args []string, outputer output.Outputer) (int, error) {
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
-	logging.SetupRollbar()
 
 	// Write our config to file
 	defer config.Save()
