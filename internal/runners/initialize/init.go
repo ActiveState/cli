@@ -43,7 +43,7 @@ func prepare(params *RunParams) error {
 		return failures.FailUserInput.New("err_init_file_exists", absPath)
 	}
 
-	if !skeletonRecognized(params.Style) {
+	if !styleRecognized(params.Style) {
 		params.Style = SkeletonBase
 	}
 
@@ -92,6 +92,7 @@ func run(config setter, params *RunParams) (string, error) {
 		Project:   params.Namespace.Project,
 		Directory: params.Path,
 	}
+
 	if params.Style == SkeletonEditor {
 		createParams.Content = locale.T("editor_yaml")
 	}
