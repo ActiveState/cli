@@ -60,6 +60,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	projectName := "Python-LinuxWorks"
 	suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+tempDir)
 
+	suite.Expect("Activating state")
 	suite.Expect("activated state", 120*time.Second)
 	suite.WaitForInput()
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -226,7 +225,12 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 }
 
 // CommitInitial ...
-func CommitInitial(projectOwner, projectName, language, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+func CommitInitial(projectOwner, projectName, hostPlatform, language, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+	platformID, fail := hostPlatformToPlatformID(hostPlatform)
+	if fail != nil {
+		return nil, "", fail
+	}
+
 	proj, fail := FetchProjectByName(projectOwner, projectName)
 	if fail != nil {
 		return nil, "", fail
@@ -253,24 +257,20 @@ func CommitInitial(projectOwner, projectName, language, langVersion string) (*mo
 		changes = append(changes, c)
 	}
 
-	platformIDs := []string{
-		constants.Win10Bit64UUID,
-		constants.LinuxBit64UUID,
+	c := &mono_models.CommitChangeEditable{
+		Operation:         string(OperationAdded),
+		Namespace:         string(NamespacePlatform()),
+		Requirement:       platformID,
+		VersionConstraint: "",
 	}
-	for _, id := range platformIDs {
-		c := &mono_models.CommitChangeEditable{
-			Operation:         string(OperationAdded),
-			Namespace:         string(NamespacePlatform()),
-			Requirement:       id,
-			VersionConstraint: "",
-		}
-		changes = append(changes, c)
+	changes = append(changes, c)
+
+	commit := &mono_models.CommitEditable{
+		Changeset: changes,
+		Message:   locale.T("commit_message_add_initial"),
 	}
-
-	msg := locale.T("commit_message_add_initial")
-
 	params := vcsClient.NewAddCommitParams()
-	params.SetCommit(&mono_models.CommitEditable{Changeset: changes, Message: msg})
+	params.SetCommit(commit)
 
 	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {

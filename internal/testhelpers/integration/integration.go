@@ -26,10 +26,13 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var PersistentUsername = "cli-integration-tests"
-var PersistentPassword = "test-cli-integration"
+var (
+	PersistentUsername = "cli-integration-tests"
+	PersistentPassword = "test-cli-integration"
 
-var defaultTimeout = 10 * time.Second
+	defaultTimeout = 10 * time.Second
+	authnTimeout   = 30 * time.Second
+)
 
 // Suite is our integration test suite
 type Suite struct {
@@ -51,6 +54,8 @@ func (s *Suite) SetupTest() {
 
 	root := environment.GetRootPathUnsafe()
 	executable := filepath.Join(root, "build/"+constants.CommandName+exe)
+
+	s.wd = nil
 
 	if !fileutils.FileExists(executable) {
 		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
@@ -145,9 +150,11 @@ func (s *Suite) AppendEnv(env []string) {
 	s.env = append(s.env, env...)
 }
 
-// SetWd specifies a working directory for the spawned processes
-// Use this method if you rely on running the test executable in a clean directory
-// By default all tests are run in `os.TempDir()`
+// SetWd specifies a working directory for the spawned processes.
+// Use this method if you rely on running the test executable in a clean directory.
+// By default all tests are run in `os.TempDir()`.
+// SetWd returns a function that unsets the working directory. Use this if
+// you do not want other tests to use the set directory.
 func (s *Suite) SetWd(dir string) {
 	s.wd = &dir
 }
@@ -186,8 +193,10 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	s.Require().NoError(err)
 }
 
-// Output returns the current Terminal snapshot.
-func (s *Suite) Output() string {
+// UnsyncedOutput returns the current Terminal snapshot.
+// However the goroutine that creates this output is separate from this
+// function so any output is not synced
+func (s *Suite) UnsyncedOutput() string {
 	return s.console.Pty.State.String()
 }
 
@@ -204,7 +213,7 @@ func (s *Suite) ExpectRe(value string, timeout ...time.Duration) {
 		s.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.Output())
+			value, err, s.UnsyncedOutput())
 	}
 }
 
@@ -226,7 +235,7 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 		s.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.Output())
+			value, err, s.UnsyncedOutput())
 	}
 }
 
@@ -287,7 +296,7 @@ func (s *Suite) Stop() error {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
-	s.Expect("successfully authenticated", 30*time.Second)
+	s.Expect("successfully authenticated", authnTimeout)
 	state, err := s.Wait()
 	s.Require().NoError(err)
 	s.Require().Equal(0, state.ExitCode())
@@ -341,13 +350,16 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	}
 }
 
-func (s *Suite) TrimSpaceOutput() string {
+// UnsyncedTrimSpaceOutput displays the terminal output a user would see
+// however the goroutine that creates this output is separate from this
+// function so any output is not synced
+func (s *Suite) UnsyncedTrimSpaceOutput() string {
 	// When the PTY reaches 80 characters it continues output on a new line.
 	// On Windows this means both a carriage return and a new line. Windows
 	// also picks up any spaces at the end of the console output, hence all
 	// the cleaning we must do here.
 	newlineRe := regexp.MustCompile(`\r?\n`)
-	return newlineRe.ReplaceAllString(strings.TrimSpace(s.Output()), "")
+	return newlineRe.ReplaceAllString(strings.TrimSpace(s.UnsyncedOutput()), "")
 }
 
 func (s *Suite) CreateNewUser() string {
@@ -369,7 +381,7 @@ func (s *Suite) CreateNewUser() string {
 	s.SendLine(username)
 	s.Expect("email:")
 	s.SendLine(email)
-	s.Expect("account has been registered", 30*time.Second)
+	s.Expect("account has been registered", authnTimeout)
 	s.Wait()
 
 	return username
