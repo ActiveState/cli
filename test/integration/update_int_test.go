@@ -66,11 +66,24 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions should match because locking is enabled")
 }
 
+func getGitBranchName() string {
+	var branch string
+
+	if v, ok := os.LookupEnv("GIT_BRANCH"); ok {
+		branch = v
+	}
+	if v, ok := os.LookupEnv("CIRCLE_BRANCH"); ok {
+		branch = v
+	}
+
+	return branch
+}
+
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
 	suite.Spawn("update")
 	// on master branch, we might already have the latest version available
-	if os.Getenv("GIT_BRANCH") == "master" {
+	if getGitBranchName() == "master" {
 		suite.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
 	} else {
 		suite.Expect("Update completed", 60*time.Second)
