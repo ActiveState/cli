@@ -42,6 +42,9 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.Require().FileExists(installFile.Name())
 	suite.installPath = installFile.Name()
 
+	err = installFile.Close()
+	suite.Require().NoError(err)
+
 	suite.configPath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.configPath)
