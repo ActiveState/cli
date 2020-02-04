@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -62,6 +63,7 @@ func (suite *CleanTestSuite) TestRun() {
 		InstallPath: suite.installPath,
 	})
 	suite.Require().NoError(err)
+	time.Sleep(2 * time.Second)
 
 	if fileutils.DirExists(suite.configPath) {
 		suite.Fail("config directory should not exists after clean")
