@@ -103,17 +103,11 @@ func (l Language) data() languageData {
 
 // String implements the fmt.Stringer interface.
 func (l *Language) String() string {
-	if l == nil {
-		return ""
-	}
 	return l.data().name
 }
 
 // Text returns the human-readable value.
 func (l *Language) Text() string {
-	if l == nil {
-		return ""
-	}
 	return l.data().text
 }
 
@@ -160,10 +154,6 @@ func (l Language) Executable() Executable {
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
 func (l *Language) UnmarshalYAML(applyPayload func(interface{}) error) error {
-	if l == nil {
-		return fmt.Errorf("cannot unmarshal to nil language")
-	}
-
 	var payload string
 	if err := applyPayload(&payload); err != nil {
 		return err
@@ -179,10 +169,6 @@ func (l Language) MarshalYAML() (interface{}, error) {
 
 // Set implements the captain marshaler interfaces.
 func (l *Language) Set(v string) error {
-	if l == nil {
-		return fmt.Errorf("cannot set nil language")
-	}
-
 	lang := MakeByName(v)
 	if !lang.Recognized() {
 		names := RecognizedNames()
@@ -254,18 +240,11 @@ type Supported struct {
 
 // Recognized returns whether the supported language is a known useful value.
 func (l *Supported) Recognized() bool {
-	if l == nil {
-		return false
-	}
-	return l.Language.Recognized() && l.Executable().Available()
+	return l != nil && l.Language.Recognized() && l.Executable().Available()
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
 func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
-	if l == nil {
-		return fmt.Errorf("cannot unmarshal to nil supported language")
-	}
-
 	var payload string
 	if err := applyPayload(&payload); err != nil {
 		return err
@@ -276,10 +255,6 @@ func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
 
 // Set implements the captain marshaler interfaces.
 func (l *Supported) Set(v string) error {
-	if l == nil {
-		return fmt.Errorf("cannot set nil supported language")
-	}
-
 	supported := Supported{MakeByName(v)}
 	if !supported.Recognized() {
 		names := RecognizedSupportedsNames()
