@@ -3,12 +3,17 @@ package clean
 import (
 	"errors"
 	"os"
+	"os/exec"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/gobuffalo/packr"
 )
 
 type confirmAble interface {
@@ -47,6 +52,21 @@ func (c *Clean) Run(params *RunParams) error {
 		if !ok {
 			return nil
 		}
+	}
+
+	if runtime.GOOS == "windows" {
+		box := packr.NewBox("../../../assets/scripts/")
+		scriptBlock := box.String("clean.bat")
+		sf, fail := scriptfile.New(language.Batch, "clean", scriptBlock)
+		if fail != nil {
+			return fail.ToError()
+		}
+		cmd := exec.Command("cmd.exe", "/C", sf.Filename(), params.CachePath, params.ConfigPath, params.InstallPath)
+		err := cmd.Start()
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
 	logging.Debug("Removing cache path: %s", params.CachePath)
