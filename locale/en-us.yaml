@@ -1207,6 +1207,10 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use `state pull`
 inventory_ingredient_version_not_available:
   other: The ingredient {{.V0}} does not have any versions available
+command_flag_no_such_flag:
+  other: "No such flag: {{.V0}}"
+command_flag_invalid_value:
+  other: "Invalid value for {{.V0}} flag: {{.V1}}"
 err_cmdtree:
   other: Could not run the requested command
 err_fetch_languages:
@@ -1223,14 +1227,8 @@ err_project_from_path:
   other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
-err_init_must_provide_namespace:
-  other: You must provide a project namespace, eg. 'state init myusername/myprojectname'.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
-err_init_owner_missing:
-  other: Owner name is required to initialize a project
-err_init_project_missing:
-  other: Project name is required to initialize a project
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
@@ -1239,7 +1237,7 @@ init_success:
 flag_state_init_language_description:
   other: The language that this project should use
 flag_state_init_skeleton_description:
-  other: The activestate.yaml template to use with project file creation. Accepts two values 'base' and 'editor'.
+  other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
@@ -1250,8 +1248,12 @@ flag_state_init_path_description:
   other: Where to initialize the project
 err_wd:
   other: Could not retrieve the working directory
-err_init_invalid_language:
-  other: "Invalid language specified: {{.V0}}, supported languages: {{.V1}}."
+err_invalid_output_format:
+  other: "Invalid output format specified: {{.V0}}; Supported formats: {{.V1}}"
+err_invalid_skeleton_style:
+  other: "Invalid skeleton style specified: {{.V0}}; Supported styles: {{.V1}}"
+err_invalid_language:
+  other: "Invalid language specified: {{.V0}}; Supported languages: {{.V1}}"
 err_push_invalid_language:
   other: "Invalid language specified: {{.V0}}, please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:

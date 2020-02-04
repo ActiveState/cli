@@ -6,17 +6,11 @@ import (
 	"github.com/ActiveState/cli/internal/runners/auth"
 )
 
-type AuthOpts struct {
-	Token    string
-	Username string
-	Password string
-	Totp     string
-}
-
 func newAuthCommand(globals *globalOptions) *captain.Command {
 	authRunner := auth.NewAuth()
 
-	opts := AuthOpts{}
+	params := auth.AuthParams{}
+
 	return captain.NewCommand(
 		"auth",
 		locale.T("auth_description"),
@@ -25,46 +19,34 @@ func newAuthCommand(globals *globalOptions) *captain.Command {
 				Name:        "token",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_token_description"),
-				Type:        captain.TypeString,
-				StringVar:   &opts.Token,
+				Value:       &params.Token,
 			},
 			{
 				Name:        "username",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_username_description"),
-				Type:        captain.TypeString,
-				StringVar:   &opts.Username,
+				Value:       &params.Username,
 			},
 			{
 				Name:        "password",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_password_description"),
-				Type:        captain.TypeString,
-				StringVar:   &opts.Password,
+				Value:       &params.Password,
 			},
 			{
 				Name:        "totp",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_totp_description"),
-				Type:        captain.TypeString,
-				StringVar:   &opts.Totp,
+				Value:       &params.Totp,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return authRunner.Run(newAuthRunParams(opts, globals))
+			params.Output = globals.Output
+
+			return authRunner.Run(&params)
 		},
 	)
-}
-
-func newAuthRunParams(opts AuthOpts, globals *globalOptions) *auth.AuthParams {
-	return &auth.AuthParams{
-		Output:   globals.Output,
-		Token:    opts.Token,
-		Username: opts.Username,
-		Password: opts.Password,
-		Totp:     opts.Totp,
-	}
 }
 
 func newSignupCommand() *captain.Command {

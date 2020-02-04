@@ -8,12 +8,13 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-// Language tracks the languages potentially used for scripts.
+// Language tracks the languages potentially used.
 type Language int
 
 // Language constants are provided for safety/reference.
 const (
-	Unknown Language = iota
+	Unset Language = iota
+	Unknown
 	Bash
 	Sh
 	Batch
@@ -37,6 +38,7 @@ type languageData struct {
 }
 
 var lookup = [...]languageData{
+	{},
 	{
 		"unknown", locale.T("language_name_unknown"), ".tmp", false, "", "",
 		Executable{"", false},
@@ -67,32 +69,6 @@ var lookup = [...]languageData{
 	},
 }
 
-// Available returns all languages that are not "builtin" and also have a
-// defined executable name.
-func Available() []Language {
-	var ls []Language
-
-	for _, name := range AvailableNames() {
-		ls = append(ls, MakeByName(name))
-	}
-
-	return ls
-}
-
-// AvailableNames returns all languages that are not "builtin" and also have a
-// defined executable name.
-func AvailableNames() []string {
-	var ls []string
-
-	for _, d := range lookup {
-		if !d.exec.base && d.exec.name != "" {
-			ls = append(ls, d.name)
-		}
-	}
-
-	return ls
-}
-
 // MakeByShell returns either bash or cmd based on whether the provided
 // shell name contains "cmd". This should be taken to mean that bash is a sort
 // of default.
@@ -106,20 +82,21 @@ func MakeByShell(shell string) Language {
 	return Bash
 }
 
-// MakeByName will retrieve a language by a given name
+// MakeByName will retrieve a language by a given name after lower-casing.
 func MakeByName(name string) Language {
-	for i, v := range lookup {
-		if strings.ToLower(name) == v.name {
+	for i, data := range lookup {
+		if strings.ToLower(name) == data.name {
 			return Language(i)
 		}
 	}
+
 	return Unknown
 }
 
 func (l Language) data() languageData {
 	i := int(l)
 	if i < 0 || i > len(lookup)-1 {
-		i = 0
+		i = 1
 	}
 	return lookup[i]
 }
@@ -132,6 +109,11 @@ func (l *Language) String() string {
 // Text returns the human-readable value.
 func (l *Language) Text() string {
 	return l.data().text
+}
+
+// Recognized returns whether the language is a known useful value.
+func (l *Language) Recognized() bool {
+	return l != nil && *l != Unset && *l != Unknown
 }
 
 // Ext return the file extension for the language.
@@ -171,24 +153,38 @@ func (l Language) Executable() Executable {
 }
 
 // UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
-func (l *Language) UnmarshalYAML(f func(interface{}) error) error {
-	var s string
-	if err := f(&s); err != nil {
+func (l *Language) UnmarshalYAML(applyPayload func(interface{}) error) error {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
 		return err
 	}
 
-	*l = MakeByName(s)
-
-	if len(s) > 0 && *l == Unknown {
-		return fmt.Errorf("cannot unmarshal yaml")
-	}
-
-	return nil
+	return l.Set(payload)
 }
 
 // MarshalYAML implements the go-yaml/yaml.Marshaler interface.
 func (l Language) MarshalYAML() (interface{}, error) {
 	return l.String(), nil
+}
+
+// Set implements the captain marshaler interfaces.
+func (l *Language) Set(v string) error {
+	lang := MakeByName(v)
+	if !lang.Recognized() {
+		names := RecognizedNames()
+
+		return fmt.Errorf(locale.Tr(
+			"err_invalid_language", v, strings.Join(names, ", "),
+		))
+	}
+
+	*l = lang
+	return nil
+}
+
+// Type implements the captain.FlagMarshaler interface.
+func (l *Language) Type() string {
+	return "language"
 }
 
 // Executable contains details about an executable program used to interpret a
@@ -207,4 +203,93 @@ func (e Executable) Name() string {
 // shell environment.
 func (e Executable) Builtin() bool {
 	return e.base
+}
+
+// Available returns whether the executable is not "builtin" and also has a
+// defined name.
+func (e Executable) Available() bool {
+	return !e.base && e.name != ""
+}
+
+// Recognized returns all languages that are supported.
+func Recognized() []Language {
+	var langs []Language
+	for i := range lookup {
+		if l := Language(i); l.Recognized() {
+			langs = append(langs, l)
+		}
+	}
+	return langs
+}
+
+// RecognizedNames returns all language names that are supported.
+func RecognizedNames() []string {
+	var langs []string
+	for i, data := range lookup {
+		if l := Language(i); l.Recognized() {
+			langs = append(langs, data.name)
+		}
+	}
+	return langs
+}
+
+// Supported tracks the languages potentially used for projects.
+type Supported struct {
+	Language
+}
+
+// Recognized returns whether the supported language is a known useful value.
+func (l *Supported) Recognized() bool {
+	return l != nil && l.Language.Recognized() && l.Executable().Available()
+}
+
+// UnmarshalYAML implements the go-yaml/yaml.Unmarshaler interface.
+func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
+	var payload string
+	if err := applyPayload(&payload); err != nil {
+		return err
+	}
+
+	return l.Set(payload)
+}
+
+// Set implements the captain marshaler interfaces.
+func (l *Supported) Set(v string) error {
+	supported := Supported{MakeByName(v)}
+	if !supported.Recognized() {
+		names := RecognizedSupportedsNames()
+
+		return fmt.Errorf(locale.Tr(
+			"err_invalid_language", v, strings.Join(names, ", "),
+		))
+	}
+
+	*l = supported
+	return nil
+}
+
+// RecognizedSupporteds returns all languages that are not "builtin"
+// and also have a defined executable name.
+func RecognizedSupporteds() []Supported {
+	var supporteds []Supported
+	for i := range lookup {
+		l := Supported{Language(i)}
+		if l.Recognized() {
+			supporteds = append(supporteds, l)
+		}
+	}
+	return supporteds
+}
+
+// RecognizedSupportedsNames returns all languages that are not
+// "builtin" and also have a defined executable name.
+func RecognizedSupportedsNames() []string {
+	var supporteds []string
+	for i, data := range lookup {
+		l := Supported{Language(i)}
+		if l.Recognized() {
+			supporteds = append(supporteds, data.name)
+		}
+	}
+	return supporteds
 }

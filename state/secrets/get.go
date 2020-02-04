@@ -12,11 +12,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 )
 
-// Flags holds the flag values passed through the command line
-var Flags struct {
-	Output *string
-}
-
 func buildGetCommand(cmd *Command) *commands.Command {
 	return &commands.Command{
 		Name:        "get",
@@ -49,7 +44,7 @@ func (cmd *Command) ExecuteGet(_ *cobra.Command, args []string) {
 		value = *valuePtr
 	}
 
-	switch commands.Output(strings.ToLower(*Flags.Output)) {
+	switch commands.Output(strings.ToLower(*cmd.Flags.Output)) {
 	case commands.JSON, commands.EditorV0:
 		printJSON(&SecretExport{secret.Name(), secret.Scope(), secret.Description(), valuePtr != nil, value})
 	default:

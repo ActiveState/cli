@@ -64,7 +64,7 @@ func run(name string, args []string) error {
 	}
 
 	lang := script.Language()
-	if lang == language.Unknown {
+	if !lang.Recognized() || !lang.Executable().Available() {
 		lang = language.MakeByShell(subs.Shell())
 	}
 

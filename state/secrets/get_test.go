@@ -104,7 +104,6 @@ func (suite *SecretsGetCommandTestSuite) assertExpansionFailure(secretName strin
 func (suite *SecretsGetCommandTestSuite) assertExpansion(secretName string, expectedExpansionValue string, expectedExitCode int) {
 	suite.prepareWorkingExpander()
 	cmd := secrets.NewCommand(suite.secretsClient, new(string))
-	secrets.Flags.Output = new(string)
 
 	var exitCode int
 	ex := exiter.New()
