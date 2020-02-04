@@ -59,7 +59,7 @@ defaults:
         command: |
           set -e
 
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $BASH_ENV
           go test ./test/integration -v
     deployBits: &deployBits
       run:
