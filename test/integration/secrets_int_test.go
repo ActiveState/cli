@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
@@ -40,7 +39,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	suite.Wait()
 	suite.Spawn("secrets", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(fmt.Sprintf("[%s]", expected), strings.TrimSpace(suite.Output()))
+	suite.Expect(fmt.Sprintf("[%s]", expected))
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
@@ -66,10 +65,11 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	suite.LoginAsPersistentUser()
 	suite.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
 	suite.Wait()
-	suite.Empty(suite.TrimSpaceOutput())
+	suite.Empty(suite.UnsyncedTrimSpaceOutput())
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(string(expected), suite.TrimSpaceOutput())
+	suite.Expect("test-value\"}")
+	suite.Equal(string(expected), suite.UnsyncedTrimSpaceOutput())
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
@@ -95,10 +95,11 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	suite.LoginAsPersistentUser()
 	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
 	suite.Wait()
-	suite.Empty(suite.TrimSpaceOutput())
+	suite.Empty(suite.UnsyncedTrimSpaceOutput())
 	suite.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	suite.Wait()
-	suite.Equal(string(expected), suite.TrimSpaceOutput())
+	suite.Expect("test-value\"}")
+	suite.Equal(string(expected), suite.UnsyncedTrimSpaceOutput())
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
