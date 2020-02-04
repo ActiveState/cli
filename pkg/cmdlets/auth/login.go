@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -78,12 +77,6 @@ func AuthenticateWithInput(username, password, totp string) *failures.Failure {
 		if fail != nil {
 			return fail
 		}
-	}
-
-	// ensure changes are propagated
-	err := config.Save()
-	if err != nil {
-		return failures.FailOS.Wrap(err)
 	}
 
 	return nil

@@ -142,6 +142,22 @@ func (suite *ConfigTestSuite) TestSave() {
 	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
 }
 
+func (suite *ConfigTestSuite) TestSaveMerge() {
+	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+
+	fail := fileutils.WriteFile(path, []byte("ishould: exist"))
+	suite.Require().NoError(fail.ToError())
+
+	viper.Set("Foo", "bar")
+	config.Save()
+
+	dat, err := ioutil.ReadFile(path)
+	suite.Require().NoError(err)
+
+	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
+	suite.Contains(string(dat), "ishould: exist", "Config should contain the pre-existing field")
+}
+
 func TestConfigTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigTestSuite))
 }
