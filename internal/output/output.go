@@ -27,7 +27,7 @@ func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 	logging.Debug("Requested outputer for %s", formatName)
 
 	switch formatName {
-	case PlainFormatName:
+	case "", PlainFormatName:
 		logging.Debug("Using Plain outputer")
 		plain, fail := NewPlain(config)
 		return &plain, fail
