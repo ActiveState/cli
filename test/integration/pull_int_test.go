@@ -31,7 +31,7 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 
 	suite.Spawn("pull", "--output", "editor.v0")
 	suite.Wait()
-	suite.Equal(string(expected), suite.TrimSpaceOutput())
+	suite.Expect(string(expected))
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {

@@ -16,11 +16,12 @@ defaults:
           $GOROOT/bin/go get github.com/gobuffalo/packr/packr
           popd
 
+          ./public/install.sh -n -b master
+
           GOFLAGS=$GOFLAGSTMP
           $GOROOT/bin/go run scripts/constants-generator/main.go -- internal/constants/generated.go
 
-          ./public/install.sh -n -b master
-
+          echo "export GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $BASH_ENV
           echo "export PATH=\$HOME/.local/bin:\$GOROOT/bin:\$GOPATH/bin:\$PATH" >> $BASH_ENV
           echo "export PS1='> '" >> $BASH_ENV
           source $BASH_ENV
@@ -59,8 +60,7 @@ defaults:
         command: |
           set -e
 
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          go test ./test/integration
+          go test ./test/integration -v
     deployBits: &deployBits
       run:
         name: Deploy bits
@@ -153,8 +153,7 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      # Don't run integration tests on macOS yet because we don't support activating languages on macos atm
-      #- <<: *runIntegrationTests
+      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
 workflows:

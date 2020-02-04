@@ -108,7 +108,6 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.Spawn("activate")
 	suite.Expect("Activating state: ActiveState-CLI/Python3")
-	suite.Expect("ActiveState-CLI/Python3", 20*time.Second)
 	suite.WaitForInput(10 * time.Second)
 
 	suite.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))

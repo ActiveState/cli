@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,6 +27,8 @@ import (
 var (
 	FailOrderRecipes   = failures.Type("model.fail.orderrecipes", api.FailUnknown)
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
+
+	FailUnsupportedPlatform = failures.Type("model.fail.unsupportedplatform")
 )
 
 // HostPlatform stores a reference to current platform
@@ -150,6 +153,19 @@ func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe,
 	}
 
 	return buildRecipe, nil
+}
+
+func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
+		return constants.LinuxBit64UUID, nil
+	//case strings.ToLower(sysinfo.Mac.String()):
+	//	return "", nil
+	case strings.ToLower(sysinfo.Windows.String()):
+		return constants.Win10Bit64UUID, nil
+	default:
+		return "", FailUnsupportedPlatform.New("err_unsupported_platform", os)
+	}
 }
 
 func hostPlatformToKernelName(os string) string {

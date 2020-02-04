@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"testing"
 	"time"
 
@@ -28,10 +28,11 @@ func (suite *UpdateIntegrationTestSuite) SetupTest() {
 
 func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Spawn("--version")
+	suite.Expect("ActiveState CLI version ")
+	suite.Expect("Revision")
 	suite.Wait()
-	versionString := strings.Split(strings.TrimSpace(suite.Output()), "\n")[0]
-	versionNumber := strings.Split(strings.TrimSpace(versionString), " ")
-	return versionNumber[len(versionNumber)-1]
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
+	return regex.FindString(suite.UnsyncedOutput())
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
@@ -49,6 +50,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	dir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.SetWd(dir)
+
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
@@ -66,7 +68,6 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
-	fmt.Println("Version before update: ", suite.getVersion())
 	suite.Spawn("update")
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {

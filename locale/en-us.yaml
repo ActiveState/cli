@@ -385,6 +385,8 @@ err_activate_output_build_failed:
   other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
 err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
+err_unsupported_platform:
+  other: "Unsupported platform: {{.V0}}"
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
@@ -821,7 +823,7 @@ developer_err_project_match:
 err_version_parse:
   other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
 err_invalid_version:
-  other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{number}"
+  other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 downloading_state_version:
   other: "Downloading state tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:
