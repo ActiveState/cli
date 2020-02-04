@@ -55,14 +55,12 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestRun() {
-	err := run(&RunParams{
+	runner := NewClean(&testOutputer{}, &confirmMock{confirm: true})
+	err := runner.Run(&RunParams{
 		ConfigPath:  suite.configPath,
 		CachePath:   suite.cachePath,
 		InstallPath: suite.installPath,
-	},
-		&confirmMock{confirm: true},
-		&testOutputer{},
-	)
+	})
 	suite.Require().NoError(err)
 
 	if fileutils.DirExists(suite.configPath) {
@@ -77,7 +75,8 @@ func (suite *CleanTestSuite) TestRun() {
 }
 
 func (suite *CleanTestSuite) TestRun_PromptNo() {
-	err := run(&RunParams{}, &confirmMock{}, &testOutputer{})
+	runner := NewClean(&testOutputer{}, &confirmMock{})
+	err := runner.Run(&RunParams{})
 	suite.Require().NoError(err)
 
 	suite.Require().DirExists(suite.configPath)
@@ -91,7 +90,8 @@ func (suite *CleanTestSuite) TestRun_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	err := run(&RunParams{}, &confirmMock{}, &testOutputer{})
+	runner := NewClean(&testOutputer{}, &confirmMock{})
+	err := runner.Run(&RunParams{})
 	suite.Require().Error(err)
 }
 

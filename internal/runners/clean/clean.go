@@ -35,16 +35,12 @@ func NewClean(outputer output.Outputer, confirmer confirmAble) *Clean {
 }
 
 func (c *Clean) Run(params *RunParams) error {
-	return run(params, c.confirm, c.out)
-}
-
-func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
 		return errors.New(locale.T("err_clean_activated"))
 	}
 
 	if !params.Force {
-		ok, fail := confirm.Confirm(locale.T("clean_confirm_remove"), false)
+		ok, fail := c.confirm.Confirm(locale.T("clean_confirm_remove"), false)
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -53,9 +49,19 @@ func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 		}
 	}
 
-	logging.Debug("Removing config directory: %s", params.ConfigPath)
 	logging.Debug("Removing cache path: %s", params.CachePath)
+	err := os.RemoveAll(params.CachePath)
+	if err != nil {
+		return err
+	}
+
 	logging.Debug("Removing state tool binary: %s", params.InstallPath)
+	err = os.Remove(params.InstallPath)
+	if err != nil {
+		return err
+	}
+
+	logging.Debug("Removing config directory: %s", params.ConfigPath)
 	if file, ok := logging.CurrentHandler().Output().(*os.File); ok {
 		err := file.Sync()
 		if err != nil {
@@ -67,21 +73,11 @@ func run(params *RunParams, confirm confirmAble, out output.Outputer) error {
 		}
 	}
 
-	err := os.RemoveAll(params.ConfigPath)
+	err = os.RemoveAll(params.ConfigPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.RemoveAll(params.CachePath)
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(params.InstallPath)
-	if err != nil {
-		return err
-	}
-
-	out.Print(locale.T("clean_success_message"))
+	c.out.Print(locale.T("clean_success_message"))
 	return nil
 }
