@@ -559,10 +559,11 @@ func (script *Script) Language() language.Language {
 // LanguageSafe returns the language of this script. The returned
 // language is guaranteed to be of a known scripting language
 func (script *Script) LanguageSafe() language.Language {
-	if script.Language() == language.Unknown {
+	lang := script.Language()
+	if !lang.Recognized() {
 		return defaultScriptLanguage()
 	}
-	return script.Language()
+	return lang
 }
 
 func defaultScriptLanguage() language.Language {

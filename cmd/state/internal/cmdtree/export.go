@@ -20,20 +20,10 @@ func newExportCommand() *captain.Command {
 		})
 }
 
-type RecipeArgs struct {
-	CommitID string
-}
-
-type RecipeFlags struct {
-	Pretty   bool
-	Platform string
-}
-
 func newRecipeCommand() *captain.Command {
 	recipe := export.NewRecipe()
 
-	args := RecipeArgs{}
-	flags := RecipeFlags{}
+	params := export.RecipeParams{}
 
 	return captain.NewCommand(
 		"recipe",
@@ -42,35 +32,31 @@ func newRecipeCommand() *captain.Command {
 			{
 				Name:        "pretty",
 				Description: locale.T("export_recipe_flag_pretty"),
-				Type:        captain.TypeBool,
-				BoolVar:     &flags.Pretty,
+				Value:       &params.Pretty,
 			},
 			{
 				Name:        "platform",
 				Shorthand:   "p",
 				Description: locale.T("export_recipe_flag_platform"),
-				Type:        captain.TypeString,
-				StringVar:   &flags.Platform,
+				Value:       &params.Platform,
 			},
 		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("export_recipe_cmd_commitid_arg"),
 				Description: locale.T("export_recipe_cmd_commitid_arg_description"),
-				Variable:    &args.CommitID,
+				Value:       &params.CommitID,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return recipe.Run(&export.RecipeParams{
-				CommitID: args.CommitID,
-				Pretty:   flags.Pretty,
-				Platform: flags.Platform,
-			})
+			return recipe.Run(&params)
 		})
 }
 
 func newJWTCommand() *captain.Command {
 	jwt := export.NewJWT()
+
+	params := export.JWTParams{}
 
 	return captain.NewCommand(
 		"jwt",
@@ -78,12 +64,16 @@ func newJWTCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return jwt.Run(&export.JWTParams{Auth: authentication.Get()})
+			params.Auth = authentication.Get()
+
+			return jwt.Run(&params)
 		})
 }
 
 func newPrivateKeyCommand() *captain.Command {
 	privateKey := export.NewPrivateKey()
+
+	params := export.PrivateKeyParams{}
 
 	return captain.NewCommand(
 		"private-key",
@@ -91,6 +81,8 @@ func newPrivateKeyCommand() *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return privateKey.Run(&export.PrivateKeyParams{Auth: authentication.Get()})
+			params.Auth = authentication.Get()
+
+			return privateKey.Run(&params)
 		})
 }

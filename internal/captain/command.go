@@ -2,8 +2,10 @@ package captain
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -55,7 +57,9 @@ func NewCommand(name, description string, flags []*Flag, args []*Argument, execu
 		SilenceUsage:  true,
 	}
 
-	cmd.setFlags(flags)
+	if err := cmd.setFlags(flags); err != nil {
+		panic(err)
+	}
 	cmd.SetUsageTemplate("usage_tpl")
 
 	return cmd
@@ -73,7 +77,7 @@ func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
-	return err
+	return setupSensibleErrors(err)
 }
 
 func (c *Command) SetAliases(aliases []string) {
@@ -147,10 +151,24 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
-		if len(args) > idx {
-			(*arg.Variable) = args[idx]
+		if idx >= len(args) {
+			break
+		}
+
+		switch v := arg.Value.(type) {
+		case *string:
+			*v = args[idx]
+		case ArgMarshaler:
+			if err := v.Set(args[idx]); err != nil {
+				return err
+			}
+		default:
+			return failures.FailDeveloper.New(
+				"arg value must be *string, or ArgMarshaler",
+			)
 		}
 	}
+
 	return c.execute(c, args)
 }
 
@@ -176,4 +194,51 @@ func (c *Command) runFlags(persistOnly bool) {
 
 func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 	return nil
+}
+
+// setupSensibleErrors inspects an error value for certain errors and returns a
+// wrapped error that can be checked and that is localized.
+func setupSensibleErrors(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	errMsg := err.Error()
+
+	// pflag: flag.go: output being parsed:
+	// fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
+	invalidArg := "invalid argument "
+	if strings.Contains(errMsg, invalidArg) {
+		segments := strings.SplitN(errMsg, ": ", 2)
+
+		flagText := "{unknown flag}"
+		msg := "unknown error"
+
+		if len(segments) > 0 {
+			subsegs := strings.SplitN(segments[0], "for ", 2)
+			if len(subsegs) > 1 {
+				flagText = strings.TrimSuffix(subsegs[1], " flag")
+			}
+		}
+
+		if len(segments) > 1 {
+			msg = segments[1]
+		}
+
+		return failures.FailUserInput.New(
+			"command_flag_invalid_value", flagText, msg,
+		)
+	}
+
+	// pflag: flag.go: output being parsed:
+	// fmt.Errorf("no such flag -%v", name)
+	noSuch := "no such flag "
+	if strings.Contains(errMsg, noSuch) {
+		flagText := strings.TrimPrefix(errMsg, noSuch)
+		return failures.FailUserInput.New(
+			"command_flag_no_such_flag", flagText,
+		)
+	}
+
+	return err
 }

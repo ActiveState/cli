@@ -37,6 +37,13 @@ func TestNew(t *testing.T) {
 			"\"hello\"",
 			"",
 		},
+		{
+			"editor.v0",
+			"editor.v0",
+			"hello",
+			"\"hello\"",
+			"",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
