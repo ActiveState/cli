@@ -26,7 +26,7 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "force",
-				Shorthand:   "",
+				Shorthand:   "f",
 				Description: locale.T("flag_state_clean_force_description"),
 				Type:        captain.TypeBool,
 				BoolVar:     &opts.Force,
