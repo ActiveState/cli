@@ -8,9 +8,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// EditorV0FormatName is the format used for Komodo. We do not implement the actual formatter at this level as the
-// format is by definition unstructured (ie. needs to be handled case by case)
-const EditorV0FormatName = "editor.v0"
+// FormatName constants are tokens representing supported output formats.
+const (
+	PlainFormatName    = "plain"     // human readable
+	JSONFormatName     = "json"      // plain json
+	EditorFormatName   = "editor"    // alias of "json"
+	EditorV0FormatName = "editor.v0" // for Komodo: alias of "json"
+)
 
 // FailNotRecognized is a failure due to the format not being recognized
 var FailNotRecognized = failures.Type("output.fail.not.recognized", failures.FailInput)
@@ -31,7 +35,7 @@ func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 		logging.Debug("Using Plain outputer")
 		plain, fail := NewPlain(config)
 		return &plain, fail
-	case JSONFormatName, EditorFormatName:
+	case JSONFormatName, EditorFormatName, EditorV0FormatName:
 		logging.Debug("Using JSON outputer")
 		json, fail := NewJSON(config)
 		return &json, fail
