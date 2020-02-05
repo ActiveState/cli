@@ -1013,6 +1013,14 @@ export_recipe_flag_pretty:
   other: Enables export format beautification
 export_recipe_flag_platform:
   other: Sets target platform
+platforms_cmd_description:
+  other: Manage platforms used in your project
+platforms_add_cmd_description:
+  other: Add a new platform to your project
+platforms_list_cmd_description:
+  other: List the platforms currently used by this project
+platforms_remove_cmd_description:
+  other: Remove a platform from your project
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:

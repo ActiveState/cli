@@ -14,10 +14,12 @@ import (
 	"github.com/ActiveState/cli/state/show"
 )
 
+// CmdTree manages a tree of captain.Command instances.
 type CmdTree struct {
 	cmd *captain.Command
 }
 
+// New prepares a CmdTree.
 func New(outputer output.Outputer) *CmdTree {
 	globals := newGlobalOptions()
 
@@ -36,6 +38,13 @@ func New(outputer output.Outputer) *CmdTree {
 		newPrivateKeyCommand(),
 	)
 
+	platformsCmd := newPlatformsCommand()
+	platformsCmd.AddChildren(
+		newPlatformsListCommand(),
+		newPlatformsAddCommand(),
+		newPlatformsRemoveCommand(),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
@@ -46,6 +55,7 @@ func New(outputer output.Outputer) *CmdTree {
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		platformsCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -119,6 +129,7 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 	return cmd
 }
 
+// Execute runs the CmdTree using the provided CLI arguments.
 func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
 }
