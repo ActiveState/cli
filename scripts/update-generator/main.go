@@ -131,7 +131,7 @@ func createVersion(version string) {
 		fmt.Println("error:", err)
 	}
 
-	err = os.MkdirAll(filepath.Join(genDir, branch, "versions", branch), 0755)
+	err = os.MkdirAll(filepath.Join(genDir, "versions", branch), 0755)
 	if err != nil {
 		log.Fatalf("could not create versions directory: %v", err)
 	}
