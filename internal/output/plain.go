@@ -13,8 +13,6 @@ import (
 	"github.com/bndr/gotabulate"
 )
 
-const PlainFormatName = "plain"
-
 // Plain is our plain outputer, it uses reflect to marshal the data.
 // Color tags are supported as [RED]foo[/RESET]
 // Table output is supported if you pass a slice of structs
