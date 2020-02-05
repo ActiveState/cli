@@ -131,6 +131,11 @@ func createVersion(version string) {
 		fmt.Println("error:", err)
 	}
 
+	err = os.MkdirAll(filepath.Join(genDir, branch, "versions", branch), 0755)
+	if err != nil {
+		log.Fatalf("could not create versions directory: %v", err)
+	}
+
 	jsonPath := filepath.Join(genDir, "versions", branch, "version.json")
 	fmt.Printf("Creating %s\n", jsonPath)
 	err = ioutil.WriteFile(jsonPath, b, 0755)
