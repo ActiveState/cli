@@ -10,6 +10,11 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/blang/semver"
 	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
@@ -34,14 +39,10 @@ func NewGithubProvider(token string) *GithubIncrementProvider {
 	}
 }
 
-// IncrementType returns the increment value string (major, minor, patch) of a
+// IncrementBranch returns the increment value string (major, minor, patch) of a
 // pull request label for the current pull request or the most recently
 // merged pull request
-func (g *GithubIncrementProvider) IncrementType(branch string) (string, error) {
-	if branch == masterBranch {
-		return g.versionLabelMaster()
-	}
-
+func (g *GithubIncrementProvider) IncrementBranch() (string, error) {
 	prNum, err := pullRequestNumber()
 	if err != nil {
 		return "", err
@@ -51,6 +52,71 @@ func (g *GithubIncrementProvider) IncrementType(branch string) (string, error) {
 	}
 
 	return g.versionLabelPullRequest(prNum)
+}
+
+func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
+	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
+		State:     "closed",
+		Sort:      "updated",
+		Direction: "desc",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var branchName string
+	for _, pullRequest := range pullRequests {
+		merged, err := g.isMerged(pullRequest)
+		if err != nil {
+			return nil, err
+		}
+		if !merged {
+			continue
+		}
+		branchName = pullRequest.Head.GetLabel()
+		break
+	}
+	if branchName == "" {
+		return nil, errors.New("could not determine branch name from previosly merged pull requests")
+	}
+
+	versionString, err := getVersionFile(branchName)
+	if err != nil {
+		return nil, err
+	}
+
+	return semver.New(versionString)
+}
+
+func getVersionFile(branchName string) (string, error) {
+	// Enable loading shared config file
+	os.Setenv("aws_SDK_LOAD_CONFIG", "1")
+
+	// Specify profile to load for the session's config
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Profile: "default",
+		Config:  aws.Config{Region: aws.String("ca-central-1")},
+	})
+	if err != nil {
+		return "", err
+	}
+
+	downloader := s3manager.NewDownloader(sess)
+
+	var buffer []byte
+	atBuffer := aws.NewWriteAtBuffer(buffer)
+
+	params := &s3.GetObjectInput{
+		Bucket: aws.String("cli-update"),
+		Key:    aws.String(fmt.Sprintf("update/state/versions/%s/version.json", branchName)),
+	}
+
+	_, err = downloader.Download(atBuffer, params)
+	if err != nil {
+		return "", err
+	}
+
+	return string(atBuffer.Bytes()), nil
 }
 
 func (g *GithubIncrementProvider) versionLabelMaster() (string, error) {
