@@ -38,11 +38,11 @@ func New(outputer output.Outputer) *CmdTree {
 		newPrivateKeyCommand(),
 	)
 
-	platformsCmd := newPlatformsCommand()
+	platformsCmd := newPlatformsCommand(outputer)
 	platformsCmd.AddChildren(
-		newPlatformsListCommand(),
-		newPlatformsAddCommand(),
-		newPlatformsRemoveCommand(),
+		newPlatformsListCommand(outputer),
+		newPlatformsAddCommand(outputer),
+		newPlatformsRemoveCommand(outputer),
 	)
 
 	stateCmd := newStateCommand(globals)

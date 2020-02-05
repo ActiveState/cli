@@ -6,14 +6,14 @@ import (
 	"github.com/ActiveState/cli/internal/runners/platforms"
 )
 
-func newPlatformsCommand() *captain.Command {
-	cmd := newPlatformsListCommand()
+func newPlatformsCommand(printer platforms.Printer) *captain.Command {
+	cmd := newPlatformsListCommand(printer)
 
 	return cmd.As("platforms", locale.T("platforms_cmd_description"))
 }
 
-func newPlatformsListCommand() *captain.Command {
-	runner := platforms.NewList()
+func newPlatformsListCommand(printer platforms.Printer) *captain.Command {
+	runner := platforms.NewList(printer)
 
 	return captain.NewCommand(
 		"list",
@@ -25,8 +25,8 @@ func newPlatformsListCommand() *captain.Command {
 		})
 }
 
-func newPlatformsAddCommand() *captain.Command {
-	runner := platforms.NewAdd()
+func newPlatformsAddCommand(printer platforms.Printer) *captain.Command {
+	runner := platforms.NewAdd(printer)
 
 	return captain.NewCommand(
 		"add",
@@ -38,8 +38,8 @@ func newPlatformsAddCommand() *captain.Command {
 		})
 }
 
-func newPlatformsRemoveCommand() *captain.Command {
-	runner := platforms.NewRemove()
+func newPlatformsRemoveCommand(printer platforms.Printer) *captain.Command {
+	runner := platforms.NewRemove(printer)
 
 	return captain.NewCommand(
 		"remove",
