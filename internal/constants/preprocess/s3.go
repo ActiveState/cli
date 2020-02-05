@@ -2,6 +2,7 @@ package preprocess
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -9,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
+
+const bucketPrefix = "update/state/versions/"
 
 type versionFile struct {
 	Version string
@@ -38,9 +41,7 @@ func getVersionString(branchName string) (string, error) {
 
 	params := &s3.GetObjectInput{
 		Bucket: aws.String("cli-update"),
-		// Key:    aws.String(fmt.Sprintf("update/state/versions/%s/version.json", branchName)),
-		// TEMPORARY: Use current PRs version file
-		Key: aws.String("update/state/versions/sync-version-increments-171012882/version.json"),
+		Key:    aws.String(fmt.Sprintf("%s%s/version.json", bucketPrefix, branchName)),
 	}
 
 	_, err = downloader.Download(atBuffer, params)

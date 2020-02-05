@@ -82,9 +82,6 @@ func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
 		return nil, err
 	}
 
-	// TEMPORARY for debugging
-	fmt.Println("Got version string from s3: ", versionString)
-
 	return semver.New(versionString)
 }
 
