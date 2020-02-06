@@ -5,25 +5,41 @@ import (
 )
 
 // List manages the listing execution context.
-type List struct {
-	printer Printer
-}
+type List struct{}
 
 // NewList prepares a list execution context for use.
-func NewList(p Printer) *List {
-	return &List{
-		printer: p,
-	}
+func NewList() *List {
+	return &List{}
 }
 
 // Run executes the list behavior.
-func (l *List) Run() error {
+func (l *List) Run() (*Listing, error) {
 	logging.Debug("Execute platforms list")
 
-	return list(l.printer)
+	fetcher := &fetch{}
+
+	return newListing(fetcher)
 }
 
-func list(printer Printer) error {
-	printer.Print("this is some info")
-	return nil
+// Listing represents the output data of a listing.
+type Listing struct {
+	Platforms []*Platform `json:"platforms"`
+}
+
+func newListing(fetcher Fetcher) (*Listing, error) {
+	platforms, fail := fetcher.FetchPlatforms()
+	if fail != nil {
+		return nil, fail
+	}
+
+	var listing Listing
+	for _, platform := range platforms {
+		var p Platform
+		if platform.DisplayName != nil {
+			p.Name = *platform.DisplayName
+		}
+		listing.Platforms = append(listing.Platforms, &p)
+	}
+
+	return &listing, nil
 }

@@ -5,24 +5,20 @@ import (
 )
 
 // Add manages the adding execution context.
-type Add struct {
-	printer Printer
-}
+type Add struct{}
 
 // NewAdd prepares an add execution context for use.
-func NewAdd(p Printer) *Add {
-	return &Add{
-		printer: p,
-	}
+func NewAdd() *Add {
+	return &Add{}
 }
 
 // Run executes the add behavior.
 func (a *Add) Run() error {
 	logging.Debug("Execute platforms add")
 
-	return add(a.printer)
+	return add()
 }
 
-func add(printer Printer) error {
+func add() error {
 	return nil
 }

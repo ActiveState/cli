@@ -3,17 +3,18 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/platforms"
 )
 
-func newPlatformsCommand(printer platforms.Printer) *captain.Command {
-	cmd := newPlatformsListCommand(printer)
+func newPlatformsCommand(out output.Outputer) *captain.Command {
+	cmd := newPlatformsListCommand(out)
 
 	return cmd.As("platforms", locale.T("platforms_cmd_description"))
 }
 
-func newPlatformsListCommand(printer platforms.Printer) *captain.Command {
-	runner := platforms.NewList(printer)
+func newPlatformsListCommand(out output.Outputer) *captain.Command {
+	runner := platforms.NewList()
 
 	return captain.NewCommand(
 		"list",
@@ -21,12 +22,39 @@ func newPlatformsListCommand(printer platforms.Printer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
-		})
+			results, err := runner.Run()
+			if err != nil {
+				out.Error(err)
+				return err
+			}
+			out.Print(results)
+			return nil
+		},
+	)
 }
 
-func newPlatformsAddCommand(printer platforms.Printer) *captain.Command {
-	runner := platforms.NewAdd(printer)
+func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
+	runner := platforms.NewSearch()
+
+	return captain.NewCommand(
+		"search",
+		locale.T("platforms_search_cmd_description"),
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(_ *captain.Command, _ []string) error {
+			results, err := runner.Run()
+			if err != nil {
+				out.Error(err)
+				return err
+			}
+			out.Print(results)
+			return nil
+		},
+	)
+}
+
+func newPlatformsAddCommand(out output.Outputer) *captain.Command {
+	runner := platforms.NewAdd()
 
 	return captain.NewCommand(
 		"add",
@@ -38,8 +66,8 @@ func newPlatformsAddCommand(printer platforms.Printer) *captain.Command {
 		})
 }
 
-func newPlatformsRemoveCommand(printer platforms.Printer) *captain.Command {
-	runner := platforms.NewRemove(printer)
+func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
+	runner := platforms.NewRemove()
 
 	return captain.NewCommand(
 		"remove",

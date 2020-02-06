@@ -5,24 +5,20 @@ import (
 )
 
 // Remove manages the removeing execution context.
-type Remove struct {
-	printer Printer
-}
+type Remove struct{}
 
 // NewRemove prepares a remove execution context for use.
-func NewRemove(p Printer) *Remove {
-	return &Remove{
-		printer: p,
-	}
+func NewRemove() *Remove {
+	return &Remove{}
 }
 
 // Run executes the remove behavior.
 func (r *Remove) Run() error {
 	logging.Debug("Execute platforms remove")
 
-	return remove(r.printer)
+	return remove()
 }
 
-func remove(printer Printer) error {
+func remove() error {
 	return nil
 }
