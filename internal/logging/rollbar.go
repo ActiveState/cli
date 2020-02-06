@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/denisbrodbeck/machineid"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -30,11 +29,7 @@ func SetupRollbar() {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	machID, err := machineid.ID()
-	if err != nil {
-		Error("Cannot retrieve machine ID: %s", err.Error())
-		machID = "unknown"
-	}
+	machID := UniqID()
 
 	// MachineID is the only thing we have that is consistent between authed and unauthed users, so
 	// we set that as the "person ID" in rollbar so the segmenting of data is consistent
