@@ -122,9 +122,7 @@ func createUpdate(path string, platform string) {
 func createVersion(version string) {
 	v := struct {
 		Version string
-	}{
-		Version: version,
-	}
+	}{version}
 
 	b, err := json.MarshalIndent(v, "", "    ")
 	if err != nil {
