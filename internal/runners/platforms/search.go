@@ -16,7 +16,7 @@ func NewSearch() *Search {
 func (s *Search) Run() (*SearchResult, error) {
 	logging.Debug("Execute platforms search")
 
-	fetcher := &fetch{}
+	fetcher := &fetchAvailable{}
 
 	return newSearchResult(fetcher)
 }
@@ -26,8 +26,8 @@ type SearchResult struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newSearchResult(f fetcher) (*SearchResult, error) {
-	platforms, err := f.FetchPlatforms()
+func newSearchResult(fetcher availableFetcher) (*SearchResult, error) {
+	platforms, err := fetcher.FetchAvailablePlatforms()
 	if err != nil {
 		return nil, err
 	}

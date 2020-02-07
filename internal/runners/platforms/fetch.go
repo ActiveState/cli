@@ -2,19 +2,18 @@ package platforms
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
 // fetcher describes the behavior needed to obtain platforms.
-type fetcher interface {
-	FetchPlatforms() ([]*model.Platform, error)
+type availableFetcher interface {
+	FetchAvailablePlatforms() ([]*model.Platform, error)
 }
 
-type fetch struct{}
+type fetchAvailable struct{}
 
-// FetchPlatforms implements the fetcher interface.
-func (f *fetch) FetchPlatforms() ([]*model.Platform, error) {
+// FetchAvailablePlatforms implements the availableFetcher interface.
+func (f *fetchAvailable) FetchAvailablePlatforms() ([]*model.Platform, error) {
 	platforms, fail := model.FetchPlatforms()
 	if fail != nil {
 		return nil, fail
@@ -23,34 +22,14 @@ func (f *fetch) FetchPlatforms() ([]*model.Platform, error) {
 	return platforms, nil
 }
 
-type fetchByCommitID struct {
-	commitID strfmt.UUID
+type committedFetcher interface {
+	FetchCommittedPlatforms(strfmt.UUID) ([]*model.Platform, error)
 }
 
-func newFetchByCommitID(commitID string) (*fetchByCommitID, error) {
-	if commitID == "" {
-		proj := project.Get()
-		cmt, fail := model.LatestCommitID(proj.Owner(), proj.Name())
-		if fail != nil {
-			return nil, fail
-		}
-		commitID = cmt.String()
-	}
+type fetchCommitted struct{}
 
-	var cid strfmt.UUID
-	if err := cid.UnmarshalText([]byte(commitID)); err != nil {
-		return nil, err
-	}
-
-	fetch := fetchByCommitID{
-		commitID: cid,
-	}
-
-	return &fetch, nil
-}
-
-func (f *fetchByCommitID) FetchPlatforms() ([]*model.Platform, error) {
-	platforms, fail := model.FetchPlatformsForCommit(f.commitID)
+func (f *fetchCommitted) FetchCommittedPlatforms(commitID strfmt.UUID) ([]*model.Platform, error) {
+	platforms, fail := model.FetchPlatformsForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
