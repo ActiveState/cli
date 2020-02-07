@@ -5,9 +5,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-// availableFetcher describes the behavior needed to obtain platforms.
-type availableFetcher interface {
-	FetchAvailablePlatforms() ([]*model.Platform, error)
+// availableProvider describes the behavior needed to obtain available platforms.
+type availableProvider interface {
+	AvailablePlatforms() ([]*model.Platform, error)
 }
 
 // Search manages the searching execution context.
@@ -22,9 +22,9 @@ func NewSearch() *Search {
 func (s *Search) Run() (*SearchResult, error) {
 	logging.Debug("Execute platforms search")
 
-	fetcher := &fetchAvailable{}
+	fetch := &fetchAvailable{}
 
-	return newSearchResult(fetcher)
+	return newSearchResult(fetch)
 }
 
 // SearchResult represents the output data of a search.
@@ -32,8 +32,8 @@ type SearchResult struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newSearchResult(fetcher availableFetcher) (*SearchResult, error) {
-	platforms, err := fetcher.FetchAvailablePlatforms()
+func newSearchResult(p availableProvider) (*SearchResult, error) {
+	platforms, err := p.AvailablePlatforms()
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func newSearchResult(fetcher availableFetcher) (*SearchResult, error) {
 type fetchAvailable struct{}
 
 // FetchAvailablePlatforms implements the availableFetcher interface.
-func (f *fetchAvailable) FetchAvailablePlatforms() ([]*model.Platform, error) {
+func (f *fetchAvailable) AvailablePlatforms() ([]*model.Platform, error) {
 	platforms, fail := model.FetchPlatforms()
 	if fail != nil {
 		return nil, fail

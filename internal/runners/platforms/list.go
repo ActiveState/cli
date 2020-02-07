@@ -7,8 +7,8 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-type committedFetcher interface {
-	FetchCommittedPlatforms(string) ([]*model.Platform, error)
+type committedProvider interface {
+	CommittedPlatforms(commitID string) ([]*model.Platform, error)
 }
 
 // List manages the listing execution context.
@@ -23,9 +23,9 @@ func NewList() *List {
 func (l *List) Run() (*Listing, error) {
 	logging.Debug("Execute platforms list")
 
-	fetcher := &fetchCommitted{}
+	fetch := &fetchCommitted{}
 
-	return newListing(fetcher, "")
+	return newListing(fetch, "")
 }
 
 // Listing represents the output data of a listing.
@@ -33,8 +33,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(f committedFetcher, commitID string) (*Listing, error) {
-	platforms, err := f.FetchCommittedPlatforms(commitID)
+func newListing(p committedProvider, commitID string) (*Listing, error) {
+	platforms, err := p.CommittedPlatforms(commitID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func newListing(f committedFetcher, commitID string) (*Listing, error) {
 
 type fetchCommitted struct{}
 
-func (f *fetchCommitted) FetchCommittedPlatforms(commitID string) ([]*model.Platform, error) {
+func (f *fetchCommitted) CommittedPlatforms(commitID string) ([]*model.Platform, error) {
 	targetCommitID, err := targettedCommitID(commitID)
 	if err != nil {
 		return nil, err
