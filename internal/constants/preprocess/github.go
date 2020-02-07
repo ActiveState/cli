@@ -83,7 +83,6 @@ func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
 		return nil, err
 	}
 
-	fmt.Println("Found version string: ", versionString)
 	return semver.New(versionString)
 }
 
