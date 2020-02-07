@@ -1,25 +1,40 @@
 package platforms
 
-import "github.com/ActiveState/cli/pkg/platform/model"
-
-// Fetcher describes the behavior needed to obtain platforms.
-type Fetcher interface {
-	FetchPlatforms() ([]*model.Platform, error)
-}
+import (
+	"github.com/ActiveState/cli/pkg/platform/model"
+)
 
 // Platform represents the output data of a platform.
 type Platform struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	WordSize string `json:"wordSize"`
 }
 
-type fetch struct{}
+func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
+	var ps []*Platform
 
-// FetchPlatforms implements the Fetcher interface.
-func (f *fetch) FetchPlatforms() ([]*model.Platform, error) {
-	platforms, fail := model.FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	for _, platform := range platforms {
+		var p Platform
+		if platform.Kernel != nil {
+			p.Name = normString(platform.Kernel.Name)
+		}
+		if platform.KernelVersion != nil {
+			p.Version = normString(platform.KernelVersion.Version)
+		}
+		if platform.CPUArchitecture != nil {
+			p.WordSize = platform.CPUArchitecture.BitWidth
+		}
+
+		ps = append(ps, &p)
 	}
 
-	return platforms, nil
+	return ps
+}
+
+func normString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

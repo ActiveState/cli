@@ -146,6 +146,27 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 	return platformCache, nil
 }
 
+func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failure) {
+	checkpt, _, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	platformIDs := CheckpointToPlatforms(checkpt)
+
+	var platforms []*Platform
+	for _, pID := range platformIDs {
+		platform, fail := FetchPlatformByUID(pID)
+		if fail != nil {
+			return nil, fail
+		}
+
+		platforms = append(platforms, platform)
+	}
+
+	return platforms, nil
+}
+
 func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
 	runtimePlatforms, fail := FetchPlatforms()
 	if fail != nil {

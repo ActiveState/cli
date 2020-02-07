@@ -16,7 +16,10 @@ func NewList() *List {
 func (l *List) Run() (*Listing, error) {
 	logging.Debug("Execute platforms list")
 
-	fetcher := &fetch{}
+	fetcher, err := newFetchByCommitID("")
+	if err != nil {
+		return nil, err
+	}
 
 	return newListing(fetcher)
 }
@@ -27,18 +30,13 @@ type Listing struct {
 }
 
 func newListing(fetcher Fetcher) (*Listing, error) {
-	platforms, fail := fetcher.FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	platforms, err := fetcher.FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
-	var listing Listing
-	for _, platform := range platforms {
-		var p Platform
-		if platform.DisplayName != nil {
-			p.Name = *platform.DisplayName
-		}
-		listing.Platforms = append(listing.Platforms, &p)
+	listing := Listing{
+		Platforms: makePlatformsFromModelPlatforms(platforms),
 	}
 
 	return &listing, nil

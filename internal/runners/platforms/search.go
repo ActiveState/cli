@@ -27,18 +27,13 @@ type SearchResult struct {
 }
 
 func newSearchResult(fetcher Fetcher) (*SearchResult, error) {
-	platforms, fail := fetcher.FetchPlatforms()
-	if fail != nil {
-		return nil, fail
+	platforms, err := fetcher.FetchPlatforms()
+	if err != nil {
+		return nil, err
 	}
 
-	var result SearchResult
-	for _, platform := range platforms {
-		var p Platform
-		if platform.DisplayName != nil {
-			p.Name = *platform.DisplayName
-		}
-		result.Platforms = append(result.Platforms, &p)
+	result := SearchResult{
+		Platforms: makePlatformsFromModelPlatforms(platforms),
 	}
 
 	return &result, nil
