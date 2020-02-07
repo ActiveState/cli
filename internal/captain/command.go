@@ -200,7 +200,7 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error) error {
-	if err == nil || reflect.ValueOf(err).IsNil() {
+	if err == nil || (reflect.ValueOf(err).Kind() == reflect.Ptr && reflect.ValueOf(err).IsNil()) {
 		return nil
 	}
 
