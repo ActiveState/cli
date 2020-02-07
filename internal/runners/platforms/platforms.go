@@ -1,6 +1,9 @@
 package platforms
 
 import (
+	"errors"
+
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -30,4 +33,27 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 	}
 
 	return ps
+}
+
+// Params represents the minimal defining details of a platform.
+type Params struct {
+	Name     string
+	WordSize int
+	Version  string
+}
+
+func prepareParams(ps Params) (Params, error) {
+	if ps.Name == "" {
+		ps.Name = model.HostPlatform
+	}
+
+	if ps.WordSize == 0 {
+		ps.WordSize = 32 << (^uint(0) >> 63) // gets host word size
+	}
+
+	if ps.Version == "" {
+		return ps, errors.New(locale.T("bad_platform_version"))
+	}
+
+	return ps, nil
 }

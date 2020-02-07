@@ -8,8 +8,7 @@ import (
 
 // RunAddParams tracks the info required for running Add.
 type RunAddParams struct {
-	Name    string
-	Version string
+	Params
 }
 
 // Add manages the adding execution context.
@@ -24,13 +23,20 @@ func NewAdd() *Add {
 func (a *Add) Run(params RunAddParams) error {
 	logging.Debug("Execute platforms add")
 
-	return add(params.Name, params.Version)
+	return add(params.Params)
 }
 
-func add(name, version string) error {
+func add(ps Params) error {
+	params, err := prepareParams(ps)
+	if err != nil {
+		return nil
+	}
+
 	proj := project.Get()
 
-	op := model.OperationAdded
-
-	return model.CommitPlatform(proj.Owner(), proj.Name(), op, name, version)
+	return model.CommitPlatform(
+		proj.Owner(), proj.Name(),
+		model.OperationAdded,
+		params.Name, params.Version, params.WordSize,
+	)
 }

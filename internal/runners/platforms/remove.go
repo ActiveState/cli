@@ -8,8 +8,7 @@ import (
 
 // RunRemoveParams tracks the info required for running Remove.
 type RunRemoveParams struct {
-	Name    string
-	Version string
+	Params
 }
 
 // Remove manages the removeing execution context.
@@ -24,13 +23,20 @@ func NewRemove() *Remove {
 func (r *Remove) Run(params RunRemoveParams) error {
 	logging.Debug("Execute platforms remove")
 
-	return remove(params.Name, params.Version)
+	return remove(params.Params)
 }
 
-func remove(name, version string) error {
+func remove(ps Params) error {
+	params, err := prepareParams(ps)
+	if err != nil {
+		return nil
+	}
+
 	proj := project.Get()
 
-	op := model.OperationRemoved
-
-	return model.CommitPlatform(proj.Owner(), proj.Name(), op, name, version)
+	return model.CommitPlatform(
+		proj.Owner(), proj.Name(),
+		model.OperationRemoved,
+		params.Name, params.Version, params.WordSize,
+	)
 }
