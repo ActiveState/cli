@@ -2,7 +2,13 @@ package platforms
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
+
+// availableFetcher describes the behavior needed to obtain platforms.
+type availableFetcher interface {
+	FetchAvailablePlatforms() ([]*model.Platform, error)
+}
 
 // Search manages the searching execution context.
 type Search struct{}
@@ -37,4 +43,16 @@ func newSearchResult(fetcher availableFetcher) (*SearchResult, error) {
 	}
 
 	return &result, nil
+}
+
+type fetchAvailable struct{}
+
+// FetchAvailablePlatforms implements the availableFetcher interface.
+func (f *fetchAvailable) FetchAvailablePlatforms() ([]*model.Platform, error) {
+	platforms, fail := model.FetchPlatforms()
+	if fail != nil {
+		return nil, fail
+	}
+
+	return platforms, nil
 }
