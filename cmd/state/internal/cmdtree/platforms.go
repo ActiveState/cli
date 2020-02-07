@@ -24,7 +24,6 @@ func newPlatformsListCommand(out output.Outputer) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			results, err := runner.Run()
 			if err != nil {
-				out.Error(err)
 				return err
 			}
 			out.Print(results)
@@ -44,7 +43,6 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			results, err := runner.Run()
 			if err != nil {
-				out.Error(err)
 				return err
 			}
 			out.Print(results)
@@ -61,7 +59,13 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 	return captain.NewCommand(
 		"add",
 		locale.T("platforms_add_cmd_description"),
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        locale.T("flag_platforms_add_word"),
+				Description: locale.T("flag_platforms_add_word_description"),
+				Value:       &params.WordSize,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_platforms_add_name"),
@@ -75,11 +79,7 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			if err := runner.Run(params); err != nil {
-				out.Error(err)
-				return err
-			}
-			return nil
+			return runner.Run(params)
 		},
 	)
 }
@@ -92,7 +92,13 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 	return captain.NewCommand(
 		"remove",
 		locale.T("platforms_remove_cmd_description"),
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        locale.T("flag_platforms_remove_word"),
+				Description: locale.T("flag_platforms_remove_word_description"),
+				Value:       &params.WordSize,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_platforms_remove_name"),
@@ -106,11 +112,7 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			if err := runner.Run(params); err != nil {
-				out.Error(err)
-				return err
-			}
-			return nil
+			return runner.Run(params)
 		},
 	)
 }
