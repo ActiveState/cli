@@ -16,6 +16,7 @@ import (
 )
 
 const labelPrefix = "version: "
+const branchPrefix = "ActiveState:"
 const masterBranch = "master"
 
 // GithubIncrementProvider provides methods for getting label values from the Github API
@@ -70,7 +71,7 @@ func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
 		if !merged {
 			continue
 		}
-		branchName = pullRequest.Head.GetLabel()
+		branchName = strings.TrimPrefix(pullRequest.Head.GetLabel(), branchPrefix)
 		break
 	}
 	if branchName == "" {
