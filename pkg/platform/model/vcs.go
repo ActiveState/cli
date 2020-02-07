@@ -336,6 +336,38 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 }
 
 // CommitPlatform commits a single platform commit
-func CommitPlatform(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
-	return nil
+func CommitPlatform(owner, prjName string, op Operation, name, version string) *failures.Failure {
+	proj, fail := FetchProjectByName(owner, prjName)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID == nil {
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
+	}
+
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = "commit_message_add_platform"
+	case OperationUpdated:
+		return failures.FailDeveloper.New("this is not supported yet")
+	case OperationRemoved:
+		msgL10nKey = "commit_message_removed_platform"
+	}
+
+	branchCommitID := *branch.CommitID
+	message := locale.Tr(msgL10nKey, name, version)
+
+	commit, fail := AddCommit(branchCommitID, message, op, NamespacePlatform(), name, version)
+	if fail != nil {
+		return fail
+	}
+
+	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
