@@ -251,12 +251,12 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	if len(timeout) > 0 {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
-	_, err := s.console.Expect(opts...)
+	parsed, err := s.console.Expect(opts...)
 	if err != nil {
 		s.FailNow(
 			"Could not meet expectation",
-			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.UnsyncedOutput())
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
+			value, err, s.UnsyncedOutput(), parsed)
 	}
 }
 
