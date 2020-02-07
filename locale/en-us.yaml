@@ -1038,9 +1038,9 @@ arg_platforms_remove_version:
 arg_platforms_remove_version_description:
   other: Platform version
 commit_message_add_platform:
-  other: "Added platform: {{.V0}} {{.V1}}"
+  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
-  other: "Removed platform: {{.V0}}"
+  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:

@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/go-openapi/strfmt"
 
@@ -336,7 +337,12 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 }
 
 // CommitPlatform commits a single platform commit
-func CommitPlatform(owner, prjName string, op Operation, name, version string) *failures.Failure {
+func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) *failures.Failure {
+	platform, fail := FetchPlatformByDetails(name, version, word)
+	if fail != nil {
+		return fail
+	}
+
 	proj, fail := FetchProjectByName(owner, prjName)
 	if fail != nil {
 		return fail
@@ -361,10 +367,12 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string) *
 		msgL10nKey = "commit_message_removed_platform"
 	}
 
-	branchCommitID := *branch.CommitID
-	message := locale.Tr(msgL10nKey, name, version)
+	bCommitID := *branch.CommitID
+	msg := locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+	platformID := platform.PlatformID.String()
 
-	commit, fail := AddCommit(branchCommitID, message, op, NamespacePlatform(), name, version)
+	// version is not the value that AddCommit needs - platforms do not post a version
+	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
 	if fail != nil {
 		return fail
 	}
