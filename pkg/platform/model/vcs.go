@@ -334,3 +334,8 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 
 	return ct, nil
 }
+
+// CommitPlatform commits a single platform commit
+func CommitPlatform(projectOwner, projectName string, operation Operation, packageName, packageVersion string) *failures.Failure {
+	return nil
+}

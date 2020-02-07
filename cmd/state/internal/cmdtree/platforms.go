@@ -56,25 +56,51 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 	runner := platforms.NewAdd()
 
+	params := platforms.RunAddParams{}
+
 	return captain.NewCommand(
 		"add",
 		locale.T("platforms_add_cmd_description"),
 		[]*captain.Flag{},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("arg_platforms_add_name"),
+				Description: locale.T("arg_platforms_add_name_description"),
+				Value:       &params.Name,
+			},
+			{
+				Name:        locale.T("arg_platforms_add_version"),
+				Description: locale.T("arg_platforms_add_version_description"),
+				Value:       &params.Version,
+			},
+		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
+			return runner.Run(params)
 		})
 }
 
 func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 	runner := platforms.NewRemove()
 
+	params := platforms.RunRemoveParams{}
+
 	return captain.NewCommand(
 		"remove",
 		locale.T("platforms_remove_cmd_description"),
 		[]*captain.Flag{},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("arg_platforms_remove_name"),
+				Description: locale.T("arg_platforms_remove_name_description"),
+				Value:       &params.Name,
+			},
+			{
+				Name:        locale.T("arg_platforms_remove_version"),
+				Description: locale.T("arg_platforms_remove_version_description"),
+				Value:       &params.Version,
+			},
+		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
+			return runner.Run(params)
 		})
 }

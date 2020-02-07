@@ -2,7 +2,14 @@ package platforms
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
+
+// RunRemoveParams tracks the info required for running Remove.
+type RunRemoveParams struct {
+	Name    string
+	Version string
+}
 
 // Remove manages the removeing execution context.
 type Remove struct{}
@@ -13,12 +20,14 @@ func NewRemove() *Remove {
 }
 
 // Run executes the remove behavior.
-func (r *Remove) Run() error {
+func (r *Remove) Run(params RunRemoveParams) error {
 	logging.Debug("Execute platforms remove")
 
-	return remove()
+	commit := &commitOp{}
+
+	return remove(commit, params.Name, params.Version)
 }
 
-func remove() error {
-	return nil
+func remove(c committer, name, version string) error {
+	return c.CommitPlatform(model.OperationAdded, name, version)
 }

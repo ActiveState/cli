@@ -2,6 +2,7 @@ package platforms
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Platform represents the output data of a platform.
@@ -37,4 +38,16 @@ func normString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+type committer interface {
+	CommitPlatform(op model.Operation, name, version string) error
+}
+
+type commitOp struct{}
+
+func (c *commitOp) CommitPlatform(op model.Operation, name, version string) error {
+	proj := project.Get()
+
+	return model.CommitPlatform(proj.Owner(), proj.Name(), op, name, version)
 }
