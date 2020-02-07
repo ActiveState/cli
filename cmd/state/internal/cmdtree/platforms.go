@@ -75,8 +75,13 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
-		})
+			if err := runner.Run(params); err != nil {
+				out.Error(err)
+				return err
+			}
+			return nil
+		},
+	)
 }
 
 func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
@@ -101,6 +106,11 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
-		})
+			if err := runner.Run(params); err != nil {
+				out.Error(err)
+				return err
+			}
+			return nil
+		},
+	)
 }
