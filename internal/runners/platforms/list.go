@@ -29,8 +29,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(fetcher Fetcher) (*Listing, error) {
-	platforms, err := fetcher.FetchPlatforms()
+func newListing(f fetcher) (*Listing, error) {
+	platforms, err := f.FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}

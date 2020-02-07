@@ -26,8 +26,8 @@ type SearchResult struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newSearchResult(fetcher Fetcher) (*SearchResult, error) {
-	platforms, err := fetcher.FetchPlatforms()
+func newSearchResult(f fetcher) (*SearchResult, error) {
+	platforms, err := f.FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}

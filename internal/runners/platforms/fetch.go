@@ -6,14 +6,14 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// Fetcher describes the behavior needed to obtain platforms.
-type Fetcher interface {
+// fetcher describes the behavior needed to obtain platforms.
+type fetcher interface {
 	FetchPlatforms() ([]*model.Platform, error)
 }
 
 type fetch struct{}
 
-// FetchPlatforms implements the Fetcher interface.
+// FetchPlatforms implements the fetcher interface.
 func (f *fetch) FetchPlatforms() ([]*model.Platform, error) {
 	platforms, fail := model.FetchPlatforms()
 	if fail != nil {
