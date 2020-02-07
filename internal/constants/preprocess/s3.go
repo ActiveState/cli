@@ -39,7 +39,6 @@ func getVersionString(branchName string) (string, error) {
 	var buffer []byte
 	atBuffer := aws.NewWriteAtBuffer(buffer)
 
-	fmt.Println("key: ", fmt.Sprintf("%s%s/version.json", bucketPrefix, branchName))
 	params := &s3.GetObjectInput{
 		Bucket: aws.String("cli-update"),
 		Key:    aws.String(fmt.Sprintf("%s%s/version.json", bucketPrefix, branchName)),
