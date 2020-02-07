@@ -1318,3 +1318,13 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
+clean_description:
+  other: Remove the state tool, installed languages, and any configuration files
+flag_state_clean_force_description:
+  other: Run clean operation without prompts
+err_clean_activated:
+  other: Cannot clean the state tool install in an activated state. Please deactivate and try again
+clean_confirm_remove:
+  other: You are about to remove the state tool, installed laguage runtimes, and all configuration information. Continue?
+clean_success_message:
+  other: "Successfully removed state tool and related files\n"

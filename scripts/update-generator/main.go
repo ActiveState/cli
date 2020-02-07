@@ -114,7 +114,32 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
+	createVersion(version)
+
 	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
+}
+
+func createVersion(version string) {
+	v := struct {
+		Version string
+	}{version}
+
+	b, err := json.MarshalIndent(v, "", "    ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	err = os.MkdirAll(filepath.Join(genDir, "versions", branch), 0755)
+	if err != nil {
+		log.Fatalf("could not create versions directory: %v", err)
+	}
+
+	jsonPath := filepath.Join(genDir, "versions", branch, "version.json")
+	fmt.Printf("Creating %s\n", jsonPath)
+	err = ioutil.WriteFile(jsonPath, b, 0755)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func createGzip(path string, target string) {

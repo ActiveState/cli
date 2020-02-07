@@ -62,8 +62,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	suite.Expect("Activating state")
 	suite.Expect("activated state", 120*time.Second)
-
-	suite.Wait()
+	suite.WaitForInput()
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string) {
