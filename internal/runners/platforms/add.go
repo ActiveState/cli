@@ -3,6 +3,7 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RunAddParams tracks the info required for running Add.
@@ -23,11 +24,13 @@ func NewAdd() *Add {
 func (a *Add) Run(params RunAddParams) error {
 	logging.Debug("Execute platforms add")
 
-	commit := &commitOp{}
-
-	return add(commit, params.Name, params.Version)
+	return add(params.Name, params.Version)
 }
 
-func add(c committer, name, version string) error {
-	return c.CommitPlatform(model.OperationAdded, name, version)
+func add(name, version string) error {
+	proj := project.Get()
+
+	op := model.OperationAdded
+
+	return model.CommitPlatform(proj.Owner(), proj.Name(), op, name, version)
 }

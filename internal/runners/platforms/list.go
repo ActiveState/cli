@@ -7,10 +7,6 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-type committedProvider interface {
-	CommittedPlatforms(commitID string) ([]*model.Platform, error)
-}
-
 // List manages the listing execution context.
 type List struct{}
 
@@ -23,9 +19,7 @@ func NewList() *List {
 func (l *List) Run() (*Listing, error) {
 	logging.Debug("Execute platforms list")
 
-	fetch := &fetchCommitted{}
-
-	return newListing(fetch, "")
+	return newListing("")
 }
 
 // Listing represents the output data of a listing.
@@ -33,22 +27,7 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(p committedProvider, commitID string) (*Listing, error) {
-	platforms, err := p.CommittedPlatforms(commitID)
-	if err != nil {
-		return nil, err
-	}
-
-	listing := Listing{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
-	}
-
-	return &listing, nil
-}
-
-type fetchCommitted struct{}
-
-func (f *fetchCommitted) CommittedPlatforms(commitID string) ([]*model.Platform, error) {
+func newListing(commitID string) (*Listing, error) {
 	targetCommitID, err := targettedCommitID(commitID)
 	if err != nil {
 		return nil, err
@@ -59,7 +38,11 @@ func (f *fetchCommitted) CommittedPlatforms(commitID string) ([]*model.Platform,
 		return nil, fail
 	}
 
-	return platforms, nil
+	listing := Listing{
+		Platforms: makePlatformsFromModelPlatforms(platforms),
+	}
+
+	return &listing, nil
 }
 
 func targettedCommitID(commitID string) (strfmt.UUID, error) {
