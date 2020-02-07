@@ -144,7 +144,7 @@ type Failure struct {
 }
 
 // Error returns the failure message, cannot be a pointer as it breaks the error interface
-func (e *Failure) Error() string {
+func (e Failure) Error() string {
 	return e.Message
 }
 
