@@ -2,7 +2,6 @@ package captain
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -200,7 +199,10 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
 func setupSensibleErrors(err error) error {
-	if err == nil || (reflect.ValueOf(err).Kind() == reflect.Ptr && reflect.ValueOf(err).IsNil()) {
+	if fail, ok := err.(*failures.Failure); ok && fail == nil {
+		return nil
+	}
+	if err == nil {
 		return nil
 	}
 
