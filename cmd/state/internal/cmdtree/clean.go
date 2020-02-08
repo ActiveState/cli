@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -32,7 +33,7 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			installPath, err := os.Executable()
+			installPath, err := filepath.Abs(os.Args[0])
 			if err != nil {
 				return err
 			}
