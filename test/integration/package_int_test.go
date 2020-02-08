@@ -20,7 +20,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 
 	suite.Spawn("packages")
 	suite.Expect("Name")
-	suite.Expect("pytest")
+	suite.Expect("dateutils")
 	suite.Wait()
 }
 
@@ -32,7 +32,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
 
 	suite.Spawn("packages", "list")
 	suite.Expect("Name")
-	suite.Expect("pytest")
+	suite.Expect("dateutils")
 	suite.Wait()
 }
 
@@ -182,7 +182,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Python3"`
+	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Python3"`
 	suite.Suite.PrepareActiveStateYAML(dir, asyData)
 }
 
