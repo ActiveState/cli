@@ -1021,6 +1021,10 @@ platforms_list_cmd_description:
   other: List the platforms currently used by this project
 platforms_remove_cmd_description:
   other: Remove a platform from your project
+flag_platforms_add_word:
+  other: word
+flag_platforms_add_word_description:
+  other: Platform word size
 arg_platforms_add_name:
   other: name
 arg_platforms_add_name_description:
@@ -1029,6 +1033,10 @@ arg_platforms_add_version:
   other: version
 arg_platforms_add_version_description:
   other: Platform version
+flag_platforms_remove_word:
+  other: word
+flag_platforms_remove_word_description:
+  other: Platform word size
 arg_platforms_remove_name:
   other: name
 arg_platforms_remove_name_description:
