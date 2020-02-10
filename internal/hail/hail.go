@@ -94,7 +94,13 @@ func loop(done <-chan struct{}, w *watcher, rcvs chan<- *Received, t time.Time) 
 		case <-done:
 			return
 
-		case _, ok := <-w.Events: // event type is unimportant for now
+		case event, ok := <-w.Events: // event type is unimportant for now
+			// Because we modify the file everytime we send we must
+			// ignore this type of event
+			if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+				break
+			}
+
 			r := newReceived(t, nil, nil)
 			if !ok {
 				r.Fail = FailWatcherRead.New(",events channel is closed")
