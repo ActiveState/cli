@@ -47,6 +47,7 @@ func New(outputer output.Outputer) *CmdTree {
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		newHistoryCommand(outputer),
 	)
 
 	applyLegacyChildren(stateCmd, globals)

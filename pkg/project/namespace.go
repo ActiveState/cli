@@ -15,21 +15,21 @@ var FailInvalidNamespace = failures.Type("project.fail.invalidnamespace", failur
 // NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)$`
 
-// Namespace represents a project namespace of the form <OWNER>/<PROJECT>
-type Namespace struct {
+// Namespaced represents a project namespace of the form <OWNER>/<PROJECT>
+type Namespaced struct {
 	Owner   string
 	Project string
 }
 
 // ParseNamespace returns a valid project namespace
-func ParseNamespace(raw string) (*Namespace, *failures.Failure) {
+func ParseNamespace(raw string) (*Namespaced, *failures.Failure) {
 	rx := regexp.MustCompile(NamespaceRegex)
 	groups := rx.FindStringSubmatch(raw)
 	if len(groups) != 3 {
 		return nil, FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", raw))
 	}
 
-	return &Namespace{
+	return &Namespaced{
 		Owner:   groups[1],
 		Project: groups[2],
 	}, nil
@@ -37,14 +37,14 @@ func ParseNamespace(raw string) (*Namespace, *failures.Failure) {
 
 // ParseNamespaceOrConfigfile returns a valid project namespace.
 // This version prefers to create a namespace from a configFile if it exists
-func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespace, *failures.Failure) {
+func ParseNamespaceOrConfigfile(raw string, configFile string) (*Namespaced, *failures.Failure) {
 
 	if fileutils.FileExists(configFile) {
 		prj, fail := FromPath(configFile)
 		if fail != nil {
 			return nil, FailInputSecretValue.New(locale.Tr("err_invalid_namespace", raw))
 		}
-		var names Namespace
+		var names Namespaced
 		names.Owner = prj.Owner()
 		names.Project = prj.Name()
 		return &names, nil
