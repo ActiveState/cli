@@ -40,7 +40,6 @@ func New(outputer output.Outputer) *CmdTree {
 
 	platformsCmd := newPlatformsCommand(outputer)
 	platformsCmd.AddChildren(
-		newPlatformsListCommand(outputer),
 		newPlatformsSearchCommand(outputer),
 		newPlatformsAddCommand(outputer),
 		newPlatformsRemoveCommand(outputer),

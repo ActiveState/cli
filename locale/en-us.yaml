@@ -1017,8 +1017,6 @@ platforms_cmd_description:
   other: Manage platforms used in your project
 platforms_add_cmd_description:
   other: Add a new platform to your project
-platforms_list_cmd_description:
-  other: List the platforms currently used by this project
 platforms_remove_cmd_description:
   other: Remove a platform from your project
 flag_platforms_add_word:

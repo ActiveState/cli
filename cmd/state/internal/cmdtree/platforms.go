@@ -8,17 +8,11 @@ import (
 )
 
 func newPlatformsCommand(out output.Outputer) *captain.Command {
-	cmd := newPlatformsListCommand(out)
-
-	return cmd.As("platforms", locale.T("platforms_cmd_description"))
-}
-
-func newPlatformsListCommand(out output.Outputer) *captain.Command {
 	runner := platforms.NewList()
 
 	return captain.NewCommand(
-		"list",
-		locale.T("platforms_list_cmd_description"),
+		"platforms",
+		locale.T("platforms_cmd_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
