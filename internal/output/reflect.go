@@ -15,7 +15,7 @@ type structMeta struct {
 
 // parseStructMeta will use reflect to populate structMeta for the given struct
 func parseStructMeta(v interface{}) (structMeta, error) {
-	structRfl := reflect.ValueOf(v)
+	structRfl := reflect.ValueOf(resolvePointer(v))
 
 	// Fail if the passed type is not a struct
 	if !isStruct(structRfl) {
@@ -62,7 +62,15 @@ func parseSlice(v interface{}) ([]interface{}, error) {
 	return result, nil
 }
 
-func isStruct(v interface{}) bool {
+func resolvePointer(v interface{}) interface{} {
 	valueRfl := reflect.ValueOf(v)
+	if valueRfl.Kind() == reflect.Ptr {
+		return valueRfl.Elem().Interface()
+	}
+	return v
+}
+
+func isStruct(v interface{}) bool {
+	valueRfl := reflect.ValueOf(resolvePointer(v))
 	return valueRfl.Kind() == reflect.Struct
 }

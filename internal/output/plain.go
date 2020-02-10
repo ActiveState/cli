@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/bndr/gotabulate"
+	"github.com/go-openapi/strfmt"
 )
 
 const PlainFormatName = "plain"
@@ -88,7 +89,11 @@ func sprint(value interface{}) (string, error) {
 	case reflect.Bool:
 		result += fmt.Sprintf("%t", valueRfl.Bool())
 	case reflect.String:
-		result += value.(string)
+		if v, ok := value.(strfmt.UUID); ok {
+			result += v.String()
+		} else {
+			result += value.(string)
+		}
 	default:
 		err = fmt.Errorf("unknown type: %s", valueRfl.Type().String())
 	}
@@ -176,8 +181,10 @@ func sprintTable(slice []interface{}) (string, error) {
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders(headers)
+	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
+	t.SetMaxCellSize(100)
+	t.SetHeaders(headers)
 
 	// Don't print whitespace lines
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
