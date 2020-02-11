@@ -111,9 +111,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		defer cleanUpCPUProf()
 	}
 
-	// Don't auto-update if we're 'state update'ing
-	manualUpdate := funk.Contains(args, "update")
-	if (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") && !manualUpdate && updater.TimedCheck() {
+	if updated(args) {
 		return relaunch() // will not return
 	}
 
@@ -225,6 +223,15 @@ func handlePanics(exiter func(int)) {
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)
 	}
+}
+
+func updated(args []string) bool {
+	// Don't auto-update if we're 'state update'ing
+	manualUpdate := funk.Contains(args, "update")
+	return (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") &&
+		!manualUpdate &&
+		os.Getenv("CI") != "true" &&
+		updater.TimedCheck()
 }
 
 // When an update was found and applied, re-launch the update with the current
