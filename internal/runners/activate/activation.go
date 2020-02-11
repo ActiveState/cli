@@ -132,9 +132,8 @@ func listenForReactivation(id string, rcvs <-chan *hail.Received, subs subShell)
 				return false
 			}
 
-			// A subshell will have triggered this case; Wait for
-			// output completion before deactivating. The nature of
-			// this issue is unclear at this time.
+			// Wait for output completion after deactivating.
+			// The nature of this issue is unclear at this time.
 			time.Sleep(time.Second)
 
 			return true
