@@ -25,33 +25,23 @@ func NewHistory() *History {
 }
 
 type HistoryParams struct {
-	namespace string
-	project   *project.Project
-	out       output.Outputer
+	owner       string
+	projectName string
+	out         output.Outputer
 }
 
-func NewHistoryParams(namespace string, project *project.Project, out output.Outputer) HistoryParams {
-	return HistoryParams{namespace, project, out}
+func NewHistoryParams(owner, projectName string, out output.Outputer) HistoryParams {
+	return HistoryParams{owner, projectName, out}
 }
 
 func (h *History) Run(params *HistoryParams) error {
-	namespace := params.namespace
-	if namespace == "" {
-		namespace = params.project.Namespace()
-	}
-
-	nsMeta, fail := project.ParseNamespace(namespace)
-	if fail != nil {
-		return fail
-	}
-
-	commits, fail := model.CommitHistory(nsMeta.Owner, nsMeta.Project)
+	commits, fail := model.CommitHistory(params.owner, params.projectName)
 	if fail != nil {
 		return fail
 	}
 
 	if len(commits) == 0 {
-		params.out.Print(locale.Tr("no_commits", namespace))
+		params.out.Print(locale.Tr("no_commits", project.Namespace(params.owner, params.projectName)))
 		return nil
 	}
 

@@ -36,7 +36,17 @@ func newHistoryCommand(outputer output.Outputer) *captain.Command {
 				return fail
 			}
 
-			params := history.NewHistoryParams(opts.Namespace, pj, outputer)
+			namespace := opts.Namespace
+			if namespace == "" {
+				namespace = pj.Namespace()
+			}
+
+			nsMeta, fail := project.ParseNamespace(namespace)
+			if fail != nil {
+				return fail
+			}
+
+			params := history.NewHistoryParams(nsMeta.Owner, nsMeta.Project, outputer)
 			return initRunner.Run(&params)
 		},
 	)
