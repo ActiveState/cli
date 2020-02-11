@@ -228,9 +228,14 @@ func handlePanics(exiter func(int)) {
 func updated(args []string) bool {
 	// Don't auto-update if we're 'state update'ing
 	manualUpdate := funk.Contains(args, "update")
+
+	// For CircleCI, TravisCI, and AppVeyor use the CI
+	// environment variable. For GCB we check BUILD_ID
+	inCI := os.Getenv("CI") != "true" || os.Getenv("BUILD_ID") != ""
+
 	return (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") &&
 		!manualUpdate &&
-		os.Getenv("CI") != "true" &&
+		inCI &&
 		updater.TimedCheck()
 }
 
