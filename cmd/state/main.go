@@ -231,11 +231,11 @@ func updated(args []string) bool {
 
 	// For CircleCI, TravisCI, and AppVeyor use the CI
 	// environment variable. For GCB we check BUILD_ID
-	inCI := os.Getenv("CI") != "true" || os.Getenv("BUILD_ID") != ""
+	onCI := os.Getenv("CI") != "" || os.Getenv("BUILD_ID") != ""
 
 	return (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") &&
 		!manualUpdate &&
-		inCI &&
+		!onCI &&
 		updater.TimedCheck()
 }
 
