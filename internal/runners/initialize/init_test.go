@@ -51,7 +51,7 @@ func TestInitialize_Run(t *testing.T) {
 		config setter
 	}
 	type args struct {
-		namespace *project.Namespace
+		namespace *project.Namespaced
 		path      string
 		language  language.Supported
 	}
@@ -66,7 +66,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace without path or language",
 			fields{&configMock{}},
 			args{
-				namespace: &project.Namespace{
+				namespace: &project.Namespaced{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -79,7 +79,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace with path and without language",
 			fields{&configMock{}},
 			args{
-				namespace: &project.Namespace{
+				namespace: &project.Namespaced{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -92,7 +92,7 @@ func TestInitialize_Run(t *testing.T) {
 			"namespace with path and language",
 			fields{&configMock{}},
 			args{
-				namespace: &project.Namespace{
+				namespace: &project.Namespaced{
 					Owner:   "foo",
 					Project: "bar",
 				},
@@ -106,7 +106,7 @@ func TestInitialize_Run(t *testing.T) {
 			"as.yaml already exists",
 			fields{&configMock{}},
 			args{
-				namespace: &project.Namespace{
+				namespace: &project.Namespaced{
 					Owner:   "foo",
 					Project: "bar",
 				},

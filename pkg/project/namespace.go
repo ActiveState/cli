@@ -23,7 +23,7 @@ type Namespaced struct {
 }
 
 // Set implements the captain argmarshaler interface.
-func (ns *Namespace) Set(v string) error {
+func (ns *Namespaced) Set(v string) error {
 	if ns == nil {
 		return fmt.Errorf("cannot set nil value")
 	}
@@ -38,7 +38,7 @@ func (ns *Namespace) Set(v string) error {
 }
 
 // String implements the fmt.Stringer interface.
-func (ns *Namespace) String() string {
+func (ns *Namespaced) String() string {
 	if ns == nil {
 		return ""
 	}
@@ -51,12 +51,12 @@ func (ns *Namespace) String() string {
 }
 
 // IsValid returns whether or not the namespace is set sufficiently.
-func (ns *Namespace) IsValid() bool {
+func (ns *Namespaced) IsValid() bool {
 	return ns != nil && ns.Owner != "" && ns.Project != ""
 }
 
 // Validate returns a failure if the namespace is not valid.
-func (ns *Namespace) Validate() *failures.Failure {
+func (ns *Namespaced) Validate() *failures.Failure {
 	if ns == nil || !ns.IsValid() {
 		return FailInvalidNamespace.New(locale.Tr("err_invalid_namespace", ns.String()))
 	}
