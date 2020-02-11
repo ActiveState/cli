@@ -77,14 +77,14 @@ func (r *Push) Run() *failures.Failure {
 	return nil
 }
 
-func (r *Push) languageForPath(path string) (*language.Language, *failures.Failure) {
+func (r *Push) languageForPath(path string) (*language.Supported, *failures.Failure) {
 	languageName := r.config.GetString(path + "_language")
 	if languageName == "" {
 		return nil, nil
 	}
 
-	lang := language.MakeByName(languageName)
-	if lang == language.Unknown {
+	lang := language.Supported{language.MakeByName(languageName)}
+	if !lang.Recognized() {
 		return nil, failures.FailUserInput.New("err_push_invalid_language", languageName)
 	}
 

@@ -132,9 +132,6 @@ type TestHandler struct {
 func (t *TestHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	t.output = append(t.output, []interface{}{ctx.Level, ctx.File, message, ctx.Line, args})
 	fmt.Println(*ctx)
-	if ctx.File != "logging_test.go" {
-		t.t.Fatalf("Got invalid file reference %s!", ctx.File)
-	}
 	if ctx.Line <= 0 || ctx.Level == "" {
 		t.t.Fatalf("Invalid args")
 	}

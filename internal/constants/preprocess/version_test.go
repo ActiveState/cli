@@ -8,10 +8,12 @@ import (
 	"github.com/blang/semver"
 )
 
-type provider struct{}
+type provider struct {
+	increment string
+}
 
-func (p provider) IncrementType(branch string) (string, error) {
-	switch branch {
+func (p provider) IncrementBranch() (string, error) {
+	switch p.increment {
 	case patch:
 		return patch, nil
 	case minor:
@@ -23,6 +25,10 @@ func (p provider) IncrementType(branch string) (string, error) {
 	}
 }
 
+func (p provider) IncrementMaster() (*semver.Version, error) {
+	return nil, nil
+}
+
 func TestService_IncrementVersion(t *testing.T) {
 	versionString := "0.2.2"
 	versionSemver, err := semver.New("0.2.2")
@@ -31,7 +37,6 @@ func TestService_IncrementVersion(t *testing.T) {
 	}
 
 	type fields struct {
-		branch      string
 		environment int
 		master      *semver.Version
 		provider    IncrementProvider
@@ -45,10 +50,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "local environment",
 			fields: fields{
-				branch:      patch,
 				environment: localEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{patch},
 			},
 			want:    versionString,
 			wantErr: false,
@@ -56,10 +60,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - patch",
 			fields: fields{
-				branch:      patch,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{patch},
 			},
 			want:    "0.2.3",
 			wantErr: false,
@@ -67,10 +70,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - minor",
 			fields: fields{
-				branch:      minor,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{minor},
 			},
 			want:    "0.3.0",
 			wantErr: false,
@@ -78,10 +80,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "remote environment - major",
 			fields: fields{
-				branch:      major,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{major},
 			},
 			want:    "1.0.0",
 			wantErr: false,
@@ -89,10 +90,9 @@ func TestService_IncrementVersion(t *testing.T) {
 		{
 			name: "error",
 			fields: fields{
-				branch:      "",
 				environment: unknownEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{""},
 			},
 			want:    "",
 			wantErr: true,
@@ -101,7 +101,6 @@ func TestService_IncrementVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &VersionIncrementer{
-				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
 				provider:    tt.fields.provider,
@@ -133,7 +132,6 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	versionSemver.Pre = []semver.PRVersion{preRelease}
 
 	type fields struct {
-		branch      string
 		environment int
 		master      *semver.Version
 		provider    IncrementProvider
@@ -151,10 +149,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "local environment",
 			fields: fields{
-				branch:      patch,
 				environment: localEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{patch},
 			},
 			args:    args{revision},
 			want:    versionString,
@@ -163,10 +160,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - patch",
 			fields: fields{
-				branch:      patch,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{patch},
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-%s", "0.2.3", preRelease),
@@ -175,10 +171,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - minor",
 			fields: fields{
-				branch:      minor,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{minor},
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-%s", "0.3.0", preRelease),
@@ -187,10 +182,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "remote environment - major",
 			fields: fields{
-				branch:      major,
 				environment: remoteEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{major},
 			},
 			args:    args{revision},
 			want:    fmt.Sprintf("%s-%s", "1.0.0", preRelease),
@@ -199,10 +193,9 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 		{
 			name: "error",
 			fields: fields{
-				branch:      "",
 				environment: unknownEnv,
 				master:      versionSemver,
-				provider:    provider{},
+				provider:    provider{""},
 			},
 			args:    args{revision},
 			want:    "",
@@ -212,7 +205,6 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &VersionIncrementer{
-				branch:      tt.fields.branch,
 				environment: tt.fields.environment,
 				master:      tt.fields.master,
 				provider:    tt.fields.provider,

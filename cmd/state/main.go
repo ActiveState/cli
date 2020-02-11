@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jessevdk/go-flags"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -23,14 +26,14 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/jessevdk/go-flags"
-	"github.com/thoas/go-funk"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
+	logging.SetupRollbar()
+
 	exiter := func(code int) {
 		os.Exit(code)
 	}
@@ -94,7 +97,6 @@ func run(args []string, outputer output.Outputer) (int, error) {
 
 	logging.Debug("ConfigPath: %s", config.ConfigPath())
 	logging.Debug("CachePath: %s", config.CachePath())
-	logging.SetupRollbar()
 
 	// Write our config to file
 	defer config.Save()

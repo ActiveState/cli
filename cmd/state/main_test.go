@@ -71,9 +71,15 @@ func (suite *MainTestSuite) TestOutputer() {
 	}
 
 	{
+		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorFormatName)
+		suite.Require().NoError(fail.ToError())
+		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
+	}
+
+	{
 		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorV0FormatName)
 		suite.Require().NoError(fail.ToError())
-		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer, as editor.v0 is not supported at this level")
+		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 }
 
@@ -81,6 +87,7 @@ func (suite *MainTestSuite) TestParseOutputFlag() {
 	suite.Equal("plain", parseOutputFlag([]string{"state", "foo", "-o", "plain"}))
 	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "--output", "json"}))
 	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "-o", "json"}))
+	suite.Equal("editor", parseOutputFlag([]string{"state", "foo", "--output", "editor"}))
 	suite.Equal("editor.v0", parseOutputFlag([]string{"state", "foo", "-o", "editor.v0"}))
 }
 

@@ -1,8 +1,6 @@
 package analytics
 
 import (
-	"github.com/denisbrodbeck/machineid"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
@@ -51,11 +49,8 @@ func init() {
 }
 
 func setup() {
-	id, err := machineid.ID()
-	if err != nil {
-		logging.Error("Cannot retrieve machine ID: %s", err.Error())
-		id = "unknown"
-	}
+	id := logging.UniqID()
+	var err error
 	client, err = ga.NewClient(constants.AnalyticsTrackingID)
 	if err != nil {
 		logging.Error("Cannot initialize analytics: %s", err.Error())

@@ -93,8 +93,10 @@ func (i *Instance) ReadInConfig() {
 
 // Save saves the config file
 func (i *Instance) Save() error {
-	err := viper.WriteConfig()
-	return err
+	if err := viper.MergeInConfig(); err != nil {
+		return err
+	}
+	return viper.WriteConfig()
 }
 
 func (i *Instance) ensureConfigExists() {

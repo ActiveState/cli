@@ -11,6 +11,7 @@ func newRunCommand() *captain.Command {
 	runner := run.New()
 
 	var name string
+
 	cmd := captain.NewCommand(
 		"run",
 		locale.T("run_description"),
@@ -19,7 +20,7 @@ func newRunCommand() *captain.Command {
 			{
 				Name:        locale.T("arg_state_run_name"),
 				Description: locale.T("arg_state_run_name_description"),
-				Variable:    &name,
+				Value:       &name,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {

@@ -33,7 +33,8 @@ type VersionIncrementer struct {
 // IncrementProvider represents a client/service that returns
 // strings related to semver increment values (ie. major, minor, patch)
 type IncrementProvider interface {
-	IncrementType(branch string) (string, error)
+	IncrementBranch() (string, error)
+	IncrementMaster() (*semver.Version, error)
 }
 
 // NewVersionIncrementer returns a version service initialized with provider and environment information
@@ -112,7 +113,11 @@ func (s *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error)
 }
 
 func (s *VersionIncrementer) incrementVersion() (*semver.Version, error) {
-	increment, err := s.provider.IncrementType(s.branch)
+	if s.branch == "master" {
+		return s.provider.IncrementMaster()
+	}
+
+	increment, err := s.provider.IncrementBranch()
 	if err != nil {
 		return nil, err
 	}

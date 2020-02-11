@@ -19,9 +19,9 @@ type Activate struct {
 }
 
 type ActivateParams struct {
-	Namespace     string
+	Namespace     *project.Namespace
 	PreferredPath string
-	Output        commands.Output
+	Output        string
 }
 
 func NewActivate(namespaceSelect namespaceSelectAble, activateCheckout CheckoutAble) *Activate {
@@ -35,8 +35,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 	return r.run(params, activationLoop)
 }
 
-func sendProjectIDToAnalytics(namespace string, configFile string) {
-	names, fail := project.ParseNamespaceOrConfigfile(namespace, configFile)
+func sendProjectIDToAnalytics(namespace *project.Namespace, configFile string) {
+	names, fail := project.ParseNamespaceOrConfigfile(namespace.String(), configFile)
 	if fail != nil {
 		logging.Debug("error resolving namespace: %v", fail.ToError())
 		return
@@ -56,19 +56,22 @@ func sendProjectIDToAnalytics(namespace string, configFile string) {
 func (r *Activate) run(params *ActivateParams, activatorLoop activationLoopFunc) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	targetPath, err := r.setupPath(params.Namespace, params.PreferredPath)
+	targetPath, err := r.setupPath(params.Namespace.String(), params.PreferredPath)
 	if err != nil {
-		if params.Namespace == "" {
+		if !params.Namespace.IsValid() {
 			return failures.FailUserInput.Wrap(err)
 		}
-		err := r.activateCheckout.Run(params.Namespace, targetPath)
+		err := r.activateCheckout.Run(params.Namespace.String(), targetPath)
 		if err != nil {
 			return err
 		}
 	}
 
 	if params.Output != "" {
-		return activateOutput(targetPath, params.Output)
+		output := commands.Output(params.Output)
+		if output == commands.JSON || output == commands.EditorV0 {
+			return activateOutput(targetPath, output)
+		}
 	}
 
 	go sendProjectIDToAnalytics(params.Namespace, filepath.Join(targetPath, constants.ConfigFileName))

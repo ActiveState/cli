@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/state/fork"
 	"github.com/ActiveState/cli/state/pull"
 	"github.com/ActiveState/cli/state/scripts"
-	"github.com/ActiveState/cli/state/secrets"
 	"github.com/ActiveState/cli/state/show"
 )
 
@@ -48,6 +47,7 @@ func New(outputer output.Outputer) *CmdTree {
 		newOrganizationsCommand(globals),
 		newRunCommand(),
 		newHistoryCommand(outputer),
+		newCleanCommand(outputer),
 	)
 
 	applyLegacyChildren(stateCmd, globals)
@@ -78,36 +78,32 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 				Name:        "locale",
 				Shorthand:   "l",
 				Description: locale.T("flag_state_locale_description"),
-				Type:        captain.TypeString,
 				Persist:     true,
-				StringVar:   &opts.Locale,
+				Value:       &opts.Locale,
 			},
 			{
 				Name:        "verbose",
 				Shorthand:   "v",
 				Description: locale.T("flag_state_verbose_description"),
-				Type:        captain.TypeBool,
 				Persist:     true,
 				OnUse: func() {
 					if !condition.InTest() {
 						logging.CurrentHandler().SetVerbose(true)
 					}
 				},
-				BoolVar: &globals.Verbose,
+				Value: &globals.Verbose,
 			},
 			{
 				Name:        "output", // Name and Shorthand should be kept in sync with cmd/state/main.go
 				Shorthand:   "o",
 				Description: locale.T("flag_state_output_description"),
-				Type:        captain.TypeString,
 				Persist:     true,
-				StringVar:   &globals.Output,
+				Value:       &globals.Output,
 			},
 			{
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
-				Type:        captain.TypeBool,
-				BoolVar:     &opts.Version,
+				Value:       &opts.Version,
 			},
 		},
 		[]*captain.Argument{},
@@ -131,7 +127,6 @@ func (ct *CmdTree) Execute(args []string) error {
 
 func setLegacyOutput(globals *globalOptions) {
 	scripts.Flags.Output = &globals.Output
-	secrets.Flags.Output = &globals.Output
 	fork.Flags.Output = &globals.Output
 	show.Flags.Output = &globals.Output
 	pull.Flags.Output = &globals.Output
