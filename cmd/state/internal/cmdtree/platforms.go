@@ -56,20 +56,20 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 		locale.T("platforms_add_cmd_description"),
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_add_bitwidth"),
-				Description: locale.T("flag_platforms_add_bitwidth_description"),
+				Name:        locale.T("flag_platforms_shared_bitwidth"),
+				Description: locale.T("flag_platforms_shared_bitwidth_description"),
 				Value:       &params.BitWidth,
 			},
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.T("arg_platforms_add_name"),
-				Description: locale.T("arg_platforms_add_name_description"),
+				Name:        locale.T("arg_platforms_shared_name"),
+				Description: locale.T("arg_platforms_shared_name_description"),
 				Value:       &params.Name,
 			},
 			{
-				Name:        locale.T("arg_platforms_add_version"),
-				Description: locale.T("arg_platforms_add_version_description"),
+				Name:        locale.T("arg_platforms_shared_version"),
+				Description: locale.T("arg_platforms_shared_version_description"),
 				Value:       &params.Version,
 			},
 		},
@@ -89,20 +89,20 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 		locale.T("platforms_remove_cmd_description"),
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_remove_bitwidth"),
-				Description: locale.T("flag_platforms_remove_bitwidth_description"),
+				Name:        locale.T("flag_platforms_shared_bitwidth"),
+				Description: locale.T("flag_platforms_shared_bitwidth_description"),
 				Value:       &params.BitWidth,
 			},
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.T("arg_platforms_remove_name"),
-				Description: locale.T("arg_platforms_remove_name_description"),
+				Name:        locale.T("arg_platforms_shared_name"),
+				Description: locale.T("arg_platforms_shared_name_description"),
 				Value:       &params.Name,
 			},
 			{
-				Name:        locale.T("arg_platforms_remove_version"),
-				Description: locale.T("arg_platforms_remove_version_description"),
+				Name:        locale.T("arg_platforms_shared_version"),
+				Description: locale.T("arg_platforms_shared_version_description"),
 				Value:       &params.Version,
 			},
 		},

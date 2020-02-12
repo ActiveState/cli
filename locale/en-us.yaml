@@ -1019,32 +1019,20 @@ platforms_add_cmd_description:
   other: Add a new platform to your project
 platforms_remove_cmd_description:
   other: Remove a platform from your project
-package_search_cmd_description:
+platforms_search_cmd_description:
   other: Search for available platforms that can be added to your project
-flag_platforms_add_bitwidth:
-  other: bitWidth
-flag_platforms_add_bitwidth_description:
-  other: Platform bit width
-arg_platforms_add_name:
+flag_platforms_shared_bitwidth:
+  other: bit-width
+flag_platforms_shared_bitwidth_description:
+  other: Platform architecture word size/width in bits (32,64)
+arg_platforms_shared_name:
   other: name
-arg_platforms_add_name_description:
-  other: Platform name
-arg_platforms_add_version:
+arg_platforms_shared_name_description:
+  other: Platform name (Windows, Darwin, etc.)
+arg_platforms_shared_version:
   other: version
-arg_platforms_add_version_description:
-  other: Platform version
-flag_platforms_remove_bitwidth:
-  other: bitWidth
-flag_platforms_remove_bitwidth_description:
-  other: Platform bit width
-arg_platforms_remove_name:
-  other: name
-arg_platforms_remove_name_description:
-  other: Platform name
-arg_platforms_remove_version:
-  other: version
-arg_platforms_remove_version_description:
-  other: Platform version
+arg_platforms_shared_version_description:
+  other: Platform version (e.g. 12.04.2)
 commit_message_add_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
