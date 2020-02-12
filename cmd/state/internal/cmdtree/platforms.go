@@ -9,7 +9,7 @@ import (
 )
 
 func newPlatformsCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewList(project.GetSafe)
+	runner := platforms.NewList(project.GetSafe, out)
 
 	return captain.NewCommand(
 		"platforms",
@@ -17,18 +17,13 @@ func newPlatformsCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			results, err := runner.Run()
-			if err != nil {
-				return err
-			}
-			out.Print(results)
-			return nil
+			return runner.Run()
 		},
 	)
 }
 
 func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewSearch()
+	runner := platforms.NewSearch(out)
 
 	return captain.NewCommand(
 		"search",
@@ -36,12 +31,7 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			results, err := runner.Run()
-			if err != nil {
-				return err
-			}
-			out.Print(results)
-			return nil
+			return runner.Run()
 		},
 	)
 }

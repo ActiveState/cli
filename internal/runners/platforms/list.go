@@ -3,6 +3,7 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
 )
@@ -15,21 +16,29 @@ var (
 
 // List manages the listing execution context.
 type List struct {
-	GetProject ProjectProviderFunc
+	getProject ProjectProviderFunc
+	out        output.Outputer
 }
 
 // NewList prepares a list execution context for use.
-func NewList(getProjFn ProjectProviderFunc) *List {
+func NewList(getProjFn ProjectProviderFunc, out output.Outputer) *List {
 	return &List{
-		GetProject: getProjFn,
+		getProject: getProjFn,
+		out:        out,
 	}
 }
 
 // Run executes the list behavior.
-func (l *List) Run() (*Listing, error) {
+func (l *List) Run() error {
 	logging.Debug("Execute platforms list")
 
-	return newListing("", l.GetProject)
+	listing, err := newListing("", l.getProject)
+	if err != nil {
+		return err
+	}
+
+	l.out.Print(listing)
+	return nil
 }
 
 // Listing represents the output data of a listing.

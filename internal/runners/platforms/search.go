@@ -2,22 +2,33 @@ package platforms
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // Search manages the searching execution context.
-type Search struct{}
+type Search struct {
+	out output.Outputer
+}
 
 // NewSearch prepares a search execution context for use.
-func NewSearch() *Search {
-	return &Search{}
+func NewSearch(out output.Outputer) *Search {
+	return &Search{
+		out: out,
+	}
 }
 
 // Run executes the search behavior.
-func (s *Search) Run() (*SearchResult, error) {
+func (s *Search) Run() error {
 	logging.Debug("Execute platforms search")
 
-	return newSearchResult()
+	res, err := newSearchResult()
+	if err != nil {
+		return err
+	}
+
+	s.out.Print(res)
+	return nil
 }
 
 // SearchResult represents the output data of a search.

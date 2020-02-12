@@ -12,13 +12,13 @@ type RunRemoveParams struct {
 
 // Remove manages the removeing execution context.
 type Remove struct {
-	GetProject ProjectProviderFunc
+	getProject ProjectProviderFunc
 }
 
 // NewRemove prepares a remove execution context for use.
 func NewRemove(getProjFn ProjectProviderFunc) *Remove {
 	return &Remove{
-		GetProject: getProjFn,
+		getProject: getProjFn,
 	}
 }
 
@@ -31,7 +31,7 @@ func (r *Remove) Run(ps RunRemoveParams) error {
 		return nil
 	}
 
-	proj, fail := r.GetProject()
+	proj, fail := r.getProject()
 	if fail != nil {
 		return fail
 	}

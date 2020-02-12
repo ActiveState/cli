@@ -12,13 +12,13 @@ type RunAddParams struct {
 
 // Add manages the adding execution context.
 type Add struct {
-	GetProject ProjectProviderFunc
+	getProject ProjectProviderFunc
 }
 
 // NewAdd prepares an add execution context for use.
 func NewAdd(getProjFn ProjectProviderFunc) *Add {
 	return &Add{
-		GetProject: getProjFn,
+		getProject: getProjFn,
 	}
 }
 
@@ -31,7 +31,7 @@ func (a *Add) Run(ps RunAddParams) error {
 		return nil
 	}
 
-	proj, fail := a.GetProject()
+	proj, fail := a.getProject()
 	if fail != nil {
 		return fail
 	}
