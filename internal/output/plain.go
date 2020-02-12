@@ -62,10 +62,7 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 // sprint will marshal and return the given value as a string
-func sprint(value interface{}) (string, error) {
-	var result string
-	var err error
-
+func sprint(value interface{}) (result string, err error) {
 	valueRfl := reflect.ValueOf(value)
 	switch valueRfl.Kind() {
 	case reflect.Ptr:
@@ -96,18 +93,19 @@ func sprint(value interface{}) (string, error) {
 
 // sprintStruct will marshal and return the given struct as a string
 func sprintStruct(value interface{}) (string, error) {
-	structMeta, err := parseStructMeta(value)
+	meta, err := parseStructMeta(value)
 	if err != nil {
 		return "", err
 	}
+
 	result := []string{}
-	for i, value := range structMeta.values {
-		stringValue, err := sprint(value)
+	for _, field := range meta {
+		stringValue, err := sprint(field.value)
 		if err != nil {
 			return "", err
 		}
 
-		key := localizedField(structMeta.localeFields[i])
+		key := localizedField(field.l10n)
 		result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
 	}
 	return strings.Join(result, "\n"), nil
@@ -150,15 +148,15 @@ func sprintTable(slice []interface{}) (string, error) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
 		}
 
-		structMeta, err := parseStructMeta(v)
+		meta, err := parseStructMeta(v)
 		if err != nil {
 			return "", err
 		}
 
 		setHeaders := len(headers) == 0
 		row := []interface{}{}
-		for i, value := range structMeta.values {
-			stringValue, err := sprint(value)
+		for _, field := range meta {
+			stringValue, err := sprint(field.value)
 			if err != nil {
 				return "", err
 			}
@@ -166,7 +164,7 @@ func sprintTable(slice []interface{}) (string, error) {
 			row = append(row, stringValue)
 
 			if setHeaders {
-				headers = append(headers, localizedField(structMeta.localeFields[i]))
+				headers = append(headers, localizedField(field.l10n))
 			}
 		}
 

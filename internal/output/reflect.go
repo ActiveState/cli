@@ -6,12 +6,14 @@ import (
 	"strings"
 )
 
-// structMeta holds the basic meta information required by the Plain outputer
-type structMeta struct {
-	fields       []string
-	localeFields []string
-	values       []interface{}
+type structField struct {
+	name  string
+	l10n  string
+	value interface{}
 }
+
+// structMeta holds the basic meta information required by the Plain outputer
+type structMeta []structField
 
 // parseStructMeta will use reflect to populate structMeta for the given struct
 func parseStructMeta(v interface{}) (structMeta, error) {
@@ -22,7 +24,7 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 		return structMeta{}, fmt.Errorf("Expected struct, got: %s", structRfl.Kind().String())
 	}
 
-	info := structMeta{}
+	var meta structMeta
 	for i := 0; i < structRfl.Type().NumField(); i++ {
 		fieldRfl := structRfl.Type().Field(i)
 		valueRfl := structRfl.Field(i)
@@ -31,17 +33,20 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 			continue // don't include unexported fields
 		}
 
-		info.fields = append(info.fields, fieldRfl.Name)
-		info.values = append(info.values, valueRfl.Interface())
-
 		serialized := strings.ToLower(string(fieldRfl.Name[0:1])) + fieldRfl.Name[1:]
 		if v, ok := fieldRfl.Tag.Lookup("locale"); ok {
 			serialized = v
 		}
-		info.localeFields = append(info.localeFields, serialized)
+
+		field := structField{
+			name:  fieldRfl.Name,
+			value: valueRfl.Interface(),
+			l10n:  serialized,
+		}
+		meta = append(meta, field)
 	}
 
-	return info, nil
+	return meta, nil
 }
 
 // parseSlice will turn an interface that is a slice into a slice with interface entries
