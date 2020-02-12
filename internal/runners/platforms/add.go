@@ -3,7 +3,6 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RunAddParams tracks the info required for running Add.
@@ -12,27 +11,30 @@ type RunAddParams struct {
 }
 
 // Add manages the adding execution context.
-type Add struct{}
+type Add struct {
+	GetProject ProjectProviderFunc
+}
 
 // NewAdd prepares an add execution context for use.
-func NewAdd() *Add {
-	return &Add{}
+func NewAdd(getProjFn ProjectProviderFunc) *Add {
+	return &Add{
+		GetProject: getProjFn,
+	}
 }
 
 // Run executes the add behavior.
-func (a *Add) Run(params RunAddParams) error {
+func (a *Add) Run(ps RunAddParams) error {
 	logging.Debug("Execute platforms add")
 
-	return add(params.Params)
-}
-
-func add(ps Params) error {
-	params, err := prepareParams(ps)
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return nil
 	}
 
-	proj := project.Get()
+	proj, fail := a.GetProject()
+	if fail != nil {
+		return fail
+	}
 
 	return model.CommitPlatform(
 		proj.Owner(), proj.Name(),

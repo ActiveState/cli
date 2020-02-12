@@ -3,7 +3,6 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RunRemoveParams tracks the info required for running Remove.
@@ -12,28 +11,30 @@ type RunRemoveParams struct {
 }
 
 // Remove manages the removeing execution context.
-type Remove struct{}
+type Remove struct {
+	GetProject ProjectProviderFunc
+}
 
 // NewRemove prepares a remove execution context for use.
-func NewRemove() *Remove {
-	return &Remove{}
+func NewRemove(getProjFn ProjectProviderFunc) *Remove {
+	return &Remove{
+		GetProject: getProjFn,
+	}
 }
 
 // Run executes the remove behavior.
-func (r *Remove) Run(params RunRemoveParams) error {
+func (r *Remove) Run(ps RunRemoveParams) error {
 	logging.Debug("Execute platforms remove")
 
-	return remove(params.Params)
-}
-
-func remove(ps Params) error {
-	params, err := prepareParams(ps)
+	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return nil
 	}
 
-	proj := project.Get()
-
+	proj, fail := r.GetProject()
+	if fail != nil {
+		return fail
+	}
 	return model.CommitPlatform(
 		proj.Owner(), proj.Name(),
 		model.OperationRemoved,

@@ -5,10 +5,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/platforms"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newPlatformsCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewList()
+	runner := platforms.NewList(project.GetSafe)
 
 	return captain.NewCommand(
 		"platforms",
@@ -46,7 +47,7 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 }
 
 func newPlatformsAddCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewAdd()
+	runner := platforms.NewAdd(project.GetSafe)
 
 	params := platforms.RunAddParams{}
 
@@ -79,7 +80,7 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 }
 
 func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewRemove()
+	runner := platforms.NewRemove(project.GetSafe)
 
 	params := platforms.RunRemoveParams{}
 

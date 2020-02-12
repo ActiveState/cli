@@ -1,25 +1,35 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
+var (
+	// FailNoCommitID indicates that no commit id is provided and not
+	// obtainable from the current project.
+	FailNoCommitID = failures.Type("platforms.fail.nocommitid", failures.FailNonFatal)
+)
+
 // List manages the listing execution context.
-type List struct{}
+type List struct {
+	GetProject ProjectProviderFunc
+}
 
 // NewList prepares a list execution context for use.
-func NewList() *List {
-	return &List{}
+func NewList(getProjFn ProjectProviderFunc) *List {
+	return &List{
+		GetProject: getProjFn,
+	}
 }
 
 // Run executes the list behavior.
 func (l *List) Run() (*Listing, error) {
 	logging.Debug("Execute platforms list")
 
-	return newListing("")
+	return newListing("", l.GetProject)
 }
 
 // Listing represents the output data of a listing.
@@ -27,8 +37,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID string) (*Listing, error) {
-	targetCommitID, err := targettedCommitID(commitID)
+func newListing(commitID string, getProj ProjectProviderFunc) (*Listing, error) {
+	targetCommitID, err := targettedCommitID(commitID, getProj)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +55,27 @@ func newListing(commitID string) (*Listing, error) {
 	return &listing, nil
 }
 
-func targettedCommitID(commitID string) (strfmt.UUID, error) {
-	if commitID == "" {
-		proj := project.Get()
-		cmt, fail := model.LatestCommitID(proj.Owner(), proj.Name())
-		if fail != nil {
-			return strfmt.UUID(""), fail
-		}
-		commitID = cmt.String()
+func targettedCommitID(commitID string, getProj ProjectProviderFunc) (strfmt.UUID, error) {
+	if commitID != "" {
+		var cid strfmt.UUID
+		err := cid.UnmarshalText([]byte(commitID))
+
+		return cid, err
 	}
 
-	var cid strfmt.UUID
-	err := cid.UnmarshalText([]byte(commitID))
+	proj, fail := getProj()
+	if fail != nil {
+		return "", fail
+	}
 
-	return cid, err
+	cmt, fail := model.LatestCommitID(proj.Owner(), proj.Name())
+	if fail != nil {
+		return "", fail
+	}
+
+	if cmt == nil {
+		return "", FailNoCommitID.New("error_no_commit")
+	}
+
+	return *cmt, nil
 }
