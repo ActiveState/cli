@@ -49,7 +49,7 @@ func main() {
 
 	code, err := run(os.Args, outputer)
 	if err != nil {
-		outputer.Error(err)
+		outputer.Error(err.Error())
 	}
 
 	exiter(code)
