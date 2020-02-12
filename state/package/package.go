@@ -33,6 +33,18 @@ var listFlags = []*commands.Flag{
 		Type:        commands.TypeString,
 		StringVar:   &ListFlags.Commit,
 	},
+	&commands.Flag{
+		Name:        "name",
+		Description: "TODO:",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Name,
+	},
+	&commands.Flag{
+		Name:        "project",
+		Description: "TODO:",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Project,
+	},
 }
 
 func init() {
