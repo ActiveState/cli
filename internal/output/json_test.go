@@ -20,7 +20,7 @@ func TestJSON_Print(t *testing.T) {
 		{
 			"simple string",
 			args{"hello"},
-			`{"result":"hello"}` + "\n",
+			`"hello"` + "\n",
 			"",
 		},
 		{
@@ -34,7 +34,7 @@ func TestJSON_Print(t *testing.T) {
 					"value1", "value2", "value3",
 				},
 			},
-			`{"result":{"Field1":"value1","Field2":"value2"}}` + "\n",
+			`{"Field1":"value1","Field2":"value2"}` + "\n",
 			"",
 		},
 		{
@@ -48,7 +48,7 @@ func TestJSON_Print(t *testing.T) {
 					"value1", "value2", "value3",
 				},
 			},
-			`{"result":{"RealField1":"value1","RealField2":"value2"}}` + "\n",
+			`{"RealField1":"value1","RealField2":"value2"}` + "\n",
 			"",
 		},
 	}

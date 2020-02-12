@@ -2,7 +2,6 @@ package output
 
 import (
 	"encoding/json"
-	"errors"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,11 +21,7 @@ func NewJSON(config *Config) (JSON, *failures.Failure) {
 
 // Print will marshal and print the given value to the output writer
 func (f *JSON) Print(value interface{}) {
-	wrap := Wrap{
-		Result: value,
-	}
-
-	b, err := json.Marshal(&wrap)
+	b, err := json.Marshal(value)
 	if err != nil {
 		logging.Error("Could not marshal value, error: %v", err)
 		f.Error(locale.T("err_could_not_marshal_print"))
@@ -41,31 +36,12 @@ func (f *JSON) Print(value interface{}) {
 // that identifies it as an error
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
-	var err error
-	switch v := value.(type) {
-	case string:
-		err = NewGeneralError(errors.New(v))
-	case error:
-		err = NewGeneralError(v)
-	default:
-		b, err := json.Marshal(value)
-		if err != nil {
-			logging.Error("Could not marshal value, error: %v", err)
-			b = []byte(locale.T("err_could_not_marshal_print"))
-		}
-		err = NewGeneralError(errors.New(string(b)))
-	}
-
-	wrap := Wrap{
-		Error: err,
-	}
-
-	b, err := json.Marshal(&wrap)
+	errStruct := struct{ Error interface{} }{value}
+	b, err := json.Marshal(errStruct)
 	if err != nil {
 		logging.Error("Could not marshal value, error: %v", err)
 		b = []byte(locale.T("err_could_not_marshal_print"))
 	}
-
 	f.cfg.OutWriter.Write(b)
 	f.cfg.OutWriter.Write([]byte("\n"))
 }

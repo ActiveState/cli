@@ -51,9 +51,3 @@ type Config struct {
 	Colored     bool
 	Interactive bool
 }
-
-// Wrap provides structural consistency for machine-readable output.
-type Wrap struct {
-	Result interface{} `json:"result,omitempty"`
-	Error  error       `json:"error,omitempty"`
-}
