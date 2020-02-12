@@ -22,7 +22,7 @@ type setter interface {
 
 // RunParams stores run func parameters.
 type RunParams struct {
-	Namespace *project.Namespace
+	Namespace *project.Namespaced
 	Path      string
 	Style     string
 	Language  language.Supported

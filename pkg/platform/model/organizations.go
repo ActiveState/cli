@@ -4,11 +4,20 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
+
+// FailOrgResponseLen is a failure due to the response length not matching the request length
+var FailOrgResponseLen = failures.Type("model.fail.getcommithistory")
 
 // FetchOrganizations fetches all organizations for the current user.
 func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
@@ -88,6 +97,25 @@ func InviteUserToOrg(org *mono_models.Organization, asOwner bool, email string) 
 	}
 	return resOk.Payload[0], nil
 
+}
+
+// FetchOrganizationsByIDs fetches organizations by their IDs
+func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, *failures.Failure) {
+	ids = funk.Uniq(ids).([]strfmt.UUID)
+	request := request.OrganizationsByIDs(ids)
+
+	gql := graphql.Get()
+	response := model.Organizations{}
+	err := gql.Run(request, &response)
+	if err != nil {
+		return nil, api.FailUnknown.Wrap(err)
+	}
+
+	if len(response.Organizations) != len(ids) {
+		return nil, FailOrgResponseLen.New(locale.Tr("err_orgs_length"))
+	}
+
+	return response.Organizations, nil
 }
 
 func processOrgErrorResponse(err error) *failures.Failure {
