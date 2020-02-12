@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,7 +21,7 @@ var ListFlags struct {
 }
 
 // ExecuteList lists the current packages in a project
-func ExecuteList(cmd *cobra.Command, _ []string) {
+func ExecuteList() {
 	logging.Debug("ExecuteList")
 
 	commit, fail := targetedCommit(ListFlags.Commit, ListFlags.Project)

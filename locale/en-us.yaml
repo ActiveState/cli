@@ -1153,6 +1153,10 @@ package_arg_nameversion_description:
   other: Package name and optionally the desired version
 package_list_flag_commit_description:
   other: The commit that the listing should be based on
+package_list_flag_name_description:
+  other: The project packages should be listed from
+package_list_flag_project_description:
+  other: The filter for package names to include in the listing
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
