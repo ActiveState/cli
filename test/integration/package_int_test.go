@@ -36,6 +36,45 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
 	suite.Wait()
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackages_project() {
+	suite.Spawn("packages", "--project", "ActiveState-CLI/List")
+	suite.Expect("Name")
+	suite.Expect("numpy")
+	suite.Expect("pytest")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackages_name() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
+	defer cleanup()
+
+	suite.PrepareActiveStateYAML(tempDir)
+
+	suite.Spawn("packages", "--name", "py")
+	suite.Expect("Name")
+	suite.Expect("pytest")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
+	suite.Spawn("packages", "--project", "ActiveState-CLI/List", "--name", "py")
+	suite.Expect("Name")
+	suite.Expect("pytest")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
+	suite.Spawn("packages", "--project", "ActiveState-CLI/List", "--name", "req")
+	suite.Expect("No packages to list")
+	suite.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackages_project_invaild() {
+	suite.Spawn("packages", "--project", "junk/junk")
+	suite.Expect("The requested project junk/junk could not be found.")
+	suite.Wait()
+}
+
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
 	defer cleanup()
@@ -182,7 +221,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Python3"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"`
 	suite.Suite.PrepareActiveStateYAML(dir, asyData)
 }
 
