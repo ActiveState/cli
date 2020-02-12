@@ -111,7 +111,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		defer cleanUpCPUProf()
 	}
 
-	if updated(args) {
+	if autoUpdate(args) {
 		return relaunch() // will not return
 	}
 
@@ -225,18 +225,21 @@ func handlePanics(exiter func(int)) {
 	}
 }
 
-func updated(args []string) bool {
-	// Don't auto-update if we're 'state update'ing
-	manualUpdate := funk.Contains(args, "update")
-
-	// For CircleCI, TravisCI, and AppVeyor use the CI
-	// environment variable. For GCB we check BUILD_ID
-	onCI := os.Getenv("CI") != "" || os.Getenv("BUILD_ID") != ""
-
-	return (!condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "true") &&
-		!manualUpdate &&
-		!onCI &&
-		updater.TimedCheck()
+func autoUpdate(args []string) bool {
+	switch {
+	case (condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"):
+		return false
+	case funk.Contains(args, "update"):
+		// Don't auto-update if we're 'state update'ing
+		return false
+	case os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "":
+		// Do not auto-update if we are on CI.
+		// For CircleCI, TravisCI, and AppVeyor use the CI
+		// environment variable. For GCB we check BUILDER_OUTPUT
+		return false
+	default:
+		return updater.TimedCheck()
+	}
 }
 
 // When an update was found and applied, re-launch the update with the current
