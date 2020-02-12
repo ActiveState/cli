@@ -1295,7 +1295,7 @@ no_commits:
 err_orgs_length:
   other: Could not retrieve the requested users / organizations
 err_user_not_found:
-  other: "Could not found the requested user: {{.V0}}"
+  other: "Could not find the requested user: {{.V0}}"
 field_date:
   other: Date
 field_author:
