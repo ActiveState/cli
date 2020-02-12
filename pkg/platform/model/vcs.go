@@ -60,6 +60,9 @@ const (
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
+
+	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
+	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
