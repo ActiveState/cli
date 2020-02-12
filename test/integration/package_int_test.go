@@ -182,7 +182,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Python3"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Python3"`
 	suite.Suite.PrepareActiveStateYAML(dir, asyData)
 }
 
