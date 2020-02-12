@@ -37,6 +37,6 @@ func remove(ps Params) error {
 	return model.CommitPlatform(
 		proj.Owner(), proj.Name(),
 		model.OperationRemoved,
-		params.Name, params.Version, params.WordSize,
+		params.Name, params.Version, params.BitWidth,
 	)
 }

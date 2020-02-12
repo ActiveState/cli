@@ -55,9 +55,9 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 		locale.T("platforms_add_cmd_description"),
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_add_word"),
-				Description: locale.T("flag_platforms_add_word_description"),
-				Value:       &params.WordSize,
+				Name:        locale.T("flag_platforms_add_bitwidth"),
+				Description: locale.T("flag_platforms_add_bitwidth_description"),
+				Value:       &params.BitWidth,
 			},
 		},
 		[]*captain.Argument{
@@ -88,9 +88,9 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 		locale.T("platforms_remove_cmd_description"),
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_remove_word"),
-				Description: locale.T("flag_platforms_remove_word_description"),
-				Value:       &params.WordSize,
+				Name:        locale.T("flag_platforms_remove_bitwidth"),
+				Description: locale.T("flag_platforms_remove_bitwidth_description"),
+				Value:       &params.BitWidth,
 			},
 		},
 		[]*captain.Argument{

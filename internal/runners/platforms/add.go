@@ -37,6 +37,6 @@ func add(ps Params) error {
 	return model.CommitPlatform(
 		proj.Owner(), proj.Name(),
 		model.OperationAdded,
-		params.Name, params.Version, params.WordSize,
+		params.Name, params.Version, params.BitWidth,
 	)
 }

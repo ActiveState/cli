@@ -11,7 +11,7 @@ import (
 type Platform struct {
 	Name     string `json:"name"`
 	Version  string `json:"version"`
-	WordSize string `json:"wordSize"`
+	BitWidth string `json:"bitWidth"`
 }
 
 func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
@@ -26,7 +26,7 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 			p.Version = *platform.KernelVersion.Version
 		}
 		if platform.CPUArchitecture != nil {
-			p.WordSize = platform.CPUArchitecture.BitWidth
+			p.BitWidth = platform.CPUArchitecture.BitWidth
 		}
 
 		ps = append(ps, &p)
@@ -38,7 +38,7 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 // Params represents the minimal defining details of a platform.
 type Params struct {
 	Name     string
-	WordSize int
+	BitWidth int
 	Version  string
 }
 
@@ -47,8 +47,8 @@ func prepareParams(ps Params) (Params, error) {
 		ps.Name = model.HostPlatform
 	}
 
-	if ps.WordSize == 0 {
-		ps.WordSize = 32 << (^uint(0) >> 63) // gets host word size
+	if ps.BitWidth == 0 {
+		ps.BitWidth = 32 << (^uint(0) >> 63) // gets host word size
 	}
 
 	if ps.Version == "" {
