@@ -63,6 +63,9 @@ const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
 // APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
 const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 
+// APIHostEnvVarName is the name of the environment variable that specifies the API host
+const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
+
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
