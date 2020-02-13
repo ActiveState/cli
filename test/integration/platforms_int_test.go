@@ -20,10 +20,10 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 
 	suite.Spawn("platforms", "search")
 	expectations := []string{
-		"Linux",
-		"Linux",
 		"Darwin",
 		"Darwin",
+		"Linux",
+		"Linux",
 		"Windows",
 		"Windows",
 	}
