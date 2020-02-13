@@ -18,7 +18,7 @@ import (
 )
 
 // FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
-var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
+var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal, failures.FailUser)
 
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
@@ -367,6 +367,7 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
 		return filepath, nil
 	}
+	fmt.Println("did not find file")
 	return "", FailFindInPathNotFound.New("err_file_not_found_in_path", filename, absDir)
 }
 
