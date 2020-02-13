@@ -67,12 +67,7 @@ func parseSlice(v interface{}) ([]interface{}, error) {
 	return result, nil
 }
 
-func isStructOrPtrTo(v interface{}) bool {
-	valueRfl := reflect.Indirect(reflect.ValueOf(v))
-	return valueRfl.Kind() == reflect.Struct
-}
-
 func isStruct(v interface{}) bool {
-	valueRfl := reflect.ValueOf(v)
+	valueRfl := reflect.Indirect(reflect.ValueOf(v))
 	return valueRfl.Kind() == reflect.Struct
 }

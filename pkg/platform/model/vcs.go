@@ -106,6 +106,23 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 	return branch.CommitID, nil
 }
 
+// CommitHistory will return the commit history for the given owner / project
+func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failures.Failure) {
+	latestCID, fail := LatestCommitID(ownerName, projectName)
+	if fail != nil {
+		return nil, fail
+	}
+
+	params := vcsClient.NewGetCommitHistoryParams()
+	params.SetCommitID(*latestCID)
+	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", err.Error()))
+	}
+
+	return res.Payload, nil
+}
+
 // CommitsBehindLatest compares the provided commit id with the latest commit
 // id and returns the count of commits it is behind. If an error is returned
 // along with a value of -1, then the provided commit is more than likely

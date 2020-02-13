@@ -197,7 +197,12 @@ func (p *Project) Version() string { return p.projectfile.Version }
 func (p *Project) Branch() string { return p.projectfile.Branch }
 
 // Namespace returns project namespace
-func (p *Project) Namespace() string { return fmt.Sprintf("%s/%s", p.owner, p.name) }
+func (p *Project) Namespace() string { return Namespace(p.owner, p.name) }
+
+// Namespace returns the namespaced version of the given owner and project name
+func Namespace(owner, project string) string {
+	return fmt.Sprintf("%s/%s", owner, project)
+}
 
 // Environments returns project environment
 func (p *Project) Environments() string { return p.projectfile.Environments }

@@ -338,9 +338,12 @@ func GetSafe() (*Project, *failures.Failure) {
 // GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
 func GetOnce() (*Project, *failures.Failure) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, failure := getProjectFilePath()
-	if failure != nil {
-		return nil, failure
+	projectFilePath, fail := getProjectFilePath()
+	if fail != nil {
+		if fail.Type.Matches(fileutils.FailFindInPathNotFound) {
+			return nil, FailNoProject.Wrap(fail, fail.Error())
+		}
+		return nil, fail
 	}
 
 	_, err := ioutil.ReadFile(projectFilePath)

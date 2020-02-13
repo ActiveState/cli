@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/bndr/gotabulate"
+	"github.com/go-openapi/strfmt"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -83,7 +84,11 @@ func sprint(value interface{}) (result string, err error) {
 	case reflect.Bool:
 		result += fmt.Sprintf("%t", valueRfl.Bool())
 	case reflect.String:
-		result += value.(string)
+		if v, ok := value.(strfmt.UUID); ok {
+			result += v.String()
+		} else {
+			result += value.(string)
+		}
 	default:
 		err = fmt.Errorf("unknown type: %s", valueRfl.Type().String())
 	}
@@ -124,7 +129,7 @@ func sprintSlice(value interface{}) (string, error) {
 		return "", err
 	}
 
-	if len(slice) > 0 && isStructOrPtrTo(slice[0]) {
+	if len(slice) > 0 && isStruct(slice[0]) {
 		return sprintTable(slice)
 	}
 
@@ -155,7 +160,7 @@ func sprintTable(slice []interface{}) (string, error) {
 	headers := []string{}
 	rows := [][]interface{}{}
 	for _, v := range slice {
-		if !isStructOrPtrTo(v) {
+		if !isStruct(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
 		}
 
@@ -183,8 +188,10 @@ func sprintTable(slice []interface{}) (string, error) {
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders(headers)
+	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
+	t.SetMaxCellSize(100)
+	t.SetHeaders(headers)
 
 	// Don't print whitespace lines
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})

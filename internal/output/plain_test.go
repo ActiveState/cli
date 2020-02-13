@@ -13,6 +13,11 @@ type Some struct {
 }
 
 func TestPlain_Print(t *testing.T) {
+	type tableStruct struct {
+		Header1 string
+		Header2 string
+		Header3 string
+	}
 	type args struct {
 		value interface{}
 	}
@@ -122,14 +127,24 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"table",
-			args{[]struct {
-				Header1 string
-				Header2 string
-				Header3 string
-			}{
+			args{[]tableStruct{
 				{"valueA.1", "valueA.2", "valueA.3"},
 				{"valueB.1", "valueB.2", "valueB.3"},
 				{"valueC.1", "valueC.2", "valueC.3"},
+			}},
+			" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" valueA.1            valueA.2            valueA.3         \n" +
+				" valueB.1            valueB.2            valueB.3         \n" +
+				" valueC.1            valueC.2            valueC.3         ",
+			"",
+		},
+		{
+			"table with pointers",
+			args{[]*tableStruct{
+				&tableStruct{"valueA.1", "valueA.2", "valueA.3"},
+				&tableStruct{"valueB.1", "valueB.2", "valueB.3"},
+				&tableStruct{"valueC.1", "valueC.2", "valueC.3"},
 			}},
 			" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +

@@ -17,7 +17,7 @@ func newActivateCommand(globals *globalOptions) *captain.Command {
 	runner := activate.NewActivate(namespaceSelect, checkout)
 
 	params := activate.ActivateParams{
-		Namespace: &project.Namespace{},
+		Namespace: &project.Namespaced{},
 	}
 
 	return captain.NewCommand(

@@ -16,10 +16,6 @@ type Branch struct {
 
 type Branches []*Branch
 
-type Organization struct {
-	URLName string `json:"url_name"`
-}
-
 type ForkedProject struct {
 	Name         string       `json:"name"`
 	Organization Organization `json:"organization"`

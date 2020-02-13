@@ -56,6 +56,7 @@ func New(outputer output.Outputer) *CmdTree {
 		newOrganizationsCommand(globals),
 		newRunCommand(),
 		platformsCmd,
+		newHistoryCommand(outputer),
 		newCleanCommand(outputer),
 	)
 
