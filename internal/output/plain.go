@@ -105,6 +105,12 @@ func sprintStruct(value interface{}) (string, error) {
 			return "", err
 		}
 
+		fieldValKind := reflect.Indirect(reflect.ValueOf(field.value)).Kind()
+		switch fieldValKind {
+		case reflect.Struct, reflect.Slice:
+			stringValue = "\n" + stringValue
+		}
+
 		key := localizedField(field.l10n)
 		result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
 	}
@@ -118,7 +124,7 @@ func sprintSlice(value interface{}) (string, error) {
 		return "", err
 	}
 
-	if len(slice) > 0 && isStruct(slice[0]) {
+	if len(slice) > 0 && isStructOrPtrTo(slice[0]) {
 		return sprintTable(slice)
 	}
 
@@ -129,10 +135,15 @@ func sprintSlice(value interface{}) (string, error) {
 			return "", err
 		}
 
+		// prepend if stringValue does not represent a slice
+		if reflect.Indirect(reflect.ValueOf(v)).Kind() != reflect.Slice {
+			stringValue = " - " + stringValue
+		}
+
 		result = append(result, stringValue)
 	}
 
-	return "\n - " + strings.Join(result, "\n - "), nil
+	return strings.Join(result, "\n"), nil
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
@@ -144,7 +155,7 @@ func sprintTable(slice []interface{}) (string, error) {
 	headers := []string{}
 	rows := [][]interface{}{}
 	for _, v := range slice {
-		if !isStruct(v) {
+		if !isStructOrPtrTo(v) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
 		}
 
@@ -179,7 +190,8 @@ func sprintTable(slice []interface{}) (string, error) {
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
 
-	return t.Render("simple"), nil
+	render := t.Render("simple")
+	return strings.TrimSuffix(render, "\n"), nil
 }
 
 // localizedField is a little helper that will return the localized version of the given string

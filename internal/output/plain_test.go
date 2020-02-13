@@ -7,6 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type Some struct {
+	H1 string
+	H2 string
+}
+
 func TestPlain_Print(t *testing.T) {
 	type args struct {
 		value interface{}
@@ -48,7 +53,7 @@ func TestPlain_Print(t *testing.T) {
 				uint(5), uint16(6), uint32(7), uint64(8),
 				float32(9.1), float64(10.1),
 			}},
-			"\n - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10",
+			" - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10",
 			"",
 		},
 		{
@@ -77,24 +82,42 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"complex mixed",
-			args{struct {
-				Value1 int
-				Value2 float32
-				Value3 bool
-				Value4 []interface{}
-				Value5 struct{ V string }
-			}{
-				1, 1.1, false,
-				[]interface{}{
-					1, true, 1.1, struct{ V string }{"value"}, []interface{}{1, 2},
+			args{
+				struct {
+					Value1 int
+					Value2 float32
+					Value3 bool
+					Value4 []interface{}
+					Value5 struct {
+						V string
+						X string
+					}
+					Value6 []Some
+					Value7 []*Some
+				}{
+					1, 1.1, false,
+					[]interface{}{
+						1, true, 1.1, struct{ V string }{"value"}, []interface{}{1, 2},
+					},
+					struct {
+						V string
+						X string
+					}{"value", "xalue"},
+					[]Some{
+						{"111", "222"},
+					},
+					[]*Some{
+						{"111", "222"},
+					},
 				},
-				struct{ V string }{"value"},
-			}},
+			},
 			"field_value1: 1\n" +
 				"field_value2: 1.10\n" +
 				"field_value3: false\n" +
-				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - \n - 1\n - 2\n" +
-				"field_value5: field_v: value",
+				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
+				"field_value5: \nfield_v: value\nfield_x: xalue\n" +
+				"field_value6: \n field_h1       field_h2    \n-------------  -------------\n 111            222         \n" +
+				"field_value7: \n field_h1       field_h2    \n-------------  -------------\n 111            222         ",
 			"",
 		},
 		{
@@ -112,7 +135,7 @@ func TestPlain_Print(t *testing.T) {
 				"------------------  ------------------  ------------------\n" +
 				" valueA.1            valueA.2            valueA.3         \n" +
 				" valueB.1            valueB.2            valueB.3         \n" +
-				" valueC.1            valueC.2            valueC.3         \n",
+				" valueC.1            valueC.2            valueC.3         ",
 			"",
 		},
 	}
