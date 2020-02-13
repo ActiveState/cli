@@ -22,7 +22,7 @@ import (
 
 var (
 	// FailNoProject identifies a failure as being due to a missing project file
-	FailNoProject = failures.Type("projectfile.fail.noproject")
+	FailNoProject = failures.Type("projectfile.fail.noproject", failures.FailUser)
 
 	// FailParseProject identifies a failure as being due inability to parse file contents
 	FailParseProject = failures.Type("projectfile.fail.parseproject", failures.FailUser)
