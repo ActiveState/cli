@@ -2,6 +2,8 @@ package platforms
 
 import (
 	"errors"
+	"sort"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -36,6 +38,12 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 
 		ps = append(ps, &p)
 	}
+
+	sort.Slice(ps, func(i, j int) bool {
+		tmpI := strings.ToLower(ps[i].Name) + ps[i].BitWidth + ps[i].Version
+		tmpJ := strings.ToLower(ps[j].Name) + ps[j].BitWidth + ps[j].Version
+		return tmpI < tmpJ
+	})
 
 	return ps
 }
