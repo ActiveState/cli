@@ -143,7 +143,20 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 			return nil, FailPlatforms.Wrap(err)
 		}
 
-		platformCache = response.Payload.Platforms
+		// remove unwanted platforms
+		var platforms []*Platform
+		for _, p := range response.Payload.Platforms {
+			if p.KernelVersion == nil || p.KernelVersion.Version == nil {
+				continue
+			}
+			version := *p.KernelVersion.Version
+			if version == "" || version == "0" {
+				continue
+			}
+			platforms = append(platforms, p)
+		}
+
+		platformCache = platforms
 	}
 
 	return platformCache, nil
