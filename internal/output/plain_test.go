@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Some struct {
-	H1 string
-	H2 string
-}
-
 func TestPlain_Print(t *testing.T) {
 	type tableStruct struct {
 		Header1 string
@@ -97,8 +92,8 @@ func TestPlain_Print(t *testing.T) {
 						V string
 						X string
 					}
-					Value6 []Some
-					Value7 []*Some
+					Value6 []tableStruct
+					Value7 []*tableStruct
 				}{
 					1, 1.1, false,
 					[]interface{}{
@@ -108,11 +103,11 @@ func TestPlain_Print(t *testing.T) {
 						V string
 						X string
 					}{"value", "xalue"},
-					[]Some{
-						{"111", "222"},
+					[]tableStruct{
+						{"111", "222", "333"},
 					},
-					[]*Some{
-						{"111", "222"},
+					[]*tableStruct{
+						{"111", "222", "333"},
 					},
 				},
 			},
@@ -121,8 +116,14 @@ func TestPlain_Print(t *testing.T) {
 				"field_value3: false\n" +
 				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
 				"field_value5: \nfield_v: value\nfield_x: xalue\n" +
-				"field_value6: \n field_h1       field_h2    \n-------------  -------------\n 111            222         \n" +
-				"field_value7: \n field_h1       field_h2    \n-------------  -------------\n 111            222         ",
+				"field_value6: \n" +
+				" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" 111                 222                 333              \n" +
+				"field_value7: \n" +
+				" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" 111                 222                 333              ",
 			"",
 		},
 		{
