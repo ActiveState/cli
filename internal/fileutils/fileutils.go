@@ -367,7 +367,6 @@ func FindFileInPath(dir, filename string) (string, *failures.Failure) {
 	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
 		return filepath, nil
 	}
-	fmt.Println("did not find file")
 	return "", FailFindInPathNotFound.New("err_file_not_found_in_path", filename, absDir)
 }
 
