@@ -34,14 +34,14 @@ var listFlags = []*commands.Flag{
 		StringVar:   &ListFlags.Commit,
 	},
 	&commands.Flag{
-		Name:        "name",
+		Name:        "package",
 		Description: "package_list_flag_name_description",
 		Type:        commands.TypeString,
 		StringVar:   &ListFlags.Name,
 	},
 	&commands.Flag{
-		Name:        "project",
-		Description: "package_list_flag_project_description",
+		Name:        "namespace",
+		Description: "namespace_list_flag_project_description",
 		Type:        commands.TypeString,
 		StringVar:   &ListFlags.Project,
 	},

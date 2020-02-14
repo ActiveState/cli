@@ -37,7 +37,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project() {
-	suite.Spawn("packages", "--project", "ActiveState-CLI/List")
+	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List")
 	suite.Expect("Name")
 	suite.Expect("numpy")
 	suite.Expect("pytest")
@@ -50,27 +50,27 @@ func (suite *PackageIntegrationTestSuite) TestPackages_name() {
 
 	suite.PrepareActiveStateYAML(tempDir)
 
-	suite.Spawn("packages", "--name", "py")
+	suite.Spawn("packages", "--package", "py")
 	suite.Expect("Name")
 	suite.Expect("pytest")
 	suite.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
-	suite.Spawn("packages", "--project", "ActiveState-CLI/List", "--name", "py")
+	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "py")
 	suite.Expect("Name")
 	suite.Expect("pytest")
 	suite.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
-	suite.Spawn("packages", "--project", "ActiveState-CLI/List", "--name", "req")
+	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "req")
 	suite.Expect("No packages to list")
 	suite.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_invaild() {
-	suite.Spawn("packages", "--project", "junk/junk")
+	suite.Spawn("packages", "--namespace", "junk/junk")
 	suite.Expect("The requested project junk/junk could not be found.")
 	suite.Wait()
 }

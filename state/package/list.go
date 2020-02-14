@@ -24,10 +24,27 @@ var ListFlags struct {
 func ExecuteList() {
 	logging.Debug("ExecuteList")
 
-	commit, fail := targetedCommit(ListFlags.Commit, ListFlags.Project)
-	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-		return
+	var commit *strfmt.UUID
+	var fail *failures.Failure
+	switch {
+	case ListFlags.Commit != "":
+		commit, fail = targetFromCommit(ListFlags.Commit)
+		if fail != nil {
+			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
+			return
+		}
+	case ListFlags.Project != "":
+		commit, fail = targetFromProject(ListFlags.Project)
+		if fail != nil {
+			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
+			return
+		}
+	default:
+		commit, fail = targetFromProjectFile()
+		if fail != nil {
+			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
+			return
+		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
@@ -51,47 +68,49 @@ func ExecuteList() {
 	print.Line(output)
 }
 
-func targetedCommit(commitOpt, projectString string) (*strfmt.UUID, *failures.Failure) {
-	if commitOpt != "" {
-		if commitOpt == "latest" {
-			logging.Debug("latest commit selected")
-			proj := project.Get()
-			return model.LatestCommitID(proj.Owner(), proj.Name())
-		}
-
-		return prepareCommit(commitOpt)
+func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {
+	if commitOpt == "latest" {
+		logging.Debug("latest commit selected")
+		proj := project.Get()
+		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
 
-	if projectString != "" {
-		ns, fail := project.ParseNamespace(projectString)
-		if fail != nil {
-			return nil, fail
-		}
+	return prepareCommit(commitOpt)
+}
 
-		proj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
-		if fail != nil {
-			return nil, fail
-		}
+func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
+	ns, fail := project.ParseNamespace(projectString)
+	if fail != nil {
+		return nil, fail
+	}
 
-		for _, branch := range proj.Branches {
-			if branch.Default {
-				return branch.CommitID, nil
-			}
+	proj, fail := model.FetchProjectByName(ns.Owner, ns.Project)
+	if fail != nil {
+		return nil, fail
+	}
+
+	for _, branch := range proj.Branches {
+		if branch.Default {
+			return branch.CommitID, nil
 		}
 	}
 
+	return nil, failures.FailNotFound.New(locale.T("err_package_project_no_commit"))
+}
+
+func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
 	logging.Debug("no project string provided, falling back to current project")
 	proj, fail := project.GetSafe()
 	if fail != nil {
 		return nil, fail
 	}
-	commitOpt = proj.CommitID()
-	if commitOpt == "" {
+	commit := proj.CommitID()
+	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")
 		return model.LatestCommitID(proj.Owner(), proj.Name())
 	}
 
-	return prepareCommit(commitOpt)
+	return prepareCommit(commit)
 }
 
 func prepareCommit(commit string) (*strfmt.UUID, *failures.Failure) {
