@@ -99,7 +99,7 @@ func targetFromProject(projectString string) (*strfmt.UUID, *failures.Failure) {
 }
 
 func targetFromProjectFile() (*strfmt.UUID, *failures.Failure) {
-	logging.Debug("no project string provided, falling back to current project")
+	logging.Debug("commit from project file")
 	proj, fail := project.GetSafe()
 	if fail != nil {
 		return nil, fail
