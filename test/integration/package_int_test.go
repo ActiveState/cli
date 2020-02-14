@@ -20,7 +20,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 
 	suite.Spawn("packages")
 	suite.Expect("Name")
-	suite.Expect("dateutils")
+	suite.Expect("pytest")
 	suite.Wait()
 }
 
@@ -32,7 +32,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
 
 	suite.Spawn("packages", "list")
 	suite.Expect("Name")
-	suite.Expect("dateutils")
+	suite.Expect("pytest")
 	suite.Wait()
 }
 
