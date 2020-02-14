@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -14,25 +15,28 @@ var (
 	FailNoCommitID = failures.Type("platforms.fail.nocommitid", failures.FailNonFatal)
 )
 
+// ListRunParams tracks the info required for running Add.
+type ListRunParams struct {
+	Project *project.Project
+}
+
 // List manages the listing execution context.
 type List struct {
-	getProject ProjectProviderFunc
-	out        output.Outputer
+	out output.Outputer
 }
 
 // NewList prepares a list execution context for use.
-func NewList(getProjFn ProjectProviderFunc, out output.Outputer) *List {
+func NewList(out output.Outputer) *List {
 	return &List{
-		getProject: getProjFn,
-		out:        out,
+		out: out,
 	}
 }
 
 // Run executes the list behavior.
-func (l *List) Run() error {
+func (l *List) Run(ps ListRunParams) error {
 	logging.Debug("Execute platforms list")
 
-	listing, err := newListing("", l.getProject)
+	listing, err := newListing("", ps.Project.Name(), ps.Project.Owner())
 	if err != nil {
 		return err
 	}
@@ -46,8 +50,8 @@ type Listing struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newListing(commitID string, getProj ProjectProviderFunc) (*Listing, error) {
-	targetCommitID, err := targettedCommitID(commitID, getProj)
+func newListing(commitID, projName, projOrg string) (*Listing, error) {
+	targetCommitID, err := targettedCommitID(commitID, projName, projOrg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +68,7 @@ func newListing(commitID string, getProj ProjectProviderFunc) (*Listing, error) 
 	return &listing, nil
 }
 
-func targettedCommitID(commitID string, getProj ProjectProviderFunc) (strfmt.UUID, error) {
+func targettedCommitID(commitID, projName, projOrg string) (strfmt.UUID, error) {
 	if commitID != "" {
 		var cid strfmt.UUID
 		err := cid.UnmarshalText([]byte(commitID))
@@ -72,12 +76,7 @@ func targettedCommitID(commitID string, getProj ProjectProviderFunc) (strfmt.UUI
 		return cid, err
 	}
 
-	proj, fail := getProj()
-	if fail != nil {
-		return "", fail
-	}
-
-	cmt, fail := model.LatestCommitID(proj.Owner(), proj.Name())
+	cmt, fail := model.LatestCommitID(projOrg, projName)
 	if fail != nil {
 		return "", fail
 	}

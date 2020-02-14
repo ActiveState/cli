@@ -9,7 +9,9 @@ import (
 )
 
 func newPlatformsCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewList(project.GetSafe, out)
+	runner := platforms.NewList(out)
+
+	params := platforms.ListRunParams{}
 
 	return captain.NewCommand(
 		"platforms",
@@ -17,7 +19,13 @@ func newPlatformsCommand(out output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run()
+			proj, fail := project.GetSafe()
+			if fail != nil {
+				return fail
+			}
+			params.Project = proj
+
+			return runner.Run(params)
 		},
 	)
 }
@@ -37,9 +45,9 @@ func newPlatformsSearchCommand(out output.Outputer) *captain.Command {
 }
 
 func newPlatformsAddCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewAdd(project.GetSafe)
+	runner := platforms.NewAdd()
 
-	params := platforms.RunAddParams{}
+	params := platforms.AddRunParams{}
 
 	return captain.NewCommand(
 		"add",
@@ -64,15 +72,21 @@ func newPlatformsAddCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			proj, fail := project.GetSafe()
+			if fail != nil {
+				return fail
+			}
+			params.Project = proj
+
 			return runner.Run(params)
 		},
 	)
 }
 
 func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
-	runner := platforms.NewRemove(project.GetSafe)
+	runner := platforms.NewRemove()
 
-	params := platforms.RunRemoveParams{}
+	params := platforms.RemoveRunParams{}
 
 	return captain.NewCommand(
 		"remove",
@@ -97,6 +111,12 @@ func newPlatformsRemoveCommand(out output.Outputer) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			proj, fail := project.GetSafe()
+			if fail != nil {
+				return fail
+			}
+			params.Project = proj
+
 			return runner.Run(params)
 		},
 	)

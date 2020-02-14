@@ -5,14 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
-
-// ProjectProviderFunc describes the function need to safely obtain the current project instance.
-type ProjectProviderFunc func() (*project.Project, *failures.Failure)
 
 // Platform represents the output data of a platform.
 type Platform struct {
