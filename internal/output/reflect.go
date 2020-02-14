@@ -40,8 +40,8 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 
 		field := structField{
 			name:  fieldRfl.Name,
-			value: valueRfl.Interface(),
 			l10n:  serialized,
+			value: valueRfl.Interface(),
 		}
 		meta = append(meta, field)
 	}
@@ -67,7 +67,18 @@ func parseSlice(v interface{}) ([]interface{}, error) {
 	return result, nil
 }
 
+func valueOf(v interface{}) reflect.Value {
+	return reflect.ValueOf(v)
+}
+
+func indirectKind(v interface{}) reflect.Kind {
+	return reflect.Indirect(valueOf(v)).Kind()
+}
+
 func isStruct(v interface{}) bool {
-	valueRfl := reflect.Indirect(reflect.ValueOf(v))
-	return valueRfl.Kind() == reflect.Struct
+	return indirectKind(v) == reflect.Struct
+}
+
+func isSlice(v interface{}) bool {
+	return indirectKind(v) == reflect.Slice
 }

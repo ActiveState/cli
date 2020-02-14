@@ -7,11 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func nilStr(s string) *string {
+	return &s
+}
+
 func TestPlain_Print(t *testing.T) {
 	type tableStruct struct {
 		Header1 string
-		Header2 string
-		Header3 string
+		Header2 *string
+		Header3 *string
 	}
 	type args struct {
 		value interface{}
@@ -94,6 +98,13 @@ func TestPlain_Print(t *testing.T) {
 					}
 					Value6 []tableStruct
 					Value7 []*tableStruct
+					Nil1   *int               // nil ptr to builtin
+					Nil2   []interface{}      // nil slice
+					Nil3   []interface{}      // slice of nils
+					Nil4   *tableStruct       // nil ptr to struct
+					Nil5   struct{ N *int }   // struct w/ ptr to builtin field
+					Nil6   []struct{ N *int } // slice of structs w/ ptr to builtin field
+					Nil7   interface{}        // typed nil
 				}{
 					1, 1.1, false,
 					[]interface{}{
@@ -104,11 +115,20 @@ func TestPlain_Print(t *testing.T) {
 						X string
 					}{"value", "xalue"},
 					[]tableStruct{
-						{"111", "222", "333"},
+						{"111", nilStr("222"), nil},
 					},
 					[]*tableStruct{
-						{"111", "222", "333"},
+						{"111", nilStr("222"), nil},
 					},
+					nil,
+					nil,
+					[]interface{}{nil, nil, nil},
+					nil,
+					struct{ N *int }{nil},
+					[]struct{ N *int }{
+						{nil}, {nil}, {nil},
+					},
+					(*int)(nil),
 				},
 			},
 			"field_value1: 1\n" +
@@ -119,38 +139,50 @@ func TestPlain_Print(t *testing.T) {
 				"field_value6: \n" +
 				" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
-				" 111                 222                 333              \n" +
+				" 111                 222                 <nil>            \n" +
 				"field_value7: \n" +
 				" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
-				" 111                 222                 333              ",
+				" 111                 222                 <nil>            \n" +
+				"field_nil1: <nil>\n" +
+				"field_nil2: \n<nil>\n" +
+				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
+				"field_nil4: <nil>\n" +
+				"field_nil5: \nfield_n: <nil>\n" +
+				"field_nil6: \n" +
+				" field_n    \n" +
+				"------------\n" +
+				" <nil>      \n" +
+				" <nil>      \n" +
+				" <nil>      \n" +
+				"field_nil7: <nil>",
 			"",
 		},
 		{
 			"table",
 			args{[]tableStruct{
-				{"valueA.1", "valueA.2", "valueA.3"},
-				{"valueB.1", "valueB.2", "valueB.3"},
-				{"valueC.1", "valueC.2", "valueC.3"},
+				{"valueA.1", nil, nilStr("valueA.3")},
+				{"valueB.1", nilStr("valueB.2"), nil},
+				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
 			}},
 			" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
-				" valueA.1            valueA.2            valueA.3         \n" +
-				" valueB.1            valueB.2            valueB.3         \n" +
+				" valueA.1            <nil>               valueA.3         \n" +
+				" valueB.1            valueB.2            <nil>            \n" +
 				" valueC.1            valueC.2            valueC.3         ",
 			"",
 		},
 		{
 			"table with pointers",
 			args{[]*tableStruct{
-				&tableStruct{"valueA.1", "valueA.2", "valueA.3"},
-				&tableStruct{"valueB.1", "valueB.2", "valueB.3"},
-				&tableStruct{"valueC.1", "valueC.2", "valueC.3"},
+				{"valueA.1", nil, nilStr("valueA.3")},
+				{"valueB.1", nilStr("valueB.2"), nil},
+				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
 			}},
 			" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
-				" valueA.1            valueA.2            valueA.3         \n" +
-				" valueB.1            valueB.2            valueB.3         \n" +
+				" valueA.1            <nil>               valueA.3         \n" +
+				" valueB.1            valueB.2            <nil>            \n" +
 				" valueC.1            valueC.2            valueC.3         ",
 			"",
 		},
