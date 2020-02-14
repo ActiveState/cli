@@ -38,6 +38,7 @@ type Console struct {
 	passthroughPipe *PassthroughPipe
 	runeReader      *bufio.Reader
 	closers         []io.Closer
+	readMutation    func([]byte) ([]byte, error)
 }
 
 // ConsoleOpt allows setting Console options.
@@ -134,7 +135,7 @@ func WithDefaultTimeout(timeout time.Duration) ConsoleOpt {
 }
 
 // NewConsole returns a new Console with the given options.
-func NewConsole(opts ...ConsoleOpt) (*Console, error) {
+func NewConsole(readMut func([]byte) ([]byte, error), opts ...ConsoleOpt) (*Console, error) {
 	options := ConsoleOpts{
 		Logger: log.New(ioutil.Discard, "", 0),
 	}
@@ -156,12 +157,19 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 
 	closers = append(options.Closers, passthroughPipe)
 
+	if readMut == nil {
+		readMut = func(bs []byte) ([]byte, error) {
+			return bs, nil
+		}
+	}
+
 	c := &Console{
 		opts:            options,
 		Pty:             pty,
 		passthroughPipe: passthroughPipe,
 		runeReader:      bufio.NewReaderSize(passthroughPipe, utf8.UTFMax),
 		closers:         closers,
+		readMutation:    readMut,
 	}
 
 	for _, stdin := range options.Stdins {
@@ -185,7 +193,14 @@ func (c *Console) Tty() *os.File {
 
 // Read reads bytes b from Console's tty.
 func (c *Console) Read(b []byte) (int, error) {
-	return c.Pty.TerminalOutPipe().Read(b)
+	n, err := c.Pty.TerminalOutPipe().Read(b)
+	if err != nil {
+		return n, err
+	}
+
+	bs, err := c.readMutation(b)
+	nc := copy(b, bs)
+	return nc, err
 }
 
 // Write writes bytes b to Console's tty.
