@@ -281,7 +281,7 @@ func TestExpectDefaultTimeoutOverride(t *testing.T) {
 func TestConsoleChain(t *testing.T) {
 	t.Parallel()
 
-	c1, err := NewConsole(nil, expectNoError(t), sendNoError(t), WithDefaultTimeout(time.Second))
+	c1, err := NewConsole(expectNoError(t), sendNoError(t), WithDefaultTimeout(time.Second))
 	if err != nil {
 		t.Errorf("Expected no error but got'%s'", err)
 	}

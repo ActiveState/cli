@@ -30,7 +30,7 @@ func NewTestConsole(t *testing.T, opts ...ConsoleOpt) (*Console, error) {
 		return nil, err
 	}
 
-	return NewConsole(nil, append(opts, WithStdout(tf))...)
+	return NewConsole(append(opts, WithStdout(tf))...)
 }
 
 // NewTestWriter returns an io.Writer where bytes written to the file are

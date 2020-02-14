@@ -186,8 +186,8 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 
 	var err error
 	s.console, err = expect.NewConsole(
-		ansi.Strip,
 		expect.WithDefaultTimeout(defaultTimeout),
+		expect.WithReadBufferMutation(ansi.Strip),
 	)
 	s.Require().NoError(err)
 
