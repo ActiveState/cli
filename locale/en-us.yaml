@@ -1041,8 +1041,9 @@ cpu_profiling_setup_failed:
   other: CPU profiling setup failed
 err_main_panic:
   other: |
-    An unexpected error occurred while running the State tool
-    Check the error log for more information
+    An unexpected error occurred while running the State tool.
+    Check the error log for more information.
+    Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:

@@ -220,7 +220,7 @@ func handlePanics(exiter func(int)) {
 		logging.Error("%v - caught panic", r)
 		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
 
-		print.Error(strings.TrimSpace(locale.T("err_main_panic")))
+		print.Error(strings.TrimSpace(locale.Tr("err_main_panic", config.ConfigPath())))
 
 		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
 		exiter(1)
