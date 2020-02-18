@@ -55,7 +55,11 @@ func (r *Push) Run() *failures.Failure {
 	}
 
 	if pjm != nil {
-		print.Info(locale.T("push_up_to_date"))
+		if pj.CommitID() == "" {
+			print.Info(locale.Tr("push_already_exists", pj.Owner(), pj.Name()))
+		} else {
+			print.Info(locale.T("push_up_to_date"))
+		}
 		return nil
 	}
 

@@ -159,8 +159,8 @@ func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return constants.LinuxBit64UUID, nil
-	//case strings.ToLower(sysinfo.Mac.String()):
-	//	return "", nil
+	case strings.ToLower(sysinfo.Mac.String()):
+		return constants.MacBit64UUID, nil
 	case strings.ToLower(sysinfo.Windows.String()):
 		return constants.Win10Bit64UUID, nil
 	default:
