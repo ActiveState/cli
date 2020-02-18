@@ -52,6 +52,7 @@ type ConsoleOpts struct {
 	ExpectObservers []ExpectObserver
 	SendObservers   []SendObserver
 	ReadTimeout     *time.Duration
+	ReadBufMutation func([]byte) ([]byte, error)
 }
 
 // ExpectObserver provides an interface for a function callback that will
@@ -133,10 +134,20 @@ func WithDefaultTimeout(timeout time.Duration) ConsoleOpt {
 	}
 }
 
+// WithReadBufferMutation sets a transformation function to prepare console
+// reads.
+func WithReadBufferMutation(fn func([]byte) ([]byte, error)) ConsoleOpt {
+	return func(opts *ConsoleOpts) error {
+		opts.ReadBufMutation = fn
+		return nil
+	}
+}
+
 // NewConsole returns a new Console with the given options.
 func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	options := ConsoleOpts{
-		Logger: log.New(ioutil.Discard, "", 0),
+		Logger:          log.New(ioutil.Discard, "", 0),
+		ReadBufMutation: func(bs []byte) ([]byte, error) { return bs, nil },
 	}
 
 	for _, opt := range opts {
@@ -185,7 +196,14 @@ func (c *Console) Tty() *os.File {
 
 // Read reads bytes b from Console's tty.
 func (c *Console) Read(b []byte) (int, error) {
-	return c.Pty.TerminalOutPipe().Read(b)
+	n, err := c.Pty.TerminalOutPipe().Read(b)
+	if err != nil {
+		return n, err
+	}
+
+	bs, err := c.opts.ReadBufMutation(b)
+	nc := copy(b, bs)
+	return nc, err
 }
 
 // Write writes bytes b to Console's tty.

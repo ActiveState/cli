@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/vt10x"
 	"github.com/google/uuid"
+	"github.com/pborman/ansi"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
@@ -186,6 +187,7 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 	var err error
 	s.console, err = expect.NewConsole(
 		expect.WithDefaultTimeout(defaultTimeout),
+		expect.WithReadBufferMutation(ansi.Strip),
 	)
 	s.Require().NoError(err)
 

@@ -114,6 +114,7 @@ func CheckpointToOrder(commitID strfmt.UUID, atTime strfmt.DateTime, checkpoint 
 		OrderID:      &commitID,
 		Platforms:    CheckpointToPlatforms(checkpoint),
 		Requirements: CheckpointToRequirements(checkpoint),
+		CamelFlags:   CheckpointToCamelFlags(checkpoint),
 		Timestamp:    &atTime,
 	}
 }
@@ -126,12 +127,30 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1Order
 		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
+		if NamespaceMatch(req.Namespace, NamespaceCamelFlagsMatch) {
+			continue
+		}
 
 		result = append(result, &inventory_models.V1OrderRequirementsItems{
 			Feature:             &req.Requirement,
 			Namespace:           &req.Namespace,
 			VersionRequirements: versionRequirement(req.VersionConstraint),
 		})
+	}
+
+	return result
+}
+
+// CheckpointToCamelFlags converts a checkpoint to camel flags
+func CheckpointToCamelFlags(checkpoint Checkpoint) []string {
+	result := []string{}
+
+	for _, req := range checkpoint {
+		if !NamespaceMatch(req.Namespace, NamespaceCamelFlagsMatch) {
+			continue
+		}
+
+		result = append(result, req.Requirement)
 	}
 
 	return result
