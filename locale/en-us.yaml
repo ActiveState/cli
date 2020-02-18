@@ -1013,6 +1013,36 @@ export_recipe_flag_pretty:
   other: Enables export format beautification
 export_recipe_flag_platform:
   other: Sets target platform
+platforms_cmd_description:
+  other: Manage platforms used in your project
+platforms_add_cmd_description:
+  other: Add a new platform to your project
+platforms_remove_cmd_description:
+  other: Remove a platform from your project
+platforms_search_cmd_description:
+  other: Search for available platforms that can be added to your project
+flag_platforms_shared_bitwidth:
+  other: bit-width
+flag_platforms_shared_bitwidth_description:
+  other: Platform architecture word size/width in bits (32,64)
+arg_platforms_shared_name:
+  other: name
+arg_platforms_shared_name_description:
+  other: Platform name (Windows, Darwin, etc.)
+arg_platforms_shared_version:
+  other: version
+arg_platforms_shared_version_description:
+  other: Platform version (e.g. 12.04.2)
+field_platforms:
+  other: Platforms
+field_version:
+  other: Version
+field_bitwidth:
+  other: Bit Width
+commit_message_add_platform:
+  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_removed_platform:
+  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
@@ -1290,6 +1320,40 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
+no_commits:
+  other: No commits exist yet for {{.V0}}
+err_orgs_length:
+  other: Could not retrieve the requested users / organizations
+err_user_not_found:
+  other: "Could not find the requested user: {{.V0}}"
+field_date:
+  other: Date
+field_author:
+  other: Author
+field_id: 
+  other: ID
+field_changes:
+  other: Changes
+change_added:
+  other: "{{.V0}} {{.V1}} added"
+change_removed:
+  other: "{{.V0}} removed"
+change_updated:
+  other: "{{.V0}} updated from {{.V1}} to {{.V2}}"
+namespace_label_platform:
+  other: "Platform"
+namespace_label_preplatform:
+  other: "Bits"
+history_commit:
+  other: "[BLUE]commit {{.V0}}[/RESET]\n"
+history_author:
+  other: "Author: {{.V0}}\n"
+history_date:
+  other: "Date: {{.V0}}\n"
+history_description:
+  other: "Description: {{.V0}}\n"
+arg_state_history_namespace_description:
+  other: "The namespace to view the history for (owner/name)"
 clean_description:
   other: Remove the state tool, installed languages, and any configuration files
 flag_state_clean_force_description:

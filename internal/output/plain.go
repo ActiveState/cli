@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/bndr/gotabulate"
+	"github.com/go-openapi/strfmt"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -61,55 +62,74 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 	}
 }
 
+const nilText = "<nil>"
+
 // sprint will marshal and return the given value as a string
 func sprint(value interface{}) (string, error) {
-	var result string
-	var err error
-
-	valueRfl := reflect.ValueOf(value)
-	switch valueRfl.Kind() {
-	case reflect.Ptr:
-		return sprint(valueRfl.Elem().Interface())
-	case reflect.Struct:
-		var r string
-		r, err = sprintStruct(value)
-		result += r
-	case reflect.Slice:
-		var r string
-		r, err = sprintSlice(value)
-		result += r
-	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		result += fmt.Sprintf("%d", value)
-	case reflect.Float32, reflect.Float64:
-		result += fmt.Sprintf("%.2f", valueRfl.Float())
-	case reflect.Bool:
-		result += fmt.Sprintf("%t", valueRfl.Bool())
-	case reflect.String:
-		result += value.(string)
-	default:
-		err = fmt.Errorf("unknown type: %s", valueRfl.Type().String())
+	if value == nil {
+		return nilText, nil
 	}
 
-	return result, err
+	valueRfl := valueOf(value)
+	switch valueRfl.Kind() {
+	case reflect.Ptr:
+		if valueRfl.IsNil() {
+			return nilText, nil
+		}
+		return sprint(valueRfl.Elem().Interface())
+
+	case reflect.Struct:
+		return sprintStruct(value)
+
+	case reflect.Slice:
+		if valueRfl.IsNil() {
+			return nilText, nil
+		}
+		return sprintSlice(value)
+
+	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fmt.Sprintf("%d", value), nil
+
+	case reflect.Float32, reflect.Float64:
+		return fmt.Sprintf("%.2f", valueRfl.Float()), nil
+
+	case reflect.Bool:
+		return fmt.Sprintf("%t", valueRfl.Bool()), nil
+
+	case reflect.String:
+		if v, ok := value.(strfmt.UUID); ok {
+			return v.String(), nil
+		}
+		return value.(string), nil
+
+	default:
+		return "", fmt.Errorf("unknown type: %s", valueRfl.Type().String())
+	}
 }
 
 // sprintStruct will marshal and return the given struct as a string
 func sprintStruct(value interface{}) (string, error) {
-	structMeta, err := parseStructMeta(value)
+	meta, err := parseStructMeta(value)
 	if err != nil {
 		return "", err
 	}
+
 	result := []string{}
-	for i, value := range structMeta.values {
-		stringValue, err := sprint(value)
+	for _, field := range meta {
+		stringValue, err := sprint(field.value)
 		if err != nil {
 			return "", err
 		}
 
-		key := localizedField(structMeta.localeFields[i])
+		if isStruct(field.value) || isSlice(field.value) {
+			stringValue = "\n" + stringValue
+		}
+
+		key := localizedField(field.l10n)
 		result = append(result, fmt.Sprintf("%s: %s", key, stringValue))
 	}
+
 	return strings.Join(result, "\n"), nil
 }
 
@@ -131,10 +151,15 @@ func sprintSlice(value interface{}) (string, error) {
 			return "", err
 		}
 
+		// prepend if stringValue does not represent a slice
+		if !isSlice(v) {
+			stringValue = " - " + stringValue
+		}
+
 		result = append(result, stringValue)
 	}
 
-	return "\n - " + strings.Join(result, "\n - "), nil
+	return strings.Join(result, "\n"), nil
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
@@ -150,15 +175,15 @@ func sprintTable(slice []interface{}) (string, error) {
 			return "", errors.New("Tried to sprintTable with slice that doesn't contain all structs")
 		}
 
-		structMeta, err := parseStructMeta(v)
+		meta, err := parseStructMeta(v)
 		if err != nil {
 			return "", err
 		}
 
 		setHeaders := len(headers) == 0
 		row := []interface{}{}
-		for i, value := range structMeta.values {
-			stringValue, err := sprint(value)
+		for _, field := range meta {
+			stringValue, err := sprint(field.value)
 			if err != nil {
 				return "", err
 			}
@@ -166,7 +191,7 @@ func sprintTable(slice []interface{}) (string, error) {
 			row = append(row, stringValue)
 
 			if setHeaders {
-				headers = append(headers, localizedField(structMeta.localeFields[i]))
+				headers = append(headers, localizedField(field.l10n))
 			}
 		}
 
@@ -174,14 +199,17 @@ func sprintTable(slice []interface{}) (string, error) {
 	}
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders(headers)
+	t.SetWrapDelimiter(' ')
 	t.SetWrapStrings(true)
+	t.SetMaxCellSize(100)
+	t.SetHeaders(headers)
 
 	// Don't print whitespace lines
 	t.SetHideLines([]string{"betweenLine", "top", "aboveTitle", "LineTop", "LineBottom", "bottomLine"})
 	t.SetAlign("left")
 
-	return t.Render("simple"), nil
+	render := t.Render("simple")
+	return strings.TrimSuffix(render, "\n"), nil
 }
 
 // localizedField is a little helper that will return the localized version of the given string
