@@ -27,6 +27,7 @@ func (f *JSON) Print(value interface{}) {
 		f.Error(locale.T("err_could_not_marshal_print"))
 		return
 	}
+
 	f.cfg.OutWriter.Write(b)
 }
 

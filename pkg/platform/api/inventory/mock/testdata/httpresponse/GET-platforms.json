@@ -10,6 +10,9 @@
 	    "kernel": {
 		"name": "Linux"
 	    },
+	    "kernel_version": {
+		"version": "not 0"
+	    },
             "platform_id": "00010001-0001-0001-0001-000100010001",
             "cpu_architecture": {
                 "bit_width": "64",
@@ -26,6 +29,9 @@
 	    "kernel": {
 		"name": "Darwin"
 	    },
+	    "kernel_version": {
+		"version": "not 0"
+	    },
             "platform_id": "00020002-0002-0002-0002-000200020002",
             "cpu_architecture": {
                 "bit_width": "64",
@@ -41,6 +47,9 @@
             },
 	    "kernel": {
 		"name": "Windows"
+	    },
+	    "kernel_version": {
+		"version": "not 0"
 	    },
             "platform_id": "00030003-0003-0003-0003-000300030003",
             "cpu_architecture": {
