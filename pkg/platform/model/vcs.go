@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/go-openapi/strfmt"
 
@@ -60,6 +61,9 @@ const (
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
+
+	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
+	NamespaceCamelFlagsMatch = `^camel-flags$`
 )
 
 // NamespaceMatch Checks if the given namespace query matches the given namespace
@@ -350,4 +354,48 @@ func (cs indexedCommits) countBetween(first, last string) (int, *failures.Failur
 	}
 
 	return ct, nil
+}
+
+// CommitPlatform commits a single platform commit
+func CommitPlatform(owner, prjName string, op Operation, name, version string, word int) *failures.Failure {
+	platform, fail := FetchPlatformByDetails(name, version, word)
+	if fail != nil {
+		return fail
+	}
+
+	proj, fail := FetchProjectByName(owner, prjName)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID == nil {
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
+	}
+
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = "commit_message_add_platform"
+	case OperationUpdated:
+		return failures.FailDeveloper.New("this is not supported yet")
+	case OperationRemoved:
+		msgL10nKey = "commit_message_removed_platform"
+	}
+
+	bCommitID := *branch.CommitID
+	msg := locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+	platformID := platform.PlatformID.String()
+
+	// version is not the value that AddCommit needs - platforms do not post a version
+	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
+	if fail != nil {
+		return fail
+	}
+
+	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
