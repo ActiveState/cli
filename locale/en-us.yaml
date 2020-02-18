@@ -1322,6 +1322,8 @@ history_date:
   other: "Date: {{.V0}}\n"
 history_description:
   other: "Description: {{.V0}}\n"
+history_cmd_description:
+  other: View history of the active or given project
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
 clean_description:
