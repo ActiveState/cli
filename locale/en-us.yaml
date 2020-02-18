@@ -757,7 +757,9 @@ pull_is_updated:
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 notify_user_to_reactivate_instances:
-  other: Please reactivate any activated instances of the State Tool
+  other: |
+    If you have any active instances of this project open in other terminals, please exit and 
+    re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
