@@ -6,23 +6,25 @@ import (
 	"strings"
 )
 
-// structMeta holds the basic meta information required by the Plain outputer
-type structMeta struct {
-	fields       []string
-	localeFields []string
-	values       []interface{}
+type structField struct {
+	name  string
+	l10n  string
+	value interface{}
 }
+
+// structMeta holds the basic meta information required by the Plain outputer
+type structMeta []structField
 
 // parseStructMeta will use reflect to populate structMeta for the given struct
 func parseStructMeta(v interface{}) (structMeta, error) {
-	structRfl := reflect.ValueOf(resolvePointer(v))
+	structRfl := reflect.Indirect(reflect.ValueOf(v))
 
 	// Fail if the passed type is not a struct
 	if !isStruct(structRfl) {
 		return structMeta{}, fmt.Errorf("Expected struct, got: %s", structRfl.Kind().String())
 	}
 
-	info := structMeta{}
+	var meta structMeta
 	for i := 0; i < structRfl.Type().NumField(); i++ {
 		fieldRfl := structRfl.Type().Field(i)
 		valueRfl := structRfl.Field(i)
@@ -31,17 +33,20 @@ func parseStructMeta(v interface{}) (structMeta, error) {
 			continue // don't include unexported fields
 		}
 
-		info.fields = append(info.fields, fieldRfl.Name)
-		info.values = append(info.values, valueRfl.Interface())
-
 		serialized := strings.ToLower(string(fieldRfl.Name[0:1])) + fieldRfl.Name[1:]
 		if v, ok := fieldRfl.Tag.Lookup("locale"); ok {
 			serialized = v
 		}
-		info.localeFields = append(info.localeFields, serialized)
+
+		field := structField{
+			name:  fieldRfl.Name,
+			l10n:  serialized,
+			value: valueRfl.Interface(),
+		}
+		meta = append(meta, field)
 	}
 
-	return info, nil
+	return meta, nil
 }
 
 // parseSlice will turn an interface that is a slice into a slice with interface entries
@@ -62,15 +67,18 @@ func parseSlice(v interface{}) ([]interface{}, error) {
 	return result, nil
 }
 
-func resolvePointer(v interface{}) interface{} {
-	valueRfl := reflect.ValueOf(v)
-	if valueRfl.Kind() == reflect.Ptr {
-		return valueRfl.Elem().Interface()
-	}
-	return v
+func valueOf(v interface{}) reflect.Value {
+	return reflect.ValueOf(v)
+}
+
+func indirectKind(v interface{}) reflect.Kind {
+	return reflect.Indirect(valueOf(v)).Kind()
 }
 
 func isStruct(v interface{}) bool {
-	valueRfl := reflect.ValueOf(resolvePointer(v))
-	return valueRfl.Kind() == reflect.Struct
+	return indirectKind(v) == reflect.Struct
+}
+
+func isSlice(v interface{}) bool {
+	return indirectKind(v) == reflect.Slice
 }
