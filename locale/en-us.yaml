@@ -1186,6 +1186,10 @@ package_arg_nameversion_description:
   other: Package name and optionally the desired version
 package_list_flag_commit_description:
   other: The commit that the listing should be based on
+package_list_flag_name_description:
+  other: The filter for package names to include in the listing
+namespace_list_flag_project_description:
+  other: The namespace packages should be listed from
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1224,6 +1228,8 @@ package_version_add:
   other: "Package added: {{.V0}}@{{.V1}}"
 err_package_update:
   other: Failed to update package
+err_package_project_no_commit:
+  other: Could not find commit for project {{.V0}}
 package_update:
   other: "Package updated: {{.V0}}"
 package_version_update:
