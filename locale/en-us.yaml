@@ -7,7 +7,7 @@ contradiction:
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
-  other: activate a project
+  other: Activate a Project
 events_description:
   other: Manage Project Events
 events_header_id:
