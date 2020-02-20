@@ -16,9 +16,10 @@ func TestSend(t *testing.T) {
 	fail := Send("/", []byte{})
 	assert.Error(t, fail.ToError())
 
-	file := "garbage"
-	f, err := os.Create(file)
+	tempFile, err := ioutil.TempFile("", t.Name())
 	require.NoError(t, err)
+
+	file := tempFile.Name()
 	defer func() {
 		assert.NoError(t, f.Close())
 		assert.NoError(t, os.Remove(file))
@@ -41,7 +42,10 @@ func TestOpen(t *testing.T) {
 	_, fail := Open(ctx, "/")
 	assert.Error(t, fail.ToError())
 
-	file := "garbage"
+	tempFile, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+
+	file := tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	defer func() {
 		assert.NoError(t, os.Remove(file))
@@ -65,7 +69,7 @@ func TestOpen(t *testing.T) {
 	var r *Received
 	select {
 	case r = <-rcvs:
-	case <-time.After(time.Second):
+	case <-time.After(3 * time.Second):
 		assert.FailNow(t, "should not block")
 	}
 
@@ -82,7 +86,10 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	file := "garbage"
+	tempFile, err := ioutil.TempFile("", t.Name())
+	require.NoError(t, err)
+
+	file := tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
