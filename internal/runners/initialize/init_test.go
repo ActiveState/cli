@@ -73,7 +73,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: "",
 			},
-			FailNoLanguage.New("err_language_required"),
+			FailNoLanguage.New("err_valid_language_required"),
 			"",
 		},
 		{
@@ -100,7 +100,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: filepath.Join(tempDir, "1"),
 			},
-			FailNoLanguage.New("err_language_required"),
+			FailNoLanguage.New("err_valid_language_required"),
 			"",
 		},
 		{
