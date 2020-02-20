@@ -48,6 +48,7 @@ func TestOpen(t *testing.T) {
 	file := tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	defer func() {
+		tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 	require.NoError(t, fail.ToError())
@@ -93,6 +94,7 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	rcvs, fail := Open(ctx, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
+		tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 
