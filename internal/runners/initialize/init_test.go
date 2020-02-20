@@ -148,6 +148,9 @@ func TestInitialize_Run(t *testing.T) {
 				}
 				return // If we want an error the rest of the tests are pointless
 			}
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
 
 			if path != tt.wantPath {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
