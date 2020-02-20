@@ -69,7 +69,7 @@ func TestOpen(t *testing.T) {
 	var r *Received
 	select {
 	case r = <-rcvs:
-	case <-time.After(3 * time.Second):
+	case <-time.After(5 * time.Second):
 		assert.FailNow(t, "should not block")
 	}
 
