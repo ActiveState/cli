@@ -146,7 +146,7 @@ func TestInitialize_Run(t *testing.T) {
 				if err.Error() != tt.wantErr.Error() {
 					t.Fatalf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-				return
+				return // If we want an error the rest of the tests are pointless
 			}
 
 			if path != tt.wantPath {
