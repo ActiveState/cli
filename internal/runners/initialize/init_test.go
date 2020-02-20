@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
@@ -59,7 +60,7 @@ func TestInitialize_Run(t *testing.T) {
 		name     string
 		fields   fields
 		args     args
-		wantErr  bool
+		wantErr  error
 		wantPath string
 	}{
 		{
@@ -72,7 +73,21 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: "",
 			},
-			false,
+			FailNoLanguage.New("err_language_required"),
+			"",
+		},
+		{
+			"namespace without path",
+			fields{&configMock{}},
+			args{
+				namespace: &project.Namespaced{
+					Owner:   "foo",
+					Project: "bar",
+				},
+				path:     "",
+				language: language.Supported{language.Python2},
+			},
+			nil,
 			filepath.Join(tempDir, "foo/bar"),
 		},
 		{
@@ -85,8 +100,8 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: filepath.Join(tempDir, "1"),
 			},
-			false,
-			filepath.Join(tempDir, "1"),
+			FailNoLanguage.New("err_language_required"),
+			"",
 		},
 		{
 			"namespace with path and language",
@@ -99,7 +114,7 @@ func TestInitialize_Run(t *testing.T) {
 				path:     filepath.Join(tempDir, "2"),
 				language: language.Supported{language.Python2},
 			},
-			false,
+			nil,
 			filepath.Join(tempDir, "2"),
 		},
 		{
@@ -110,9 +125,10 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path: tempDirWithConfig,
+				path:     tempDirWithConfig,
+				language: language.Supported{language.Python2},
 			},
-			true,
+			failures.FailUserInput.New("err_init_file_exists", tempDirWithConfig),
 			"",
 		},
 	}
@@ -126,11 +142,11 @@ func TestInitialize_Run(t *testing.T) {
 				Path:      tt.args.path,
 				Language:  tt.args.language,
 			})
-			if tt.wantErr {
-				if err == nil {
-					t.Errorf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr != nil {
+				if err.Error() != tt.wantErr.Error() {
+					t.Fatalf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)
 				}
-				return // If we want an error the rest of the tests are pointless
+				return
 			}
 
 			if path != tt.wantPath {

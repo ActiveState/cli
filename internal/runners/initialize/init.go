@@ -16,6 +16,11 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+var (
+	// FailNoLanguage indicates when a required language value was not selected.
+	FailNoLanguage = failures.Type("initialize.fail.nolanguage", failures.FailUser)
+)
+
 type setter interface {
 	Set(key string, value interface{})
 }
@@ -34,6 +39,10 @@ type Initialize struct {
 }
 
 func prepare(params *RunParams) error {
+	if !params.Language.Recognized() {
+		return FailNoLanguage.New("err_language_required")
+	}
+
 	// Fail if target dir already has an activestate.yaml
 	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
 		absPath, err := filepath.Abs(params.Path)
