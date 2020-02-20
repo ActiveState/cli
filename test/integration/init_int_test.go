@@ -21,16 +21,23 @@ var (
 	testUser    = "test-user"
 	testProject = "test-project"
 	namespace   = fmt.Sprintf("%s/%s", testUser, testProject)
+	sampleYAML  = locale.T("sample_yaml", map[string]interface{}{
+		"Owner":   testUser,
+		"Project": testProject,
+	})
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest("", locale.T("sample_yaml", map[string]interface{}{
-		"Owner": testUser, "Project": testProject,
-	}))
+	suite.runInitTest("", sampleYAML, "--language", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.runInitTest("", locale.T("editor_yaml"), "--skeleton", "editor")
+	suite.runInitTest(
+		"",
+		locale.T("editor_yaml"),
+		"--skeleton", "editor",
+		"--language", "python3",
+	)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
@@ -50,9 +57,12 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
-	suite.runInitTest(tempDir, locale.T("sample_yaml", map[string]interface{}{
-		"Owner": testUser, "Project": testProject,
-	}), "--path", filepath.Join(tempDir, namespace))
+	suite.runInitTest(
+		tempDir,
+		sampleYAML,
+		"--language", "python3",
+		"--path", filepath.Join(tempDir, namespace),
+	)
 }
 
 func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, flags ...string) {
