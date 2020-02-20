@@ -21,7 +21,7 @@ func TestSend(t *testing.T) {
 
 	file := tempFile.Name()
 	defer func() {
-		assert.NoError(t, f.Close())
+		assert.NoError(t, tempFile.Close())
 		assert.NoError(t, os.Remove(file))
 	}()
 
@@ -29,7 +29,7 @@ func TestSend(t *testing.T) {
 	fail = Send(file, want)
 	require.NoError(t, fail.ToError())
 
-	got, err := ioutil.ReadAll(f)
+	got, err := ioutil.ReadAll(tempFile)
 	require.NoError(t, err)
 	assert.Equal(t, got, want)
 }
