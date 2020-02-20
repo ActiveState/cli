@@ -40,7 +40,7 @@ type Initialize struct {
 
 func prepare(params *RunParams) error {
 	if !params.Language.Recognized() {
-		return FailNoLanguage.New("err_language_required")
+		return FailNoLanguage.New("err_valid_language_required")
 	}
 
 	// Fail if target dir already has an activestate.yaml

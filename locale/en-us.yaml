@@ -1268,8 +1268,8 @@ err_must_provide_directory:
   other: You must provide a valid directory
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
-err_language_required:
-  other: A language is required: Please define a language to be used.
+err_valid_language_required:
+  other: A valid language is required.
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
