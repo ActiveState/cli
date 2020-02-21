@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -163,11 +164,7 @@ func TestInitialize_Run(t *testing.T) {
 				return // If we want an error the rest of the tests are pointless
 			}
 
-			wantPath, _ := filepath.EvalSymlinks(tt.wantPath)
-			if path != wantPath {
-				fmt.Println("path: ", path)
-				fmt.Println("wantPath: ", wantPath)
-				fmt.Println("tt.wantPath: ", tt.wantPath)
+			if confirmPath(path, tt.wantPath) {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
 			configFile := filepath.Join(tt.wantPath, constants.ConfigFileName)
@@ -184,4 +181,12 @@ func TestInitialize_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func confirmPath(path, want string) bool {
+	if runtime.GOOS == "windows" {
+		return path != want
+	}
+	wantEval, _ := filepath.EvalSymlinks(want)
+	return path != wantEval
 }
