@@ -33,6 +33,18 @@ var listFlags = []*commands.Flag{
 		Type:        commands.TypeString,
 		StringVar:   &ListFlags.Commit,
 	},
+	&commands.Flag{
+		Name:        "package",
+		Description: "package_list_flag_name_description",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Name,
+	},
+	&commands.Flag{
+		Name:        "namespace",
+		Description: "namespace_list_flag_project_description",
+		Type:        commands.TypeString,
+		StringVar:   &ListFlags.Project,
+	},
 }
 
 func init() {
@@ -45,7 +57,7 @@ func init() {
 // Execute is ran when `state package` is ran
 func Execute(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("Execute")
-	ExecuteList(cmd, allArgs)
+	ExecuteList()
 }
 
 func executeAddUpdate(cmd *commands.Command, language, name, version string, operation model.Operation) {

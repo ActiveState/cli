@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -73,6 +74,10 @@ func GetServiceURL(service Service) *url.URL {
 }
 
 func getProjectHost() *string {
+	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
+		return &apiHost
+	}
+
 	pj, fail := projectfile.GetOnce()
 	if fail != nil {
 		return nil

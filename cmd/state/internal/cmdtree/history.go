@@ -19,7 +19,7 @@ func newHistoryCommand(outputer output.Outputer) *captain.Command {
 	opts := HistoryOpts{}
 	return captain.NewCommand(
 		"history",
-		locale.T("history_description"),
+		locale.T("history_cmd_description"),
 		[]*captain.Flag{
 			{
 				Name:        "namespace",

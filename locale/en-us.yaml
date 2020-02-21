@@ -7,7 +7,7 @@ contradiction:
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
-  other: activate a project
+  other: Activate a Project
 events_description:
   other: Manage Project Events
 events_header_id:
@@ -757,7 +757,9 @@ pull_is_updated:
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 notify_user_to_reactivate_instances:
-  other: Please reactivate any activated instances of the State Tool
+  other: |
+    If you have any active instances of this project open in other terminals, please exit and 
+    re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -1071,8 +1073,9 @@ cpu_profiling_setup_failed:
   other: CPU profiling setup failed
 err_main_panic:
   other: |
-    An unexpected error occurred while running the State tool
-    Check the error log for more information
+    An unexpected error occurred while running the State tool.
+    Check the error log for more information.
+    Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:
@@ -1183,6 +1186,10 @@ package_arg_nameversion_description:
   other: Package name and optionally the desired version
 package_list_flag_commit_description:
   other: The commit that the listing should be based on
+package_list_flag_name_description:
+  other: The filter for package names to include in the listing
+namespace_list_flag_project_description:
+  other: The namespace packages should be listed from
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1221,6 +1228,8 @@ package_version_add:
   other: "Package added: {{.V0}}@{{.V1}}"
 err_package_update:
   other: Failed to update package
+err_package_project_no_commit:
+  other: Could not find commit for project {{.V0}}
 package_update:
   other: "Package updated: {{.V0}}"
 package_version_update:
@@ -1352,6 +1361,8 @@ history_date:
   other: "Date: {{.V0}}\n"
 history_description:
   other: "Description: {{.V0}}\n"
+history_cmd_description:
+  other: View history of the active or given project
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
 clean_description:

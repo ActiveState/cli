@@ -138,7 +138,7 @@ version: %s
 	// Ensure we have the most up to date version of the project before activating
 	suite.Spawn("pull")
 	suite.Expect("Your activestate.yaml has been updated to the latest version available")
-	suite.Expect("Please reactivate any activated instances of the State Tool")
+	suite.Expect("If you have any active instances of this project open in other terminals")
 	suite.ExpectExitCode(0)
 
 	suite.Spawn("activate")
@@ -186,7 +186,7 @@ version: %s
 	// Pull to ensure we have an up to date config file
 	suite.Spawn("pull")
 	suite.Expect("Your activestate.yaml has been updated to the latest version available")
-	suite.Expect("Please reactivate any activated instances of the State Tool")
+	suite.Expect("If you have any active instances of this project open in other terminals")
 	suite.ExpectExitCode(0)
 
 	// Change directories to a sub directory
