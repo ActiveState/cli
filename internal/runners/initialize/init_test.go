@@ -25,6 +25,10 @@ func (c *configMock) Set(key string, value interface{}) {
 	c.set[key] = value
 }
 
+func newLanguageUnsupportedError(value string) error {
+	return language.NewUnrecognizedLanguageError(value, language.RecognizedSupportedsNames())
+}
+
 func TestInitialize_Run(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -73,7 +77,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: "",
 			},
-			FailNoLanguage.New("err_valid_language_required"),
+			newLanguageUnsupportedError(""),
 			"",
 		},
 		{
@@ -100,7 +104,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: filepath.Join(tempDir, "1"),
 			},
-			FailNoLanguage.New("err_valid_language_required"),
+			newLanguageUnsupportedError(""),
 			"",
 		},
 		{

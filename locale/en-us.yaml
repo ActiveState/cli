@@ -1102,6 +1102,8 @@ git_cloning_project:
   other: Cloning the git repository associated with '{{.V0}}/{{.V1}}'
 language_name_unknown:
   other: Unknown
+language_unknown_options:
+  other: Unknown options
 sample_yaml:
   other: |
     scripts:
@@ -1268,8 +1270,6 @@ err_must_provide_directory:
   other: You must provide a valid directory
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
-err_valid_language_required:
-  other: A valid language is required.
 init_success:
   other: |
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
@@ -1292,13 +1292,13 @@ flag_state_init_path_description:
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
-  other: "Invalid output format specified: {{.V0}}; Supported formats: {{.V1}}"
+  other: "Invalid output format specified: '{{.V0}}'; Supported formats: {{.V1}}"
 err_invalid_skeleton_style:
-  other: "Invalid skeleton style specified: {{.V0}}; Supported styles: {{.V1}}"
+  other: "Invalid skeleton style specified: '{{.V0}}'; Supported styles: {{.V1}}"
 err_invalid_language:
-  other: "Invalid language specified: {{.V0}}; Supported languages: {{.V1}}"
+  other: "Invalid language specified: '{{.V0}}'; Supported languages: {{.V1}}"
 err_push_invalid_language:
-  other: "Invalid language specified: {{.V0}}, please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
+  other: "Invalid language specified: '{{.V0}}', please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:
   other: "Creating project {{.V1}} under {{.V0}} on the ActiveState Platform"
 push_project_created:
