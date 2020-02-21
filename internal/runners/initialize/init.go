@@ -63,9 +63,18 @@ func prepare(params *RunParams) error {
 		if err != nil {
 			return err
 		}
-		params.Path = filepath.Join(wd, fmt.Sprintf(
-			"%s/%s", params.Namespace.Owner, params.Namespace.Project,
-		))
+
+		empty, fail := fileutils.IsEmptyDir(wd)
+		if fail != nil {
+			return fail
+		}
+
+		params.Path = wd
+		if !empty {
+			params.Path = filepath.Join(wd, fmt.Sprintf(
+				"%s/%s", params.Namespace.Owner, params.Namespace.Project,
+			))
+		}
 	}
 
 	return nil

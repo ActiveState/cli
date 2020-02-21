@@ -42,7 +42,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.runInitTest(
 		tempDir,
 		locale.T("editor_yaml"),
-		"--path", filepath.Join(tempDir, namespace),
+		"--path", tempDir,
 		"--skeleton", "editor",
 	)
 }
@@ -51,7 +51,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
-	suite.runInitTest(tempDir, sampleYAML, "--path", filepath.Join(tempDir, namespace))
+	suite.runInitTest(tempDir, sampleYAML, "--path", tempDir)
 }
 
 func (suite *InitIntegrationTestSuite) runInitTest(path, config string, flags ...string) {
@@ -73,7 +73,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(path, config string, flags ..
 	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
 	suite.Wait()
 
-	configFilepath := filepath.Join(path, namespace, constants.ConfigFileName)
+	configFilepath := filepath.Join(path, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
 
 	content, err := ioutil.ReadFile(configFilepath)

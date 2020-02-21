@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -45,12 +46,19 @@ func TestInitialize_Run(t *testing.T) {
 		panic(fmt.Sprintf("Cannot get wd: %v", err))
 	}
 
-	tempDirWithConfig := filepath.Join(tempDir, "withConfig")
+	tempDirWithConfig := filepath.Join(fileutils.TempDirUnsafe(), "withConfig")
 	fail := fileutils.Mkdir(tempDirWithConfig)
 	if fail != nil {
 		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
 	}
 	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
+
+	tempDirWithFile := filepath.Join(fileutils.TempDirUnsafe(), "withFile")
+	fail = fileutils.Mkdir(tempDirWithConfig)
+	if fail != nil {
+		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
+	}
+	fileutils.WriteFile(filepath.Join(tempDirWithFile, "bogus"), []byte(""))
 
 	type fields struct {
 		config setter
@@ -62,6 +70,7 @@ func TestInitialize_Run(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
+		wd       string
 		fields   fields
 		args     args
 		wantErr  error
@@ -69,6 +78,7 @@ func TestInitialize_Run(t *testing.T) {
 	}{
 		{
 			"namespace without path or language",
+			tempDir,
 			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
@@ -78,10 +88,11 @@ func TestInitialize_Run(t *testing.T) {
 				path: "",
 			},
 			newLanguageUnsupportedError(""),
-			"",
+			tempDir,
 		},
 		{
-			"namespace without path",
+			"namespace without path and with language",
+			tempDir,
 			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
@@ -92,10 +103,26 @@ func TestInitialize_Run(t *testing.T) {
 				language: language.Supported{language.Python2},
 			},
 			nil,
-			filepath.Join(tempDir, "foo/bar"),
+			tempDir,
+		},
+		{
+			"namespace without path and with language, wd has file",
+			tempDirWithFile,
+			fields{&configMock{}},
+			args{
+				namespace: &project.Namespaced{
+					Owner:   "foo",
+					Project: "bar",
+				},
+				path:     "",
+				language: language.Supported{language.Python2},
+			},
+			nil,
+			filepath.Join(tempDirWithFile, "foo/bar"),
 		},
 		{
 			"namespace with path and without language",
+			tempDir,
 			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
@@ -109,6 +136,7 @@ func TestInitialize_Run(t *testing.T) {
 		},
 		{
 			"namespace with path and language",
+			tempDir,
 			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
@@ -123,6 +151,7 @@ func TestInitialize_Run(t *testing.T) {
 		},
 		{
 			"as.yaml already exists",
+			tempDir,
 			fields{&configMock{}},
 			args{
 				namespace: &project.Namespaced{
@@ -138,6 +167,10 @@ func TestInitialize_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			err := os.Chdir(tt.wd)
+			if err != nil {
+				t.Errorf("Initialize.run() chdir error = %v", err)
+			}
 			r := &Initialize{
 				config: tt.fields.config,
 			}
@@ -156,7 +189,7 @@ func TestInitialize_Run(t *testing.T) {
 				t.Fatalf("Unexpected error: %v", err)
 			}
 
-			if path != tt.wantPath {
+			if confirmPath(path, tt.wantPath) {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
 			configFile := filepath.Join(tt.wantPath, constants.ConfigFileName)
@@ -173,4 +206,12 @@ func TestInitialize_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func confirmPath(path, want string) bool {
+	if runtime.GOOS == "windows" {
+		return path != want
+	}
+	wantEval, _ := filepath.EvalSymlinks(want)
+	return path != wantEval
 }
