@@ -321,6 +321,23 @@ func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	}
 }
 
+// ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
+func (s *Suite) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := s.Wait(timeout...)
+	if err != nil {
+		s.FailNow(
+			"Error waiting for process:",
+			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
+			err, s.TerminalSnapshot())
+	}
+	if ps.ExitCode() == exitCode {
+		s.FailNow(
+			"Process terminated with unexpected exit code\n",
+			"Expected anything except: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
+			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+	}
+}
+
 // Wait waits for the tested process to finish and returns its state including ExitCode
 func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
 	if s.cmd == nil || s.cmd.Process == nil {
