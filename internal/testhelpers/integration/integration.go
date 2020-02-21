@@ -32,7 +32,7 @@ var (
 	PersistentPassword = "test-cli-integration"
 
 	defaultTimeout = 10 * time.Second
-	authnTimeout   = 30 * time.Second
+	authnTimeout   = 40 * time.Second
 )
 
 // Suite is our integration test suite
