@@ -163,6 +163,7 @@ const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
 	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
+	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
 )
 
 // ActivePythonDistsDir represents the base name of a directory where ActivePython dists will be installed under.

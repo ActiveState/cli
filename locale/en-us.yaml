@@ -1375,3 +1375,5 @@ clean_confirm_remove:
   other: You are about to remove the state tool, installed laguage runtimes, and all configuration information. Continue?
 clean_success_message:
   other: "Successfully removed state tool and related files\n"
+push_already_exists:
+  other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
