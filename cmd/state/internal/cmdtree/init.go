@@ -12,7 +12,7 @@ func newInitCommand() *captain.Command {
 	initRunner := initialize.New(viper.GetViper())
 
 	params := initialize.RunParams{
-		Namespace: &project.Namespace{},
+		Namespace: &project.Namespaced{},
 	}
 
 	return captain.NewCommand(

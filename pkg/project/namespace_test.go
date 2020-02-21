@@ -31,11 +31,11 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 		name       string
 		namespace  string
 		configFile string
-		expected   *Namespace
+		expected   *Namespaced
 	}{
 		{"InvalidConfigfile", "", invalidConfigFile, nil},
-		{"FromConfigFile", "", validConfigFile, &Namespace{Owner: "ActiveState", Project: "CodeIntel"}},
-		{"FromNamespace", "valid/namespace", invalidConfigFile, &Namespace{Owner: "valid", Project: "namespace"}},
+		{"FromConfigFile", "", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel"}},
+		{"FromNamespace", "valid/namespace", invalidConfigFile, &Namespaced{Owner: "valid", Project: "namespace"}},
 		{"InvalidNamespace", "invalid-namespace", invalidConfigFile, nil},
 	}
 

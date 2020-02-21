@@ -1,6 +1,9 @@
 package model
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -140,10 +143,44 @@ func FetchPlatforms() ([]*Platform, *failures.Failure) {
 			return nil, FailPlatforms.Wrap(err)
 		}
 
-		platformCache = response.Payload.Platforms
+		// remove unwanted platforms
+		var platforms []*Platform
+		for _, p := range response.Payload.Platforms {
+			if p.KernelVersion == nil || p.KernelVersion.Version == nil {
+				continue
+			}
+			version := *p.KernelVersion.Version
+			if version == "" || version == "0" {
+				continue
+			}
+			platforms = append(platforms, p)
+		}
+
+		platformCache = platforms
 	}
 
 	return platformCache, nil
+}
+
+func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, *failures.Failure) {
+	checkpt, _, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	platformIDs := CheckpointToPlatforms(checkpt)
+
+	var platforms []*Platform
+	for _, pID := range platformIDs {
+		platform, fail := FetchPlatformByUID(pID)
+		if fail != nil {
+			return nil, fail
+		}
+
+		platforms = append(platforms, platform)
+	}
+
+	return platforms, nil
 }
 
 func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, *failures.Failure) {
@@ -203,4 +240,42 @@ func FetchPlatformByUID(uid strfmt.UUID) (*Platform, *failures.Failure) {
 	}
 
 	return nil, nil
+}
+
+func FetchPlatformByDetails(name, version string, word int) (*Platform, *failures.Failure) {
+	runtimePlatforms, fail := FetchPlatforms()
+	if fail != nil {
+		return nil, fail
+	}
+
+	lower := strings.ToLower
+
+	for _, rtPf := range runtimePlatforms {
+		if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
+			continue
+		}
+		if lower(*rtPf.Kernel.Name) != lower(name) {
+			continue
+		}
+
+		if rtPf.KernelVersion == nil || rtPf.KernelVersion.Version == nil {
+			continue
+		}
+		if lower(*rtPf.KernelVersion.Version) != lower(version) {
+			continue
+		}
+
+		if rtPf.CPUArchitecture == nil {
+			continue
+		}
+		if rtPf.CPUArchitecture.BitWidth != strconv.Itoa(word) {
+			continue
+		}
+
+		return rtPf, nil
+	}
+
+	details := fmt.Sprintf("%s %d %s", name, word, version)
+
+	return nil, FailUnsupportedPlatform.New("err_unsupported_platform", details)
 }

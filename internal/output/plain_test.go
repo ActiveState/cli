@@ -7,7 +7,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func nilStr(s string) *string {
+	return &s
+}
+
 func TestPlain_Print(t *testing.T) {
+	type tableStruct struct {
+		Header1 string
+		Header2 *string
+		Header3 *string
+	}
 	type args struct {
 		value interface{}
 	}
@@ -48,7 +57,7 @@ func TestPlain_Print(t *testing.T) {
 				uint(5), uint16(6), uint32(7), uint64(8),
 				float32(9.1), float64(10.1),
 			}},
-			"\n - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10",
+			" - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10",
 			"",
 		},
 		{
@@ -77,42 +86,104 @@ func TestPlain_Print(t *testing.T) {
 		},
 		{
 			"complex mixed",
-			args{struct {
-				Value1 int
-				Value2 float32
-				Value3 bool
-				Value4 []interface{}
-				Value5 struct{ V string }
-			}{
-				1, 1.1, false,
-				[]interface{}{
-					1, true, 1.1, struct{ V string }{"value"}, []interface{}{1, 2},
+			args{
+				struct {
+					Value1 int
+					Value2 float32
+					Value3 bool
+					Value4 []interface{}
+					Value5 struct {
+						V string
+						X string
+					}
+					Value6 []tableStruct
+					Value7 []*tableStruct
+					Nil1   *int               // nil ptr to builtin
+					Nil2   []interface{}      // nil slice
+					Nil3   []interface{}      // slice of nils
+					Nil4   *tableStruct       // nil ptr to struct
+					Nil5   struct{ N *int }   // struct w/ ptr to builtin field
+					Nil6   []struct{ N *int } // slice of structs w/ ptr to builtin field
+					Nil7   interface{}        // typed nil
+				}{
+					1, 1.1, false,
+					[]interface{}{
+						1, true, 1.1, struct{ V string }{"value"}, []interface{}{1, 2},
+					},
+					struct {
+						V string
+						X string
+					}{"value", "xalue"},
+					[]tableStruct{
+						{"111", nilStr("222"), nil},
+					},
+					[]*tableStruct{
+						{"111", nilStr("222"), nil},
+					},
+					nil,
+					nil,
+					[]interface{}{nil, nil, nil},
+					nil,
+					struct{ N *int }{nil},
+					[]struct{ N *int }{
+						{nil}, {nil}, {nil},
+					},
+					(*int)(nil),
 				},
-				struct{ V string }{"value"},
-			}},
+			},
 			"field_value1: 1\n" +
 				"field_value2: 1.10\n" +
 				"field_value3: false\n" +
-				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - \n - 1\n - 2\n" +
-				"field_value5: field_v: value",
+				"field_value4: \n - 1\n - true\n - 1.10\n - field_v: value\n - 1\n - 2\n" +
+				"field_value5: \nfield_v: value\nfield_x: xalue\n" +
+				"field_value6: \n" +
+				" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" 111                 222                 <nil>            \n" +
+				"field_value7: \n" +
+				" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" 111                 222                 <nil>            \n" +
+				"field_nil1: <nil>\n" +
+				"field_nil2: \n<nil>\n" +
+				"field_nil3: \n - <nil>\n - <nil>\n - <nil>\n" +
+				"field_nil4: <nil>\n" +
+				"field_nil5: \nfield_n: <nil>\n" +
+				"field_nil6: \n" +
+				" field_n    \n" +
+				"------------\n" +
+				" <nil>      \n" +
+				" <nil>      \n" +
+				" <nil>      \n" +
+				"field_nil7: <nil>",
 			"",
 		},
 		{
 			"table",
-			args{[]struct {
-				Header1 string
-				Header2 string
-				Header3 string
-			}{
-				{"valueA.1", "valueA.2", "valueA.3"},
-				{"valueB.1", "valueB.2", "valueB.3"},
-				{"valueC.1", "valueC.2", "valueC.3"},
+			args{[]tableStruct{
+				{"valueA.1", nil, nilStr("valueA.3")},
+				{"valueB.1", nilStr("valueB.2"), nil},
+				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
 			}},
 			" field_header1       field_header2       field_header3    \n" +
 				"------------------  ------------------  ------------------\n" +
-				" valueA.1            valueA.2            valueA.3         \n" +
-				" valueB.1            valueB.2            valueB.3         \n" +
-				" valueC.1            valueC.2            valueC.3         \n",
+				" valueA.1            <nil>               valueA.3         \n" +
+				" valueB.1            valueB.2            <nil>            \n" +
+				" valueC.1            valueC.2            valueC.3         ",
+			"",
+		},
+		{
+			"table with pointers",
+			args{[]*tableStruct{
+				{"valueA.1", nil, nilStr("valueA.3")},
+				{"valueB.1", nilStr("valueB.2"), nil},
+				{"valueC.1", nilStr("valueC.2"), nilStr("valueC.3")},
+			}},
+			" field_header1       field_header2       field_header3    \n" +
+				"------------------  ------------------  ------------------\n" +
+				" valueA.1            <nil>               valueA.3         \n" +
+				" valueB.1            valueB.2            <nil>            \n" +
+				" valueC.1            valueC.2            valueC.3         ",
 			"",
 		},
 	}

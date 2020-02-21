@@ -63,6 +63,9 @@ const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
 // APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
 const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 
+// APIHostEnvVarName is the name of the environment variable that specifies the API host, specifying this overrides the activestate.yaml api url config
+const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
+
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
@@ -136,6 +139,9 @@ const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/dep
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
+
+// DateTimeFormatUser is the datetime format we use when communicating with the end-user
+const DateTimeFormatUser = "2 Jan 2006 15:04"
 
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"

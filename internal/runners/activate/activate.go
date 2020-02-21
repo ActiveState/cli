@@ -19,7 +19,7 @@ type Activate struct {
 }
 
 type ActivateParams struct {
-	Namespace     *project.Namespace
+	Namespace     *project.Namespaced
 	PreferredPath string
 	Output        string
 }
@@ -35,7 +35,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 	return r.run(params, activationLoop)
 }
 
-func sendProjectIDToAnalytics(namespace *project.Namespace, configFile string) {
+func sendProjectIDToAnalytics(namespace *project.Namespaced, configFile string) {
 	names, fail := project.ParseNamespaceOrConfigfile(namespace.String(), configFile)
 	if fail != nil {
 		logging.Debug("error resolving namespace: %v", fail.ToError())

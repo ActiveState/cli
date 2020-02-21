@@ -7,7 +7,7 @@ contradiction:
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
-  other: activate a project
+  other: Activate a Project
 events_description:
   other: Manage Project Events
 events_header_id:
@@ -757,7 +757,9 @@ pull_is_updated:
 pull_not_updated:
   other: Your activestate.yaml is already up to date!
 notify_user_to_reactivate_instances:
-  other: Please reactivate any activated instances of the State Tool
+  other: |
+    If you have any active instances of this project open in other terminals, please exit and 
+    re-activate them to pick up the latest changes.
 keypair_cmd_description:
   other: Manage Your Keypair
 keypair_generate_cmd_description:
@@ -1013,6 +1015,36 @@ export_recipe_flag_pretty:
   other: Enables export format beautification
 export_recipe_flag_platform:
   other: Sets target platform
+platforms_cmd_description:
+  other: Manage platforms used in your project
+platforms_add_cmd_description:
+  other: Add a new platform to your project
+platforms_remove_cmd_description:
+  other: Remove a platform from your project
+platforms_search_cmd_description:
+  other: Search for available platforms that can be added to your project
+flag_platforms_shared_bitwidth:
+  other: bit-width
+flag_platforms_shared_bitwidth_description:
+  other: Platform architecture word size/width in bits (32,64)
+arg_platforms_shared_name:
+  other: name
+arg_platforms_shared_name_description:
+  other: Platform name (Windows, Darwin, etc.)
+arg_platforms_shared_version:
+  other: version
+arg_platforms_shared_version_description:
+  other: Platform version (e.g. 12.04.2)
+field_platforms:
+  other: Platforms
+field_version:
+  other: Version
+field_bitwidth:
+  other: Bit Width
+commit_message_add_platform:
+  other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_removed_platform:
+  other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
@@ -1041,8 +1073,9 @@ cpu_profiling_setup_failed:
   other: CPU profiling setup failed
 err_main_panic:
   other: |
-    An unexpected error occurred while running the State tool
-    Check the error log for more information
+    An unexpected error occurred while running the State tool.
+    Check the error log for more information.
+    Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:
@@ -1153,6 +1186,10 @@ package_arg_nameversion_description:
   other: Package name and optionally the desired version
 package_list_flag_commit_description:
   other: The commit that the listing should be based on
+package_list_flag_name_description:
+  other: The filter for package names to include in the listing
+namespace_list_flag_project_description:
+  other: The namespace packages should be listed from
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1191,6 +1228,8 @@ package_version_add:
   other: "Package added: {{.V0}}@{{.V1}}"
 err_package_update:
   other: Failed to update package
+err_package_project_no_commit:
+  other: Could not find commit for project {{.V0}}
 package_update:
   other: "Package updated: {{.V0}}"
 package_version_update:
@@ -1290,6 +1329,42 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
+no_commits:
+  other: No commits exist yet for {{.V0}}
+err_orgs_length:
+  other: Could not retrieve the requested users / organizations
+err_user_not_found:
+  other: "Could not find the requested user: {{.V0}}"
+field_date:
+  other: Date
+field_author:
+  other: Author
+field_id: 
+  other: ID
+field_changes:
+  other: Changes
+change_added:
+  other: "{{.V0}} {{.V1}} added"
+change_removed:
+  other: "{{.V0}} removed"
+change_updated:
+  other: "{{.V0}} updated from {{.V1}} to {{.V2}}"
+namespace_label_platform:
+  other: "Platform"
+namespace_label_preplatform:
+  other: "Bits"
+history_commit:
+  other: "[BLUE]commit {{.V0}}[/RESET]\n"
+history_author:
+  other: "Author: {{.V0}}\n"
+history_date:
+  other: "Date: {{.V0}}\n"
+history_description:
+  other: "Description: {{.V0}}\n"
+history_cmd_description:
+  other: View history of the active or given project
+arg_state_history_namespace_description:
+  other: "The namespace to view the history for (owner/name)"
 clean_description:
   other: Remove the state tool, installed languages, and any configuration files
 flag_state_clean_force_description:
