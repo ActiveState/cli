@@ -165,6 +165,9 @@ func TestInitialize_Run(t *testing.T) {
 
 			wantPath, _ := filepath.EvalSymlinks(tt.wantPath)
 			if path != wantPath {
+				fmt.Println("path: ", path)
+				fmt.Println("wantPath: ", wantPath)
+				fmt.Println("tt.wantPath: ", tt.wantPath)
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
 			configFile := filepath.Join(tt.wantPath, constants.ConfigFileName)
