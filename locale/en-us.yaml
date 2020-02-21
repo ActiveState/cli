@@ -1275,14 +1275,16 @@ init_success:
     Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
-flag_state_init_language_description:
-  other: The language that this project should use
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
   other: The namespace for the project that you wish to initialize
+arg_state_init_language:
+  other: Language
+arg_state_init_language_description:
+  other: The language that this project should use
 flag_state_init_path:
   other: Path
 flag_state_init_path_description:

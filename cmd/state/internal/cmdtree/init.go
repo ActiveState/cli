@@ -43,8 +43,8 @@ func newInitCommand() *captain.Command {
 				Required:    true,
 			},
 			{
-				Name:        "language",
-				Description: locale.T("flag_state_init_language_description"),
+				Name:        locale.T("arg_state_init_language"),
+				Description: locale.T("arg_state_init_language_description"),
 				Value:       &params.Language,
 				Required:    true,
 			},
