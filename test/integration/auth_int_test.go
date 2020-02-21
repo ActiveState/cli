@@ -61,7 +61,7 @@ func (suite *AuthIntegrationTestSuite) signup() {
 	suite.SendLine(suite.username)
 	suite.Expect("email:")
 	suite.SendLine(suite.email)
-	suite.Expect("account has been registered", 20*time.Second)
+	suite.Expect("account has been registered", 30*time.Second)
 	suite.Wait()
 }
 
