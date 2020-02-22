@@ -23,6 +23,30 @@ const (
 	Python3
 )
 
+// UnrecognizedLanguageError contains info related to the usage of an
+// unrecognized language and the available valid options.
+type UnrecognizedLanguageError struct {
+	Name    string
+	Options []string
+}
+
+// NewUnrecognizedLanguageError simplifies construction.
+func NewUnrecognizedLanguageError(name string, options []string) *UnrecognizedLanguageError {
+	return &UnrecognizedLanguageError{
+		Name:    name,
+		Options: options,
+	}
+}
+
+// Error implements the error interface.
+func (e *UnrecognizedLanguageError) Error() string {
+	opts := locale.T("language_unknown_options")
+	if len(e.Options) > 0 {
+		opts = strings.Join(e.Options, ", ")
+	}
+	return locale.Tr("err_invalid_language", e.Name, opts)
+}
+
 const (
 	filePatternPrefix = "script-*"
 )
@@ -171,11 +195,7 @@ func (l Language) MarshalYAML() (interface{}, error) {
 func (l *Language) Set(v string) error {
 	lang := MakeByName(v)
 	if !lang.Recognized() {
-		names := RecognizedNames()
-
-		return fmt.Errorf(locale.Tr(
-			"err_invalid_language", v, strings.Join(names, ", "),
-		))
+		return NewUnrecognizedLanguageError(v, RecognizedNames())
 	}
 
 	*l = lang
@@ -257,11 +277,7 @@ func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
 func (l *Supported) Set(v string) error {
 	supported := Supported{MakeByName(v)}
 	if !supported.Recognized() {
-		names := RecognizedSupportedsNames()
-
-		return fmt.Errorf(locale.Tr(
-			"err_invalid_language", v, strings.Join(names, ", "),
-		))
+		return NewUnrecognizedLanguageError(v, RecognizedSupportedsNames())
 	}
 
 	*l = supported

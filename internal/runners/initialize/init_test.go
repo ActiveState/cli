@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,6 +24,10 @@ func (c *configMock) Set(key string, value interface{}) {
 		c.set = map[string]interface{}{}
 	}
 	c.set[key] = value
+}
+
+func newLanguageUnsupportedError(value string) error {
+	return language.NewUnrecognizedLanguageError(value, language.RecognizedSupportedsNames())
 }
 
 func TestInitialize_Run(t *testing.T) {
@@ -68,7 +73,7 @@ func TestInitialize_Run(t *testing.T) {
 		wd       string
 		fields   fields
 		args     args
-		wantErr  bool
+		wantErr  error
 		wantPath string
 	}{
 		{
@@ -82,11 +87,26 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: "",
 			},
-			false,
+			newLanguageUnsupportedError(""),
 			tempDir,
 		},
 		{
-			"namespace without path or language, wd has file",
+			"namespace without path and with language",
+			tempDir,
+			fields{&configMock{}},
+			args{
+				namespace: &project.Namespaced{
+					Owner:   "foo",
+					Project: "bar",
+				},
+				path:     "",
+				language: language.Supported{language.Python2},
+			},
+			nil,
+			tempDir,
+		},
+		{
+			"namespace without path and with language, wd has file",
 			tempDirWithFile,
 			fields{&configMock{}},
 			args{
@@ -94,9 +114,10 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path: "",
+				path:     "",
+				language: language.Supported{language.Python2},
 			},
-			false,
+			nil,
 			filepath.Join(tempDirWithFile, "foo/bar"),
 		},
 		{
@@ -110,8 +131,8 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: filepath.Join(tempDir, "1"),
 			},
-			false,
-			filepath.Join(tempDir, "1"),
+			newLanguageUnsupportedError(""),
+			"",
 		},
 		{
 			"namespace with path and language",
@@ -125,7 +146,7 @@ func TestInitialize_Run(t *testing.T) {
 				path:     filepath.Join(tempDir, "2"),
 				language: language.Supported{language.Python2},
 			},
-			false,
+			nil,
 			filepath.Join(tempDir, "2"),
 		},
 		{
@@ -137,9 +158,10 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path: tempDirWithConfig,
+				path:     tempDirWithConfig,
+				language: language.Supported{language.Python2},
 			},
-			true,
+			failures.FailUserInput.New("err_init_file_exists", tempDirWithConfig),
 			"",
 		},
 	}
@@ -157,11 +179,14 @@ func TestInitialize_Run(t *testing.T) {
 				Path:      tt.args.path,
 				Language:  tt.args.language,
 			})
-			if tt.wantErr {
-				if err == nil {
-					t.Errorf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr != nil {
+				if err.Error() != tt.wantErr.Error() {
+					t.Fatalf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				return // If we want an error the rest of the tests are pointless
+			}
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
 			}
 
 			if confirmPath(path, tt.wantPath) {

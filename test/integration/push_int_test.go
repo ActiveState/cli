@@ -24,11 +24,11 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 	suite.Spawn(
 		"init",
 		namespace,
-		"--language", "python3",
+		"python3",
 		"--path", filepath.Join(tempDir, namespace),
 		"--skeleton", "editor",
 	)
-	suite.Wait()
+	suite.ExpectExitCode(0)
 	suite.SetWd(filepath.Join(tempDir, namespace))
 	suite.Spawn("push")
 	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))

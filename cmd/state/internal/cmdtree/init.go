@@ -26,12 +26,6 @@ func newInitCommand() *captain.Command {
 				Value:       &params.Path,
 			},
 			{
-				Name:        "language",
-				Shorthand:   "",
-				Description: locale.T("flag_state_init_language_description"),
-				Value:       &params.Language,
-			},
-			{
 				Name:      "skeleton",
 				Shorthand: "",
 				Description: locale.Tr(
@@ -46,6 +40,12 @@ func newInitCommand() *captain.Command {
 				Name:        locale.T("arg_state_init_namespace"),
 				Description: locale.T("arg_state_init_namespace_description"),
 				Value:       params.Namespace,
+				Required:    true,
+			},
+			{
+				Name:        locale.T("arg_state_init_language"),
+				Description: locale.T("arg_state_init_language_description"),
+				Value:       &params.Language,
 				Required:    true,
 			},
 		},
