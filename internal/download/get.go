@@ -50,6 +50,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	if err != nil {
 		return nil, failures.FailNetwork.Wrap(err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
@@ -68,12 +69,6 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	}
 
 	bar := progress.AddByteProgressBar(int64(total))
-
-	resp, err = http.Get(url)
-	if err != nil {
-		return nil, failures.FailNetwork.Wrap(err)
-	}
-	defer resp.Body.Close()
 
 	src := resp.Body
 	var dst bytes.Buffer
