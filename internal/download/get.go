@@ -52,7 +52,7 @@ func httpGetWithProgress(url string, progress *progress.Progress) ([]byte, *fail
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, failures.FailNetwork.New("error_status_code", strconv.Itoa(resp.StatusCode))
+		return nil, failures.FailNetwork.New("err_invalid_status_code", strconv.Itoa(resp.StatusCode))
 	}
 
 	var total int
