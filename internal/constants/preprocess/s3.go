@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -40,7 +39,6 @@ func getVersionString(branchName string) (string, error) {
 	var buffer []byte
 	atBuffer := aws.NewWriteAtBuffer(buffer)
 
-	logging.Debug("Looking for AWS key: %s", fmt.Sprintf("%s%s/version.json", bucketPrefix, branchName))
 	params := &s3.GetObjectInput{
 		Bucket: aws.String("cli-update"),
 		Key:    aws.String(fmt.Sprintf("%s%s/version.json", bucketPrefix, branchName)),
