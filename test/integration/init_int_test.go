@@ -21,12 +21,14 @@ var (
 	testUser    = "test-user"
 	testProject = "test-project"
 	namespace   = fmt.Sprintf("%s/%s", testUser, testProject)
+	sampleYAML  = locale.T("sample_yaml", map[string]interface{}{
+		"Owner":   testUser,
+		"Project": testProject,
+	})
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest("", locale.T("sample_yaml", map[string]interface{}{
-		"Owner": testUser, "Project": testProject,
-	}))
+	suite.runInitTest("", sampleYAML)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
@@ -40,7 +42,6 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.runInitTest(
 		tempDir,
 		locale.T("editor_yaml"),
-		"--language", "python3",
 		"--path", tempDir,
 		"--skeleton", "editor",
 	)
@@ -50,12 +51,10 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
-	suite.runInitTest(tempDir, locale.T("sample_yaml", map[string]interface{}{
-		"Owner": testUser, "Project": testProject,
-	}), "--path", tempDir)
+	suite.runInitTest(tempDir, sampleYAML, "--path", tempDir)
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, flags ...string) {
+func (suite *InitIntegrationTestSuite) runInitTest(path, config string, flags ...string) {
 	if path == "" {
 		var err error
 		path, err = ioutil.TempDir("", "InitIntegrationTestSuite")
@@ -65,13 +64,10 @@ func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, f
 
 	suite.SetWd(path)
 	defer func() {
-		os.RemoveAll(path)
+		_ = os.RemoveAll(path)
 	}()
 
-	var args = []string{"init", namespace}
-	for _, flag := range flags {
-		args = append(args, flag)
-	}
+	args := append([]string{"init", namespace, "python3"}, flags...)
 
 	suite.Spawn(args...)
 	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
@@ -83,6 +79,18 @@ func (suite *InitIntegrationTestSuite) runInitTest(path string, config string, f
 	content, err := ioutil.ReadFile(configFilepath)
 	suite.Require().NoError(err)
 	suite.Contains(string(content), config)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
+	path, err := ioutil.TempDir("", "InitIntegrationTestSuite")
+	suite.Require().NoError(err)
+	defer func() {
+		_ = os.RemoveAll(path)
+	}()
+
+	suite.SetWd(path)
+	suite.Spawn("init", namespace)
+	suite.ExpectNotExitCode(0)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

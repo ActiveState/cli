@@ -34,6 +34,13 @@ type Initialize struct {
 }
 
 func prepare(params *RunParams) error {
+	if !params.Language.Recognized() {
+		return language.NewUnrecognizedLanguageError(
+			params.Language.String(),
+			language.RecognizedSupportedsNames(),
+		)
+	}
+
 	// Fail if target dir already has an activestate.yaml
 	if fileutils.FileExists(filepath.Join(params.Path, constants.ConfigFileName)) {
 		absPath, err := filepath.Abs(params.Path)

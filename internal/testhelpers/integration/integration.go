@@ -299,9 +299,7 @@ func (s *Suite) Stop() error {
 func (s *Suite) LoginAsPersistentUser() {
 	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
 	s.Expect("successfully authenticated", authnTimeout)
-	state, err := s.Wait()
-	s.Require().NoError(err)
-	s.Require().Equal(0, state.ExitCode())
+	s.ExpectExitCode(0)
 }
 
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
@@ -317,6 +315,23 @@ func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 		s.FailNow(
 			"Process terminated with unexpected exit code\n",
 			"Expected: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
+			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+	}
+}
+
+// ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
+func (s *Suite) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := s.Wait(timeout...)
+	if err != nil {
+		s.FailNow(
+			"Error waiting for process:",
+			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
+			err, s.TerminalSnapshot())
+	}
+	if ps.ExitCode() == exitCode {
+		s.FailNow(
+			"Process terminated with unexpected exit code\n",
+			"Expected anything except: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
 			exitCode, ps.ExitCode(), s.TerminalSnapshot())
 	}
 }
