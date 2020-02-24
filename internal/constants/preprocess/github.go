@@ -74,7 +74,6 @@ func (g *GithubIncrementProvider) IncrementMaster() (string, error) {
 		break
 	}
 	if branchName == "" {
-		// TODO: this should be a locale entry
 		return "", errors.New("could not determine branch name from previosly merged pull requests")
 	}
 
