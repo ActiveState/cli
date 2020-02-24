@@ -26,14 +26,15 @@ import (
 
 var exit = os.Exit
 
-var appPath, version, genDir, defaultPlatform, branch string
+var appPath, version, increment, genDir, defaultPlatform, branch string
 
 var outputDirFlag, platformFlag, branchFlag *string
 
 type current struct {
-	Version  string
-	Sha256   string
-	Sha256v2 string
+	Version   string
+	Increment string
+	Sha256    string
+	Sha256v2  string
 }
 
 func generateSha256(path string) string {
@@ -114,15 +115,15 @@ func createUpdate(path string, platform string) {
 		panic(err)
 	}
 
-	createVersion(version)
+	createIncrement(increment)
 
 	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
 }
 
-func createVersion(version string) {
+func createIncrement(increment string) {
 	v := struct {
-		Version string
-	}{version}
+		Increment string
+	}{increment}
 
 	b, err := json.MarshalIndent(v, "", "    ")
 	if err != nil {
@@ -233,6 +234,13 @@ func run() {
 		version = flag.Arg(1)
 		if flag.Arg(1) == "" {
 			version = constants.Version
+		}
+	}
+
+	if increment == "" {
+		increment = flag.Arg(2)
+		if flag.Arg(2) == "" {
+			increment = constants.IncrementString
 		}
 	}
 

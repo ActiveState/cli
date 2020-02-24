@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/blang/semver"
 	"github.com/google/go-github/v29/github"
 	"golang.org/x/oauth2"
 )
@@ -52,21 +51,21 @@ func (g *GithubIncrementProvider) IncrementBranch() (string, error) {
 
 // IncrementMaster returns the version number for the master branch by reading
 // the appropriate version file associated with the most recently merged pull request
-func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
+func (g *GithubIncrementProvider) IncrementMaster() (string, error) {
 	pullRequests, err := g.pullRequestList(&github.PullRequestListOptions{
 		State:     "closed",
 		Sort:      "updated",
 		Direction: "desc",
 	})
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var branchName string
 	for _, pullRequest := range pullRequests {
 		merged, err := g.isMerged(pullRequest)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if !merged {
 			continue
@@ -75,15 +74,11 @@ func (g *GithubIncrementProvider) IncrementMaster() (*semver.Version, error) {
 		break
 	}
 	if branchName == "" {
-		return nil, errors.New("could not determine branch name from previosly merged pull requests")
+		// TODO: this should be a locale entry
+		return "", errors.New("could not determine branch name from previosly merged pull requests")
 	}
 
-	versionString, err := getVersionString(branchName)
-	if err != nil {
-		return nil, err
-	}
-
-	return semver.New(versionString)
+	return getVersionString(branchName)
 }
 
 func (g *GithubIncrementProvider) versionLabelPullRequest(number int) (string, error) {
