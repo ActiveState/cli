@@ -95,9 +95,9 @@ func loop(done <-chan struct{}, w *watcher, rcvs chan<- *Received, t time.Time) 
 			return
 
 		case event, ok := <-w.Events:
-			// Because we modify the file everytime we send we must
-			// ignore this type of event
-			if event.Op&fsnotify.Chmod == fsnotify.Chmod {
+			// os.OpenFile calls may trigger both write and chmod events, or a single
+			// write|chmod event. Filter chmod and break if no other flag is set.
+			if event.Op^fsnotify.Chmod == 0 {
 				break
 			}
 

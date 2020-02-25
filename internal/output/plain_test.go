@@ -29,25 +29,25 @@ func TestPlain_Print(t *testing.T) {
 		{
 			"simple string",
 			args{"hello"},
-			"hello",
+			"hello\n",
 			"",
 		},
 		{
 			"int",
 			args{1},
-			"1",
+			"1\n",
 			"",
 		},
 		{
 			"float",
 			args{1.1},
-			"1.10",
+			"1.10\n",
 			"",
 		},
 		{
 			"boolean",
 			args{true},
-			"true",
+			"true\n",
 			"",
 		},
 		{
@@ -57,19 +57,19 @@ func TestPlain_Print(t *testing.T) {
 				uint(5), uint16(6), uint32(7), uint64(8),
 				float32(9.1), float64(10.1),
 			}},
-			" - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10",
+			" - 1\n - 2\n - 3\n - 4\n - 5\n - 6\n - 7\n - 8\n - 9.10\n - 10.10\n",
 			"",
 		},
 		{
 			"pointer",
 			args{&struct{ V string }{"hello"}},
-			"field_v: hello",
+			"field_v: hello\n",
 			"",
 		},
 		{
 			"unexported",
 			args{&struct{ v string }{"hello"}},
-			"",
+			"\n",
 			"",
 		},
 		{
@@ -81,7 +81,7 @@ func TestPlain_Print(t *testing.T) {
 			}{
 				"hello", "world", "value",
 			}},
-			"field_testname: hello\nfield_test_value: world\nLocalized Field: value",
+			"field_testname: hello\nfield_test_value: world\nLocalized Field: value\n",
 			"",
 		},
 		{
@@ -155,7 +155,7 @@ func TestPlain_Print(t *testing.T) {
 				" <nil>      \n" +
 				" <nil>      \n" +
 				" <nil>      \n" +
-				"field_nil7: <nil>",
+				"field_nil7: <nil>\n",
 			"",
 		},
 		{
@@ -169,7 +169,7 @@ func TestPlain_Print(t *testing.T) {
 				"------------------  ------------------  ------------------\n" +
 				" valueA.1            <nil>               valueA.3         \n" +
 				" valueB.1            valueB.2            <nil>            \n" +
-				" valueC.1            valueC.2            valueC.3         ",
+				" valueC.1            valueC.2            valueC.3         \n",
 			"",
 		},
 		{
@@ -183,7 +183,7 @@ func TestPlain_Print(t *testing.T) {
 				"------------------  ------------------  ------------------\n" +
 				" valueA.1            <nil>               valueA.3         \n" +
 				" valueB.1            valueB.2            <nil>            \n" +
-				" valueC.1            valueC.2            valueC.3         ",
+				" valueC.1            valueC.2            valueC.3         \n",
 			"",
 		},
 	}
@@ -220,7 +220,7 @@ func TestPlain_Error(t *testing.T) {
 			"simple string",
 			args{"hello"},
 			"",
-			"hello",
+			"hello\n",
 		},
 	}
 	for _, tt := range tests {
