@@ -31,10 +31,9 @@ var appPath, version, increment, genDir, defaultPlatform, branch string
 var outputDirFlag, platformFlag, branchFlag *string
 
 type current struct {
-	Version   string
-	Increment string
-	Sha256    string
-	Sha256v2  string
+	Version  string
+	Sha256   string
+	Sha256v2 string
 }
 
 func generateSha256(path string) string {
