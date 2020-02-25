@@ -14,7 +14,7 @@ import (
 const bucketPrefix = "update/state/versions/"
 
 type versionFile struct {
-	Version string
+	Increment string
 }
 
 func startSession() (*session.Session, error) {
@@ -49,11 +49,11 @@ func getVersionString(branchName string) (string, error) {
 		return "", err
 	}
 
-	version := &versionFile{}
-	err = json.Unmarshal(atBuffer.Bytes(), version)
+	file := &versionFile{}
+	err = json.Unmarshal(atBuffer.Bytes(), file)
 	if err != nil {
 		return "", err
 	}
 
-	return version.Version, nil
+	return file.Increment, nil
 }
