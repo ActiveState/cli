@@ -30,12 +30,13 @@ func NewPlain(config *Config) (Plain, *failures.Failure) {
 // Print will marshal and print the given value to the output writer
 func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, value)
+	f.write(f.cfg.OutWriter, "\n")
 }
 
 // Error will marshal and print the given value to the error writer, it wraps it in red colored text but otherwise the
 // only thing that identifies it as an error is the channel it writes it to
 func (f *Plain) Error(value interface{}) {
-	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]", value))
+	f.write(f.cfg.ErrWriter, fmt.Sprintf("[RED]%s[/RESET]\n", value))
 }
 
 // Config returns the Config struct for the active instance
