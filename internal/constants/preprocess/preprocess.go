@@ -62,9 +62,6 @@ func branchName() (string, string) {
 	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
 		releaseName = releaseOverride
 	}
-	if strings.Contains(releaseName, "/") {
-		releaseName = strings.Split(releaseName, "/")[1]
-	}
 
 	return releaseName, branch
 }
