@@ -31,6 +31,7 @@ func init() {
 	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + branchNameFull) }
 	Constants["Version"] = func() string { return mustIncrementVersionRevision(incrementer, Constants["RevisionHashShort"]()) }
 	Constants["VersionNumber"] = func() string { return mustIncrementVersion(incrementer) }
+	Constants["IncrementString"] = func() string { return mustGetIncrementString(incrementer) }
 	Constants["Date"] = func() string { return time.Now().Format("Mon Jan 2 2006 15:04:05 -0700 MST") }
 	Constants["UserAgent"] = func() string {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
@@ -81,7 +82,6 @@ func getCmdOutput(cmdString string) string {
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-
 	if err != nil {
 		log.Fatalf("Command failed, command: %s, args: %v, output: %s, error: %s, code: %s", cmdArgs[0], cmdArgs[1:], out.String(), stderr.String(), err)
 		os.Exit(1)
@@ -110,7 +110,7 @@ func mustIncrementVersion(incrementer *VersionIncrementer) string {
 		log.Fatalf("Failed to increment version: %s", err)
 	}
 
-	return version
+	return version.String()
 }
 
 func mustIncrementVersionRevision(incrementer *VersionIncrementer, revision string) string {
@@ -119,5 +119,14 @@ func mustIncrementVersionRevision(incrementer *VersionIncrementer, revision stri
 		log.Fatalf("Failed to increment version: %s", err)
 	}
 
-	return version
+	return version.String()
+}
+
+func mustGetIncrementString(incrementer *VersionIncrementer) string {
+	increment, err := incrementer.IncrementString()
+	if err != nil {
+		log.Fatalf("Failed to get increment string: %s", err)
+	}
+
+	return increment
 }

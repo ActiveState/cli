@@ -18,23 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func TestActivateZsh(t *testing.T) {
-	setup(t)
-
-	os.Setenv("SHELL", "zsh")
-	venv, fail := Activate()
-
-	assert.NoError(t, fail.ToError(), "Should activate")
-
-	assert.NotEqual(t, "", venv.Shell(), "Should detect a shell")
-	assert.True(t, venv.IsActive(), "Subshell should be active")
-
-	fail = venv.Deactivate()
-	assert.NoError(t, fail.ToError(), "Should deactivate")
-
-	assert.False(t, venv.IsActive(), "Subshell should be inactive")
-}
-
 func TestRunCommandNoProjectEnv(t *testing.T) {
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
