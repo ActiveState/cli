@@ -17,7 +17,7 @@ const (
 
 // Opts ...
 type Opts struct {
-	translateURL string
+	TranslateURL string
 }
 
 // ReqsImport ...
@@ -45,7 +45,7 @@ func Init() *ReqsImport {
 	svcURL := api.GetServiceURL(api.ServiceInventory)
 
 	opts := Opts{
-		translateURL: path.Join(svcURL.Host, svcURL.Path),
+		TranslateURL: path.Join(svcURL.Host, svcURL.Path),
 	}
 
 	ri, err := New(opts)
@@ -56,8 +56,8 @@ func Init() *ReqsImport {
 	return ri
 }
 
-// ChangeRequest ...
-func (ri *ReqsImport) ChangeRequest(data []byte) (*ChangeRequest, error) {
+// Changeset ...
+func (ri *ReqsImport) Changeset(data []byte) (Changeset, error) {
 	reqMsg := ReqsTxtTranslateReqMsg{
 		Data: string(data),
 	}
@@ -67,7 +67,7 @@ func (ri *ReqsImport) ChangeRequest(data []byte) (*ChangeRequest, error) {
 		return nil, err
 	}
 
-	url := ri.opts.translateURL
+	url := ri.opts.TranslateURL
 
 	resp, err := ri.client.Post(url, translateContentType, &buf)
 	if err != nil {
@@ -81,11 +81,8 @@ func (ri *ReqsImport) ChangeRequest(data []byte) (*ChangeRequest, error) {
 		return nil, err
 	}
 
-	return respMsg.ChangeRequest, nil
+	return respMsg.ChangeRequest.Changeset, nil
 }
-
-// ChangeRequest ...
-type ChangeRequest mono_models.CommitEditable
 
 // ReqsTxtTranslateReqMsg ...
 type ReqsTxtTranslateReqMsg struct {
@@ -97,3 +94,9 @@ type ReqsTxtTranslateRespMsg struct {
 	*ChangeRequest
 	Errors []string `json:"errors,omitempty"`
 }
+
+// Changeset ...
+type Changeset []*mono_models.CommitChangeEditable
+
+// ChangeRequest ...
+type ChangeRequest mono_models.CommitEditable
