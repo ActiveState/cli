@@ -158,16 +158,14 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 	return indexed.countBetween(commitID, latestCID.String())
 }
 
-// AddCommit creates a new commit with a single change
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
+// Changeset aliases for eased usage and to act as a disconnect from the underlying dep.
+type Changeset = []*mono_models.CommitChangeEditable
+
+// AddChangeset creates a new commit with multiple changes as provided.
+func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(&mono_models.CommitEditable{
-		Changeset: []*mono_models.CommitChangeEditable{&mono_models.CommitChangeEditable{
-			Operation:         string(operation),
-			Namespace:         string(namespace),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		}},
+		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
 	})
@@ -178,6 +176,20 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 		return nil, FailAddCommit.New(locale.Tr("err_add_commit", api.ErrorMessageFromPayload(err)))
 	}
 	return res.Payload, nil
+}
+
+// AddCommit creates a new commit with a single change
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
+	changeset := []*mono_models.CommitChangeEditable{
+		{
+			Operation:         string(operation),
+			Namespace:         string(namespace),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		},
+	}
+
+	return AddChangeset(parentCommitID, commitMessage, changeset)
 }
 
 // UpdateBranchCommit updates the commit that a branch is pointed at
@@ -243,6 +255,34 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 	}
 
 	return nil
+}
+
+// CommitChangeset commits multiple changes in one commit
+func CommitChangeset(projOwner, projName, commitMsg string, changeset Changeset) *failures.Failure {
+	branch, fail := DefaultBranchByProjectInfo(projOwner, projName)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID == nil {
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
+	}
+
+	languages, fail := FetchLanguagesForCommit(*branch.CommitID)
+	if fail != nil {
+		return fail
+	}
+
+	if len(languages) == 0 {
+		return FailNoLanguages.New(locale.T("err_project_no_languages"))
+	}
+
+	commit, fail := AddChangeset(*branch.CommitID, commitMsg, changeset)
+	if fail != nil {
+		return fail
+	}
+
+	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
 // CommitInitial ...

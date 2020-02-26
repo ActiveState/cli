@@ -80,6 +80,16 @@ func DefaultLanguageForProject(orgName, projectName string) (string, *failures.F
 	return languages[0], nil
 }
 
+// DefaultBranchByProjectInfo retrieves the default branch for the given project info.
+func DefaultBranchByProjectInfo(owner, name string) (*mono_models.Branch, *failures.Failure) {
+	proj, fail := FetchProjectByName(owner, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return DefaultBranchForProject(proj)
+}
+
 // DefaultBranchForProject retrieves the default branch for the given project
 func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *failures.Failure) {
 	for _, branch := range pj.Branches {
