@@ -1381,3 +1381,5 @@ clean_success_message:
   other: "Successfully removed state tool and related files\n"
 push_already_exists:
   other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
+languages_cmd_description:
+  other: View the languages of a project

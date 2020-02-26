@@ -231,7 +231,7 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 	}
 
 	commit, fail := AddCommit(*branch.CommitID, locale.Tr(message, packageName, packageVersion),
-		operation, NamespacePackage(languages[0]),
+		operation, NamespacePackage(languages[0].Name),
 		packageName, packageVersion)
 	if fail != nil {
 		return fail

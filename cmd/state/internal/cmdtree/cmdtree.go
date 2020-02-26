@@ -58,6 +58,7 @@ func New(outputer output.Outputer) *CmdTree {
 		platformsCmd,
 		newHistoryCommand(outputer),
 		newCleanCommand(outputer),
+		newLanguagesCommand(outputer),
 	)
 
 	applyLegacyChildren(stateCmd, globals)

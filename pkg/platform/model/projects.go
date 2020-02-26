@@ -77,7 +77,7 @@ func DefaultLanguageForProject(orgName, projectName string) (string, *failures.F
 		return "", failures.FailUser.New(locale.T("err_no_languages"))
 	}
 
-	return languages[0], nil
+	return languages[0].Name, nil
 }
 
 // DefaultBranchForProject retrieves the default branch for the given project
