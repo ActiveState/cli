@@ -96,7 +96,7 @@ type ReqsTxtTranslateRespMsg struct {
 }
 
 // Changeset ...
-type Changeset []*mono_models.CommitChangeEditable
+type Changeset = []*mono_models.CommitChangeEditable
 
 // ChangeRequest ...
-type ChangeRequest mono_models.CommitEditable
+type ChangeRequest = mono_models.CommitEditable
