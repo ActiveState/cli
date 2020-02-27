@@ -51,12 +51,12 @@ type Listing struct {
 }
 
 func newListing(commitID, projName, projOrg string) (*Listing, error) {
-	targetCommitID, err := targettedCommitID(commitID, projName, projOrg)
+	targetCommitID, err := targetedCommitID(commitID, projName, projOrg)
 	if err != nil {
 		return nil, err
 	}
 
-	platforms, fail := model.FetchPlatformsForCommit(targetCommitID)
+	platforms, fail := model.FetchPlatformsForCommit(*targetCommitID)
 	if fail != nil {
 		return nil, fail
 	}
@@ -68,22 +68,18 @@ func newListing(commitID, projName, projOrg string) (*Listing, error) {
 	return &listing, nil
 }
 
-func targettedCommitID(commitID, projName, projOrg string) (strfmt.UUID, error) {
+func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) {
 	if commitID != "" {
 		var cid strfmt.UUID
 		err := cid.UnmarshalText([]byte(commitID))
 
-		return cid, err
+		return &cid, err
 	}
 
-	cmt, fail := model.LatestCommitID(projOrg, projName)
+	latest, fail := model.LatestCommitID(projName, projOrg)
 	if fail != nil {
-		return "", fail
+		return nil, fail.ToError()
 	}
 
-	if cmt == nil {
-		return "", FailNoCommitID.New("error_no_commit")
-	}
-
-	return *cmt, nil
+	return latest, nil
 }

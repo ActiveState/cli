@@ -387,6 +387,8 @@ err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 err_unsupported_platform:
   other: "Unsupported platform: {{.V0}}"
+err_language_not_found:
+  other: "Could not find language: {{.V0}}@{{.V1}}"
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
@@ -1045,6 +1047,10 @@ commit_message_add_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_removed_platform:
   other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_add_language:
+  other: "Added language: {{.V0}} {{.V1}}"
+commit_message_removed_language:
+  other: "Removed language: {{.V0}} {{.V1}}"
 update_description:
   other: Updates the state tool to the latest available version
 downloading_artifacts:
@@ -1383,3 +1389,15 @@ push_already_exists:
   other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
 languages_cmd_description:
   other: View the languages of a project
+languages_update_cmd_description:
+  other: Update the language of a project
+arg_languages_update_description:
+  other: The language to update in the form of <language>@<version> or <language>
+err_language_format:
+  other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
+err_update_not_found:
+  other: "Could not find the requested language: {{.V0}}. Please ensure the language name is correct and supported by the ActiveState platform"
+err_language_version_not_found:
+  other: The requested version {{.V0}} for the language {{.V1}} is not available
+err_language_mismatch:
+  other: Cannot change languages, only changes to the current project's language is allowed

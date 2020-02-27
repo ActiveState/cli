@@ -45,6 +45,9 @@ func New(outputer output.Outputer) *CmdTree {
 		newPlatformsRemoveCommand(outputer),
 	)
 
+	languagesCmd := newLanguagesCommand(outputer)
+	languagesCmd.AddChildren(newUpdateCommand(outputer))
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
@@ -58,7 +61,7 @@ func New(outputer output.Outputer) *CmdTree {
 		platformsCmd,
 		newHistoryCommand(outputer),
 		newCleanCommand(outputer),
-		newLanguagesCommand(outputer),
+		languagesCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)

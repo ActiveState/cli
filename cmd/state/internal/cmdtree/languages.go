@@ -27,3 +27,33 @@ func newLanguagesCommand(outputer output.Outputer) *captain.Command {
 		},
 	)
 }
+
+func newUpdateCommand(outputer output.Outputer) *captain.Command {
+	runner := languages.NewUpdate(outputer)
+
+	params := languages.UpdateParams{}
+
+	return captain.NewCommand(
+		"update",
+		locale.T("languages_update_cmd_description"),
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "language",
+				Description: locale.T("arg_languages_update_description"),
+				Required:    true,
+				Value:       &params.Language,
+			},
+		},
+		func(cccmd *captain.Command, _ []string) error {
+			proj, fail := project.GetSafe()
+			if fail != nil {
+				return fail
+			}
+
+			params.Owner = proj.Owner()
+			params.ProjectName = proj.Name()
+			return runner.Run(&params)
+		},
+	)
+}

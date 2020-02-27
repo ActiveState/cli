@@ -65,7 +65,10 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, *failures.Failur
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			languages = append(languages, Language{requirement.Requirement, requirement.VersionConstraint})
+			languages = append(languages, Language{
+				Name:    requirement.Requirement,
+				Version: requirement.VersionConstraint,
+			})
 		}
 	}
 
@@ -189,4 +192,20 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	}
 
 	return result
+}
+
+func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) {
+	for _, req := range checkpoint {
+		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
+			continue
+		}
+		lang, fail := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
+		if fail != nil {
+			return nil, fail
+		}
+		return lang, nil
+	}
+
+	// TODO: Not a user error
+	return nil, failures.FailUser.New("TODO: could convert language from checkpoint")
 }

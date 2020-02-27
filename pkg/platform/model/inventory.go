@@ -279,3 +279,67 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, *failure
 
 	return nil, FailUnsupportedPlatform.New("err_unsupported_platform", details)
 }
+
+func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, *failures.Failure) {
+	checkpt, _, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return CheckpointToLanguage(checkpt)
+}
+
+func FetchLanguageByDetails(name, version string) (*Language, *failures.Failure) {
+	languages, fail := FetchLanguages()
+	if fail != nil {
+		return nil, fail
+	}
+
+	for _, language := range languages {
+		if language.Name == name && language.Version == version {
+			return &language, nil
+		}
+	}
+
+	return nil, failures.FailUser.New(locale.Tr("err_language_not_found", name, version))
+}
+
+func FetchLanguageVersions(name string) ([]string, *failures.Failure) {
+	languages, fail := FetchLanguages()
+	if fail != nil {
+		return nil, fail
+	}
+
+	var versions []string
+	for _, lang := range languages {
+		if lang.Name == name {
+			versions = append(versions, lang.Version)
+		}
+	}
+
+	return versions, nil
+}
+
+func FetchLanguages() ([]Language, *failures.Failure) {
+	client := inventory.Get()
+
+	params := inventory_operations.NewGetNamespaceIngredientsParams()
+	params.SetNamespace("language")
+	limit := int64(10000)
+	params.SetLimit(&limit)
+
+	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, FailNoLanguages.Wrap(err)
+	}
+
+	var languages []Language
+	for _, ting := range res.Payload.IngredientsAndVersions {
+		languages = append(languages, Language{
+			Name:    *ting.Ingredient.Name,
+			Version: *ting.Version.Version,
+		})
+	}
+
+	return languages, nil
+}

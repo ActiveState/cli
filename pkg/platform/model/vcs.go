@@ -31,6 +31,9 @@ var (
 	FailNoCommit = failures.Type("model.fail.nocommit")
 	// FailNoLanguages is a failure due to the checkpoint not having any languages
 	FailNoLanguages = failures.Type("model.fail.nolanguages")
+	// FailNoCommitID indicates that no commit id is provided and not
+	// obtainable from the current project.
+	FailNoCommitID = failures.Type("languages.fail.nocommitid", failures.FailNonFatal)
 )
 
 // Operation is the action to be taken in a commit
@@ -393,6 +396,48 @@ func CommitPlatform(owner, prjName string, op Operation, name, version string, w
 
 	// version is not the value that AddCommit needs - platforms do not post a version
 	commit, fail := AddCommit(bCommitID, msg, op, NamespacePlatform(), platformID, "")
+	if fail != nil {
+		return fail
+	}
+
+	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
+}
+
+// CommitLanguage commits a single language to the platform
+func CommitLanguage(owner, project string, op Operation, name, version string) *failures.Failure {
+	lang, fail := FetchLanguageByDetails(name, version)
+	if fail != nil {
+		return fail
+	}
+
+	proj, fail := FetchProjectByName(owner, project)
+	if fail != nil {
+		return fail
+	}
+
+	branch, fail := DefaultBranchForProject(proj)
+	if fail != nil {
+		return fail
+	}
+
+	if branch.CommitID == nil {
+		return FailNoCommit.New(locale.T("err_project_no_languages"))
+	}
+
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = "commit_message_add_language"
+	case OperationUpdated:
+		return failures.FailDeveloper.New("this is not supported yet")
+	case OperationRemoved:
+		msgL10nKey = "commit_message_removed_language"
+	}
+
+	branchCommitID := *branch.CommitID
+	msg := locale.Tr(msgL10nKey, name, version)
+
+	commit, fail := AddCommit(branchCommitID, msg, op, NamespaceLanguage(), lang.Name, lang.Version)
 	if fail != nil {
 		return fail
 	}

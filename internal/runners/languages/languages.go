@@ -5,10 +5,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type language struct {
-	Name string `json:"name"`
-}
-
 type Languages struct{}
 
 func NewLanguages() *Languages {
