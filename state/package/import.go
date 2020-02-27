@@ -14,6 +14,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+// ChangesetProvider describes the behavior required to convert some file data into a changeset.
+type ChangesetProvider interface {
+	Changeset([]byte) (model.Changeset, error)
+}
+
 const (
 	defaultImportFile = "requirements.txt"
 )
@@ -54,15 +59,7 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		ImportFlags.FileName = defaultImportFile
 	}
 
-	rimport := reqsimport.Init()
-
-	data, err := ioutil.ReadFile(ImportFlags.FileName)
-	if err != nil {
-		failures.Handle(err, locale.T("err_reading_file"))
-		return
-	}
-
-	changeset, err := rimport.Changeset(data)
+	changeset, err := importChangeset(reqsimport.Init(), ImportFlags.FileName)
 	if err != nil {
 		failures.Handle(err, locale.T("err_obtaining_change_request"))
 		return
@@ -70,8 +67,23 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 
 	msg := locale.T("commit_reqstext_message")
 
-	if fail := model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset[1:]); fail != nil {
+	fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset)
+	if fail != nil {
 		failures.Handle(err, locale.T("err_"))
 		return
 	}
+}
+
+func importChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
+	data, err := ioutil.ReadFile(ImportFlags.FileName)
+	if err != nil {
+		return nil, err
+	}
+
+	changeset, err := cp.Changeset(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return changeset, err
 }
