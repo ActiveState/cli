@@ -1204,6 +1204,8 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
+commit_reqstext_message:
+  other: "Import from requirements.txt"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
