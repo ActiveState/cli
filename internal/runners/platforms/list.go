@@ -76,7 +76,7 @@ func targetedCommitID(commitID, projName, projOrg string) (*strfmt.UUID, error) 
 		return &cid, err
 	}
 
-	latest, fail := model.LatestCommitID(projName, projOrg)
+	latest, fail := model.LatestCommitID(projOrg, projName)
 	if fail != nil {
 		return nil, fail.ToError()
 	}
