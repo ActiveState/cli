@@ -29,6 +29,9 @@ const (
 
 	// ServiceGraphQL is our service that's used as a graphql endpoint for platform requests
 	ServiceGraphQL = "platform-graphql"
+
+	// ServiceRequirementsImport is our service that processes requirements.txt files.
+	ServiceRequirementsImport = "requirements-import"
 )
 
 var urlsByService = map[Service]*url.URL{
@@ -56,6 +59,11 @@ var urlsByService = map[Service]*url.URL{
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.GraphqlAPIPath,
+	},
+	ServiceRequirementsImport: {
+		Scheme: "https",
+		Host:   constants.DefaultAPIHost,
+		Path:   constants.RequirementsImportAPIPath,
 	},
 }
 

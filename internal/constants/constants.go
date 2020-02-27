@@ -134,6 +134,9 @@ const InventoryAPIPath = "/sv/inventory-api-v1"
 // GraphqlAPIPath is the path used for the platform graphql api
 const GraphqlAPIPath = "/graphql/v1/graphql"
 
+// RequirementsImportAPIPath is the path used for the requiremments import api
+const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
+
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
 const DeprecationInfoURL = "https://s3.ca-central-1.amazonaws.com/cli-update/deprecation.json"
 

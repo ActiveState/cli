@@ -42,10 +42,10 @@ func New(opts Opts) (*ReqsImport, error) {
 
 // Init ...
 func Init() *ReqsImport {
-	svcURL := api.GetServiceURL(api.ServiceInventory)
+	svcURL := api.GetServiceURL(api.ServiceRequirementsImport)
 
 	opts := Opts{
-		TranslateURL: path.Join(svcURL.Host, svcURL.Path),
+		TranslateURL: "https://" + path.Join(svcURL.Host, svcURL.Path),
 	}
 
 	ri, err := New(opts)
