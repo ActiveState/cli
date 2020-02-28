@@ -231,6 +231,8 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	opts := []expect.ExpectOpt{expect.String(value)}
 	if len(timeout) > 0 {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
+	} else {
+		opts = append(opts, expect.WithTimeout(defaultTimeout))
 	}
 	_, err := s.console.Expect(opts...)
 	if err != nil {
