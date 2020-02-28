@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 const (
@@ -57,7 +57,7 @@ func Init() *ReqsImport {
 }
 
 // Changeset ...
-func (ri *ReqsImport) Changeset(data []byte) (Changeset, error) {
+func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 	reqMsg := ReqsTxtTranslateReqMsg{
 		Data: string(data),
 	}
@@ -81,7 +81,7 @@ func (ri *ReqsImport) Changeset(data []byte) (Changeset, error) {
 		return nil, err
 	}
 
-	return respMsg.ChangeRequest.Changeset, nil
+	return respMsg.CommitRequest.Changeset, nil
 }
 
 // ReqsTxtTranslateReqMsg ...
@@ -91,12 +91,6 @@ type ReqsTxtTranslateReqMsg struct {
 
 // ReqsTxtTranslateRespMsg ...
 type ReqsTxtTranslateRespMsg struct {
-	*ChangeRequest
+	*model.CommitRequest
 	Errors []string `json:"errors,omitempty"`
 }
-
-// Changeset ...
-type Changeset = []*mono_models.CommitChangeEditable
-
-// ChangeRequest ...
-type ChangeRequest = mono_models.CommitEditable
