@@ -7,6 +7,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -66,6 +67,7 @@ func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 
 	url := ri.opts.TranslateURL
 
+	logging.Debug("POSTing data to reqsvc")
 	resp, err := ri.client.Post(url, translateContentType, &buf)
 	if err != nil {
 		return nil, err
