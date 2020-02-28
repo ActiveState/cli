@@ -161,13 +161,10 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 // Changeset aliases for eased usage and to act as a disconnect from the underlying dep.
 type Changeset = []*mono_models.CommitChangeEditable
 
-// CommitRequest ...
-type CommitRequest = mono_models.CommitEditable
-
 // AddChangeset creates a new commit with multiple changes as provided.
 func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
 	params := vcsClient.NewAddCommitParams()
-	params.SetCommit(&CommitRequest{
+	params.SetCommit(&mono_models.CommitEditable{
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
@@ -329,7 +326,7 @@ func CommitInitial(projectOwner, projectName, hostPlatform, language, langVersio
 	}
 	changes = append(changes, c)
 
-	commit := &CommitRequest{
+	commit := &mono_models.CommitEditable{
 		Changeset: changes,
 		Message:   locale.T("commit_message_add_initial"),
 	}
