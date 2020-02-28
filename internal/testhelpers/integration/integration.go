@@ -127,6 +127,18 @@ func (s *Suite) PrepareActiveStateYAML(dir, contents string) {
 	s.Require().NoError(fail.ToError(), msg)
 }
 
+func (s *Suite) PrepareFile(path, contents string) {
+	errMsg := fmt.Sprintf("cannot setup file %q", path)
+
+	contents = strings.TrimSpace(contents)
+
+	err := os.MkdirAll(filepath.Dir(path), 0770)
+	s.Require().NoError(err, errMsg)
+
+	err = ioutil.WriteFile(path, []byte(contents), 0660)
+	s.Require().NoError(err, errMsg)
+}
+
 // Executable returns the path to the executable under test (state tool)
 func (s *Suite) Executable() string {
 	return s.executable
