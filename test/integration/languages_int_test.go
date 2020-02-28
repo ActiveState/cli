@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/stretchr/testify/suite"
@@ -27,6 +28,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
+	timeout := 60 * time.Second
 	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("LangaugesIntergrationTestSuite")
 	defer cleanup()
 
@@ -47,18 +49,18 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Wait()
 
 	suite.Spawn("languages")
-	suite.Expect("Name")
-	suite.Expect("python")
-	suite.Expect("3.6.6")
+	suite.Expect("Name", timeout)
+	suite.Expect("python", timeout)
+	suite.Expect("3.6.6", timeout)
 	suite.Wait()
 
 	suite.Spawn("languages", "update", "python")
 	suite.Wait()
 
 	suite.Spawn("languages")
-	suite.Expect("Name")
-	suite.Expect("python")
-	suite.Expect("3.8.1")
+	suite.Expect("Name", timeout)
+	suite.Expect("python", timeout)
+	suite.Expect("3.8.1", timeout)
 	suite.Wait()
 }
 
