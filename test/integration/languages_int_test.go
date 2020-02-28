@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -38,9 +39,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Wait()
 	fmt.Println(suite.UnsyncedOutput())
 
-	// On MacOS the tempdir is symlinked
-	path, err := filepath.EvalSymlinks(tempDir)
-	suite.Require().NoError(err)
+	if runtime.GOOS != "windows" {
+		// On MacOS the tempdir is symlinked
+		path, err := filepath.EvalSymlinks(tempDir)
+		suite.Require().NoError(err)
+	}
 
 	suite.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
 	suite.Expect("succesfully initialized")
