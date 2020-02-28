@@ -103,10 +103,15 @@ func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string,
 	s.Require().NoError(err)
 	err = os.MkdirAll(tempDir, 0770)
 	s.Require().NoError(err)
-	s.SetWd(tempDir)
+	dir, err := filepath.EvalSymlinks(tempDir)
+	s.Require().NoError(err)
+	s.SetWd(dir)
 
 	return tempDir, func() {
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(dir)
+		if tempDir != dir {
+			_ = os.RemoveAll(tempDir)
+		}
 	}
 }
 
