@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -59,7 +60,10 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		ImportFlags.FileName = defaultImportFile
 	}
 
-	changeset, err := importChangeset(reqsimport.Init(), ImportFlags.FileName)
+	svcURL := api.GetServiceURL(api.ServiceRequirementsImport)
+	changesetProvider := reqsimport.Init(svcURL.Host, svcURL.Path)
+
+	changeset, err := importChangeset(changesetProvider, ImportFlags.FileName)
 	if err != nil {
 		failures.Handle(err, locale.T("err_obtaining_change_request"))
 		return
