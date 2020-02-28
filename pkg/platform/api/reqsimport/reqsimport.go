@@ -89,7 +89,7 @@ func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 		return nil, &TranslateResponseError{respMsg.LineErrs}
 	}
 
-	return respMsg.CommitRequest.Changeset, nil
+	return respMsg.Changeset, nil
 }
 
 // ReqsTxtTranslateReqMsg ...
@@ -99,8 +99,8 @@ type ReqsTxtTranslateReqMsg struct {
 
 // ReqsTxtTranslateRespMsg ...
 type ReqsTxtTranslateRespMsg struct {
-	*model.CommitRequest
-	LineErrs []TranslateLineError `json:"errors,omitempty"`
+	Changeset model.Changeset      `json:"changeset,omitempty"`
+	LineErrs  []TranslateLineError `json:"errors,omitempty"`
 }
 
 // TranslateResponseError ...
