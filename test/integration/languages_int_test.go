@@ -35,6 +35,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	username := suite.CreateNewUser()
 	suite.Spawn("auth", "--username", username, "--password", username)
 	suite.Expect("You are logged in")
+	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 
 	// On MacOS the tempdir is symlinked
 	path, err := filepath.EvalSymlinks(tempDir)
@@ -43,25 +45,30 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
 	suite.Expect("succesfully initialized")
 	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 
 	suite.Spawn("push")
 	suite.Expect("Project created")
 	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 
 	suite.Spawn("languages")
 	suite.Expect("Name", timeout)
 	suite.Expect("python", timeout)
 	suite.Expect("3.6.6", timeout)
 	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 
 	suite.Spawn("languages", "update", "python")
 	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 
 	suite.Spawn("languages")
 	suite.Expect("Name", timeout)
 	suite.Expect("python", timeout)
 	suite.Expect("3.8.1", timeout)
 	suite.Wait()
+	fmt.Println(suite.UnsyncedOutput())
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
