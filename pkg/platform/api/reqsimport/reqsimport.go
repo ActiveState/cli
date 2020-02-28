@@ -3,10 +3,12 @@ package reqsimport
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path"
 	"time"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -84,6 +86,10 @@ func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 		return nil, err
 	}
 
+	if len(respMsg.LineErrs) > 0 {
+		return nil, &TranslateResponseError{respMsg.LineErrs}
+	}
+
 	return respMsg.CommitRequest.Changeset, nil
 }
 
@@ -95,5 +101,33 @@ type ReqsTxtTranslateReqMsg struct {
 // ReqsTxtTranslateRespMsg ...
 type ReqsTxtTranslateRespMsg struct {
 	*model.CommitRequest
-	Errors []string `json:"errors,omitempty"`
+	LineErrs []TranslateLineError `json:"errors,omitempty"`
+}
+
+// TranslateResponseError ...
+type TranslateResponseError struct {
+	LineErrs []TranslateLineError
+}
+
+func (e *TranslateResponseError) Error() string {
+	var msgs, sep string
+	for _, lineErr := range e.LineErrs {
+		msgs += sep + lineErr.Error()
+		sep = "; "
+	}
+	if msgs == "" {
+		msgs = "unknown error"
+	}
+
+	return locale.Tr("reqsvc_err_line_errors", msgs)
+}
+
+// TranslateLineError ...
+type TranslateLineError struct {
+	ErrMsg string `json:"errorText,omitempty"`
+	PkgTxt string `json:"packageText,omitempty"`
+}
+
+func (e *TranslateLineError) Error() string {
+	return fmt.Sprintf("line %q: %s", e.PkgTxt, e.ErrMsg)
 }

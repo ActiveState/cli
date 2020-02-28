@@ -441,6 +441,8 @@ err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
   other: That should not happen.  Expected to receive at least one invitation receipt.
+reqsvc_err_line_errors:
+  other: "Line errors encountered translating data: [{{.V0}}]"
 secrets_expander_err_empty_name:
   other: Expander handle can not be an empty string
 secrets_expander_err_undefined:
@@ -1220,6 +1222,8 @@ package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
   other: Cannot commit changeset
+err_obtaining_change_request:
+  other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_no_packages:
