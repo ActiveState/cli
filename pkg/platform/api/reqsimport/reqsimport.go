@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -41,9 +42,12 @@ func New(opts Opts) (*ReqsImport, error) {
 }
 
 // Init ...
-func Init(host, urlPath string) *ReqsImport {
+func Init() *ReqsImport {
+	svcURL := api.GetServiceURL(api.ServiceRequirementsImport)
+	url := "https://" + path.Join(svcURL.Host, svcURL.Path)
+
 	opts := Opts{
-		TranslateURL: "https://" + path.Join(host, urlPath),
+		TranslateURL: url,
 	}
 
 	ri, err := New(opts)
