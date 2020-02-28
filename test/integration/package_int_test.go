@@ -1,7 +1,10 @@
 package integration
 
 import (
+	"fmt"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -218,6 +221,43 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	suite.Spawn("packages", "search", "numpy", "--language=bad")
 	suite.Expect("Cannot obtain search")
 	suite.Wait()
+}
+
+const (
+	reqsFileName = "requirements.txt"
+	reqsData     = `Click==7.0
+Flask==1.1.1
+Flask-Cors==3.0.8
+itsdangerous==1.1.0
+Jinja2==2.10.3
+MarkupSafe==1.1.1
+packaging==20.1
+pyparsing==2.4.6
+six==1.14.0
+Werkzeug==0.16.0
+`
+)
+
+func (suite *PackageIntegrationTestSuite) TestPackage_importSimple() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
+	defer cleanup()
+
+	username := suite.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", username, "Python3")
+	initPath := filepath.Join(tempDir, namespace)
+
+	suite.Spawn("init", namespace, "python3", "--path="+initPath, "--skeleton=editor")
+	suite.ExpectExitCode(0)
+
+	suite.PrepareFile(filepath.Join(initPath, reqsFileName), reqsData)
+
+	suite.SetWd(filepath.Join(tempDir, namespace))
+	suite.Spawn("push")
+	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	suite.ExpectExitCode(0)
+
+	suite.Spawn("packages", "import")
+	suite.ExpectExitCode(0, time.Second*60)
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
