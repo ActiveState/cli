@@ -331,7 +331,7 @@ manual_installation_instructions() {
   echo "To make the changes to your path permanent please add the line"
   echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
   activation_warning
-  exit 1
+  exit 0
 }
 
 manual_update_instructions() {
@@ -339,7 +339,7 @@ manual_update_instructions() {
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
   activation_warning
-  exit 1
+  exit 0
 }
 
 # Prints a warning if an activation was requested and state tool is not in the PATH
