@@ -135,7 +135,9 @@ func (s *Suite) PrepareFile(path, contents string) {
 	err := os.MkdirAll(filepath.Dir(path), 0770)
 	s.Require().NoError(err, errMsg)
 
-	err = ioutil.WriteFile(path, []byte(contents), 0660)
+	bs := append([]byte(contents), '\n')
+
+	err = ioutil.WriteFile(path, bs, 0660)
 	s.Require().NoError(err, errMsg)
 }
 
