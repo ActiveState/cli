@@ -5,20 +5,23 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type Languages struct{}
+type Languages struct {
+	out output.Outputer
+}
 
-func NewLanguages() *Languages {
-	return &Languages{}
+func NewLanguages(out output.Outputer) *Languages {
+	return &Languages{
+		out: out,
+	}
 }
 
 type LanguagesParams struct {
 	owner       string
 	projectName string
-	out         output.Outputer
 }
 
-func NewLanguagesParams(owner, projectName string, out output.Outputer) LanguagesParams {
-	return LanguagesParams{owner, projectName, out}
+func NewLanguagesParams(owner, projectName string) LanguagesParams {
+	return LanguagesParams{owner, projectName}
 }
 
 func (l *Languages) Run(params *LanguagesParams) error {
@@ -27,6 +30,6 @@ func (l *Languages) Run(params *LanguagesParams) error {
 		return err
 	}
 
-	params.out.Print(langs)
+	l.out.Print(langs)
 	return nil
 }

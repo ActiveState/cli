@@ -35,7 +35,6 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Spawn("auth", "--username", username, "--password", username)
 	suite.Expect("You are logged in")
 	suite.Wait()
-	fmt.Println(suite.UnsyncedOutput())
 
 	path := tempDir
 	var err error

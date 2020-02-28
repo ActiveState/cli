@@ -54,30 +54,62 @@ func (u *Update) Run(params *UpdateParams) error {
 }
 
 func parseLanguage(param string) (*model.Language, error) {
-	lang := &model.Language{}
-	if strings.Contains(param, "@") {
-		split := strings.Split(param, "@")
-		if len(split) != 2 {
-			return nil, errors.New(locale.T("err_language_format"))
-		}
-		lang.Name = split[0]
-		lang.Version = split[1]
-	} else {
-		lang.Name = param
+	if !strings.Contains(param, "@") {
+		return processName(param)
 	}
 
+	split := strings.Split(param, "@")
+	if len(split) != 2 {
+		return nil, errors.New(locale.T("err_language_format"))
+	}
+	name := split[0]
+	version := split[1]
+
+	err := ensureLanguage(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return processNameVersion(name, version)
+}
+
+func processName(name string) (*model.Language, error) {
+	version, err := latestVersion(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Language{
+		Name:    name,
+		Version: version,
+	}, nil
+}
+
+func processNameVersion(name, version string) (*model.Language, error) {
+	err := ensureVersion(name, version)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Language{
+		Name:    name,
+		Version: version,
+	}, nil
+}
+
+func ensureLanguage(name string) error {
 	platformLanguages, fail := model.FetchLanguages()
 	if fail != nil {
-		return nil, fail.ToError()
+		return fail.ToError()
 	}
 
 	for _, pl := range platformLanguages {
-		if strings.ToLower(pl.Name) == strings.ToLower(lang.Name) {
-			return lang, nil
+		if strings.ToLower(pl.Name) == strings.ToLower(name) {
+			return nil
 		}
 	}
 
-	return nil, errors.New(locale.Tr("err_update_not_found", lang.Name))
+	return errors.New(locale.Tr("err_update_not_found", name))
 }
 
 func ensureVersion(name, version string) error {

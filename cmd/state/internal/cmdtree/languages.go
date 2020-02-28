@@ -9,7 +9,7 @@ import (
 )
 
 func newLanguagesCommand(outputer output.Outputer) *captain.Command {
-	runner := languages.NewLanguages()
+	runner := languages.NewLanguages(outputer)
 
 	return captain.NewCommand(
 		"languages",
@@ -22,7 +22,7 @@ func newLanguagesCommand(outputer output.Outputer) *captain.Command {
 				return fail
 			}
 
-			params := languages.NewLanguagesParams(proj.Owner(), proj.Name(), outputer)
+			params := languages.NewLanguagesParams(proj.Owner(), proj.Name())
 			return runner.Run(&params)
 		},
 	)
@@ -45,7 +45,7 @@ func newUpdateCommand(outputer output.Outputer) *captain.Command {
 				Value:       &params.Language,
 			},
 		},
-		func(cccmd *captain.Command, _ []string) error {
+		func(ccmd *captain.Command, _ []string) error {
 			proj, fail := project.GetSafe()
 			if fail != nil {
 				return fail
