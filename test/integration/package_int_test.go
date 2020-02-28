@@ -248,30 +248,30 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 	username := suite.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-	initPath := filepath.Join(tempDir, namespace)
 
-	suite.Spawn("init", namespace, "python3", "--path="+initPath, "--skeleton=editor")
+	suite.Spawn("init", namespace, "python3", "--path="+tempDir, "--skeleton=editor")
 	suite.ExpectExitCode(0)
 
-	suite.SetWd(filepath.Join(tempDir, namespace))
 	suite.Spawn("push")
 	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
 	suite.ExpectExitCode(0)
 
-	filename := filepath.Join(initPath, reqsFileName)
+	reqsFilePath := filepath.Join(tempDir, reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
-		suite.PrepareFile(filename, badReqsData)
+		suite.PrepareFile(reqsFilePath, badReqsData)
+
 		suite.Spawn("packages", "import")
 		suite.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
-		suite.PrepareFile(filename, reqsData)
+		suite.PrepareFile(reqsFilePath, reqsData)
+
 		suite.Spawn("packages", "import")
 		suite.ExpectExitCode(0, time.Second*60)
 
-		suite.Run("add already added", func() {
+		suite.Run("already added", func() {
 			suite.Spawn("packages", "import")
 			suite.ExpectNotExitCode(0, time.Second*60)
 		})
