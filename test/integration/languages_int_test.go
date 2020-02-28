@@ -39,9 +39,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Wait()
 	fmt.Println(suite.UnsyncedOutput())
 
+	path := tempdir
 	if runtime.GOOS != "windows" {
 		// On MacOS the tempdir is symlinked
-		path, err := filepath.EvalSymlinks(tempDir)
+		path, err = filepath.EvalSymlinks(tempDir)
 		suite.Require().NoError(err)
 	}
 
