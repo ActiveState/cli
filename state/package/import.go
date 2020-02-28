@@ -51,7 +51,7 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 
 	proj, fail := project.GetSafe()
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_"))
+		failures.Handle(fail, locale.T("err_project_unavailable"))
 		return
 	}
 
@@ -69,7 +69,7 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 
 	fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset)
 	if fail != nil {
-		failures.Handle(err, locale.T("err_"))
+		failures.Handle(fail, locale.T("err_cannot_commit_changeset"))
 		return
 	}
 }
