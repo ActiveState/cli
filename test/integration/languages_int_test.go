@@ -44,6 +44,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 
 	suite.Spawn("push")
 	suite.Expect("Project created")
+	suite.Wait()
 
 	suite.Spawn("languages")
 	suite.Expect("Name")
