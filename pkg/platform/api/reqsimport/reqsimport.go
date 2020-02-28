@@ -81,7 +81,6 @@ func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
 	defer resp.Body.Close() //nolint
 
 	var respMsg ReqsTxtTranslateRespMsg
-
 	if err := json.NewDecoder(resp.Body).Decode(&respMsg); err != nil {
 		return nil, err
 	}
