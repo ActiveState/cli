@@ -49,6 +49,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	suite.Expect("Name")
 	suite.Expect("python")
 	suite.Expect("3.6.6")
+	suite.Wait()
 
 	suite.Spawn("languages", "update", "python")
 	suite.Wait()
