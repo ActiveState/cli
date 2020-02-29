@@ -107,7 +107,7 @@ func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string,
 	s.Require().NoError(err)
 	s.SetWd(dir)
 
-	return tempDir, func() {
+	return dir, func() {
 		_ = os.RemoveAll(dir)
 		if tempDir != dir {
 			_ = os.RemoveAll(tempDir)
