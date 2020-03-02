@@ -198,7 +198,16 @@ func (c *Console) Tty() *os.File {
 // This function can unblock the writer, if no further reads from the passthrough pipe are
 // needed
 func (c *Console) Flush() {
-	c.passthroughPipe.Flush()
+	for {
+		buf := make([]byte, 10)
+		n, err := c.passthroughPipe.Read(buf)
+		if n == 0 {
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
 }
 
 // Read reads bytes b from Console's tty.
