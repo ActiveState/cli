@@ -66,7 +66,7 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 		return nil, err
 	}
 
-	prVersion, err := semver.NewPRVersion(revision)
+	prVersion, err := semver.NewPRVersion("SHA" + revision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pre-release version number: %v", err)
 	}
