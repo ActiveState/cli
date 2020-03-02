@@ -373,7 +373,7 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		t = timeout[0]
 	}
 
-	s.console.Drain()
+	s.console.Flush()
 
 	type processState struct {
 		state *os.ProcessState
