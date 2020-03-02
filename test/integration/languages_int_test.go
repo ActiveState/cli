@@ -54,7 +54,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 
 	suite.Spawn("languages")
 	suite.Expect("Name")
-	suite.Expect("python")
+	suite.Expect("Python")
 	suite.Expect("3.6.6")
 	suite.Wait()
 
@@ -63,7 +63,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 
 	suite.Spawn("languages")
 	suite.Expect("Name")
-	suite.Expect("python")
+	suite.Expect("Python")
 	suite.Expect("3.8.1")
 	suite.Wait()
 }
