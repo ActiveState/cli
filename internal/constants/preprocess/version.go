@@ -78,6 +78,10 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 // IncrementString returns the string representation of the version bump
 // ie. patch, minor, or major
 func (v *VersionIncrementer) IncrementString() (string, error) {
+	if v.environment == localEnv {
+		return v.master.String(), nil
+	}
+
 	if v.branch == "master" {
 		return v.provider.IncrementMaster()
 	}
@@ -90,6 +94,7 @@ func masterVersion() (*semver.Version, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
 	match := regex.FindString(string(output))
 	if match == "" {
