@@ -26,31 +26,20 @@ func NewLanguagesParams(owner, projectName string) LanguagesParams {
 	return LanguagesParams{owner, projectName}
 }
 
-func (l *Languages) Run(params *LanguagesParams) error {
-	listing, err := newListing(params.owner, params.projectName)
-	if err != nil {
-		return err
-	}
-
-	l.out.Print(listing)
-	return nil
-}
-
 type Listing struct {
 	Languages []model.Language `json:"languages"`
 }
 
-func newListing(owner, name string) (*Listing, error) {
-	langs, err := model.FetchLanguagesForProject(owner, name)
+func (l *Languages) Run(params *LanguagesParams) error {
+	langs, err := model.FetchLanguagesForProject(params.owner, params.projectName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	formatLangs(langs)
 
-	return &Listing{
-		Languages: langs,
-	}, nil
+	l.out.Print(Listing{langs})
+	return nil
 }
 
 func formatLangs(langs []model.Language) {
