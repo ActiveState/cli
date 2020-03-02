@@ -31,7 +31,7 @@ func (suite *UpdateIntegrationTestSuite) getVersion() string {
 	suite.Expect("ActiveState CLI version ")
 	suite.Expect("Revision")
 	suite.Wait()
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[SHA]?[a-f0-9]+`)
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-SHA[a-f0-9]+`)
 	return regex.FindString(suite.UnsyncedOutput())
 }
 
