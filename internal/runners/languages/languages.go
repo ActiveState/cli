@@ -1,6 +1,8 @@
 package languages
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -25,11 +27,34 @@ func NewLanguagesParams(owner, projectName string) LanguagesParams {
 }
 
 func (l *Languages) Run(params *LanguagesParams) error {
-	langs, err := model.FetchLanguagesForProject(params.owner, params.projectName)
+	listing, err := newListing(params.owner, params.projectName)
 	if err != nil {
 		return err
 	}
 
-	l.out.Print(langs)
+	l.out.Print(listing)
 	return nil
+}
+
+type Listing struct {
+	Languages []model.Language `json:"languages"`
+}
+
+func newListing(owner, name string) (*Listing, error) {
+	langs, err := model.FetchLanguagesForProject(owner, name)
+	if err != nil {
+		return nil, err
+	}
+
+	formatLangs(langs)
+
+	return &Listing{
+		Languages: langs,
+	}, nil
+}
+
+func formatLangs(langs []model.Language) {
+	for i := range langs {
+		langs[i].Name = strings.Title(langs[i].Name)
+	}
 }
