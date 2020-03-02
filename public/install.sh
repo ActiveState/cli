@@ -272,7 +272,9 @@ fi
 
 if [ -z "$INSTALLDIR" ]; then
   error "Could not install state tool to PATH."
-  error "You can use the '-t' flag to denote an install target."
+  error "Do not have write access to any directories currently on PATH."
+  error "You can use the '-t' flag to denote an install target or update"
+  error "the write permissions to a directory on PATH."
   exit 1
 fi
 
