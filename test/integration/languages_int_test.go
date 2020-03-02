@@ -22,7 +22,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 
 	suite.Spawn("languages")
 	suite.Expect("Name")
-	suite.Expect("python")
+	suite.Expect("Python")
 	suite.Expect("3.6.6")
 	suite.Wait()
 }
