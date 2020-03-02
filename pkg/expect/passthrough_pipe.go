@@ -13,7 +13,7 @@ type errPassthroughTimeout struct {
 
 func (errPassthroughTimeout) Timeout() bool { return true }
 
-// buffsize is the size of the PassthroughPipe channel
+// bufsize is the size of the PassthroughPipe channel
 const bufsize = 1024
 
 // PassthroughPipe pipes data from a io.Reader and allows setting a read
@@ -77,6 +77,33 @@ func (p *PassthroughPipe) Close() error {
 	return nil
 }
 
+// Flush flushes the pipe by consuming all the data written to it
+func (p *PassthroughPipe) Flush() {
+
+	buf := make([]byte, bufsize)
+
+	for {
+		n := p.consume(0, buf)
+		if n == 0 {
+			return
+		}
+	}
+
+}
+
+func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
+	ni := nStart
+	for ; ni < len(buf); ni++ {
+		select {
+		case b := <-p.pipeC:
+			buf[ni] = b
+		default:
+			return ni
+		}
+	}
+	return ni
+}
+
 // Read reads from the PassthroughPipe and errors out if no data has been written to the pipe before the read deadline expired
 func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 
@@ -84,22 +111,8 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
 	}
 
-	consume := func(nStart int) int {
-		ni := nStart
-	fillBufLoop:
-		for ; ni < len(buf); ni++ {
-			select {
-			case b := <-p.pipeC:
-				buf[ni] = b
-			default:
-				break fillBufLoop
-			}
-		}
-		return ni
-	}
-
 	// fill buffer with bytes that are already waiting in pipe channel
-	n = consume(0)
+	n = p.consume(0, buf)
 	if n > 0 {
 		return n, nil
 	}
@@ -117,7 +130,7 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 	}
 
 	// fill up buf or until the pipe channel is drained
-	n = consume(1)
+	n = p.consume(1, buf)
 
 	return n, nil
 }
