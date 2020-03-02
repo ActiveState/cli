@@ -206,6 +206,5 @@ func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) 
 		return lang, nil
 	}
 
-	// TODO: Not a user error
-	return nil, failures.FailUser.New("TODO: could convert language from checkpoint")
+	return nil, failures.FailNotFound.New(locale.T("err_no_language"))
 }
