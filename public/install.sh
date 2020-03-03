@@ -279,40 +279,36 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 # Install to the determined directory.
-while "true"; do
-  info "Installing to $INSTALLDIR"
-  if [ ! -e "$INSTALLDIR" ]; then
-    info "NOTE: $INSTALLDIR will be created"
-  elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
-    warn "WARNING: overwriting previous installation"
-  fi
-  if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
-    warn "WARNING: installing elsewhere from previous installation"
-  fi
-  userprompt "Continue? [y/N/q] "
-  RESPONSE=$(userinput y)
-  case "$RESPONSE" in
-    [Qq])
-      error "Aborting installation"
-      exit 0
-      ;;
-    [Yy])
-      # Install.
-      if [ ! -e "$INSTALLDIR" ]; then
-        mkdir -p "$INSTALLDIR" || continue
-      fi
-      fetchArtifact
-      info "Installing to $INSTALLDIR..."
-      mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
-      if [ $? -eq 0 ]; then
-        break
-      fi
-      ;;
-    [Nn]|*)
-      continue
-      ;;
-  esac
-done
+info "Installing to $INSTALLDIR"
+if [ ! -e "$INSTALLDIR" ]; then
+  info "NOTE: $INSTALLDIR will be created"
+elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
+  warn "WARNING: overwriting previous installation"
+fi
+if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
+  warn "WARNING: installing elsewhere from previous installation"
+fi
+userprompt "Continue? [y/N/q] "
+RESPONSE=$(userinput y)
+case "$RESPONSE" in
+  [Qq])
+    error "Aborting installation"
+    exit 0
+    ;;
+  [Yy])
+    # Install.
+    if [ ! -e "$INSTALLDIR" ]; then
+      mkdir -p "$INSTALLDIR" || continue
+    fi
+    fetchArtifact
+    info "Installing to $INSTALLDIR..."
+    mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
+    ;;
+  [Nn]|*)
+    continue
+    ;;
+esac
+
 
 # If the installation is not in $PATH then we attempt to update the users rc file
 if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
