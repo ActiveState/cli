@@ -92,13 +92,13 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *ConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
-		suite.Expect("Terminate batch job")
+		cp.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
-		suite.SendLine("N")
-		suite.Expect("N", 500*time.Millisecond)
+		cp.SendLine("N")
+		cp.Expect("N", 500*time.Millisecond)
 	}
 }
 
@@ -109,20 +109,21 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.LoginAsPersistentUser()
 	defer suite.LogoutUser()
 
-	suite.Spawn("activate")
-	suite.Expect("Activating state: ActiveState-CLI/Python3")
-	suite.WaitForInput(10 * time.Second)
+	cp := suite.Spawn("activate")
+	defer cp.Close()
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.WaitForInput(10 * time.Second)
 
-	suite.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
-	suite.Expect("Start of script", 5*time.Second)
-	suite.SendCtrlC()
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.SendCtrlC()
-	suite.expectTerminateBatchJob()
+	cp.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
+	cp.Expect("Start of script", 5*time.Second)
+	cp.SendCtrlC()
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.SendCtrlC()
+	suite.expectTerminateBatchJob(cp)
 
-	suite.SendLine("exit 0")
-	suite.ExpectExitCode(0)
+	cp.SendLine("exit 0")
+	cp.ExpectExitCode(0)
 	suite.Require().NotContains(
 		suite.TerminalSnapshot(), "not printed after second interrupt",
 	)
@@ -132,30 +133,32 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	suite.LoginAsPersistentUser()
 	defer suite.LogoutUser()
 
-	suite.Spawn("run", "test-interrupt")
-	suite.Expect("Start of script")
+	cp := suite.Spawn("run", "test-interrupt")
+	defer cp.Close()
+	cp.Expect("Start of script")
 	// interrupt the first (very long) sleep
-	suite.SendCtrlC()
+	cp.SendCtrlC()
 
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.Expect("After second sleep")
-	suite.expectTerminateBatchJob()
-	suite.ExpectExitCode(0)
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.Expect("After second sleep")
+	suite.expectTerminateBatchJob(cp)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.LoginAsPersistentUser()
 	defer suite.LogoutUser()
 
-	suite.Spawn("run", "test-interrupt")
-	suite.Expect("Start of script")
-	suite.SendCtrlC()
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.SendCtrlC()
-	suite.expectTerminateBatchJob()
-	suite.ExpectExitCode(123)
+	cp := suite.Spawn("run", "test-interrupt")
+	defer cp.Close()
+	cp.Expect("Start of script")
+	cp.SendCtrlC()
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.SendCtrlC()
+	suite.expectTerminateBatchJob(cp)
+	cp.ExpectExitCode(123)
 	suite.Require().NotContains(
 		suite.TerminalSnapshot(), "not printed after second interrupt",
 	)
@@ -165,14 +168,18 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 	suite.LoginAsPersistentUser()
 	defer suite.LogoutUser()
 
-	suite.Spawn("run", "helloWorld")
-	suite.Expect("Hello World!")
+	cp := suite.Spawn("run", "helloWorld")
+	defer cp.Close()
+	cp.Expect("Hello World!")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
-	suite.Spawn("run", "-h")
-	suite.Expect("Usage")
-	suite.Expect("Arguments")
+	cp := suite.Spawn("run", "-h")
+	defer cp.Close()
+	cp.Expect("Usage")
+	cp.Expect("Arguments")
+	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {

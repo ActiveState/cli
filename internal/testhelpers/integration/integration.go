@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,9 +11,9 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
-	"github.com/ActiveState/vt10x"
 	"github.com/google/uuid"
 	"github.com/pborman/ansi"
 	"github.com/phayes/permbits"
@@ -38,10 +39,7 @@ var (
 // Suite is our integration test suite
 type Suite struct {
 	suite.Suite
-	console    *expect.Console
-	state      *vt10x.State
 	executable string
-	cmd        *exec.Cmd
 	env        []string
 	wd         *string
 }
@@ -151,15 +149,6 @@ func (s *Suite) Executable() string {
 	return s.executable
 }
 
-// TearDownTest closes the terminal attached to this integration test suite
-// Run this to clean-up everything set up with SetupTest()
-func (s *Suite) TearDownTest() {
-	if s.console != nil {
-		s.console.Close()
-		s.console = nil // global nature of this field requires singleton-like behavior
-	}
-}
-
 // ClearEnv removes all environment variables
 func (s *Suite) ClearEnv() {
 	s.env = []string{}
@@ -179,13 +168,22 @@ func (s *Suite) SetWd(dir string) {
 	s.wd = &dir
 }
 
-// Spawn executes the State Tool executable under test in a pseudo-terminal
-func (s *Suite) Spawn(args ...string) {
-	s.SpawnCustom(s.executable, args...)
+// Spawn executes the state tool executable under test in a pseudo-terminal
+func (s *Suite) Spawn(args ...string) *ConsoleProcess {
+	return s.SpawnCustom(s.executable, args...)
+}
+
+type ConsoleProcess struct {
+	stateCh chan error
+	console *expect.Console
+	cmd     *exec.Cmd
+	suite   suite.Suite
+	ctx     context.Context
+	cancel  func()
 }
 
 // SpawnCustom executes an executable in a pseudo-terminal for integration tests
-func (s *Suite) SpawnCustom(executable string, args ...string) {
+func (s *Suite) SpawnCustom(executable string, args ...string) *ConsoleProcess {
 	var wd string
 	if s.wd == nil {
 		wd = fileutils.TempDirUnsafe()
@@ -193,133 +191,178 @@ func (s *Suite) SpawnCustom(executable string, args ...string) {
 		wd = *s.wd
 	}
 
-	s.cmd = exec.Command(executable, args...)
-	s.cmd.Dir = wd
-	s.cmd.Env = s.env
+	cmd := exec.Command(executable, args...)
+	cmd.Dir = wd
+	cmd.Env = s.env
 
 	// Create the process in a new process group.
 	// This makes the behavior more consistent, as it isolates the signal handling from
 	// the parent processes, which are dependent on the test environment.
-	s.cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
-	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(s.cmd), wd)
+	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
+	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(cmd), wd)
 
 	var err error
-	s.console, err = expect.NewConsole(
+	console, err := expect.NewConsole(
 		expect.WithDefaultTimeout(defaultTimeout),
 		expect.WithReadBufferMutation(ansi.Strip),
 	)
 	s.Require().NoError(err)
 
-	err = s.console.Pty.StartProcessInTerminal(s.cmd)
+	err = console.Pty.StartProcessInTerminal(cmd)
 	s.Require().NoError(err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	cp := &ConsoleProcess{
+		stateCh: make(chan error),
+		suite:   s.Suite,
+		console: console,
+		cmd:     cmd,
+		ctx:     ctx,
+		cancel:  cancel,
+	}
+
+	go func() {
+		defer close(cp.stateCh)
+		err := cmd.Wait()
+
+		console.Close()
+
+		fmt.Printf("send err to channel: %v\n", err)
+		select {
+		case cp.stateCh <- err:
+		case <-cp.ctx.Done():
+		}
+
+		fmt.Printf("done sending err to channel: %v\n", err)
+	}()
+
+	return cp
+}
+
+func (cp *ConsoleProcess) Close() error {
+	fmt.Println("closing channel")
+	cp.cancel()
+	if cp.cmd.ProcessState.Exited() {
+		return nil
+	}
+	err := cp.cmd.Process.Kill()
+	if err == nil {
+		return nil
+	}
+	return cp.cmd.Process.Signal(syscall.SIGTERM)
 }
 
 // UnsyncedOutput returns the current Terminal snapshot.
 // However the goroutine that creates this output is separate from this
 // function so any output is not synced
-func (s *Suite) UnsyncedOutput() string {
-	return s.console.Pty.State.String()
+func (cp *ConsoleProcess) UnsyncedOutput() string {
+	return cp.console.Pty.State.String()
 }
 
 // ExpectRe listens to the terminal output and returns once the expected regular expression is matched or
 // a timeout occurs
 // Default timeout is 10 seconds
-func (s *Suite) ExpectRe(value string, timeout ...time.Duration) {
+func (cp *ConsoleProcess) ExpectRe(value string, timeout ...time.Duration) {
 	opts := []expect.ExpectOpt{expect.RegexpPattern(value)}
 	if len(timeout) > 0 {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
-	_, err := s.console.Expect(opts...)
+	_, err := cp.console.Expect(opts...)
 	if err != nil {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.UnsyncedOutput())
+			value, err, cp.UnsyncedOutput())
 	}
 }
 
 // TerminalSnapshot returns a snapshot of the terminal output
-func (s *Suite) TerminalSnapshot() string {
-	return s.console.Pty.State.String()
+func (cp *ConsoleProcess) TerminalSnapshot() string {
+	return cp.console.Pty.State.String()
 }
 
 // Expect listens to the terminal output and returns once the expected value is found or
 // a timeout occurs
 // Default timeout is 10 seconds
-func (s *Suite) Expect(value string, timeout ...time.Duration) {
+func (cp *ConsoleProcess) Expect(value string, timeout ...time.Duration) {
 	opts := []expect.ExpectOpt{expect.String(value)}
 	if len(timeout) > 0 {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
 
-	parsed, err := s.console.Expect(opts...)
+	parsed, err := cp.console.Expect(opts...)
 	if err != nil {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Could not meet expectation",
 			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
-			value, err, s.UnsyncedOutput(), parsed)
+			value, err, cp.UnsyncedOutput(), parsed)
 	}
 }
 
 // WaitForInput returns once a shell prompt is active on the terminal
 // Default timeout is 10 seconds
-func (s *Suite) WaitForInput(timeout ...time.Duration) {
+func (cp *ConsoleProcess) WaitForInput(timeout ...time.Duration) {
 	usr, err := user.Current()
-	s.Require().NoError(err)
+	cp.suite.Require().NoError(err)
 
 	msg := "echo wait_ready_$HOME"
 	if runtime.GOOS == "windows" {
 		msg = "echo wait_ready_%USERPROFILE%"
 	}
 
-	s.SendLine(msg)
-	s.Expect("wait_ready_"+usr.HomeDir, timeout...)
+	cp.SendLine(msg)
+	cp.Expect("wait_ready_"+usr.HomeDir, timeout...)
 }
 
 // SendLine sends a new line to the terminal, as if a user typed it
-func (s *Suite) SendLine(value string) {
-	_, err := s.console.SendLine(value)
+func (cp *ConsoleProcess) SendLine(value string) {
+	_, err := cp.console.SendLine(value)
 	if err != nil {
-		s.FailNow("Could not send data to terminal", "error: %v", err)
+		cp.suite.FailNow("Could not send data to terminal", "error: %v", err)
 	}
 }
 
 // Send sends a string to the terminal as if a user typed it
-func (s *Suite) Send(value string) {
-	_, err := s.console.Send(value)
+func (cp *ConsoleProcess) Send(value string) {
+	_, err := cp.console.Send(value)
 	if err != nil {
-		s.FailNow("Could not send data to terminal", "error: %v", err)
+		cp.suite.FailNow("Could not send data to terminal", "error: %v", err)
 	}
 }
 
 // Signal sends an arbitrary signal to the running process
-func (s *Suite) Signal(sig os.Signal) error {
-	return s.cmd.Process.Signal(sig)
+func (cp *ConsoleProcess) Signal(sig os.Signal) error {
+	return cp.cmd.Process.Signal(sig)
 }
 
 // SendCtrlC tries to emulate what would happen in an interactive shell, when the user presses Ctrl-C
-func (s *Suite) SendCtrlC() {
-	s.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
+func (cp *ConsoleProcess) SendCtrlC() {
+	cp.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
 }
 
 // Quit sends an interrupt signal to the tested process
-func (s *Suite) Quit() error {
-	return s.cmd.Process.Signal(os.Interrupt)
+func (cp *ConsoleProcess) Quit() error {
+	return cp.cmd.Process.Signal(os.Interrupt)
 }
 
 // Stop sends an interrupt signal for the tested process and fails if no process has been started yet.
-func (s *Suite) Stop() error {
-	if s.cmd == nil || s.cmd.Process == nil {
-		s.FailNow("stop called without a spawned process")
+func (cp *ConsoleProcess) Stop() error {
+	if cp.cmd == nil || cp.cmd.Process == nil {
+		cp.suite.FailNow("stop called without a spawned process")
 	}
-	return s.Quit()
+	return cp.Quit()
 }
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
-	s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
-	s.Expect("successfully authenticated", authnTimeout)
-	s.ExpectExitCode(0)
+	cp := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	defer cp.Close()
+	fmt.Println("1")
+	cp.Expect("successfully authenticated", authnTimeout)
+	fmt.Println("2")
+	cp.ExpectExitCode(0)
+	fmt.Println("3")
 }
 
 func (s *Suite) LogoutUser() {
@@ -329,42 +372,42 @@ func (s *Suite) LogoutUser() {
 }
 
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
-func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
-	ps, err := s.Wait(timeout...)
+func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := cp.Wait(timeout...)
 	if err != nil {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Error waiting for process:",
 			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
-			err, s.TerminalSnapshot())
+			err, cp.TerminalSnapshot())
 	}
 	if ps.ExitCode() != exitCode {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Process terminated with unexpected exit code\n",
 			"Expected: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
-			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+			exitCode, ps.ExitCode(), cp.TerminalSnapshot())
 	}
 }
 
 // ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
-func (s *Suite) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
-	ps, err := s.Wait(timeout...)
+func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
+	ps, err := cp.Wait(timeout...)
 	if err != nil {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Error waiting for process:",
 			"\n%v\n---\nTerminal snapshot:\n%s\n---\n",
-			err, s.TerminalSnapshot())
+			err, cp.TerminalSnapshot())
 	}
 	if ps.ExitCode() == exitCode {
-		s.FailNow(
+		cp.suite.FailNow(
 			"Process terminated with unexpected exit code\n",
 			"Expected anything except: %d, got %d\n---\nTerminal snapshot:\n%s\n---\n",
-			exitCode, ps.ExitCode(), s.TerminalSnapshot())
+			exitCode, ps.ExitCode(), cp.TerminalSnapshot())
 	}
 }
 
 // Wait waits for the tested process to finish and returns its state including ExitCode
-func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
-	if s.cmd == nil || s.cmd.Process == nil {
+func (cp *ConsoleProcess) Wait(timeout ...time.Duration) (state *os.ProcessState, err error) {
+	if cp.cmd == nil || cp.cmd.Process == nil {
 		return
 	}
 
@@ -373,40 +416,40 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 		t = timeout[0]
 	}
 
-	go func() {
-		s.console.Flush()
-	}()
+	fmt.Printf("waiting for EOF\n")
+	// TODO: This might need to be different for Windows, I think that Windows sends a different error message when we close the pseudo-terminal...
+	_, err = cp.console.Expect(expect.PTSClosed, expect.EOF, expect.WithTimeout(t))
+	fmt.Printf("EOF received: %v\n", err)
 
-	type processState struct {
-		state *os.ProcessState
-		err   error
+	if err != nil /* && err is timeout (?) */ {
+		fmt.Println("killing process")
+		err = cp.cmd.Process.Kill()
+		if err != nil {
+			// Don't know what else to do otherwise, honestly...
+			panic(err)
+		}
 	}
-	states := make(chan processState)
 
-	go func() {
-		defer close(states)
-		s, e := s.cmd.Process.Wait()
-		states <- processState{state: s, err: e}
-	}()
-
+	fmt.Printf("Waiting for stateCh")
 	select {
-	case s := <-states:
-		return s.state, s.err
-	case <-time.After(t):
-		return nil, fmt.Errorf("i/o error")
+	case pErr := <-cp.stateCh:
+		fmt.Printf("got error: %v\n", pErr)
+		return cp.cmd.ProcessState, pErr
+	case <-cp.ctx.Done():
+		return nil, fmt.Errorf("context canceled")
 	}
 }
 
 // UnsyncedTrimSpaceOutput displays the terminal output a user would see
 // however the goroutine that creates this output is separate from this
 // function so any output is not synced
-func (s *Suite) UnsyncedTrimSpaceOutput() string {
+func (cp *ConsoleProcess) UnsyncedTrimSpaceOutput() string {
 	// When the PTY reaches 80 characters it continues output on a new line.
 	// On Windows this means both a carriage return and a new line. Windows
 	// also picks up any spaces at the end of the console output, hence all
 	// the cleaning we must do here.
 	newlineRe := regexp.MustCompile(`\r?\n`)
-	return newlineRe.ReplaceAllString(strings.TrimSpace(s.UnsyncedOutput()), "")
+	return newlineRe.ReplaceAllString(strings.TrimSpace(cp.UnsyncedOutput()), "")
 }
 
 func (s *Suite) CreateNewUser() string {
@@ -417,19 +460,20 @@ func (s *Suite) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	s.Spawn("auth", "signup")
-	s.Expect("username:")
-	s.SendLine(username)
-	s.Expect("password:")
-	s.SendLine(password)
-	s.Expect("again:")
-	s.SendLine(password)
-	s.Expect("name:")
-	s.SendLine(username)
-	s.Expect("email:")
-	s.SendLine(email)
-	s.Expect("account has been registered", authnTimeout)
-	s.Wait()
+	cp := s.Spawn("auth", "signup")
+	defer cp.Close()
+	cp.Expect("username:")
+	cp.SendLine(username)
+	cp.Expect("password:")
+	cp.SendLine(password)
+	cp.Expect("again:")
+	cp.SendLine(password)
+	cp.Expect("name:")
+	cp.SendLine(username)
+	cp.Expect("email:")
+	cp.SendLine(email)
+	cp.Expect("account has been registered", authnTimeout)
+	cp.ExpectExitCode(0)
 
 	return username
 }

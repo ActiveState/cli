@@ -15,8 +15,9 @@ type OrganizationsIntegrationTestSuite struct {
 
 func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	suite.LoginAsPersistentUser()
-	suite.Spawn("orgs", "--output", "editor.v0")
-	suite.Wait()
+	cp := suite.Spawn("orgs", "--output", "editor.v0")
+	defer cp.Close()
+	cp.ExpectExitCode(0)
 
 	org := struct {
 		Name            string `json:"name,omitempty"`
@@ -33,8 +34,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Expect("false}")
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), suite.UnsyncedTrimSpaceOutput())
+	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.UnsyncedTrimSpaceOutput())
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {

@@ -50,6 +50,7 @@ func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
 				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
 				select {
 				case p.errC <- err:
+					fmt.Printf("signaling error: %v\n", err)
 				case <-ctx.Done():
 				}
 				break readLoop
@@ -73,7 +74,7 @@ func (p *PassthroughPipe) SetReadDeadline(d time.Time) {
 
 // Close releases all resources allocated by the pipe
 func (p *PassthroughPipe) Close() error {
-	p.cancel()
+	// p.cancel()
 	return nil
 }
 
@@ -121,6 +122,7 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 	case b := <-p.pipeC:
 		buf[0] = b
 	case e := <-p.errC:
+		fmt.Printf("error: %v\n", e)
 		return 0, e
 	case <-time.After(p.deadline.Sub(time.Now())):
 		// force stop consuming

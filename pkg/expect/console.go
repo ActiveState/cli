@@ -197,15 +197,16 @@ func (c *Console) Tty() *os.File {
 // Flush reads from the input stream until it catches up with the incoming stream off data.
 // This function can unblock the writer, if no further reads from the passthrough pipe are
 // needed
-func (c *Console) Flush() {
+func (c *Console) Flush(t time.Duration) error {
+	c.passthroughPipe.SetReadDeadline(time.Now().Add(t))
 	for {
 		buf := make([]byte, 10)
 		n, err := c.passthroughPipe.Read(buf)
 		if n == 0 {
-			return
+			return err
 		}
 		if err != nil {
-			return
+			return err
 		}
 	}
 }
