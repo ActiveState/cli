@@ -77,8 +77,8 @@ func (p *PassthroughPipe) Close() error {
 	return nil
 }
 
-// Flush flushes the pipe by consuming all the data written to it
-func (p *PassthroughPipe) Flush() {
+// Drain flushes the pipe by consuming all the data written to it
+func (p *PassthroughPipe) Drain() {
 
 	buf := make([]byte, bufsize)
 

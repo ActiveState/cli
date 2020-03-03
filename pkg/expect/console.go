@@ -194,11 +194,11 @@ func (c *Console) Tty() *os.File {
 	return c.Pty.Tty()
 }
 
-// Flush reads from the input stream until it catches up with the incoming stream off data.
+// Drain reads from the input stream until it catches up with the incoming stream off data.
 // This function can unblock the writer, if no further reads from the passthrough pipe are
 // needed
-func (c *Console) Flush() {
-	c.passthroughPipe.Flush()
+func (c *Console) Drain() {
+	c.passthroughPipe.Drain()
 }
 
 // Read reads bytes b from Console's tty.
