@@ -291,10 +291,6 @@ fi
 userprompt "Continue? [y/N] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
-  [Nn]|*)
-    error "Aborting installation"
-    exit 0
-    ;;
   [Yy])
     # Install.
     if [ ! -e "$INSTALLDIR" ]; then
@@ -303,6 +299,10 @@ case "$RESPONSE" in
     fetchArtifact
     info "Installing to $INSTALLDIR..."
     mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
+    ;;
+  [Nn]|*)
+    error "Aborting installation"
+    exit 0
     ;;
 esac
 
