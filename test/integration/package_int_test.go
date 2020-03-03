@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -272,6 +273,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		suite.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
+			if runtime.GOOS == "darwin" {
+				suite.T().Skip("integ test primitives bug affecting darwin")
+			}
+
 			suite.Spawn("packages", "import")
 			suite.ExpectNotExitCode(0, time.Second*60)
 		})
