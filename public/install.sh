@@ -290,7 +290,7 @@ if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != 
 fi
 userprompt "Continue? [y/N/q] "
 RESPONSE=$(userinput y)
-echo "Continue response: $RESPONSE"
+echo "$RESPONSE"
 case "$RESPONSE" in
   [Qq])
     error "Aborting installation"
@@ -387,7 +387,7 @@ else
   # installation instructions
   userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
   RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-  echo "Allow path update response: $RESPONSE"
+  echo "$RESPONSE"
   if [ "$RESPONSE" != "y" ]; then
     manual_installation_instructions
   else
