@@ -31,7 +31,7 @@ var (
 	PersistentUsername = "cli-integration-tests"
 	PersistentPassword = "test-cli-integration"
 
-	defaultTimeout = 10 * time.Second
+	defaultTimeout = 20 * time.Second
 	authnTimeout   = 40 * time.Second
 )
 
@@ -232,6 +232,7 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 	if len(timeout) > 0 {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
+
 	_, err := s.console.Expect(opts...)
 	if err != nil {
 		s.FailNow(
