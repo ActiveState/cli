@@ -46,7 +46,7 @@ func (suite *CheckpointTestSuite) TestGetLanguages() {
 	response, fail := model.FetchLanguagesForCommit(strfmt.UUID("00010001-0001-0001-0001-000100010001"))
 	suite.Require().NoError(fail.ToError())
 	suite.NotEmpty(response, "Returns checkpoints")
-	suite.Equal("Python", response[0], "Returns Python")
+	suite.Equal("Python", response[0].Name, "Returns Python")
 }
 
 func TestCheckpointSuite(t *testing.T) {

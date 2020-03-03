@@ -13,6 +13,14 @@ type provider struct {
 }
 
 func (p provider) IncrementBranch() (string, error) {
+	return p.run()
+}
+
+func (p provider) IncrementMaster() (string, error) {
+	return p.run()
+}
+
+func (p provider) run() (string, error) {
 	switch p.increment {
 	case patch:
 		return patch, nil
@@ -23,10 +31,6 @@ func (p provider) IncrementBranch() (string, error) {
 	default:
 		return "", errors.New("error")
 	}
-}
-
-func (p provider) IncrementMaster() (*semver.Version, error) {
-	return nil, nil
 }
 
 func TestService_IncrementVersion(t *testing.T) {
@@ -110,7 +114,11 @@ func TestService_IncrementVersion(t *testing.T) {
 				t.Errorf("VersionIncrementer.IncrementVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			var gotString string
+			if got != nil {
+				gotString = got.String()
+			}
+			if gotString != tt.want {
 				t.Errorf("VersionIncrementer.IncrementVersion() = %v, want %v", got, tt.want)
 			}
 		})
@@ -214,7 +222,11 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
+			var gotString string
+			if got != nil {
+				gotString = got.String()
+			}
+			if gotString != tt.want {
 				t.Errorf("VersionIncrementer.IncrementVersionPreRelease() = %v, want %v", got, tt.want)
 			}
 		})

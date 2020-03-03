@@ -25,8 +25,14 @@ var (
 // Checkpoint represents a collection of requirements
 type Checkpoint []*model.Requirement
 
+// Language represents a langauge requirement
+type Language struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
 // FetchLanguagesForProject fetches a list of language names for the given project
-func FetchLanguagesForProject(orgName string, projectName string) ([]string, *failures.Failure) {
+func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *failures.Failure) {
 	platProject, fail := FetchProjectByName(orgName, projectName)
 	if fail != nil {
 		return nil, fail
@@ -41,7 +47,7 @@ func FetchLanguagesForProject(orgName string, projectName string) ([]string, *fa
 }
 
 // FetchLanguagesForBranch fetches a list of language names for the given branch
-func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Failure) {
+func FetchLanguagesForBranch(branch *mono_models.Branch) ([]Language, *failures.Failure) {
 	if branch.CommitID == nil {
 		return nil, FailNoCommit.New(locale.T("err_no_commit"))
 	}
@@ -50,16 +56,19 @@ func FetchLanguagesForBranch(branch *mono_models.Branch) ([]string, *failures.Fa
 }
 
 // FetchLanguagesForCommit fetches a list of language names for the given commit
-func FetchLanguagesForCommit(commitID strfmt.UUID) ([]string, *failures.Failure) {
+func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, *failures.Failure) {
 	checkpoint, _, fail := FetchCheckpointForCommit(commitID)
 	if fail != nil {
 		return nil, fail
 	}
 
-	languages := []string{}
+	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			languages = append(languages, requirement.Requirement)
+			languages = append(languages, Language{
+				Name:    requirement.Requirement,
+				Version: requirement.VersionConstraint,
+			})
 		}
 	}
 
@@ -183,4 +192,19 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 	}
 
 	return result
+}
+
+func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) {
+	for _, req := range checkpoint {
+		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
+			continue
+		}
+		lang, fail := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
+		if fail != nil {
+			return nil, fail
+		}
+		return lang, nil
+	}
+
+	return nil, failures.FailNotFound.New(locale.T("err_no_language"))
 }

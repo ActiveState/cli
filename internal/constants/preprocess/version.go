@@ -34,7 +34,7 @@ type VersionIncrementer struct {
 // strings related to semver increment values (ie. major, minor, patch)
 type IncrementProvider interface {
 	IncrementBranch() (string, error)
-	IncrementMaster() (*semver.Version, error)
+	IncrementMaster() (string, error)
 }
 
 // NewVersionIncrementer returns a version service initialized with provider and environment information
@@ -54,30 +54,38 @@ func NewVersionIncrementer(provider IncrementProvider, branchName string, buildE
 
 // IncrementVersion bumps the master version based on the current build
 // environment and the increment provided
-func (s *VersionIncrementer) IncrementVersion() (string, error) {
-	version, err := s.incrementFromEnvironment()
-	if err != nil {
-		return "", err
-	}
-
-	return version.String(), nil
+func (v *VersionIncrementer) IncrementVersion() (*semver.Version, error) {
+	return v.incrementFromEnvironment()
 }
 
 // IncrementVersionRevision bumps the master version based on the current build
 // environment, the increment and revision string provided
-func (s *VersionIncrementer) IncrementVersionRevision(revision string) (string, error) {
-	version, err := s.incrementFromEnvironment()
+func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.Version, error) {
+	version, err := v.incrementFromEnvironment()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	prVersion, err := semver.NewPRVersion(revision)
 	if err != nil {
-		return "", fmt.Errorf("failed to create pre-release version number: %v", err)
+		return nil, fmt.Errorf("failed to create pre-release version number: %v", err)
 	}
 	version.Pre = []semver.PRVersion{prVersion}
 
-	return version.String(), nil
+	return version, nil
+}
+
+// IncrementString returns the string representation of the version bump
+// ie. patch, minor, or major
+func (v *VersionIncrementer) IncrementString() (string, error) {
+	if v.environment == localEnv {
+		return v.master.String(), nil
+	}
+
+	if v.branch == "master" {
+		return v.provider.IncrementMaster()
+	}
+	return v.provider.IncrementBranch()
 }
 
 func masterVersion() (*semver.Version, error) {
@@ -86,6 +94,7 @@ func masterVersion() (*semver.Version, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
 	match := regex.FindString(string(output))
 	if match == "" {
@@ -101,28 +110,32 @@ func masterVersion() (*semver.Version, error) {
 	return masterVersion, nil
 }
 
-func (s *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
-	switch s.environment {
+func (v *VersionIncrementer) incrementFromEnvironment() (*semver.Version, error) {
+	switch v.environment {
 	case localEnv:
-		return s.master, nil
+		return v.master, nil
 	case remoteEnv:
-		return s.incrementVersion()
+		return v.incrementVersion()
 	default:
 		return nil, errors.New("encountered unknown build environment")
 	}
 }
 
-func (s *VersionIncrementer) incrementVersion() (*semver.Version, error) {
-	if s.branch == "master" {
-		return s.provider.IncrementMaster()
-	}
+func (v *VersionIncrementer) incrementVersion() (*semver.Version, error) {
+	var increment string
+	var err error
 
-	increment, err := s.provider.IncrementBranch()
+	switch v.branch {
+	case "master":
+		increment, err = v.provider.IncrementMaster()
+	default:
+		increment, err = v.provider.IncrementBranch()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	copy := *s.master
+	copy := *v.master
 	switch increment {
 	case patch:
 		copy.Patch++

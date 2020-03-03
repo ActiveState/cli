@@ -26,6 +26,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
 	suite.activatePython("3")
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
+	suite.AppendEnv([]string{"SHELL", "zsh"})
+	suite.activatePython("3")
+	suite.ClearEnv()
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 	suite.T().Skip("Python 2 is not officially supported by the platform ATM.")
 	suite.activatePython("2")
