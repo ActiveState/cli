@@ -288,11 +288,10 @@ fi
 if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
-userprompt "Continue? [y/N/q] "
+userprompt "Continue? [y/N] "
 RESPONSE=$(userinput y)
-echo "$RESPONSE"
 case "$RESPONSE" in
-  [Qq])
+  [Nn]|*)
     error "Aborting installation"
     exit 0
     ;;
@@ -304,9 +303,6 @@ case "$RESPONSE" in
     fetchArtifact
     info "Installing to $INSTALLDIR..."
     mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
-    ;;
-  [Nn]|*)
-    continue
     ;;
 esac
 
@@ -385,9 +381,8 @@ if $NOPROMPT; then
 else
   # Prompt user to update users path, otherwise present manual
   # installation instructions
-  userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
+  userprompt "Allow \$PATH to be appended in your $RC_FILE? [y/N]"
   RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-  echo "$RESPONSE"
   if [ "$RESPONSE" != "y" ]; then
     manual_installation_instructions
   else
