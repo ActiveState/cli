@@ -66,15 +66,19 @@ func TestInitialize_Run(t *testing.T) {
 	type args struct {
 		namespace *project.Namespaced
 		path      string
-		language  language.Supported
+		language  string
+		version   string
 	}
 	tests := []struct {
-		name     string
-		wd       string
-		fields   fields
-		args     args
-		wantErr  error
-		wantPath string
+		name            string
+		wd              string
+		fields          fields
+		args            args
+		wantErr         error
+		wantPath        string
+		resultPath      string
+		wantLanguage    string
+		wantLangVersion string
 	}{
 		{
 			"namespace without path or language",
@@ -89,6 +93,9 @@ func TestInitialize_Run(t *testing.T) {
 			},
 			newLanguageUnsupportedError(""),
 			tempDir,
+			tempDir,
+			"",
+			"",
 		},
 		{
 			"namespace without path and with language",
@@ -100,10 +107,13 @@ func TestInitialize_Run(t *testing.T) {
 					Project: "bar",
 				},
 				path:     "",
-				language: language.Supported{language.Python2},
+				language: language.Python2.String(),
 			},
 			nil,
 			tempDir,
+			tempDir,
+			language.Python2.String(),
+			"",
 		},
 		{
 			"namespace without path and with language, wd has file",
@@ -115,10 +125,13 @@ func TestInitialize_Run(t *testing.T) {
 					Project: "bar",
 				},
 				path:     "",
-				language: language.Supported{language.Python2},
+				language: language.Python2.String(),
 			},
 			nil,
 			filepath.Join(tempDirWithFile, "foo/bar"),
+			filepath.Join(tempDirWithFile, "foo/bar"),
+			language.Python2.String(),
+			"",
 		},
 		{
 			"namespace with path and without language",
@@ -133,6 +146,9 @@ func TestInitialize_Run(t *testing.T) {
 			},
 			newLanguageUnsupportedError(""),
 			"",
+			tempDir,
+			"",
+			"",
 		},
 		{
 			"namespace with path and language",
@@ -144,10 +160,31 @@ func TestInitialize_Run(t *testing.T) {
 					Project: "bar",
 				},
 				path:     filepath.Join(tempDir, "2"),
-				language: language.Supported{language.Python2},
+				language: language.Python2.String(),
 			},
 			nil,
 			filepath.Join(tempDir, "2"),
+			filepath.Join(tempDir, "2"),
+			language.Python2.String(),
+			"",
+		},
+		{
+			"namespace with path, language and version",
+			tempDir,
+			fields{&configMock{}},
+			args{
+				namespace: &project.Namespaced{
+					Owner:   "foo",
+					Project: "bar",
+				},
+				path:     filepath.Join(tempDir, "3"),
+				language: language.Python2.String() + "@1.0",
+			},
+			nil,
+			filepath.Join(tempDir, "3"),
+			filepath.Join(tempDir, "3"),
+			language.Python2.String(),
+			"1.0",
 		},
 		{
 			"as.yaml already exists",
@@ -159,22 +196,24 @@ func TestInitialize_Run(t *testing.T) {
 					Project: "bar",
 				},
 				path:     tempDirWithConfig,
-				language: language.Supported{language.Python2},
+				language: language.Python2.String(),
 			},
 			failures.FailUserInput.New("err_init_file_exists", tempDirWithConfig),
+			"",
+			tempDir,
+			language.Python2.String(),
 			"",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			cfgMock := configMock{}
+
 			err := os.Chdir(tt.wd)
 			if err != nil {
 				t.Errorf("Initialize.run() chdir error = %v", err)
 			}
-			r := &Initialize{
-				config: tt.fields.config,
-			}
-			path, err := run(tt.fields.config, &RunParams{
+			path, err := run(&cfgMock, &RunParams{
 				Namespace: tt.args.namespace,
 				Path:      tt.args.path,
 				Language:  tt.args.language,
@@ -201,11 +240,23 @@ func TestInitialize_Run(t *testing.T) {
 					t.Errorf("Expected %s to contain %s/%s", contents, tt.args.namespace.Owner, tt.args.namespace.Project)
 				}
 			}
-			if tt.args.language.Recognized() && tt.args.language.Executable().Available() && len(r.config.(*configMock).set) == 0 {
+			resultPath := resolvePath(t, tt.resultPath)
+			if cfgMock.set[resultPath+"_language"] != tt.wantLanguage {
 				t.Errorf("Expected config to have been written for language")
+			}
+			if cfgMock.set[resultPath+"_language_version"] != tt.wantLangVersion {
+				t.Errorf("Expected config to have been written for language version")
 			}
 		})
 	}
+}
+
+func resolvePath(t *testing.T, path string) string {
+	r, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Errorf("t.Errorf: %v", err)
+	}
+	return r
 }
 
 func confirmPath(path, want string) bool {

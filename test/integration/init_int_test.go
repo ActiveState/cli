@@ -51,10 +51,17 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
 	suite.Require().NoError(err)
 
-	suite.runInitTest(tempDir, sampleYAML, "--path", tempDir)
+	suite.runInitTest(tempDir, sampleYAML, "python3", "--path", tempDir)
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(path, config string, flags ...string) {
+func (suite *InitIntegrationTestSuite) TestInit_Version() {
+	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
+	suite.Require().NoError(err)
+
+	suite.runInitTest(tempDir, sampleYAML, "python3@1.0")
+}
+
+func (suite *InitIntegrationTestSuite) runInitTest(path, config string, args ...string) {
 	if path == "" {
 		var err error
 		path, err = ioutil.TempDir("", "InitIntegrationTestSuite")
@@ -67,9 +74,9 @@ func (suite *InitIntegrationTestSuite) runInitTest(path, config string, flags ..
 		_ = os.RemoveAll(path)
 	}()
 
-	args := append([]string{"init", namespace, "python3"}, flags...)
+	computedArgs := append([]string{"init", namespace}, args...)
 
-	suite.Spawn(args...)
+	suite.Spawn(computedArgs...)
 	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
 	suite.Wait()
 
