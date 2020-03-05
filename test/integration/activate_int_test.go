@@ -125,7 +125,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
 
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/Python3"
+project: "https://platform.activestate.com/ActiveState-CLI/Python2"
 branch: %s
 version: %s
 `, constants.BranchName, constants.Version))
@@ -148,10 +148,10 @@ version: %s
 	suite.ExpectExitCode(0)
 
 	suite.Spawn("activate")
-	suite.Expect("Activating state: ActiveState-CLI/Python3")
+	suite.Expect("Activating state: ActiveState-CLI/Python2", 120*time.Second)
 
 	// not waiting for activation, as we test that part in a different test
-	suite.WaitForInput()
+	suite.WaitForInput(120 * time.Second)
 	suite.SendLine("exit")
 	suite.ExpectExitCode(0)
 }

@@ -201,6 +201,10 @@ func (m *MetaData) prepareMacPython() *failures.Failure {
 
 	m.setPythonEnv()
 
+	if !fileutils.DirExists(libDir) {
+		return nil
+	}
+
 	files, err := ioutil.ReadDir(libDir)
 	if err != nil {
 		return failures.FailOS.Wrap(err)

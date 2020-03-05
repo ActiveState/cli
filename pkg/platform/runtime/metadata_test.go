@@ -79,7 +79,6 @@ func (suite *MetaDataTestSuite) TestMetaData_MakeBackwardsCompatible() {
 	suite.Require().NoError(fail.ToError())
 	defer tempBinary.Close()
 
-	fmt.Println(tempDir)
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
 	suite.Require().NoError(fail.ToError())
