@@ -46,7 +46,7 @@ func New(opts Opts) (*ReqsImport, error) {
 // Init is a convenience wrapper for New.
 func Init() *ReqsImport {
 	svcURL := api.GetServiceURL(api.ServiceRequirementsImport)
-	url := svcURL.Scheme + path.Join(svcURL.Host, svcURL.Path)
+	url := svcURL.Scheme + "://" + path.Join(svcURL.Host, svcURL.Path)
 
 	opts := Opts{
 		ReqsvcURL: url,
