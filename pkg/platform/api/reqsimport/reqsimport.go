@@ -93,6 +93,18 @@ type TranslationRespMsg struct {
 	LineErrs  []TranslationLineError `json:"errors,omitempty"`
 }
 
+// TranslationLineError represents an error reported by the requirements
+// translation service regarding a single line processed from the request.
+type TranslationLineError struct {
+	ErrMsg string `json:"errorText,omitempty"`
+	PkgTxt string `json:"packageText,omitempty"`
+}
+
+// Error implements the error interface.
+func (e *TranslationLineError) Error() string {
+	return fmt.Sprintf("line %q: %s", e.PkgTxt, e.ErrMsg)
+}
+
 // TranslationResponseError contains multiple error messages and allows them to
 // be handled as a common error.
 type TranslationResponseError struct {
@@ -111,18 +123,6 @@ func (e *TranslationResponseError) Error() string {
 	}
 
 	return locale.Tr("reqsvc_err_line_errors", msgs)
-}
-
-// TranslationLineError represents an error reported by the requirements
-// translation service regarding a single line processed from the request.
-type TranslationLineError struct {
-	ErrMsg string `json:"errorText,omitempty"`
-	PkgTxt string `json:"packageText,omitempty"`
-}
-
-// Error implements the error interface.
-func (e *TranslationLineError) Error() string {
-	return fmt.Sprintf("line %q: %s", e.PkgTxt, e.ErrMsg)
 }
 
 func postJSON(client *http.Client, url string, reqPayload, respPayload interface{}) error {
