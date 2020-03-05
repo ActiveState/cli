@@ -262,7 +262,7 @@ func CommitPackage(projectOwner, projectName string, operation Operation, packag
 
 // CommitChangeset commits multiple changes in one commit
 func CommitChangeset(projOwner, projName, commitMsg string, changeset Changeset) *failures.Failure {
-	branch, fail := DefaultBranchByProjectInfo(projOwner, projName)
+	branch, fail := DefaultBranchForProjectName(projOwner, projName)
 	if fail != nil {
 		return fail
 	}
