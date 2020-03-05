@@ -2,8 +2,10 @@ package runtime
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -108,12 +110,21 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 				Path:     "bin",
 				Relative: true,
 			},
+			MetaDataBinary{
+				Path:     "Library/Frameworks/Python.framework/Versions/Current/bin/",
+				Relative: true,
+			},
 		}
 	}
 
 	// Python
 	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
 		logging.Debug("Detected Python artifact, ensuring backwards compatibility")
+
+		// For Python on MacOS we don't need a relocation DIR
+		if runtime.GOOS == "darwin" {
+			return m.prepareMacPython()
+		}
 
 		// RelocationTargetBinaries
 		if m.RelocationTargetBinaries == "" {
@@ -124,6 +135,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 			}
 		}
 		// RelocationDir
+		logging.Debug("Metadata relocation dir: %s", m.RelocationDir)
 		if m.RelocationDir == "" {
 			var fail *failures.Failure
 			if m.RelocationDir, fail = m.pythonRelocationDir(); fail != nil {
@@ -131,12 +143,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 			}
 		}
 		// Env
-		if _, exists := m.Env["PYTHONPATH"]; !exists {
-			m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
-		}
-		if os.Getenv("PYTHONIOENCODING") == "" {
-			m.Env["PYTHONIOENCODING"] = "utf-8"
-		}
+		m.setPythonEnv()
 
 		//Perl
 	} else if m.hasBinaryFile(constants.ActivePerlExecutable) {
@@ -177,4 +184,41 @@ func (m *MetaData) hasBinaryFile(executable string) bool {
 	}
 
 	return false
+}
+
+func (m *MetaData) setPythonEnv() {
+	if _, exists := m.Env["PYTHONPATH"]; !exists {
+		m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
+	}
+	if os.Getenv("PYTHONIOENCODING") == "" {
+		m.Env["PYTHONIOENCODING"] = "utf-8"
+	}
+}
+
+func (m *MetaData) prepareMacPython() *failures.Failure {
+	libDir := filepath.Join(m.Path, "Library/Frameworks/Python.framework/Versions/Current/lib")
+	dirRe := regexp.MustCompile(`python\d.\d`)
+
+	m.setPythonEnv()
+
+	files, err := ioutil.ReadDir(libDir)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	var sitePackages string
+	for _, f := range files {
+		if !f.IsDir() {
+			continue
+		}
+		if dirRe.MatchString(f.Name()) {
+			sitePackages = filepath.Join(libDir, f.Name(), "site-packages")
+		}
+	}
+
+	if fileutils.DirExists(sitePackages) {
+		m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
+	}
+
+	return nil
 }
