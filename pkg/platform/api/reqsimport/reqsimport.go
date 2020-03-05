@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	translateContentType = "application/json"
+	jsonContentType = "application/json"
 )
 
 // Opts contains the options available for the primary package type ReqsImport.
 type Opts struct {
-	TranslateURL string
+	ReqsvcURL string
 }
 
 // ReqsImport represents a reusable http.Client and related options.
@@ -49,7 +49,7 @@ func Init() *ReqsImport {
 	url := svcURL.Scheme + path.Join(svcURL.Host, svcURL.Path)
 
 	opts := Opts{
-		TranslateURL: url,
+		ReqsvcURL: url,
 	}
 
 	ri, err := New(opts)
@@ -63,44 +63,44 @@ func Init() *ReqsImport {
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
 func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
-	reqPayload := &ReqsTxtTranslateReqMsg{
+	reqPayload := &TranslationReqMsg{
 		Data: string(data),
 	}
-	respPayload := &ReqsTxtTranslateRespMsg{}
+	respPayload := &TranslationRespMsg{}
 
-	err := postJSON(ri.client, ri.opts.TranslateURL, reqPayload, respPayload)
+	err := postJSON(ri.client, ri.opts.ReqsvcURL, reqPayload, respPayload)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(respPayload.LineErrs) > 0 {
-		return nil, &TranslateResponseError{respPayload.LineErrs}
+		return nil, &TranslationResponseError{respPayload.LineErrs}
 	}
 
 	return respPayload.Changeset, nil
 }
 
-// ReqsTxtTranslateReqMsg represents the message sent to the requirements
+// TranslationReqMsg represents the message sent to the requirements
 // translation service.
-type ReqsTxtTranslateReqMsg struct {
+type TranslationReqMsg struct {
 	Data string `json:"requirements"`
 }
 
-// ReqsTxtTranslateRespMsg represents the message returned by the requirements
+// TranslationRespMsg represents the message returned by the requirements
 // translation service.
-type ReqsTxtTranslateRespMsg struct {
-	Changeset model.Changeset      `json:"changeset,omitempty"`
-	LineErrs  []TranslateLineError `json:"errors,omitempty"`
+type TranslationRespMsg struct {
+	Changeset model.Changeset        `json:"changeset,omitempty"`
+	LineErrs  []TranslationLineError `json:"errors,omitempty"`
 }
 
-// TranslateResponseError contains multiple error messages and allows them to
+// TranslationResponseError contains multiple error messages and allows them to
 // be handled as a common error.
-type TranslateResponseError struct {
-	LineErrs []TranslateLineError
+type TranslationResponseError struct {
+	LineErrs []TranslationLineError
 }
 
 // Error implements the error interface.
-func (e *TranslateResponseError) Error() string {
+func (e *TranslationResponseError) Error() string {
 	var msgs, sep string
 	for _, lineErr := range e.LineErrs {
 		msgs += sep + lineErr.Error()
@@ -113,15 +113,15 @@ func (e *TranslateResponseError) Error() string {
 	return locale.Tr("reqsvc_err_line_errors", msgs)
 }
 
-// TranslateLineError represents an error reported by the requirements
-// translation service regarding a single line in the request.
-type TranslateLineError struct {
+// TranslationLineError represents an error reported by the requirements
+// translation service regarding a single line processed from the request.
+type TranslationLineError struct {
 	ErrMsg string `json:"errorText,omitempty"`
 	PkgTxt string `json:"packageText,omitempty"`
 }
 
 // Error implements the error interface.
-func (e *TranslateLineError) Error() string {
+func (e *TranslationLineError) Error() string {
 	return fmt.Sprintf("line %q: %s", e.PkgTxt, e.ErrMsg)
 }
 
@@ -132,7 +132,7 @@ func postJSON(client *http.Client, url string, reqPayload, respPayload interface
 	}
 
 	logging.Debug("POSTing JSON")
-	resp, err := client.Post(url, translateContentType, &buf)
+	resp, err := client.Post(url, jsonContentType, &buf)
 	if err != nil {
 		return err
 	}
