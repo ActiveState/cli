@@ -63,34 +63,21 @@ func Init() *ReqsImport {
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
 func (ri *ReqsImport) Changeset(data []byte) (model.Changeset, error) {
-	reqMsg := ReqsTxtTranslateReqMsg{
+	reqPayload := &ReqsTxtTranslateReqMsg{
 		Data: string(data),
 	}
+	respPayload := &ReqsTxtTranslateRespMsg{}
 
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(reqMsg); err != nil {
-		return nil, err
-	}
-
-	url := ri.opts.TranslateURL
-
-	logging.Debug("POSTing data to reqsvc")
-	resp, err := ri.client.Post(url, translateContentType, &buf)
+	err := postJSON(ri.client, ri.opts.TranslateURL, reqPayload, respPayload)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close() //nolint
 
-	var respMsg ReqsTxtTranslateRespMsg
-	if err := json.NewDecoder(resp.Body).Decode(&respMsg); err != nil {
-		return nil, err
+	if len(respPayload.LineErrs) > 0 {
+		return nil, &TranslateResponseError{respPayload.LineErrs}
 	}
 
-	if len(respMsg.LineErrs) > 0 {
-		return nil, &TranslateResponseError{respMsg.LineErrs}
-	}
-
-	return respMsg.Changeset, nil
+	return respPayload.Changeset, nil
 }
 
 // ReqsTxtTranslateReqMsg represents the message sent to the requirements
@@ -136,4 +123,20 @@ type TranslateLineError struct {
 // Error implements the error interface.
 func (e *TranslateLineError) Error() string {
 	return fmt.Sprintf("line %q: %s", e.PkgTxt, e.ErrMsg)
+}
+
+func postJSON(client *http.Client, url string, reqPayload, respPayload interface{}) error {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(reqPayload); err != nil {
+		return err
+	}
+
+	logging.Debug("POSTing JSON")
+	resp, err := client.Post(url, translateContentType, &buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close() //nolint
+
+	return json.NewDecoder(resp.Body).Decode(&respPayload)
 }
