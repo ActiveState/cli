@@ -270,6 +270,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		suite.PrepareFile(reqsFilePath, reqsData)
 
 		suite.Spawn("packages", "import")
+		suite.Expect("state pull")
 		suite.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {

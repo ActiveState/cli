@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -72,6 +73,8 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		failures.Handle(fail, locale.T("err_cannot_commit_changeset"))
 		return
 	}
+
+	print.Warning(locale.T("package_update_config_file"))
 }
 
 func importChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
