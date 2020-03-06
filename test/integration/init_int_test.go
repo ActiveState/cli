@@ -28,11 +28,11 @@ var (
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest("", sampleYAML)
+	suite.runInitTest("", sampleYAML, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.runInitTest("", locale.T("editor_yaml"), "--skeleton", "editor")
+	suite.runInitTest("", locale.T("editor_yaml"), "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
@@ -42,6 +42,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.runInitTest(
 		tempDir,
 		locale.T("editor_yaml"),
+		"python3",
 		"--path", tempDir,
 		"--skeleton", "editor",
 	)
