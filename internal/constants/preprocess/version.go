@@ -66,7 +66,7 @@ func (v *VersionIncrementer) IncrementVersionRevision(revision string) (*semver.
 		return nil, err
 	}
 
-	prVersion, err := semver.NewPRVersion(revision)
+	prVersion, err := semver.NewPRVersion("SHA" + revision)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pre-release version number: %v", err)
 	}
@@ -95,7 +95,7 @@ func masterVersion() (*semver.Version, error) {
 		return nil, err
 	}
 
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-[a-f0-9]+`)
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
 	match := regex.FindString(string(output))
 	if match == "" {
 		return nil, errors.New("could not determine master version")
