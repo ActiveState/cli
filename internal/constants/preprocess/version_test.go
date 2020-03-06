@@ -126,7 +126,7 @@ func TestService_IncrementVersion(t *testing.T) {
 }
 
 func TestService_IncrementVersionPreRelease(t *testing.T) {
-	versionString := "0.2.2-1a2b3c4d"
+	versionString := "0.2.2-SHA1a2b3c4d"
 	versionSemver, err := semver.New("0.2.2")
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +173,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    provider{patch},
 			},
 			args:    args{revision},
-			want:    fmt.Sprintf("%s-%s", "0.2.3", preRelease),
+			want:    fmt.Sprintf("%s-SHA%s", "0.2.3", preRelease),
 			wantErr: false,
 		},
 		{
@@ -184,7 +184,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    provider{minor},
 			},
 			args:    args{revision},
-			want:    fmt.Sprintf("%s-%s", "0.3.0", preRelease),
+			want:    fmt.Sprintf("%s-SHA%s", "0.3.0", preRelease),
 			wantErr: false,
 		},
 		{
@@ -195,7 +195,7 @@ func TestService_IncrementVersionPreRelease(t *testing.T) {
 				provider:    provider{major},
 			},
 			args:    args{revision},
-			want:    fmt.Sprintf("%s-%s", "1.0.0", preRelease),
+			want:    fmt.Sprintf("%s-SHA%s", "1.0.0", preRelease),
 			wantErr: false,
 		},
 		{
