@@ -106,6 +106,9 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
+	suite.LoginAsPersistentUser()
+	defer suite.LogoutUser()
+
 	suite.Spawn("activate")
 	suite.Expect("Activating state: ActiveState-CLI/Python3")
 	suite.WaitForInput(10 * time.Second)
@@ -126,6 +129,9 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
+	suite.LoginAsPersistentUser()
+	defer suite.LogoutUser()
+
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	// interrupt the first (very long) sleep
@@ -139,6 +145,9 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
+	suite.LoginAsPersistentUser()
+	defer suite.LogoutUser()
+
 	suite.Spawn("run", "test-interrupt")
 	suite.Expect("Start of script")
 	suite.SendCtrlC()
@@ -153,6 +162,9 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
+	suite.LoginAsPersistentUser()
+	defer suite.LogoutUser()
+
 	suite.Spawn("run", "helloWorld")
 	suite.Expect("Hello World!")
 }

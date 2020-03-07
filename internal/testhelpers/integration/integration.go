@@ -322,6 +322,12 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.ExpectExitCode(0)
 }
 
+func (s *Suite) LogoutUser() {
+	s.Spawn("auth", "logout")
+	s.Expect("logged out")
+	s.ExpectExitCode(0)
+}
+
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	ps, err := s.Wait(timeout...)
