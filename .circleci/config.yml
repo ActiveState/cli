@@ -155,7 +155,6 @@ jobs:
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
-jobs:
   test-linux:
     environment:
       TEST_RESULTS: /tmp/test-results
