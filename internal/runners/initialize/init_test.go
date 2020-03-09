@@ -240,12 +240,11 @@ func TestInitialize_Run(t *testing.T) {
 					t.Errorf("Expected %s to contain %s/%s", contents, tt.args.namespace.Owner, tt.args.namespace.Project)
 				}
 			}
-			resultPath := resolvePath(t, tt.resultPath)
-			if cfgMock.set[resultPath+"_language"] != tt.wantLanguage {
-				t.Errorf("Expected config to have been written for language, config: %v, resultPath: %s", cfgMock.set, resultPath)
+			if cfgMock.set[tt.resultPath+"_language"] != tt.wantLanguage {
+				t.Errorf("Expected config to have been written for language, config: %v, resultPath: %s", cfgMock.set, tt.resultPath)
 			}
-			if cfgMock.set[resultPath+"_language_version"] != tt.wantLangVersion {
-				t.Errorf("Expected config to have been written for language version, config: %v, resultPath: %s", cfgMock.set, resultPath)
+			if cfgMock.set[tt.resultPath+"_language_version"] != tt.wantLangVersion {
+				t.Errorf("Expected config to have been written for language version, config: %v, resultPath: %s", cfgMock.set, tt.resultPath)
 			}
 		})
 	}
