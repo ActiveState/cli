@@ -133,6 +133,7 @@ func (m *MetaData) prepareMacOS() *failures.Failure {
 			}
 			if dirRe.MatchString(f.Name()) {
 				sitePackages = filepath.Join(libDir, f.Name(), "site-packages")
+				break
 			}
 		}
 
