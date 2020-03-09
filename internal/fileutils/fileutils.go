@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -125,6 +126,15 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 // IsBinary checks if the given bytes are for a binary file
 func IsBinary(fileBytes []byte) bool {
 	return bytes.IndexByte(fileBytes, nullByte) != -1
+}
+
+// TargetExists checks if the given file or folder exists
+func TargetExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 // FileExists checks if the given file (not folder) exists
@@ -599,4 +609,36 @@ func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
 	}
 
 	return copyFiles(src, dst, true)
+}
+
+// Join is identical to filepath.Join except that it doesn't clean the input, allowing for
+// more consistent behavior
+func Join(elem ...string) string {
+	for i, e := range elem {
+		if e != "" {
+			return strings.Join(elem[i:], string(filepath.Separator))
+		}
+	}
+	return ""
+}
+
+// PrepareDir prepares a path by ensuring it exists and the path is consistent
+func PrepareDir(path string) (string, error) {
+	fail := MkdirUnlessExists(path)
+	if fail != nil {
+		return "", fail
+	}
+
+	var err error
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	path, err = filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
 }

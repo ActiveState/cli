@@ -108,8 +108,9 @@ func MakeByShell(shell string) Language {
 
 // MakeByName will retrieve a language by a given name after lower-casing.
 func MakeByName(name string) Language {
+	nameParts := strings.Split(name, "@")
 	for i, data := range lookup {
-		if strings.ToLower(name) == data.name {
+		if strings.ToLower(nameParts[0]) == data.name {
 			return Language(i)
 		}
 	}
@@ -126,12 +127,12 @@ func (l Language) data() languageData {
 }
 
 // String implements the fmt.Stringer interface.
-func (l *Language) String() string {
+func (l Language) String() string {
 	return l.data().name
 }
 
 // Text returns the human-readable value.
-func (l *Language) Text() string {
+func (l Language) Text() string {
 	return l.data().text
 }
 

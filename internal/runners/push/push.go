@@ -16,12 +16,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-type configAble interface {
-	Set(key string, value interface{})
+type configGetter interface {
+	GetString(key string) string
 }
 
 type Push struct {
-	config *viper.Viper
+	config configGetter
 }
 
 func NewPush(config *viper.Viper) *Push {
@@ -63,14 +63,14 @@ func (r *Push) Run() *failures.Failure {
 		return nil
 	}
 
-	lang, fail := r.languageForPath(wd)
+	lang, langVersion, fail := r.languageForPath(wd)
 	if fail != nil {
 		return fail
 	}
 
 	print.Info(locale.Tr("push_creating_project", pj.Owner(), pj.Name()))
 	var commitID strfmt.UUID
-	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang)
+	pjm, commitID, fail = model.CreateProject(pj.Owner(), pj.Name(), model.HostPlatform, lang, langVersion)
 	if fail != nil {
 		return fail
 	}
@@ -81,16 +81,18 @@ func (r *Push) Run() *failures.Failure {
 	return nil
 }
 
-func (r *Push) languageForPath(path string) (*language.Supported, *failures.Failure) {
+func (r *Push) languageForPath(path string) (*language.Supported, string, *failures.Failure) {
+	languageVersion := r.config.GetString(path + "_language_version")
+
 	languageName := r.config.GetString(path + "_language")
 	if languageName == "" {
-		return nil, nil
+		return nil, languageVersion, nil
 	}
 
 	lang := language.Supported{language.MakeByName(languageName)}
 	if !lang.Recognized() {
-		return nil, failures.FailUserInput.New("err_push_invalid_language", languageName)
+		return nil, languageVersion, failures.FailUserInput.New("err_push_invalid_language", languageName)
 	}
 
-	return &lang, nil
+	return &lang, languageVersion, nil
 }
