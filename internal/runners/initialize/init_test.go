@@ -231,7 +231,7 @@ func TestInitialize_Run(t *testing.T) {
 			if confirmPath(path, tt.wantPath) {
 				t.Errorf("Initialize.run() path = %s, wantPath %s", path, tt.wantPath)
 			}
-			configFile := filepath.Join(tt.wantPath, constants.ConfigFileName)
+			configFile := fileutils.Join(tt.wantPath, constants.ConfigFileName)
 			if !fileutils.FileExists(configFile) {
 				t.Errorf("Expected file to exist: %s", configFile)
 			} else {

@@ -107,20 +107,16 @@ func run(config setter, params *RunParams) (string, error) {
 
 	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
 
-	path, err := filepath.EvalSymlinks(params.Path)
-	if err != nil {
-		return "", err
-	}
 	if params.language.Recognized() {
 		// Store language for when we run 'state push'
-		config.Set(path+"_language", params.language.String())
-		config.Set(path+"_language_version", params.version)
+		config.Set(params.Path+"_language", params.language.String())
+		config.Set(params.Path+"_language_version", params.version)
 	}
 
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
-		Directory: path,
+		Directory: params.Path,
 	}
 
 	if params.Style == SkeletonEditor {

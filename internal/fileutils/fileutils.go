@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -599,4 +600,15 @@ func MoveAllFilesCrossDisk(src, dst string) *failures.Failure {
 	}
 
 	return copyFiles(src, dst, true)
+}
+
+// Join is identical to filepath.Join except that it doesn't clean the input, allowing for
+// more consistent behavior
+func Join(elem ...string) string {
+	for i, e := range elem {
+		if e != "" {
+			return strings.Join(elem[i:], string(filepath.Separator))
+		}
+	}
+	return ""
 }
