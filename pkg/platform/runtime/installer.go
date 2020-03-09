@@ -314,6 +314,8 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	upb.ReScale(numUnpackedFiles)
 
 	// Detect the install dir
+	// Python runtimes on MacOS work where they are unarchived so we do not
+	// need to do any detection of the install directory
 	var tmpInstallDir string
 	if runtime.GOOS == "darwin" {
 		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
