@@ -79,6 +79,11 @@ func (suite *MetaDataTestSuite) TestMetaData_MakeBackwardsCompatible() {
 	suite.Require().NoError(fail.ToError())
 	defer tempBinary.Close()
 
+	if rt.GOOS == "darwin" {
+		fail := fileutils.Mkdir("Library/Frameworks/Python.framework/Versions/Current/lib")
+		suite.Require().NoError(fail.ToError())
+	}
+
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))
 	suite.Require().NoError(fail.ToError())

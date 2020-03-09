@@ -123,7 +123,7 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 
 		// For Python on MacOS we don't need a relocation DIR
 		if runtime.GOOS == "darwin" {
-			return m.prepareMacPython()
+			return m.backwardsCompatibleMac()
 		}
 
 		// RelocationTargetBinaries
@@ -135,7 +135,6 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 			}
 		}
 		// RelocationDir
-		logging.Debug("Metadata relocation dir: %s", m.RelocationDir)
 		if m.RelocationDir == "" {
 			var fail *failures.Failure
 			if m.RelocationDir, fail = m.pythonRelocationDir(); fail != nil {
@@ -195,15 +194,11 @@ func (m *MetaData) setPythonEnv() {
 	}
 }
 
-func (m *MetaData) prepareMacPython() *failures.Failure {
+func (m *MetaData) backwardsCompatibleMac() *failures.Failure {
 	libDir := filepath.Join(m.Path, "Library/Frameworks/Python.framework/Versions/Current/lib")
 	dirRe := regexp.MustCompile(`python\d.\d`)
 
 	m.setPythonEnv()
-
-	if !fileutils.DirExists(libDir) {
-		return nil
-	}
 
 	files, err := ioutil.ReadDir(libDir)
 	if err != nil {
