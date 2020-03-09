@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -46,19 +47,19 @@ func TestInitialize_Run(t *testing.T) {
 		panic(fmt.Sprintf("Cannot get wd: %v", err))
 	}
 
-	tempDirWithConfig := filepath.Join(fileutils.TempDirUnsafe(), "withConfig")
+	tempDirWithConfig := fileutils.Join(fileutils.TempDirUnsafe(), "withConfig")
 	fail := fileutils.Mkdir(tempDirWithConfig)
 	if fail != nil {
 		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
 	}
-	fileutils.WriteFile(filepath.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
+	fileutils.WriteFile(fileutils.Join(tempDirWithConfig, constants.ConfigFileName), []byte(""))
 
-	tempDirWithFile := filepath.Join(fileutils.TempDirUnsafe(), "withFile")
+	tempDirWithFile := fileutils.Join(fileutils.TempDirUnsafe(), "withFile")
 	fail = fileutils.Mkdir(tempDirWithConfig)
 	if fail != nil {
 		panic(fmt.Sprintf("Cannot create dir: %v", fail.ToError()))
 	}
-	fileutils.WriteFile(filepath.Join(tempDirWithFile, "bogus"), []byte(""))
+	fileutils.WriteFile(fileutils.Join(tempDirWithFile, "bogus"), []byte(""))
 
 	type fields struct {
 		config setter
@@ -128,8 +129,8 @@ func TestInitialize_Run(t *testing.T) {
 				language: language.Python2.String(),
 			},
 			nil,
-			filepath.Join(tempDirWithFile, "foo/bar"),
-			filepath.Join(tempDirWithFile, "foo/bar"),
+			osutil.PreparePath(fileutils.Join(tempDirWithFile, "foo/bar")),
+			osutil.PreparePath(fileutils.Join(tempDirWithFile, "foo/bar")),
 			language.Python2.String(),
 			"",
 		},
@@ -142,7 +143,7 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path: filepath.Join(tempDir, "1"),
+				path: fileutils.Join(tempDir, "1"),
 			},
 			newLanguageUnsupportedError(""),
 			"",
@@ -159,12 +160,12 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path:     filepath.Join(tempDir, "2"),
+				path:     fileutils.Join(tempDir, "2"),
 				language: language.Python2.String(),
 			},
 			nil,
-			filepath.Join(tempDir, "2"),
-			filepath.Join(tempDir, "2"),
+			fileutils.Join(tempDir, "2"),
+			fileutils.Join(tempDir, "2"),
 			language.Python2.String(),
 			"",
 		},
@@ -177,12 +178,12 @@ func TestInitialize_Run(t *testing.T) {
 					Owner:   "foo",
 					Project: "bar",
 				},
-				path:     filepath.Join(tempDir, "3"),
+				path:     fileutils.Join(tempDir, "3"),
 				language: language.Python2.String() + "@1.0",
 			},
 			nil,
-			filepath.Join(tempDir, "3"),
-			filepath.Join(tempDir, "3"),
+			fileutils.Join(tempDir, "3"),
+			fileutils.Join(tempDir, "3"),
 			language.Python2.String(),
 			"1.0",
 		},

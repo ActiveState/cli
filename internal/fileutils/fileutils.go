@@ -128,6 +128,15 @@ func IsBinary(fileBytes []byte) bool {
 	return bytes.IndexByte(fileBytes, nullByte) != -1
 }
 
+// TargetExists checks if the given file or folder exists
+func TargetExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // FileExists checks if the given file (not folder) exists
 func FileExists(path string) bool {
 	fi, err := os.Stat(path)
