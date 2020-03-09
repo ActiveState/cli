@@ -74,7 +74,14 @@ func InitMetaData(installDir string) (*MetaData, *failures.Failure) {
 	}
 
 	metaData.Path = installDir
-	fail := metaData.MakeBackwardsCompatible()
+	var fail *failures.Failure
+	if runtime.GOOS == "darwin" {
+		// python runtimes on MacOS do not include metadata files as
+		// they should be runnable from where they are unarchived
+		fail = metaData.prepareMacOS()
+	} else {
+		fail = metaData.MakeBackwardsCompatible()
+	}
 	if fail != nil {
 		return nil, fail
 	}
@@ -100,6 +107,43 @@ func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
 	return metaData, nil
 }
 
+func (m *MetaData) prepareMacOS() *failures.Failure {
+	m.BinaryLocations = []MetaDataBinary{
+		MetaDataBinary{
+			Path:     "Library/Frameworks/Python.framework/Versions/Current/bin/",
+			Relative: true,
+		},
+	}
+
+	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
+		libDir := filepath.Join(m.Path, "Library/Frameworks/Python.framework/Versions/Current/lib")
+		dirRe := regexp.MustCompile(`python\d.\d`)
+
+		m.setPythonEnv()
+
+		files, err := ioutil.ReadDir(libDir)
+		if err != nil {
+			return failures.FailOS.Wrap(err)
+		}
+
+		var sitePackages string
+		for _, f := range files {
+			if !f.IsDir() {
+				continue
+			}
+			if dirRe.MatchString(f.Name()) {
+				sitePackages = filepath.Join(libDir, f.Name(), "site-packages")
+			}
+		}
+
+		if fileutils.DirExists(sitePackages) {
+			m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
+		}
+	}
+
+	return nil
+}
+
 // MakeBackwardsCompatible will assume the LibLocation in cases where the metadata
 // doesn't contain it and we know what it should be
 func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
@@ -120,11 +164,6 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 	// Python
 	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
 		logging.Debug("Detected Python artifact, ensuring backwards compatibility")
-
-		// For Python on MacOS we don't need a relocation DIR
-		if runtime.GOOS == "darwin" {
-			return m.backwardsCompatibleMac()
-		}
 
 		// RelocationTargetBinaries
 		if m.RelocationTargetBinaries == "" {
@@ -192,32 +231,4 @@ func (m *MetaData) setPythonEnv() {
 	if os.Getenv("PYTHONIOENCODING") == "" {
 		m.Env["PYTHONIOENCODING"] = "utf-8"
 	}
-}
-
-func (m *MetaData) backwardsCompatibleMac() *failures.Failure {
-	libDir := filepath.Join(m.Path, "Library/Frameworks/Python.framework/Versions/Current/lib")
-	dirRe := regexp.MustCompile(`python\d.\d`)
-
-	m.setPythonEnv()
-
-	files, err := ioutil.ReadDir(libDir)
-	if err != nil {
-		return failures.FailOS.Wrap(err)
-	}
-
-	var sitePackages string
-	for _, f := range files {
-		if !f.IsDir() {
-			continue
-		}
-		if dirRe.MatchString(f.Name()) {
-			sitePackages = filepath.Join(libDir, f.Name(), "site-packages")
-		}
-	}
-
-	if fileutils.DirExists(sitePackages) {
-		m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
-	}
-
-	return nil
 }
