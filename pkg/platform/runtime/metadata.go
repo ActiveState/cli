@@ -154,10 +154,6 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 				Path:     "bin",
 				Relative: true,
 			},
-			MetaDataBinary{
-				Path:     "Library/Frameworks/Python.framework/Versions/Current/bin/",
-				Relative: true,
-			},
 		}
 	}
 
