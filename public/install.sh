@@ -272,45 +272,40 @@ fi
 
 if [ -z "$INSTALLDIR" ]; then
   error "Could not install state tool to PATH."
-  error "You can use the '-t' flag to denote an install target."
+  error "You do not have write access to any directories currently on PATH."
+  error "You can use the '-t' flag to denote an install target, "
+  error "otherwise please ensure you have write permissions to a directory that's on your PATH."
   exit 1
 fi
 
 # Install to the determined directory.
-while "true"; do
-  info "Installing to $INSTALLDIR"
-  if [ ! -e "$INSTALLDIR" ]; then
-    info "NOTE: $INSTALLDIR will be created"
-  elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
-    warn "WARNING: overwriting previous installation"
-  fi
-  if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
-    warn "WARNING: installing elsewhere from previous installation"
-  fi
-  userprompt "Continue? [y/N/q] "
-  RESPONSE=$(userinput y)
-  case "$RESPONSE" in
-    [Qq])
-      error "Aborting installation"
-      exit 0
-      ;;
-    [Yy])
-      # Install.
-      if [ ! -e "$INSTALLDIR" ]; then
-        mkdir -p "$INSTALLDIR" || continue
-      fi
-      fetchArtifact
-      info "Installing to $INSTALLDIR..."
-      mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
-      if [ $? -eq 0 ]; then
-        break
-      fi
-      ;;
-    [Nn]|*)
-      continue
-      ;;
-  esac
-done
+info "Installing to $INSTALLDIR"
+if [ ! -e "$INSTALLDIR" ]; then
+  info "NOTE: $INSTALLDIR will be created"
+elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
+  warn "WARNING: overwriting previous installation"
+fi
+if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
+  warn "WARNING: installing elsewhere from previous installation"
+fi
+userprompt "Continue? [y/N] "
+RESPONSE=$(userinput y)
+case "$RESPONSE" in
+  [Yy])
+    # Install.
+    if [ ! -e "$INSTALLDIR" ]; then
+      mkdir -p "$INSTALLDIR" || continue
+    fi
+    fetchArtifact
+    info "Installing to $INSTALLDIR..."
+    mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
+    ;;
+  [Nn]|*)
+    error "Aborting installation"
+    exit 0
+    ;;
+esac
+
 
 # If the installation is not in $PATH then we attempt to update the users rc file
 if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
@@ -386,7 +381,7 @@ if $NOPROMPT; then
 else
   # Prompt user to update users path, otherwise present manual
   # installation instructions
-  userprompt "Allow \$PATH to be appended to in your $RC_FILE? [y/N]"
+  userprompt "Allow \$PATH to be appended in your $RC_FILE? [y/N]"
   RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
   if [ "$RESPONSE" != "y" ]; then
     manual_installation_instructions
