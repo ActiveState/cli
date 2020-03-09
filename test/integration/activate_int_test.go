@@ -123,12 +123,19 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
 	defer cb()
 	suite.SetWd(tempDir)
 
+	var project string
+	if runtime.GOOS == "darwin" {
+		project = "Activate-MacOS"
+	} else {
+		project = "Python3"
+	}
+
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/Python2"
+project: "https://platform.activestate.com/ActiveState-CLI/%s"
 branch: %s
 version: %s
-`, constants.BranchName, constants.Version))
+`, project, constants.BranchName, constants.Version))
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	suite.Require().NoError(err)
@@ -148,10 +155,10 @@ version: %s
 	suite.ExpectExitCode(0)
 
 	suite.Spawn("activate")
-	suite.Expect("Activating state: ActiveState-CLI/Python2", 120*time.Second)
+	suite.Expect(fmt.Sprintf("Activating state: ActiveState-CLI/%s", project))
 
 	// not waiting for activation, as we test that part in a different test
-	suite.WaitForInput(120 * time.Second)
+	suite.WaitForInput()
 	suite.SendLine("exit")
 	suite.ExpectExitCode(0)
 }
