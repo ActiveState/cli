@@ -72,27 +72,16 @@ func getCallerPath() string {
 	return filepath.Dir(file)
 }
 
-// PreparePath prepares a path for use in tests (ensures it exists and ensures the path is concistent)
-func PreparePath(path string) string {
-	fail := fileutils.MkdirUnlessExists(path)
-	if fail != nil {
-		panic(fmt.Sprintf("filepath.Abs mkdir error: %v", fail))
+// PrepareDir prepares a path for use in tests (ensures it exists and ensures the path is concistent)
+func PrepareDir(path string) string {
+	if path == "" {
+		return path
 	}
 
-	p, err := filepath.Abs(path)
+	var err error
+	path, err = fileutils.PrepareDir(path)
 	if err != nil {
-		panic(fmt.Sprintf("filepath.Abs abs error: %v", err))
-	}
-	if p != "" {
-		path = p
-	}
-
-	p, err = filepath.EvalSymlinks(path)
-	if err != nil {
-		panic(fmt.Sprintf("filepath.Abs eval error: %v", err))
-	}
-	if p != "" {
-		path = p
+		panic(fmt.Sprintf("PrepareDir error: %v", err))
 	}
 
 	return path

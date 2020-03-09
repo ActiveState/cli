@@ -129,8 +129,8 @@ func TestInitialize_Run(t *testing.T) {
 				language: language.Python2.String(),
 			},
 			nil,
-			osutil.PreparePath(fileutils.Join(tempDirWithFile, "foo/bar")),
-			osutil.PreparePath(fileutils.Join(tempDirWithFile, "foo/bar")),
+			osutil.PrepareDir(fileutils.Join(tempDirWithFile, "foo/bar")),
+			osutil.PrepareDir(fileutils.Join(tempDirWithFile, "foo/bar")),
 			language.Python2.String(),
 			"",
 		},
@@ -219,6 +219,8 @@ func TestInitialize_Run(t *testing.T) {
 				Path:      tt.args.path,
 				Language:  tt.args.language,
 			})
+			path = osutil.PrepareDir(path)
+
 			if tt.wantErr != nil {
 				if err.Error() != tt.wantErr.Error() {
 					t.Fatalf("Initialize.run() error = %v, wantErr %v", err, tt.wantErr)

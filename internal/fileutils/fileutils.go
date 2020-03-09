@@ -621,3 +621,24 @@ func Join(elem ...string) string {
 	}
 	return ""
 }
+
+// PrepareDir prepares a path by ensuring it exists and the path is consistent
+func PrepareDir(path string) (string, error) {
+	fail := MkdirUnlessExists(path)
+	if fail != nil {
+		return "", fail
+	}
+
+	var err error
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	path, err = filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
+
+	return path, nil
+}

@@ -68,7 +68,13 @@ func prepare(params *RunParams) error {
 	}
 
 	if params.Path == "" {
+		var wd string
 		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		wd, err = fileutils.PrepareDir(wd)
 		if err != nil {
 			return err
 		}
@@ -83,6 +89,12 @@ func prepare(params *RunParams) error {
 			params.Path = filepath.Join(wd, fmt.Sprintf(
 				"%s/%s", params.Namespace.Owner, params.Namespace.Project,
 			))
+		}
+	} else {
+		var err error
+		params.Path, err = fileutils.PrepareDir(params.Path)
+		if err != nil {
+			return err
 		}
 	}
 
