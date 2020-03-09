@@ -155,6 +155,47 @@ jobs:
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
+  test-linux:
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      GOBIN: /go/bin
+      GOPATH: /go
+      GOROOT: /usr/local/go
+      GOFLAGS: -p=8 -mod=vendor
+      SHELL: bash
+    docker:
+      - image: circleci/golang:1.12
+    resource_class: large
+    working_directory: /home/circleci/workdir/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - <<: *prepareEnv
+      - <<: *buildCli
+      - <<: *runIntegrationTests
+  test-macos:
+    environment:
+      TEST_RESULTS: /tmp/test-results
+      GOPATH: /private/tmp/gohome
+      GOBIN: /private/tmp/gohome/bin
+      GOROOT: /private/tmp/go
+      GOFLAGS: -p=8 -mod=vendor
+      SHELL: bash
+    macos:
+      xcode: 9.3.0
+    resource_class: large
+    working_directory: /private/tmp/workdir/github.com/ActiveState/cli
+    steps:
+      - checkout
+      - run:
+          name: Install Dependencies
+          command: |
+            pushd /private/tmp
+            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
+            tar -xzf golang.tar.gz
+            popd
+      - <<: *prepareEnv
+      - <<: *buildCli
+      - <<: *runIntegrationTests
 workflows:
   version: 2
   CI-test-build-deploy:
@@ -162,3 +203,14 @@ workflows:
       - build-linux
       #- build-windows
       - build-macos
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - test-linux
+      - test-macos
