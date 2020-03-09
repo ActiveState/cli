@@ -443,6 +443,8 @@ err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
   other: That should not happen.  Expected to receive at least one invitation receipt.
+reqsvc_err_line_errors:
+  other: "Line errors encountered translating data: [{{.V0}}]"
 secrets_expander_err_empty_name:
   other: Expander handle can not be an empty string
 secrets_expander_err_undefined:
@@ -1184,6 +1186,8 @@ package_update_description:
   other: Update a package in your project to the latest available version
 package_remove_description:
   other: Remove a package from your project
+package_import_description:
+  other: Import packages from a list of dependencies
 package_search_description:
   other: Search for available packages that can be added to your project
 package_arg_name:
@@ -1204,6 +1208,8 @@ package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
+package_import_flag_filename_description:
+  other: The file to import
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1212,6 +1218,8 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
+commit_reqstext_message:
+  other: "Import from requirements.txt"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
@@ -1224,6 +1232,10 @@ package_err_cannot_obtain_language:
   other: Cannot obtain language for package search
 package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
+err_cannot_commit_changeset:
+  other: Cannot commit changeset
+err_obtaining_change_request:
+  other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_no_packages:

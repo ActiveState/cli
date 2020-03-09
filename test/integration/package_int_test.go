@@ -1,7 +1,11 @@
 package integration
 
 import (
+	"fmt"
+	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -218,6 +222,66 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	suite.Spawn("packages", "search", "numpy", "--language=bad")
 	suite.Expect("Cannot obtain search")
 	suite.Wait()
+}
+
+const (
+	reqsFileName = "requirements.txt"
+	reqsData     = `Click==7.0
+Flask==1.1.1
+Flask-Cors==3.0.8
+itsdangerous==1.1.0
+Jinja2==2.10.3
+MarkupSafe==1.1.1
+packaging==20.1
+pyparsing==2.4.6
+six==1.14.0
+Werkzeug==0.16.0
+`
+	badReqsData = `Click==7.0
+garbage---<<001.X
+six==1.14.0
+`
+)
+
+func (suite *PackageIntegrationTestSuite) TestPackage_import() {
+	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
+	defer cleanup()
+
+	username := suite.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", username, "Python3")
+
+	suite.Spawn("init", namespace, "python3", "--path="+tempDir, "--skeleton=editor")
+	suite.ExpectExitCode(0)
+
+	suite.Spawn("push")
+	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	suite.ExpectExitCode(0)
+
+	reqsFilePath := filepath.Join(tempDir, reqsFileName)
+
+	suite.Run("invalid requirements.txt", func() {
+		suite.PrepareFile(reqsFilePath, badReqsData)
+
+		suite.Spawn("packages", "import")
+		suite.ExpectNotExitCode(0, time.Second*60)
+	})
+
+	suite.Run("valid requirements.txt", func() {
+		suite.PrepareFile(reqsFilePath, reqsData)
+
+		suite.Spawn("packages", "import")
+		suite.Expect("state pull")
+		suite.ExpectExitCode(0, time.Second*60)
+
+		suite.Run("already added", func() {
+			if runtime.GOOS == "darwin" {
+				suite.T().Skip("integ test primitives bug affecting darwin")
+			}
+
+			suite.Spawn("packages", "import")
+			suite.ExpectNotExitCode(0, time.Second*60)
+		})
+	})
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {

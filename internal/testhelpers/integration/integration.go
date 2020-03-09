@@ -103,10 +103,15 @@ func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string,
 	s.Require().NoError(err)
 	err = os.MkdirAll(tempDir, 0770)
 	s.Require().NoError(err)
-	s.SetWd(tempDir)
+	dir, err := filepath.EvalSymlinks(tempDir)
+	s.Require().NoError(err)
+	s.SetWd(dir)
 
-	return tempDir, func() {
-		os.RemoveAll(tempDir)
+	return dir, func() {
+		_ = os.RemoveAll(dir)
+		if tempDir != dir {
+			_ = os.RemoveAll(tempDir)
+		}
 	}
 }
 
@@ -125,6 +130,20 @@ func (s *Suite) PrepareActiveStateYAML(dir, contents string) {
 	projectFile.SetPath(filepath.Join(dir, "activestate.yaml"))
 	fail := projectFile.Save()
 	s.Require().NoError(fail.ToError(), msg)
+}
+
+func (s *Suite) PrepareFile(path, contents string) {
+	errMsg := fmt.Sprintf("cannot setup file %q", path)
+
+	contents = strings.TrimSpace(contents)
+
+	err := os.MkdirAll(filepath.Dir(path), 0770)
+	s.Require().NoError(err, errMsg)
+
+	bs := append([]byte(contents), '\n')
+
+	err = ioutil.WriteFile(path, bs, 0660)
+	s.Require().NoError(err, errMsg)
 }
 
 // Executable returns the path to the executable under test (state tool)
@@ -233,12 +252,12 @@ func (s *Suite) Expect(value string, timeout ...time.Duration) {
 		opts = append(opts, expect.WithTimeout(timeout[0]))
 	}
 
-	_, err := s.console.Expect(opts...)
+	parsed, err := s.console.Expect(opts...)
 	if err != nil {
 		s.FailNow(
 			"Could not meet expectation",
-			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\n",
-			value, err, s.UnsyncedOutput())
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
+			value, err, s.UnsyncedOutput(), parsed)
 	}
 }
 
@@ -303,6 +322,12 @@ func (s *Suite) LoginAsPersistentUser() {
 	s.ExpectExitCode(0)
 }
 
+func (s *Suite) LogoutUser() {
+	s.Spawn("auth", "logout")
+	s.Expect("logged out")
+	s.ExpectExitCode(0)
+}
+
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (s *Suite) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	ps, err := s.Wait(timeout...)
@@ -347,6 +372,8 @@ func (s *Suite) Wait(timeout ...time.Duration) (state *os.ProcessState, err erro
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
+
+	s.console.Drain()
 
 	type processState struct {
 		state *os.ProcessState
