@@ -98,7 +98,6 @@ jobs:
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
-      - <<: *runIntegrationTests
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
@@ -154,7 +153,6 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
 workflows:
