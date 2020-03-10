@@ -80,6 +80,16 @@ func DefaultLanguageForProject(orgName, projectName string) (string, *failures.F
 	return languages[0].Name, nil
 }
 
+// DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
+func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, *failures.Failure) {
+	proj, fail := FetchProjectByName(owner, name)
+	if fail != nil {
+		return nil, fail
+	}
+
+	return DefaultBranchForProject(proj)
+}
+
 // DefaultBranchForProject retrieves the default branch for the given project
 func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *failures.Failure) {
 	for _, branch := range pj.Branches {
@@ -91,7 +101,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, *fai
 }
 
 // CreateProject will create the project on the platform
-func CreateProject(owner, name, hostPlatform string, lang *language.Supported) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
+func CreateProject(owner, name, hostPlatform string, lang *language.Supported, langVersion string) (*mono_models.Project, strfmt.UUID, *failures.Failure) {
 	addParams := projects.NewAddProjectParams()
 	addParams.SetOrganizationName(owner)
 	addParams.SetProject(&mono_models.Project{Name: name})
@@ -100,13 +110,15 @@ func CreateProject(owner, name, hostPlatform string, lang *language.Supported) (
 		return nil, "", api.FailUnknown.New(api.ErrorMessageFromPayload(err))
 	}
 
-	var requirement, recommendedVersion string
+	var requirement string
 	if lang != nil {
 		requirement = lang.Requirement()
-		recommendedVersion = lang.RecommendedVersion()
+		if langVersion == "" {
+			langVersion = lang.RecommendedVersion()
+		}
 	}
 
-	return CommitInitial(owner, name, hostPlatform, requirement, recommendedVersion)
+	return CommitInitial(owner, name, hostPlatform, requirement, langVersion)
 }
 
 // ProjectURL creates a valid platform URL for the given project parameters

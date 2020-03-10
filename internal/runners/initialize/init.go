@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -25,7 +26,9 @@ type RunParams struct {
 	Namespace *project.Namespaced
 	Path      string
 	Style     string
-	Language  language.Supported
+	Language  string
+	language  language.Language
+	version   string
 }
 
 // Initialize stores scope-related dependencies.
@@ -34,9 +37,15 @@ type Initialize struct {
 }
 
 func prepare(params *RunParams) error {
-	if !params.Language.Recognized() {
+	langParts := strings.Split(params.Language, "@")
+	if len(langParts) > 1 {
+		params.version = langParts[1]
+	}
+
+	params.language = language.MakeByName(langParts[0])
+	if !params.language.Recognized() {
 		return language.NewUnrecognizedLanguageError(
-			params.Language.String(),
+			params.language.String(),
 			language.RecognizedSupportedsNames(),
 		)
 	}
@@ -59,7 +68,13 @@ func prepare(params *RunParams) error {
 	}
 
 	if params.Path == "" {
+		var wd string
 		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		wd, err = fileutils.PrepareDir(wd)
 		if err != nil {
 			return err
 		}
@@ -74,6 +89,12 @@ func prepare(params *RunParams) error {
 			params.Path = filepath.Join(wd, fmt.Sprintf(
 				"%s/%s", params.Namespace.Owner, params.Namespace.Project,
 			))
+		}
+	} else {
+		var err error
+		params.Path, err = fileutils.PrepareDir(params.Path)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -98,9 +119,10 @@ func run(config setter, params *RunParams) (string, error) {
 
 	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
 
-	if params.Language.Recognized() {
+	if params.language.Recognized() {
 		// Store language for when we run 'state push'
-		config.Set(params.Path+"_language", params.Language)
+		config.Set(params.Path+"_language", params.language.String())
+		config.Set(params.Path+"_language_version", params.version)
 	}
 
 	createParams := &projectfile.CreateParams{

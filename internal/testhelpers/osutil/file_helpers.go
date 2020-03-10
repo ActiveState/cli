@@ -1,12 +1,14 @@
 package osutil
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 // CreateConfigFile will create a file in the config dir with the given file name.
@@ -68,4 +70,19 @@ func getCallerPath() string {
 	}
 
 	return filepath.Dir(file)
+}
+
+// PrepareDir prepares a path for use in tests (ensures it exists and ensures the path is concistent)
+func PrepareDir(path string) string {
+	if path == "" {
+		return path
+	}
+
+	var err error
+	path, err = fileutils.PrepareDir(path)
+	if err != nil {
+		panic(fmt.Sprintf("PrepareDir error: %v", err))
+	}
+
+	return path
 }
