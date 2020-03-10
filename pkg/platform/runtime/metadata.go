@@ -2,10 +2,8 @@ package runtime
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -96,44 +94,6 @@ func ParseMetaData(contents []byte) (*MetaData, *failures.Failure) {
 	}
 
 	return metaData, nil
-}
-
-func (m *MetaData) prepareMacOS() *failures.Failure {
-	m.BinaryLocations = []MetaDataBinary{
-		MetaDataBinary{
-			Path:     "Library/Frameworks/Python.framework/Versions/Current/bin/",
-			Relative: true,
-		},
-	}
-
-	if m.hasBinaryFile(constants.ActivePython3Executable) || m.hasBinaryFile(constants.ActivePython2Executable) {
-		libDir := filepath.Join(m.Path, "Library/Frameworks/Python.framework/Versions/Current/lib")
-		dirRe := regexp.MustCompile(`python\d.\d`)
-
-		m.setPythonEnv()
-
-		files, err := ioutil.ReadDir(libDir)
-		if err != nil {
-			return failures.FailOS.Wrap(err)
-		}
-
-		var sitePackages string
-		for _, f := range files {
-			if !f.IsDir() {
-				continue
-			}
-			if dirRe.MatchString(f.Name()) {
-				sitePackages = filepath.Join(libDir, f.Name(), "site-packages")
-				break
-			}
-		}
-
-		if fileutils.DirExists(sitePackages) {
-			m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
-		}
-	}
-
-	return nil
 }
 
 func (m *MetaData) hasBinaryFile(executable string) bool {
