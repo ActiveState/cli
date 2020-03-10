@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -140,13 +139,10 @@ func (m *MetaData) prepareMacOS() *failures.Failure {
 func (m *MetaData) hasBinaryFile(executable string) bool {
 	for _, dir := range m.BinaryLocations {
 		parent := ""
-		fmt.Println("Relative: ", dir.Relative)
-		fmt.Println("Metadata path: ", m.Path)
 		if dir.Relative {
 			parent = m.Path
 		}
 		bin := filepath.Join(parent, dir.Path, executable)
-		fmt.Println("Searching: ", bin)
 		if fileutils.FileExists(bin) {
 			return true
 		}
