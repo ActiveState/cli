@@ -155,11 +155,15 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 			m.AffectedEnv = "PERL5LIB"
 		}
 
-		// Currently only Perl 5.x.x is supported by the platform
-		lib := filepath.Join(m.Path, "lib", "perl5")
-		sitePerl := filepath.Join(m.Path, "lib", "perl5", "site_perl")
+		// On Linux we must set the PERL5LIB in order for the modules to
+		// be useable
+		if runtime.GOOS == "linux" {
+			// Currently only Perl 5.x.x is supported by the platform
+			lib := filepath.Join(m.Path, "lib", "perl5")
+			sitePerl := filepath.Join(m.Path, "lib", "perl5", "site_perl")
 
-		m.Env["PERL5LIB"] = strings.Join([]string{m.Env["PERL5LIB"], lib, sitePerl}, string(os.PathListSeparator))
+			m.Env["PERL5LIB"] = strings.Join([]string{m.Env["PERL5LIB"], lib, sitePerl}, string(os.PathListSeparator))
+		}
 	} else {
 		logging.Debug("No language detected for %s", m.Path)
 	}
