@@ -267,11 +267,7 @@ func updateForkBranch(new, original *mono_models.Branch) *failures.Failure {
 
 func editProjectDetails(originalOwner, newOwner, name string) *failures.Failure {
 	editParams := projects.NewEditProjectParams()
-	updates := &mono_models.Project{
-		ForkedFrom: &mono_models.ProjectForkedFrom{
-			Organization: originalOwner,
-			Project:      name,
-		},
+	updates := &mono_models.ProjectEditable{
 		Private: Flags.Private,
 	}
 	editParams.SetProject(updates)

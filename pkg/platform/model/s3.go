@@ -28,7 +28,7 @@ func SignS3URL(u *url.URL) (*url.URL, *failures.Failure) {
 	params := s3.NewSignS3URIParams()
 	params.URI = strfmt.URI(unescaped)
 
-	res, err := mono.Get().S3.SignS3URI(params, nil)
+	res, err := mono.Get().S3.SignS3URI(params)
 	if err != nil {
 		return nil, FailSignS3URL.Wrap(err)
 	}

@@ -8,16 +8,16 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func NewHeadChefRequester(pj *mono_models.Project) (*headchef_models.Requester, *failures.Failure) {
+func NewHeadChefRequester(pj *mono_models.Project) (*headchef_models.V1BuildRequestRequester, *failures.Failure) {
 	userID := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 	auth := authentication.Get()
 	if auth.Authenticated() {
 		userID = *auth.UserID()
 	}
-	return &headchef_models.Requester{
+	return &headchef_models.V1BuildRequestRequester{
 		OrganizationID: &pj.OrganizationID,
 		ProjectID:      &pj.ProjectID,
-		UserID:         &userID,
+		UserID:         userID,
 	}, nil
 }
 
