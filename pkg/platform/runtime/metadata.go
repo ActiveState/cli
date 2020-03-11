@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -153,6 +154,12 @@ func (m *MetaData) MakeBackwardsCompatible() *failures.Failure {
 		if m.AffectedEnv == "" {
 			m.AffectedEnv = "PERL5LIB"
 		}
+
+		// Currently only Perl 5.x.x is supported by the platform
+		lib := filepath.Join(m.Path, "lib", "perl5")
+		sitePerl := filepath.Join(m.Path, "lib", "perl5", "site_perl")
+
+		m.Env["PERL5LIB"] = strings.Join([]string{m.Env["PERL5LIB"], lib, sitePerl}, string(os.PathListSeparator))
 	} else {
 		logging.Debug("No language detected for %s", m.Path)
 	}
