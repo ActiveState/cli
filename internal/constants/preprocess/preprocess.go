@@ -58,7 +58,7 @@ func gitBranchName() string {
 // `BRANCH_OVERRIDE` is set
 func branchName() (string, string) {
 	branch := gitBranchName()
-	releaseName := branch
+	releaseName := strings.Trim(branch, "origin/")
 
 	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
 		releaseName = releaseOverride
