@@ -79,7 +79,7 @@ type DeleteOrganizationOK struct {
 }
 
 func (o *DeleteOrganizationOK) Error() string {
-	return fmt.Sprintf("[DELETE /organizations/{organizationName}][%d] deleteOrganizationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationOK  %+v", 200, o.Payload)
 }
 
 func (o *DeleteOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteOrganizationBadRequest struct {
 }
 
 func (o *DeleteOrganizationBadRequest) Error() string {
-	return fmt.Sprintf("[DELETE /organizations/{organizationName}][%d] deleteOrganizationBadRequest  %+v", 400, o.Payload)
+	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
 func (o *DeleteOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,7 +137,7 @@ type DeleteOrganizationForbidden struct {
 }
 
 func (o *DeleteOrganizationForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /organizations/{organizationName}][%d] deleteOrganizationForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationForbidden  %+v", 403, o.Payload)
 }
 
 func (o *DeleteOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -166,7 +166,7 @@ type DeleteOrganizationNotFound struct {
 }
 
 func (o *DeleteOrganizationNotFound) Error() string {
-	return fmt.Sprintf("[DELETE /organizations/{organizationName}][%d] deleteOrganizationNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationNotFound  %+v", 404, o.Payload)
 }
 
 func (o *DeleteOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -195,7 +195,7 @@ type DeleteOrganizationInternalServerError struct {
 }
 
 func (o *DeleteOrganizationInternalServerError) Error() string {
-	return fmt.Sprintf("[DELETE /organizations/{organizationName}][%d] deleteOrganizationInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *DeleteOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

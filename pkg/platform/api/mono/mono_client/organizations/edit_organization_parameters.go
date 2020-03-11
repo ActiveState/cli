@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -22,8 +23,11 @@ import (
 // NewEditOrganizationParams creates a new EditOrganizationParams object
 // with the default values initialized.
 func NewEditOrganizationParams() *EditOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -32,8 +36,11 @@ func NewEditOrganizationParams() *EditOrganizationParams {
 // NewEditOrganizationParamsWithTimeout creates a new EditOrganizationParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewEditOrganizationParamsWithTimeout(timeout time.Duration) *EditOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -42,8 +49,11 @@ func NewEditOrganizationParamsWithTimeout(timeout time.Duration) *EditOrganizati
 // NewEditOrganizationParamsWithContext creates a new EditOrganizationParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewEditOrganizationParamsWithContext(ctx context.Context) *EditOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -52,9 +62,12 @@ func NewEditOrganizationParamsWithContext(ctx context.Context) *EditOrganization
 // NewEditOrganizationParamsWithHTTPClient creates a new EditOrganizationParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewEditOrganizationParamsWithHTTPClient(client *http.Client) *EditOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -63,13 +76,18 @@ for the edit organization operation typically these are written to a http.Reques
 */
 type EditOrganizationParams struct {
 
-	/*Organization*/
-	Organization *mono_models.OrganizationEditable
-	/*OrganizationName
-	  organizationName of desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*Organization*/
+	Organization *mono_models.OrganizationEditable
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -109,6 +127,17 @@ func (o *EditOrganizationParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIdentifierType adds the identifierType to the edit organization params
+func (o *EditOrganizationParams) WithIdentifierType(identifierType *string) *EditOrganizationParams {
+	o.SetIdentifierType(identifierType)
+	return o
+}
+
+// SetIdentifierType adds the identifierType to the edit organization params
+func (o *EditOrganizationParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
 // WithOrganization adds the organization to the edit organization params
 func (o *EditOrganizationParams) WithOrganization(organization *mono_models.OrganizationEditable) *EditOrganizationParams {
 	o.SetOrganization(organization)
@@ -120,15 +149,15 @@ func (o *EditOrganizationParams) SetOrganization(organization *mono_models.Organ
 	o.Organization = organization
 }
 
-// WithOrganizationName adds the organizationName to the edit organization params
-func (o *EditOrganizationParams) WithOrganizationName(organizationName string) *EditOrganizationParams {
-	o.SetOrganizationName(organizationName)
+// WithOrganizationIdentifier adds the organizationIdentifier to the edit organization params
+func (o *EditOrganizationParams) WithOrganizationIdentifier(organizationIdentifier string) *EditOrganizationParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the edit organization params
-func (o *EditOrganizationParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetOrganizationIdentifier adds the organizationIdentifier to the edit organization params
+func (o *EditOrganizationParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -139,14 +168,30 @@ func (o *EditOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg str
 	}
 	var res []error
 
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
 	if o.Organization != nil {
 		if err := r.SetBodyParam(o.Organization); err != nil {
 			return err
 		}
 	}
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

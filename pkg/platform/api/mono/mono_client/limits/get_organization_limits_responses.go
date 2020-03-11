@@ -72,7 +72,7 @@ type GetOrganizationLimitsOK struct {
 }
 
 func (o *GetOrganizationLimitsOK) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/limits][%d] getOrganizationLimitsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsOK  %+v", 200, o.Payload)
 }
 
 func (o *GetOrganizationLimitsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -101,7 +101,7 @@ type GetOrganizationLimitsForbidden struct {
 }
 
 func (o *GetOrganizationLimitsForbidden) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/limits][%d] getOrganizationLimitsForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsForbidden  %+v", 403, o.Payload)
 }
 
 func (o *GetOrganizationLimitsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -130,7 +130,7 @@ type GetOrganizationLimitsNotFound struct {
 }
 
 func (o *GetOrganizationLimitsNotFound) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/limits][%d] getOrganizationLimitsNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetOrganizationLimitsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -159,7 +159,7 @@ type GetOrganizationLimitsInternalServerError struct {
 }
 
 func (o *GetOrganizationLimitsInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/limits][%d] getOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetOrganizationLimitsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

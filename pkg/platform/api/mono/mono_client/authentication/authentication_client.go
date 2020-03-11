@@ -25,11 +25,71 @@ type Client struct {
 }
 
 /*
+GetLoginJwtToken logins with a valid j w t and redirect to a platform URL
+
+Login with a valid JWT and redirect to a platform URL
+*/
+func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLoginJwtTokenParams()
+	}
+
+	_, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetLoginJwtToken",
+		Method:             "GET",
+		PathPattern:        "/login/jwt/{token}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetLoginJwtTokenReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+/*
+GetLogout renews a valid j w t
+
+Log out of the current session
+*/
+func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLogoutParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "GetLogout",
+		Method:             "GET",
+		PathPattern:        "/logout",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetLogoutReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetLogoutNoContent), nil
+
+}
+
+/*
 GetRenew renews a valid j w t
 
 Renew your current JWT to forestall expiration
 */
-func (a *Client) GetRenew(params *GetRenewParams, authInfo runtime.ClientAuthInfoWriter) (*GetRenewOK, error) {
+func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetRenewParams()
@@ -44,7 +104,6 @@ func (a *Client) GetRenew(params *GetRenewParams, authInfo runtime.ClientAuthInf
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetRenewReader{formats: a.formats},
-		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
@@ -113,6 +172,37 @@ func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInf
 		return nil, err
 	}
 	return result.(*AddTokenOK), nil
+
+}
+
+/*
+ChangePassword changes the current password
+
+Prompts for current password which is used to change it to something new.
+*/
+func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter) (*ChangePasswordOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewChangePasswordParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "changePassword",
+		Method:             "POST",
+		PathPattern:        "/change-password",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ChangePasswordReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ChangePasswordOK), nil
 
 }
 
@@ -266,6 +356,34 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 		return nil, err
 	}
 	return result.(*LoginAsOK), nil
+
+}
+
+/*
+LoginWithGithub callbacks endpoint for github auth
+*/
+func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewLoginWithGithubParams()
+	}
+
+	_, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "loginWithGithub",
+		Method:             "GET",
+		PathPattern:        "/githubLogin",
+		ProducesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &LoginWithGithubReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 
 }
 
