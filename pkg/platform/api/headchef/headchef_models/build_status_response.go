@@ -22,8 +22,13 @@ import (
 // swagger:model BuildStatusResponse
 type BuildStatusResponse struct {
 
-	// An array containing all the artifacts that make up this build. Will be null unless type is build_completed.
+	// An array containing all the artifacts that make up this build. When 'build_engine' is 'camel', this array is empty for all response types other than 'build_completed'
 	Artifacts []*Artifact `json:"artifacts"`
+
+	// Name of the system that orchestrates the build
+	// Required: true
+	// Enum: [alternative camel]
+	BuildEngine *string `json:"build_engine"`
 
 	// Build Request UUID Sub Schema
 	//
@@ -32,14 +37,14 @@ type BuildStatusResponse struct {
 	// Format: uuid
 	BuildRequestID *strfmt.UUID `json:"build_request_id"`
 
-	// All of the errors from the failed build. Will be null unless type is build_failed. Note that these errors may not be suitable for presenting to users and should simply be logged for further investigation.
+	// All of the errors from the failed build. Will be null unless 'type' is 'build_failed'. Note that these errors may not be suitable for presenting to users and should simply be logged for further investigation.
 	Errors []string `json:"errors"`
 
-	// If true this failed build can be retried and it may succeed. If false, retrying this failed build will not change the outcome. This field's value is only valid when type is build_failed.
+	// If true this failed build can be retried and it may succeed. If false, retrying this failed build will not change the outcome. This field's value is only valid when 'type' is 'build_failed'.
 	// Required: true
 	IsRetryable bool `json:"is_retryable"`
 
-	// An S3 URI containing the log for this build.
+	// An S3 URI containing the log for this build. Always null for builds where 'build_engine' is not 'camel'
 	// Format: uri
 	LogURI strfmt.URI `json:"log_uri,omitempty"`
 
@@ -67,6 +72,10 @@ func (m *BuildStatusResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateArtifacts(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBuildEngine(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -120,6 +129,49 @@ func (m *BuildStatusResponse) validateArtifacts(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var buildStatusResponseTypeBuildEnginePropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["alternative","camel"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		buildStatusResponseTypeBuildEnginePropEnum = append(buildStatusResponseTypeBuildEnginePropEnum, v)
+	}
+}
+
+const (
+
+	// BuildStatusResponseBuildEngineAlternative captures enum value "alternative"
+	BuildStatusResponseBuildEngineAlternative string = "alternative"
+
+	// BuildStatusResponseBuildEngineCamel captures enum value "camel"
+	BuildStatusResponseBuildEngineCamel string = "camel"
+)
+
+// prop value enum
+func (m *BuildStatusResponse) validateBuildEngineEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, buildStatusResponseTypeBuildEnginePropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *BuildStatusResponse) validateBuildEngine(formats strfmt.Registry) error {
+
+	if err := validate.Required("build_engine", "body", m.BuildEngine); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateBuildEngineEnum("build_engine", "body", *m.BuildEngine); err != nil {
+		return err
 	}
 
 	return nil

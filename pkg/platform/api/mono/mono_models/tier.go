@@ -18,6 +18,9 @@ type Tier struct {
 	// description
 	Description string `json:"description,omitempty"`
 
+	// grants security and compliance
+	GrantsSecurityAndCompliance bool `json:"grantsSecurityAndCompliance,omitempty"`
+
 	// is default
 	IsDefault bool `json:"isDefault,omitempty"`
 

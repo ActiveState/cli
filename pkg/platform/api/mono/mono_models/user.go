@@ -53,6 +53,9 @@ type User struct {
 	// organizations
 	Organizations []*UserOrganizationsItems0 `json:"organizations"`
 
+	// send marketing email
+	SendMarketingEmail bool `json:"sendMarketingEmail,omitempty"`
+
 	// timezone
 	Timezone string `json:"timezone,omitempty"`
 
@@ -213,8 +216,12 @@ func (m *User) UnmarshalBinary(b []byte) error {
 // swagger:model UserOrganizationsItems0
 type UserOrganizationsItems0 struct {
 
-	// name
-	Name string `json:"name,omitempty"`
+	// urlname
+	Urlname string `json:"URLname,omitempty"`
+
+	// organization ID
+	// Format: uuid
+	OrganizationID strfmt.UUID `json:"organizationID,omitempty"`
 
 	// role
 	Role string `json:"role,omitempty"`
@@ -222,6 +229,28 @@ type UserOrganizationsItems0 struct {
 
 // Validate validates this user organizations items0
 func (m *UserOrganizationsItems0) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateOrganizationID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *UserOrganizationsItems0) validateOrganizationID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.OrganizationID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("organizationID", "body", "uuid", m.OrganizationID.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

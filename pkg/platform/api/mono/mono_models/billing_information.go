@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // BillingInformation billing information
@@ -20,7 +21,8 @@ type BillingInformation struct {
 	Address *AddressInfo `json:"address,omitempty"`
 
 	// billing date
-	BillingDate *string `json:"billingDate,omitempty"`
+	// Format: date
+	BillingDate *strfmt.Date `json:"billingDate,omitempty"`
 
 	// cc exp month
 	CcExpMonth *string `json:"ccExpMonth,omitempty"`
@@ -37,11 +39,20 @@ type BillingInformation struct {
 	// email
 	Email *string `json:"email,omitempty"`
 
+	// external URL
+	ExternalURL string `json:"externalURL,omitempty"`
+
 	// is stripe customer
 	IsStripeCustomer bool `json:"isStripeCustomer,omitempty"`
 
 	// name
 	Name *string `json:"name,omitempty"`
+
+	// reseller managed
+	ResellerManaged bool `json:"resellerManaged,omitempty"`
+
+	// self serve
+	SelfServe bool `json:"selfServe,omitempty"`
 }
 
 // Validate validates this billing information
@@ -49,6 +60,10 @@ func (m *BillingInformation) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAddress(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBillingDate(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -71,6 +86,19 @@ func (m *BillingInformation) validateAddress(formats strfmt.Registry) error {
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *BillingInformation) validateBillingDate(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.BillingDate) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("billingDate", "body", "date", m.BillingDate.String(), formats); err != nil {
+		return err
 	}
 
 	return nil
