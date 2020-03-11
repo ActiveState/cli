@@ -43,11 +43,11 @@ func init() {
 func gitBranchName() string {
 	// branch name variable set by Azure CI during pull request
 	if branch, isset := os.LookupEnv("SYSTEM_PULLREQUEST_SOURCEBRANCH"); isset {
-		return "origin/" + branch
+		return branch
 	}
 	// branch name variable set by Azure CI
 	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
-		return "origin/" + branch
+		return branch
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
