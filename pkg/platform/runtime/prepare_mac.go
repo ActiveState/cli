@@ -25,7 +25,7 @@ func (m *MetaData) Prepare() *failures.Failure {
 		},
 	}
 
-	if !m.hasBinaryFile(constants.ActivePython3Executable) || !m.hasBinaryFile(constants.ActivePython2Executable) {
+	if !m.hasBinaryFile(constants.ActivePython3Executable) && !m.hasBinaryFile(constants.ActivePython2Executable) {
 		logging.Debug("No language detected for %s", m.Path)
 		return nil
 	}
