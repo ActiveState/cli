@@ -166,7 +166,7 @@ func (suite *InstallerLinuxTestSuite) TestRelocate() {
 		Env: map[string]string{},
 	}
 
-	metaData.MakeBackwardsCompatible()
+	metaData.Prepare()
 	suite.Equal("lib", metaData.RelocationTargetBinaries)
 
 	installDir := filepath.Join(suite.cacheDir, "relocate")
