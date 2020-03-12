@@ -1417,3 +1417,5 @@ err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
 field_languages:
   other: Languages
+err_no_recipes:
+  other: No build recipes could be generated for the current project

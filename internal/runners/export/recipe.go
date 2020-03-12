@@ -39,9 +39,10 @@ func (r *Recipe) Run(params *RecipeParams) error {
 	}
 
 	if params.Pretty {
-		data, fail = beautifyJSON(data)
+		var err error
+		data, err = beautifyJSON(data)
 		if fail != nil {
-			return fail
+			return err
 		}
 	}
 
@@ -62,31 +63,27 @@ func recipeData(proj *project.Project, commitID, platform string) ([]byte, *fail
 		return nil, fail
 	}
 
-	data, err := r.MarshalBinary()
-	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
-	}
-
-	return data, nil
+	return []byte(r), nil
 }
 
 // expects valid json or explodes
-func beautifyJSON(d []byte) ([]byte, *failures.Failure) {
-	var b bytes.Buffer
-	if err := json.Indent(&b, d, "", "\t"); err != nil {
-		return nil, failures.FailInput.Wrap(err)
+func beautifyJSON(d []byte) ([]byte, error) {
+	var out bytes.Buffer
+	err := json.Indent(&out, d, "", "  ")
+	if err != nil {
+		return nil, err
 	}
-	return b.Bytes(), nil
+	return d, nil
 }
 
-func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (*model.Recipe, *failures.Failure) {
+func fetchRecipe(pj *mono_models.Project, commitID strfmt.UUID, platform string) (string, *failures.Failure) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
 
 	if commitID != "" {
-		return model.FetchRecipeForCommitAndHostPlatform(pj, commitID, platform)
+		return model.FetchRawRecipeForCommitAndPlatform(commitID, platform)
 	}
 
-	return model.FetchRecipeForPlatform(pj, platform)
+	return model.FetchRawRecipeForPlatform(pj, platform)
 }

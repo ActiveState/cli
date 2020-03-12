@@ -2,9 +2,13 @@ package headchef
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
+	"github.com/go-openapi/errors"
+	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
@@ -46,7 +50,8 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client *headchef_operations.Client
+	client    *headchef_operations.Client
+	transport *httptransport.Runtime
 }
 
 func InitClient() *Client {
@@ -60,27 +65,89 @@ func NewClient(apiURL *url.URL) *Client {
 	//transportRuntime.SetDebug(true)
 
 	return &Client{
-		client: headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
+		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
+		transport: transportRuntime,
 	}
 }
 
-func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *BuildStatus {
+func (r *Client) RequestBuild(recipe BuildRequest) *BuildStatus {
 	buildStatus := NewBuildStatus()
 
 	go func() {
 		defer buildStatus.Close()
-		r.reqBuild(buildRequest, buildStatus)
+		r.reqBuild(recipe, buildStatus)
 	}()
 
 	return buildStatus
 }
 
-func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {
-	startParams := headchef_operations.StartBuildV1Params{
-		Context:      context.Background(),
-		BuildRequest: buildReq,
+type BuildRequest struct {
+	headchef_models.V1BuildRequest
+	Recipe json.RawMessage `json:"recipe,omitempty"`
+}
+
+func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *failures.Failure) {
+	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
+	format := "raw"
+
+	br := BuildRequest{
+		headchef_models.V1BuildRequest{
+			//CamelCommit: "00010001-0001-0001-0001-000100010001",
+			Requester: &headchef_models.Requester{
+				OrganizationID: &orgID,
+				ProjectID:      &projID,
+				UserID:         &uid,
+			},
+			Format: &format,
+		},
+		json.RawMessage(recipe),
 	}
-	created, accepted, err := r.client.StartBuildV1(&startParams)
+
+	return br, nil
+}
+
+type BuildParams struct {
+	headchef_operations.StartBuildV1Params
+	timeout      time.Duration
+	BuildRequest *BuildRequest
+}
+
+func (b *BuildParams) WithTimeout(timeout time.Duration) *BuildParams {
+	b.StartBuildV1Params.SetTimeout(timeout)
+	return b
+}
+
+func (b *BuildParams) SetTimeout(timeout time.Duration) {
+	b.timeout = timeout
+}
+
+func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Registry) error {
+	if err := req.SetTimeout(b.timeout); err != nil {
+		return err
+	}
+	var res []error
+
+	if b.BuildRequest != nil {
+		if err := req.SetBodyParam(b.BuildRequest); err != nil {
+			return err
+		}
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (r *Client) reqBuild(buildReq BuildRequest, buildStatus *BuildStatus) {
+	startParams := BuildParams{
+		StartBuildV1Params: headchef_operations.StartBuildV1Params{
+			Context: context.Background(),
+		},
+		BuildRequest: &buildReq,
+	}
+
+	created, accepted, err := r.StartBuild(&startParams)
 
 	switch {
 	case err != nil:
@@ -125,4 +192,33 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	default:
 		buildStatus.RunFail <- FailBuildReqNoResp.New("no response")
 	}
+}
+
+func (r *Client) StartBuild(params *BuildParams) (*headchef_operations.StartBuildV1Created, *headchef_operations.StartBuildV1Accepted, error) {
+	if params == nil {
+		params = &BuildParams{}
+	}
+
+	result, err := r.transport.Submit(&runtime.ClientOperation{
+		ID:                 "startBuildV1",
+		Method:             "POST",
+		PathPattern:        "/v1/builds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &headchef_operations.StartBuildV1Reader{},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	switch value := result.(type) {
+	case *headchef_operations.StartBuildV1Created:
+		return value, nil, nil
+	case *headchef_operations.StartBuildV1Accepted:
+		return nil, value, nil
+	}
+	return nil, nil, nil
 }

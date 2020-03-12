@@ -1,8 +1,11 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -12,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/sysinfo"
 )
 
 var (
@@ -207,4 +211,62 @@ func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) 
 	}
 
 	return nil, failures.FailNotFound.New(locale.T("err_no_language"))
+}
+
+func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
+		return constants.LinuxBit64UUID, nil
+	case strings.ToLower(sysinfo.Mac.String()):
+		return constants.MacBit64UUID, nil
+	case strings.ToLower(sysinfo.Windows.String()):
+		return constants.Win10Bit64UUID, nil
+	default:
+		return "", FailUnsupportedPlatform.New("err_unsupported_platform", os)
+	}
+}
+
+func hostPlatformToKernelName(os string) string {
+	switch strings.ToLower(os) {
+	case strings.ToLower(sysinfo.Linux.String()):
+		return "Linux"
+	case strings.ToLower(sysinfo.Mac.String()):
+		return "Darwin"
+	case strings.ToLower(sysinfo.Windows.String()):
+		return "Windows"
+	default:
+		return ""
+	}
+}
+
+func platformArchToHostArch(arch, bits string) string {
+	switch bits {
+	case "32":
+		switch arch {
+		case "IA64":
+			return "nonexistent"
+		case "PA-RISC":
+			return "unsupported"
+		case "PowerPC":
+			return "ppc"
+		case "Sparc":
+			return "sparc"
+		case "x86":
+			return "386"
+		}
+	case "64":
+		switch arch {
+		case "IA64":
+			return "unsupported"
+		case "PA-RISC":
+			return "unsupported"
+		case "PowerPC":
+			return "ppc64"
+		case "Sparc":
+			return "sparc64"
+		case "x86":
+			return "amd64"
+		}
+	}
+	return "unrecognized"
 }
