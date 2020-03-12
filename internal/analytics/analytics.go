@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 
@@ -132,11 +133,16 @@ func eventWithValue(category string, action string, value int64) error {
 }
 
 func setUserAgentOverride(client *ga.Client) {
+	viewer := "compatible"
 	opsysName := "Unknown"
 	opsysVersion := "0.0"
 
 	switch info := sysinfo.OS(); info {
 	case sysinfo.Linux:
+		if _, ok := os.LookupEnv("DISPLAY"); ok {
+			viewer = "X11"
+		}
+
 		opsysName = "Linux"
 
 		// linux user-agent version shows architecture
@@ -152,6 +158,8 @@ func setUserAgentOverride(client *ga.Client) {
 		}
 
 	case sysinfo.Mac:
+		viewer = "Macintosh"
+
 		opsysArch := "Intel"
 		if strings.Contains(runtime.GOARCH, "ppc") {
 			opsysArch = "PPC"
@@ -179,8 +187,8 @@ func setUserAgentOverride(client *ga.Client) {
 	}
 
 	uaText := fmt.Sprintf(
-		"%s/%s (%s %s)",
-		"state", constants.VersionNumber, opsysName, opsysVersion,
+		"%s/%s (%s; %s %s)",
+		"state", constants.VersionNumber, viewer, opsysName, opsysVersion,
 	)
 
 	client.UserAgentOverride(uaText)
