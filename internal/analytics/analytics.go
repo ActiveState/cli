@@ -1,11 +1,8 @@
 package analytics
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
 	"strings"
 
@@ -14,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -135,25 +133,31 @@ func eventWithValue(category string, action string, value int64) error {
 }
 
 func setUserAgentOverride(client *ga.Client) {
-	productName := "state"
-	productVersion := constants.VersionNumber
 	viewer := "compatible"
 	opsysName := "Unknown"
 	opsysVersion := "0.0"
 
-	switch runtime.GOOS {
-	case "linux":
+	switch info := sysinfo.OS(); info {
+	case sysinfo.Linux:
 		if _, ok := os.LookupEnv("DISPLAY"); ok {
 			viewer = "X11"
 		}
 
 		opsysName = "Linux"
 
-		if version, err := linuxVersion(); err == nil {
-			opsysVersion = version
+		// linux user-agent version shows architecture
+		switch arch := sysinfo.Architecture(); arch {
+		case sysinfo.I386:
+			opsysVersion = "i386"
+
+		case sysinfo.Amd64:
+			opsysVersion = "x86_64"
+
+		case sysinfo.Arm:
+			opsysVersion = "arm"
 		}
 
-	case "darwin":
+	case sysinfo.Mac:
 		viewer = "Macintosh"
 
 		opsysArch := "Intel"
@@ -162,86 +166,30 @@ func setUserAgentOverride(client *ga.Client) {
 		}
 		opsysName = fmt.Sprintf("%s %s", opsysArch, "Mac OS X")
 
-		if version, err := macVersion(); err == nil {
-			opsysVersion = version
+		osv, err := sysinfo.OSVersion()
+		if err == nil {
+			// 10_15 or 10_15_1
+			var patch string
+			if osv.Micro > 0 {
+				patch = fmt.Sprintf("_%d", osv.Micro)
+			}
+			opsysVersion = fmt.Sprintf("%d_%d%s", osv.Major, osv.Minor, patch)
 		}
 
-	case "windows":
+	case sysinfo.Windows:
 		opsysName = "Windows NT"
 
-		if version, err := windowsVersion(); err == nil {
-			opsysVersion = version
+		osv, err := sysinfo.OSVersion()
+		if err == nil {
+			// 10.1
+			opsysVersion = fmt.Sprintf("%d.%d", osv.Major, osv.Minor)
 		}
 	}
 
 	uaText := fmt.Sprintf(
 		"%s/%s (%s; %s %s)",
-		productName, productVersion,
-		viewer, opsysName, opsysVersion,
+		"state", constants.VersionNumber, viewer, opsysName, opsysVersion,
 	)
 
 	client.UserAgentOverride(uaText)
-}
-
-// linuxVersion returns architecture (this is the data associated with the OS
-// in Linux user-agent data)
-func linuxVersion() (string, error) {
-	archData, err := exec.Command("uname", "-i").Output()
-	if err != nil {
-		return "", nil
-	}
-
-	archData = bytes.TrimSpace(archData)
-	if len(archData) == 0 {
-		return "", errors.New("cannot parse linux version")
-	}
-
-	return string(archData), nil
-}
-
-// macVersion returns version as "10.15.1"
-func macVersion() (string, error) {
-	cmd := exec.Command("defaults", "read", "loginwindow", "SystemVersionStampAsString")
-	versionData, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	versionData = bytes.TrimSpace(versionData)
-	if len(versionData) == 0 {
-		return "", errors.New("cannot parse mac version")
-	}
-
-	return string(versionData), nil
-}
-
-// windowsVersion returns version as "10.0"
-func windowsVersion() (string, error) {
-	data, err := exec.Command("wmic", "os", "get", "version").Output()
-	if err != nil {
-		return "", err
-	}
-
-	// command outputs multiple lines; version expected on second line
-	data = bytes.Replace(data, []byte("\r\n"), []byte("\n"), -1)
-	lines := bytes.Split(data, []byte("\n"))
-	index := 1
-	if len(lines) < 2 {
-		index = 0
-	}
-	version := lines[index]
-
-	// version format example: 10.0.2345
-	vsplit := bytes.Split(version, []byte("."))
-	ct := 2
-	if len(vsplit) < 2 {
-		ct = 1
-	}
-
-	out := bytes.TrimSpace(bytes.Join(vsplit[:ct], []byte(".")))
-	if len(out) == 0 {
-		return "", errors.New("cannot parse windows version")
-	}
-
-	return string(out), nil
 }
