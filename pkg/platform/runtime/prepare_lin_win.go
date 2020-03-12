@@ -3,7 +3,10 @@
 package runtime
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
