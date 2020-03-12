@@ -42,6 +42,18 @@ func Get() *VirtualEnvironment {
 	if persisted == nil {
 		persisted = Init()
 	}
+
+	return persisted
+}
+
+// Get returns a persisted version of VirtualEnvironment{}
+func GetWithRefreshedProject() *VirtualEnvironment {
+	if persisted != nil {
+		persisted.project = project.GetFresh()
+	} else {
+		persisted = Init()
+	}
+
 	return persisted
 }
 

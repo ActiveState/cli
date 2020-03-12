@@ -320,6 +320,17 @@ func Get() *Project {
 	return project
 }
 
+func GetFresh() *Project {
+	project, fail := GetOnce()
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_project_file_unavailable"))
+		os.Exit(1)
+	}
+
+	project.Persist()
+	return project
+}
+
 // GetSafe returns the project configuration in a safe manner (returns error)
 func GetSafe() (*Project, *failures.Failure) {
 	if persistentProject != nil {

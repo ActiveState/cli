@@ -240,6 +240,16 @@ func Get() *Project {
 	return project
 }
 
+func GetFresh() *Project {
+	pj := projectfile.GetFresh()
+	project, fail := New(pj)
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_project_unavailable"))
+		os.Exit(1)
+	}
+	return project
+}
+
 // GetSafe returns project struct.  Produces failure if error occurs, allows recovery
 func GetSafe() (*Project, *failures.Failure) {
 	pjFile, fail := projectfile.GetSafe()
