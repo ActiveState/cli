@@ -24,7 +24,7 @@ type Project struct {
 	Added strfmt.DateTime `json:"added,omitempty"`
 
 	// branches
-	Branches Branches `json:"branches,omitempty"`
+	Branches Branches `json:"branches"`
 
 	// created by
 	CreatedBy *string `json:"createdBy,omitempty"`

@@ -27,14 +27,17 @@ type OrganizationEditable struct {
 	// Format: email
 	BillingEmail *strfmt.Email `json:"billingEmail,omitempty"`
 
-	// name
-	Name string `json:"name,omitempty"`
+	// display name
+	DisplayName string `json:"displayName,omitempty"`
 
 	// stripe payment token
 	StripePaymentToken *string `json:"stripePaymentToken,omitempty"`
 
 	// tier name
 	Tier string `json:"tier,omitempty"`
+
+	// user allowance
+	UserAllowance int64 `json:"userAllowance,omitempty"`
 }
 
 // Validate validates this organization editable

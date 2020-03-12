@@ -24,6 +24,10 @@ type V1BuildRequestRecipeResolvedIngredientsItems struct {
 	// Alternative ingredient versions which can also satisfy the order's requirement. Each entry in the array is the ID of an ingredient version which could satisfy these requirements.
 	Alternatives []strfmt.UUID `json:"alternatives"`
 
+	// An ID to uniquely represent the artifact built from resolved ingredient. The same ingredient version will have different artifact IDs on different platforms, different images, or with different resolved dependencies.
+	// Format: uuid
+	ArtifactID strfmt.UUID `json:"artifact_id,omitempty"`
+
 	// The custom build scripts for building this ingredient, if any
 	BuildScripts []*V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItems `json:"build_scripts"`
 
@@ -50,6 +54,10 @@ func (m *V1BuildRequestRecipeResolvedIngredientsItems) Validate(formats strfmt.R
 	var res []error
 
 	if err := m.validateAlternatives(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateArtifactID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -95,6 +103,19 @@ func (m *V1BuildRequestRecipeResolvedIngredientsItems) validateAlternatives(form
 			return err
 		}
 
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItems) validateArtifactID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ArtifactID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("artifact_id", "body", "uuid", m.ArtifactID.String(), formats); err != nil {
+		return err
 	}
 
 	return nil

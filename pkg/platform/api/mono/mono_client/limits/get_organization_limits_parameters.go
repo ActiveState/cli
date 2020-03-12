@@ -6,9 +6,10 @@ package limits
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,8 +21,11 @@ import (
 // NewGetOrganizationLimitsParams creates a new GetOrganizationLimitsParams object
 // with the default values initialized.
 func NewGetOrganizationLimitsParams() *GetOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -30,8 +34,11 @@ func NewGetOrganizationLimitsParams() *GetOrganizationLimitsParams {
 // NewGetOrganizationLimitsParamsWithTimeout creates a new GetOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetOrganizationLimitsParamsWithTimeout(timeout time.Duration) *GetOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -40,8 +47,11 @@ func NewGetOrganizationLimitsParamsWithTimeout(timeout time.Duration) *GetOrgani
 // NewGetOrganizationLimitsParamsWithContext creates a new GetOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetOrganizationLimitsParamsWithContext(ctx context.Context) *GetOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -50,9 +60,12 @@ func NewGetOrganizationLimitsParamsWithContext(ctx context.Context) *GetOrganiza
 // NewGetOrganizationLimitsParamsWithHTTPClient creates a new GetOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetOrganizationLimitsParamsWithHTTPClient(client *http.Client) *GetOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationLimitsParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -61,11 +74,16 @@ for the get organization limits operation typically these are written to a http.
 */
 type GetOrganizationLimitsParams struct {
 
-	/*OrganizationName
-	  organization to search
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,15 +123,26 @@ func (o *GetOrganizationLimitsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrganizationName adds the organizationName to the get organization limits params
-func (o *GetOrganizationLimitsParams) WithOrganizationName(organizationName string) *GetOrganizationLimitsParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the get organization limits params
+func (o *GetOrganizationLimitsParams) WithIdentifierType(identifierType *string) *GetOrganizationLimitsParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the get organization limits params
-func (o *GetOrganizationLimitsParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the get organization limits params
+func (o *GetOrganizationLimitsParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the get organization limits params
+func (o *GetOrganizationLimitsParams) WithOrganizationIdentifier(organizationIdentifier string) *GetOrganizationLimitsParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the get organization limits params
+func (o *GetOrganizationLimitsParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -124,8 +153,24 @@ func (o *GetOrganizationLimitsParams) WriteToRequest(r runtime.ClientRequest, re
 	}
 	var res []error
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

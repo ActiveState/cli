@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,8 +21,11 @@ import (
 // NewDeleteOrganizationParams creates a new DeleteOrganizationParams object
 // with the default values initialized.
 func NewDeleteOrganizationParams() *DeleteOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &DeleteOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -30,8 +34,11 @@ func NewDeleteOrganizationParams() *DeleteOrganizationParams {
 // NewDeleteOrganizationParamsWithTimeout creates a new DeleteOrganizationParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewDeleteOrganizationParamsWithTimeout(timeout time.Duration) *DeleteOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &DeleteOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -40,8 +47,11 @@ func NewDeleteOrganizationParamsWithTimeout(timeout time.Duration) *DeleteOrgani
 // NewDeleteOrganizationParamsWithContext creates a new DeleteOrganizationParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewDeleteOrganizationParamsWithContext(ctx context.Context) *DeleteOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &DeleteOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -50,9 +60,12 @@ func NewDeleteOrganizationParamsWithContext(ctx context.Context) *DeleteOrganiza
 // NewDeleteOrganizationParamsWithHTTPClient creates a new DeleteOrganizationParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewDeleteOrganizationParamsWithHTTPClient(client *http.Client) *DeleteOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &DeleteOrganizationParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -61,11 +74,16 @@ for the delete organization operation typically these are written to a http.Requ
 */
 type DeleteOrganizationParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,15 +123,26 @@ func (o *DeleteOrganizationParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrganizationName adds the organizationName to the delete organization params
-func (o *DeleteOrganizationParams) WithOrganizationName(organizationName string) *DeleteOrganizationParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the delete organization params
+func (o *DeleteOrganizationParams) WithIdentifierType(identifierType *string) *DeleteOrganizationParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the delete organization params
-func (o *DeleteOrganizationParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the delete organization params
+func (o *DeleteOrganizationParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the delete organization params
+func (o *DeleteOrganizationParams) WithOrganizationIdentifier(organizationIdentifier string) *DeleteOrganizationParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the delete organization params
+func (o *DeleteOrganizationParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -124,8 +153,24 @@ func (o *DeleteOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 	var res []error
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

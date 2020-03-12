@@ -32,10 +32,13 @@ type Organization struct {
 	// billing date
 	BillingDate *string `json:"billingDate,omitempty"`
 
+	// display name
+	DisplayName string `json:"displayName,omitempty"`
+
 	// member count
 	MemberCount int64 `json:"memberCount,omitempty"`
 
-	// name
+	// Deprecated; use displayName instead.
 	Name string `json:"name,omitempty"`
 
 	// organization ID

@@ -19,18 +19,31 @@ import (
 // swagger:model v1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0
 type V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0 struct {
 
+	// The SPDX license expression based on ActiveState's analysis of the package's licensing
+	ActivestateLicenseExpression string `json:"activestate_license_expression,omitempty"`
+
 	// Camel-specific metadata needed to build this ingredient version revision in camel, if there is any.
 	CamelExtras interface{} `json:"camel_extras,omitempty"`
 
 	// dependency sets
 	DependencySets []*V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0DependencySetsItems `json:"dependency_sets"`
 
+	// Whether or not this revision is indemnified for customers paying for indemnification
+	IsIndemnified *bool `json:"is_indemnified,omitempty"`
+
 	// Whether or not this is a stable release of the package
 	IsStableRelease *bool `json:"is_stable_release,omitempty"`
+
+	// An S3 URI to a JSON manifest mapping files in the package to licenses for that file
+	// Format: uri
+	LicenseManifestURI *strfmt.URI `json:"license_manifest_uri,omitempty"`
 
 	// S3 URL where the source distribution is stored for our platform
 	// Format: uri
 	PlatformSourceURI *strfmt.URI `json:"platform_source_uri,omitempty"`
+
+	// The SPDX license expression based on runner an automated scanner to determine the package's licensing
+	ScannerLicenseExpression string `json:"scanner_license_expression,omitempty"`
 
 	// A checksum of the source distribution. The actual type of the checksum (MD5, S3 Etag, etc.) is not specified. It's assumed that the system that populates and uses this data will know how to work with these checksums.
 	SourceChecksum *string `json:"source_checksum,omitempty"`
@@ -41,6 +54,10 @@ func (m *V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0) Validate(forma
 	var res []error
 
 	if err := m.validateDependencySets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLicenseManifestURI(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -74,6 +91,19 @@ func (m *V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0) validateDepend
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0) validateLicenseManifestURI(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.LicenseManifestURI) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("license_manifest_uri", "body", "uri", m.LicenseManifestURI.String(), formats); err != nil {
+		return err
 	}
 
 	return nil

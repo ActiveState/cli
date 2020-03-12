@@ -72,7 +72,7 @@ type GetOrganizationTierOK struct {
 }
 
 func (o *GetOrganizationTierOK) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/tier][%d] getOrganizationTierOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierOK  %+v", 200, o.Payload)
 }
 
 func (o *GetOrganizationTierOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -101,7 +101,7 @@ type GetOrganizationTierForbidden struct {
 }
 
 func (o *GetOrganizationTierForbidden) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/tier][%d] getOrganizationTierForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierForbidden  %+v", 403, o.Payload)
 }
 
 func (o *GetOrganizationTierForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -130,7 +130,7 @@ type GetOrganizationTierNotFound struct {
 }
 
 func (o *GetOrganizationTierNotFound) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/tier][%d] getOrganizationTierNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetOrganizationTierNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -159,7 +159,7 @@ type GetOrganizationTierInternalServerError struct {
 }
 
 func (o *GetOrganizationTierInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/tier][%d] getOrganizationTierInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetOrganizationTierInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

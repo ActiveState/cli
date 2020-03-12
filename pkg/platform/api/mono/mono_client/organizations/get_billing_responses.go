@@ -32,6 +32,13 @@ func (o *GetBillingReader) ReadResponse(response runtime.ClientResponse, consume
 		}
 		return result, nil
 
+	case 400:
+		result := NewGetBillingBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	case 403:
 		result := NewGetBillingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -72,12 +79,41 @@ type GetBillingOK struct {
 }
 
 func (o *GetBillingOK) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/billing][%d] getBillingOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingOK  %+v", 200, o.Payload)
 }
 
 func (o *GetBillingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.BillingInformation)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetBillingBadRequest creates a GetBillingBadRequest with default headers values
+func NewGetBillingBadRequest() *GetBillingBadRequest {
+	return &GetBillingBadRequest{}
+}
+
+/*GetBillingBadRequest handles this case with default header values.
+
+Bad Request
+*/
+type GetBillingBadRequest struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetBillingBadRequest) Error() string {
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *GetBillingBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -101,7 +137,7 @@ type GetBillingForbidden struct {
 }
 
 func (o *GetBillingForbidden) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/billing][%d] getBillingForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingForbidden  %+v", 403, o.Payload)
 }
 
 func (o *GetBillingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -130,7 +166,7 @@ type GetBillingNotFound struct {
 }
 
 func (o *GetBillingNotFound) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/billing][%d] getBillingNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetBillingNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -159,7 +195,7 @@ type GetBillingInternalServerError struct {
 }
 
 func (o *GetBillingInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}/billing][%d] getBillingInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetBillingInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

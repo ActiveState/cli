@@ -33,6 +33,10 @@ type V1OrderRequirementsItems struct {
 	// Required: true
 	Namespace *string `json:"namespace"`
 
+	// The revision number of the ingredient version that should be used to fulfill this requirement.
+	// Minimum: 1
+	Revision int64 `json:"revision,omitempty"`
+
 	// The requirements for the acceptable versions of this feature. This can be omitted, in which case any version is acceptable.
 	// Min Items: 1
 	VersionRequirements []*V1OrderRequirementsItemsVersionRequirementsItems `json:"version_requirements"`
@@ -51,6 +55,10 @@ func (m *V1OrderRequirementsItems) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateNamespace(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRevision(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -89,6 +97,19 @@ func (m *V1OrderRequirementsItems) validateIngredientVersionID(formats strfmt.Re
 func (m *V1OrderRequirementsItems) validateNamespace(formats strfmt.Registry) error {
 
 	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1OrderRequirementsItems) validateRevision(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Revision) { // not required
+		return nil
+	}
+
+	if err := validate.MinimumInt("revision", "body", int64(m.Revision), 1, false); err != nil {
 		return err
 	}
 

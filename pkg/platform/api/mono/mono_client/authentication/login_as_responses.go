@@ -32,8 +32,22 @@ func (o *LoginAsReader) ReadResponse(response runtime.ClientResponse, consumer r
 		}
 		return result, nil
 
+	case 400:
+		result := NewLoginAsBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	case 401:
 		result := NewLoginAsUnauthorized()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	case 500:
+		result := NewLoginAsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -73,6 +87,35 @@ func (o *LoginAsOK) readResponse(response runtime.ClientResponse, consumer runti
 	return nil
 }
 
+// NewLoginAsBadRequest creates a LoginAsBadRequest with default headers values
+func NewLoginAsBadRequest() *LoginAsBadRequest {
+	return &LoginAsBadRequest{}
+}
+
+/*LoginAsBadRequest handles this case with default header values.
+
+Bad Request
+*/
+type LoginAsBadRequest struct {
+	Payload *mono_models.Message
+}
+
+func (o *LoginAsBadRequest) Error() string {
+	return fmt.Sprintf("[POST /login/{username}][%d] loginAsBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *LoginAsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
 // NewLoginAsUnauthorized creates a LoginAsUnauthorized with default headers values
 func NewLoginAsUnauthorized() *LoginAsUnauthorized {
 	return &LoginAsUnauthorized{}
@@ -91,6 +134,35 @@ func (o *LoginAsUnauthorized) Error() string {
 }
 
 func (o *LoginAsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewLoginAsInternalServerError creates a LoginAsInternalServerError with default headers values
+func NewLoginAsInternalServerError() *LoginAsInternalServerError {
+	return &LoginAsInternalServerError{}
+}
+
+/*LoginAsInternalServerError handles this case with default header values.
+
+Server Error
+*/
+type LoginAsInternalServerError struct {
+	Payload *mono_models.Message
+}
+
+func (o *LoginAsInternalServerError) Error() string {
+	return fmt.Sprintf("[POST /login/{username}][%d] loginAsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *LoginAsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 
