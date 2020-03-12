@@ -7,9 +7,9 @@ contradiction:
 state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
-  other: Activate a Project
+  other: Activate a project
 events_description:
-  other: Manage Project Events
+  other: Manage project events
 events_header_id:
   other: ID
 events_header_event:
@@ -177,7 +177,7 @@ info_state_active_repoexists:
 panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
-  other: Authenticate against the ActiveState platform
+  other: Authenticate against the ActiveState Platform
 flag_state_auth_token_description:
   other: The API Token generated via your control panel
 flag_state_auth_username_description:
@@ -278,7 +278,7 @@ login_err_auth_token:
 fetch_org_err:
   other: Failed to fetch organization {{.V0}} from ActivateState platform.  Is the organization name correct?
 fork_project:
-  other: Fork an existing platform project
+  other: Fork an existing ActiveState Platform project
 flag_state_fork_org_description:
   other: The organization to fork the project to
 flag_state_fork_private_description:
@@ -310,7 +310,7 @@ local:
 organization:
   other: Organization
 organizations_description:
-  other: List member organizations on the ActiveState platform
+  other: List member organizations on the ActiveState Platform
 organizations_err:
   other: Unable to list member organizations
 organizations_unknown_tier:
@@ -426,7 +426,7 @@ invalid_uuid_val:
 total:
   other: Total
 projects_description:
-  other: Manage Your Projects
+  other: Manage your projects
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
@@ -458,7 +458,7 @@ error_expand_variable_project_unknown_name:
 error_expand_variable_project_unrecognized_platform_var:
   other: "Unrecognized platform variable '{{.V0}}'"
 run_description:
-  other: Run Your Project Scripts
+  other: Run your project scripts
 scripts_description:
   other: Show project scripts 
 flag_json_desc:
@@ -594,7 +594,7 @@ env_inherit_prompt_overwrite:
 env_inherit_inherit_aborted:
   other: "Unable to inherit from current environment: aborted."
 show_project:
-  other: Shows information about a project.
+  other: Show information about a project
 arg_state_show_remote_description:
   other: Path to project
 err_state_show_path_does_not_exist:
@@ -629,7 +629,7 @@ run_listing_scripts:
   other: "Available Scripts: "
 
 secrets_cmd_description:
-  other: Manage Your Secrets
+  other: Manage your secrets
 secrets_flag_filter:
   other: Show only secrets that match the given filter. The filter value is the config path that you want to see secrets for, eg. constants.foo, scripts.foo, secrets.project.foo, etc.
 secrets_get_cmd_description:
