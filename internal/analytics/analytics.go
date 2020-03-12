@@ -1,8 +1,6 @@
 package analytics
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
@@ -30,6 +28,8 @@ type customDimensions struct {
 	branchName string
 	userID     string
 	output     string
+	osName     string
+	osVersion  string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -44,6 +44,8 @@ func (d *customDimensions) toMap() map[string]string {
 		"3": d.branchName,
 		"4": d.userID,
 		"5": d.output,
+		"6": d.osName,
+		"7": d.osVersion,
 	}
 }
 
@@ -66,10 +68,22 @@ func setup() {
 		userIDString = userID.String()
 	}
 
+	osName := sysinfo.OS().String()
+	osVersion := "unknown"
+	osvInfo, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Errorf("Could not detect osVersion: %v", err)
+	}
+	if osvInfo != nil {
+		osVersion = osvInfo.Version
+	}
+
 	CustomDimensions = &customDimensions{
 		version:    constants.Version,
 		branchName: constants.BranchName,
 		userID:     userIDString,
+		osName:     osName,
+		osVersion:  osVersion,
 	}
 
 	client.ClientID(id)
@@ -77,8 +91,6 @@ func setup() {
 	if id == "unknown" {
 		Event("error", "unknown machine id")
 	}
-
-	setUserAgentOverride(client)
 }
 
 // Event logs an event to google analytics
@@ -127,22 +139,4 @@ func eventWithValue(category string, action string, value int64) error {
 
 	logging.Debug("Event+value: %s, %s, %s", category, action, value)
 	return client.Send(ga.NewEvent(category, action).Value(value))
-}
-
-func setUserAgentOverride(client *ga.Client) {
-	version := "unknown"
-	osVersion, err := sysinfo.OSVersion()
-	if err != nil {
-		logging.Errorf("Could not detect osVersion: %v", err)
-	}
-	if osVersion != nil {
-		version = osVersion.Version
-	}
-
-	uaText := fmt.Sprintf(
-		"%s/%s (%s %s)",
-		"state", constants.VersionNumber, sysinfo.OS().String(), version,
-	)
-
-	client.UserAgentOverride(uaText)
 }
