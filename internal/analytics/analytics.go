@@ -2,9 +2,6 @@ package analytics
 
 import (
 	"fmt"
-	"os"
-	"runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -133,62 +130,18 @@ func eventWithValue(category string, action string, value int64) error {
 }
 
 func setUserAgentOverride(client *ga.Client) {
-	viewer := "compatible"
-	opsysName := "Unknown"
-	opsysVersion := "0.0"
-
-	switch info := sysinfo.OS(); info {
-	case sysinfo.Linux:
-		if _, ok := os.LookupEnv("DISPLAY"); ok {
-			viewer = "X11"
-		}
-
-		opsysName = "Linux"
-
-		// linux user-agent version shows architecture
-		switch arch := sysinfo.Architecture(); arch {
-		case sysinfo.I386:
-			opsysVersion = "i386"
-
-		case sysinfo.Amd64:
-			opsysVersion = "x86_64"
-
-		case sysinfo.Arm:
-			opsysVersion = "arm"
-		}
-
-	case sysinfo.Mac:
-		viewer = "Macintosh"
-
-		opsysArch := "Intel"
-		if strings.Contains(runtime.GOARCH, "ppc") {
-			opsysArch = "PPC"
-		}
-		opsysName = fmt.Sprintf("%s %s", opsysArch, "Mac OS X")
-
-		osv, err := sysinfo.OSVersion()
-		if err == nil {
-			// 10_15 or 10_15_1
-			var patch string
-			if osv.Micro > 0 {
-				patch = fmt.Sprintf("_%d", osv.Micro)
-			}
-			opsysVersion = fmt.Sprintf("%d_%d%s", osv.Major, osv.Minor, patch)
-		}
-
-	case sysinfo.Windows:
-		opsysName = "Windows NT"
-
-		osv, err := sysinfo.OSVersion()
-		if err == nil {
-			// 10.1
-			opsysVersion = fmt.Sprintf("%d.%d", osv.Major, osv.Minor)
-		}
+	version := "unknown"
+	osVersion, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Errorf("Could not detect osVersion: %v", err)
+	}
+	if osVersion != nil {
+		version = osVersion.Version
 	}
 
 	uaText := fmt.Sprintf(
-		"%s/%s (%s; %s %s)",
-		"state", constants.VersionNumber, viewer, opsysName, opsysVersion,
+		"%s/%s (%s %s)",
+		"state", constants.VersionNumber, sysinfo.OS().String(), version,
 	)
 
 	client.UserAgentOverride(uaText)
