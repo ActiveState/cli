@@ -91,10 +91,10 @@ func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *f
 
 	br := BuildRequest{
 		headchef_models.V1BuildRequest{
-			Requester: &headchef_models.Requester{
+			Requester: &headchef_models.V1BuildRequestRequester{
 				OrganizationID: &orgID,
 				ProjectID:      &projID,
-				UserID:         &uid,
+				UserID:         uid,
 			},
 			Format: &format,
 		},
