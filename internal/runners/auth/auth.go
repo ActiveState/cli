@@ -37,39 +37,44 @@ func runAuth(params *AuthParams) error {
 	auth := authentication.Get()
 
 	output := commands.Output(strings.ToLower(params.Output))
-	var user []byte
-	var fail *failures.Failure
-	if auth.Authenticated() {
-		logging.Debug("Already authenticated")
-		switch output {
-		case commands.JSON, commands.EditorV0:
-			user, fail = userToJSON(auth.WhoAmI())
-			if fail != nil {
-				return fail.WithDescription("login_err_output")
-			}
-			print.Line(string(user))
-		default:
-			print.Line(locale.T("logged_in_as", map[string]string{
-				"Name": auth.WhoAmI(),
-			}))
-		}
-
-		return nil
+	if !auth.Authenticated() {
+		return authenticate(params, auth)
 	}
 
+	logging.Debug("Already authenticated")
+	switch output {
+	case commands.JSON, commands.EditorV0:
+		user, fail := userToJSON(auth.WhoAmI())
+		if fail != nil {
+			return fail.WithDescription("login_err_output")
+		}
+		print.Line(string(user))
+	default:
+		print.Line(locale.T("logged_in_as", map[string]string{
+			"Name": auth.WhoAmI(),
+		}))
+	}
+
+	return nil
+}
+
+func authenticate(params *AuthParams, auth *authentication.Auth) error {
 	if params.Token == "" {
-		fail = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp)
+		fail := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth")
 		}
 	} else {
-		fail = tokenAuth(params.Token)
+		fail := tokenAuth(params.Token)
 		if fail != nil {
 			return fail.WithDescription("login_err_auth_token")
 		}
 	}
+	if !auth.Authenticated() {
+		return failures.FailUser.New(locale.T("login_err_auth"))
+	}
 
-	switch output {
+	switch commands.Output(strings.ToLower(params.Output)) {
 	case commands.JSON, commands.EditorV0:
 		user, fail := userToJSON(auth.WhoAmI())
 		if fail != nil {
