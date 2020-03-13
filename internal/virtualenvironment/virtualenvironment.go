@@ -41,9 +41,6 @@ type VirtualEnvironment struct {
 func Get() *VirtualEnvironment {
 	if persisted == nil {
 		persisted = Init()
-	} else {
-		projectfile.Reset()
-		persisted.project = project.Get()
 	}
 
 	return persisted
