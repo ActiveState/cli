@@ -5,18 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -41,174 +38,74 @@ func init() {
 	HostPlatform = sysinfo.OS().String()
 }
 
-// FetchRecipesForCommit returns a list of recipes from a project based off a commitID
-func FetchRecipesForCommit(pj *mono_models.Project, commitID strfmt.UUID) ([]*Recipe, *failures.Failure) {
-	return fetchRecipes(pj, commitID, nil)
+// FetchRawRecipeForCommit returns a recipe from a project based off a commitID
+func FetchRawRecipeForCommit(commitID strfmt.UUID) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, nil)
 }
 
-func fetchRecipes(pj *mono_models.Project, commitID strfmt.UUID, hostPlatform *string) ([]*Recipe, *failures.Failure) {
-	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
+// FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, platform string) (string, *failures.Failure) {
+	return fetchRawRecipe(commitID, &platform)
+}
+
+// FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
+func FetchRawRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (string, *failures.Failure) {
+	branch, fail := DefaultBranchForProject(pj)
 	if fail != nil {
-		return nil, fail
+		return "", fail
+	}
+	if branch.CommitID == nil {
+		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	client := inventory.Get()
+	return FetchRawRecipeForCommitAndPlatform(*branch.CommitID, hostPlatform)
+}
 
-	params := inventory_operations.NewResolveRecipesParams()
+func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
+	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return "", fail
+	}
+
+	_, transport := inventory.Init()
+
+	params := iop.NewResolveRecipesParams()
 	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
+	if fail != nil {
+		return "", fail
+	}
 
 	if hostPlatform != nil {
 		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if fail != nil {
-			return nil, fail
+			return "", fail
 		}
 	}
 
-	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			return nil, FailOrderRecipes.New("request_timed_out")
+			return "", FailOrderRecipes.New("request_timed_out")
 		}
 
-		recipeBody, err2 := json.Marshal(params.Order)
+		orderBody, err2 := json.Marshal(params.Order)
 		if err2 != nil {
-			recipeBody = []byte(fmt.Sprintf("Could not marshal recipe, error: %v", err2))
+			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
 		switch rrErr := err.(type) {
-		case *inventory_operations.ResolveRecipesDefault:
+		case *iop.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
-			logging.Error("Could not resolve recipe, error: %s, recipe: %s", msg, string(recipeBody))
-			return nil, FailOrderRecipes.New(msg)
-		case *inventory_operations.ResolveRecipesBadRequest:
+			logging.Error("Could not resolve order, error: %s, order: %s", msg, string(orderBody))
+			return "", FailOrderRecipes.New(msg)
+		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
-			logging.Error("Bad request while resolving recipe, error: %s, recipe: %s", msg, string(recipeBody))
-			return nil, FailOrderRecipes.New(msg)
+			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
+			return "", FailOrderRecipes.New(msg)
 		default:
-			logging.Error("Unknown error while resolving recipe, error: %v, recipe: %s", err, string(recipeBody))
-			return nil, FailOrderRecipes.Wrap(err)
+			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
+			return "", FailOrderRecipes.Wrap(err)
 		}
 	}
 
-	return recipe.Payload.Recipes, nil
-}
-
-// RecipeByHostPlatform filters multiple recipes down to one based on it's
-// platform name
-func RecipeByHostPlatform(recipes []*Recipe, hostPlatform string) (*Recipe, *failures.Failure) {
-	for _, recipe := range recipes {
-		if recipe.Platform.PlatformID == nil {
-			continue
-		}
-
-		pf, fail := FetchPlatformByUID(*recipe.Platform.PlatformID)
-		if fail != nil {
-			return nil, fail
-		}
-
-		if pf == nil || pf.Kernel == nil || pf.Kernel.Name == nil {
-			continue
-		}
-
-		if *pf.Kernel.Name == hostPlatformToKernelName(hostPlatform) {
-			return recipe, nil
-		}
-	}
-
-	return nil, FailRecipeNotFound.New(locale.T("err_recipe_not_found"))
-}
-
-// FetchRecipeForCommitAndHostPlatform returns the available recipe matching the commit id and platform string
-func FetchRecipeForCommitAndHostPlatform(pj *mono_models.Project, commitID strfmt.UUID, hostPlatform string) (*Recipe, *failures.Failure) {
-	recipes, fail := fetchRecipes(pj, commitID, &hostPlatform)
-	if fail != nil {
-		return nil, fail
-	}
-	return RecipeByHostPlatform(recipes, hostPlatform)
-}
-
-// FetchRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
-func FetchRecipeForPlatform(pj *mono_models.Project, hostPlatform string) (*Recipe, *failures.Failure) {
-	branch, fail := DefaultBranchForProject(pj)
-	if fail != nil {
-		return nil, fail
-	}
-	if branch.CommitID == nil {
-		return nil, FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	return FetchRecipeForCommitAndHostPlatform(pj, *branch.CommitID, hostPlatform)
-}
-
-// RecipeToBuildRecipe converts a *Recipe to the related head chef model
-func RecipeToBuildRecipe(recipe *Recipe) (*headchef_models.V1BuildRequestRecipe, *failures.Failure) {
-	b, err := recipe.MarshalBinary()
-	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
-	}
-
-	buildRecipe := &headchef_models.V1BuildRequestRecipe{}
-	err = buildRecipe.UnmarshalBinary(b)
-	if err != nil {
-		return nil, failures.FailMarshal.Wrap(err)
-	}
-
-	return buildRecipe, nil
-}
-
-func hostPlatformToPlatformID(os string) (string, *failures.Failure) {
-	switch strings.ToLower(os) {
-	case strings.ToLower(sysinfo.Linux.String()):
-		return constants.LinuxBit64UUID, nil
-	case strings.ToLower(sysinfo.Mac.String()):
-		return constants.MacBit64UUID, nil
-	case strings.ToLower(sysinfo.Windows.String()):
-		return constants.Win10Bit64UUID, nil
-	default:
-		return "", FailUnsupportedPlatform.New("err_unsupported_platform", os)
-	}
-}
-
-func hostPlatformToKernelName(os string) string {
-	switch strings.ToLower(os) {
-	case strings.ToLower(sysinfo.Linux.String()):
-		return "Linux"
-	case strings.ToLower(sysinfo.Mac.String()):
-		return "Darwin"
-	case strings.ToLower(sysinfo.Windows.String()):
-		return "Windows"
-	default:
-		return ""
-	}
-}
-
-func platformArchToHostArch(arch, bits string) string {
-	switch bits {
-	case "32":
-		switch arch {
-		case "IA64":
-			return "nonexistent"
-		case "PA-RISC":
-			return "unsupported"
-		case "PowerPC":
-			return "ppc"
-		case "Sparc":
-			return "sparc"
-		case "x86":
-			return "386"
-		}
-	case "64":
-		switch arch {
-		case "IA64":
-			return "unsupported"
-		case "PA-RISC":
-			return "unsupported"
-		case "PowerPC":
-			return "ppc64"
-		case "Sparc":
-			return "sparc64"
-		case "x86":
-			return "amd64"
-		}
-	}
-	return "unrecognized"
+	return recipe, nil
 }

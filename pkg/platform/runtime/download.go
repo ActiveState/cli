@@ -79,48 +79,38 @@ func NewDownload(project *project.Project, targetDir string) Downloader {
 	return &Download{project, targetDir}
 }
 
-// fetchBuildRequest juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchBuildRequest() (*headchef_models.V1BuildRequest, *failures.Failure) {
-	// First, get the platform project for our current project
+// fetchRecipe juggles API's to get the build request that can be sent to the head-chef
+func (r *Download) fetchRecipe() (string, *failures.Failure) {
+	commitID := strfmt.UUID(r.project.CommitID())
+	if commitID == "" {
+		return "", FailNoCommit.New(locale.T("err_no_commit"))
+	}
+
+	recipe, fail := model.FetchRawRecipeForCommitAndPlatform(commitID, model.HostPlatform)
+	if fail != nil {
+		return "", fail
+	}
+
+	return recipe, nil
+}
+
+// FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
+func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
+	recipe, fail := r.fetchRecipe()
+	if fail != nil {
+		return nil, fail
+	}
+
 	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
 	if fail != nil {
 		return nil, fail
 	}
 
-	commitID := strfmt.UUID(r.project.CommitID())
-	if commitID == "" {
-		return nil, FailNoCommit.New(locale.T("err_no_commit"))
-	}
-
-	recipe, fail := model.FetchRecipeForCommitAndHostPlatform(platProject, commitID, model.HostPlatform)
-	if fail != nil {
-		return nil, fail
-	}
-
-	// Turn it into a build recipe (same data, differently typed)
-	buildRecipe, fail := model.RecipeToBuildRecipe(recipe)
-	if fail != nil {
-		return nil, fail
-	}
-
-	// Wrap it all up in a build request
-	buildRequest, fail := model.NewBuildRequest(platProject)
-	if fail != nil {
-		return nil, fail
-	}
-
-	buildRequest.Recipe = buildRecipe
-	return buildRequest, nil
-}
-
-// FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
-func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
-	buildRequest, fail := r.fetchBuildRequest()
-	if fail != nil {
-		return nil, fail
-	}
-
 	logging.Debug("sending request to head-chef")
+	buildRequest, fail := headchef.NewBuildRequest(recipe, platProject.OrganizationID, platProject.ProjectID)
+	if fail != nil {
+		return nil, fail
+	}
 	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
 
 	var artifacts []*HeadChefArtifact

@@ -67,29 +67,21 @@ func (suite *RecipeTestSuite) mockProject() *mono_models.Project {
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipesForCommit() {
-	recipes, fail := model.FetchRecipesForCommit(suite.mockProject(), "00010001-0001-0001-0001-000100010001")
+	recipe, fail := model.FetchRawRecipeForCommit("00010001-0001-0001-0001-000100010001")
 	suite.Require().NoError(fail.ToError())
-	suite.NotEmpty(recipes, "Returns recipes")
+	suite.NotEmpty(recipe, "Returns recipes")
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipeForPlatform() {
-	recipe, fail := model.FetchRecipeForPlatform(suite.mockProject(), model.HostPlatform)
+	recipe, fail := model.FetchRawRecipeForPlatform(suite.mockProject(), model.HostPlatform)
 	suite.Require().NoError(fail.ToError())
-	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.Platform.PlatformID, "Returns recipe")
+	suite.NotEmpty(recipe, "Returns recipes")
 }
 
 func (suite *RecipeTestSuite) TestFetchRecipeForCommitAndHostPlatform() {
-	recipe, fail := model.FetchRecipeForCommitAndHostPlatform(suite.mockProject(), "00010001-0001-0001-0001-000100010001", model.HostPlatform)
+	recipe, fail := model.FetchRawRecipeForCommitAndPlatform("00010001-0001-0001-0001-000100010001", model.HostPlatform)
 	suite.Require().NoError(fail.ToError())
-	suite.Equal(strfmt.UUID(suite.platformUID), *recipe.Platform.PlatformID, "Returns recipe")
-}
-
-func (suite *RecipeTestSuite) TestRecipeToBuildRecipe() {
-	recipe, fail := model.FetchRecipeForPlatform(suite.mockProject(), model.HostPlatform)
-	suite.Require().NoError(fail.ToError())
-	buildRecipe, fail := model.RecipeToBuildRecipe(recipe)
-	suite.Require().NoError(fail.ToError())
-	suite.Equal(strfmt.UUID(suite.platformUID), *buildRecipe.Platform.PlatformID, "Returns recipe")
+	suite.NotEmpty(recipe, "Returns recipes")
 }
 
 func TestRecipeSuite(t *testing.T) {
