@@ -19,6 +19,10 @@ import (
 // swagger:model CommitEditable
 type CommitEditable struct {
 
+	// When resolving depdencies, updates made after this time will be ignored.
+	// Format: date-time
+	AtTime strfmt.DateTime `json:"atTime,omitempty"`
+
 	// what changed in this commit
 	Changeset []*CommitChangeEditable `json:"changeset"`
 
@@ -34,6 +38,10 @@ type CommitEditable struct {
 func (m *CommitEditable) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAtTime(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateChangeset(formats); err != nil {
 		res = append(res, err)
 	}
@@ -45,6 +53,19 @@ func (m *CommitEditable) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CommitEditable) validateAtTime(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AtTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("atTime", "body", "date-time", m.AtTime.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

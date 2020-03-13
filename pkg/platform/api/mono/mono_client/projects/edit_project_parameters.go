@@ -6,9 +6,10 @@ package projects
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -69,7 +70,7 @@ type EditProjectParams struct {
 	*/
 	OrganizationName string
 	/*Project*/
-	Project *mono_models.Project
+	Project *mono_models.ProjectEditable
 	/*ProjectName
 	  projectName of desired project
 
@@ -126,13 +127,13 @@ func (o *EditProjectParams) SetOrganizationName(organizationName string) {
 }
 
 // WithProject adds the project to the edit project params
-func (o *EditProjectParams) WithProject(project *mono_models.Project) *EditProjectParams {
+func (o *EditProjectParams) WithProject(project *mono_models.ProjectEditable) *EditProjectParams {
 	o.SetProject(project)
 	return o
 }
 
 // SetProject adds the project to the edit project params
-func (o *EditProjectParams) SetProject(project *mono_models.Project) {
+func (o *EditProjectParams) SetProject(project *mono_models.ProjectEditable) {
 	o.Project = project
 }
 

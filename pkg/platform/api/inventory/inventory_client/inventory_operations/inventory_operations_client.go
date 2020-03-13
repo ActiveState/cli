@@ -2137,6 +2137,35 @@ func (a *Client) GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, erro
 }
 
 /*
+GetSolutionRecipe Retrieve a recipe produced as part of a solution
+*/
+func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter) (*GetSolutionRecipeOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetSolutionRecipeParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getSolutionRecipe",
+		Method:             "GET",
+		PathPattern:        "/v1/solutions/recipes/{recipe_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetSolutionRecipeReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetSolutionRecipeOK), nil
+
+}
+
+/*
 HealthCheck health check API
 */
 func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
@@ -2220,6 +2249,35 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 		return nil, err
 	}
 	return result.(*ResolveRecipesOK), nil
+
+}
+
+/*
+SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
+*/
+func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter) (*SolveOrderCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSolveOrderParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "solveOrder",
+		Method:             "POST",
+		PathPattern:        "/v1/solutions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &SolveOrderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*SolveOrderCreated), nil
 
 }
 

@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -22,8 +23,11 @@ import (
 // NewEditBillingParams creates a new EditBillingParams object
 // with the default values initialized.
 func NewEditBillingParams() *EditBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -32,8 +36,11 @@ func NewEditBillingParams() *EditBillingParams {
 // NewEditBillingParamsWithTimeout creates a new EditBillingParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewEditBillingParamsWithTimeout(timeout time.Duration) *EditBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -42,8 +49,11 @@ func NewEditBillingParamsWithTimeout(timeout time.Duration) *EditBillingParams {
 // NewEditBillingParamsWithContext creates a new EditBillingParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewEditBillingParamsWithContext(ctx context.Context) *EditBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -52,9 +62,12 @@ func NewEditBillingParamsWithContext(ctx context.Context) *EditBillingParams {
 // NewEditBillingParamsWithHTTPClient creates a new EditBillingParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewEditBillingParamsWithHTTPClient(client *http.Client) *EditBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditBillingParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -68,11 +81,16 @@ type EditBillingParams struct {
 
 	*/
 	BillingInformation *mono_models.BillingInformationEditable
-	/*OrganizationName
-	  desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -123,15 +141,26 @@ func (o *EditBillingParams) SetBillingInformation(billingInformation *mono_model
 	o.BillingInformation = billingInformation
 }
 
-// WithOrganizationName adds the organizationName to the edit billing params
-func (o *EditBillingParams) WithOrganizationName(organizationName string) *EditBillingParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the edit billing params
+func (o *EditBillingParams) WithIdentifierType(identifierType *string) *EditBillingParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the edit billing params
-func (o *EditBillingParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the edit billing params
+func (o *EditBillingParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the edit billing params
+func (o *EditBillingParams) WithOrganizationIdentifier(organizationIdentifier string) *EditBillingParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the edit billing params
+func (o *EditBillingParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -148,8 +177,24 @@ func (o *EditBillingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		}
 	}
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

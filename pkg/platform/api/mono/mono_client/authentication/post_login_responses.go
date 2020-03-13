@@ -53,6 +53,13 @@ func (o *PostLoginReader) ReadResponse(response runtime.ClientResponse, consumer
 		}
 		return nil, result
 
+	case 500:
+		result := NewPostLoginInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	default:
 		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
@@ -163,6 +170,35 @@ func (o *PostLoginRetryWith) Error() string {
 }
 
 func (o *PostLoginRetryWith) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewPostLoginInternalServerError creates a PostLoginInternalServerError with default headers values
+func NewPostLoginInternalServerError() *PostLoginInternalServerError {
+	return &PostLoginInternalServerError{}
+}
+
+/*PostLoginInternalServerError handles this case with default header values.
+
+Server Error
+*/
+type PostLoginInternalServerError struct {
+	Payload *mono_models.Message
+}
+
+func (o *PostLoginInternalServerError) Error() string {
+	return fmt.Sprintf("[POST /login][%d] postLoginInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *PostLoginInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

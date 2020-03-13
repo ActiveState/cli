@@ -53,6 +53,13 @@ func (o *EditProjectReader) ReadResponse(response runtime.ClientResponse, consum
 		}
 		return nil, result
 
+	case 409:
+		result := NewEditProjectConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	case 500:
 		result := NewEditProjectInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -170,6 +177,35 @@ func (o *EditProjectNotFound) Error() string {
 }
 
 func (o *EditProjectNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewEditProjectConflict creates a EditProjectConflict with default headers values
+func NewEditProjectConflict() *EditProjectConflict {
+	return &EditProjectConflict{}
+}
+
+/*EditProjectConflict handles this case with default header values.
+
+Conflict
+*/
+type EditProjectConflict struct {
+	Payload *mono_models.Message
+}
+
+func (o *EditProjectConflict) Error() string {
+	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectConflict  %+v", 409, o.Payload)
+}
+
+func (o *EditProjectConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

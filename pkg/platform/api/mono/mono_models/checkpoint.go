@@ -8,6 +8,7 @@ package mono_models
 import (
 	strfmt "github.com/go-openapi/strfmt"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
 )
 
@@ -21,12 +22,40 @@ type Checkpoint struct {
 	// The name of the requirement (a requirement can be a package, a language, a clib, etc)
 	Requirement string `json:"requirement,omitempty"`
 
-	// version constraint
+	// Deprecated; use version_constraints instead.
 	VersionConstraint string `json:"version_constraint,omitempty"`
+
+	// version constraints
+	VersionConstraints Constraints `json:"version_constraints"`
 }
 
 // Validate validates this checkpoint
 func (m *Checkpoint) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateVersionConstraints(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Checkpoint) validateVersionConstraints(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.VersionConstraints) { // not required
+		return nil
+	}
+
+	if err := m.VersionConstraints.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints")
+		}
+		return err
+	}
+
 	return nil
 }
 

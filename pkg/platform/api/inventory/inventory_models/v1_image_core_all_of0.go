@@ -25,11 +25,12 @@ type V1ImageCoreAllOf0 struct {
 
 	// The platform to which this image belongs.
 	// Required: true
-	PlatformID *string `json:"platform_id"`
+	// Format: uuid
+	PlatformID *strfmt.UUID `json:"platform_id"`
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker WindowsInstance]
+	// Enum: [Docker Mac WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -70,6 +71,10 @@ func (m *V1ImageCoreAllOf0) validatePlatformID(formats strfmt.Registry) error {
 		return err
 	}
 
+	if err := validate.FormatOf("platform_id", "body", "uuid", m.PlatformID.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -77,7 +82,7 @@ var v1ImageCoreAllOf0TypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -89,6 +94,12 @@ const (
 
 	// V1ImageCoreAllOf0TypeDocker captures enum value "Docker"
 	V1ImageCoreAllOf0TypeDocker string = "Docker"
+
+	// V1ImageCoreAllOf0TypeMac captures enum value "Mac"
+	V1ImageCoreAllOf0TypeMac string = "Mac"
+
+	// V1ImageCoreAllOf0TypeWindowsDocker captures enum value "WindowsDocker"
+	V1ImageCoreAllOf0TypeWindowsDocker string = "WindowsDocker"
 
 	// V1ImageCoreAllOf0TypeWindowsInstance captures enum value "WindowsInstance"
 	V1ImageCoreAllOf0TypeWindowsInstance string = "WindowsInstance"

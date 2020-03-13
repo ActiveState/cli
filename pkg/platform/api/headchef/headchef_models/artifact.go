@@ -6,6 +6,7 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"encoding/json"
 	"strconv"
 
 	strfmt "github.com/go-openapi/strfmt"
@@ -26,6 +27,11 @@ type Artifact struct {
 	// Format: uuid
 	ArtifactID *strfmt.UUID `json:"artifact_id"`
 
+	// Indicates where in the build process the artifact currently is.
+	// Required: true
+	// Enum: [blocked doomed failed ready running starting succeeded]
+	BuildState *string `json:"build_state"`
+
 	// Timestamp for when the artifact was created
 	// Required: true
 	// Format: date-time
@@ -34,9 +40,12 @@ type Artifact struct {
 	// dependency ids
 	DependencyIds []strfmt.UUID `json:"dependency_ids"`
 
+	// The error that happened which caused the artifact to fail to build. Only non-null if 'build_state' is 'failed'.
+	Error string `json:"error,omitempty"`
+
 	// Ingredient Version ID
 	//
-	// Source Ingredient Version for the artifact
+	// Source Ingredient Version ID for the artifact. Null if the artifact was not built directly from an ingredient (i.e. a packager artifact)
 	// Format: uuid
 	IngredientVersionID strfmt.UUID `json:"ingredient_version_id,omitempty"`
 
@@ -45,10 +54,9 @@ type Artifact struct {
 	// Format: uuid
 	PlatformID *strfmt.UUID `json:"platform_id"`
 
-	// URI for the storage location of the artifact
-	// Required: true
+	// URI for the storage location of the artifact. Only non-null if 'build_state' is 'succeeded'.
 	// Format: uri
-	URI *strfmt.URI `json:"uri"`
+	URI strfmt.URI `json:"uri,omitempty"`
 }
 
 // Validate validates this artifact
@@ -56,6 +64,10 @@ func (m *Artifact) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateArtifactID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateBuildState(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -92,6 +104,64 @@ func (m *Artifact) validateArtifactID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("artifact_id", "body", "uuid", m.ArtifactID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var artifactTypeBuildStatePropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["blocked","doomed","failed","ready","running","starting","succeeded"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		artifactTypeBuildStatePropEnum = append(artifactTypeBuildStatePropEnum, v)
+	}
+}
+
+const (
+
+	// ArtifactBuildStateBlocked captures enum value "blocked"
+	ArtifactBuildStateBlocked string = "blocked"
+
+	// ArtifactBuildStateDoomed captures enum value "doomed"
+	ArtifactBuildStateDoomed string = "doomed"
+
+	// ArtifactBuildStateFailed captures enum value "failed"
+	ArtifactBuildStateFailed string = "failed"
+
+	// ArtifactBuildStateReady captures enum value "ready"
+	ArtifactBuildStateReady string = "ready"
+
+	// ArtifactBuildStateRunning captures enum value "running"
+	ArtifactBuildStateRunning string = "running"
+
+	// ArtifactBuildStateStarting captures enum value "starting"
+	ArtifactBuildStateStarting string = "starting"
+
+	// ArtifactBuildStateSucceeded captures enum value "succeeded"
+	ArtifactBuildStateSucceeded string = "succeeded"
+)
+
+// prop value enum
+func (m *Artifact) validateBuildStateEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, artifactTypeBuildStatePropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Artifact) validateBuildState(formats strfmt.Registry) error {
+
+	if err := validate.Required("build_state", "body", m.BuildState); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateBuildStateEnum("build_state", "body", *m.BuildState); err != nil {
 		return err
 	}
 
@@ -156,8 +226,8 @@ func (m *Artifact) validatePlatformID(formats strfmt.Registry) error {
 
 func (m *Artifact) validateURI(formats strfmt.Registry) error {
 
-	if err := validate.Required("uri", "body", m.URI); err != nil {
-		return err
+	if swag.IsZero(m.URI) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("uri", "body", "uri", m.URI.String(), formats); err != nil {

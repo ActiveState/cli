@@ -100,7 +100,7 @@ func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo r
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "deleteOrganization",
 		Method:             "DELETE",
-		PathPattern:        "/organizations/{organizationName}",
+		PathPattern:        "/organizations/{organizationIdentifier}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{""},
 		Schemes:            []string{"http", "https"},
@@ -131,7 +131,7 @@ func (a *Client) EditBilling(params *EditBillingParams, authInfo runtime.ClientA
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "editBilling",
 		Method:             "PUT",
-		PathPattern:        "/organizations/{organizationName}/billing",
+		PathPattern:        "/organizations/{organizationIdentifier}/billing",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -193,7 +193,7 @@ func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runti
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "editOrganization",
 		Method:             "POST",
-		PathPattern:        "/organizations/{organizationName}",
+		PathPattern:        "/organizations/{organizationIdentifier}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -224,7 +224,7 @@ func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAut
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getBilling",
 		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/billing",
+		PathPattern:        "/organizations/{organizationIdentifier}/billing",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{""},
 		Schemes:            []string{"http", "https"},
@@ -242,9 +242,40 @@ func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAut
 }
 
 /*
+GetNextMutationID nexts mutation ID
+
+Get the id that the next mutation of this org should use
+*/
+func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetNextMutationIDOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNextMutationIDParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getNextMutationID",
+		Method:             "GET",
+		PathPattern:        "/organizations/{organizationIdentifier}/nextMutationID",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetNextMutationIDReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetNextMutationIDOK), nil
+
+}
+
+/*
 GetOrganization retrieves an organization
 
-Return a specific organization matching organization name
+Return a specific organization
 */
 func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -255,7 +286,7 @@ func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOrganization",
 		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}",
+		PathPattern:        "/organizations/{organizationIdentifier}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{""},
 		Schemes:            []string{"http", "https"},
@@ -335,6 +366,37 @@ func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, au
 }
 
 /*
+GetOrganizationMutations gets history of mutations applied to an organization
+
+Query mutation records for the org
+*/
+func (a *Client) GetOrganizationMutations(params *GetOrganizationMutationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationMutationsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOrganizationMutationsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOrganizationMutations",
+		Method:             "GET",
+		PathPattern:        "/organizations/{organizationIdentifier}/mutations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetOrganizationMutationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetOrganizationMutationsOK), nil
+
+}
+
+/*
 GetOrganizationTier gets information about an organization s tier
 
 Get information about an organization's tier
@@ -348,7 +410,7 @@ func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOrganizationTier",
 		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/tier",
+		PathPattern:        "/organizations/{organizationIdentifier}/tier",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{""},
 		Schemes:            []string{"http", "https"},
@@ -486,6 +548,37 @@ func (a *Client) ListOrganizations(params *ListOrganizationsParams, authInfo run
 		return nil, err
 	}
 	return result.(*ListOrganizationsOK), nil
+
+}
+
+/*
+MutateOrganization mutates organization
+
+Perform an atomic mutation on the org
+*/
+func (a *Client) MutateOrganization(params *MutateOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*MutateOrganizationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewMutateOrganizationParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "mutateOrganization",
+		Method:             "POST",
+		PathPattern:        "/organizations/{organizationIdentifier}/mutations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &MutateOrganizationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*MutateOrganizationOK), nil
 
 }
 

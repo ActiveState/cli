@@ -39,6 +39,13 @@ func (o *GetCommitReader) ReadResponse(response runtime.ClientResponse, consumer
 		}
 		return nil, result
 
+	case 500:
+		result := NewGetCommitInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	default:
 		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
@@ -91,6 +98,35 @@ func (o *GetCommitNotFound) Error() string {
 }
 
 func (o *GetCommitNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetCommitInternalServerError creates a GetCommitInternalServerError with default headers values
+func NewGetCommitInternalServerError() *GetCommitInternalServerError {
+	return &GetCommitInternalServerError{}
+}
+
+/*GetCommitInternalServerError handles this case with default header values.
+
+error retrieving commit
+*/
+type GetCommitInternalServerError struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetCommitInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetCommitInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

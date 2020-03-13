@@ -15,20 +15,17 @@ import (
 // swagger:model LimitsEditable
 type LimitsEditable struct {
 
-	// clear nodes limit override
-	ClearNodesLimitOverride bool `json:"clearNodesLimitOverride,omitempty"`
+	// clear security and compliance override
+	ClearSecurityAndComplianceOverride bool `json:"clearSecurityAndComplianceOverride,omitempty"`
 
-	// clear users limit override
-	ClearUsersLimitOverride bool `json:"clearUsersLimitOverride,omitempty"`
+	// nodes limit
+	NodesLimit *int64 `json:"nodesLimit,omitempty"`
 
-	// nodes limit override
-	NodesLimitOverride *int64 `json:"nodesLimitOverride,omitempty"`
+	// security and compliance override
+	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
 
-	// users limit base
-	UsersLimitBase *int64 `json:"usersLimitBase,omitempty"`
-
-	// users limit override
-	UsersLimitOverride *int64 `json:"usersLimitOverride,omitempty"`
+	// users limit
+	UsersLimit *int64 `json:"usersLimit,omitempty"`
 }
 
 // Validate validates this limits editable
