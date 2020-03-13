@@ -42,6 +42,7 @@ func Get() *VirtualEnvironment {
 	if persisted == nil {
 		persisted = Init()
 	}
+
 	return persisted
 }
 
