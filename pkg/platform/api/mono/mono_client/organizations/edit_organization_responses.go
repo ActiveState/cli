@@ -79,7 +79,7 @@ type EditOrganizationOK struct {
 }
 
 func (o *EditOrganizationOK) Error() string {
-	return fmt.Sprintf("[POST /organizations/{organizationName}][%d] editOrganizationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationOK  %+v", 200, o.Payload)
 }
 
 func (o *EditOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type EditOrganizationBadRequest struct {
 }
 
 func (o *EditOrganizationBadRequest) Error() string {
-	return fmt.Sprintf("[POST /organizations/{organizationName}][%d] editOrganizationBadRequest  %+v", 400, o.Payload)
+	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
 func (o *EditOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,7 +137,7 @@ type EditOrganizationForbidden struct {
 }
 
 func (o *EditOrganizationForbidden) Error() string {
-	return fmt.Sprintf("[POST /organizations/{organizationName}][%d] editOrganizationForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationForbidden  %+v", 403, o.Payload)
 }
 
 func (o *EditOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -166,7 +166,7 @@ type EditOrganizationNotFound struct {
 }
 
 func (o *EditOrganizationNotFound) Error() string {
-	return fmt.Sprintf("[POST /organizations/{organizationName}][%d] editOrganizationNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationNotFound  %+v", 404, o.Payload)
 }
 
 func (o *EditOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -195,7 +195,7 @@ type EditOrganizationInternalServerError struct {
 }
 
 func (o *EditOrganizationInternalServerError) Error() string {
-	return fmt.Sprintf("[POST /organizations/{organizationName}][%d] editOrganizationInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *EditOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

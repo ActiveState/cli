@@ -16,22 +16,16 @@ import (
 type Limits struct {
 
 	// nodes limit
-	NodesLimit *int64 `json:"nodesLimit,omitempty"`
+	NodesLimit int64 `json:"nodesLimit,omitempty"`
 
-	// nodes limit base
-	NodesLimitBase *int64 `json:"nodesLimitBase,omitempty"`
+	// security and compliance enabled
+	SecurityAndComplianceEnabled bool `json:"securityAndComplianceEnabled,omitempty"`
 
-	// nodes limit override
-	NodesLimitOverride *int64 `json:"nodesLimitOverride,omitempty"`
+	// security and compliance override
+	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
 
 	// users limit
-	UsersLimit *int64 `json:"usersLimit,omitempty"`
-
-	// users limit base
-	UsersLimitBase *int64 `json:"usersLimitBase,omitempty"`
-
-	// users limit override
-	UsersLimitOverride *int64 `json:"usersLimitOverride,omitempty"`
+	UsersLimit int64 `json:"usersLimit,omitempty"`
 }
 
 // Validate validates this limits

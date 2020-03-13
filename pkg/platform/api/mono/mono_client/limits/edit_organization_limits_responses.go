@@ -79,7 +79,7 @@ type EditOrganizationLimitsOK struct {
 }
 
 func (o *EditOrganizationLimitsOK) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/limits][%d] editOrganizationLimitsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsOK  %+v", 200, o.Payload)
 }
 
 func (o *EditOrganizationLimitsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type EditOrganizationLimitsBadRequest struct {
 }
 
 func (o *EditOrganizationLimitsBadRequest) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/limits][%d] editOrganizationLimitsBadRequest  %+v", 400, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsBadRequest  %+v", 400, o.Payload)
 }
 
 func (o *EditOrganizationLimitsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,7 +137,7 @@ type EditOrganizationLimitsForbidden struct {
 }
 
 func (o *EditOrganizationLimitsForbidden) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/limits][%d] editOrganizationLimitsForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsForbidden  %+v", 403, o.Payload)
 }
 
 func (o *EditOrganizationLimitsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -166,7 +166,7 @@ type EditOrganizationLimitsNotFound struct {
 }
 
 func (o *EditOrganizationLimitsNotFound) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/limits][%d] editOrganizationLimitsNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
 
 func (o *EditOrganizationLimitsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -195,7 +195,7 @@ type EditOrganizationLimitsInternalServerError struct {
 }
 
 func (o *EditOrganizationLimitsInternalServerError) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/limits][%d] editOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *EditOrganizationLimitsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/components"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/identities"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/ingredients"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/invoices"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/languages"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/licenses"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/limits"
@@ -80,6 +81,8 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli.Identities = identities.New(transport, formats)
 
 	cli.Ingredients = ingredients.New(transport, formats)
+
+	cli.Invoices = invoices.New(transport, formats)
 
 	cli.Languages = languages.New(transport, formats)
 
@@ -159,6 +162,8 @@ type Mono struct {
 
 	Ingredients *ingredients.Client
 
+	Invoices *invoices.Client
+
 	Languages *languages.Client
 
 	Licenses *licenses.Client
@@ -199,6 +204,8 @@ func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Identities.SetTransport(transport)
 
 	c.Ingredients.SetTransport(transport)
+
+	c.Invoices.SetTransport(transport)
 
 	c.Languages.SetTransport(transport)
 

@@ -32,6 +32,20 @@ func (o *GetRenewReader) ReadResponse(response runtime.ClientResponse, consumer 
 		}
 		return result, nil
 
+	case 404:
+		result := NewGetRenewNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	case 500:
+		result := NewGetRenewInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	default:
 		return nil, runtime.NewAPIError("unknown error", response, response.Code())
 	}
@@ -57,6 +71,64 @@ func (o *GetRenewOK) Error() string {
 func (o *GetRenewOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.JWT)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRenewNotFound creates a GetRenewNotFound with default headers values
+func NewGetRenewNotFound() *GetRenewNotFound {
+	return &GetRenewNotFound{}
+}
+
+/*GetRenewNotFound handles this case with default header values.
+
+Not Found
+*/
+type GetRenewNotFound struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetRenewNotFound) Error() string {
+	return fmt.Sprintf("[GET /renew][%d] getRenewNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetRenewNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRenewInternalServerError creates a GetRenewInternalServerError with default headers values
+func NewGetRenewInternalServerError() *GetRenewInternalServerError {
+	return &GetRenewInternalServerError{}
+}
+
+/*GetRenewInternalServerError handles this case with default header values.
+
+Server Error
+*/
+type GetRenewInternalServerError struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetRenewInternalServerError) Error() string {
+	return fmt.Sprintf("[GET /renew][%d] getRenewInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetRenewInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

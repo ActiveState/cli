@@ -6,9 +6,10 @@ package authentication
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,7 +21,7 @@ import (
 // NewGetRenewParams creates a new GetRenewParams object
 // with the default values initialized.
 func NewGetRenewParams() *GetRenewParams {
-
+	var ()
 	return &GetRenewParams{
 
 		timeout: cr.DefaultTimeout,
@@ -30,7 +31,7 @@ func NewGetRenewParams() *GetRenewParams {
 // NewGetRenewParamsWithTimeout creates a new GetRenewParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetRenewParamsWithTimeout(timeout time.Duration) *GetRenewParams {
-
+	var ()
 	return &GetRenewParams{
 
 		timeout: timeout,
@@ -40,7 +41,7 @@ func NewGetRenewParamsWithTimeout(timeout time.Duration) *GetRenewParams {
 // NewGetRenewParamsWithContext creates a new GetRenewParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetRenewParamsWithContext(ctx context.Context) *GetRenewParams {
-
+	var ()
 	return &GetRenewParams{
 
 		Context: ctx,
@@ -50,7 +51,7 @@ func NewGetRenewParamsWithContext(ctx context.Context) *GetRenewParams {
 // NewGetRenewParamsWithHTTPClient creates a new GetRenewParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetRenewParamsWithHTTPClient(client *http.Client) *GetRenewParams {
-
+	var ()
 	return &GetRenewParams{
 		HTTPClient: client,
 	}
@@ -60,6 +61,13 @@ func NewGetRenewParamsWithHTTPClient(client *http.Client) *GetRenewParams {
 for the get renew operation typically these are written to a http.Request
 */
 type GetRenewParams struct {
+
+	/*SessionID
+	  id of session to renew
+
+	*/
+	SessionID *strfmt.UUID
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -98,6 +106,17 @@ func (o *GetRenewParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithSessionID adds the sessionID to the get renew params
+func (o *GetRenewParams) WithSessionID(sessionID *strfmt.UUID) *GetRenewParams {
+	o.SetSessionID(sessionID)
+	return o
+}
+
+// SetSessionID adds the sessionId to the get renew params
+func (o *GetRenewParams) SetSessionID(sessionID *strfmt.UUID) {
+	o.SessionID = sessionID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetRenewParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -105,6 +124,22 @@ func (o *GetRenewParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
+
+	if o.SessionID != nil {
+
+		// query param sessionID
+		var qrSessionID strfmt.UUID
+		if o.SessionID != nil {
+			qrSessionID = *o.SessionID
+		}
+		qSessionID := qrSessionID.String()
+		if qSessionID != "" {
+			if err := r.SetQueryParam("sessionID", qSessionID); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

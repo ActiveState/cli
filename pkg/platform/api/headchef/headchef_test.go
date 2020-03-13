@@ -1,7 +1,6 @@
 package headchef_test
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -33,11 +32,9 @@ func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headc
 	suite.mock.MockBuilds(rt)
 
 	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef))
-	buildRequest := headchef.BuildRequest{
-		headchef_models.V1BuildRequest{
-			Requester: &headchef_models.Requester{},
-		},
-		json.RawMessage(""),
+	buildRequest := &headchef_models.V1BuildRequest{
+		Requester: &headchef_models.V1BuildRequestRequester{},
+		Recipe:    &headchef_models.V1BuildRequestRecipe{},
 	}
 	return client.RequestBuild(buildRequest)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -27,6 +28,8 @@ type customDimensions struct {
 	branchName string
 	userID     string
 	output     string
+	osName     string
+	osVersion  string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -41,6 +44,8 @@ func (d *customDimensions) toMap() map[string]string {
 		"3": d.branchName,
 		"4": d.userID,
 		"5": d.output,
+		"6": d.osName,
+		"7": d.osVersion,
 	}
 }
 
@@ -63,10 +68,22 @@ func setup() {
 		userIDString = userID.String()
 	}
 
+	osName := sysinfo.OS().String()
+	osVersion := "unknown"
+	osvInfo, err := sysinfo.OSVersion()
+	if err != nil {
+		logging.Errorf("Could not detect osVersion: %v", err)
+	}
+	if osvInfo != nil {
+		osVersion = osvInfo.Version
+	}
+
 	CustomDimensions = &customDimensions{
 		version:    constants.Version,
 		branchName: constants.BranchName,
 		userID:     userIDString,
+		osName:     osName,
+		osVersion:  osVersion,
 	}
 
 	client.ClientID(id)

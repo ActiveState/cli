@@ -65,7 +65,7 @@ type GetOrganizationOK struct {
 }
 
 func (o *GetOrganizationOK) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}][%d] getOrganizationOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationOK  %+v", 200, o.Payload)
 }
 
 func (o *GetOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -94,7 +94,7 @@ type GetOrganizationNotFound struct {
 }
 
 func (o *GetOrganizationNotFound) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}][%d] getOrganizationNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationNotFound  %+v", 404, o.Payload)
 }
 
 func (o *GetOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -123,7 +123,7 @@ type GetOrganizationInternalServerError struct {
 }
 
 func (o *GetOrganizationInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /organizations/{organizationName}][%d] getOrganizationInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *GetOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,8 +21,11 @@ import (
 // NewGetOrganizationTierParams creates a new GetOrganizationTierParams object
 // with the default values initialized.
 func NewGetOrganizationTierParams() *GetOrganizationTierParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationTierParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -30,8 +34,11 @@ func NewGetOrganizationTierParams() *GetOrganizationTierParams {
 // NewGetOrganizationTierParamsWithTimeout creates a new GetOrganizationTierParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetOrganizationTierParamsWithTimeout(timeout time.Duration) *GetOrganizationTierParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationTierParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -40,8 +47,11 @@ func NewGetOrganizationTierParamsWithTimeout(timeout time.Duration) *GetOrganiza
 // NewGetOrganizationTierParamsWithContext creates a new GetOrganizationTierParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetOrganizationTierParamsWithContext(ctx context.Context) *GetOrganizationTierParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationTierParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -50,9 +60,12 @@ func NewGetOrganizationTierParamsWithContext(ctx context.Context) *GetOrganizati
 // NewGetOrganizationTierParamsWithHTTPClient creates a new GetOrganizationTierParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetOrganizationTierParamsWithHTTPClient(client *http.Client) *GetOrganizationTierParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationTierParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -61,11 +74,16 @@ for the get organization tier operation typically these are written to a http.Re
 */
 type GetOrganizationTierParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,15 +123,26 @@ func (o *GetOrganizationTierParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrganizationName adds the organizationName to the get organization tier params
-func (o *GetOrganizationTierParams) WithOrganizationName(organizationName string) *GetOrganizationTierParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the get organization tier params
+func (o *GetOrganizationTierParams) WithIdentifierType(identifierType *string) *GetOrganizationTierParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the get organization tier params
-func (o *GetOrganizationTierParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the get organization tier params
+func (o *GetOrganizationTierParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the get organization tier params
+func (o *GetOrganizationTierParams) WithOrganizationIdentifier(organizationIdentifier string) *GetOrganizationTierParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the get organization tier params
+func (o *GetOrganizationTierParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -124,8 +153,24 @@ func (o *GetOrganizationTierParams) WriteToRequest(r runtime.ClientRequest, reg 
 	}
 	var res []error
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

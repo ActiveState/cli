@@ -28,6 +28,9 @@ type V1BuildRequestRecipe struct {
 	// Required: true
 	Image *V1BuildRequestRecipeImage `json:"image"`
 
+	// If all of the resolved ingredients resolved to indemnified versions, then this will be true.
+	IsIndemnified *bool `json:"is_indemnified,omitempty"`
+
 	// platform
 	// Required: true
 	Platform *V1BuildRequestRecipePlatform `json:"platform"`

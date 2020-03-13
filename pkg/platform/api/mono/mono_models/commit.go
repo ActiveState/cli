@@ -23,6 +23,10 @@ type Commit struct {
 	// Format: date-time
 	Added strfmt.DateTime `json:"added,omitempty"`
 
+	// When resolving depdencies, updates made after this time will be ignored.
+	// Format: date-time
+	AtTime strfmt.DateTime `json:"atTime,omitempty"`
+
 	// the user that authored this commit
 	// Format: uuid
 	Author strfmt.UUID `json:"author,omitempty"`
@@ -49,6 +53,10 @@ func (m *Commit) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAdded(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAtTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,6 +89,19 @@ func (m *Commit) validateAdded(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("added", "body", "date-time", m.Added.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Commit) validateAtTime(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AtTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("atTime", "body", "date-time", m.AtTime.String(), formats); err != nil {
 		return err
 	}
 

@@ -29,17 +29,16 @@ type V1BuildRequest struct {
 	// Unique: true
 	CamelFlags []string `json:"camel_flags"`
 
-	// Selects what format to bundle artifacts in. NOTE: This is currently unimplemented and may be removed in the future.
-	// Required: true
+	// NOTE: This field is deprecated and will be removed in the future.
 	// Enum: [7zip dmg msi raw tarball zip]
-	Format *string `json:"format"`
+	Format *string `json:"format,omitempty"`
 
 	// recipe
 	// Required: true
 	Recipe *V1BuildRequestRecipe `json:"recipe"`
 
 	// requester
-	Requester *Requester `json:"requester,omitempty"`
+	Requester *V1BuildRequestRequester `json:"requester,omitempty"`
 }
 
 // Validate validates this v1 build request
@@ -152,8 +151,8 @@ func (m *V1BuildRequest) validateFormatEnum(path, location string, value string)
 
 func (m *V1BuildRequest) validateFormat(formats strfmt.Registry) error {
 
-	if err := validate.Required("format", "body", m.Format); err != nil {
-		return err
+	if swag.IsZero(m.Format) { // not required
+		return nil
 	}
 
 	// value enum

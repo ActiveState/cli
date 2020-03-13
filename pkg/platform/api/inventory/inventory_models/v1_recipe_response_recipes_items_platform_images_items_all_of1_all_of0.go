@@ -25,11 +25,12 @@ type V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0 struct {
 
 	// The platform to which this image belongs.
 	// Required: true
-	PlatformID *string `json:"platform_id"`
+	// Format: uuid
+	PlatformID *strfmt.UUID `json:"platform_id"`
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker WindowsInstance]
+	// Enum: [Docker Mac WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -70,6 +71,10 @@ func (m *V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0) validatePl
 		return err
 	}
 
+	if err := validate.FormatOf("platform_id", "body", "uuid", m.PlatformID.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -77,7 +82,7 @@ var v1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeTypePropEnum 
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -89,6 +94,12 @@ const (
 
 	// V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeDocker captures enum value "Docker"
 	V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeDocker string = "Docker"
+
+	// V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeMac captures enum value "Mac"
+	V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeMac string = "Mac"
+
+	// V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeWindowsDocker captures enum value "WindowsDocker"
+	V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeWindowsDocker string = "WindowsDocker"
 
 	// V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeWindowsInstance captures enum value "WindowsInstance"
 	V1RecipeResponseRecipesItemsPlatformImagesItemsAllOf1AllOf0TypeWindowsInstance string = "WindowsInstance"

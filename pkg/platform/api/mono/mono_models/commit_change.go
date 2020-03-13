@@ -29,11 +29,17 @@ type CommitChange struct {
 	// The name of the requirement (a requirement can be a package, a language, a clib, etc)
 	Requirement string `json:"requirement,omitempty"`
 
-	// version constraint
+	// Deprecated; use version_constraints instead.
 	VersionConstraint string `json:"version_constraint,omitempty"`
 
-	// version constraint old
+	// Deprecated; use version_constraints_old instead.
 	VersionConstraintOld string `json:"version_constraint_old,omitempty"`
+
+	// version constraints
+	VersionConstraints Constraints `json:"version_constraints"`
+
+	// version constraints old
+	VersionConstraintsOld Constraints `json:"version_constraints_old"`
 }
 
 // Validate validates this commit change
@@ -41,6 +47,14 @@ func (m *CommitChange) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateOperation(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVersionConstraints(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateVersionConstraintsOld(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +104,38 @@ func (m *CommitChange) validateOperation(formats strfmt.Registry) error {
 
 	// value enum
 	if err := m.validateOperationEnum("operation", "body", m.Operation); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *CommitChange) validateVersionConstraints(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.VersionConstraints) { // not required
+		return nil
+	}
+
+	if err := m.VersionConstraints.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *CommitChange) validateVersionConstraintsOld(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.VersionConstraintsOld) { // not required
+		return nil
+	}
+
+	if err := m.VersionConstraintsOld.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints_old")
+		}
 		return err
 	}
 

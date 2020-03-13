@@ -36,7 +36,6 @@ func (suite *LimitsTestSuite) TestLimits_FetchLimits() {
 	suite.NotNil(limits, "expected to retrieve limits")
 	suite.Equal(50, limits.NodesLimit)
 	suite.Equal(100, limits.UsersLimit)
-	suite.Nil(limits.NodesLimitBase)
 }
 
 func (suite *OrganizationsTestSuite) TestLimits_FetchLimits_404() {

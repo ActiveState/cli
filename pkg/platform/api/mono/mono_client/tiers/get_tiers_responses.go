@@ -65,7 +65,7 @@ func NewGetTiersOK() *GetTiersOK {
 
 /*GetTiersOK handles this case with default header values.
 
-Get all available tiers
+Success
 */
 type GetTiersOK struct {
 	Payload []*mono_models.Tier

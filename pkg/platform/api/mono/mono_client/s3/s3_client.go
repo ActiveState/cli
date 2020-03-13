@@ -29,7 +29,7 @@ SignS3URI signs an s3 URI
 
 Returns a signed, limited-duration S3 URI
 */
-func (a *Client) SignS3URI(params *SignS3URIParams, authInfo runtime.ClientAuthInfoWriter) (*SignS3URIOK, error) {
+func (a *Client) SignS3URI(params *SignS3URIParams) (*SignS3URIOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSignS3URIParams()
@@ -44,7 +44,6 @@ func (a *Client) SignS3URI(params *SignS3URIParams, authInfo runtime.ClientAuthI
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &SignS3URIReader{formats: a.formats},
-		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})

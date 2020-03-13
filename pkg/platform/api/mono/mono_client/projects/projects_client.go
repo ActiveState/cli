@@ -149,6 +149,37 @@ func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAut
 }
 
 /*
+DeleteProject deletes a project
+
+Delete a Project
+*/
+func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteProjectParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteProject",
+		Method:             "DELETE",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &DeleteProjectReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*DeleteProjectOK), nil
+
+}
+
+/*
 EditProject edits a project
 
 Edit a project
@@ -300,6 +331,37 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 		return nil, err
 	}
 	return result.(*GetProjectOK), nil
+
+}
+
+/*
+GetProjectByID projects info
+
+Get project details by ID
+*/
+func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectByIDOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetProjectByIDParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getProjectByID",
+		Method:             "GET",
+		PathPattern:        "/projects/{projectID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetProjectByIDReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetProjectByIDOK), nil
 
 }
 

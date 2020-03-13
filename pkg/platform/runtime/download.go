@@ -125,7 +125,7 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 			}
 
 			for _, artf := range resp.Artifacts {
-				if artf.URI == nil {
+				if artf.URI == "" {
 					continue
 				}
 

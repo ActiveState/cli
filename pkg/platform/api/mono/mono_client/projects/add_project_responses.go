@@ -39,6 +39,20 @@ func (o *AddProjectReader) ReadResponse(response runtime.ClientResponse, consume
 		}
 		return nil, result
 
+	case 403:
+		result := NewAddProjectForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	case 404:
+		result := NewAddProjectNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	case 409:
 		result := NewAddProjectConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -105,6 +119,64 @@ func (o *AddProjectBadRequest) Error() string {
 }
 
 func (o *AddProjectBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewAddProjectForbidden creates a AddProjectForbidden with default headers values
+func NewAddProjectForbidden() *AddProjectForbidden {
+	return &AddProjectForbidden{}
+}
+
+/*AddProjectForbidden handles this case with default header values.
+
+Forbidden
+*/
+type AddProjectForbidden struct {
+	Payload *mono_models.Message
+}
+
+func (o *AddProjectForbidden) Error() string {
+	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddProjectForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewAddProjectNotFound creates a AddProjectNotFound with default headers values
+func NewAddProjectNotFound() *AddProjectNotFound {
+	return &AddProjectNotFound{}
+}
+
+/*AddProjectNotFound handles this case with default header values.
+
+Not Found
+*/
+type AddProjectNotFound struct {
+	Payload *mono_models.Message
+}
+
+func (o *AddProjectNotFound) Error() string {
+	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectNotFound  %+v", 404, o.Payload)
+}
+
+func (o *AddProjectNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

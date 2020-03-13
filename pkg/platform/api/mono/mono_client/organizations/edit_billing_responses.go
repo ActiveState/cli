@@ -79,7 +79,7 @@ type EditBillingOK struct {
 }
 
 func (o *EditBillingOK) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/billing][%d] editBillingOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingOK  %+v", 200, o.Payload)
 }
 
 func (o *EditBillingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type EditBillingBadRequest struct {
 }
 
 func (o *EditBillingBadRequest) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/billing][%d] editBillingBadRequest  %+v", 400, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingBadRequest  %+v", 400, o.Payload)
 }
 
 func (o *EditBillingBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -137,7 +137,7 @@ type EditBillingForbidden struct {
 }
 
 func (o *EditBillingForbidden) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/billing][%d] editBillingForbidden  %+v", 403, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingForbidden  %+v", 403, o.Payload)
 }
 
 func (o *EditBillingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -166,7 +166,7 @@ type EditBillingNotFound struct {
 }
 
 func (o *EditBillingNotFound) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/billing][%d] editBillingNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingNotFound  %+v", 404, o.Payload)
 }
 
 func (o *EditBillingNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -195,7 +195,7 @@ type EditBillingInternalServerError struct {
 }
 
 func (o *EditBillingInternalServerError) Error() string {
-	return fmt.Sprintf("[PUT /organizations/{organizationName}/billing][%d] editBillingInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *EditBillingInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

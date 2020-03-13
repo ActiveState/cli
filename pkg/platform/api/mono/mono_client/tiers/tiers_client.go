@@ -25,7 +25,7 @@ type Client struct {
 }
 
 /*
-GetTiers get tiers API
+GetTiers gets information about all available tiers
 */
 func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error) {
 	// TODO: Validate the params before sending
@@ -50,6 +50,35 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 		return nil, err
 	}
 	return result.(*GetTiersOK), nil
+
+}
+
+/*
+GetTiersPricing gets information about all available tiers including their price in cents per user per year
+*/
+func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetTiersPricingParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getTiersPricing",
+		Method:             "GET",
+		PathPattern:        "/tiers/pricing",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetTiersPricingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetTiersPricingOK), nil
 
 }
 
