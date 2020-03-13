@@ -17,7 +17,7 @@ func run(params *RunParams, confirm confirmAble, outputer output.Outputer) error
 		return err
 	}
 
-	logging.Debug("Removing state tool binary: %s", params.InstallPath)
+	logging.Debug("Removing State Tool binary: %s", params.InstallPath)
 	err = os.Remove(params.InstallPath)
 	if err != nil {
 		return err

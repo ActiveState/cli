@@ -11,10 +11,10 @@ install.sh [flags]
 Flags:
  -b <branch>           Default 'unstable'.  Specify an alternative branch to install from (eg. master)
  -n                    Don't prompt for anything when installing into a new location
- -f                    Forces overwrite.  Overwrite existing state tool
+ -f                    Forces overwrite.  Overwrite existing State Tool
  -t <dir>              Install into target directory <dir>
  -e <file>             Default 'state'. Filename to use for the executable
- --activate <project>  Activate a project when state tools is correctly installed
+ --activate <project>  Activate a project when State Tool is correctly installed
  -h                    Show usage information (what you're currently reading)
 EOF
 `
@@ -228,7 +228,7 @@ if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
       [ -z $TARGET ] || [ $TARGET == $INSTALLDIR ] \
    ); then
   warn "Previous installation detected at $INSTALLDIR"
-  echo "To update the state tool to the latest version, please run 'state update'."
+  echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
 fi
@@ -271,7 +271,7 @@ else
 fi
 
 if [ -z "$INSTALLDIR" ]; then
-  error "Could not install state tool to PATH."
+  error "Could not install State Tool to PATH."
   error "You do not have write access to any directories currently on PATH."
   error "You can use the '-t' flag to denote an install target, "
   error "otherwise please ensure you have write permissions to a directory that's on your PATH."
@@ -319,7 +319,7 @@ else
 fi
 
 manual_installation_instructions() {
-  info "State tool installation complete."
+  info "State Tool installation complete."
   echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
   echo "using the '$STATEEXE' program."
   echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
@@ -330,19 +330,19 @@ manual_installation_instructions() {
 }
 
 manual_update_instructions() {
-  info "State tool installation complete."
+  info "State Tool installation complete."
   echo "Please either run 'source $RC_FILE' or start a new login shell in "
   echo "order to start using the '$STATEEXE' program."
   activation_warning
   exit 0
 }
 
-# Prints a warning if an activation was requested and state tool is not in the PATH
+# Prints a warning if an activation was requested and State Tool is not in the PATH
 activation_warning() {
   if [ -n "$ACTIVATE" ]; then
     echo
     warn "Cannot activate ${ACTIVATE} yet."
-    echo "In order to activate a project, the state tool needs to be installed in your PATH first."
+    echo "In order to activate a project, the State Tool needs to be installed in your PATH first."
     echo "To manually activate the project run 'state activate ${ACTIVATE}' once 'state' is on your PATH"
   fi
 }
@@ -364,7 +364,7 @@ update_rc_file() {
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
 if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State tool installation complete."
+  info "State Tool installation complete."
   if [ -n "${ACTIVATE}" ]; then
     # switch this shell to interactive mode
     set -i

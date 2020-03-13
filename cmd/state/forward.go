@@ -22,7 +22,7 @@ import (
 // forceFileExt is used in tests, do not use it for anything else
 var forceFileExt string
 
-// forward will forward the call to the appropriate state tool version if necessary
+// forward will forward the call to the appropriate State Tool version if necessary
 func forward(args []string, versionInfo *projectfile.VersionInfo) (int, *failures.Failure) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(versionInfo)

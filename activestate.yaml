@@ -117,7 +117,7 @@ scripts:
       go clean
       rm -Rf build
   - name: run
-    description: Builds the state tool and runs it with `--help`
+    description: Builds the State Tool and runs it with `--help`
     value: |
       $scripts.build
       build/state --help

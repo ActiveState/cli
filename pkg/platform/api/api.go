@@ -43,7 +43,7 @@ func (r *UserAgentTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-// UserAgent returns the user agent used by the state tool
+// UserAgent returns the user agent used by the State Tool
 func (r *UserAgentTripper) UserAgent() string {
 	var osVersionStr string
 	osVersion, err := sysinfo.OSVersion()

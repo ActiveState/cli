@@ -70,7 +70,7 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	if isForwardCall() {
 		// If this is a forward call (version locking) then we should just update the version in the activestate.yaml
-		// The actual update will happen the next time the state tool is invoked in this project
+		// The actual update will happen the next time the State Tool is invoked in this project
 		fail := lockVersion(constants.BranchName, info.Version)
 		if fail != nil {
 			failures.Handle(fail, locale.T("err_update_failed"))

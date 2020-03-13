@@ -2,7 +2,7 @@
 # Copyright 2019 ActiveState Software Inc. All rights reserved.
 <#
 .DESCRIPTION
-Install the ActiveState state.exe tool.  Must be run as admin OR install state tool to
+Install the ActiveState state.exe tool.  Must be run as admin OR install State Tool to
 User profile folder.
 
 .EXAMPLE
@@ -146,7 +146,7 @@ function isValidFolder([string] $path)
     return checkPermsRecur $path
 }
 
-# isStateToolInstallationOnPath returns true if the state tool's installation directory is in the current PATH
+# isStateToolInstallationOnPath returns true if the State Tool's installation directory is in the current PATH
 function isStateToolInstallationOnPath($installDirectory) {
     $existing = getExistingOnPath
     $existing -eq $installDirectory
@@ -177,7 +177,7 @@ function warningIfadmin() {
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
 
-    # State tool binary base dir
+    # State Tool binary base dir
     $STATEURL="https://s3.ca-central-1.amazonaws.com/cli-update/update/state"
     
     Write-Host "Preparing for installation...`n"
@@ -210,7 +210,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     try{
         $downloader.DownloadFile($zipURL, $zipPath)
     } catch [System.Exception] {
-        Write-Warning "Could not install state tool"
+        Write-Warning "Could not install State Tool"
         Write-Warning "Could not access $zipURL"
         Write-Error $_.Exception.Message
         return 1
@@ -268,7 +268,7 @@ function install()
     -n                   Don't prompt for anything, just install and override any existing executables
     -t <dir>             Install target dir
     -f <file>            Default 'state.exe'.  Binary filename to use
-    -activate <project>  Activate a project when state tools is correctly installed
+    -activate <project>  Activate a project when State Tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
 
     # Ensure errors from previously run commands are not reported during install
@@ -328,7 +328,7 @@ function install()
                 Write-Warning "Overwriting previous installation."
             } else {
                 Write-Host $("Previous install detected at '"+($existing)+"'") -ForegroundColor Yellow
-                Write-Host "To update the state tool to the latest version, please run 'state update'."
+                Write-Host "To update the State Tool to the latest version, please run 'state update'."
                 Write-Host "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
                 return
             }
@@ -368,14 +368,14 @@ function install()
 
     # Check if installation is in $PATH
     if (isStateToolInstallationOnPath $installDir) {
-        Write-Host "`nState tool installation complete." -ForegroundColor Yellow
+        Write-Host "`nState Tool installation complete." -ForegroundColor Yellow
         Write-Host "You may now start using the '$script:STATEEXE' program."
         warningIfAdmin
         activateIfRequested
         return
     }
 
-    # Update PATH for state tool installation directory
+    # Update PATH for State Tool installation directory
     $envTarget = [EnvironmentVariableTarget]::User
     $envTargetName = "user"
     if (isAdmin) {
@@ -397,7 +397,7 @@ function install()
     $env:Path = $installDir + ";" + $env:Path
 
     warningIfAdmin
-    Write-Host "State tool successfully installed to: $installDir." -ForegroundColor Yellow
+    Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
     Write-Host "Please close your Powershell prompt and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
     activateIfRequested
 

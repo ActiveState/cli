@@ -2,7 +2,7 @@
 
 # Installation
 
- 1. Install the state tool: https://www.activestate.com/products/platform/state-tool/
+ 1. Install the State Tool: https://www.activestate.com/products/platform/state-tool/
  2. If on Windows: install and use WSL or MSYS (you need a bash shell)
  3. Run `state activate` to get into an activated state
 

@@ -4,17 +4,17 @@
 
 ## NOTE
 
-In order to run these tests you must first uninstall the state tool.
+In order to run these tests you must first uninstall the State Tool.
 To do this run:
 
 ```powershell
 Remove-Item (Get-Command state.exe).Source
 ```
 
-If you installed the state tool with a different binary name replace 'state.exe' with it.
+If you installed the State Tool with a different binary name replace 'state.exe' with it.
 
 When the tests are complete run the install script with your preferred configuration
-options to reinstall the state tool.
+options to reinstall the State Tool.
 
 ---
 
@@ -154,12 +154,12 @@ Run command again
 **What to look for**:
 
 - You should see a warning for running as administrator
-- The state tool artifact should **NOT** be downloaded
+- The State Tool artifact should **NOT** be downloaded
 - After the second install attempt you should be presented with a message that says:
 
 ```powershell
 Previous install detected at '<install-dir>'
-To update the state tool to the latest version, please run 'state update'.
+To update the State Tool to the latest version, please run 'state update'.
 To install in a different location, please specify the installation directory with '-t TARGET_DIR'.
 ```
 
@@ -172,7 +172,7 @@ To install in a different location, please specify the installation directory wi
 **What to look for**:
 
 - You should see a warning for running as administrator
-- You should see a warning that the state tool gets overwritten
+- You should see a warning that the State Tool gets overwritten
 
 ### Cleanup A.5
 

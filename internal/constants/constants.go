@@ -18,10 +18,10 @@ const ConfigFileName = "activestate.yaml"
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
 
-// ConfigEnvVarName is the env var used to override the config dir that the state tool uses
+// ConfigEnvVarName is the env var used to override the config dir that the State Tool uses
 const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 
-// CacheEnvVarName is the env var used to override the cache dir that the state tool uses
+// CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
 // DisableUpdates is the env var used to disable auto update
@@ -69,7 +69,7 @@ const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
-// NonInteractive is the name of the environment variable that specifies whether to run the state tool without prompts
+// NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
