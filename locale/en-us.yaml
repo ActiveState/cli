@@ -1297,6 +1297,8 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
+arg_state_init_path_description:
+  other: The location to initialize the project
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
