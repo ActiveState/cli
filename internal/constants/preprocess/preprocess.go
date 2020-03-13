@@ -47,7 +47,7 @@ func gitBranchName() string {
 	}
 	// branch name variable set by Azure CI
 	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCH"); isset {
-		return "origin/" + branch
+		return "origin/" + strings.TrimPrefix(branch, "refs/heads/")
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
