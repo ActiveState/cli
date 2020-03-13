@@ -63,7 +63,7 @@ type activateFunc func(owner, name, srcPath string) bool
 // activate will activate the venv and subshell. It is meant to be run in a loop
 // with the return value indicating whether another iteration is warranted.
 func activate(owner, name, srcPath string) bool {
-	venv := virtualenvironment.GetWithRefreshedProject()
+	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
 	fail := venv.Activate()
