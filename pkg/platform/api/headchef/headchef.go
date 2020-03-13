@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -92,7 +91,6 @@ func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *f
 
 	br := BuildRequest{
 		headchef_models.V1BuildRequest{
-			//CamelCommit: "00010001-0001-0001-0001-000100010001",
 			Requester: &headchef_models.Requester{
 				OrganizationID: &orgID,
 				ProjectID:      &projID,
@@ -125,7 +123,6 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 	if err := req.SetTimeout(b.timeout); err != nil {
 		return err
 	}
-	var res []error
 
 	if b.BuildRequest != nil {
 		if err := req.SetBodyParam(b.BuildRequest); err != nil {
@@ -133,9 +130,6 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 		}
 	}
 
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 
