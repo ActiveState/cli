@@ -46,7 +46,7 @@ type Suite struct {
 	wd         *string
 }
 
-// SetupTest sets up an integration test suite for testing the state tool executable
+// SetupTest sets up an integration test suite for testing the State Tool executable
 func (s *Suite) SetupTest() {
 	exe := ""
 	if runtime.GOOS == "windows" {
@@ -59,7 +59,7 @@ func (s *Suite) SetupTest() {
 	s.wd = nil
 
 	if !fileutils.FileExists(executable) {
-		s.FailNow("Integration tests require you to have built a state tool binary. Please run `state run build`.")
+		s.FailNow("Integration tests require you to have built a State Tool binary. Please run `state run build`.")
 	}
 
 	configDir, err := ioutil.TempDir("", "")
@@ -146,7 +146,7 @@ func (s *Suite) PrepareFile(path, contents string) {
 	s.Require().NoError(err, errMsg)
 }
 
-// Executable returns the path to the executable under test (state tool)
+// Executable returns the path to the executable under test (State Tool)
 func (s *Suite) Executable() string {
 	return s.executable
 }
@@ -179,7 +179,7 @@ func (s *Suite) SetWd(dir string) {
 	s.wd = &dir
 }
 
-// Spawn executes the state tool executable under test in a pseudo-terminal
+// Spawn executes the State Tool executable under test in a pseudo-terminal
 func (s *Suite) Spawn(args ...string) {
 	s.SpawnCustom(s.executable, args...)
 }

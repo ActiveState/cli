@@ -831,19 +831,19 @@ err_version_parse:
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 downloading_state_version:
-  other: "Downloading state tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
+  other: "Downloading State Tool version {{.V0}}, as specified by your activestate.yaml (this only needs to happen once for each version you specify)."
 forward_fail:
-  other: Could not forward command to the appropriate state tool version
+  other: Could not forward command to the appropriate State Tool version
 forward_fail_with_error:
-  other: "Could not forward the command to the appropriate state tool version, error: {{.V0}}"
+  other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
 forward_fail_info:
-  other: The requested version of the state tool does not exist, please ensure the version and branch are correct.
+  other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 flag_update_lock_description:
-  other: Lock the state tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
+  other: Lock the State Tool at the current version, this disables automatic updates. You can still force an update by manually running the update command.
 err_lock_failed:
   other: Locking the version failed
 locking_version:
-  other: Locking state tool to the current version
+  other: Locking State Tool to the current version
 version_locked:
   other: Version locked at {{.V0}}
 update_available:
@@ -900,7 +900,7 @@ installer_err_runtime_rm_installdir:
 installer_err_runtime_no_commits:
   other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
 installer_err_runtime_preplatform:
-  other: The version of the installer used in the project you specified is not compatible with the state tool. Please make a new project.
+  other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
   other: Build status could not be retrieved, please check the dashboard for more information
 build_status_in_progress:
@@ -940,7 +940,7 @@ err_no_platform_data_remains:
 err_no_artifacts:
   other: Your project does not seem to produce any artifacts
 err_no_valid_artifact:
-  other: Your project is not producing any usable artifacts, is your state tool up to date?
+  other: Your project is not producing any usable artifacts, is your State Tool up to date?
 err_runtime_download_no_response:
   other: Could not find bits associated with your runtime environment, please contact support
 err_signs3_invalid_url:
@@ -965,7 +965,7 @@ activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
   other: | 
-    [YELLOW]You are running a deprecated version of the state tool. This version will stop working as of {{.V0}}. 
+    [YELLOW]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
     
     Reason for deprecation: 
       {{.V1}}
@@ -973,7 +973,7 @@ warn_deprecation:
     Please update soon![/RESET]
 err_deprecation:
   other: |
-    You are running a version of the state tool that is no longer supported! You will be encountering issues. 
+    You are running a version of the State Tool that is no longer supported! You will be encountering issues. 
     
     Reason for deprecation: 
       {{.V1}}
@@ -1056,7 +1056,7 @@ commit_message_add_language:
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 update_description:
-  other: Updates the state tool to the latest available version
+  other: Updates the State Tool to the latest available version
 downloading_artifacts:
   other: Downloading required artifacts
 installing_artifacts:
@@ -1083,7 +1083,7 @@ cpu_profiling_setup_failed:
   other: CPU profiling setup failed
 err_main_panic:
   other: |
-    An unexpected error occurred while running the State tool.
+    An unexpected error occurred while running the State Tool.
     Check the error log for more information.
     Your error log is located at: {{.V0}}/log.txt
 err_deprection_404:
@@ -1390,15 +1390,15 @@ history_cmd_description:
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
 clean_description:
-  other: Remove the state tool, installed languages, and any configuration files
+  other: Remove the State Tool, installed languages, and any configuration files
 flag_state_clean_force_description:
   other: Run clean operation without prompts
 err_clean_activated:
-  other: Cannot clean the state tool install in an activated state. Please deactivate and try again
+  other: Cannot clean the State Tool install in an activated state. Please deactivate and try again
 clean_confirm_remove:
-  other: You are about to remove the state tool, installed laguage runtimes, and all configuration information. Continue?
+  other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
 clean_success_message:
-  other: "Successfully removed state tool and related files\n"
+  other: "Successfully removed State Tool and related files\n"
 push_already_exists:
   other: The project {{.V0}}/{{.V1}} already exists on the platform. To start using the latest version please run 'state pull'.
 languages_cmd_description:

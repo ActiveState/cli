@@ -4,7 +4,7 @@ This is a list of docker commands to test some expected behavior of the `install
 
 ## Install and activate
 
-Install state tool and activate project `ActiveState/cli` afterwards.
+Install State Tool and activate project `ActiveState/cli` afterwards.
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
@@ -21,8 +21,8 @@ You should end up in a shell with an activated state.
 
 ## Install and try to activate, but PATH is not set
 
-Install state tool and try to activate project `ActiveState/cli` but it does
-not work, because the state tool is not installed in a PATH directory.
+Install State Tool and try to activate project `ActiveState/cli` but it does
+not work, because the State Tool is not installed in a PATH directory.
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
@@ -35,9 +35,9 @@ Confirm all defaults
 
 ### Expected behavior
 
-- The state tool gets installed under `/root/.local/bin`.
-- You see an error message that the state tool could not be activated.
-- You see instructions how to install the state tool and then activate the project manually or with the install script.
+- The State Tool gets installed under `/root/.local/bin`.
+- You see an error message that the State Tool could not be activated.
+- You see instructions how to install the State Tool and then activate the project manually or with the install script.
 
 ## Invalid options 1
 
@@ -65,10 +65,10 @@ docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl 
 
 You see an error message that `-f` requires `-n`.
 
-## Custom state tool name
+## Custom State Tool name
 
-Install state tool and activate project `ActiveState/cli` afterwards.
-Overwrite the name of the state tool to `as`
+Install State Tool and activate project `ActiveState/cli` afterwards.
+Overwrite the name of the State Tool to `as`
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
@@ -85,7 +85,7 @@ You should end up in a shell with an activated state.
 
 ## No prompt
 
-Install the state tool with no prompts
+Install the State Tool with no prompts
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
@@ -100,7 +100,7 @@ You should see a message saying `You may now start using the 'state' program`
 
 ## No prompt with target not in PATH
 
-Install the state tool with no prompts and a target not in the current PATH
+Install the State Tool with no prompts and a target not in the current PATH
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl \
@@ -115,7 +115,7 @@ You should see a message instructing you to source your RC file.
 
 ## Previous installation detected
 
-Install the state tool with defaults and then attempt to install again
+Install the State Tool with defaults and then attempt to install again
 
 ```sh
 docker run --rm -it -v $PWD/public:/scripts -w /root buildpack-deps:bionic-curl
@@ -144,11 +144,11 @@ stating:
 
 ```sh
 Previous installation detected at <installation-path>
-To update the state tool to the latest version, please run 'state update'.
+To update the State Tool to the latest version, please run 'state update'.
 To install in a different location, please specify the installation directory with '-t TARGET_DIR'.
 ```
 
-The state tool artifact was **NOT** downloaded.
+The State Tool artifact was **NOT** downloaded.
 
 ### Follow up 1
 
@@ -172,4 +172,4 @@ Run in the same docker container
 
 #### Expected behavior
 
-State tool should install into /opt/state
+State Tool should install into /opt/state
