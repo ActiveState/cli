@@ -6,9 +6,10 @@ package limits
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -22,8 +23,11 @@ import (
 // NewEditOrganizationLimitsParams creates a new EditOrganizationLimitsParams object
 // with the default values initialized.
 func NewEditOrganizationLimitsParams() *EditOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -32,8 +36,11 @@ func NewEditOrganizationLimitsParams() *EditOrganizationLimitsParams {
 // NewEditOrganizationLimitsParamsWithTimeout creates a new EditOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewEditOrganizationLimitsParamsWithTimeout(timeout time.Duration) *EditOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -42,8 +49,11 @@ func NewEditOrganizationLimitsParamsWithTimeout(timeout time.Duration) *EditOrga
 // NewEditOrganizationLimitsParamsWithContext creates a new EditOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewEditOrganizationLimitsParamsWithContext(ctx context.Context) *EditOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -52,9 +62,12 @@ func NewEditOrganizationLimitsParamsWithContext(ctx context.Context) *EditOrgani
 // NewEditOrganizationLimitsParamsWithHTTPClient creates a new EditOrganizationLimitsParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewEditOrganizationLimitsParamsWithHTTPClient(client *http.Client) *EditOrganizationLimitsParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &EditOrganizationLimitsParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -63,16 +76,21 @@ for the edit organization limits operation typically these are written to a http
 */
 type EditOrganizationLimitsParams struct {
 
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
+
+	*/
+	IdentifierType *string
 	/*Limits
 	  the limits to set
 
 	*/
 	Limits *mono_models.LimitsEditable
-	/*OrganizationName
-	  desired organization
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
 
 	*/
-	OrganizationName string
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -112,6 +130,17 @@ func (o *EditOrganizationLimitsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithIdentifierType adds the identifierType to the edit organization limits params
+func (o *EditOrganizationLimitsParams) WithIdentifierType(identifierType *string) *EditOrganizationLimitsParams {
+	o.SetIdentifierType(identifierType)
+	return o
+}
+
+// SetIdentifierType adds the identifierType to the edit organization limits params
+func (o *EditOrganizationLimitsParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
 // WithLimits adds the limits to the edit organization limits params
 func (o *EditOrganizationLimitsParams) WithLimits(limits *mono_models.LimitsEditable) *EditOrganizationLimitsParams {
 	o.SetLimits(limits)
@@ -123,15 +152,15 @@ func (o *EditOrganizationLimitsParams) SetLimits(limits *mono_models.LimitsEdita
 	o.Limits = limits
 }
 
-// WithOrganizationName adds the organizationName to the edit organization limits params
-func (o *EditOrganizationLimitsParams) WithOrganizationName(organizationName string) *EditOrganizationLimitsParams {
-	o.SetOrganizationName(organizationName)
+// WithOrganizationIdentifier adds the organizationIdentifier to the edit organization limits params
+func (o *EditOrganizationLimitsParams) WithOrganizationIdentifier(organizationIdentifier string) *EditOrganizationLimitsParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the edit organization limits params
-func (o *EditOrganizationLimitsParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetOrganizationIdentifier adds the organizationIdentifier to the edit organization limits params
+func (o *EditOrganizationLimitsParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -142,14 +171,30 @@ func (o *EditOrganizationLimitsParams) WriteToRequest(r runtime.ClientRequest, r
 	}
 	var res []error
 
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
 	if o.Limits != nil {
 		if err := r.SetBodyParam(o.Limits); err != nil {
 			return err
 		}
 	}
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

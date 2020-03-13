@@ -19,7 +19,7 @@ type AddressInfo struct {
 
 	// address1
 	// Required: true
-	Address1 *string `json:"address1"`
+	Address1 string `json:"address1"`
 
 	// address2
 	Address2 *string `json:"address2,omitempty"`
@@ -29,6 +29,9 @@ type AddressInfo struct {
 
 	// country
 	Country string `json:"country,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
 
 	// state
 	State string `json:"state,omitempty"`
@@ -53,7 +56,7 @@ func (m *AddressInfo) Validate(formats strfmt.Registry) error {
 
 func (m *AddressInfo) validateAddress1(formats strfmt.Registry) error {
 
-	if err := validate.Required("address1", "body", m.Address1); err != nil {
+	if err := validate.RequiredString("address1", "body", string(m.Address1)); err != nil {
 		return err
 	}
 

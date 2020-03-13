@@ -25,6 +25,37 @@ type Client struct {
 }
 
 /*
+ClearAllUserSecrets clears the value from all secrets this user has access to in a given project
+
+Clear the value from all secrets this user has access to in a given project
+*/
+func (a *Client) ClearAllUserSecrets(params *ClearAllUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*ClearAllUserSecretsNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewClearAllUserSecretsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "clearAllUserSecrets",
+		Method:             "DELETE",
+		PathPattern:        "/user_secrets/clear/{projectID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &ClearAllUserSecretsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ClearAllUserSecretsNoContent), nil
+
+}
+
+/*
 DeleteUserSecret deletes a specific user s secret
 
 Delete a specific user's secret

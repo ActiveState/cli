@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,8 +21,11 @@ import (
 // NewGetBillingParams creates a new GetBillingParams object
 // with the default values initialized.
 func NewGetBillingParams() *GetBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -30,8 +34,11 @@ func NewGetBillingParams() *GetBillingParams {
 // NewGetBillingParamsWithTimeout creates a new GetBillingParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetBillingParamsWithTimeout(timeout time.Duration) *GetBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -40,8 +47,11 @@ func NewGetBillingParamsWithTimeout(timeout time.Duration) *GetBillingParams {
 // NewGetBillingParamsWithContext creates a new GetBillingParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetBillingParamsWithContext(ctx context.Context) *GetBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetBillingParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -50,9 +60,12 @@ func NewGetBillingParamsWithContext(ctx context.Context) *GetBillingParams {
 // NewGetBillingParamsWithHTTPClient creates a new GetBillingParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetBillingParamsWithHTTPClient(client *http.Client) *GetBillingParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetBillingParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -61,11 +74,16 @@ for the get billing operation typically these are written to a http.Request
 */
 type GetBillingParams struct {
 
-	/*OrganizationName
-	  desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,15 +123,26 @@ func (o *GetBillingParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrganizationName adds the organizationName to the get billing params
-func (o *GetBillingParams) WithOrganizationName(organizationName string) *GetBillingParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the get billing params
+func (o *GetBillingParams) WithIdentifierType(identifierType *string) *GetBillingParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the get billing params
-func (o *GetBillingParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the get billing params
+func (o *GetBillingParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the get billing params
+func (o *GetBillingParams) WithOrganizationIdentifier(organizationIdentifier string) *GetBillingParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the get billing params
+func (o *GetBillingParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -124,8 +153,24 @@ func (o *GetBillingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 	}
 	var res []error
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

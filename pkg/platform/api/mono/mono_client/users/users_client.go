@@ -303,6 +303,37 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
+GetUserByID retrieves a user record by their user ID
+
+Return a specific user matching user ID
+*/
+func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserByIDOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetUserByIDParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getUserByID",
+		Method:             "GET",
+		PathPattern:        "/users/id/{userID}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{""},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetUserByIDReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GetUserByIDOK), nil
+
+}
+
+/*
 ListInvitations lists of pending invitations for an email address
 
 Has this email address been invited to any orginzations

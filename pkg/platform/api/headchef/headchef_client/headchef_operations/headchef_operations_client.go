@@ -25,6 +25,34 @@ type Client struct {
 }
 
 /*
+ArtifactJobStatus Receives job status callbacks from the scheduler when a build job for a given artifact request completes/fails. If a job fails or errors, the build will be marked as failed.
+*/
+func (a *Client) ArtifactJobStatus(params *ArtifactJobStatusParams) (*ArtifactJobStatusOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewArtifactJobStatusParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "artifactJobStatus",
+		Method:             "POST",
+		PathPattern:        "/artifacts/{artifact_id}/job-status",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &ArtifactJobStatusReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*ArtifactJobStatusOK), nil
+
+}
+
+/*
 GetBuildStatus Get status of a build that has previously been started using the build_request_id returned from /builds. Status requests for pre-platform builds will always result in a 404 as these are not actual platform builds.
 */
 func (a *Client) GetBuildStatus(params *GetBuildStatusParams) (*GetBuildStatusOK, error) {
@@ -109,40 +137,6 @@ func (a *Client) JobStatus(params *JobStatusParams) (*JobStatusOK, error) {
 }
 
 /*
-StartBuild start build API
-*/
-func (a *Client) StartBuild(params *StartBuildParams) (*StartBuildCreated, *StartBuildAccepted, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewStartBuildParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "startBuild",
-		Method:             "POST",
-		PathPattern:        "/builds",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &StartBuildReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-	switch value := result.(type) {
-	case *StartBuildCreated:
-		return value, nil, nil
-	case *StartBuildAccepted:
-		return nil, value, nil
-	}
-	return nil, nil, nil
-
-}
-
-/*
 StartBuildV1 start build v1 API
 */
 func (a *Client) StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created, *StartBuildV1Accepted, error) {
@@ -173,34 +167,6 @@ func (a *Client) StartBuildV1(params *StartBuildV1Params) (*StartBuildV1Created,
 		return nil, value, nil
 	}
 	return nil, nil, nil
-
-}
-
-/*
-Websocket Websocket compatibility layer for the state tool.
-*/
-func (a *Client) Websocket(params *WebsocketParams) (*WebsocketOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewWebsocketParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "websocket",
-		Method:             "GET",
-		PathPattern:        "/",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &WebsocketReader{formats: a.formats},
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result.(*WebsocketOK), nil
 
 }
 

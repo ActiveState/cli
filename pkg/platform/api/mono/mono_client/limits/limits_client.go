@@ -38,7 +38,7 @@ func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, au
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "editOrganizationLimits",
 		Method:             "PUT",
-		PathPattern:        "/organizations/{organizationName}/limits",
+		PathPattern:        "/organizations/{organizationIdentifier}/limits",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -69,7 +69,7 @@ func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, auth
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOrganizationLimits",
 		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/limits",
+		PathPattern:        "/organizations/{organizationIdentifier}/limits",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{""},
 		Schemes:            []string{"http", "https"},

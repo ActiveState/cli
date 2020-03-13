@@ -23,7 +23,7 @@ type V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0DependencySetsItems 
 	// dependencies
 	// Required: true
 	// Min Items: 1
-	Dependencies []*V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0DependencySetsItemsDependenciesItems `json:"dependencies"`
+	Dependencies []V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0DependencySetsItemsDependenciesItems `json:"dependencies"`
 
 	// A description of this set.
 	Description string `json:"description,omitempty"`
@@ -70,17 +70,12 @@ func (m *V1IngredientCreateAllOf0VersionsItemsAllOf2AllOf1AllOf0DependencySetsIt
 	}
 
 	for i := 0; i < len(m.Dependencies); i++ {
-		if swag.IsZero(m.Dependencies[i]) { // not required
-			continue
-		}
 
-		if m.Dependencies[i] != nil {
-			if err := m.Dependencies[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
-				}
-				return err
+		if err := m.Dependencies[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
 			}
+			return err
 		}
 
 	}

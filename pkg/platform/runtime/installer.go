@@ -298,6 +298,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	wrappedStream := progress.NewReaderProxy(upb, archiveFile)
 
 	// unpack it
+	logging.Debug("Unarchiving to: %s", tmpRuntimeDir)
 	err = ua.Unarchive(wrappedStream, archiveSize, tmpRuntimeDir)
 	if err != nil {
 		return nil, FailArchiveInvalid.Wrap(err)
@@ -313,12 +314,18 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	upb.ReScale(numUnpackedFiles)
 
 	// Detect the install dir
-	tmpInstallDir := ""
-	installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
-	for _, dir := range installDirs {
-		currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
-		if fileutils.DirExists(currentDir) {
-			tmpInstallDir = currentDir
+	// Python runtimes on MacOS work where they are unarchived so we do not
+	// need to do any detection of the install directory
+	var tmpInstallDir string
+	if runtime.GOOS == "darwin" {
+		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
+	} else {
+		installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
+		for _, dir := range installDirs {
+			currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
+			if fileutils.DirExists(currentDir) {
+				tmpInstallDir = currentDir
+			}
 		}
 	}
 	if tmpInstallDir == "" {
@@ -360,6 +367,7 @@ func (installer *Installer) Relocate(metaData *MetaData, upb *progress.UnpackBar
 	prefix := metaData.RelocationDir
 
 	if len(prefix) == 0 || prefix == metaData.Path {
+		upb.Complete()
 		return nil
 	}
 

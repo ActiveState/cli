@@ -23,7 +23,7 @@ type V1IngredientAndVersionPagedListIngredientsAndVersionsItemsVersionAllOf3AllO
 	// dependencies
 	// Required: true
 	// Min Items: 1
-	Dependencies []*V1IngredientAndVersionPagedListIngredientsAndVersionsItemsVersionAllOf3AllOf0DependencySetsItemsDependenciesItems `json:"dependencies"`
+	Dependencies []V1IngredientAndVersionPagedListIngredientsAndVersionsItemsVersionAllOf3AllOf0DependencySetsItemsDependenciesItems `json:"dependencies"`
 
 	// A description of this set.
 	Description string `json:"description,omitempty"`
@@ -70,17 +70,12 @@ func (m *V1IngredientAndVersionPagedListIngredientsAndVersionsItemsVersionAllOf3
 	}
 
 	for i := 0; i < len(m.Dependencies); i++ {
-		if swag.IsZero(m.Dependencies[i]) { // not required
-			continue
-		}
 
-		if m.Dependencies[i] != nil {
-			if err := m.Dependencies[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
-				}
-				return err
+		if err := m.Dependencies[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
 			}
+			return err
 		}
 
 	}

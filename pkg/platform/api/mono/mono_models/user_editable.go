@@ -33,6 +33,9 @@ type UserEditable struct {
 	// password
 	Password string `json:"password,omitempty"`
 
+	// send marketing email
+	SendMarketingEmail *bool `json:"sendMarketingEmail,omitempty"`
+
 	// timezone
 	Timezone string `json:"timezone,omitempty"`
 

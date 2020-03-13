@@ -46,8 +46,8 @@ func gitBranchName() string {
 		return "origin/" + branch
 	}
 	// branch name variable set by Azure CI
-	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCHNAME"); isset {
-		return "origin/" + branch
+	if branch, isset := os.LookupEnv("BUILD_SOURCEBRANCH"); isset {
+		return "origin/" + strings.TrimPrefix(branch, "refs/heads/")
 	}
 	branch := getCmdOutput("git rev-parse --abbrev-ref HEAD")
 	return branch
@@ -58,7 +58,7 @@ func gitBranchName() string {
 // `BRANCH_OVERRIDE` is set
 func branchName() (string, string) {
 	branch := gitBranchName()
-	releaseName := branch
+	releaseName := strings.TrimPrefix(branch, "origin/")
 
 	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
 		releaseName = releaseOverride

@@ -1,6 +1,8 @@
 package mock
 
 import (
+	rt "runtime"
+
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -58,6 +60,11 @@ func (m *Mock) MockFullRuntime() {
 }
 
 func (m *Mock) MockDownload() {
-	m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python"+runtime.InstallerExtension)
-	m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python"+runtime.InstallerExtension)
+	if rt.GOOS == "darwin" {
+		m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python-macos"+runtime.InstallerExtension)
+		m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python-macos"+runtime.InstallerExtension)
+	} else {
+		m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python"+runtime.InstallerExtension)
+		m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python"+runtime.InstallerExtension)
+	}
 }

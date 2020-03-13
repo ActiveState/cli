@@ -14,7 +14,7 @@ func headchefArtifact(artifactPath string) map[string]*runtime.HeadChefArtifact 
 	result := map[string]*runtime.HeadChefArtifact{}
 	result[artifactPath] = &runtime.HeadChefArtifact{
 		ArtifactID: &artifactID,
-		URI:        &uri,
+		URI:        uri,
 	}
 	return result
 }

@@ -88,13 +88,13 @@ func isInvitationPossible(organization *mono_models.Organization, numInvites int
 	}
 
 	requestedMemberCount := organization.MemberCount + int64(numInvites)
-	if limits.UsersLimit != nil && requestedMemberCount > *limits.UsersLimit {
-		memberCountExceededBy := requestedMemberCount - *limits.UsersLimit
-		remainingFreeSeats := *limits.UsersLimit - organization.MemberCount
+	if requestedMemberCount > limits.UsersLimit {
+		memberCountExceededBy := requestedMemberCount - limits.UsersLimit
+		remainingFreeSeats := limits.UsersLimit - organization.MemberCount
 
 		return failures.FailUser.New(locale.T("invite_member_limit_err", map[string]string{
 			"Organization":   organization.Name,
-			"UserLimit":      strconv.FormatInt(*limits.UsersLimit, 10),
+			"UserLimit":      strconv.FormatInt(limits.UsersLimit, 10),
 			"ExceededBy":     strconv.FormatInt(memberCountExceededBy, 10),
 			"RemainingUsers": strconv.FormatInt(remainingFreeSeats, 10),
 		}))

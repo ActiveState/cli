@@ -6,9 +6,10 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -20,8 +21,11 @@ import (
 // NewGetOrganizationParams creates a new GetOrganizationParams object
 // with the default values initialized.
 func NewGetOrganizationParams() *GetOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -30,8 +34,11 @@ func NewGetOrganizationParams() *GetOrganizationParams {
 // NewGetOrganizationParamsWithTimeout creates a new GetOrganizationParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetOrganizationParamsWithTimeout(timeout time.Duration) *GetOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		timeout: timeout,
 	}
@@ -40,8 +47,11 @@ func NewGetOrganizationParamsWithTimeout(timeout time.Duration) *GetOrganization
 // NewGetOrganizationParamsWithContext creates a new GetOrganizationParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetOrganizationParamsWithContext(ctx context.Context) *GetOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
 
 		Context: ctx,
 	}
@@ -50,9 +60,12 @@ func NewGetOrganizationParamsWithContext(ctx context.Context) *GetOrganizationPa
 // NewGetOrganizationParamsWithHTTPClient creates a new GetOrganizationParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetOrganizationParamsWithHTTPClient(client *http.Client) *GetOrganizationParams {
-	var ()
+	var (
+		identifierTypeDefault = string("URLname")
+	)
 	return &GetOrganizationParams{
-		HTTPClient: client,
+		IdentifierType: &identifierTypeDefault,
+		HTTPClient:     client,
 	}
 }
 
@@ -61,11 +74,16 @@ for the get organization operation typically these are written to a http.Request
 */
 type GetOrganizationParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/*IdentifierType
+	  what kind of thing the provided organizationIdentifier is
 
 	*/
-	OrganizationName string
+	IdentifierType *string
+	/*OrganizationIdentifier
+	  identifier (URLname, by default) of the desired organization
+
+	*/
+	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -105,15 +123,26 @@ func (o *GetOrganizationParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithOrganizationName adds the organizationName to the get organization params
-func (o *GetOrganizationParams) WithOrganizationName(organizationName string) *GetOrganizationParams {
-	o.SetOrganizationName(organizationName)
+// WithIdentifierType adds the identifierType to the get organization params
+func (o *GetOrganizationParams) WithIdentifierType(identifierType *string) *GetOrganizationParams {
+	o.SetIdentifierType(identifierType)
 	return o
 }
 
-// SetOrganizationName adds the organizationName to the get organization params
-func (o *GetOrganizationParams) SetOrganizationName(organizationName string) {
-	o.OrganizationName = organizationName
+// SetIdentifierType adds the identifierType to the get organization params
+func (o *GetOrganizationParams) SetIdentifierType(identifierType *string) {
+	o.IdentifierType = identifierType
+}
+
+// WithOrganizationIdentifier adds the organizationIdentifier to the get organization params
+func (o *GetOrganizationParams) WithOrganizationIdentifier(organizationIdentifier string) *GetOrganizationParams {
+	o.SetOrganizationIdentifier(organizationIdentifier)
+	return o
+}
+
+// SetOrganizationIdentifier adds the organizationIdentifier to the get organization params
+func (o *GetOrganizationParams) SetOrganizationIdentifier(organizationIdentifier string) {
+	o.OrganizationIdentifier = organizationIdentifier
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -124,8 +153,24 @@ func (o *GetOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg strf
 	}
 	var res []error
 
-	// path param organizationName
-	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
+	if o.IdentifierType != nil {
+
+		// query param identifierType
+		var qrIdentifierType string
+		if o.IdentifierType != nil {
+			qrIdentifierType = *o.IdentifierType
+		}
+		qIdentifierType := qrIdentifierType
+		if qIdentifierType != "" {
+			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param organizationIdentifier
+	if err := r.SetPathParam("organizationIdentifier", o.OrganizationIdentifier); err != nil {
 		return err
 	}
 

@@ -38,7 +38,7 @@ func FetchOrganizations() ([]*mono_models.Organization, *failures.Failure) {
 // FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
 func FetchOrgByURLName(urlName string) (*mono_models.Organization, *failures.Failure) {
 	params := clientOrgs.NewGetOrganizationParams()
-	params.OrganizationName = urlName
+	params.OrganizationIdentifier = urlName
 	resOk, err := authentication.Client().Organizations.GetOrganization(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, processOrgErrorResponse(err)

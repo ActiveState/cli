@@ -96,6 +96,11 @@ type GetNamespaceIngredientsParams struct {
 
 	*/
 	AllowUnstable *bool
+	/*ExcludeFeatures
+	  Exclude provided features from returned ingredients. This is a performance optimization used when features are not needed.
+
+	*/
+	ExcludeFeatures *bool
 	/*IncludePrivate
 	  Include private ingredients from all organizations. Only available to superusers.
 
@@ -119,7 +124,7 @@ type GetNamespaceIngredientsParams struct {
 	*/
 	Page *int64
 	/*Q
-	  Filter ingredient and versions to just those whose name, description, or provided features match the specified query string
+	  Filter ingredient and versions to just those whose name or provided features match the specified query string
 
 	*/
 	Q *string
@@ -176,6 +181,17 @@ func (o *GetNamespaceIngredientsParams) WithAllowUnstable(allowUnstable *bool) *
 // SetAllowUnstable adds the allowUnstable to the get namespace ingredients params
 func (o *GetNamespaceIngredientsParams) SetAllowUnstable(allowUnstable *bool) {
 	o.AllowUnstable = allowUnstable
+}
+
+// WithExcludeFeatures adds the excludeFeatures to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) WithExcludeFeatures(excludeFeatures *bool) *GetNamespaceIngredientsParams {
+	o.SetExcludeFeatures(excludeFeatures)
+	return o
+}
+
+// SetExcludeFeatures adds the excludeFeatures to the get namespace ingredients params
+func (o *GetNamespaceIngredientsParams) SetExcludeFeatures(excludeFeatures *bool) {
+	o.ExcludeFeatures = excludeFeatures
 }
 
 // WithIncludePrivate adds the includePrivate to the get namespace ingredients params
@@ -273,6 +289,22 @@ func (o *GetNamespaceIngredientsParams) WriteToRequest(r runtime.ClientRequest, 
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.ExcludeFeatures != nil {
+
+		// query param exclude_features
+		var qrExcludeFeatures bool
+		if o.ExcludeFeatures != nil {
+			qrExcludeFeatures = *o.ExcludeFeatures
+		}
+		qExcludeFeatures := swag.FormatBool(qrExcludeFeatures)
+		if qExcludeFeatures != "" {
+			if err := r.SetQueryParam("exclude_features", qExcludeFeatures); err != nil {
 				return err
 			}
 		}
