@@ -71,7 +71,7 @@ func authenticate(params *AuthParams, auth *authentication.Auth) error {
 		}
 	}
 	if !auth.Authenticated() {
-		return nil
+		return failures.FailUser.New(locale.T("login_err_auth"))
 	}
 
 	switch commands.Output(strings.ToLower(params.Output)) {
