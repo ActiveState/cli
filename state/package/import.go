@@ -27,8 +27,10 @@ const (
 // ImportFlags holds the import-related flag values passed through the command line
 var ImportFlags = struct {
 	FileName string
+	Force    bool
 }{
 	defaultImportFile,
+	false,
 }
 
 // ImportCommand is the `package import` command struct
@@ -42,6 +44,12 @@ var ImportCommand = &commands.Command{
 			Type:        commands.TypeString,
 			StringVar:   &ImportFlags.FileName,
 		},
+		{
+			Name:        "force",
+			Description: "package_import_flag_force_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &ImportFlags.Force,
+		},
 	},
 	Run: ExecuteImport,
 }
@@ -49,6 +57,27 @@ var ImportCommand = &commands.Command{
 // ExecuteImport is executed with `state package import` is ran
 func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteImport")
+
+	commit, fail := targetFromProjectFile()
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
+		return
+	}
+
+	requirements, fail := fetchCheckpoint(commit)
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
+		return
+	}
+
+	if len(requirements) > 0 {
+		if !ImportFlags.Force {
+			logging.Warning("this kills the old crab; are you sure?")
+			// prompt response "no" => return
+		}
+
+		// remove existing requirements
+	}
 
 	proj, fail := project.GetSafe()
 	if fail != nil {
