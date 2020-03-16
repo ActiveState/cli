@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -57,6 +58,12 @@ var ImportCommand = &commands.Command{
 // ExecuteImport is executed with `state package import` is ran
 func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteImport")
+
+	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_activate_auth_required"))
+		return
+	}
 
 	commit, fail := targetFromProjectFile()
 	if fail != nil {
