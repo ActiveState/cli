@@ -5,10 +5,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -148,4 +150,56 @@ func TestInheritEnv_MultipleEquals(t *testing.T) {
 	updated := inheritEnv(env)
 
 	assert.Equal(t, value, updated[key])
+}
+
+func TestActivateRuntimeEnvironment(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	os.Unsetenv(constants.DisableRuntime)
+
+	project := projectfile.Project{}
+	dat := strings.TrimSpace(`
+project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+languages:
+    - name: Python3`)
+	yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
+
+	venv := Init()
+	fail := venv.Activate()
+	require.NoError(t, fail.ToError(), "Should activate")
+	assert.NotEmpty(t, venv.artifactPaths, "Pulled in artifacts")
+
+	for _, path := range venv.artifactPaths {
+		assert.Contains(t, venv.GetEnv(false)["PATH"], path, "Artifact path is added to PATH")
+	}
+
+	assert.Equal(t, ".", venv.GetEnv(false)["PYTHONPATH"], "Sets PythonPath to project dir")
+
+	env := venv.GetEnv(false)
+	for k := range env {
+		assert.NotEmpty(t, k, "Does not return any empty env keys")
+	}
+}
+
+func TestSkipActivateRuntimeEnvironment(t *testing.T) {
+	setup(t)
+	defer teardown()
+
+	os.Setenv(constants.DisableRuntime, "true")
+	defer os.Unsetenv(constants.DisableRuntime)
+
+	project := projectfile.Project{}
+	dat := strings.TrimSpace(`
+project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+languages:
+    - name: Python3`)
+	yaml.Unmarshal([]byte(dat), &project)
+	project.Persist()
+
+	venv := Init()
+	fail := venv.Activate()
+	require.NoError(t, fail.ToError(), "Should activate")
+	assert.Empty(t, venv.artifactPaths, "Did not Pull in artifacts")
 }
