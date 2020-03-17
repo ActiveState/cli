@@ -20,6 +20,9 @@ type SingleUnarchiver interface {
 
 	// ExtractNext extracts the next file in the archive
 	ExtractNext(destination string) (f archiver.File, err error)
+
+	// CheckExt checks that the file extension is appropriate for the archive
+	CheckExt(archiveName string) error
 }
 
 // ExtractNotifier gets called when a new file has been extracted from the archive
@@ -42,7 +45,7 @@ func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
 // Returns the opened file and its size
 func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, fileSize int64, err error) {
 
-	if !fileExists(destination) {
+	if !dirExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
 			return nil, 0, fmt.Errorf("preparing destination: %v", err)
@@ -62,6 +65,11 @@ func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile 
 
 	return archiveFile, fileInfo.Size(), nil
 
+}
+
+// CheckExt checks that the file extension is appropriate for the given unarchiver
+func (ua *Unarchiver) CheckExt(archiveName string) error {
+	return ua.impl.CheckExt(archiveName)
 }
 
 // Unarchive unarchives an archive file ` and unpacks it in `destination`
@@ -154,6 +162,11 @@ func writeNewHardLink(fpath string, target string) error {
 func fileExists(name string) bool {
 	_, err := os.Stat(name)
 	return !os.IsNotExist(err)
+}
+
+func dirExists(name string) bool {
+	fi, err := os.Stat(name)
+	return err == nil && fi.IsDir()
 }
 
 func mkdir(dirPath string) error {
