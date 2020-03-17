@@ -9,12 +9,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+// Selector describes the behavior required to prompt a user for a selection.
+type Selector interface {
+	Select(msg string, opts []string, defaultOpt string) (string, *failures.Failure)
+}
 
 // ChangesetProvider describes the behavior required to convert some file data into a changeset.
 type ChangesetProvider interface {
@@ -59,31 +65,14 @@ var ImportCommand = &commands.Command{
 func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	logging.Debug("ExecuteImport")
 
+	if ImportFlags.FileName == "" {
+		ImportFlags.FileName = defaultImportFile
+	}
+
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_activate_auth_required"))
 		return
-	}
-
-	commit, fail := targetFromProjectFile()
-	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-		return
-	}
-
-	requirements, fail := fetchCheckpoint(commit)
-	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
-		return
-	}
-
-	if len(requirements) > 0 {
-		if !ImportFlags.Force {
-			logging.Warning("this kills the old crab; are you sure?")
-			// prompt response "no" => return
-		}
-
-		// remove existing requirements
 	}
 
 	proj, fail := project.GetSafe()
@@ -92,14 +81,46 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if ImportFlags.FileName == "" {
-		ImportFlags.FileName = defaultImportFile
+	latestCommit, fail := model.LatestCommitID(proj.Owner(), proj.Name())
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
+		return
 	}
 
-	changeset, err := importChangeset(reqsimport.Init(), ImportFlags.FileName)
+	requirements, fail := fetchCheckpoint(latestCommit)
+	if fail != nil {
+		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
+		return
+	}
+
+	changeset, err := fetchImportChangeset(reqsimport.Init(), ImportFlags.FileName)
 	if err != nil {
 		failures.Handle(err, locale.T("err_obtaining_change_request"))
 		return
+	}
+
+	if len(requirements) > 0 {
+		if !ImportFlags.Force {
+			msg := locale.T("reqstext_clobber_prompt")
+
+			verified, fail := promptForVerification(prompt.New(), msg, false)
+			if fail != nil {
+				failures.Handle(fail, locale.T("err_prompt_unknown"))
+				return
+			}
+			if !verified {
+				return
+			}
+		}
+
+		removal := model.ChangesetFromRequirements(model.OperationRemoved, requirements)
+		msg := locale.T("commit_reqstext_clobber_message")
+
+		fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, removal)
+		if fail != nil {
+			failures.Handle(fail, locale.T("err_packages_removed"))
+			return
+		}
 	}
 
 	msg := locale.T("commit_reqstext_message")
@@ -113,7 +134,24 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	print.Warning(locale.T("package_update_config_file"))
 }
 
-func importChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
+func promptForVerification(sel Selector, msg string, defaultYes bool) (bool, *failures.Failure) {
+	yes, no := "Yes", "No"
+	opts := []string{yes, no}
+
+	def := yes
+	if !defaultYes {
+		def = no
+	}
+
+	res, fail := sel.Select(msg, opts, def)
+	if fail != nil {
+		return false, fail
+	}
+
+	return res == yes, nil
+}
+
+func fetchImportChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
 	data, err := ioutil.ReadFile(ImportFlags.FileName)
 	if err != nil {
 		return nil, err

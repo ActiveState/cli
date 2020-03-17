@@ -484,3 +484,20 @@ func CommitLanguage(owner, project string, op Operation, name, version string) *
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
+
+func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
+	var changeset Changeset
+
+	for _, req := range reqs {
+		change := &mono_models.CommitChangeEditable{
+			Operation:         string(op),
+			Namespace:         req.Namespace,
+			Requirement:       req.Requirement,
+			VersionConstraint: req.VersionConstraint,
+		}
+
+		changeset = append(changeset, change)
+	}
+
+	return changeset
+}

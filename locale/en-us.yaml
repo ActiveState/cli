@@ -235,7 +235,7 @@ survey_error_template:
   other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
 err_value_required: 
   other: value required
-err_prompt_unkown:
+err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
 prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
@@ -1218,8 +1218,12 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
+reqstext_clobber_prompt:
+  other: "This action will first remove the existing project packages. Are you sure?:"
 commit_reqstext_message:
-  other: "Import from requirements.txt"
+  other: "Import from requirements file"
+commit_reqstext_clobber_message:
+  other: "Remove current packages prior to import from requirements file"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
@@ -1262,6 +1266,8 @@ package_ingredient_not_found:
   other: The provided package does not exist
 err_package_removed:
   other: Failed to remove package
+err_packages_removed:
+  other: Failed to remove packages
 package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
