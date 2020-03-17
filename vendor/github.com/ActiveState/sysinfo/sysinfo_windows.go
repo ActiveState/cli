@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -41,17 +40,42 @@ var versions = map[int]map[int]string{
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
-	dll := windows.NewLazySystemDLL("kernel32.dll")
-	version, _, _ := dll.NewProc("GetVersion").Call()
-	major := int(byte(version))
-	minor := int(uint8(version >> 8))
-	micro := int(uint16(version >> 16))
+	key, err := registry.OpenKey(
+		registry.LOCAL_MACHINE,
+		`SOFTWARE\Microsoft\Windows NT\CurrentVersion`,
+		registry.QUERY_VALUE,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer key.Close()
+
+	major, _, err := key.GetIntegerValue("CurrentMajorVersionNumber")
+	if err != nil {
+		return nil, err
+	}
+
+	minor, _, err := key.GetIntegerValue("CurrentMinorVersionNumber")
+	if err != nil {
+		return nil, err
+	}
+
+	microText, _, err := key.GetStringValue("CurrentBuild")
+	if err != nil {
+		return nil, err
+	}
+	micro, err := strconv.Atoi(microText)
+	if err != nil {
+		return nil, err
+	}
+
 	name := "Unknown"
 	if subversion, ok := versions[major]; ok {
 		if value, ok := subversion[minor]; ok {
 			name = value
 		}
 	}
+
 	return &OSVersionInfo{
 		fmt.Sprintf("%d.%d.%d", major, minor, micro),
 		major,
