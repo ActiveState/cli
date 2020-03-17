@@ -1423,3 +1423,10 @@ err_no_recipes:
   other: No build recipes could be generated for the current project
 using_cached_env:
   other: Reusing cached runtime environment
+err_project_env_file_not_exist:
+  other: |
+    Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
+
+    Expected the following file to exist: {{.V0}}
+
+    Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.

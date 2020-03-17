@@ -115,10 +115,17 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		return relaunch() // will not return
 	}
 
+	// Explicitly check for projectfile missing when in activated env so we can give a friendlier error without
+	// any missleading prefix
+	_, fail := projectfile.GetProjectFilePath()
+	if fail != nil && fail.Type.Matches(projectfile.FailNoProjectFromEnv) {
+		return 1, fail
+	}
+
 	versionInfo, fail := projectfile.ParseVersionInfo()
 	if fail != nil {
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
-		return 1, failures.FailUser.New(locale.T("err_version_parse"))
+		return 1, failures.FailUser.Wrap(fail, locale.T("err_version_parse"))
 	}
 
 	if shouldForward(versionInfo) {
