@@ -94,7 +94,7 @@ func masterVersion() (*semver.Version, error) {
 	if err != nil {
 		errMsg := err.Error()
 		if ee, ok := err.(*exec.ExitError); ok {
-			errMsg = fmt.Sprintf("Stderr: %s, code: %v", ee.Stderr, errMsg)
+			errMsg = fmt.Sprintf("Stderr: %s, code: %s", ee.Stderr, errMsg)
 		}
 		return nil, errors.New(errMsg)
 	}
