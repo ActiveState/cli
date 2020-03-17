@@ -98,7 +98,7 @@ func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bo
 func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResult) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	var runtimeAssembler Assembler
 	if artifactsResult.IsAlternative {
-		return nil, false, failures.FailRuntime.New("alternative build_engine is unsupported")
+		runtimeAssembler, fail = NewAlternativeRuntime(artifactsResult.Artifacts, installer.cacheDir, *artifactsResult.RecipeID)
 	} else {
 		runtimeAssembler, fail = NewCamelRuntime(artifactsResult.Artifacts, installer.cacheDir)
 	}
