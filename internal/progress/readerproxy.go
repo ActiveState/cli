@@ -8,23 +8,36 @@ import (
 	"github.com/vbauerster/mpb/v4"
 )
 
+// SingleReporter is an interface for a reporter that reports to a single linear progress bar, opposed to the multi-progress bar.
+// This interface mainly exists to be used in tests, such that we can test
+// functionality without the heavy wait of an actual progress bar.
+type SingleReporter interface {
+	IncrBy(n int, wdd ...time.Duration)
+
+	Current() int64
+
+	SetCurrent(n int64, wdd ...time.Duration)
+}
+
+var _ SingleReporter = &mpb.Bar{}
+
 // ReaderProxy is io.Reader wrapper, for proxy read bytes
 type ReaderProxy struct {
 	io.ReadCloser
-	bar      *mpb.Bar
-	iT       time.Time
-	complete func()
+	bar       SingleReporter
+	iT        time.Time
+	completer Completer
 }
 
 // NewReaderProxy wraps a Reader with functionality that automatically updates
 // the bar with progress about how many bytes have been read from the underlying
 // reader so far.
-func NewReaderProxy(upb *UnpackBar, r io.ReadCloser) *ReaderProxy {
+func NewReaderProxy(bar SingleReporter, completer Completer, r io.ReadCloser) *ReaderProxy {
 	return &ReaderProxy{
 		ReadCloser: r,
-		bar:        upb.bar,
+		bar:        bar,
 		iT:         time.Now(),
-		complete:   upb.Complete,
+		completer:  completer,
 	}
 }
 
@@ -37,7 +50,7 @@ func (pr *ReaderProxy) Read(p []byte) (n int, err error) {
 		pr.iT = time.Now()
 	}
 	if err == io.EOF {
-		go pr.complete()
+		go pr.completer.Complete()
 	}
 	return
 }
@@ -59,7 +72,7 @@ func (pr *ReaderProxy) ReadAt(p []byte, offset int64) (n int, err error) {
 		pr.iT = time.Now()
 	}
 	if err == io.EOF {
-		go pr.complete()
+		go pr.completer.Complete()
 	}
 	return
 }

@@ -61,7 +61,7 @@ func TestUnpackBar(t *testing.T) {
 
 		bar := p.AddUnpackBar(30, 70)
 		dz := &devZero{}
-		wrapped := NewReaderProxy(bar, dz)
+		wrapped := NewReaderProxy(bar.Bar(), bar, dz)
 		_, err := wrapped.Read(readBuf[:])
 		assert.NoError(t, err)
 		_, err = wrapped.Read(readBuf[:])
