@@ -275,16 +275,23 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.NoError(t, err, "Should fetch cwd")
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
-	configPath, failure := getProjectFilePath()
-	require.Nil(t, failure)
+	configPath, fail := GetProjectFilePath()
+	require.Nil(t, fail)
 	expectedPath := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
 
-	os.Setenv(constants.ProjectEnvVarName, "/some/path")
 	defer os.Unsetenv(constants.ProjectEnvVarName)
-	configPath, failure = getProjectFilePath()
-	require.Nil(t, failure)
-	assert.Equal(t, "/some/path", configPath, "Project path is properly detected using the ProjectEnvVarName")
+
+	os.Setenv(constants.ProjectEnvVarName, "/some/path")
+	configPath, fail = GetProjectFilePath()
+	require.NotNil(t, fail)
+	require.Equal(t, FailNoProjectFromEnv.Name, fail.Type.Name, "Failure types should match")
+
+	expectedPath = filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
+	os.Setenv(constants.ProjectEnvVarName, expectedPath)
+	configPath, fail = GetProjectFilePath()
+	require.Nil(t, fail)
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
 	os.Chdir(cwd) // restore
 }

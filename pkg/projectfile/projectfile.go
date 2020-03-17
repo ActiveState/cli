@@ -24,6 +24,9 @@ var (
 	// FailNoProject identifies a failure as being due to a missing project file
 	FailNoProject = failures.Type("projectfile.fail.noproject", failures.FailUser)
 
+	// FailNoProjectFromEnv identifies a failure as being due to the project file referenced by the env not existing
+	FailNoProjectFromEnv = failures.Type("projectfile.fail.noprojectfromenv", failures.FailUser)
+
 	// FailParseProject identifies a failure as being due inability to parse file contents
 	FailParseProject = failures.Type("projectfile.fail.parseproject", failures.FailUser)
 
@@ -249,7 +252,7 @@ func (p *Project) Save() *failures.Failure {
 // SetCommit sets the commit id within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetCommit(commitID string) *failures.Failure {
-	fp, fail := getProjectFilePath()
+	fp, fail := GetProjectFilePath()
 	if fail != nil {
 		return fail
 	}
@@ -295,9 +298,12 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 }
 
 // Returns the path to the project activestate.yaml
-func getProjectFilePath() (string, *failures.Failure) {
+func GetProjectFilePath() (string, *failures.Failure) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath != "" {
+		if !fileutils.FileExists(projectFilePath) {
+			return "", FailNoProjectFromEnv.New(locale.Tr("err_project_env_file_not_exist", projectFilePath))
+		}
 		return projectFilePath, nil
 	}
 
@@ -338,7 +344,7 @@ func GetSafe() (*Project, *failures.Failure) {
 // GetOnce returns the project configuration in a safe manner (returns error), the same as GetSafe, but it avoids persisting the project
 func GetOnce() (*Project, *failures.Failure) {
 	// we do not want to use a path provided by state if we're running tests
-	projectFilePath, fail := getProjectFilePath()
+	projectFilePath, fail := GetProjectFilePath()
 	if fail != nil {
 		if fail.Type.Matches(fileutils.FailFindInPathNotFound) {
 			return nil, FailNoProject.Wrap(fail, fail.Error())
@@ -485,8 +491,11 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 		projectFilePath = persistentProject.Path()
 	} else {
 		var fail *failures.Failure
-		projectFilePath, fail = getProjectFilePath()
+		projectFilePath, fail = GetProjectFilePath()
 		if fail != nil {
+			if fail.Type.Matches(FailNoProjectFromEnv) {
+				return nil, fail
+			}
 			// Not being able to find a project file is not a failure for the purposes of this function
 			return nil, nil
 		}
