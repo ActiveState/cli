@@ -21,11 +21,14 @@ github.com/PuerkitoBio/urlesc
 github.com/StackExchange/wmi
 # github.com/VividCortex/ewma v1.1.1
 github.com/VividCortex/ewma
-# github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
+# github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
 # github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 github.com/asaskevich/govalidator
+# github.com/autarch/testify v1.2.2
+github.com/autarch/testify/assert
+github.com/autarch/testify/mock
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
@@ -369,5 +372,5 @@ gopkg.in/src-d/go-git.v4/utils/merkletrie/internal/frame
 gopkg.in/src-d/go-git.v4/utils/merkletrie/noder
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
-# gopkg.in/yaml.v2 v2.0.0
+# gopkg.in/yaml.v2 v2.2.4
 gopkg.in/yaml.v2
