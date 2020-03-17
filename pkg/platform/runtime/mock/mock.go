@@ -10,7 +10,6 @@ import (
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
 type Mock struct {
@@ -56,15 +55,19 @@ func (m *Mock) MockFullRuntime() {
 	// Disable the mocking this lib does natively, it's a bad mechanic that has to change, but out of scope for right now
 	download.SetMocking(false)
 
-	m.MockDownload()
+	m.MockCamelDownload()
 }
 
-func (m *Mock) MockDownload() {
-	if rt.GOOS == "darwin" {
-		m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python-macos"+runtime.InstallerExtension)
-		m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python-macos"+runtime.InstallerExtension)
-	} else {
-		m.httpmock.RegisterWithResponse("GET", "python"+runtime.InstallerExtension, 200, "python"+runtime.InstallerExtension)
-		m.httpmock.RegisterWithResponse("GET", "legacy-python"+runtime.InstallerExtension, 200, "legacy-python"+runtime.InstallerExtension)
+func (m *Mock) MockCamelDownload() {
+	switch rt.GOOS {
+	case "darwin":
+		m.httpmock.RegisterWithResponse("GET", "python.tar.gz", 200, "python-macos.tar.gz")
+		m.httpmock.RegisterWithResponse("GET", "legacy-python.tar.gz", 200, "legacy-python-macos.tar.gz")
+	case "windows":
+		m.httpmock.RegisterWithResponse("GET", "python.zip", 200, "python.zip")
+		m.httpmock.RegisterWithResponse("GET", "legacy-python.zip", 200, "legacy-python.zip")
+	default:
+		m.httpmock.RegisterWithResponse("GET", "python.tar.gz", 200, "python.tar.gz")
+		m.httpmock.RegisterWithResponse("GET", "legacy-python.tar.gz", 200, "legacy-python.tar.gz")
 	}
 }

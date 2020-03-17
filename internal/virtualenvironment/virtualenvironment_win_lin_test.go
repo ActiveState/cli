@@ -45,11 +45,8 @@ languages:
 	venv := Init()
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
-	assert.NotEmpty(t, venv.artifactPaths, "Pulled in artifacts")
 
-	for _, path := range venv.artifactPaths {
-		assert.Contains(t, venv.GetEnv(false)["PATH"], path, "Artifact path is added to PATH")
-	}
+	assert.Contains(t, venv.GetEnv(false)["PATH"], "state-cache-tests", "Artifact path is added to PATH")
 
 	assert.Equal(t, ".", venv.GetEnv(false)["PYTHONPATH"], "Sets PythonPath to project dir")
 
@@ -77,5 +74,5 @@ languages:
 	venv := Init()
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
-	assert.Empty(t, venv.artifactPaths, "Did not Pull in artifacts")
+
 }
