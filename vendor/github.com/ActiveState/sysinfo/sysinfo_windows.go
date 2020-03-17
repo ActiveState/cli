@@ -70,16 +70,16 @@ func OSVersion() (*OSVersionInfo, error) {
 	}
 
 	name := "Unknown"
-	if subversion, ok := versions[major]; ok {
-		if value, ok := subversion[minor]; ok {
+	if subversion, ok := versions[int(major)]; ok {
+		if value, ok := subversion[int(minor)]; ok {
 			name = value
 		}
 	}
 
 	return &OSVersionInfo{
 		fmt.Sprintf("%d.%d.%d", major, minor, micro),
-		major,
-		minor,
+		int(major),
+		int(minor),
 		micro,
 		name,
 	}, nil
