@@ -1423,3 +1423,11 @@ err_no_recipes:
   other: No build recipes could be generated for the current project
 using_cached_env:
   other: Reusing cached runtime environment
+auto_update_to_version:
+  other: |
+    [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
+    [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+forward_version:
+  other: |
+    [BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET][BLUE].
+    To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]

@@ -10,7 +10,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -53,7 +55,7 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // TimedCheck is skipped altogether if the current project has a locked version.
-func TimedCheck() bool {
+func TimedCheck(outputer output.Outputer) bool {
 	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo != nil {
 		return false
 	}
@@ -105,6 +107,8 @@ func TimedCheck() bool {
 		logging.Debug("No update available.")
 		return false
 	}
+
+	outputer.Notice(locale.Tr("auto_update_to_version", constants.Version, info.Version))
 
 	// Self-update.
 	logging.Debug("Self-updating.")

@@ -111,7 +111,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		defer cleanUpCPUProf()
 	}
 
-	if autoUpdate(args) {
+	if autoUpdate(args, outputer) {
 		return relaunch() // will not return
 	}
 
@@ -122,6 +122,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 	}
 
 	if shouldForward(versionInfo) {
+		outputer.Notice(locale.Tr("forward_version", versionInfo.Version))
 		code, fail := forward(args, versionInfo)
 		if fail != nil {
 			outputer.Error(locale.T("forward_fail"))
@@ -225,7 +226,7 @@ func handlePanics(exiter func(int)) {
 	}
 }
 
-func autoUpdate(args []string) bool {
+func autoUpdate(args []string, outputer output.Outputer) bool {
 	switch {
 	case (condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"):
 		return false
@@ -238,7 +239,7 @@ func autoUpdate(args []string) bool {
 		// environment variable. For GCB we check BUILDER_OUTPUT
 		return false
 	default:
-		return updater.TimedCheck()
+		return updater.TimedCheck(outputer)
 	}
 }
 
