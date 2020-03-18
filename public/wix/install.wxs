@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-    <Product Name='State Tool' Manufacturer='ActiveState'
+    <Product Name='ActiveState State Tool' Manufacturer='ActiveState'
         Id='72781F65-49A7-47F5-9BA8-B25294271E09' 
         UpgradeCode='50D1C035-D6CB-4F15-A458-94E385B0A28D'
         Language='1033' Codepage='1252' Version='1.0.0'>
@@ -15,8 +15,8 @@
                         <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
                             <RemoveFolder Id='MainExecutable' On='uninstall' />
                             <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-                            <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe' >
-                            </File>
+                            <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
+                            <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[bin]' />
                         </Component> 
                     </Directory>
                 </Directory>
