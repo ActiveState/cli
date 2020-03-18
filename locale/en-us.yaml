@@ -1431,3 +1431,10 @@ forward_version:
   other: |
     [BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET][BLUE].
     To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+err_project_env_file_not_exist:
+  other: |
+    Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
+
+    Expected the following file to exist: {{.V0}}
+
+    Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
