@@ -68,6 +68,7 @@ func activate(owner, name, srcPath string) bool {
 	venv := virtualenvironment.Get()
 	venv.OnDownloadArtifacts(func() { print.Line(locale.T("downloading_artifacts")) })
 	venv.OnInstallArtifacts(func() { print.Line(locale.T("installing_artifacts")) })
+	venv.OnUseCache(func() { print.Info(locale.T("using_cached_env")) })
 	fail := venv.Activate()
 	if fail != nil {
 		failures.Handle(fail, locale.T("error_could_not_activate_venv"))
