@@ -100,31 +100,14 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	}
 
 	if len(requirements) > 0 {
-		if !ImportFlags.Force {
-			msg := locale.T("reqstext_clobber_prompt")
-
-			verified, fail := promptForVerification(prompt.New(), msg, false)
-			if fail != nil {
-				failures.Handle(fail, locale.T("err_prompt_unknown"))
-				return
-			}
-			if !verified {
-				return
-			}
-		}
-
-		removal := model.ChangesetFromRequirements(model.OperationRemoved, requirements)
-		msg := locale.T("commit_reqstext_clobber_message")
-
-		fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, removal)
+		fail = clobber(proj.Owner(), proj.Name(), ImportFlags.Force, requirements)
 		if fail != nil {
-			failures.Handle(fail, locale.T("err_packages_removed"))
+			failures.Handle(fail, "err_cannot_clobber")
 			return
 		}
 	}
 
 	msg := locale.T("commit_reqstext_message")
-
 	fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset)
 	if fail != nil {
 		failures.Handle(fail, locale.T("err_cannot_commit_changeset"))
@@ -132,6 +115,30 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	}
 
 	print.Warning(locale.T("package_update_config_file"))
+}
+
+func clobber(pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
+	if !force {
+		msg := locale.T("reqstext_clobber_prompt")
+
+		verified, fail := promptForVerification(prompt.New(), msg, false)
+		if fail != nil {
+			return fail
+		}
+		if !verified {
+			return failures.FailUserInput.New("err_action_was_not_confirmed")
+		}
+	}
+
+	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
+	msg := locale.T("commit_reqstext_clobber_message")
+
+	fail := model.CommitChangeset(pjOwner, pjName, msg, removal)
+	if fail != nil {
+		return fail.WithDescription("err_packages_removed")
+	}
+
+	return nil
 }
 
 func promptForVerification(sel Selector, msg string, defaultYes bool) (bool, *failures.Failure) {

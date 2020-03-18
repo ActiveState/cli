@@ -1224,6 +1224,10 @@ commit_reqstext_message:
   other: "Import from requirements file"
 commit_reqstext_clobber_message:
   other: "Remove current packages prior to import from requirements file"
+err_cannot_clobber:
+  other: "The already configured packages were not able to be overwritten"
+err_action_was_not_confirmed:
+  other: "Current action was not confirmed"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
