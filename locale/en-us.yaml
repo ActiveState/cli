@@ -177,9 +177,9 @@ info_state_active_repoexists:
 panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
-  other: "Authenticate against the ActiveState Platform\nFor help generating an API Token, please visit http://docs.activestate.com/platform/state/ci.html#authenticate-without-prompts-or-passwords"
+  other: Authenticate against the ActiveState Platform
 flag_state_auth_token_description:
-  other: The API Token generated via your control panel
+  other: "The API Token generated via the ActiveState Platform (http://docs.activestate.com/platform/state/ci.html#authenticate-without-prompts-or-passwords)"
 flag_state_auth_username_description:
   other: The username to authenticate with, will be prompted for otherwise
 flag_state_auth_password_description:
