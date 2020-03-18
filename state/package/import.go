@@ -17,9 +17,9 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// Selector describes the behavior required to prompt a user for a selection.
-type Selector interface {
-	Select(msg string, opts []string, defaultOpt string) (string, *failures.Failure)
+// Confirmer describes the behavior required to prompt a user for confirmation.
+type Confirmer interface {
+	Confirm(msg string, defaultOpt bool) (bool, *failures.Failure)
 }
 
 // ChangesetProvider describes the behavior required to convert some file data into a changeset.
@@ -100,7 +100,8 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	}
 
 	if len(requirements) > 0 {
-		fail = clobber(proj.Owner(), proj.Name(), ImportFlags.Force, requirements)
+		force := ImportFlags.Force
+		fail = clobber(prompt.New(), proj.Owner(), proj.Name(), force, requirements)
 		if fail != nil {
 			failures.Handle(fail, "err_cannot_clobber")
 			return
@@ -117,15 +118,15 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	print.Warning(locale.T("package_update_config_file"))
 }
 
-func clobber(pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
+func clobber(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
 	if !force {
 		msg := locale.T("reqstext_clobber_prompt")
 
-		verified, fail := promptForVerification(prompt.New(), msg, false)
+		confirmed, fail := conf.Confirm(msg, false)
 		if fail != nil {
 			return fail
 		}
-		if !verified {
+		if !confirmed {
 			return failures.FailUserInput.New("err_action_was_not_confirmed")
 		}
 	}
@@ -139,23 +140,6 @@ func clobber(pjOwner, pjName string, force bool, reqs model.Checkpoint) *failure
 	}
 
 	return nil
-}
-
-func promptForVerification(sel Selector, msg string, defaultYes bool) (bool, *failures.Failure) {
-	yes, no := "Yes", "No"
-	opts := []string{yes, no}
-
-	def := yes
-	if !defaultYes {
-		def = no
-	}
-
-	res, fail := sel.Select(msg, opts, def)
-	if fail != nil {
-		return false, fail
-	}
-
-	return res == yes, nil
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
