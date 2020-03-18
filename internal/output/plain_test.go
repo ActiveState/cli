@@ -206,6 +206,42 @@ func TestPlain_Print(t *testing.T) {
 	}
 }
 
+func TestPlain_Notice(t *testing.T) {
+	type args struct {
+		value interface{}
+	}
+	tests := []struct {
+		name           string
+		args           args
+		expectedOut    string
+		expectedNotice string
+	}{
+		{
+			"simple string",
+			args{"hello"},
+			"",
+			"hello\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outWriter := &bytes.Buffer{}
+			errWriter := &bytes.Buffer{}
+
+			f := &Plain{&Config{
+				OutWriter:   outWriter,
+				ErrWriter:   errWriter,
+				Colored:     false,
+				Interactive: false,
+			}}
+
+			f.Notice(tt.args.value)
+			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
+			assert.Equal(t, tt.expectedNotice, errWriter.String(), "Notice did not match")
+		})
+	}
+}
+
 func TestPlain_Error(t *testing.T) {
 	type args struct {
 		value interface{}

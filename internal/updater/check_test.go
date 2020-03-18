@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
@@ -43,14 +43,14 @@ func TestTimedCheck(t *testing.T) {
 
 	updatemocks.MockUpdater(t, os.Args[0], constants.BranchName, "1.2.3-123")
 
-	update := TimedCheck()
+	update, _ := TimedCheck()
 	assert.True(t, update, "Should want to update")
 
 	stat, err := os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker was created")
 	modTime := stat.ModTime()
 
-	update = TimedCheck()
+	update, _ = TimedCheck()
 	assert.False(t, update, "Should not want to update")
 	stat, err = os.Stat(updateCheckMarker)
 	assert.NoError(t, err, "update-check marker still exists")
@@ -65,7 +65,7 @@ func TestTimedCheckLockedVersion(t *testing.T) {
 	_, err := os.Stat(updateCheckMarker)
 	assert.Error(t, err, "update-check marker does not exist")
 
-	update := TimedCheck()
+	update, _ := TimedCheck()
 	assert.False(t, update, "Should not want to update because we're using a locked version")
 }
 
