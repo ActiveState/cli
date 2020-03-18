@@ -1219,7 +1219,7 @@ commit_message_updated_package:
 commit_message_add_initial:
   other: Initialize project via the State Tool
 reqstext_clobber_prompt:
-  other: "This action will first remove the existing project packages. Are you sure?:"
+  other: "Your project already has packages configured for it, continuing will overwrite your existing package selection. Are you sure you want to do this?"
 commit_reqstext_message:
   other: "Import from requirements file"
 commit_reqstext_clobber_message:
