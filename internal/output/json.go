@@ -46,6 +46,12 @@ func (f *JSON) Error(value interface{}) {
 	f.cfg.OutWriter.Write([]byte("\n"))
 }
 
+// Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to
+// reliably combine this data into the eventual output
+func (f *JSON) Notice(value interface{}) {
+	logging.Warningf("JSON outputer truncated the following notice: %v", value)
+}
+
 // Config returns the Config struct for the active instance
 func (f *JSON) Config() *Config {
 	return f.cfg

@@ -132,13 +132,13 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 
 	suite.installer.OnDownload(func() { onDownloadCalled = true })
 
-	fail = suite.installer.Install()
+	_, fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.True(onDownloadCalled, "OnDownload is triggered")
 
 	onDownloadCalled = false
-	fail = suite.installer.Install()
+	_, fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.False(onDownloadCalled, "OnDownload is not triggered, because we already downloaded it")
@@ -155,7 +155,7 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 	suite.installer, fail = runtime.InitInstaller()
 	suite.Require().NoError(fail.ToError())
 
-	fail = suite.installer.Install()
+	_, fail = suite.installer.Install()
 	suite.Require().NoError(fail.ToError())
 
 	suite.Require().Len(suite.installer.InstallDirs(), 2)
