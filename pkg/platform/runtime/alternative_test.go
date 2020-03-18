@@ -10,7 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/progress/mock"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 )
@@ -34,45 +36,112 @@ func (suite *AlternativeRuntimeTestSuite) AfterTest(suiteName, testName string) 
 	suite.Assert().NoError(err, "cache dir removed")
 }
 
-func (suite *AlternativeRuntimeTestSuite) initWith(numArtifacts int, numTerminalArtifacts int, uriOverwrite ...string) ([]*runtime.HeadChefArtifact, *runtime.AlternativeRuntime, *failures.Failure) {
-	artifacts := make([]*runtime.HeadChefArtifact, 0, numArtifacts+numTerminalArtifacts)
-	for i := 0; i < numArtifacts; i++ {
-		uri := fmt.Sprintf("https://test.tld/artifact%d/artifact.tar.gz", i)
-		if len(uriOverwrite) == 1 {
-			uri = uriOverwrite[0]
+func (suite *AlternativeRuntimeTestSuite) mockEnvDefs(num int) (defs []*envdef.EnvironmentDefinition, merged *envdef.EnvironmentDefinition) {
+	defs = make([]*envdef.EnvironmentDefinition, 0, num)
+	merged = &envdef.EnvironmentDefinition{Env: []envdef.EnvironmentVariable{}, InstallDir: "installdir"}
+	for i := 0; i < num; i++ {
+		def := &envdef.EnvironmentDefinition{
+			Env: []envdef.EnvironmentVariable{
+				{
+					Name:    "COMMON",
+					Values:  []string{fmt.Sprintf("%02d", i)},
+					Inherit: false,
+				},
+				{
+					Name:    fmt.Sprintf("VAR%02d", i),
+					Values:  []string{"set"},
+					Inherit: false,
+				},
+			},
+			InstallDir: "installdir",
 		}
-		artifactID := strfmt.UUID(fmt.Sprintf("00010001-0001-0001-0001-00010001000%d", i))
-		ingredientVersionID := strfmt.UUID(fmt.Sprintf("00020001-0001-0001-0001-00010001000%d", i))
-		artifacts = append(artifacts, &runtime.HeadChefArtifact{
-			ArtifactID:          &artifactID,
-			IngredientVersionID: ingredientVersionID,
-			URI:                 strfmt.URI(uri),
-		})
-	}
-	for i := 0; i < numTerminalArtifacts; i++ {
-		artifactID := strfmt.UUID(fmt.Sprintf("00010002-0001-0001-0001-00010001000%d", i))
-		artifacts = append(artifacts, &runtime.HeadChefArtifact{
-			ArtifactID: &artifactID,
-			URI:        strfmt.URI("https://test.tld/terminal/artifact.tar.gz"),
-		})
 
+		var err error
+		merged, err = merged.Merge(def)
+		suite.Require().NoError(err)
+
+		defs = append(defs, def)
 	}
-	ar, fail := runtime.NewAlternativeRuntime(artifacts, suite.cacheDir, suite.recipeID)
-	return artifacts, ar, fail
+	return defs, merged
+}
+
+func (suite *AlternativeRuntimeTestSuite) mockTemporaryRuntimeDirs(defs []*envdef.EnvironmentDefinition) []string {
+
+	tmpRuntimeBase := filepath.Join(suite.cacheDir, "temp-runtime-base")
+	dirs := make([]string, 0, len(defs))
+
+	for i, def := range defs {
+		tmpRuntimeDir := filepath.Join(tmpRuntimeBase, fmt.Sprintf("%02d", i))
+		fail := fileutils.MkdirUnlessExists(tmpRuntimeDir)
+		suite.Require().NoError(fail.ToError())
+
+		// create runtime.json
+		err := def.WriteFile(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
+		suite.Require().NoError(err)
+
+		// create one installation file
+		fail = fileutils.MkdirUnlessExists(filepath.Join(tmpRuntimeDir, "installdir", "bin"))
+		suite.Require().NoError(fail.ToError())
+
+		err = ioutil.WriteFile(filepath.Join(tmpRuntimeDir, "installdir", "bin", fmt.Sprintf("executable%02d", i)), []byte{}, 0555)
+		suite.Require().NoError(err)
+
+		dirs = append(dirs, tmpRuntimeDir)
+	}
+	return dirs
+}
+
+func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
+	numArtifacts := 2
+	artifacts := mockFetchArtifactsResult(withRegularArtifacts(numArtifacts))
+	ar, fail := runtime.NewAlternativeRuntime(artifacts.Artifacts, suite.cacheDir, artifacts.RecipeID)
+	suite.Require().NoError(fail.ToError())
+
+	installDir := ar.InstallationDirectory(artifacts.Artifacts[0])
+	fail = fileutils.MkdirUnlessExists(installDir)
+	suite.Require().NoError(fail.ToError())
+	envDefs, merged := suite.mockEnvDefs(numArtifacts)
+
+	runtimeDirs := suite.mockTemporaryRuntimeDirs(envDefs)
+
+	for i := numArtifacts - 1; i >= 0; i-- {
+		counter := mock.NewMockIncrementer()
+		fail := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", counter)
+		suite.Assert().NoError(fail.ToError())
+		suite.Assert().Equal(1, counter.Count, "one executable moved to final installation directory")
+	}
+
+	expectedEnv := merged.GetEnv()
+
+	mergedFilePath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeDefinitionFilename)
+	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
+
+	suite.Assert().False(fileutils.FileExists(mergedFilePath))
+	env := ar.GetEnv()
+	suite.Assert().Equal(expectedEnv, env)
+	suite.Assert().True(fileutils.FileExists(mergedFilePath))
+	err := os.Remove(firstEnvDefPath)
+	suite.Assert().NoError(err, "removing cached runtime definition file for first artifact")
+
+	// This should still work, as we have cached the merged result by now
+	env = ar.GetEnv()
+	suite.Assert().Equal(expectedEnv, env)
 }
 
 func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 	cases := []struct {
-		name         string
-		uriOverwrite string
+		name   string
+		option artifactsResultMockOption
 	}{
-		{"filter empty URIs and terminal artifacts", ""},
-		{"filter invalid URIs and terminal artifacts", "https://test.tld/artifact.invalid"},
+		{"filter empty URIs", withURIArtifact("")},
+		{"filter invalid URIs", withURIArtifact("https://test.tld/artifact.invalid")},
+		{"filter terminal artifacts", withTerminalArtifacts(1)},
 	}
 
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			_, _, fail := suite.initWith(0, 2, tc.uriOverwrite)
+			artifactsResult := mockFetchArtifactsResult(tc.option)
+			_, fail := runtime.NewAlternativeRuntime(artifactsResult.Artifacts, suite.cacheDir, artifactsResult.RecipeID)
 			suite.Require().Error(fail.ToError())
 			suite.Assert().Equal(runtime.FailNoValidArtifact, fail.Type)
 		})
@@ -82,10 +151,11 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 
 func (suite *AlternativeRuntimeTestSuite) Test_ArtifactsToDownloadAndUnpack() {
 
-	artifacts, ar, fail := suite.initWith(2, 0)
+	artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
+	suite.Require().Len(artifactsRes.Artifacts, 2)
+	ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(ar)
-	suite.Require().Len(artifacts, 2)
 
 	cases := []struct {
 		name        string
@@ -99,7 +169,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_ArtifactsToDownloadAndUnpack() {
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
 			for i := 0; i < tc.preExisting; i++ {
-				downloadDir, fail := ar.DownloadDirectory(artifacts[i])
+				downloadDir, fail := ar.DownloadDirectory(artifactsRes.Artifacts[i])
 				suite.Require().NoError(fail.ToError())
 				fail = fileutils.MkdirUnlessExists(downloadDir)
 				suite.Require().NoError(fail.ToError())
@@ -139,10 +209,11 @@ func (suite *AlternativeRuntimeTestSuite) Test_PreInstall() {
 
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {
-			artifacts, ar, fail := suite.initWith(2, 1)
+			artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
+			ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)
 			suite.Require().NoError(fail.ToError())
 
-			installDir := ar.InstallationDirectory(artifacts[0])
+			installDir := ar.InstallationDirectory(artifactsRes.Artifacts[0])
 			defer os.RemoveAll(installDir)
 
 			tc.prepFunc(installDir)

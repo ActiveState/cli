@@ -59,7 +59,7 @@ type HeadChefArtifact = headchef_models.Artifact
 type FetchArtifactsResult struct {
 	IsAlternative bool
 	Artifacts     []*HeadChefArtifact
-	RecipeID      *strfmt.UUID
+	RecipeID      strfmt.UUID
 }
 
 // DownloadDirectoryProvider provides download directories for individual artifacts
@@ -141,7 +141,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			}
 
 			result.IsAlternative = resp.BuildEngine != nil && *resp.BuildEngine == headchef_models.BuildStatusResponseBuildEngineAlternative
-			result.RecipeID = resp.RecipeID
+			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
 			logging.Debug("request isAlternative=%v, recipeID=%s", result.IsAlternative, result.RecipeID.String())
 
