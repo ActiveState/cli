@@ -6,19 +6,17 @@
         Language='1033' Codepage='1252' Version='1.0.0'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
-            InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+            InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallScope='perUser' />
         <Media Id='1' Cabinet='state.cab' />
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='AppDataFolder' Name='AppData'>
-                <Directory Id='ActiveState' Name='activestate'>
-                    <Directory Id='bin' Name='bin'>
-                        <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-                            <RemoveFolder Id='MainExecutable' On='uninstall' />
-                            <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-                            <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
-                            <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[bin]' />
-                        </Component> 
-                    </Directory>
+                <Directory Id='ActiveState' Name='ActiveState State Tool'>
+                    <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
+                        <RemoveFolder Id='MainExecutable' On='uninstall' />
+                        <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+                        <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
+                        <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[bin]' />
+                    </Component> 
                 </Directory>
             </Directory>
         </Directory>
