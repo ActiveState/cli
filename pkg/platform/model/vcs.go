@@ -164,7 +164,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 // Changeset aliases for eased usage and to act as a disconnect from the underlying dep.
 type Changeset = []*mono_models.CommitChangeEditable
 
-// AddChangeset creates a new commit with multiple changes as provided.
+// AddChangeset creates a new commit with multiple changes as provided. This is lower level than CommitChangeset.
 func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, *failures.Failure) {
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(&mono_models.CommitEditable{
@@ -181,7 +181,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 	return res.Payload, nil
 }
 
-// AddCommit creates a new commit with a single change
+// AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
 func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, *failures.Failure) {
 	changeset := []*mono_models.CommitChangeEditable{
 		{
@@ -483,4 +483,21 @@ func CommitLanguage(owner, project string, op Operation, name, version string) *
 	}
 
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
+}
+
+func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
+	var changeset Changeset
+
+	for _, req := range reqs {
+		change := &mono_models.CommitChangeEditable{
+			Operation:         string(op),
+			Namespace:         req.Namespace,
+			Requirement:       req.Requirement,
+			VersionConstraint: req.VersionConstraint,
+		}
+
+		changeset = append(changeset, change)
+	}
+
+	return changeset
 }
