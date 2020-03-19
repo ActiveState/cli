@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -243,14 +245,18 @@ func (ar *AlternativeRuntime) getRuntimeDefinition() (*envdef.EnvironmentDefinit
 		return nil, err
 	}
 
+	filenames := make([]string, 0, len(files))
+	for _, f := range files {
+		if ok, _ := regexp.MatchString("[0-9]{6}.json", f.Name()); ok {
+			filenames = append(filenames, f.Name())
+		}
+	}
+	sort.Strings(filenames)
+
 	var rtGlobal *envdef.EnvironmentDefinition
 
-	for _, f := range files {
-		c := f.Name()
-		if !strings.HasSuffix(c, ".json") {
-			continue
-		}
-		rtPath := filepath.Join(ar.runtimeEnvBaseDir(), c)
+	for _, fn := range filenames {
+		rtPath := filepath.Join(ar.runtimeEnvBaseDir(), fn)
 		rt, err := envdef.NewEnvironmentDefinition(rtPath)
 		if err != nil {
 			logging.Warning("Failed to read environment definition file %s", rtPath)
