@@ -87,7 +87,7 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	requirements, fail := fetchCheckpoint(latestCommit)
+	reqs, fail := fetchCheckpoint(latestCommit)
 	if fail != nil {
 		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
 		return
@@ -99,11 +99,11 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		return
 	}
 
-	if len(requirements) > 0 {
+	if len(reqs) > 0 {
 		force := ImportFlags.Force
-		fail = clobber(prompt.New(), proj.Owner(), proj.Name(), force, requirements)
+		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, reqs)
 		if fail != nil {
-			failures.Handle(fail, "err_cannot_clobber")
+			failures.Handle(fail, "err_cannot_remove_existing")
 			return
 		}
 	}
@@ -118,9 +118,9 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 	print.Warning(locale.T("package_update_config_file"))
 }
 
-func clobber(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
+func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
 	if !force {
-		msg := locale.T("reqstext_clobber_prompt")
+		msg := locale.T("confirm_remove_existing_prompt")
 
 		confirmed, fail := conf.Confirm(msg, false)
 		if fail != nil {
@@ -132,7 +132,7 @@ func clobber(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Chec
 	}
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
-	msg := locale.T("commit_reqstext_clobber_message")
+	msg := locale.T("commit_reqstext_remove_existing_message")
 
 	fail := model.CommitChangeset(pjOwner, pjName, msg, removal)
 	if fail != nil {

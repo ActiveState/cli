@@ -1218,13 +1218,13 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
-reqstext_clobber_prompt:
+confirm_remove_existing_prompt:
   other: "Your project already has packages configured for it, continuing will overwrite your existing package selection. Are you sure you want to do this?"
 commit_reqstext_message:
   other: "Import from requirements file"
-commit_reqstext_clobber_message:
+commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
-err_cannot_clobber:
+err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
 err_action_was_not_confirmed:
   other: "Current action was not confirmed"
