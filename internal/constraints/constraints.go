@@ -226,14 +226,22 @@ func compilerMatches(compiler string) bool {
 	return false // no matching compilers found
 }
 
+func printFunc(title string) func(bool) bool {
+	return func(b bool) bool {
+		fmt.Println(title, b)
+		return b
+	}
+}
+
 // PlatformMatches returns whether or not the given platform matches the current
 // platform, as determined by the sysinfo package.
 func PlatformMatches(platform projectfile.Platform) bool {
-	return (platform.Os == "" || osMatches(platform.Os)) &&
-		(platform.Version == "" || osVersionMatches(platform.Version)) &&
-		(platform.Architecture == "" || archMatches(platform.Architecture)) &&
-		(platform.Libc == "" || libcMatches(platform.Libc)) &&
-		(platform.Compiler == "" || compilerMatches(platform.Compiler))
+	pf := printFunc
+	return (platform.Os == "" || pf("osmatches")(osMatches(platform.Os))) &&
+		(platform.Version == "" || pf("osversmatches")(osVersionMatches(platform.Version))) &&
+		(platform.Architecture == "" || pf("archmatches")(archMatches(platform.Architecture))) &&
+		(platform.Libc == "" || pf("libcmatches")(libcMatches(platform.Libc))) &&
+		(platform.Compiler == "" || pf("compilermatches")(compilerMatches(platform.Compiler)))
 }
 
 //Returns whether or not the current OS is constrained by the given
