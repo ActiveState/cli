@@ -6,8 +6,8 @@
         Language='1033' Codepage='1252' Version='1.0.0'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
-            InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' InstallScope='perUser' />
-        <Media Id='1' Cabinet='state.cab' />
+            InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+        <Media Id='1' Cabinet='state.cab' EmbedCab='yes' />
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='AppDataFolder' Name='AppData'>
                 <Directory Id='ActiveState' Name='ActiveState State Tool'>
@@ -15,7 +15,7 @@
                         <RemoveFolder Id='MainExecutable' On='uninstall' />
                         <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
                         <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
-                        <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[bin]' />
+                        <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[ActiveState]' />
                     </Component> 
                 </Directory>
             </Directory>
