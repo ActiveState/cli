@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -45,7 +46,7 @@ func (ua *Unarchiver) SetNotifier(cb ExtractNotifier) {
 // Returns the opened file and its size
 func (ua *Unarchiver) PrepareUnpacking(source, destination string) (archiveFile *os.File, fileSize int64, err error) {
 
-	if !dirExists(destination) {
+	if !fileutils.DirExists(destination) {
 		err := mkdir(destination)
 		if err != nil {
 			return nil, 0, fmt.Errorf("preparing destination: %v", err)
@@ -162,11 +163,6 @@ func writeNewHardLink(fpath string, target string) error {
 func fileExists(name string) bool {
 	_, err := os.Stat(name)
 	return !os.IsNotExist(err)
-}
-
-func dirExists(name string) bool {
-	fi, err := os.Stat(name)
-	return err == nil && fi.IsDir()
 }
 
 func mkdir(dirPath string) error {

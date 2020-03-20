@@ -72,9 +72,9 @@ func (ar *TarGzArchive) ExtractNext(destination string) (f archiver.File, err er
 	return f, ar.untarFile(f, destination, header.Name)
 }
 
-func (ar *TarGzArchive) untarFile(f archiver.File, destination string, _to string) error {
+func (ar *TarGzArchive) untarFile(f archiver.File, destination string, relTo string) error {
 
-	to := filepath.Join(destination, _to)
+	to := filepath.Join(destination, relTo)
 	// do not overwrite existing files, if configured
 	if !f.IsDir() && !ar.OverwriteExisting && fileExists(to) {
 		return fmt.Errorf("file already exists: %s", to)
