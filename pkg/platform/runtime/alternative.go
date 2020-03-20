@@ -196,7 +196,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// move files to the final installation directory
 	fail := fileutils.MoveAllFilesRecursively(
 		filepath.Join(tmpRuntimeDir, rt.InstallDir),
-		ft, counter)
+		ft, func() { counter.Increment() })
 	if fail != nil {
 		return fail
 	}
