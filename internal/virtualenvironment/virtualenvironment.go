@@ -32,8 +32,8 @@ type VirtualEnvironment struct {
 	activationID        string
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
-	envGetter           runtime.EnvGetter
 	onUseCache          func()
+	getEnv              func() map[string]string
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -94,7 +94,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 		return fail
 	}
 
-	v.envGetter = rt
+	v.getEnv = rt.GetEnv
 	if !installed && v.onUseCache != nil {
 		v.onUseCache()
 	}
@@ -106,12 +106,12 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 
 	var env map[string]string
-	if v.envGetter == nil {
+	if v.getEnv == nil {
 		logging.Warning("setting up environment in un-activated project")
 		env = make(map[string]string)
 		env["PATH"] = os.Getenv("PATH")
 	} else {
-		env = v.envGetter.GetEnv()
+		env = v.getEnv()
 	}
 
 	pjfile := projectfile.Get()
