@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // EnvironmentDefinition defines environment variables that need to be set for a
@@ -165,7 +167,7 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 	return &res, nil
 }
 
-// ReplaceInstallString replaces the string 'from' with 'replacement' in
+// ReplaceString replaces the string 'from' with 'replacement' in
 // environment variable values
 func (ev EnvironmentVariable) ReplaceString(from string, replacement string) EnvironmentVariable {
 	res := ev
@@ -178,16 +180,24 @@ func (ev EnvironmentVariable) ReplaceString(from string, replacement string) Env
 	return res
 }
 
-// Merges two environment variables according to the join strategy defined by
+// Merge Merges two environment variables according to the join strategy defined by
 // the second environment variable
+// If join strategy of the second variable is "prepend" or "append", the values
+// are prepended or appended to the first variable.
+// If join strategy is set to "disallowed", the variables is allowed to have at most
+// one value, and both merged values need to be identical, otherwise an error is
+// returned.
 func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
 	res := ev
+
+	// separators and inherit strategy always need to match for two merged variables
 	if ev.Separator != other.Separator || ev.Inherit != other.Inherit {
-		return nil, fmt.Errorf("could not join environment variable %s, conflicting directives `inherit` or `separator`", ev.Name)
+		return nil, fmt.Errorf(locale.T("envdef_variable_merge_conflict_inherit_separator"))
 	}
 
+	// 'disallowed' join strategy needs to be set for both or none of the variables
 	if (ev.Join == Disallowed || other.Join == Disallowed) && ev.Join != other.Join {
-		return nil, fmt.Errorf("could not join environment variable %s, with conflicting `join` strategies %v and %v", ev.Name, ev.Join, other.Join)
+		return nil, fmt.Errorf(locale.T("envdef_variable_merge_conflict_join", ev.Join, other.Join))
 	}
 
 	switch other.Join {
@@ -199,18 +209,23 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 		if len(ev.Values) > 1 || len(other.Values) > 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
 			return nil, fmt.Errorf(
-				"could not join environment variable %s: no join strategy with values %s and %s",
-				ev.Name,
-				strings.Join(ev.Values, sep), strings.Join(other.Values, sep))
+				locale.T(
+					"envdef_variable_no_join_strategy_conflicting_values",
+					ev.Name,
+					strings.Join(ev.Values, sep), strings.Join(other.Values, sep)),
+			)
 
 		}
 	default:
-		return nil, fmt.Errorf("could not join environment variable %s: invalid `join` directive %v", ev.Name, other.Join)
+		return nil, fmt.Errorf(locale.T("envdef_variable_merge_invalid_join", ev.Name, other.Join)) // "could not join environment variable %s: invalid `join` directive %v", ev.Name, other.Join)
 	}
 	res.Join = other.Join
 	return &res, nil
 }
 
+// filterValuesUniquely removes duplicate entries from a list of strings
+// If `keepFirst` is true, only the first occurrence is kept, otherwise the last
+// one.
 func filterValuesUniquely(values []string, keepFirst bool) []string {
 	nvs := make([]*string, len(values))
 	posMap := map[string][]int{}

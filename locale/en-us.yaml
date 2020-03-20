@@ -8,6 +8,14 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: Activate a project
+envdef_variable_merge_conflict_inherit_separator:
+  other: could not join environment variable {{.V0}}, conflicting directives `inherit` or `separator`
+envdef_variable_merge_conflict_join:
+  other: could not join environment variable {{.V0}}, with conflicting `join` strategies {{.V1}} and {{.V2}}"
+envdef_variable_no_join_strategy_conflicting_values:
+  other: could not join environment variable {{.V0}}: no join strategy with values {{.V1}} and {{.V2}} 
+envdef_variable_merge_invalid_join:
+  other:could not join environment variable {{.V0}}: invalid `join` directive {{.V1}}
 events_description:
   other: Manage project events
 events_header_id:
