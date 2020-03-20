@@ -108,7 +108,7 @@ func (ed *EnvironmentDefinition) ReplaceInstallDir(replacement string) *Environm
 	res := ed
 	newEnv := make([]EnvironmentVariable, 0, len(ed.Env))
 	for _, ev := range ed.Env {
-		newEnv = append(newEnv, ev.ReplaceInstallDir(replacement))
+		newEnv = append(newEnv, ev.ReplaceString("${INSTALLDIR}", replacement))
 	}
 	res.Env = newEnv
 	return res
@@ -165,9 +165,9 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 	return &res, nil
 }
 
-// ReplaceInstallDir replaces the string '${INSTALLDIR}' with the actual
-// installation directory
-func (ev EnvironmentVariable) ReplaceInstallDir(replacement string) EnvironmentVariable {
+// ReplaceInstallString replaces the string 'from' with 'replacement' in
+// environment variable values
+func (ev EnvironmentVariable) ReplaceString(from string, replacement string) EnvironmentVariable {
 	res := ev
 	values := make([]string, 0, len(ev.Values))
 
