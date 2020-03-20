@@ -116,10 +116,10 @@ func (ed *EnvironmentDefinition) ReplaceInstallDir(replacement string) *Environm
 
 // Merge merges two environment definitions according to the join strategy of
 // the second one.
-func (ed *EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
+func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
 	res := ed
 	if other == nil {
-		return res, nil
+		return &res, nil
 	}
 
 	newEnv := []EnvironmentVariable{}
@@ -156,13 +156,13 @@ func (ed *EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environme
 		} else {
 			mev, err := ev.Merge(otherEv)
 			if err != nil {
-				return res, err
+				return &res, err
 			}
 			newEnv = append(newEnv, *mev)
 		}
 	}
 	res.Env = newEnv
-	return res, nil
+	return &res, nil
 }
 
 // ReplaceInstallDir replaces the string '${INSTALLDIR}' with the actual
@@ -180,7 +180,7 @@ func (ev EnvironmentVariable) ReplaceInstallDir(replacement string) EnvironmentV
 
 // Merges two environment variables according to the join strategy defined by
 // the second environment variable
-func (ev *EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
+func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
 	res := ev
 	if ev.Separator != other.Separator || ev.Inherit != other.Inherit {
 		return nil, fmt.Errorf("could not join environment variable %s, conflicting directives `inherit` or `separator`", ev.Name)
@@ -208,7 +208,7 @@ func (ev *EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVar
 		return nil, fmt.Errorf("could not join environment variable %s: invalid `join` directive %v", ev.Name, other.Join)
 	}
 	res.Join = other.Join
-	return res, nil
+	return &res, nil
 }
 
 func filterValuesUniquely(values []string, keepFirst bool) []string {
