@@ -184,7 +184,7 @@ func (ev EnvironmentVariable) ReplaceString(from string, replacement string) Env
 // the second environment variable
 // If join strategy of the second variable is "prepend" or "append", the values
 // are prepended or appended to the first variable.
-// If join strategy is set to "disallowed", the variables is allowed to have at most
+// If join strategy is set to "disallowed", the variables need to have exactly
 // one value, and both merged values need to be identical, otherwise an error is
 // returned.
 func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVariable, error) {
@@ -206,7 +206,7 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 	case Append:
 		res.Values = append(ev.Values, other.Values...)
 	case Disallowed:
-		if len(ev.Values) > 1 || len(other.Values) > 1 || (ev.Values[0] != other.Values[0]) {
+		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
 			return nil, fmt.Errorf(
 				locale.T(
