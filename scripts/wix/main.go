@@ -21,7 +21,7 @@ func main() {
 	}
 
 	versionRE := regexp.MustCompile(`REPLACE-VERSION`)
-	updated := versionRE.ReplaceAll(xmlRaw, []byte(constants.Version))
+	updated := versionRE.ReplaceAll(xmlRaw, []byte(constants.VersionNumber))
 
 	err = ioutil.WriteFile(os.Args[1], updated, 0644)
 	if err != nil {
