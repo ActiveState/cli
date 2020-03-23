@@ -100,11 +100,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 	env := map[string]string{"PATH": os.Getenv("PATH")}
 	pjfile := projectfile.Get()
 
-	// Dirty hack for internal mac use-case. Mocking this via artifact would be too costly for the value we'd get.
-	if rt.GOOS == "darwin" {
-		env["PYTHONPATH"] = filepath.Dir(pjfile.Path())
-	}
-
 	for _, artifactPath := range v.artifactPaths {
 		meta, fail := runtime.InitMetaData(artifactPath)
 		if fail != nil {
