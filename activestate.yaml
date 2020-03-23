@@ -103,6 +103,11 @@ scripts:
   - name: generate-locale
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
+  - name: update-wxs
+    description: Updates the install.wxs file with the correct version of the state tool. This must be run in order to generate a State Tool MSI
+    value: |
+      $scripts.preprocess
+      go run scripts/wix/main.go publix/wix/install.wxs
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
