@@ -103,7 +103,7 @@ func ExecuteImport(cmd *cobra.Command, allArgs []string) {
 		force := ImportFlags.Force
 		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, reqs)
 		if fail != nil {
-			failures.Handle(fail, "err_cannot_remove_existing")
+			failures.Handle(fail, locale.T("err_cannot_remove_existing"))
 			return
 		}
 	}
