@@ -37,7 +37,7 @@ func Signup() *failures.Failure {
 
 	fail := promptForSignup(input)
 	if fail != nil {
-		return fail.WithDescription("err_prompt_unkown")
+		return fail.WithDescription("err_prompt_unknown")
 	}
 
 	doSignup(input)

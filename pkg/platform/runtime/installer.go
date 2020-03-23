@@ -102,14 +102,14 @@ func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() *failures.Failure {
+func (installer *Installer) Install() (bool, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
-		return fail
+		return false, fail
 	}
 
 	artifactMap, fail := installer.fetchArtifactMap()
 	if fail != nil {
-		return fail
+		return false, fail
 	}
 
 	downloadArtfs := []*HeadChefArtifact{}
@@ -122,7 +122,7 @@ func (installer *Installer) Install() *failures.Failure {
 	if len(downloadArtfs) == 0 {
 		// Already installed, no need to download or install
 		logging.Debug("Nothing to download")
-		return nil
+		return false, nil
 	}
 
 	if installer.onDownload != nil {
@@ -134,16 +134,16 @@ func (installer *Installer) Install() *failures.Failure {
 	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
 	if fail != nil {
 		progress.Cancel()
-		return fail
+		return false, fail
 	}
 
 	fail = installer.InstallFromArchives(archives, progress)
 	if fail != nil {
 		progress.Cancel()
-		return fail
+		return false, fail
 	}
 
-	return nil
+	return true, nil
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding

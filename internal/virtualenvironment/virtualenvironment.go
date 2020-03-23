@@ -34,6 +34,7 @@ type VirtualEnvironment struct {
 	activationID        string
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
+	onUseCache          func()
 	artifactPaths       []string
 }
 
@@ -78,6 +79,9 @@ func (v *VirtualEnvironment) OnDownloadArtifacts(f func()) { v.onDownloadArtifac
 // OnInstallArtifacts will call the given function when artifacts are being installed
 func (v *VirtualEnvironment) OnInstallArtifacts(f func()) { v.onInstallArtifacts = f }
 
+// OnUseCache will call the given function when the cached runtime is used
+func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
+
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	installer, fail := runtime.InitInstaller()
@@ -86,8 +90,13 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	}
 
 	installer.OnDownload(v.onDownloadArtifacts)
-	if fail := installer.Install(); fail != nil {
+	installed, fail := installer.Install()
+	if fail != nil {
 		return fail
+	}
+
+	if !installed && v.onUseCache != nil {
+		v.onUseCache()
 	}
 
 	v.artifactPaths = installer.InstallDirs()

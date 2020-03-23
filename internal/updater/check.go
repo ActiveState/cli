@@ -49,13 +49,19 @@ func timeout(f func() (*Info, error), t time.Duration) (*Info, error) {
 	}
 }
 
+type UpdateResult struct {
+	Updated     bool
+	FromVersion string
+	ToVersion   string
+}
+
 // TimedCheck checks for updates once per day and, if one was found within a
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // TimedCheck is skipped altogether if the current project has a locked version.
-func TimedCheck() bool {
+func TimedCheck() (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(); versionInfo != nil {
-		return false
+		return false, ""
 	}
 
 	// Determine whether or not an update check has been performed today.
@@ -66,7 +72,7 @@ func TimedCheck() bool {
 		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
 		if err != nil {
 			logging.Error("Unable to automatically check for updates: %s", err)
-			return false
+			return false, ""
 		}
 	} else {
 		// Check to see if it has been 24 hours since the last update check. If not,
@@ -74,7 +80,7 @@ func TimedCheck() bool {
 		nextCheckTime := marker.ModTime().Add(24 * time.Hour)
 		if time.Now().Before(nextCheckTime) {
 			logging.Debug("Not checking for updates until %s", nextCheckTime)
-			return false
+			return false, ""
 		}
 	}
 
@@ -100,10 +106,10 @@ func TimedCheck() bool {
 		} else {
 			logging.Debug("Automatically checking for updates timed out")
 		}
-		return false
+		return false, ""
 	} else if info == nil {
 		logging.Debug("No update available.")
-		return false
+		return false, ""
 	}
 
 	// Self-update.
@@ -111,7 +117,7 @@ func TimedCheck() bool {
 	err = update.Run()
 	if err != nil {
 		logging.Error("Unable to automatically check for updates: %s", err)
-		return false
+		return false, ""
 	}
 
 	// Touch the update check marker so the next check will not happen for another
@@ -119,8 +125,8 @@ func TimedCheck() bool {
 	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
 	if err != nil {
 		logging.Error("Unable to automatically check for updates: %s", err)
-		return false
+		return false, ""
 	}
 
-	return true
+	return true, info.Version
 }
