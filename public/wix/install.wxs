@@ -8,6 +8,8 @@
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
         <Media Id='1' Cabinet='state.cab' EmbedCab='yes' />
+
+        <!-- The default directory structure when installing the state tool. This can be changed via the UI -->
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='AppDataFolder' Name='AppData'>
                 <Directory Id='ActiveState' Name='ActiveState'>
@@ -15,24 +17,30 @@
                         <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
                             <RemoveFolder Id='BINDIR' On='uninstall' />
                             <RemoveFolder Id='MainExecutable' On='uninstall' />
+                            <!-- Required by WiX -->
                             <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
                             <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
-                            <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='no' Part='last' Value='[BINDIR]' />
+                            <!-- This utility element uses a custom install directory value to remove the state tool on uninstallation -->
                             <util:RemoveFolderEx Id="RemoveAdditionalFiles" On="uninstall" Property="REMOVAL"/>
                         </Component>
                     </Directory> 
                 </Directory>
             </Directory>
         </Directory>
+
         <Feature Id='Complete' Level='1'>
             <ComponentRef Id='MainExecutable' />
             <Component Directory="BINDIR">
+                <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
                 <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[BINDIR]" Type="string"/>
                 <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
+                <!-- Set the PATH environment variable to the installation directory of the State Tool -->
+                <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='no' Part='last' Value='[BINDIR]' />
             </Component>
         </Feature>
 
         <Property Id="REMOVAL">
+            <!-- Retrieve the value of the installation directory from the registry -->
             <RegistrySearch Id="RemovalProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Type="raw" />
         </Property>
 
@@ -43,6 +51,8 @@
 
             <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
             <Property Id="WixUI_Mode" Value="InstallDir" />
+
+            <!-- Must set WIXUI_INSTALLDIR to our default installation directory in order to pass it to the UI -->
             <Property Id="WIXUI_INSTALLDIR" Value="BINDIR" />
 
             <DialogRef Id="BrowseDlg" />
@@ -61,6 +71,7 @@
 
             <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
+            <!-- Can enable the element below when EUAL text is prepared -->
             <!-- <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish> -->
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">NOT Installed</Publish>
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -68,6 +79,7 @@
             <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
             <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
 
+            <!-- Can enable the element below when EUAL text is prepared -->
             <!-- <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
             <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
             <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
@@ -92,7 +104,8 @@
 
         <UIRef Id="WixUI_Common" />
         <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
-        <CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Successfully installed to [WIXUI_INSTALLDIR]. Thank you for installing the State Tool."/>
+        <!-- Custom action to set the text of the Success screen -->
+        <CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Successfully installed to [BINDIR]. Thank you for installing the State Tool."/>
         <InstallUISequence>
             <Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="5">NOT Installed</Custom>
         </InstallUISequence>
