@@ -1,36 +1,52 @@
 <?xml version='1.0' encoding='windows-1252'?>
-<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi' xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
     <Product Name='ActiveState State Tool' Manufacturer='ActiveState'
         Id='72781F65-49A7-47F5-9BA8-B25294271E09' 
         UpgradeCode='50D1C035-D6CB-4F15-A458-94E385B0A28D'
-        Language='1033' Codepage='1252' Version='REPLACE-VERSION'>
+        Language='1033' Codepage='1252' Version='1.0.0'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
         <Media Id='1' Cabinet='state.cab' EmbedCab='yes' />
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='AppDataFolder' Name='AppData'>
-                <Directory Id='ActiveState' Name='ActiveState State Tool'>
-                    <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-                        <RemoveFolder Id='MainExecutable' On='uninstall' />
-                        <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
-                        <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
-                        <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='yes' Part='last' Value='[ActiveState]' />
-                    </Component> 
+                <Directory Id='ActiveState' Name='ActiveState'>
+                    <Directory Id='BINDIR' Name='bin'>
+                        <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
+                            <RemoveFolder Id='BINDIR' On='uninstall' />
+                            <RemoveFolder Id='MainExecutable' On='uninstall' />
+                            <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
+                            <File Id='StateEXE' Name='state.exe' DiskId='1' Source='..\..\build\state.exe'  />
+                            <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='no' Part='last' Value='[BINDIR]' />
+                            <util:RemoveFolderEx Id="RemoveAdditionalFiles" On="uninstall" Property="REMOVAL"/>
+                        </Component>
+                    </Directory> 
                 </Directory>
             </Directory>
         </Directory>
         <Feature Id='Complete' Level='1'>
             <ComponentRef Id='MainExecutable' />
+            <Component Directory="BINDIR">
+                <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[BINDIR]" Type="string"/>
+                <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
+            </Component>
         </Feature>
-        <UI Id="WixUI_Minimal">
+
+        <Property Id="REMOVAL">
+            <RegistrySearch Id="RemovalProperty" Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Type="raw" />
+        </Property>
+
+        <UI Id="WixUI_InstallDir">
             <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
             <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
             <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
 
             <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
-            <Property Id="WixUI_Mode" Value="Minimal" />
+            <Property Id="WixUI_Mode" Value="InstallDir" />
+            <Property Id="WIXUI_INSTALLDIR" Value="BINDIR" />
 
+            <DialogRef Id="BrowseDlg" />
+            <DialogRef Id="DiskCostDlg" />
             <DialogRef Id="ErrorDlg" />
             <DialogRef Id="FatalError" />
             <DialogRef Id="FilesInUse" />
@@ -39,11 +55,31 @@
             <DialogRef Id="ProgressDlg" />
             <DialogRef Id="ResumeDlg" />
             <DialogRef Id="UserExit" />
-            <DialogRef Id="WelcomeDlg" />
+            
+            <Publish Dialog="BrowseDlg" Control="OK" Event="DoAction" Value="WixUIValidatePath" Order="3">1</Publish>
+            <Publish Dialog="BrowseDlg" Control="OK" Event="SpawnDialog" Value="InvalidDirDlg" Order="4"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
 
             <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
-            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
+            <!-- <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish> -->
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">NOT Installed</Publish>
+            <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
+
+            <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+            <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
+
+            <!-- <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
+            <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="WixUIValidatePath" Order="2">NOT WIXUI_DONTVALIDATEPATH</Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="SpawnDialog" Value="InvalidDirDlg" Order="3"><![CDATA[NOT WIXUI_DONTVALIDATEPATH AND WIXUI_INSTALLDIR_VALID<>"1"]]></Publish>
+            <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4">WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID="1"</Publish>
+            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+            <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
+            <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">Installed AND PATCH</Publish>
 
             <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg">1</Publish>
 
@@ -51,16 +87,14 @@
             <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
             <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg">1</Publish>
 
-            <Publish Dialog="WelcomeDlg" Control="Next" Event="EndDialog" Value="Return" Order="2"></Publish>
-
-            <InstallUISequence>
-                <Show Dialog="WelcomeDlg" Before="ProgressDlg"></Show>
-            </InstallUISequence>
-
             <Property Id="ARPNOMODIFY" Value="1" />
         </UI>
 
         <UIRef Id="WixUI_Common" />
-        <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing the State Tool." />
+        <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
+        <CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Successfully installed to [WIXUI_INSTALLDIR]. Thank you for installing the State Tool."/>
+        <InstallUISequence>
+            <Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="5">NOT Installed</Custom>
+        </InstallUISequence>
     </Product>
 </Wix>
