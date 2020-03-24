@@ -91,7 +91,7 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, *failures.Failu
 	resp, err := client.Get(constants.DeprecationInfoURL)
 	if err != nil {
 		// Check for timeout by evaluating the error string. Yeah this is dumb, thank the http package for that.
-		if strings.Contains(err.Error(), "Client.Timeout") {
+		if strings.Contains(err.Error(), "Client.Timeout") || strings.Contains(err.Error(), "context deadline exceeded") {
 			return -1, nil, FailTimeout.Wrap(err)
 		}
 		return -1, nil, FailFetchDeprecationInfo.Wrap(err)
