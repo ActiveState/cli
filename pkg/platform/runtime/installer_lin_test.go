@@ -111,14 +111,6 @@ func (suite *InstallerLinuxTestSuite) TestInstall_BadArchive() {
 	suite.Contains(fail.Error(), "EOF")
 }
 
-func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveHasNoInstallDir_ForTarGz() {
-	archivePath := path.Join(suite.dataDir, "empty.tar.gz")
-	fail := suite.installer.InstallFromArchives(headchefArtifact(archivePath), suite.prg)
-	suite.Require().Error(fail.ToError())
-	suite.prg.Cancel()
-	suite.Equal(runtime.FailArchiveNoInstallDir, fail.Type)
-}
-
 func (suite *InstallerLinuxTestSuite) TestInstall_RuntimeMissingPythonExecutable() {
 	archivePath := path.Join(suite.dataDir, "python-missing-python-binary.tar.gz")
 	fail := suite.installer.InstallFromArchives(headchefArtifact(archivePath), suite.prg)
