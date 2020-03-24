@@ -91,8 +91,7 @@ func (suite *InstallerTestSuite) TestInstall_Python_RelocationSuccessful() {
 
 func (suite *InstallerTestSuite) TestInstall_Python_Legacy_RelocationSuccessful() {
 	if rt.GOOS == "darwin" {
-		// Our macOS Python builds do not use relocation, so this will fail if it has to auto detect relocation paths
-		return
+		suite.T().Skip("Our macOS Python builds do not use relocation, so this will fail if it has to auto detect relocation paths")
 	}
 	suite.testRelocation("python-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePython3Executable)
 }
@@ -103,7 +102,7 @@ func (suite *InstallerTestSuite) TestInstall_Perl_RelocationSuccessful() {
 
 func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
 	if rt.GOOS == "darwin" {
-		// PERL NOT YET SUPPORTED ON MAC
+		suite.T().Skip("PERL NOT YET SUPPORTED ON MAC")
 		return
 	}
 	suite.testRelocation("perl-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePerlExecutable)
