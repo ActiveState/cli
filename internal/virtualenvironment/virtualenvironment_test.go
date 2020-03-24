@@ -175,6 +175,7 @@ languages:
 		assert.Contains(t, venv.GetEnv(false)["PATH"], path, "Artifact path is added to PATH")
 	}
 
+	// Ensure we're not passing any empty env keys, which causes problems in bashrc and similar
 	env := venv.GetEnv(false)
 	for k := range env {
 		assert.NotEmpty(t, k, "Does not return any empty env keys")
