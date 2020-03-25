@@ -45,6 +45,7 @@
         </Property>
 
         <UI Id="WixUI_InstallDir">
+            <!-- TODO: Need to add icon for state tool -->
             <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
             <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
             <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
@@ -105,9 +106,9 @@
         <UIRef Id="WixUI_Common" />
         <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value=" " />
         <!-- Custom action to set the text of the Success screen -->
-        <CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Successfully installed to [BINDIR]. Thank you for installing the State Tool."/>
+        <CustomAction Id="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Installation complete. Thank you for installing the ActiveState State Tool."/>
         <InstallUISequence>
-            <Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="5">NOT Installed</Custom>
+            <Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
         </InstallUISequence>
     </Product>
 </Wix>
