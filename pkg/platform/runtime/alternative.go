@@ -189,7 +189,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	if err != nil {
 		return failures.FailRuntime.Wrap(err)
 	}
-	rt = rt.ReplaceInstallDir(ft)
+	rt = rt.ExpandVariables(ft)
 
 	// move files to the final installation directory
 	fail := fileutils.MoveAllFilesRecursively(

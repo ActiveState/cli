@@ -104,13 +104,20 @@ func (ed *EnvironmentDefinition) WriteFile(filepath string) error {
 	return ioutil.WriteFile(filepath, blob, 0666)
 }
 
-// ReplaceInstallDir replaces the string '${INSTALLDIR}' with the actual
-// installation directory in every environment variable value
-func (ed *EnvironmentDefinition) ReplaceInstallDir(replacement string) *EnvironmentDefinition {
+// ExpandVariables expands substitution strings specified in the environment variable values.
+// Right now, the only valid substition string is `${INSTALLDIR}` which is being replaced
+// with the base of the installation directory for a given project
+func (ed *EnvironmentDefinition) ExpandVariables(installationDirectory string) *EnvironmentDefinition {
+	return ed.ReplaceString("${INSTALLDIR}", installationDirectory)
+}
+
+// ReplaceString replaces the string `from` with its `replacement` value
+// in every environment variable value
+func (ed *EnvironmentDefinition) ReplaceString(from string, replacement string) *EnvironmentDefinition {
 	res := ed
 	newEnv := make([]EnvironmentVariable, 0, len(ed.Env))
 	for _, ev := range ed.Env {
-		newEnv = append(newEnv, ev.ReplaceString("${INSTALLDIR}", replacement))
+		newEnv = append(newEnv, ev.ReplaceString(from, replacement))
 	}
 	res.Env = newEnv
 	return res
