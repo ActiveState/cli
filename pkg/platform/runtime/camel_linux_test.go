@@ -69,7 +69,7 @@ func (suite *CamelLinuxRuntimeTestSuite) TestRelocate() {
 
 	counter := pMock.NewMockIncrementer()
 
-	fail := runtime.Relocate(metaData, counter)
+	fail := runtime.Relocate(metaData, func() { counter.Increment() })
 	suite.Require().NoError(fail.ToError())
 
 	suite.Assert().Equal(3, counter.Count, "3 files relocated")
@@ -121,7 +121,7 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 			suite.Require().NoError(fail.ToError(), "camel runtime assembler initialized")
 			fail = fileutils.MkdirUnlessExists(cr.InstallationDirectory(artifact))
 			suite.Require().NoError(fail.ToError(), "creating installation directory")
-			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, counter)
+			fail = cr.PostUnpackArtifact(artifact, runtimeDir, archivePath, func() { counter.Increment() })
 
 			suite.Require().Error(fail.ToError())
 			suite.Equal(tc.expectedFailure, fail.Type)

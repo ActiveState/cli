@@ -66,7 +66,7 @@ func (suite *CamelRuntimeTestSuite) Test_PreUnpackArtifact() {
 		{"InstallationDirectoryIsOkay", func(installDir string) {}, nil},
 	}
 
-	archivePath := "does-not-matter-here" + runtime.CamelInstallerExtension()
+	archivePath := "does-not-matter-here" + camelInstallerExtension()
 	artifact, _ := headchefArtifact(archivePath)
 	for _, tc := range cases {
 		suite.Run(tc.name, func() {

@@ -83,3 +83,10 @@ func withTerminalArtifacts(numArtifacts int) artifactsResultMockOption {
 		return res
 	}
 }
+
+// camelInstallerExtension returns the installer extension for camel artifacts without caring
+// about the CamelRuntime.  This is useful to mock OS independent artifact file names.
+func camelInstallerExtension() string {
+	crTemp := &runtime.CamelRuntime{}
+	return crTemp.InstallerExtension()
+}

@@ -8,14 +8,31 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: Activate a project
+envdef_unmarshal_join_error:
+  other: |
+    The runtime environment is corrupted.
+
+    Please let our build engineers know that the specified `join` directive e {{.V0}}.
 envdef_variable_merge_conflict_inherit_separator:
-  other: could not join environment variable {{.V0}}, conflicting directives `inherit` or `separator`
+  other: |
+    The runtime environment is corrupted.
+
+    Please let our build engineers know that the `inherit` or `separator` directives conflict for environment variable {{.V0}}.
 envdef_variable_merge_conflict_join:
-  other: could not join environment variable {{.V0}}, with conflicting `join` strategies {{.V1}} and {{.V2}}"
+  other: |
+    The runtime environment is corrupted.
+
+    Please let our build engineers know that the `join` strategies {{.V1}} and {{.V2}} conflict for environment variable {{.V0}}
 envdef_variable_no_join_strategy_conflicting_values:
-  other: could not join environment variable {{.V0}}: no join strategy with values {{.V1}} and {{.V2}} 
+  other: |
+    The runtime environment is corrupted.
+
+    Please let our build engineers know that the environment variable {{.V0}} has no join strategy and conflicting values {{.V1}} and {{.V2}}.
 envdef_variable_merge_invalid_join:
-  other:could not join environment variable {{.V0}}: invalid `join` directive {{.V1}}
+  other: |
+    The runtime environment is corrupted.
+
+    Please let our build engineers know that the environment variable {{.V0}} has an invalid join strategy {{.V1}} specified.
 events_description:
   other: Manage project events
 events_header_id:
@@ -431,8 +448,6 @@ unknown_value:
   other: Unknown value
 invalid_uuid_val:
   other: Invalid UUID value
-invalid_build_request_response_no_recipe_id:
-  other: "Invalid Build Request response: Expected a recipe id in response body."
 total:
   other: Total
 projects_description:
@@ -829,7 +844,7 @@ warn_script_name_in_use:
     Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
 
 warn_move_incompatible_modes:
-  other: "Permissions of files {{.V0}} with {{.V1}} differ. Using permissions of {{.V0}}"
+  other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
 warn_move_destination_overwritten:
   other: "Overwriting existing file {{.V1}} with file {{.V0}}"
 err_file_not_found_in_path:
@@ -1303,7 +1318,9 @@ err_project_from_path:
 err_must_provide_directory:
   other: You must provide a valid directory
 err_incompatible_move_file_dir:
-  other: "Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory."
+  other: |
+    Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
+    This indicates that the requested build may be corrupted.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:

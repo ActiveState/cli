@@ -12,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -58,19 +58,13 @@ func NewCamelRuntime(artifacts []*HeadChefArtifact, cacheDir string) (*CamelRunt
 	return cr, nil
 }
 
-// CamelInstallerExtension returns the file extension for archive file names
+// InstallerExtension returns the expected file extension for archive file names
 // We expect .zip for Windows and .tar.gz otherwise
-func CamelInstallerExtension() string {
+func (cr *CamelRuntime) InstallerExtension() string {
 	if rt.GOOS == "windows" {
 		return ".zip"
 	}
 	return ".tar.gz"
-}
-
-// InstallerExtension returns the expected file extension for archive file names
-// We expect .zip for Windows and .tar.gz otherwise
-func (cr *CamelRuntime) InstallerExtension() string {
-	return CamelInstallerExtension()
 }
 
 // Unarchiver initializes and returns an Unarchiver instance that is able to
@@ -119,7 +113,7 @@ func (cr *CamelRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map
 // InstallationDirectory returns the local directory into which the artifact files need to be unpacked
 func (cr *CamelRuntime) InstallationDirectory(artf *HeadChefArtifact) string {
 
-	installDir := filepath.Join(cr.cacheDir, shortHash(artf.ArtifactID.String()))
+	installDir := filepath.Join(cr.cacheDir, hash.ShortHash(artf.ArtifactID.String()))
 
 	return installDir
 }
@@ -132,7 +126,6 @@ func (cr *CamelRuntime) PreInstall() *failures.Failure {
 // PreUnpackArtifact ensures that the final installation directory exists and is
 // useable.
 func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure {
-
 	installDir := cr.InstallationDirectory(artf)
 
 	if fileutils.FileExists(installDir) {
@@ -152,13 +145,11 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 	}
 
 	return nil
-
 }
 
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
-func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, upb progress.Incrementer) *failures.Failure {
-
+func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -212,7 +203,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		return fail
 	}
 
-	if fail = Relocate(metaData, upb); fail != nil {
+	if fail = Relocate(metaData, cb); fail != nil {
 		return fail
 	}
 
@@ -221,7 +212,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 
 // Relocate will look through all of the files in this installation and replace any
 // character sequence in those files containing the given prefix.
-func Relocate(metaData *MetaData, upb progress.Incrementer) *failures.Failure {
+func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	prefix := metaData.RelocationDir
 
 	if len(prefix) == 0 || prefix == metaData.Path {
@@ -236,7 +227,7 @@ func Relocate(metaData *MetaData, upb progress.Incrementer) *failures.Failure {
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
-				upb.Increment()
+				cb()
 				return true
 			}
 			return false
@@ -252,7 +243,7 @@ func Relocate(metaData *MetaData, upb progress.Incrementer) *failures.Failure {
 			// Binaries only
 			func(p string, contents []byte) bool {
 				if fileutils.IsBinary(contents) {
-					upb.Increment()
+					cb()
 					return true
 				}
 				return false

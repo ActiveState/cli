@@ -2,7 +2,6 @@ package mock
 
 import (
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	testifyMock "github.com/stretchr/testify/mock"
@@ -49,8 +48,8 @@ func (a *Assembler) PreUnpackArtifact(artf *runtime.HeadChefArtifact) *failures.
 	return args.Get(0).(*failures.Failure)
 }
 
-func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, upb progress.Incrementer) *failures.Failure {
-	args := a.Called(artf, tmpRuntimeDir, archivePath)
+func (a *Assembler) PostUnpackArtifact(artf *runtime.HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
+	args := a.Called(artf, tmpRuntimeDir, archivePath, cb)
 	if args.Get(0) == nil {
 		return nil
 	}

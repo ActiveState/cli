@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
@@ -102,7 +102,7 @@ func (ar *AlternativeRuntime) cachedArtifact(downloadDir string) *string {
 // ArtifactsToDownloadAndUnpack returns the artifacts that we need to download
 // for this project.
 // It returns nothing if the final installation directory is non-empty.
-// It filters out artifacts that have been downloaded before, and adds them to
+// Otherwise: It filters out artifacts that have been downloaded before, and adds them to
 // the list of artifacts that need to be unpacked only.
 func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact) {
 	downloadArtfs := []*HeadChefArtifact{}
@@ -125,7 +125,7 @@ func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifac
 }
 
 func (ar *AlternativeRuntime) downloadDirectory(artf *HeadChefArtifact) string {
-	return filepath.Join(ar.cacheDir, "artifacts", shortHash(artf.ArtifactID.String()))
+	return filepath.Join(ar.cacheDir, "artifacts", hash.ShortHash(artf.ArtifactID.String()))
 }
 
 // DownloadDirectory returns the local directory where the artifact files should
@@ -137,7 +137,7 @@ func (ar *AlternativeRuntime) DownloadDirectory(artf *HeadChefArtifact) (string,
 }
 
 func (ar *AlternativeRuntime) finalInstallationDirectory() string {
-	finstDir := filepath.Join(ar.cacheDir, shortHash(ar.recipeID.String()))
+	finstDir := filepath.Join(ar.cacheDir, hash.ShortHash(ar.recipeID.String()))
 	return finstDir
 }
 
@@ -145,7 +145,7 @@ func (ar *AlternativeRuntime) finalInstallationDirectory() string {
 // should be unpacked to.
 // For alternative build artifacts, all artifacts are unpacked into the same
 // directory eventually.
-func (ar *AlternativeRuntime) InstallationDirectory(artf *HeadChefArtifact) string {
+func (ar *AlternativeRuntime) InstallationDirectory(_ *HeadChefArtifact) string {
 	return ar.finalInstallationDirectory()
 }
 
@@ -180,12 +180,10 @@ func (ar *AlternativeRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failure
 // PostUnpackArtifact is called after the artifacts are unpacked
 // In this steps, the artifact contents are moved to its final destination.
 // This step also sets up the runtime environment variables.
-func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, counter progress.Incrementer) *failures.Failure {
+func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
 
 	// final installation target
 	ft := ar.InstallationDirectory(artf)
-
-	logging.Debug("ft=%s trd=%s\n", ft, tmpRuntimeDir)
 
 	rt, err := envdef.NewEnvironmentDefinition(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
 	if err != nil {
@@ -196,7 +194,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// move files to the final installation directory
 	fail := fileutils.MoveAllFilesRecursively(
 		filepath.Join(tmpRuntimeDir, rt.InstallDir),
-		ft, func() { counter.Increment() })
+		ft, cb)
 	if fail != nil {
 		return fail
 	}
@@ -212,6 +210,9 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 		return fail
 	}
 
+	// copy the runtime environment file to the installation directory.
+	// The file name is based on the artifact order index, such that we can
+	// ensure the environment definition files can be read in the correct order.
 	err = rt.WriteFile(filepath.Join(ar.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
 	if err != nil {
 		return failures.FailRuntime.Wrap(err, "Failed to write runtime.json to final installation directory %s", ar.runtimeEnvBaseDir())
@@ -219,7 +220,6 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
 		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
-		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
 	}
 	return nil
 }
@@ -228,8 +228,15 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 	return filepath.Join(ar.finalInstallationDirectory(), constants.LocalRuntimeEnvironmentDirectory)
 }
 
-func (ar *AlternativeRuntime) getRuntimeDefinition() (*envdef.EnvironmentDefinition, error) {
-
+// assembleRuntimeDefinition assembles the environment from runtime definition files copied to the
+// installation directory (at runtimeEnvBaseDir())
+// This function expects files named `"00001.json", "00002.json", ...` that are installed in the
+// PostUnpackArtifact step.  It sorts them by name, parses them and merges the EnvironmentDefinition
+//
+// As an optimization step, the merged environment definition is cached and written back to
+// `<runtimeEnvBaseDir()>/runtime.json`. If this file exits, we can just return its parsed contents and skip parsing
+// the many individual runtime definition files.
+func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDefinition, error) {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	if fileutils.FileExists(mergedRuntimeDefinitionFile) {
 		rt, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
@@ -288,7 +295,7 @@ func (ar *AlternativeRuntime) getRuntimeDefinition() (*envdef.EnvironmentDefinit
 // GetEnv returns the environment variable configuration for this build
 func (ar *AlternativeRuntime) GetEnv() map[string]string {
 
-	rt, err := ar.getRuntimeDefinition()
+	rt, err := ar.assembleRuntimeDefinition()
 	if err != nil {
 		logging.Warning("No runtime definition found")
 		return map[string]string{}

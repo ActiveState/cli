@@ -66,7 +66,6 @@ func (suite *AlternativeRuntimeTestSuite) mockEnvDefs(num int) (defs []*envdef.E
 }
 
 func (suite *AlternativeRuntimeTestSuite) mockTemporaryRuntimeDirs(defs []*envdef.EnvironmentDefinition) []string {
-
 	tmpRuntimeBase := filepath.Join(suite.cacheDir, "temp-runtime-base")
 	dirs := make([]string, 0, len(defs))
 
@@ -106,7 +105,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 
 	for i := numArtifacts - 1; i >= 0; i-- {
 		counter := mock.NewMockIncrementer()
-		fail := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", counter)
+		fail := ar.PostUnpackArtifact(artifacts.Artifacts[i], runtimeDirs[i], "", func() { counter.Increment() })
 		suite.Assert().NoError(fail.ToError())
 		suite.Assert().Equal(1, counter.Count, "one executable moved to final installation directory")
 	}
@@ -150,7 +149,6 @@ func (suite *AlternativeRuntimeTestSuite) Test_InitializationFailure() {
 }
 
 func (suite *AlternativeRuntimeTestSuite) Test_ArtifactsToDownloadAndUnpack() {
-
 	artifactsRes := mockFetchArtifactsResult(withRegularArtifacts(2))
 	suite.Require().Len(artifactsRes.Artifacts, 2)
 	ar, fail := runtime.NewAlternativeRuntime(artifactsRes.Artifacts, suite.cacheDir, artifactsRes.RecipeID)

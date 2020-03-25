@@ -1,13 +1,7 @@
 package runtime
 
 import (
-	"crypto/sha1"
-	"fmt"
-	"io"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
@@ -36,6 +30,18 @@ type Assembler interface {
 	// runtime should be installed to.
 	InstallationDirectory(artf *HeadChefArtifact) string
 
+	// BuildEngine returns the build engine that this runtime has been created
+	// with
+	BuildEngine() BuildEngine
+
+	// InstallerExtension is used to identify whether an artifact is one that we
+	// should care about
+	InstallerExtension() string
+
+	// Unarchiver initializes and returns the unarchiver for the expected
+	// artifact archive format
+	Unarchiver() unarchiver.Unarchiver
+
 	/* HOOKS */
 
 	// PreInstall is invoked by the installer after all artifact archives are
@@ -49,19 +55,7 @@ type Assembler interface {
 	// PostUnpackArtifact is invoked by the installer for every artifact archive
 	// after it has been unpacked into its temporary installation directory tmpRuntimeDir
 	// Here, the final relocation to InstallationDirectory() needs to take place.
-	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, upb progress.Incrementer) *failures.Failure
-
-	// BuildEngine returns the build engine that this runtime has been created
-	// with
-	BuildEngine() BuildEngine
-
-	// InstallerExtension is used to identify whether an artifact is one that we
-	// should care about
-	InstallerExtension() string
-
-	// Unarchiver initializes and returns the unarchiver for the expected
-	// artifact archive format
-	Unarchiver() unarchiver.Unarchiver
+	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure
 }
 
 // BuildEngine describes the build engine that was used to build the runtime
@@ -75,16 +69,3 @@ const (
 	// Alternative is the new alternative build orchestration framework
 	Alternative
 )
-
-// shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
-//
-// For example:
-//   shortHash("ActiveState-TestProject-python3")
-// 	 => e784c7e0
-//
-// This is useful for creating a shortened namespace for language installations.
-func shortHash(data ...string) string {
-	h := sha1.New()
-	io.WriteString(h, strings.Join(data, ""))
-	return fmt.Sprintf("%x", h.Sum(nil)[:4])
-}

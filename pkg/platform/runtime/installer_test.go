@@ -84,7 +84,7 @@ func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InstallerTestSuite) testRelocation(archiveName string, executable string) {
-	archive := archiveName + runtime.CamelInstallerExtension()
+	archive := archiveName + camelInstallerExtension()
 
 	artifact, archives := headchefArtifact(path.Join(suite.dataDir, archive))
 

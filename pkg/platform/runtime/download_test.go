@@ -96,8 +96,8 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 	suite.Require().NoError(fail.ToError())
 
 	suite.Implements((*runtime.Downloader)(nil), r)
-	suite.Contains(files, filepath.Join(suite.dir, "python"+runtime.CamelInstallerExtension()))
-	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+runtime.CamelInstallerExtension()))
+	suite.Contains(files, filepath.Join(suite.dir, "python"+camelInstallerExtension()))
+	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+camelInstallerExtension()))
 
 	for file := range files {
 		suite.FileExists(file)

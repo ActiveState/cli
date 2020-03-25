@@ -57,7 +57,7 @@ func (j *VariableJoin) UnmarshalText(text []byte) error {
 	case "disallowed":
 		*j = Disallowed
 	default:
-		return fmt.Errorf("invalid join directive `%s`", string(text))
+		return fmt.Errorf(locale.T("envdef_unmarshal_join_error", string(text)))
 	}
 	return nil
 }

@@ -21,6 +21,15 @@ import (
 // FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
 var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
 
+// FailMoveSourceNotDirectory indicates the specified source to be moved is not a directory
+var FailMoveSourceNotDirectory = failures.Type("fileutils.fail.move.sourcenotdirectory", failures.FailUser)
+
+// FailMoveDestinationNotDirectory indicates the specified source to be moved is not a directory
+var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destinationnotdirectory", failures.FailUser)
+
+// FailMoveDestinationExists indicates the specified destination to move to already exists
+var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailRuntime)
+
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
@@ -434,9 +443,9 @@ type MoveAllFilesCallback func()
 // - a sub-directory exists in both the source and and the destination and their permissions do not match
 func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *failures.Failure {
 	if !DirExists(fromPath) {
-		return failures.FailOS.New("err_os_not_a_directory", fromPath)
+		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
 	} else if !DirExists(toPath) {
-		return failures.FailOS.New("err_os_not_a_directory", toPath)
+		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
 	}
 
 	// read all child files and dirs
@@ -460,7 +469,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 		// handle case where destination exists
 		if toPathExists {
 			if fileInfo.IsDir() != toInfo.IsDir() {
-				return failures.FailOS.New("err_incompatible_move_file_dir", subFromPath, subToPath)
+				return FailMoveDestinationExists.New("err_incompatible_move_file_dir", subFromPath, subToPath)
 			}
 			if fileInfo.Mode() != toInfo.Mode() {
 				logging.Warning(locale.T("warn_move_incompatible_modes", subFromPath, subToPath))
@@ -492,9 +501,9 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *
 // must already exist.
 func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 	if !DirExists(fromPath) {
-		return failures.FailOS.New("err_os_not_a_directory", fromPath)
+		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
 	} else if !DirExists(toPath) {
-		return failures.FailOS.New("err_os_not_a_directory", toPath)
+		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
 	}
 
 	// read all child files and dirs

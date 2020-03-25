@@ -201,7 +201,7 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 		return fail
 	}
 
-	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, upb)
+	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
 	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
