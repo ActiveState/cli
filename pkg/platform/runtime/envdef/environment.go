@@ -7,15 +7,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/failures"
 	"github.com/thoas/go-funk"
 )
 
 // EnvironmentDefinition defines environment variables that need to be set for a
 // runtime to work
 type EnvironmentDefinition struct {
-	Env        []EnvironmentVariable `json:env`
-	InstallDir string                `json:installdir`
+	// Env is a list of environment variables to be set
+	Env []EnvironmentVariable `json:"env"`
+
+	// InstallDir is the directory (inside the artifact tarball) that needs to be installed on the user's computer
+	InstallDir string `json:"installdir"`
 }
 
 // EnvironmentVariable defines a single environment variable and its values
@@ -31,11 +34,15 @@ type EnvironmentVariable struct {
 type VariableJoin int
 
 const (
+	// Prepend indicates that new variables should be prepended
 	Prepend VariableJoin = iota
+	// Append indicates that new variables should be prepended
 	Append
+	// Disallowed indicates that there must be only one value for an environment variable
 	Disallowed
 )
 
+// MarshalText marshals a join directive for environment variables
 func (j VariableJoin) MarshalText() ([]byte, error) {
 	var res string
 	switch j {
@@ -49,6 +56,7 @@ func (j VariableJoin) MarshalText() ([]byte, error) {
 	return []byte(res), nil
 }
 
+// UnmarshalText un-marshals a join directive for environment variables
 func (j *VariableJoin) UnmarshalText(text []byte) error {
 	switch string(text) {
 	case "prepend":
@@ -58,11 +66,13 @@ func (j *VariableJoin) UnmarshalText(text []byte) error {
 	case "disallowed":
 		*j = Disallowed
 	default:
-		return fmt.Errorf(locale.T("envdef_unmarshal_join_error", string(text)))
+		return fmt.Errorf("Invalid join directive %s", string(text))
 	}
 	return nil
 }
 
+// UnmarshalJSON unmarshals an environment variable
+// It sets default values for Inherit, Join and Separator if they are not specified
 func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 	type evAlias EnvironmentVariable
 	v := &evAlias{
@@ -80,17 +90,25 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+var (
+	// FailEnvironmentDefinitionFileNotFound indicates that the specified runtime environment definition file could not be found
+	FailEnvironmentDefinitionFileNotFound = failures.Type("runtime.envdef.filenotfound", failures.FailIO)
+
+	// FailEnvironmentDefinitionUnmarshalError indicates an error during unmarshaling a runtime definition blob
+	FailEnvironmentDefinitionUnmarshalError = failures.Type("runtime.envdef.unmarshalerror", failures.FailMarshal)
+)
+
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
-func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
+func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, *failures.Failure) {
 	blob, err := ioutil.ReadFile(fp)
 	if err != nil {
-		return nil, err
+		return nil, FailEnvironmentDefinitionFileNotFound.Wrap(err, "envdef_file_not_found", fp)
 	}
 	ed := &EnvironmentDefinition{}
 	err = json.Unmarshal(blob, ed)
 	if err != nil {
-		return nil, err
+		return nil, FailEnvironmentDefinitionUnmarshalError.Wrap(err, "envdef_unmarshal_error", fp)
 	}
 	return ed, nil
 }
@@ -141,7 +159,7 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 	newKeys := make([]string, 0, len(other.Env))
 	otherEnvMap := map[string]EnvironmentVariable{}
 	for _, ev := range other.Env {
-		if funk.ContainsString(thisEnvNames, ev.Name) {
+		if !funk.ContainsString(thisEnvNames, ev.Name) {
 			newKeys = append(newKeys, ev.Name)
 		}
 		otherEnvMap[ev.Name] = ev
@@ -183,7 +201,7 @@ func (ev EnvironmentVariable) ReplaceString(from string, replacement string) Env
 	return res
 }
 
-// Merge Merges two environment variables according to the join strategy defined by
+// Merge merges two environment variables according to the join strategy defined by
 // the second environment variable
 // If join strategy of the second variable is "prepend" or "append", the values
 // are prepended or appended to the first variable.
@@ -195,12 +213,12 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 
 	// separators and inherit strategy always need to match for two merged variables
 	if ev.Separator != other.Separator || ev.Inherit != other.Inherit {
-		return nil, fmt.Errorf(locale.T("envdef_variable_merge_conflict_inherit_separator"))
+		return nil, fmt.Errorf("cannot merge environment definitions: incompatible `separator` or `inherit` directives")
 	}
 
 	// 'disallowed' join strategy needs to be set for both or none of the variables
 	if (ev.Join == Disallowed || other.Join == Disallowed) && ev.Join != other.Join {
-		return nil, fmt.Errorf(locale.T("envdef_variable_merge_conflict_join", ev.Join, other.Join))
+		return nil, fmt.Errorf("cannot merge environment definitions: incompatible `join` directives")
 	}
 
 	switch other.Join {
@@ -212,15 +230,14 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
 			return nil, fmt.Errorf(
-				locale.T(
-					"envdef_variable_no_join_strategy_conflicting_values",
-					ev.Name,
-					strings.Join(ev.Values, sep), strings.Join(other.Values, sep)),
+				"cannot merge environment definitions: no join strategy for variable %s with values %s and %s",
+				ev.Name,
+				strings.Join(ev.Values, sep), strings.Join(other.Values, sep),
 			)
 
 		}
 	default:
-		return nil, fmt.Errorf(locale.T("envdef_variable_merge_invalid_join", ev.Name, other.Join)) // "could not join environment variable %s: invalid `join` directive %v", ev.Name, other.Join)
+		return nil, fmt.Errorf("could not join environment variable %s: invalid `join` directive %v", ev.Name, other.Join)
 	}
 	res.Join = other.Join
 	return &res, nil

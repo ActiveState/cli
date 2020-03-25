@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -55,7 +54,7 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 			continue
 		}
 
-		// XXX: For now we are excluding terminal artifacts ie., the artifacts that a packaging step would produce.
+		// For now we are excluding terminal artifacts ie., the artifacts that a packaging step would produce.
 		// Right now, these artifacts are empty anyways...
 		if artf.IngredientVersionID == "" {
 			continue
@@ -185,14 +184,14 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// final installation target
 	ft := ar.InstallationDirectory(artf)
 
-	rt, err := envdef.NewEnvironmentDefinition(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
-	if err != nil {
-		return failures.FailRuntime.Wrap(err)
+	rt, fail := envdef.NewEnvironmentDefinition(filepath.Join(tmpRuntimeDir, constants.RuntimeDefinitionFilename))
+	if fail != nil {
+		return fail
 	}
 	rt = rt.ExpandVariables(ft)
 
 	// move files to the final installation directory
-	fail := fileutils.MoveAllFilesRecursively(
+	fail = fileutils.MoveAllFilesRecursively(
 		filepath.Join(tmpRuntimeDir, rt.InstallDir),
 		ft, cb)
 	if fail != nil {
@@ -202,7 +201,8 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// move the runtime.json to the runtime environment directory
 	artifactIndex, ok := ar.artifactOrder[artf.ArtifactID.String()]
 	if !ok {
-		return failures.FailRuntime.New(fmt.Sprintf("Could not write runtime.json: artifact order for %s unknown", artf.ArtifactID.String()))
+		logging.Error("Could not write runtime.json: artifact order for %s unknown", artf.ArtifactID.String())
+		return failures.FailRuntime.New("runtime_alternative_failed_artifact_order")
 	}
 
 	fail = fileutils.MkdirUnlessExists(ar.runtimeEnvBaseDir())
@@ -213,9 +213,9 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 	// copy the runtime environment file to the installation directory.
 	// The file name is based on the artifact order index, such that we can
 	// ensure the environment definition files can be read in the correct order.
-	err = rt.WriteFile(filepath.Join(ar.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
+	err := rt.WriteFile(filepath.Join(ar.runtimeEnvBaseDir(), fmt.Sprintf("%06d.json", artifactIndex)))
 	if err != nil {
-		return failures.FailRuntime.Wrap(err, "Failed to write runtime.json to final installation directory %s", ar.runtimeEnvBaseDir())
+		return failures.FailRuntime.Wrap(err, "runtime_alternative_failed_destination", ar.runtimeEnvBaseDir())
 	}
 
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
@@ -236,20 +236,20 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 // As an optimization step, the merged environment definition is cached and written back to
 // `<runtimeEnvBaseDir()>/runtime.json`. If this file exits, we can just return its parsed contents and skip parsing
 // the many individual runtime definition files.
-func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDefinition, error) {
+func (ar *AlternativeRuntime) assembleRuntimeDefinition() *envdef.EnvironmentDefinition {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	if fileutils.FileExists(mergedRuntimeDefinitionFile) {
-		rt, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
-		if err == nil {
-			return rt, nil
+		rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
+		if fail == nil {
+			return rt
 		}
-		logging.Warning("Failed to unmarshal the merged runtime definition file at %s", mergedRuntimeDefinitionFile)
+		logging.Warning("Failed to unmarshal the merged runtime definition file at %s: %v", mergedRuntimeDefinitionFile, fail.ToError())
 	}
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
 		logging.Warning("no environment definition files found")
-		return nil, err
+		return nil
 	}
 
 	filenames := make([]string, 0, len(files))
@@ -264,9 +264,9 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 
 	for _, fn := range filenames {
 		rtPath := filepath.Join(ar.runtimeEnvBaseDir(), fn)
-		rt, err := envdef.NewEnvironmentDefinition(rtPath)
-		if err != nil {
-			logging.Warning("Failed to read environment definition file %s", rtPath)
+		rt, fail := envdef.NewEnvironmentDefinition(rtPath)
+		if fail != nil {
+			logging.Warning("Failed to read environment definition file %s: %v", rtPath, fail.ToError())
 			continue
 		}
 		if rtGlobal == nil {
@@ -281,22 +281,23 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 	}
 
 	if rtGlobal == nil {
-		return nil, errors.New("did not find any runtime definition files")
+		return nil
 	}
 
 	err = rtGlobal.WriteFile(mergedRuntimeDefinitionFile)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile)
+		// It should still work without writing the merged runtime definition file
+		logging.Warning(fmt.Sprintf("Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile))
 	}
 
-	return rtGlobal, nil
+	return rtGlobal
 }
 
 // GetEnv returns the environment variable configuration for this build
 func (ar *AlternativeRuntime) GetEnv() map[string]string {
 
-	rt, err := ar.assembleRuntimeDefinition()
-	if err != nil {
+	rt := ar.assembleRuntimeDefinition()
+	if rt == nil {
 		logging.Warning("No runtime definition found")
 		return map[string]string{}
 	}

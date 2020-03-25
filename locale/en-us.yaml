@@ -8,31 +8,6 @@ state_description:
   other: The ActiveState CLI allows you to easily switch between your ActiveState environments
 activate_project:
   other: Activate a project
-envdef_unmarshal_join_error:
-  other: |
-    The runtime environment is corrupted.
-
-    Please let our build engineers know that the specified `join` directive e {{.V0}}.
-envdef_variable_merge_conflict_inherit_separator:
-  other: |
-    The runtime environment is corrupted.
-
-    Please let our build engineers know that the `inherit` or `separator` directives conflict for environment variable {{.V0}}.
-envdef_variable_merge_conflict_join:
-  other: |
-    The runtime environment is corrupted.
-
-    Please let our build engineers know that the `join` strategies {{.V1}} and {{.V2}} conflict for environment variable {{.V0}}
-envdef_variable_no_join_strategy_conflicting_values:
-  other: |
-    The runtime environment is corrupted.
-
-    Please let our build engineers know that the environment variable {{.V0}} has no join strategy and conflicting values {{.V1}} and {{.V2}}.
-envdef_variable_merge_invalid_join:
-  other: |
-    The runtime environment is corrupted.
-
-    Please let our build engineers know that the environment variable {{.V0}} has an invalid join strategy {{.V1}} specified.
 events_description:
   other: Manage project events
 events_header_id:
@@ -488,6 +463,10 @@ scripts_description:
   other: Show project scripts 
 flag_json_desc:
   other: Changes output to machine-readable JSON
+runtime_alternative_failed_artifact_order:
+  other: Could not write runtime.json file: internal error" 
+runtime_alternative_failed_destination:
+  other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
   other: Name
 scripts_col_description:
@@ -1463,3 +1442,15 @@ err_project_env_file_not_exist:
     Expected the following file to exist: {{.V0}}
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
+envdef_file_not_found:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot find runtime definition file at {{.V0}}.
+    You can try to manually delete the cache directory and re-activating the project.
+envdef_unmarshal_error:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot not parse runtime definition file at {{.V0}}
+    This indicates a problem with the build. You can try updating your project

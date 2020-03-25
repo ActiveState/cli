@@ -22,13 +22,13 @@ import (
 var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
 
 // FailMoveSourceNotDirectory indicates the specified source to be moved is not a directory
-var FailMoveSourceNotDirectory = failures.Type("fileutils.fail.move.sourcenotdirectory", failures.FailUser)
+var FailMoveSourceNotDirectory = failures.Type("fileutils.fail.move.sourcenotdirectory", failures.FailIO)
 
 // FailMoveDestinationNotDirectory indicates the specified source to be moved is not a directory
-var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destinationnotdirectory", failures.FailUser)
+var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destinationnotdirectory", failures.FailIO)
 
 // FailMoveDestinationExists indicates the specified destination to move to already exists
-var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailRuntime)
+var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailIO)
 
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
