@@ -30,7 +30,7 @@
 
         <Feature Id='Complete' Level='1'>
             <ComponentRef Id='MainExecutable' />
-            <Component Directory="BINDIR">
+            <Component Id='InstallHelper' Directory="BINDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
                 <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
                 <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[BINDIR]" Type="string"/>
                 <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
@@ -72,7 +72,7 @@
 
             <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
 
-            <!-- Can enable the element below when EUAL text is prepared -->
+            <!-- Can enable the element below when EULA text is prepared -->
             <!-- <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish> -->
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">NOT Installed</Publish>
             <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">Installed AND PATCH</Publish>
@@ -80,7 +80,7 @@
             <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
             <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
 
-            <!-- Can enable the element below when EUAL text is prepared -->
+            <!-- Can enable the element below when EULA text is prepared -->
             <!-- <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish> -->
             <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
             <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
