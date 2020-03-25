@@ -11,8 +11,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// EnvironmentDefinition defines environment variables that need to be set for a
-// runtime to work
+// EnvironmentDefinition provides all the information needed to set up an
+// environment in which the packaged artifact contents can be used.
 type EnvironmentDefinition struct {
 	// Env is a list of environment variables to be set
 	Env []EnvironmentVariable `json:"env"`
