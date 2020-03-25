@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/thoas/go-funk"
 )
 
 // EnvironmentDefinition defines environment variables that need to be set for a
@@ -82,7 +83,6 @@ func (ev *EnvironmentVariable) UnmarshalJSON(data []byte) error {
 // NewEnvironmentDefinition returns an environment definition unmarshaled from a
 // file
 func NewEnvironmentDefinition(fp string) (*EnvironmentDefinition, error) {
-
 	blob, err := ioutil.ReadFile(fp)
 	if err != nil {
 		return nil, err
@@ -133,16 +133,15 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 
 	newEnv := []EnvironmentVariable{}
 
-	thisEnvHas := map[string]struct{}{}
-
-	for _, ev := range ed.Env {
-		thisEnvHas[ev.Name] = struct{}{}
-	}
+	thisEnvNames := funk.Map(
+		ed.Env,
+		func(x EnvironmentVariable) string { return x.Name },
+	).([]string)
 
 	newKeys := make([]string, 0, len(other.Env))
 	otherEnvMap := map[string]EnvironmentVariable{}
 	for _, ev := range other.Env {
-		if _, ok := thisEnvHas[ev.Name]; !ok {
+		if funk.ContainsString(thisEnvNames, ev.Name) {
 			newKeys = append(newKeys, ev.Name)
 		}
 		otherEnvMap[ev.Name] = ev
@@ -150,10 +149,7 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 
 	// add new keys to environment
 	for _, k := range newKeys {
-		oev, ok := otherEnvMap[k]
-		if !ok {
-			panic("This should not happen")
-		}
+		oev := otherEnvMap[k]
 		newEnv = append(newEnv, oev)
 	}
 
