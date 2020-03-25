@@ -83,7 +83,12 @@ func TestMatchConstraint(t *testing.T) {
 	project.Persist()
 	assert.Nil(t, err, "There was no error parsing the config file")
 
-	constraint := projectfile.Constraint{sysinfo.OS().String(), "Windows10Label", "dev"}
+	variableLabel := "Windows10Label"
+	if sysinfo.OS() == sysinfo.Windows {
+		variableLabel = "Linux64Label"
+	}
+
+	constraint := projectfile.Constraint{sysinfo.OS().String(), variableLabel, "dev"}
 	assert.True(t, IsConstrained(constraint))
 	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
@@ -109,7 +114,7 @@ func TestMatchConstraint(t *testing.T) {
 
 	// Confirm we DO get constrained with only one value set
 	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
-	assert.True(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+	assert.True(t, IsConstrained(projectfile.Constraint{"", variableLabel, ""}))
 	assert.True(t, IsConstrained(projectfile.Constraint{"", "", "dev"}))
 
 	// Don't constrain at all if nothing is passed in

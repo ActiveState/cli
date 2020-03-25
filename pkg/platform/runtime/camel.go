@@ -162,19 +162,16 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	// Python runtimes on MacOS work where they are unarchived so we do not
 	// need to do any detection of the install directory
 	var tmpInstallDir string
-	if rt.GOOS == "darwin" {
-		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
-	} else {
-		installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
-		for _, dir := range installDirs {
-			currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
-			if fileutils.DirExists(currentDir) {
-				tmpInstallDir = currentDir
-			}
+	installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
+	for _, dir := range installDirs {
+		currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
+		if fileutils.DirExists(currentDir) {
+			tmpInstallDir = currentDir
 		}
 	}
 	if tmpInstallDir == "" {
-		return FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
+		// If no installDir was found assume the root of the archive
+		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
 	}
 
 	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
@@ -262,11 +259,6 @@ func (cr *CamelRuntime) GetEnv() map[string]string {
 	pjFile := projectfile.Get()
 	projectPath := pjFile.Path()
 	env := map[string]string{"PATH": os.Getenv("PATH")}
-
-	// Dirty hack for internal mac use-case. Mocking this via artifact would be too costly for the value we'd get.
-	if rt.GOOS == "darwin" {
-		env["PYTHONPATH"] = filepath.Dir(projectPath)
-	}
 
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)

@@ -92,7 +92,11 @@ func masterVersion() (*semver.Version, error) {
 	cmd := exec.Command(constants.CommandName, "--version")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		errMsg := err.Error()
+		if ee, ok := err.(*exec.ExitError); ok {
+			errMsg = fmt.Sprintf("Stderr: %s, code: %s", ee.Stderr, errMsg)
+		}
+		return nil, errors.New(errMsg)
 	}
 
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)

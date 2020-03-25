@@ -23,6 +23,7 @@ var FailNotRecognized = failures.Type("output.fail.not.recognized", failures.Fai
 type Outputer interface {
 	Print(value interface{})
 	Error(value interface{})
+	Notice(value interface{})
 	Config() *Config
 }
 

@@ -23,9 +23,10 @@ func (c *confirmMock) Confirm(message string, defaultChoice bool) (bool, *failur
 
 type testOutputer struct{}
 
-func (o *testOutputer) Print(value interface{}) {}
-func (o *testOutputer) Error(value interface{}) {}
-func (o *testOutputer) Config() *output.Config  { return nil }
+func (o *testOutputer) Print(value interface{})  {}
+func (o *testOutputer) Error(value interface{})  {}
+func (o *testOutputer) Notice(value interface{}) {}
+func (o *testOutputer) Config() *output.Config   { return nil }
 
 type CleanTestSuite struct {
 	suite.Suite

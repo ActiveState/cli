@@ -96,7 +96,6 @@ func (suite *CamelLinuxRuntimeTestSuite) Test_PostUnpackWithFailures() {
 		archiveName     string
 		expectedFailure *failures.FailureType
 	}{
-		{"ArchiveHasNoInstallDir_ForTarGz", "empty.tar.gz", runtime.FailArchiveNoInstallDir},
 		{"RuntimeMissingPythonExecutable", "python-missing-python-binary.tar.gz", runtime.FailMetaDataNotDetected},
 		{"PythonFoundButNotExecutable", "python-noexec-python.tar.gz", runtime.FailRuntimeNotExecutable},
 		{"InstallerFailsToGetPrefixes", "python-fail-prefixes.tar.gz", runtime.FailRuntimeNoPrefixes},

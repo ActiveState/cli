@@ -179,7 +179,7 @@ panic_couldnt_detect_wd:
 auth_description:
   other: Authenticate against the ActiveState Platform
 flag_state_auth_token_description:
-  other: The API Token generated via your control panel
+  other: "The API Token generated via the ActiveState Platform (http://docs.activestate.com/platform/state/ci.html#authenticate-without-prompts-or-passwords)"
 flag_state_auth_username_description:
   other: The username to authenticate with, will be prompted for otherwise
 flag_state_auth_password_description:
@@ -235,7 +235,7 @@ survey_error_template:
   other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
 err_value_required: 
   other: value required
-err_prompt_unkown:
+err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
 prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
@@ -1226,8 +1226,16 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
+confirm_remove_existing_prompt:
+  other: "Your project already has packages configured for it, continuing will overwrite your existing package selection. Are you sure you want to do this?"
 commit_reqstext_message:
-  other: "Import from requirements.txt"
+  other: "Import from requirements file"
+commit_reqstext_remove_existing_message:
+  other: "Remove current packages prior to import from requirements file"
+err_cannot_remove_existing:
+  other: "The already configured packages were not able to be overwritten"
+err_action_was_not_confirmed:
+  other: "Current action was not confirmed"
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_add:
@@ -1270,6 +1278,8 @@ package_ingredient_not_found:
   other: The provided package does not exist
 err_package_removed:
   other: Failed to remove package
+err_packages_removed:
+  other: Failed to remove packages
 package_removed:
   other: "Package removed: {{.V0}}"
 package_update_config_file:
@@ -1435,6 +1445,14 @@ err_no_recipes:
   other: No build recipes could be generated for the current project
 using_cached_env:
   other: Reusing cached runtime environment
+auto_update_to_version:
+  other: |
+    [BLUE]Auto updating from [BOLD]{{.V0}}[/RESET] [BLUE]to[/RESET] [BOLD]{{.V1}}[/RESET].
+    [BLUE]To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
+forward_version:
+  other: |
+    [BLUE]Using locked state tool version [BOLD]{{.V0}}[/RESET][BLUE].
+    To avoid auto updating run 'state update --lock' (only recommended for production environments).[/RESET]
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
