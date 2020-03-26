@@ -3,7 +3,7 @@
     <Product Name='ActiveState State Tool' Manufacturer='ActiveState'
         Id='72781F65-49A7-47F5-9BA8-B25294271E09' 
         UpgradeCode='50D1C035-D6CB-4F15-A458-94E385B0A28D'
-        Language='1033' Codepage='1252' Version='REPLACE-VERSION'>
+        Language='1033' Codepage='1252' Version='1.0.0'>
         <Package Id='*' Keywords='Installer' Description="ActiveState's State Tool Installer"
             Comments='State Tool is a registered trademark of ActiveState' Manufacturer='ActiveState'
             InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
@@ -13,9 +13,9 @@
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='AppDataFolder' Name='AppData'>
                 <Directory Id='ActiveState' Name='ActiveState'>
-                    <Directory Id='BINDIR' Name='bin'>
+                    <Directory Id='INSTALLDIR' Name='bin'>
                         <Component Id='MainExecutable' Guid='7CF56E89-AA69-4A35-921C-F2CA2F9FE12B'>
-                            <RemoveFolder Id='BINDIR' On='uninstall' />
+                            <RemoveFolder Id='INSTALLDIR' On='uninstall' />
                             <RemoveFolder Id='MainExecutable' On='uninstall' />
                             <!-- Required by WiX -->
                             <RegistryValue Root='HKCU' Key='Software\[Manufacturer]\[ProductName]' Type='string' Value='' KeyPath='yes' />
@@ -30,12 +30,12 @@
 
         <Feature Id='Complete' Level='1'>
             <ComponentRef Id='MainExecutable' />
-            <Component Id='InstallHelper' Directory="BINDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
+            <Component Id='InstallHelper' Directory="INSTALLDIR" Guid='4dda6117-ca9c-4371-a09d-c8575f520a01'>
                 <!-- We save the value of the install directory to the registry so we can retrieve it on uninstall -->
-                <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[BINDIR]" Type="string"/>
+                <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[INSTALLDIR]" Type="string"/>
                 <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
                 <!-- Set the PATH environment variable to the installation directory of the State Tool -->
-                <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='no' Part='last' Value='[BINDIR]' />
+                <Environment Id='UpdatePath' Name='PATH' Action='set' Permanent='no' System='no' Part='last' Value='[INSTALLDIR]' />
             </Component>
         </Feature>
 
@@ -53,7 +53,7 @@
             <Property Id="WixUI_Mode" Value="InstallDir" />
 
             <!-- Must set WIXUI_INSTALLDIR to our default installation directory in order to pass it to the UI -->
-            <Property Id="WIXUI_INSTALLDIR" Value="BINDIR" />
+            <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
 
             <DialogRef Id="BrowseDlg" />
             <DialogRef Id="DiskCostDlg" />
