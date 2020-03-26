@@ -141,6 +141,9 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			}
 
 			result.IsAlternative = resp.BuildEngine != nil && *resp.BuildEngine == headchef_models.BuildStatusResponseBuildEngineAlternative
+			if resp.RecipeID == nil {
+				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
+			}
 			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
 			logging.Debug("request isAlternative=%v, recipeID=%s", result.IsAlternative, result.RecipeID.String())

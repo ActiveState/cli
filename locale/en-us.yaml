@@ -1472,3 +1472,6 @@ envdef_unmarshal_error:
 
     Cannot not parse runtime definition file at {{.V0}}
     This indicates a problem with the build. You can try updating your project
+err_corrupted_build_request_response:
+  other: |
+    Internal error.  You can try manually updating the state tool.
