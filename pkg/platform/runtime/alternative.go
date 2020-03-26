@@ -108,7 +108,7 @@ func (ar *AlternativeRuntime) ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifac
 	archives := map[string]*HeadChefArtifact{}
 
 	// if final installation directory exists -> no need to download or unpack anything
-	if fileutils.DirExists(ar.finalInstallationDirectory()) {
+	if fileutils.DirExists(ar.installationDirectory()) {
 		return downloadArtfs, archives
 	}
 
@@ -135,7 +135,7 @@ func (ar *AlternativeRuntime) DownloadDirectory(artf *HeadChefArtifact) (string,
 	return p, fail
 }
 
-func (ar *AlternativeRuntime) finalInstallationDirectory() string {
+func (ar *AlternativeRuntime) installationDirectory() string {
 	finstDir := filepath.Join(ar.cacheDir, hash.ShortHash(ar.recipeID.String()))
 	return finstDir
 }
@@ -145,12 +145,12 @@ func (ar *AlternativeRuntime) finalInstallationDirectory() string {
 // For alternative build artifacts, all artifacts are unpacked into the same
 // directory eventually.
 func (ar *AlternativeRuntime) InstallationDirectory(_ *HeadChefArtifact) string {
-	return ar.finalInstallationDirectory()
+	return ar.installationDirectory()
 }
 
 // PreInstall ensures that the final installation directory exists, and is useable
 func (ar *AlternativeRuntime) PreInstall() *failures.Failure {
-	installDir := ar.finalInstallationDirectory()
+	installDir := ar.installationDirectory()
 
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file
@@ -225,7 +225,7 @@ func (ar *AlternativeRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRunt
 }
 
 func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
-	return filepath.Join(ar.finalInstallationDirectory(), constants.LocalRuntimeEnvironmentDirectory)
+	return filepath.Join(ar.installationDirectory(), constants.LocalRuntimeEnvironmentDirectory)
 }
 
 // assembleRuntimeDefinition assembles the environment from runtime definition files copied to the
