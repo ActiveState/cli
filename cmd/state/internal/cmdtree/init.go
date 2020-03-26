@@ -22,7 +22,7 @@ func newInitCommand() *captain.Command {
 			{
 				Name:        "path",
 				Shorthand:   "",
-				Description: locale.T("arg_state_init_path_description"),
+				Description: locale.T("flag_state_init_path_description"),
 				Value:       &params.Path,
 			},
 			{
@@ -33,6 +33,13 @@ func newInitCommand() *captain.Command {
 					initialize.RecognizedSkeletonStyles(),
 				),
 				Value: &params.Style,
+			},
+			{
+				Name:        "language",
+				Shorthand:   "",
+				Description: locale.T("flag_state_init_language_description"),
+				Value:       &params.Language,
+				Hidden:      true,
 			},
 		},
 		[]*captain.Argument{
