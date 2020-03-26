@@ -280,7 +280,9 @@ func (cr *CamelRuntime) GetEnv() map[string]string {
 		for k, v := range meta.Env {
 			// XXX: This will replace the RelocationDir string with the funky string that camel introduces during build time.
 			// We probably want: templateMeta.RelocationDir = artifactPath
-			// On the other hand, this will never be used... :)
+			// BUT: From what I know there is no metadata file that actually uses this feature.
+			// And as we have seen before, people do not like to do changes to camel.
+			// It is and most likely will never be used.
 			templateMeta.RelocationDir = meta.RelocationDir
 			valueTemplate, err := template.New(k).Parse(v)
 			if err != nil {
