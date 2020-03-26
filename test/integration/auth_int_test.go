@@ -123,26 +123,6 @@ func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
 	suite.authOutput("json")
 }
 
-func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
-	suite.authOutput("editor.v0")
-}
-
-func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
-	user := userJSON{
-		Username: "cli-integration-tests",
-		URLName:  "cli-integration-tests",
-		Tier:     "free",
-	}
-	data, err := json.Marshal(user)
-	suite.Require().NoError(err)
-	expected := string(data)
-
-	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
-	suite.Wait()
-	suite.Expect(`"privateProjects":false}`)
-	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
-}
-
 func TestAuthIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AuthIntegrationTestSuite))
 }

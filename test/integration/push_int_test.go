@@ -14,26 +14,6 @@ type PushIntegrationTestSuite struct {
 	username string
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("push_editor_v0")
-	defer cb()
-
-	username := suite.CreateNewUser()
-
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-	suite.Spawn(
-		"init",
-		namespace,
-		"python3",
-		"--path", filepath.Join(tempDir, namespace),
-		"--skeleton", "editor",
-	)
-	suite.ExpectExitCode(0)
-	suite.SetWd(filepath.Join(tempDir, namespace))
-	suite.Spawn("push")
-	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
-}
-
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("push_editor_v0")
 	defer cb()

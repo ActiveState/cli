@@ -161,14 +161,6 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	)
 }
 
-func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
-
-	suite.Spawn("run", "helloWorld")
-	suite.Expect("Hello World!")
-}
-
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	suite.Spawn("run", "-h")
 	suite.Expect("Usage")
