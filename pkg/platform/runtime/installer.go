@@ -35,6 +35,9 @@ var (
 	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
 	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
 
+	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
+	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
+
 	// FailNoCommits represents a Failure due to a project not having commits yet (and thus no runtime).
 	FailNoCommits = failures.Type("runtime.runtime.nocommits", failures.FailUser)
 

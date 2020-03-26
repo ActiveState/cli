@@ -33,7 +33,7 @@ type VirtualEnvironment struct {
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	onUseCache          func()
-	getEnv              func() map[string]string
+	getEnv              func() (map[string]string, *failures.Failure)
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -107,11 +107,16 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 
 	var env map[string]string
 	if v.getEnv == nil {
-		logging.Warning("setting up environment in un-activated project")
+		logging.Error("setting up environment in un-activated project")
 		env = make(map[string]string)
 		env["PATH"] = os.Getenv("PATH")
 	} else {
-		env = v.getEnv()
+		var fail *failures.Failure
+		env, fail = v.getEnv()
+		if fail != nil {
+			logging.Error("could not set-up the runtime environment: %v", fail)
+			return map[string]string{}
+		}
 	}
 
 	pjfile := projectfile.Get()

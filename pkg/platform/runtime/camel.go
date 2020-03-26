@@ -255,7 +255,7 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 }
 
 // GetEnv returns the environment that is needed to use the installed runtime
-func (cr *CamelRuntime) GetEnv() map[string]string {
+func (cr *CamelRuntime) GetEnv() (map[string]string, *failures.Failure) {
 	pjFile := projectfile.Get()
 	projectPath := pjFile.Path()
 	env := map[string]string{"PATH": os.Getenv("PATH")}
@@ -263,8 +263,7 @@ func (cr *CamelRuntime) GetEnv() map[string]string {
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)
 		if fail != nil {
-			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
-			continue
+			return nil, fail
 		}
 
 		// Unset AffectedEnv
@@ -312,5 +311,5 @@ func (cr *CamelRuntime) GetEnv() map[string]string {
 			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
 		}
 	}
-	return env
+	return env, nil
 }

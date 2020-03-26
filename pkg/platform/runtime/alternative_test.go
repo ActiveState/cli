@@ -116,14 +116,16 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
-	env := ar.GetEnv()
+	env, fail := ar.GetEnv()
+	suite.Require().NoError(fail.ToError())
 	suite.Assert().Equal(expectedEnv, env)
 	suite.Assert().True(fileutils.FileExists(mergedFilePath))
 	err := os.Remove(firstEnvDefPath)
 	suite.Assert().NoError(err, "removing cached runtime definition file for first artifact")
 
 	// This should still work, as we have cached the merged result by now
-	env = ar.GetEnv()
+	env, fail = ar.GetEnv()
+	suite.Require().NoError(fail.ToError())
 	suite.Assert().Equal(expectedEnv, env)
 }
 

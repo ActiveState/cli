@@ -236,20 +236,19 @@ func (ar *AlternativeRuntime) runtimeEnvBaseDir() string {
 // As an optimization step, the merged environment definition is cached and written back to
 // `<runtimeEnvBaseDir()>/runtime.json`. If this file exits, we can just return its parsed contents and skip parsing
 // the many individual runtime definition files.
-func (ar *AlternativeRuntime) assembleRuntimeDefinition() *envdef.EnvironmentDefinition {
+func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDefinition, *failures.Failure) {
 	mergedRuntimeDefinitionFile := filepath.Join(ar.runtimeEnvBaseDir(), constants.RuntimeDefinitionFilename)
 	if fileutils.FileExists(mergedRuntimeDefinitionFile) {
 		rt, fail := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 		if fail == nil {
-			return rt
+			return rt, nil
 		}
 		logging.Warning("Failed to unmarshal the merged runtime definition file at %s: %v", mergedRuntimeDefinitionFile, fail.ToError())
 	}
 
 	files, err := ioutil.ReadDir(ar.runtimeEnvBaseDir())
 	if err != nil {
-		logging.Warning("no environment definition files found")
-		return nil
+		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
 	}
 
 	filenames := make([]string, 0, len(files))
@@ -266,8 +265,7 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() *envdef.EnvironmentDef
 		rtPath := filepath.Join(ar.runtimeEnvBaseDir(), fn)
 		rt, fail := envdef.NewEnvironmentDefinition(rtPath)
 		if fail != nil {
-			logging.Warning("Failed to read environment definition file %s: %v", rtPath, fail.ToError())
-			continue
+			return nil, fail
 		}
 		if rtGlobal == nil {
 			rtGlobal = rt
@@ -281,7 +279,7 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() *envdef.EnvironmentDef
 	}
 
 	if rtGlobal == nil {
-		return nil
+		return nil, FailRuntimeInvalidEnvironment.New("err_no_environment_definition")
 	}
 
 	err = rtGlobal.WriteFile(mergedRuntimeDefinitionFile)
@@ -290,16 +288,15 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() *envdef.EnvironmentDef
 		logging.Warning(fmt.Sprintf("Failed to write merged runtime definition file at %s", mergedRuntimeDefinitionFile))
 	}
 
-	return rtGlobal
+	return rtGlobal, nil
 }
 
 // GetEnv returns the environment variable configuration for this build
-func (ar *AlternativeRuntime) GetEnv() map[string]string {
+func (ar *AlternativeRuntime) GetEnv() (map[string]string, *failures.Failure) {
 
-	rt := ar.assembleRuntimeDefinition()
-	if rt == nil {
-		logging.Warning("No runtime definition found")
-		return map[string]string{}
+	rt, fail := ar.assembleRuntimeDefinition()
+	if fail != nil {
+		return nil, fail
 	}
-	return rt.GetEnv()
+	return rt.GetEnv(), nil
 }

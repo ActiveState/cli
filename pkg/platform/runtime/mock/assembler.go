@@ -17,9 +17,9 @@ func (a *Assembler) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, *
 	args := a.Called(artf)
 	return args.String(0), args.Get(1).(*failures.Failure)
 }
-func (a *Assembler) GetEnv() map[string]string {
+func (a *Assembler) GetEnv() (map[string]string, *failures.Failure) {
 	args := a.Called()
-	return args.Get(0).(map[string]string)
+	return args.Get(0).(map[string]string), args.Get(1).(*failures.Failure)
 }
 
 func (a *Assembler) ArtifactsToDownloadAndUnpack() ([]*runtime.HeadChefArtifact, map[string]*runtime.HeadChefArtifact) {
