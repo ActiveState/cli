@@ -217,6 +217,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 	suite.testOutput("json")
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
+	suite.testOutput("editor.v0")
+}
+
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
