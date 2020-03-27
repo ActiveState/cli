@@ -35,21 +35,25 @@ func TestSend(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
-	t.Skip("Must fix https://www.pivotaltracker.com/story/show/171945142")
+	file := `/`
+	if runtime.GOOS == "windows" {
+		file = `xx:\`
+	}
+
 	start := time.Now()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, fail := Open(ctx, "/")
+	_, fail := Open(ctx, file)
 	assert.Error(t, fail.ToError())
 
 	tempFile, err := ioutil.TempFile("", t.Name())
 	require.NoError(t, err)
 
-	file := tempFile.Name()
+	file = tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	defer func() {
-		tempFile.Close()
+		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 	require.NoError(t, fail.ToError())
@@ -95,7 +99,7 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	rcvs, fail := Open(ctx, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
-		tempFile.Close()
+		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 
