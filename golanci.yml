@@ -1,0 +1,24 @@
+run:
+  timeout: 10s
+
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - errcheck
+    # We need to include both gofmt and goimports so we can get the simplify
+    # suggestions from gofmt. See https://github.com/golang/go/issues/21476
+    # for more info.
+    - gofmt
+    - goimports
+    - golint
+    - govet
+  fast: false
+
+linters-settings:
+  govet:
+    check-shadowing: true
+
+issues:
+  max-issues-per-linter: 5
+  max-same-issues: 5

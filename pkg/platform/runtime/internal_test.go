@@ -44,7 +44,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = NewInstaller(suite.downloadDir, suite.cacheDir, InitDownload(suite.downloadDir))
+	suite.installer, fail = NewInstallerByParams(suite.downloadDir, suite.cacheDir, InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 

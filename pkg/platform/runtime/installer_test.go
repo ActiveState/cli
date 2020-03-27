@@ -13,6 +13,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/sysinfo"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
@@ -23,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 )
 
 type InstallerTestSuite struct {
@@ -58,7 +59,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
+	suite.installer, fail = runtime.NewInstallerByParams(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 
@@ -125,7 +126,7 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(downloadDir, cacheDir, runtime.InitDownload(downloadDir))
+	suite.installer, fail = runtime.NewInstallerByParams(downloadDir, cacheDir, runtime.InitDownload(downloadDir))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -152,7 +153,7 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 	pjfile.Persist()
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.InitInstaller()
+	suite.installer, fail = runtime.NewInstaller()
 	suite.Require().NoError(fail.ToError())
 
 	_, fail = suite.installer.Install()

@@ -10,11 +10,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/archiver"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // During installation after all files are unpacked to a temporary directory, the progress bar should advanced this much.
@@ -61,39 +60,56 @@ var (
 
 	// FailRuntimeNoPrefixes represents a Failure due to there not being any prefixes for relocation
 	FailRuntimeNoPrefixes = failures.Type("runtime.runtime.noprefixes", FailRuntimeInvalid)
+
+	// FailRequiresDownload is a failure due to not all artifacts having been downloaded
+	FailRequiresDownload = failures.Type("runtime.requires.download", failures.FailUserInput)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	downloadDir        string
-	cacheDir           string
+	params             InstallerParams
 	installDirs        []string
-	runtimeDownloader  Downloader
+	downloadDir        string
+	downloader         Downloader
 	onDownload         func()
 	onInstall          func()
 	archiver           archiver.Archiver
 	progressUnarchiver unarchiver.Unarchiver // an unarchiver that can report its progress
 }
 
-// InitInstaller creates a new RuntimeInstaller
-func InitInstaller() (*Installer, *failures.Failure) {
+type InstallerParams struct {
+	CacheDir    string
+	CommitID    strfmt.UUID
+	Owner       string
+	ProjectName string
+}
+
+// NewInstaller creates a new RuntimeInstaller
+func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+	logging.Debug("cache path: %s", config.CachePath())
+	return NewInstallerByParams(
+		InstallerParams{
+			config.CachePath(),
+			commitID,
+			owner,
+			projectName,
+		})
+}
+
+// NewInstallerByParams creates a new RuntimeInstaller after verifying the provided install-dir
+// exists as a directory or can be created.
+func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
 	downloadDir, err := ioutil.TempDir("", "state-runtime-downloader")
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
-	logging.Debug("downloadDir: %s, cache path: %s", downloadDir, config.CachePath())
-	return NewInstaller(downloadDir, config.CachePath(), InitDownload(downloadDir))
-}
-
-// NewInstaller creates a new RuntimeInstaller after verifying the provided install-dir
-// exists as a directory or can be created.
-func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
+	logging.Debug("downloadDir: %s", downloadDir)
 	installer := &Installer{
+		downloader:         InitDownload(downloadDir),
 		downloadDir:        downloadDir,
-		cacheDir:           cacheDir,
-		runtimeDownloader:  downloader,
+		params:             params,
 		archiver:           Archiver(),
 		progressUnarchiver: UnarchiverWithProgress(),
 	}
@@ -131,7 +147,7 @@ func (installer *Installer) Install() (bool, *failures.Failure) {
 	progress := progress.New(nil)
 	defer progress.Close()
 
-	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
+	archives, fail := installer.downloader.Download(downloadArtfs, progress)
 	if fail != nil {
 		progress.Cancel()
 		return false, fail
@@ -148,12 +164,11 @@ func (installer *Installer) Install() (bool, *failures.Failure) {
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() *failures.Failure {
-	pj := project.Get()
-	if pj.CommitID() == "" {
-		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(pj.Owner(), pj.Name(), ""))
+	if installer.params.CommitID == "" {
+		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(installer.params.Owner, installer.params.ProjectName, ""))
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
+	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.params.CommitID)
 	if fail != nil {
 		return fail
 	}
@@ -170,7 +185,7 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *failures.Failure) {
 	artifactMap := map[string]*HeadChefArtifact{}
 
-	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
+	artifacts, fail := installer.downloader.FetchArtifacts()
 	if fail != nil {
 		return artifactMap, fail
 	}
@@ -236,14 +251,51 @@ func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChe
 	return nil
 }
 
-// InstallDirs returns all the artifact install paths required by the current configuration.
+// InstallDirs will return the installDirs returned by `InstallDirsFromInstallCall`, and fall back on `InstallDirsStandalone`
+// if the former is empty. Effectively this should always give the InstallDirs without requiring the consumer to worry about
+// whether Install was called.
+// Yes this is awkward. But refactoring this package to remove this behavior altogether is out of scope at this time.
+func (installer *Installer) InstallDirs() ([]string, *failures.Failure) {
+	installDirs := installer.InstallDirsFromInstallCall()
+
+	if len(installDirs) == 0 {
+		return installer.InstallDirsStandalone()
+	}
+
+	return installDirs, nil
+}
+
+// InstallDirsFromInstallCall returns all the artifact install paths required by the current configuration.
 // WARNING: This will always return an empty slice UNLESS Install() or InstallFromArchive() was called!
-func (installer *Installer) InstallDirs() []string {
+func (installer *Installer) InstallDirsFromInstallCall() []string {
 	return funk.Uniq(installer.installDirs).([]string)
 }
 
+// InstallDirsStandalone returns all the artifact paths detected for the given runtime environment, these are detected live
+// so Install() does not need to be called first. If even a single installDir is missing this will fail.
+func (installer *Installer) InstallDirsStandalone() ([]string, *failures.Failure) {
+	if fail := installer.validateCheckpoint(); fail != nil {
+		return []string{}, fail
+	}
+
+	artifactMap, fail := installer.fetchArtifactMap()
+	if fail != nil {
+		return []string{}, fail
+	}
+
+	installDirs := []string{}
+	for installDir, _ := range artifactMap {
+		if !fileutils.DirExists(installDir) {
+			return []string{}, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
+		}
+		installDirs = append(installDirs, installDir)
+	}
+
+	return installDirs, nil
+}
+
 func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failures.Failure) {
-	installDir := filepath.Join(installer.cacheDir, shortHash(artf.ArtifactID.String()))
+	installDir := filepath.Join(installer.params.CacheDir, shortHash(artf.ArtifactID.String()))
 
 	if fileutils.FileExists(installDir) {
 		// install-dir exists, but is a regular file

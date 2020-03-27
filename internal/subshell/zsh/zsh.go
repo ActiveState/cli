@@ -66,6 +66,11 @@ func (v *SubShell) RcFileTemplate() string {
 	return "zshrc.sh"
 }
 
+// RcAppendFileTemplate - see subshell.SubShell
+func (v *SubShell) RcAppendFileTemplate() string {
+	return "zshrc_append.sh"
+}
+
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env []string) {
 	v.env = env

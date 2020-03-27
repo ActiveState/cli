@@ -60,6 +60,11 @@ func (v *SubShell) RcFileTemplate() string {
 	return "fishrc.fish"
 }
 
+// RcAppendFileTemplate - see subshell.SubShell
+func (v *SubShell) RcAppendFileTemplate() string {
+	return "fishrc_append.fish"
+}
+
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env []string) {
 	v.env = env

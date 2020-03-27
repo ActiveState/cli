@@ -177,3 +177,9 @@ const RuntimeInstallDirs = "INSTALLDIR,perl"
 
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "support/metadata.json"
+
+// RCAppendStartLine is the start line used to denote our environment config in RC files
+const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
+
+// RCAppendEndLine is the end line used to denote our environment config in RC files
+const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"

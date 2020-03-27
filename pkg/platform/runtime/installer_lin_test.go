@@ -64,7 +64,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
+	suite.installer, fail = runtime.NewInstallerByParams(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 	suite.prg = progress.New(progress.WithOutput(nil))
@@ -92,9 +92,8 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveDoesNotExist() {
 func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 	invalidArchive := path.Join(suite.dataDir, "empty.archive")
 
-	file, fail := fileutils.Touch(invalidArchive)
+	fail := fileutils.Touch(invalidArchive)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().NoError(file.Close())
 
 	fail = suite.installer.InstallFromArchives(headchefArtifact(invalidArchive), suite.prg)
 	suite.Require().Error(fail.ToError())

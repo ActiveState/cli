@@ -3,10 +3,11 @@ package model
 import (
 	"fmt"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -16,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 

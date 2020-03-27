@@ -55,6 +55,14 @@ func Init() *VirtualEnvironment {
 	}
 }
 
+func New(pj *project.Project, artifactPaths []string) *VirtualEnvironment {
+	return &VirtualEnvironment{
+		project:       pj,
+		activationID:  uuid.New().String(),
+		artifactPaths: artifactPaths,
+	}
+}
+
 // Activate the virtual environment
 func (v *VirtualEnvironment) Activate() *failures.Failure {
 	logging.Debug("Activating Virtual Environment")
@@ -84,7 +92,8 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
-	installer, fail := runtime.InitInstaller()
+	pj := project.Get()
+	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}
@@ -99,7 +108,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 		v.onUseCache()
 	}
 
-	v.artifactPaths = installer.InstallDirs()
+	v.artifactPaths = installer.InstallDirsFromInstallCall()
 
 	return nil
 }

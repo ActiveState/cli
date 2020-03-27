@@ -1,6 +1,7 @@
 package subshell
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
@@ -12,12 +13,13 @@ import (
 
 	"github.com/alecthomas/template"
 	"github.com/gobuffalo/packr"
-	tempfile "github.com/mash/go-tempfile-suffix"
+	"github.com/mash/go-tempfile-suffix"
 	"github.com/shirou/gopsutil/process"
-	funk "github.com/thoas/go-funk"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -63,6 +65,9 @@ type SubShell interface {
 	// RcFileTemplate returns the file name of the projects terminal config script used to generate project specific terminal configuration scripts, this script should live under assets/shells
 	RcFileTemplate() string
 
+	// RcAppendFileTemplate returns the template file name that is meant to be used to append data to the users RC file
+	RcAppendFileTemplate() string
+
 	// RcFileExt returns the extension to use (including the dot), primarily aimed at windows
 	RcFileExt() string
 
@@ -98,9 +103,9 @@ func Activate() (SubShell, *failures.Failure) {
 
 // getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func getRcFile(v SubShell) (*os.File, *failures.Failure) {
+func getRcFile(shell SubShell) (*os.File, *failures.Failure) {
 	box := packr.NewBox("../../assets/shells")
-	tpl := box.String(v.RcFileTemplate())
+	tpl := box.String(shell.RcFileTemplate())
 	prj := project.Get()
 
 	userScripts := ""
@@ -153,7 +158,7 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 		return nil, failures.FailTemplating.Wrap(err)
 	}
 
-	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", v.RcFileExt())
+	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", shell.RcFileExt())
 	if err != nil {
 		return nil, failures.FailOS.Wrap(err)
 	}
@@ -162,6 +167,75 @@ func getRcFile(v SubShell) (*os.File, *failures.Failure) {
 	tmpFile.Close()
 
 	return tmpFile, nil
+}
+
+func WriteRcFile(shell SubShell, path string, env map[string]string) *failures.Failure {
+	if fail := fileutils.Touch(path); fail != nil {
+		return fail
+	}
+
+	if fail := cleanRcFile(path); fail != nil {
+		return fail
+	}
+
+	box := packr.NewBox("../../assets/shells")
+	tpl := box.String(shell.RcAppendFileTemplate())
+
+	rcData := map[string]interface{}{
+		"Start": constants.RCAppendStartLine,
+		"Stop":  constants.RCAppendStopLine,
+		"Env":   env,
+	}
+	t, err := template.New("rcfile_append").Parse(tpl)
+	if err != nil {
+		return failures.FailTemplating.Wrap(err)
+	}
+
+	var out bytes.Buffer
+	err = t.Execute(&out, rcData)
+	if err != nil {
+		return failures.FailTemplating.Wrap(err)
+	}
+
+	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+fileutils.LineEnd+out.String()))
+}
+
+func cleanRcFile(path string) *failures.Failure {
+	readFile, err := os.Open(path)
+
+	if err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+
+	scanner := bufio.NewScanner(readFile)
+	scanner.Split(bufio.ScanLines)
+
+	var strip bool
+	var fileContents []string
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		// Detect start line
+		if strings.Contains(text, constants.RCAppendStartLine) {
+			strip = true
+		}
+
+		// Strip line
+		if strip {
+			continue
+		}
+
+		// Rebuild file contents
+		fileContents = append(fileContents, scanner.Text())
+
+		// Detect stop line
+		if strings.Contains(text, constants.RCAppendStopLine) {
+			strip = false
+		}
+	}
+	readFile.Close()
+
+	return fileutils.WriteFile(path, []byte(strings.Join(fileContents, fileutils.LineEnd)))
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it

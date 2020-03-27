@@ -36,9 +36,8 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 		pythonBinaryFilename = pythonBinaryFilename + ".exe"
 		tempDir = strings.ReplaceAll(tempDir, "\\", "\\\\")
 	}
-	tempBinary, fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
+	fail := fileutils.Touch(filepath.Join(suite.dir, pythonBinaryFilename))
 	suite.Require().NoError(fail.ToError())
-	defer tempBinary.Close()
 
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))

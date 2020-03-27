@@ -59,6 +59,11 @@ func (v *SubShell) RcFileTemplate() string {
 	return "config.bat"
 }
 
+// RcAppendFileTemplate - see subshell.SubShell
+func (v *SubShell) RcAppendFileTemplate() string {
+	return "" // Not used on Windows
+}
+
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env []string) {
 	v.env = env
