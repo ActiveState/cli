@@ -135,6 +135,10 @@ func (c *Command) flagByName(name string, persistOnly bool) *Flag {
 	return nil
 }
 
+func (c *Command) markFlagHidden(name string) error {
+	return c.cobra.Flags().MarkHidden(name)
+}
+
 func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	// Run OnUse functions for persistent flags
 	c.runFlags(true)

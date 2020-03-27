@@ -42,7 +42,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.runInitTest(
 		tempDir,
 		locale.T("editor_yaml"),
-		"python3",
+		"--language", "python3",
 		"--path", tempDir,
 		"--skeleton", "editor",
 	)
