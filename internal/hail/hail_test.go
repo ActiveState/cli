@@ -35,17 +35,22 @@ func TestSend(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
+	file := `/`
+	if runtime.GOOS == "windows" {
+		file = `xx:\`
+	}
+
 	start := time.Now()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	_, fail := Open(ctx, "/")
+	_, fail := Open(ctx, file)
 	assert.Error(t, fail.ToError())
 
 	tempFile, err := ioutil.TempFile("", t.Name())
 	require.NoError(t, err)
 
-	file := tempFile.Name()
+	file = tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	defer func() {
 		_ = tempFile.Close()
