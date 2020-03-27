@@ -1307,8 +1307,6 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
-flag_state_init_language_description:
-  other: The language that this project should use, and optionally the version of that language. This flag is for legacy support. If this flag is used with the language argument the argument is prioritized over the flag value.
 flag_state_init_path_description:
   other: The location to initialize the project
 arg_state_init_namespace:

@@ -35,11 +35,10 @@ func newInitCommand() *captain.Command {
 				Value: &params.Style,
 			},
 			{
-				Name:        "language",
-				Shorthand:   "",
-				Description: locale.T("flag_state_init_language_description"),
-				Value:       &params.Language,
-				Hidden:      true,
+				// Hidden flag for legacy Komodo support
+				Name:   "language",
+				Value:  &params.Language,
+				Hidden: true,
 			},
 		},
 		[]*captain.Argument{
