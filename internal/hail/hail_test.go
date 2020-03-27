@@ -35,7 +35,6 @@ func TestSend(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
-	t.Skip("Must fix https://www.pivotaltracker.com/story/show/171945142")
 	start := time.Now()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -49,7 +48,7 @@ func TestOpen(t *testing.T) {
 	file := tempFile.Name()
 	rcvs, fail := Open(ctx, file)
 	defer func() {
-		tempFile.Close()
+		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 	require.NoError(t, fail.ToError())
@@ -95,7 +94,7 @@ func TestOpen_ReceivesClosed(t *testing.T) {
 	rcvs, fail := Open(ctx, file)
 	require.NoError(t, fail.ToError())
 	defer func() {
-		tempFile.Close()
+		_ = tempFile.Close()
 		assert.NoError(t, os.Remove(file))
 	}()
 
