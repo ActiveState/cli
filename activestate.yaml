@@ -41,6 +41,13 @@ scripts:
       outFile=$(buildProject external ${1}) || exit $?
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update $outFile
+  - name: build-rmpath
+    description: Build a helper utility for the MSI installer
+    constraints:
+      os: windows
+    value: |
+      $scripts.preprocess
+      eval go build -o ./public/wix/rmpath/rmpath.exe $CLI_BUILDFLAGS ./public/wix/rmpath/main.go
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |

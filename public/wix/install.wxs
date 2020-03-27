@@ -35,7 +35,7 @@
                 <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Name="CompleteRemoval" Value="[INSTALLDIR]" Type="string"/>
                 <RemoveFolder Id='CleanupApplicationFolder' On='uninstall' />
                 <!-- Set the PATH environment variable to the installation directory of the State Tool -->
-                <Environment Id='UpdatePath' Name='PATH' Action='set' System='yes' Part='first' Value='[INSTALLDIR]' />
+                <Environment Id='UpdatePath' Name='PATH' Action='set' System='no' Part='first' Value='[INSTALLDIR]' />
             </Component>
         </Feature>
 
@@ -114,5 +114,14 @@
         <InstallUISequence>
             <Custom Action="CA_Set_WIXUI_EXITDIALOGOPTIONALTEXT" Sequence="1">NOT Installed</Custom>
         </InstallUISequence>
+        
+        <!-- This currently only works when we are updating the USER path -->
+        <CustomAction Id="RemoveInstallPath" BinaryKey="rmpath.exe" Return="ignore" Execute="commit" ExeCommand='[INSTALLDIR]' />
+
+        <InstallExecuteSequence> 
+            <Custom Action="RemoveInstallPath" After="RemoveFiles">REMOVE="ALL"</Custom>
+        </InstallExecuteSequence>
+
+        <Binary Id="rmpath.exe" SourceFile=".\rmpath\rmpath.exe" />
     </Product>
 </Wix>
