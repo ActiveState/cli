@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/conproc"
+	"github.com/ActiveState/cli/pkg/expect"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -32,77 +33,92 @@ var (
 // Suite is our integration test suite
 type Suite struct {
 	suite.Suite
-	executable string
-	env        []string
-	wd         *string
 }
 
-// SetupTest sets up an integration test suite for testing the State Tool executable
-func (s *Suite) SetupTest() {
-	exe := ""
+func (s *Suite) executablePath() string {
+	ext := ""
 	if runtime.GOOS == "windows" {
-		exe = ".exe"
+		ext = ".exe"
 	}
-
+	name := constants.CommandName + ext
 	root := environment.GetRootPathUnsafe()
-	executable := filepath.Join(root, "build/"+constants.CommandName+exe)
+	subdir := "build"
 
-	s.wd = nil
-
-	if !fileutils.FileExists(executable) {
-		s.FailNow("Integration tests require you to have built a State Tool binary. Please run `state run build`.")
+	exec := filepath.Join(root, subdir, name)
+	if !fileutils.FileExists(exec) {
+		s.FailNow("E2E tests require a State Tool binary. Run `state run build`.")
 	}
 
-	configDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
-	cacheDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
-	binDir, err := ioutil.TempDir("", "")
-	s.Require().NoError(err)
+	return exec
+}
 
-	fmt.Println("Configdir: " + configDir)
-	fmt.Println("Cachedir: " + cacheDir)
-	fmt.Println("Bindir: " + binDir)
+type SpawnOptions struct {
+	Env        []string
+	Dirs       *Dirs
+	RetainDirs bool
+}
 
-	s.executable = filepath.Join(binDir, constants.CommandName+exe)
-	fail := fileutils.CopyFile(executable, s.executable)
-	s.Require().NoError(fail.ToError())
+// Spawn executes the state tool executable under test in a pseudo-terminal
+func (s *Suite) Spawn(args ...string) *Process {
+	return s.SpawnDirect(SpawnOptions{}, s.executablePath(), args...)
+}
 
-	permissions, _ := permbits.Stat(s.executable)
+// SpawnCustom executes an executable in a pseudo-terminal for integration tests
+func (s *Suite) SpawnCustom(opts SpawnOptions, args ...string) *Process {
+	return s.SpawnDirect(opts, s.executablePath(), args...)
+}
+
+func (s *Suite) SpawnDirect(opts SpawnOptions, exe string, args ...string) *Process {
+	noErr := s.Require().NoError
+
+	if opts.Dirs == nil {
+		var err error
+		opts.Dirs, err = NewDirs("")
+		noErr(err)
+	}
+
+	execu := filepath.Join(opts.Dirs.Bin, filepath.Base(exe))
+	fail := fileutils.CopyFile(exe, execu)
+	noErr(fail.ToError())
+
+	permissions, _ := permbits.Stat(execu)
 	permissions.SetUserExecute(true)
-	err = permbits.Chmod(s.executable, permissions)
-	s.Require().NoError(err)
+	noErr(permbits.Chmod(execu, permissions))
 
-	s.ClearEnv()
-	s.AppendEnv(os.Environ())
-	s.AppendEnv([]string{
-		"ACTIVESTATE_CLI_CONFIGDIR=" + configDir,
-		"ACTIVESTATE_CLI_CACHEDIR=" + cacheDir,
+	var env []string
+	env = append(env, os.Environ()...)
+	env = append(env, []string{
+		"ACTIVESTATE_CLI_CONFIGDIR=" + opts.Dirs.Config,
+		"ACTIVESTATE_CLI_CACHEDIR=" + opts.Dirs.Cache,
 		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
-	})
-}
+	}...)
+	env = append(env, opts.Env...)
 
-// PrepareTemporaryWorkingDirectory prepares a temporary working directory to run the tests in
-// It returns the directory name a clean-up function
-func (s *Suite) PrepareTemporaryWorkingDirectory(prefix string) (tempDir string, cleanup func()) {
+	pOpts := processOptions{
+		Options: conproc.Options{
+			DefaultTimeout: defaultTimeout,
+			Environment:    env,
+			WorkDirectory:  opts.Dirs.Work,
+			RetainWorkDir:  true,
+			ObserveExpect:  observeExpectFn(s),
+			ObserveSend:    observeSendFn(s),
+		},
+		cleanUp: func() error {
+			if opts.RetainDirs {
+				return nil
+			}
+			return opts.Dirs.Close()
+		},
+	}
 
-	tempDir, err := ioutil.TempDir("", prefix)
-	s.Require().NoError(err)
-	err = os.RemoveAll(tempDir)
-	s.Require().NoError(err)
-	err = os.MkdirAll(tempDir, 0770)
-	s.Require().NoError(err)
-	dir, err := filepath.EvalSymlinks(tempDir)
-	s.Require().NoError(err)
-	s.SetWd(dir)
+	console, err := conproc.NewConsoleProcess(pOpts.Options, execu, args...)
+	noErr(err)
 
-	return dir, func() {
-		_ = os.RemoveAll(dir)
-		if tempDir != dir {
-			_ = os.RemoveAll(tempDir)
-		}
+	return &Process{
+		ConsoleProcess: console,
+		pOpts:          pOpts,
 	}
 }
 
@@ -137,108 +153,21 @@ func (s *Suite) PrepareFile(path, contents string) {
 	s.Require().NoError(err, errMsg)
 }
 
-// Executable returns the path to the executable under test (State Tool)
-func (s *Suite) Executable() string {
-	return s.executable
-}
-
-// ClearEnv removes all environment variables
-func (s *Suite) ClearEnv() {
-	s.env = []string{}
-}
-
-// AppendEnv appends new environment variable settings
-func (s *Suite) AppendEnv(env []string) {
-	s.env = append(s.env, env...)
-}
-
-// SetWd specifies a working directory for the spawned processes.
-// Use this method if you rely on running the test executable in a clean directory.
-// By default all tests are run in `os.TempDir()`.
-// SetWd returns a function that unsets the working directory. Use this if
-// you do not want other tests to use the set directory.
-func (s *Suite) SetWd(dir string) {
-	s.wd = &dir
-}
-
-// Spawn executes the state tool executable under test in a pseudo-terminal
-func (s *Suite) Spawn(args ...string) *ConsoleProcess {
-	return s.SpawnCustom(s.executable, args...)
-}
-
-// SpawnCustom executes an executable in a pseudo-terminal for integration tests
-func (s *Suite) SpawnCustom(executable string, args ...string) *conproc.ConsoleProcess {
-	/*var wd string
-	if s.wd == nil {
-		wd = fileutils.TempDirUnsafe()
-	} else {
-		wd = *s.wd
-	}
-
-	cmd := exec.Command(executable, args...)
-	cmd.Dir = wd
-	cmd.Env = s.env
-
-	// Create the process in a new process group.
-	// This makes the behavior more consistent, as it isolates the signal handling from
-	// the parent processes, which are dependent on the test environment.
-	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
-	fmt.Printf("Spawning '%s' from %s\n", osutils.CmdString(cmd), wd)
-
-	var err error
-	console, err := expect.NewConsole(
-		expect.WithDefaultTimeout(defaultTimeout),
-		expect.WithReadBufferMutation(ansi.Strip),
-	)
-	s.Require().NoError(err)
-
-	err = console.Pty.StartProcessInTerminal(cmd)
-	s.Require().NoError(err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cp := &ConsoleProcess{
-		stateCh: make(chan error),
-		suite:   s.Suite,
-		console: console,
-		cmd:     cmd,
-		ctx:     ctx,
-		cancel:  cancel,
-	}
-
-	go func() {
-		defer close(cp.stateCh)
-		err := cmd.Wait()
-
-		console.Close()
-
-		fmt.Printf("send err to channel: %v\n", err)
-		select {
-		case cp.stateCh <- err:
-		case <-cp.ctx.Done():
-		}
-
-		fmt.Printf("done sending err to channel: %v\n", err)
-	}()*/
-
-	return nil
-}
-
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Suite) LoginAsPersistentUser() {
-	cp := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
-	defer cp.Close()
-	fmt.Println("1")
-	cp.Expect("successfully authenticated", authnTimeout)
-	fmt.Println("2")
-	cp.ExpectExitCode(0)
-	fmt.Println("3")
+	p := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
+	defer p.Close()
+
+	p.Expect("successfully authenticated", authnTimeout)
+	p.ExpectExitCode(0)
 }
 
 func (s *Suite) LogoutUser() {
-	s.Spawn("auth", "logout")
-	s.Expect("logged out")
-	s.ExpectExitCode(0)
+	p := s.Spawn("auth", "logout")
+	defer p.Close()
+
+	p.Expect("logged out")
+	p.ExpectExitCode(0)
 }
 
 func (s *Suite) CreateNewUser() string {
@@ -249,20 +178,54 @@ func (s *Suite) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	cp := s.Spawn("auth", "signup")
-	defer cp.Close()
-	cp.Expect("username:")
-	cp.SendLine(username)
-	cp.Expect("password:")
-	cp.SendLine(password)
-	cp.Expect("again:")
-	cp.SendLine(password)
-	cp.Expect("name:")
-	cp.SendLine(username)
-	cp.Expect("email:")
-	cp.SendLine(email)
-	cp.Expect("account has been registered", authnTimeout)
-	cp.ExpectExitCode(0)
+	p := s.Spawn("auth", "signup")
+	defer p.Close()
+
+	p.Expect("username:")
+	p.SendLine(username)
+	p.Expect("password:")
+	p.SendLine(password)
+	p.Expect("again:")
+	p.SendLine(password)
+	p.Expect("name:")
+	p.SendLine(username)
+	p.Expect("email:")
+	p.SendLine(email)
+	p.Expect("account has been registered", authnTimeout)
+	p.ExpectExitCode(0)
 
 	return username
+}
+
+func observeSendFn(s *Suite) func(string, int, error) {
+	return func(msg string, num int, err error) {
+		if err == nil {
+			return
+		}
+
+		s.FailNow("Could not send data to terminal", "error: %v", err)
+	}
+}
+
+func observeExpectFn(s *Suite) func([]expect.Matcher, string, string, error) {
+	return func(matchers []expect.Matcher, raw, pty string, err error) {
+		if err == nil {
+			return
+		}
+
+		var value string
+		var sep string
+		for _, matcher := range matchers {
+			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
+			sep = ", "
+		}
+
+		pty = strings.TrimRight(pty, " \n") + "\n"
+
+		s.FailNow(
+			"Could not meet expectation",
+			"Expectation: '%s'\nError: %v\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
+			value, err, raw, pty,
+		)
+	}
 }
