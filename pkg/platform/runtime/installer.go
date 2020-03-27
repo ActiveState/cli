@@ -369,19 +369,16 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	// Python runtimes on MacOS work where they are unarchived so we do not
 	// need to do any detection of the install directory
 	var tmpInstallDir string
-	if runtime.GOOS == "darwin" {
-		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
-	} else {
-		installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
-		for _, dir := range installDirs {
-			currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
-			if fileutils.DirExists(currentDir) {
-				tmpInstallDir = currentDir
-			}
+	installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
+	for _, dir := range installDirs {
+		currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
+		if fileutils.DirExists(currentDir) {
+			tmpInstallDir = currentDir
 		}
 	}
 	if tmpInstallDir == "" {
-		return nil, FailArchiveNoInstallDir.New("installer_err_runtime_missing_install_dir", tmpRuntimeDir, constants.RuntimeInstallDirs)
+		// If no installDir was found assume the root of the archive
+		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
 	}
 
 	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {

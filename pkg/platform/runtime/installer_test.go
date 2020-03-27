@@ -1,5 +1,3 @@
-// +build !darwin
-
 package runtime_test
 
 import (
@@ -21,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	rmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -62,13 +59,6 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.installer, fail = runtime.NewInstallerByParams(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
-
-	// Only linux is supported for now, so force it so we can run this test on mac
-	// If we want to skip this on mac it should be skipped through build tags, in
-	// which case this tweak is meaningless and only a convenience for when testing manually
-	if rt.GOOS == "darwin" {
-		model.HostPlatform = sysinfo.Linux.String()
-	}
 }
 
 func (suite *InstallerTestSuite) AfterTest(suiteName, testName string) {
@@ -91,7 +81,7 @@ func (suite *InstallerTestSuite) testRelocation(archive string, executable strin
 	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
 
 	pathToExecutable := filepath.Join(suite.installer.InstallDirs()[0], "bin", executable)
-	suite.Require().True(fileutils.FileExists(pathToExecutable), executable+" exists")
+	suite.Require().FileExists(pathToExecutable)
 
 	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
 	suite.Contains(ascriptContents, pathToExecutable)
@@ -102,6 +92,9 @@ func (suite *InstallerTestSuite) TestInstall_Python_RelocationSuccessful() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_Python_Legacy_RelocationSuccessful() {
+	if rt.GOOS == "darwin" {
+		suite.T().Skip("Our macOS Python builds do not use relocation, so this will fail if it has to auto detect relocation paths")
+	}
 	suite.testRelocation("python-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePython3Executable)
 }
 
@@ -110,6 +103,10 @@ func (suite *InstallerTestSuite) TestInstall_Perl_RelocationSuccessful() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() {
+	if rt.GOOS == "darwin" {
+		suite.T().Skip("PERL NOT YET SUPPORTED ON MAC")
+		return
+	}
 	suite.testRelocation("perl-good-installer-nometa"+runtime.InstallerExtension, constants.ActivePerlExecutable)
 }
 

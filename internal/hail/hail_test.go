@@ -35,6 +35,7 @@ func TestSend(t *testing.T) {
 }
 
 func TestOpen(t *testing.T) {
+	t.Skip("Must fix https://www.pivotaltracker.com/story/show/171945142")
 	start := time.Now()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
