@@ -41,13 +41,6 @@ scripts:
       outFile=$(buildProject external ${1}) || exit $?
       mkdir -p public/update
       go run scripts/update-generator/main.go -o public/update $outFile
-  - name: build-rmpath
-    description: Build a helper utility for the MSI installer
-    constraints:
-      os: windows
-    value: |
-      $scripts.preprocess
-      eval go build -o ./public/wix/rmpath/rmpath.exe $CLI_BUILDFLAGS ./public/wix/rmpath/main.go
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
@@ -110,11 +103,14 @@ scripts:
   - name: generate-locale
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
-  - name: update-wxs
-    description: Updates the install.wxs file with the correct version of the state tool. This must be run in order to generate a State Tool MSI
+  - name: build-wix
+    Description: Update the wxs file and build a helper for the MSI installer
+    constraints:
+      os: windows
     value: |
       $scripts.preprocess
       go run scripts/wix/main.go public/wix/install.wxs
+      eval go build -o ./public/wix/rmpath/rmpath.exe $CLI_BUILDFLAGS ./public/wix/rmpath/main.go
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
