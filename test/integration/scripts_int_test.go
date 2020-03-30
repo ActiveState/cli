@@ -55,12 +55,6 @@ func (suite *ScriptsIntegrationTestSuite) TearDownTest() {
 	suite.cleanup()
 }
 
-func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
-	suite.Spawn("scripts", "--output", "editor.v0")
-	suite.Expect(`[{"name":"first-script"},{"name":"second-script"}]`)
-	suite.Wait()
-}
-
 func TestScriptsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ScriptsIntegrationTestSuite))
 }
