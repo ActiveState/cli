@@ -27,6 +27,8 @@ func main() {
 
 	tmpl := template.Must(template.ParseFiles(wxsFile))
 	data := Product{constants.VersionNumber}
+	file.Truncate(0)
+	file.Seek(0, 0)
 	err = tmpl.Execute(file, data)
 	if err != nil {
 		log.Fatal(err)
