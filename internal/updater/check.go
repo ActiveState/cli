@@ -71,7 +71,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 		// Marker does not exist. Create it.
 		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
 		if err != nil {
-			logging.Error("Unable to automatically check for updates: %s", err)
+			logging.Error("Unable to create/write update marker: %s", err)
 			return false, ""
 		}
 	} else {
@@ -116,7 +116,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 	logging.Debug("Self-updating.")
 	err = update.Run()
 	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
+		logging.Error("Unable to self update: %s", err)
 		return false, ""
 	}
 
@@ -124,7 +124,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 	// day.
 	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
 	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
+		logging.Error("Unable to update modification times of check marker: %s", err)
 		return false, ""
 	}
 

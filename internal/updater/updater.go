@@ -175,6 +175,8 @@ func (u *Updater) update() error {
 	if err != nil {
 		return err
 	}
+
+	logging.Debug("Attempting to open executable path at: %s", path)
 	old, err := os.Open(path)
 	if err != nil {
 		return err
@@ -195,7 +197,10 @@ func (u *Updater) update() error {
 
 	// close the old binary before installing because on windows
 	// it can't be renamed if a handle to the file is still open
-	old.Close()
+	err = old.Close()
+	if err != nil {
+		return err
+	}
 
 	err, errRecover := up.FromStream(bytes.NewBuffer(bin))
 	if errRecover != nil {
