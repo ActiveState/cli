@@ -9,26 +9,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
 
 type RunIntegrationTestSuite struct {
-	integration.Suite
-	tmpDirCleanup func()
+	e2e.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
+func (suite *RunIntegrationTestSuite) createProjectFile() {
 
-	var err error
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
+	fileutils.CopyFile(interruptScript, filepath.Join(suite.WorkDirectory(), "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`
@@ -61,16 +58,7 @@ scripts:
     constraints:
       os: windows
 `)
-	projectfile.Reset()
-	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
-	suite.Require().NoError(err)
-
-	projectFile.SetPath(filepath.Join(projectDir, constants.ConfigFileName))
-	fail := projectFile.Save()
-	suite.Require().NoError(fail.ToError())
-
-	suite.SetWd(projectDir)
+	suite.PrepareActiveStateYAML(configFileContent)
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
@@ -80,19 +68,15 @@ func (suite *RunIntegrationTestSuite) SetupTest() {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory("RunIntegrationTestSuite")
-	suite.tmpDirCleanup = cleanup
-
-	suite.createProjectFile(tmpDir)
+	suite.createProjectFile()
 }
 
 func (suite *RunIntegrationTestSuite) TearDownTest() {
 	suite.Suite.TearDownTest()
-	suite.tmpDirCleanup()
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *ConsoleProcess) {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *conproc.ConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")
@@ -114,7 +98,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("Activating state: ActiveState-CLI/Python3")
 	cp.WaitForInput(10 * time.Second)
 
-	cp.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
+	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
 	cp.Expect("Start of script", 5*time.Second)
 	cp.SendCtrlC()
 	cp.Expect("received interrupt", 3*time.Second)
@@ -125,7 +109,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
 	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "not printed after second interrupt",
+		cp.TrimmedSnapshot(), "not printed after second interrupt",
 	)
 }
 
@@ -160,7 +144,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(123)
 	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "not printed after second interrupt",
+		cp.TrimmedSnapshot(), "not printed after second interrupt",
 	)
 }
 

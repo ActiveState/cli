@@ -18,7 +18,7 @@ func (s *Suite) SetupTest() {
 	s.Session = New(s.T(), false)
 }
 
-func (s *Suite) TeardownTest() {
+func (s *Suite) TearDownTest() {
 	if s.Session == nil {
 		return
 	}
