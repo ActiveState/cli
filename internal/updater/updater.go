@@ -178,13 +178,9 @@ func (u *Updater) update() error {
 	}
 
 	logging.Debug("Attempting to open executable path at: %s", path)
-	err = fileutils.LogPath(path)
-	if err != nil {
-		return err
-	}
-
 	old, err := os.Open(path)
 	if err != nil {
+		_ = fileutils.LogPath(path)
 		return err
 	}
 
