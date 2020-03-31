@@ -73,7 +73,7 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 		errs:    make(chan error),
 		console: console,
 		cmd:     cmd,
-		cmdName: cmdName,
+		cmdName: opts.CmdName,
 		ctx:     ctx,
 		cancel:  cancel,
 	}
@@ -266,7 +266,7 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 	select {
 	case perr := <-cp.errs:
 		if perr != nil {
-			cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, perr)
+			// XXX: that's wrong: cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, perr)
 			return cp.cmd.ProcessState, buf, perr
 		}
 		return cp.cmd.ProcessState, buf, nil

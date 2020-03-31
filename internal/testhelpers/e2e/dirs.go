@@ -19,7 +19,7 @@ type Dirs struct {
 	Config string
 	// Cache is the directory where cached files including downloaded artifacts are stored
 	Cache string
-	// XXX: Do we need this???
+	// Bin is the directory where executables are stored
 	Bin string
 	// Work is the working directory where the activestate.yaml file would live, and that is the PWD for tested console processes
 	Work string
