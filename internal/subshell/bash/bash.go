@@ -3,8 +3,10 @@ package bash
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -39,29 +41,14 @@ func (v *SubShell) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// RcFile - see subshell.SubShell
-func (v *SubShell) RcFile() *os.File {
-	return v.rcFile
-}
+// WriteUserEnv - see subshell.SubShell
+func (v *SubShell) WriteUserEnv(env map[string]string) error {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return err
+	}
 
-// SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile *os.File) {
-	v.rcFile = rcFile
-}
-
-// RcFileExt - see subshell.SubShell
-func (v *SubShell) RcFileExt() string {
-	return ""
-}
-
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "bashrc.sh"
-}
-
-// RcAppendFileTemplate - see subshell.SubShell
-func (v *SubShell) RcAppendFileTemplate() string {
-	return "bashrc_append.sh"
+	return sscommon.WriteRcFile("bashrc_append.sh", filepath.Join(homeDir, ".bashrc"), env)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -76,6 +63,11 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
+	var fail *failures.Failure
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("bashrc.sh", ""); fail != nil {
+		return fail
+	}
+
 	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 

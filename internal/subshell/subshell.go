@@ -1,35 +1,25 @@
 package subshell
 
 import (
-	"bufio"
-	"bytes"
-	"fmt"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/alecthomas/template"
-	"github.com/gobuffalo/packr"
-	"github.com/mash/go-tempfile-suffix"
 	"github.com/shirou/gopsutil/process"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -56,20 +46,8 @@ type SubShell interface {
 	// SetBinary sets the configured binary, this should only be called by the subshell package
 	SetBinary(string)
 
-	// RcFile returns the parsed RcFileTemplate file to initialise the shell
-	RcFile() *os.File
-
-	// SetRcFile sets the configured RC file, this should only be called by the subshell package
-	SetRcFile(*os.File)
-
-	// RcFileTemplate returns the file name of the projects terminal config script used to generate project specific terminal configuration scripts, this script should live under assets/shells
-	RcFileTemplate() string
-
-	// RcAppendFileTemplate returns the template file name that is meant to be used to append data to the users RC file
-	RcAppendFileTemplate() string
-
-	// RcFileExt returns the extension to use (including the dot), primarily aimed at windows
-	RcFileExt() string
+	// WriteUserEnv writes the given env map to the users environment
+	WriteUserEnv(map[string]string) error
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string
@@ -99,143 +77,6 @@ func Activate() (SubShell, *failures.Failure) {
 	}
 
 	return subs, subs.Activate()
-}
-
-// getRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
-// used for initialising the subshell
-func getRcFile(shell SubShell) (*os.File, *failures.Failure) {
-	box := packr.NewBox("../../assets/shells")
-	tpl := box.String(shell.RcFileTemplate())
-	prj := project.Get()
-
-	userScripts := ""
-	for _, event := range prj.Events() {
-		if event.Name() == "ACTIVATE" {
-			userScripts = userScripts + "\n" + event.Value()
-		}
-	}
-
-	inuse := []string{}
-	scripts := map[string]string{}
-	var explicitName string
-
-	// Prepare script map to be parsed by template
-	for _, cmd := range prj.Scripts() {
-		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
-
-		_, err := exec.LookPath(cmd.Name())
-		if err == nil {
-			// Do not overwrite commands that are already in use and
-			// keep track of those commands to warn to the user
-			inuse = append(inuse, cmd.Name())
-			continue
-		}
-
-		scripts[cmd.Name()] = cmd.Name()
-		scripts[explicitName] = cmd.Name()
-	}
-
-	if len(inuse) > 0 {
-		print.Warning(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  - "), inuse[0], prj.NormalizedName(), explicitName))
-	}
-
-	rcData := map[string]interface{}{
-		"Owner":       prj.Owner(),
-		"Name":        prj.Name(),
-		"Env":         virtualenvironment.Get().GetEnv(false),
-		"WD":          virtualenvironment.Get().WorkingDirectory(),
-		"UserScripts": userScripts,
-		"Scripts":     scripts,
-	}
-	t, err := template.New("rcfile").Parse(tpl)
-	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
-	}
-
-	var out bytes.Buffer
-	err = t.Execute(&out, rcData)
-	if err != nil {
-		return nil, failures.FailTemplating.Wrap(err)
-	}
-
-	tmpFile, err := tempfile.TempFileWithSuffix(os.TempDir(), "state-subshell-rc", shell.RcFileExt())
-	if err != nil {
-		return nil, failures.FailOS.Wrap(err)
-	}
-
-	tmpFile.WriteString(out.String())
-	tmpFile.Close()
-
-	return tmpFile, nil
-}
-
-func WriteRcFile(shell SubShell, path string, env map[string]string) *failures.Failure {
-	if fail := fileutils.Touch(path); fail != nil {
-		return fail
-	}
-
-	if fail := cleanRcFile(path); fail != nil {
-		return fail
-	}
-
-	box := packr.NewBox("../../assets/shells")
-	tpl := box.String(shell.RcAppendFileTemplate())
-
-	rcData := map[string]interface{}{
-		"Start": constants.RCAppendStartLine,
-		"Stop":  constants.RCAppendStopLine,
-		"Env":   env,
-	}
-	t, err := template.New("rcfile_append").Parse(tpl)
-	if err != nil {
-		return failures.FailTemplating.Wrap(err)
-	}
-
-	var out bytes.Buffer
-	err = t.Execute(&out, rcData)
-	if err != nil {
-		return failures.FailTemplating.Wrap(err)
-	}
-
-	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+fileutils.LineEnd+out.String()))
-}
-
-func cleanRcFile(path string) *failures.Failure {
-	readFile, err := os.Open(path)
-
-	if err != nil {
-		return failures.FailIO.Wrap(err)
-	}
-
-	scanner := bufio.NewScanner(readFile)
-	scanner.Split(bufio.ScanLines)
-
-	var strip bool
-	var fileContents []string
-	for scanner.Scan() {
-		text := scanner.Text()
-
-		// Detect start line
-		if strings.Contains(text, constants.RCAppendStartLine) {
-			strip = true
-		}
-
-		// Strip line
-		if strip {
-			continue
-		}
-
-		// Rebuild file contents
-		fileContents = append(fileContents, scanner.Text())
-
-		// Detect stop line
-		if strings.Contains(text, constants.RCAppendStopLine) {
-			strip = false
-		}
-	}
-	readFile.Close()
-
-	return fileutils.WriteFile(path, []byte(strings.Join(fileContents, fileutils.LineEnd)))
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it
@@ -282,15 +123,8 @@ func Get() (SubShell, *failures.Failure) {
 		}))
 	}
 
-	rcFile, err := getRcFile(subs)
-	if err != nil {
-		return nil, err
-	}
-
 	logging.Debug("Using binary: %s", binary)
 	subs.SetBinary(binary)
-	logging.Debug("Using RC File: %s", rcFile.Name())
-	subs.SetRcFile(rcFile)
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)

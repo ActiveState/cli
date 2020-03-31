@@ -24,6 +24,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	}`
 
 	originalValue := os.Getenv("PYTHONIOENCODING")
+	os.Unsetenv("PYTHONIOENCODING")
 	defer func() {
 		os.Setenv("PYTHONIOENCODING", originalValue)
 	}()

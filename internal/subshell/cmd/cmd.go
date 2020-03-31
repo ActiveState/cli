@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -39,29 +40,21 @@ func (v *SubShell) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// RcFile - see subshell.SubShell
-func (v *SubShell) RcFile() *os.File {
-	return v.rcFile
-}
-
-// SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile *os.File) {
-	v.rcFile = rcFile
-}
-
-// RcFileExt - see subshell.SubShell
-func (v *SubShell) RcFileExt() string {
-	return ".bat"
-}
-
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "config.bat"
-}
-
-// RcAppendFileTemplate - see subshell.SubShell
-func (v *SubShell) RcAppendFileTemplate() string {
-	return "" // Not used on Windows
+// WriteUserEnv - see subshell.SubShell
+func (v *SubShell) WriteUserEnv(env map[string]string) error {
+	for k, v := range env {
+		var cmd *exec.Cmd
+		if k == "PATH" {
+			cmd = exec.Command("setx", "PATH", fmt.Sprintf("%s;%s", v, "%PATH%"))
+		} else {
+			cmd = exec.Command("setx", k, v)
+		}
+		err := cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetEnv - see subshell.SetEnv
@@ -76,6 +69,11 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
+	var fail *failures.Failure
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat"); fail != nil {
+		return fail
+	}
+
 	shellArgs := []string{"/K", v.rcFile.Name()}
 
 	cmd := exec.Command("cmd", shellArgs...)

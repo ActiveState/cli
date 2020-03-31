@@ -46,29 +46,14 @@ func (v *SubShell) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// RcFile - see subshell.SubShell
-func (v *SubShell) RcFile() *os.File {
-	return v.rcFile
-}
+// WriteUserEnv - see subshell.SubShell
+func (v *SubShell) WriteUserEnv(env map[string]string) error {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return err
+	}
 
-// SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile *os.File) {
-	v.rcFile = rcFile
-}
-
-// RcFileExt - see subshell.SubShell
-func (v *SubShell) RcFileExt() string {
-	return ""
-}
-
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "zshrc.sh"
-}
-
-// RcAppendFileTemplate - see subshell.SubShell
-func (v *SubShell) RcAppendFileTemplate() string {
-	return "zshrc_append.sh"
+	return sscommon.WriteRcFile("zshrc_append.sh", filepath.Join(homeDir, ".zshrc"), env)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -83,6 +68,10 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
+	var fail *failures.Failure
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("zshrc.sh", ""); fail != nil {
+		return fail
+	}
 
 	path, err := ioutil.TempDir("", "state-zsh")
 	if err != nil {
@@ -90,7 +79,7 @@ func (v *SubShell) Activate() *failures.Failure {
 	}
 
 	activeZsrcPath := filepath.Join(path, ".zshrc")
-	fail := fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+	fail = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
 	if fail != nil {
 		return fail
 	}

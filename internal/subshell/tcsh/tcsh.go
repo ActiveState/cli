@@ -3,8 +3,10 @@ package tcsh
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -39,29 +41,14 @@ func (v *SubShell) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// RcFile - see subshell.SubShell
-func (v *SubShell) RcFile() *os.File {
-	return v.rcFile
-}
+// WriteUserEnv - see subshell.SubShell
+func (v *SubShell) WriteUserEnv(env map[string]string) error {
+	homeDir, err := fileutils.HomeDir()
+	if err != nil {
+		return err
+	}
 
-// SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile *os.File) {
-	v.rcFile = rcFile
-}
-
-// RcFileExt - see subshell.SubShell
-func (v *SubShell) RcFileExt() string {
-	return ""
-}
-
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "tcsh.sh"
-}
-
-// RcAppendFileTemplate - see subshell.SubShell
-func (v *SubShell) RcAppendFileTemplate() string {
-	return "tcsh_append.sh"
+	return sscommon.WriteRcFile("tcshrc_append.sh", filepath.Join(homeDir, ".tcshrc"), env)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -84,6 +71,11 @@ func (v *SubShell) Activate() *failures.Failure {
 	// The exec'd shell does not inherit 'prompt' from the calling terminal since
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
+	var fail *failures.Failure
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("tcsh.sh", ""); fail != nil {
+		return fail
+	}
+
 	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 

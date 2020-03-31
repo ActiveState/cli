@@ -1458,3 +1458,7 @@ err_requires_runtime_download:
   other: You need to download the runtime environment before you can use it
 err_deploy_no_commits:
   other: "The project '{{.V0}}' does not have any packages configured, please add add some packages first."
+err_userrc_notfound:
+  other: "Could not update your environment as your RC file could not be found, expecting to find one of '{{.V0}}' in your home directory."
+err_arg_required:
+  other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"

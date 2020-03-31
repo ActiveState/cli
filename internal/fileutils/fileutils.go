@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -643,4 +644,14 @@ func PrepareDir(path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+// HomeDir returns the users homedir
+func HomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return usr.HomeDir, nil
 }

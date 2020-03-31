@@ -86,6 +86,13 @@ type InstallerParams struct {
 	ProjectName string
 }
 
+func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
+	if cacheDir == "" {
+		cacheDir = config.CachePath()
+	}
+	return InstallerParams{cacheDir, commitID, owner, projectName}
+}
+
 // NewInstaller creates a new RuntimeInstaller
 func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
 	logging.Debug("cache path: %s", config.CachePath())
@@ -273,6 +280,7 @@ func (installer *Installer) InstallDirsFromInstallCall() []string {
 
 // InstallDirsStandalone returns all the artifact paths detected for the given runtime environment, these are detected live
 // so Install() does not need to be called first. If even a single installDir is missing this will fail.
+// This does mean Install() needs to have been called at SOME POINT, just not during the same invocation.
 func (installer *Installer) InstallDirsStandalone() ([]string, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return []string{}, fail

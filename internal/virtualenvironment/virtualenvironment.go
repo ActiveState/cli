@@ -55,9 +55,8 @@ func Init() *VirtualEnvironment {
 	}
 }
 
-func New(pj *project.Project, artifactPaths []string) *VirtualEnvironment {
+func NewWithArtifacts(artifactPaths []string) *VirtualEnvironment {
 	return &VirtualEnvironment{
-		project:       pj,
 		activationID:  uuid.New().String(),
 		artifactPaths: artifactPaths,
 	}
@@ -114,9 +113,11 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
-	env := map[string]string{"PATH": os.Getenv("PATH")}
-	pjfile := projectfile.Get()
+func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]string {
+	env := map[string]string{"PATH": ""}
+	if inherit {
+		env["PATH"] = os.Getenv("PATH")
+	}
 
 	for _, artifactPath := range v.artifactPaths {
 		meta, fail := runtime.InitMetaData(artifactPath)
@@ -134,8 +135,13 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 		templateMeta := struct {
 			RelocationDir string
 			ProjectDir    string
-		}{"", filepath.Dir(pjfile.Path())}
+		}{"", projectDir}
 		for k, v := range meta.Env {
+			// Dirty workaround until https://www.pivotaltracker.com/story/show/172033094 is implemented
+			// This avoids projectDir dependant env vars from being written
+			if projectDir == "" && strings.Contains(v, "ProjectDir") {
+				continue
+			}
 			templateMeta.RelocationDir = meta.RelocationDir
 			valueTemplate, err := template.New(k).Parse(v)
 			if err != nil {
@@ -157,17 +163,19 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 			if v.Relative {
 				path = filepath.Join(artifactPath, path)
 			}
-			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
+			env["PATH"] = prependPath(env["PATH"], path)
 		}
 
 		// Add DLL dir to PATH on Windows
 		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
-			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
+			env["PATH"] = prependPath(env["PATH"], filepath.Join(meta.Path, meta.RelocationTargetBinaries))
 		}
 	}
 
-	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
-	env[constants.ActivatedStateIDEnvVarName] = v.activationID
+	if projectDir != "" {
+		env[constants.ActivatedStateEnvVarName] = projectDir
+		env[constants.ActivatedStateIDEnvVarName] = v.activationID
+	}
 
 	if inherit {
 		return inheritEnv(env)
@@ -176,9 +184,17 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 	return env
 }
 
+func prependPath(PATH, prefix string) string {
+	var suffix string
+	if PATH != "" {
+		suffix = string(os.PathListSeparator) + PATH
+	}
+	return prefix + suffix
+}
+
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
 func (v *VirtualEnvironment) GetEnvSlice(inherit bool) []string {
-	envMap := v.GetEnv(inherit)
+	envMap := v.GetEnv(inherit, filepath.Dir(projectfile.Get().Path()))
 	var env []string
 	for k, v := range envMap {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
