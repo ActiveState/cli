@@ -653,10 +653,10 @@ func LogPath(path string) error {
 		}
 
 		logging.Debug(strings.Join([]string{
-			fmt.Sprint("File name: %s", info.Name()),
-			fmt.Sprint("File permissions: %s", info.Mode()),
-			fmt.Sprint("File mod time: %s", info.ModTime()),
-			fmt.Sprint("File size: %d", info.Size()),
+			fmt.Sprintf("File name: %s", info.Name()),
+			fmt.Sprintf("File permissions: %s", info.Mode()),
+			fmt.Sprintf("File mod time: %s", info.ModTime()),
+			fmt.Sprintf("File size: %d", info.Size()),
 		}, "\n"))
 		return nil
 	})
