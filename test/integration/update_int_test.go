@@ -37,12 +37,12 @@ func (suite *UpdateIntegrationTestSuite) getVersion() string {
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true"})
-	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions should match as auto-update should not have occurred")
+	suite.NotEqual(constants.VersionNumber, suite.getVersion(), "Versions should match as auto-update should not have occurred")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_UPDATES=false"})
-	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as auto-update should have occurred")
+	suite.NotEqual(constants.VersionNumber, suite.getVersion(), "Versions shouldn't match as auto-update should have occurred")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
@@ -63,7 +63,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.Expect("Version locked at")
 	suite.Wait()
 
-	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions should match because locking is enabled")
+	suite.NotEqual(constants.VersionNumber, suite.getVersion(), "Versions should match because locking is enabled")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -78,7 +78,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.Wait()
 	fmt.Println("Version after update: ", suite.getVersion())
 
-	suite.NotEqual(constants.BuildNumber, suite.getVersion(), "Versions shouldn't match as we ran update")
+	suite.NotEqual(constants.Version, suite.getVersion(), "Versions shouldn't match as we ran update")
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {

@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -175,8 +176,11 @@ func (u *Updater) update() error {
 	if err != nil {
 		return err
 	}
+
+	logging.Debug("Attempting to open executable path at: %s", path)
 	old, err := os.Open(path)
 	if err != nil {
+		_ = fileutils.LogPath(path)
 		return err
 	}
 
@@ -195,7 +199,10 @@ func (u *Updater) update() error {
 
 	// close the old binary before installing because on windows
 	// it can't be renamed if a handle to the file is still open
-	old.Close()
+	err = old.Close()
+	if err != nil {
+		return err
+	}
 
 	err, errRecover := up.FromStream(bytes.NewBuffer(bin))
 	if errRecover != nil {
