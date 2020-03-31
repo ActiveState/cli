@@ -50,8 +50,16 @@ func (s *Suite) PrepareFile(path, contents string) {
 	s.Session.PrepareFile(s.T(), path, contents)
 }
 
+func (s *Suite) CreateNewUser() string {
+	return s.Session.CreateNewUser(s.T())
+}
+
 func (s *Suite) LoginAsPersistentUser() {
 	s.Session.LoginAsPersistentUser(s.T())
+}
+
+func (s *Suite) LoginUser(userName string) {
+	s.Session.LoginUser(s.T(), userName)
 }
 
 func (s *Suite) LogoutUser() {

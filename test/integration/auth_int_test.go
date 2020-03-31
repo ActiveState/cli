@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 var uid uuid.UUID
@@ -25,74 +25,38 @@ func init() {
 }
 
 type AuthIntegrationTestSuite struct {
-	integration.Suite
-	username string
-	password string
-	email    string
-}
-
-func (suite *AuthIntegrationTestSuite) SetupTest() {
-	suite.Suite.SetupTest()
-
-	suite.username = fmt.Sprintf("user-%s", uid.String()[0:8])
-	suite.password = suite.username
-	suite.email = fmt.Sprintf("%s@test.tld", suite.username)
+	e2e.Suite
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	suite.signup()
-	suite.logout()
-	suite.login()
-	suite.logout()
-	suite.loginFlags()
+	username := suite.CreateNewUser()
+	suite.LogoutUser()
+	suite.interactiveLogin(username)
+	suite.LogoutUser()
+	suite.loginFlags(username)
 }
 
-func (suite *AuthIntegrationTestSuite) signup() {
-	suite.Spawn("auth", "signup")
-	defer suite.Stop()
-
-	suite.Expect("username:")
-	suite.SendLine(suite.username)
-	suite.Expect("password:")
-	suite.SendLine(suite.password)
-	suite.Expect("again:")
-	suite.SendLine(suite.password)
-	suite.Expect("name:")
-	suite.SendLine(suite.username)
-	suite.Expect("email:")
-	suite.SendLine(suite.email)
-	suite.Expect("account has been registered", 30*time.Second)
-	suite.Wait()
-}
-
-func (suite *AuthIntegrationTestSuite) logout() {
-	suite.Spawn("auth", "logout")
-	defer suite.Stop()
-
-	suite.Expect("You have been logged out")
-	suite.Wait()
-}
-
-func (suite *AuthIntegrationTestSuite) login() {
-	suite.Spawn("auth")
-	suite.Expect("username:")
-	suite.SendLine(suite.username)
-	suite.Expect("password:")
-	suite.SendLine(suite.password)
-	suite.Expect("successfully authenticated", 20*time.Second)
-	suite.Wait()
+func (suite *AuthIntegrationTestSuite) interactiveLogin(username string) {
+	cp := suite.Spawn("auth")
+	defer cp.Close()
+	cp.Expect("username:")
+	cp.SendLine(username)
+	cp.Expect("password:")
+	cp.SendLine(username)
+	cp.Expect("successfully authenticated", 20*time.Second)
+	cp.ExpectExitCode(0)
 
 	// still logged in?
-	suite.Spawn("auth")
-	suite.Expect("You are logged in")
-	suite.Wait()
+	cp = suite.Spawn("auth")
+	cp.Expect("You are logged in")
+	cp.ExpectExitCode(0)
 }
 
-func (suite *AuthIntegrationTestSuite) loginFlags() {
-	suite.Spawn("auth", "--username", suite.username, "--password", "bad-password")
-	suite.Expect("Authentication failed")
-	suite.Expect("You are not authorized, did you provide valid login credentials?")
-	suite.Wait()
+func (suite *AuthIntegrationTestSuite) loginFlags(username string) {
+	cp := suite.Spawn("auth", "--username", username, "--password", "bad-password")
+	cp.Expect("Authentication failed")
+	cp.Expect("You are not authorized, did you provide valid login credentials?")
+	cp.ExpectExitCode(0)
 }
 
 type userJSON struct {
@@ -114,9 +78,9 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 
 	expected := string(data)
 	suite.LoginAsPersistentUser()
-	suite.Spawn("auth", "--output", method)
-	suite.Expect("false}")
-	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
+	cp := suite.Spawn("auth", "--output", method)
+	cp.Expect("false}")
+	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
@@ -137,10 +101,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	suite.Require().NoError(err)
 	expected := string(data)
 
-	suite.Spawn("auth", "--username", integration.PersistentUsername, "--password", integration.PersistentPassword, "--output", "editor.v0")
-	suite.Wait()
-	suite.Expect(`"privateProjects":false}`)
-	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
+	cp := suite.Spawn("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0")
+	cp.Expect(`"privateProjects":false}`)
+	cp.ExpectExitCode(0)
+	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
 
 func TestAuthIntegrationTestSuite(t *testing.T) {

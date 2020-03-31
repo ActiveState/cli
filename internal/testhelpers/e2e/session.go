@@ -157,6 +157,14 @@ func (s *Session) PrepareFile(t *testing.T, path, contents string) {
 	require.NoError(t, err, errMsg)
 }
 
+func (s *Session) LoginUser(t *testing.T, userName string) {
+	p := s.Spawn(t, "auth", "--username", userName, "--password", userName)
+	defer p.Close()
+
+	p.Expect("successfully authenticated", authnTimeout)
+	p.ExpectExitCode(0)
+}
+
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser(t *testing.T) {
 	p := s.Spawn(t, "auth", "--username", PersistentUsername, "--password", PersistentPassword)
