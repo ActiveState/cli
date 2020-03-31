@@ -21,6 +21,8 @@ type Options struct {
 	Environment    []string
 	ObserveSend    SendObserver
 	ObserveExpect  ExpectObserver
+	CmdName        string
+	Args           []string
 }
 
 func (opts *Options) Normalize() error {

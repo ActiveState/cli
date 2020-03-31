@@ -34,12 +34,12 @@ type ConsoleProcess struct {
 }
 
 // NewConsoleProcess bonds a command process with a console pty.
-func NewConsoleProcess(opts Options, cmdName string, args ...string) (*ConsoleProcess, error) {
+func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 	if err := opts.Normalize(); err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command(cmdName, args...)
+	cmd := exec.Command(opts.CmdName, opts.Args...)
 	cmd.Dir = opts.WorkDirectory
 	cmd.Env = opts.Environment
 

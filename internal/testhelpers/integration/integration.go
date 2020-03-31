@@ -17,8 +17,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/conproc"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/pkg/expect"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -54,7 +55,7 @@ func (s *Suite) executablePath() string {
 
 type SpawnOptions struct {
 	Env        []string
-	Dirs       *Dirs
+	Dirs       *e2e.Dirs
 	RetainDirs bool
 }
 
@@ -73,7 +74,7 @@ func (s *Suite) SpawnDirect(opts SpawnOptions, exe string, args ...string) *Proc
 
 	if opts.Dirs == nil {
 		var err error
-		opts.Dirs, err = NewDirs("")
+		opts.Dirs, err = e2e.NewDirs("")
 		noErr(err)
 	}
 

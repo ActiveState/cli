@@ -3,7 +3,7 @@ package integration
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/pkg/conproc"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 )
 
 type processOptions struct {
