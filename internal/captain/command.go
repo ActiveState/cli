@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 type cobraCommander interface {
@@ -155,6 +156,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
+		if arg.Required && idx > len(args)-1 {
+			return failures.FailUserInput.New(locale.Tr("err_arg_required", arg.Name, arg.Description))
+		}
+
 		if idx >= len(args) {
 			break
 		}
@@ -171,6 +176,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 				"arg value must be *string, or ArgMarshaler",
 			)
 		}
+
 	}
 
 	return c.execute(c, args)
