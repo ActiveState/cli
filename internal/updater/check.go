@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -72,6 +73,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
 		if err != nil {
 			logging.Error("Unable to create/write update marker: %s", err)
+			_ = fileutils.LogPath(config.ConfigPath())
 			return false, ""
 		}
 	} else {

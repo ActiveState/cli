@@ -642,3 +642,20 @@ func PrepareDir(path string) (string, error) {
 
 	return path, nil
 }
+
+// LogPath will walk the given file path and log the name, permissions, mod
+// time, and file size of all files it encounters
+func LogPath(path string) error {
+	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			logging.Error("Error walking filepath at: %s", path)
+			return err
+		}
+
+		logging.Debug("File name: %s", info.Name())
+		logging.Debug("File permissions: %s", info.Mode())
+		logging.Debug("File mod time: %s", info.ModTime())
+		logging.Debug("File size: %d", info.Size())
+		return nil
+	})
+}

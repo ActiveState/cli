@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -177,6 +178,11 @@ func (u *Updater) update() error {
 	}
 
 	logging.Debug("Attempting to open executable path at: %s", path)
+	err = fileutils.LogPath(path)
+	if err != nil {
+		return err
+	}
+
 	old, err := os.Open(path)
 	if err != nil {
 		return err
