@@ -1450,3 +1450,5 @@ err_project_env_file_not_exist:
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
 err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
+err_init_no_language:
+  other: "You need to supply the [language] argument, run 'state init --help' for more information."

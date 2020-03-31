@@ -37,6 +37,9 @@ type Initialize struct {
 }
 
 func prepare(params *RunParams) error {
+	if params.Language == "" {
+		return failures.FailUserInput.New(locale.T("err_init_no_language"))
+	}
 	langParts := strings.Split(params.Language, "@")
 	if len(langParts) > 1 {
 		params.version = langParts[1]

@@ -1,11 +1,12 @@
 package cmdtree
 
 import (
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/initialize"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
 func newInitCommand() *captain.Command {
@@ -52,7 +53,6 @@ func newInitCommand() *captain.Command {
 				Name:        locale.T("arg_state_init_language"),
 				Description: locale.T("arg_state_init_language_description"),
 				Value:       &params.Language,
-				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
