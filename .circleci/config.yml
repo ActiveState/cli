@@ -50,10 +50,12 @@ defaults:
           if [[ "$BRANCH" == "master" ]]; then
             echo "Building for external use"
             BRANCH_OVERRIDE=unstable state run build-external
+            BRANCH_OVERRIDE=unstable state run generate-update
           fi
 
           echo "Building for internal use"
           state run build
+          state run generate-update
     runIntegrationTests: &runIntegrationTests
       run:
         name: Run integration tests
