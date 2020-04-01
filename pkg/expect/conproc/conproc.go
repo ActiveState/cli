@@ -100,6 +100,7 @@ func (cp *ConsoleProcess) Close() error {
 	if !cp.wasAwaited {
 		fmt.Fprintf(os.Stderr, "WARNING: consoleProcess closed without being waited for!  You may have forgotten to call ExpectExitCode()\n")
 	}
+
 	cp.cancel()
 
 	_ = cp.opts.CleanUp()
@@ -215,33 +216,35 @@ func (cp *ConsoleProcess) Stop() error {
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	// TODO: communicate exit code info properly
-	ps, buf, err := cp.wait(timeout...)
-	if err != nil {
+	_, buf, err := cp.wait(timeout...)
+	if err == nil && exitCode == 0 {
 		return
 	}
-	if ps.ExitCode() != exitCode {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, errors.New("exit code wrong"))
+	eexit, ok := err.(*exec.ExitError)
+	if !ok {
+		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
 		return
+	}
+	if eexit.ExitCode() != exitCode {
+		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: was %d (expected %d)", eexit.ExitCode(), exitCode))
 	}
 }
 
 // ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
 func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
 	// TODO: communicate exit code info properly
-	ps, buf, err := cp.wait(timeout...)
-	if err != nil {
+	_, buf, err := cp.wait(timeout...)
+	if err == nil && exitCode != 0 {
 		return
 	}
-	if ps.ExitCode() == exitCode {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, errors.New("exit code not correct"))
+	eexit, ok := err.(*exec.ExitError)
+	if !ok {
+		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
 		return
 	}
-}
-
-// Wait waits for the tested process to finish and returns its state including ExitCode
-func (cp *ConsoleProcess) Wait(timeout ...time.Duration) (*os.ProcessState, error) {
-	ps, _, err := cp.wait(timeout...)
-	return ps, err
+	if eexit.ExitCode() == exitCode {
+		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been %d", exitCode))
+	}
 }
 
 func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, string, error) {
@@ -254,12 +257,13 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		t = timeout[0]
 	}
 
-	fmt.Printf("waiting for EOF\n")
 	// TODO: This might need to be different for Windows; I think that Windows
 	// sends a different error message when we close the pseudo-terminal...
 	buf, err := cp.console.Expect(expect.PTSClosed, expect.EOF, expect.WithTimeout(t))
-	fmt.Printf("EOF received: %v\n", err)
-	if err != nil /* && err is timeout (?) */ {
+	if err != nil {
+		if !os.IsTimeout(err) {
+			fmt.Fprintf(os.Stderr, "unknown error while waiting for process: %v", err)
+		}
 		fmt.Println("killing process")
 		if err = cp.cmd.Process.Kill(); err != nil {
 			panic(err)
@@ -272,7 +276,6 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 	case perr := <-cp.errs:
 		cp.wasAwaited = true
 		if perr != nil {
-			// XXX: that's wrong: cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, perr)
 			return cp.cmd.ProcessState, buf, perr
 		}
 		return cp.cmd.ProcessState, buf, nil

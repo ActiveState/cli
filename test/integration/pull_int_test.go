@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/stretchr/testify/suite"
 )
 
 type PullIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {

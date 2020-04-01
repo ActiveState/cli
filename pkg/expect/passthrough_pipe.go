@@ -14,7 +14,7 @@ type errPassthroughTimeout struct {
 func (errPassthroughTimeout) Timeout() bool { return true }
 
 // bufsize is the size of the PassthroughPipe channel
-const bufsize = 1024
+const bufsize = 4096
 
 // PassthroughPipe pipes data from a io.Reader and allows setting a read
 // deadline. If a timeout is reached the error is returned, otherwise the error
@@ -50,7 +50,7 @@ func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
 				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
 				select {
 				case p.errC <- err:
-					fmt.Printf("signaling error: %v\n", err)
+					// fmt.Printf("signaling error: %v\n", err)
 				case <-ctx.Done():
 				}
 				break readLoop
@@ -122,7 +122,7 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 	case b := <-p.pipeC:
 		buf[0] = b
 	case e := <-p.errC:
-		fmt.Printf("error: %v\n", e)
+		// fmt.Printf("error: %v\n", e)
 		return 0, e
 	case <-time.After(p.deadline.Sub(time.Now())):
 		// force stop consuming

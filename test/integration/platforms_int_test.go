@@ -3,22 +3,21 @@ package integration
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
 )
 
 type PlatformsIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PlatformsIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("platforms", "search")
+	cp := ts.Spawn("platforms", "search")
 	expectations := []string{
 		"Darwin",
 		"Darwin",
@@ -28,56 +27,56 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 		"Windows",
 	}
 	for _, expectation := range expectations {
-		suite.Expect(expectation)
+		cp.Expect(expectation)
 	}
-	suite.Wait()
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PlatformsIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
 	cmds := []string{"", "search"}
 	for _, cmd := range cmds {
-		suite.Spawn("platforms", cmd)
+		cp := ts.Spawn("platforms", cmd)
 		expectations := []string{
 			"Linux",
 			"4.15.0",
 			"64",
 		}
 		for _, expectation := range expectations {
-			suite.Expect(expectation)
+			cp.Expect(expectation)
 		}
-		suite.Wait()
+		cp.ExpectExitCode(0)
 	}
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PlatformsIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.LoginAsPersistentUser()
+	ts.LoginAsPersistentUser()
 	defer func() {
-		suite.Spawn("auth", "logout")
-		suite.ExpectExitCode(0)
+		cp := ts.Spawn("auth", "logout")
+		cp.ExpectExitCode(0)
 	}()
 
 	platform := "Windows"
 	version := "10.0.17134.1"
 
-	suite.Spawn("platforms", "add", platform, version)
-	suite.ExpectExitCode(0)
-	suite.Spawn("platforms", "remove", platform, version)
-	suite.ExpectExitCode(0)
+	cp := ts.Spawn("platforms", "add", platform, version)
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("platforms", "remove", platform, version)
+	cp.ExpectExitCode(0)
 }
 
-func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
+func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/cli-integration-tests/ExercisePlatforms"`
-	suite.Suite.PrepareActiveStateYAML(dir, asyData)
+	ts.PrepareActiveStateYAML(asyData)
 }
 
 func TestPlatformsIntegrationTestSuite(t *testing.T) {

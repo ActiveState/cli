@@ -86,7 +86,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invaild() {
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
 	cp.Expect("The requested project junk/junk could not be found.")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
@@ -109,7 +109,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 
 	cp := ts.Spawn("packages", "--commit", "junk")
 	cp.Expect("Cannot obtain")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
@@ -120,7 +120,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 
 	cp := ts.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
 	cp.Expect("No data")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
@@ -221,7 +221,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 
 	cp := ts.Spawn("packages", "search", "numpy", "--language=bad")
 	cp.Expect("Cannot obtain search")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 const (

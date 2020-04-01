@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/stretchr/testify/suite"
 )
 
 type TesterIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 // TestActivatedEnv is a regression test for the following tickets:
@@ -25,8 +25,7 @@ func (suite *TesterIntegrationTestSuite) TestInActivatedEnv() {
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
 
-	p := suite.Spawn("activate")
-	defer p.Close()
+	p := ts.Spawn("activate")
 
 	p.Expect("Activating state: ActiveState-CLI/Python3")
 	p.WaitForInput(10 * time.Second)
@@ -46,7 +45,7 @@ func (suite *TesterIntegrationTestSuite) TestInActivatedEnv() {
 	)
 }
 
-func (suite *TesterIntegrationTestSuite) expectTerminateBatchJob(p *integration.Process) {
+func (suite *TesterIntegrationTestSuite) expectTerminateBatchJob(p *conproc.ConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
 		p.Expect("Terminate batch job")

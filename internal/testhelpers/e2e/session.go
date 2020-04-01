@@ -100,13 +100,17 @@ func (s *Session) SpawnCustomWithOpts(exe string, opts ...SpawnOptions) *conproc
 		s.cp.Close()
 	}
 
-	execu := filepath.Join(s.Dirs.Bin, filepath.Base(exe))
-	fail := fileutils.CopyFile(exe, execu)
-	require.NoError(s.t, fail.ToError())
+	execu := exe
+	// if executable is provided as absolute path, copy it to temporary directory
+	if filepath.IsAbs(exe) {
+		execu = filepath.Join(s.Dirs.Bin, filepath.Base(exe))
+		fail := fileutils.CopyFile(exe, execu)
+		require.NoError(s.t, fail.ToError())
 
-	permissions, _ := permbits.Stat(execu)
-	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(execu, permissions))
+		permissions, _ := permbits.Stat(execu)
+		permissions.SetUserExecute(true)
+		require.NoError(s.t, permbits.Chmod(execu, permissions))
+	}
 
 	env := s.env
 
@@ -165,7 +169,6 @@ func (s *Session) PrepareFile(path, contents string) {
 
 func (s *Session) LoginUser(userName string) {
 	p := s.Spawn("auth", "--username", userName, "--password", userName)
-	defer p.Close()
 
 	p.Expect("successfully authenticated", authnTimeout)
 	p.ExpectExitCode(0)
@@ -174,7 +177,6 @@ func (s *Session) LoginUser(userName string) {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
-	defer p.Close()
 
 	p.Expect("successfully authenticated", authnTimeout)
 	p.ExpectExitCode(0)
@@ -182,7 +184,6 @@ func (s *Session) LoginAsPersistentUser() {
 
 func (s *Session) LogoutUser() {
 	p := s.Spawn("auth", "logout")
-	defer p.Close()
 
 	p.Expect("logged out")
 	p.ExpectExitCode(0)
@@ -197,7 +198,6 @@ func (s *Session) CreateNewUser() string {
 	email := fmt.Sprintf("%s@test.tld", username)
 
 	p := s.Spawn("auth", "signup")
-	defer p.Close()
 
 	p.Expect("username:")
 	p.SendLine(username)

@@ -5,22 +5,21 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/state/secrets"
 	"github.com/stretchr/testify/suite"
 )
 
 type SecretsIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 	originalWd string
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_output_editorv0")
-	defer cb()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(
-		tempDir,
+	ts.PrepareActiveStateYAML(
 		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
 	)
 
@@ -34,20 +33,19 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 	expected, err := json.Marshal(secret)
 	suite.Require().NoError(err)
 
-	suite.LoginAsPersistentUser()
-	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
-	suite.ExpectExitCode(0)
-	suite.Spawn("secrets", "--output", "editor.v0")
-	suite.ExpectExitCode(0)
-	suite.Expect(fmt.Sprintf("[%s]", expected))
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("secrets", "--output", "editor.v0")
+	cp.Expect(fmt.Sprintf("[%s]", expected))
+	cp.ExpectExitCode(0)
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_get_editorv0")
-	defer cb()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(
-		tempDir,
+	ts.PrepareActiveStateYAML(
 		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
 	)
 
@@ -62,22 +60,22 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
 	expected, err := json.Marshal(secret)
 	suite.Require().NoError(err)
 
-	suite.LoginAsPersistentUser()
-	suite.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
-	suite.ExpectExitCode(0)
-	suite.Empty(suite.UnsyncedTrimSpaceOutput())
-	suite.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
-	suite.ExpectExitCode(0)
-	suite.Expect("test-value\"}")
-	suite.Equal(string(expected), suite.UnsyncedTrimSpaceOutput())
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value", "--output", "editor.v0")
+	suite.T().Log("before exit code 1")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot())
+	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "editor.v0")
+	suite.T().Log("before exit code 2")
+	cp.ExpectExitCode(0)
+	suite.Equal(string(expected), cp.TrimmedSnapshot())
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("secrets_test_json")
-	defer cb()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(
-		tempDir,
+	ts.PrepareActiveStateYAML(
 		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
 	)
 
@@ -92,14 +90,13 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	expected, err := json.Marshal(secret)
 	suite.Require().NoError(err)
 
-	suite.LoginAsPersistentUser()
-	suite.Spawn("secrets", "set", "project.test-secret", "test-value")
-	suite.ExpectExitCode(0)
-	suite.Empty(suite.UnsyncedTrimSpaceOutput())
-	suite.Spawn("secrets", "get", "project.test-secret", "--output", "json")
-	suite.ExpectExitCode(0)
-	suite.Expect("test-value\"}")
-	suite.Equal(string(expected), suite.UnsyncedTrimSpaceOutput())
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot())
+	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
+	cp.ExpectExitCode(0)
+	suite.Equal(string(expected), cp.TrimmedSnapshot())
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
