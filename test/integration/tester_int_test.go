@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/stretchr/testify/suite"
 )
@@ -18,8 +19,11 @@ type TesterIntegrationTestSuite struct {
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *TesterIntegrationTestSuite) TestInActivatedEnv() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
 
 	p := suite.Spawn("activate")
 	defer p.Close()

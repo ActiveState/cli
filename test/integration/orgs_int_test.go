@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
 )
 
 type OrganizationsIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
-	suite.LoginAsPersistentUser()
-	cp := suite.Spawn("orgs", "--output", "editor.v0")
-	defer cp.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("orgs", "--output", "editor.v0")
 	cp.ExpectExitCode(0)
 
 	org := struct {
@@ -34,7 +36,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.UnsyncedTrimSpaceOutput())
+	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.TrimmedSnapshot())
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {

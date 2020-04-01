@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/stretchr/testify/suite"
 )
@@ -13,10 +14,10 @@ type PullIntegrationTestSuite struct {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
-	tempDir, cb := suite.PrepareTemporaryWorkingDirectory("activate_test_forward")
-	defer cb()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir, `project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
 
 	result := struct {
 		Result map[string]bool `json:"result"`
@@ -29,9 +30,9 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 	expected, err := json.Marshal(result)
 	suite.Require().NoError(err)
 
-	suite.Spawn("pull", "--output", "editor.v0")
-	suite.Wait()
-	suite.Expect(string(expected))
+	cp := ts.Spawn("pull", "--output", "editor.v0")
+	cp.Expect(string(expected))
+	cp.ExpectExitCode(0)
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {

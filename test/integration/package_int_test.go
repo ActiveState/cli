@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -140,11 +139,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
+	// Note that the expected strings might change due to inventory changes
 	cp := ts.Spawn("packages", "search", "request")
 	expectations := []string{
 		"Name",
-		"aws-requests-auth",
-		"django-request-logging",
 		"requests",
 		"2.10.0",
 		"2.18.4",
@@ -154,8 +152,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"requests-oauthlib",
 		"requests3",
 		"requests_gpgauthlib",
-		"requestsexceptions",
-		"robotframework-requests",
 	}
 	for _, expectation := range expectations {
 		cp.Expect(expectation)
@@ -205,7 +201,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 	cp.Expect("MooseX-Getopt")
 	cp.Expect("MooseX-Role-Parameterized")
 	cp.Expect("MooseX-Role-WithOverloading")
-	cp.Expect("MooX-Types-MooseLike")
 	cp.ExpectExitCode(0)
 }
 
@@ -279,11 +274,15 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
+			/* XXX
 			if runtime.GOOS == "darwin" {
 				suite.T().Skip("integ test primitives bug affecting darwin")
 			}
+			*/
 
 			cp := ts.Spawn("packages", "import")
+			cp.Expect("Are you sure you want to do this")
+			cp.SendLine("n")
 			cp.ExpectNotExitCode(0, time.Second*60)
 		})
 	})
