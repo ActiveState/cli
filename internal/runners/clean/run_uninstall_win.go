@@ -12,7 +12,7 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-func run(params *RunParams, confirm confirmAble, outputer output.Outputer) error {
+func run(params *UninstallParams, confirm confirmAble, outputer output.Outputer) error {
 	logging.Debug("Removing cache path: %s", params.CachePath)
 	logging.Debug("Removing State Tool binary: %s", params.InstallPath)
 	logging.Debug("Removing config directory: %s", params.ConfigPath)
