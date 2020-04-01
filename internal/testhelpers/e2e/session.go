@@ -29,9 +29,11 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
+	cp         *conproc.ConsoleProcess
 	Dirs       *Dirs
 	env        []string
 	retainDirs bool
+	t          *testing.T
 }
 
 var (
@@ -43,7 +45,7 @@ var (
 )
 
 // executablePath returns the path to the state tool that we want to test
-func (s *Session) executablePath(t *testing.T) string {
+func (s *Session) executablePath() string {
 	ext := ""
 	if runtime.GOOS == "windows" {
 		ext = ".exe"
@@ -54,7 +56,7 @@ func (s *Session) executablePath(t *testing.T) string {
 
 	exec := filepath.Join(root, subdir, name)
 	if !fileutils.FileExists(exec) {
-		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
+		s.t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
 
 	return exec
@@ -73,35 +75,38 @@ func New(t *testing.T, retainDirs bool) *Session {
 		"ACTIVESTATE_PROJECT=",
 	}...)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs}
+	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(t *testing.T, args ...string) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(t, s.executablePath(t), WithArgs(args...))
+func (s *Session) Spawn(args ...string) *conproc.ConsoleProcess {
+	return s.SpawnCustomWithOpts(s.executablePath(), WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(t *testing.T, opts ...SpawnOptions) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(t, s.executablePath(t), opts...)
+func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *conproc.ConsoleProcess {
+	return s.SpawnCustomWithOpts(s.executablePath(), opts...)
 }
 
 // SpawnCustom executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCustom(t *testing.T, cmdName string, args ...string) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(t, cmdName, WithArgs(args...))
+func (s *Session) SpawnCustom(cmdName string, args ...string) *conproc.ConsoleProcess {
+	return s.SpawnCustomWithOpts(cmdName, WithArgs(args...))
 }
 
 // SpawnCustomWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCustomWithOpts(t *testing.T, exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
+func (s *Session) SpawnCustomWithOpts(exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
+	if s.cp != nil {
+		s.cp.Close()
+	}
 
 	execu := filepath.Join(s.Dirs.Bin, filepath.Base(exe))
 	fail := fileutils.CopyFile(exe, execu)
-	require.NoError(t, fail.ToError())
+	require.NoError(s.t, fail.ToError())
 
 	permissions, _ := permbits.Stat(execu)
 	permissions.SetUserExecute(true)
-	require.NoError(t, permbits.Chmod(execu, permissions))
+	require.NoError(s.t, permbits.Chmod(execu, permissions))
 
 	env := s.env
 
@@ -110,8 +115,8 @@ func (s *Session) SpawnCustomWithOpts(t *testing.T, exe string, opts ...SpawnOpt
 		Environment:    env,
 		WorkDirectory:  s.Dirs.Work,
 		RetainWorkDir:  true,
-		ObserveExpect:  observeExpectFn(s, t),
-		ObserveSend:    observeSendFn(s, t),
+		ObserveExpect:  observeExpectFn(s),
+		ObserveSend:    observeSendFn(s),
 		CmdName:        execu,
 	}
 
@@ -120,7 +125,8 @@ func (s *Session) SpawnCustomWithOpts(t *testing.T, exe string, opts ...SpawnOpt
 	}
 
 	console, err := conproc.NewConsoleProcess(pOpts)
-	require.NoError(t, err)
+	require.NoError(s.t, err)
+	s.cp = console
 
 	return console
 }
@@ -128,37 +134,37 @@ func (s *Session) SpawnCustomWithOpts(t *testing.T, exe string, opts ...SpawnOpt
 // PrepareActiveStateYAML creates a projectfile.Project instance from the
 // provided contents and saves the output to an as.y file within the named
 // directory.
-func (s *Session) PrepareActiveStateYAML(t *testing.T, contents string) {
+func (s *Session) PrepareActiveStateYAML(contents string) {
 	msg := "cannot setup activestate.yaml file"
 
 	contents = strings.TrimSpace(contents)
 	projectFile := &projectfile.Project{}
 
 	err := yaml.Unmarshal([]byte(contents), projectFile)
-	require.NoError(t, err, msg)
+	require.NoError(s.t, err, msg)
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	fail := projectFile.Save()
-	require.NoError(t, fail.ToError(), msg)
+	require.NoError(s.t, fail.ToError(), msg)
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
-func (s *Session) PrepareFile(t *testing.T, path, contents string) {
+func (s *Session) PrepareFile(path, contents string) {
 	errMsg := fmt.Sprintf("cannot setup file %q", path)
 
 	contents = strings.TrimSpace(contents)
 
 	err := os.MkdirAll(filepath.Dir(path), 0770)
-	require.NoError(t, err, errMsg)
+	require.NoError(s.t, err, errMsg)
 
 	bs := append([]byte(contents), '\n')
 
 	err = ioutil.WriteFile(path, bs, 0660)
-	require.NoError(t, err, errMsg)
+	require.NoError(s.t, err, errMsg)
 }
 
-func (s *Session) LoginUser(t *testing.T, userName string) {
-	p := s.Spawn(t, "auth", "--username", userName, "--password", userName)
+func (s *Session) LoginUser(userName string) {
+	p := s.Spawn("auth", "--username", userName, "--password", userName)
 	defer p.Close()
 
 	p.Expect("successfully authenticated", authnTimeout)
@@ -166,31 +172,31 @@ func (s *Session) LoginUser(t *testing.T, userName string) {
 }
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
-func (s *Session) LoginAsPersistentUser(t *testing.T) {
-	p := s.Spawn(t, "auth", "--username", PersistentUsername, "--password", PersistentPassword)
+func (s *Session) LoginAsPersistentUser() {
+	p := s.Spawn("auth", "--username", PersistentUsername, "--password", PersistentPassword)
 	defer p.Close()
 
 	p.Expect("successfully authenticated", authnTimeout)
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) LogoutUser(t *testing.T) {
-	p := s.Spawn(t, "auth", "logout")
+func (s *Session) LogoutUser() {
+	p := s.Spawn("auth", "logout")
 	defer p.Close()
 
 	p.Expect("logged out")
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser(t *testing.T) string {
+func (s *Session) CreateNewUser() string {
 	uid, err := uuid.NewRandom()
-	require.NoError(t, err)
+	require.NoError(s.t, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn(t, "auth", "signup")
+	p := s.Spawn("auth", "signup")
 	defer p.Close()
 
 	p.Expect("username:")
@@ -209,17 +215,17 @@ func (s *Session) CreateNewUser(t *testing.T) string {
 	return username
 }
 
-func observeSendFn(s *Session, t *testing.T) func(string, int, error) {
+func observeSendFn(s *Session) func(string, int, error) {
 	return func(msg string, num int, err error) {
 		if err == nil {
 			return
 		}
 
-		t.Fatalf("Could not send data to terminal\nerror: %v", err)
+		s.t.Fatalf("Could not send data to terminal\nerror: %v", err)
 	}
 }
 
-func observeExpectFn(s *Session, t *testing.T) func([]expect.Matcher, string, string, error) {
+func observeExpectFn(s *Session) func([]expect.Matcher, string, string, error) {
 	return func(matchers []expect.Matcher, raw, pty string, err error) {
 		if err == nil {
 			return
@@ -234,7 +240,7 @@ func observeExpectFn(s *Session, t *testing.T) func([]expect.Matcher, string, st
 
 		pty = strings.TrimRight(pty, " \n") + "\n"
 
-		t.Fatalf(
+		s.t.Fatalf(
 			"Could not meet expectation: Expectation: '%s'\nError: %v at\n%s\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
 			value, err, stacktrace.Get().String(), pty, raw,
 		)
@@ -243,8 +249,16 @@ func observeExpectFn(s *Session, t *testing.T) func([]expect.Matcher, string, st
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
+	if s.cp != nil {
+		s.cp.Close()
+	}
+
 	if s.retainDirs {
 		return nil
 	}
 	return s.Dirs.Close()
+}
+
+func (s *Session) WorkDirectory() string {
+	return s.Dirs.Work
 }

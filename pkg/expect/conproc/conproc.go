@@ -24,13 +24,14 @@ var (
 )
 
 type ConsoleProcess struct {
-	opts    Options
-	errs    chan error
-	console *expect.Console
-	cmd     *exec.Cmd
-	cmdName string
-	ctx     context.Context
-	cancel  func()
+	opts       Options
+	errs       chan error
+	console    *expect.Console
+	cmd        *exec.Cmd
+	cmdName    string
+	ctx        context.Context
+	cancel     func()
+	wasAwaited bool
 }
 
 // NewConsoleProcess bonds a command process with a console pty.
@@ -96,6 +97,9 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 }
 
 func (cp *ConsoleProcess) Close() error {
+	if !cp.wasAwaited {
+		fmt.Fprintf(os.Stderr, "WARNING: consoleProcess closed without being waited for!  You may have forgotten to call ExpectExitCode()\n")
+	}
 	cp.cancel()
 
 	_ = cp.opts.CleanUp()
@@ -260,17 +264,20 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		if err = cp.cmd.Process.Kill(); err != nil {
 			panic(err)
 		}
+		cp.wasAwaited = true
 		return nil, buf, err
 	}
 
 	select {
 	case perr := <-cp.errs:
+		cp.wasAwaited = true
 		if perr != nil {
 			// XXX: that's wrong: cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, perr)
 			return cp.cmd.ProcessState, buf, perr
 		}
 		return cp.cmd.ProcessState, buf, nil
 	case <-cp.ctx.Done():
+		cp.wasAwaited = true
 		return nil, buf, fmt.Errorf("context canceled")
 	}
 }

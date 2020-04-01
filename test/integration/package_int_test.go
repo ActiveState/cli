@@ -7,130 +7,140 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
 )
 
 type PackageIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	cp := ts.Spawn("packages")
+	cp.Expect("Name")
+	cp.Expect("pytest")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listCommand() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "list")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	cp := ts.Spawn("packages", "list")
+	cp.Expect("Name")
+	cp.Expect("pytest")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project() {
-	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List")
-	suite.Expect("Name")
-	suite.Expect("numpy")
-	suite.Expect("pytest")
-	suite.Wait()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("packages", "--namespace", "ActiveState-CLI/List")
+	cp.Expect("Name")
+	cp.Expect("numpy")
+	cp.Expect("pytest")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_name() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "--package", "py")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	cp := ts.Spawn("packages", "--package", "py")
+	cp.Expect("Name")
+	cp.Expect("pytest")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
-	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "py")
-	suite.Expect("Name")
-	suite.Expect("pytest")
-	suite.Wait()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "py")
+	cp.Expect("Name")
+	cp.Expect("pytest")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
-	suite.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "req")
-	suite.Expect("No packages to list")
-	suite.Wait()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("packages", "--namespace", "ActiveState-CLI/List", "--package", "req")
+	cp.Expect("No packages to list")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_invaild() {
-	suite.Spawn("packages", "--namespace", "junk/junk")
-	suite.Expect("The requested project junk/junk could not be found.")
-	suite.Wait()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("packages", "--namespace", "junk/junk")
+	cp.Expect("The requested project junk/junk could not be found.")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
-	suite.Expect("Name")
-	suite.Expect("numpy")
-	suite.Wait()
+	cp := ts.Spawn("packages", "--commit", "b350c879-b72a-48da-bbc2-d8d709a6182a")
+	cp.Expect("Name")
+	cp.Expect("numpy")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "--commit", "junk")
-	suite.Expect("Cannot obtain")
-	suite.Wait()
+	cp := ts.Spawn("packages", "--commit", "junk")
+	cp.Expect("Cannot obtain")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
-	suite.Expect("No data")
-	suite.Wait()
+	cp := ts.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
+	cp.Expect("No data")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
-	suite.Expect("No packages")
-	suite.Wait()
+	cp := ts.Spawn("packages", "--commit", "cd674adb-e89a-48ff-95c6-ad52a177537b")
+	cp.Expect("No packages")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "request")
+	cp := ts.Spawn("packages", "search", "request")
 	expectations := []string{
 		"Name",
 		"aws-requests-auth",
@@ -148,18 +158,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 		"robotframework-requests",
 	}
 	for _, expectation := range expectations {
-		suite.Expect(expectation)
+		cp.Expect(expectation)
 	}
-	suite.Wait()
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "requests", "--exact-term")
+	cp := ts.Spawn("packages", "search", "requests", "--exact-term")
 	expectations := []string{
 		"Name",
 		"requests",
@@ -171,57 +180,53 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"---",
 	}
 	for _, expectation := range expectations {
-		suite.Expect(expectation)
+		cp.Expect(expectation)
 	}
-	suite.Wait()
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
-	suite.Expect("No packages")
-	suite.Wait()
+	cp := ts.Spawn("packages", "search", "xxxrequestsxxx", "--exact-term")
+	cp.Expect("No packages")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "moose", "--language=perl")
-	suite.Expect("Name")
-	suite.Expect("MooseX-Getopt")
-	suite.Expect("MooseX-Role-Parameterized")
-	suite.Expect("MooseX-Role-WithOverloading")
-	suite.Expect("MooX-Types-MooseLike")
-	suite.Wait()
+	cp := ts.Spawn("packages", "search", "moose", "--language=perl")
+	cp.Expect("Name")
+	cp.Expect("MooseX-Getopt")
+	cp.Expect("MooseX-Role-Parameterized")
+	cp.Expect("MooseX-Role-WithOverloading")
+	cp.Expect("MooX-Types-MooseLike")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "numpy", "--language=perl")
-	suite.Expect("No packages")
-	suite.Wait()
+	cp := ts.Spawn("packages", "search", "numpy", "--language=perl")
+	cp.Expect("No packages")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.PrepareActiveStateYAML(tempDir)
-
-	suite.Spawn("packages", "search", "numpy", "--language=bad")
-	suite.Expect("Cannot obtain search")
-	suite.Wait()
+	cp := ts.Spawn("packages", "search", "numpy", "--language=bad")
+	cp.Expect("Cannot obtain search")
+	cp.ExpectExitCode(0)
 }
 
 const (
@@ -244,49 +249,49 @@ six==1.14.0
 )
 
 func (suite *PackageIntegrationTestSuite) TestPackage_import() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("PackageIntegrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	username := suite.CreateNewUser()
+	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	suite.Spawn("init", namespace, "python3", "--path="+tempDir, "--skeleton=editor")
-	suite.ExpectExitCode(0)
+	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.WorkDirectory(), "--skeleton=editor")
+	cp.ExpectExitCode(0)
 
-	suite.Spawn("push")
-	suite.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
-	suite.ExpectExitCode(0)
+	cp = ts.Spawn("push")
+	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	cp.ExpectExitCode(0)
 
-	reqsFilePath := filepath.Join(tempDir, reqsFileName)
+	reqsFilePath := filepath.Join(ts.WorkDirectory(), reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
-		suite.PrepareFile(reqsFilePath, badReqsData)
+		ts.PrepareFile(reqsFilePath, badReqsData)
 
-		suite.Spawn("packages", "import")
-		suite.ExpectNotExitCode(0, time.Second*60)
+		cp := ts.Spawn("packages", "import")
+		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 
 	suite.Run("valid requirements.txt", func() {
-		suite.PrepareFile(reqsFilePath, reqsData)
+		ts.PrepareFile(reqsFilePath, reqsData)
 
-		suite.Spawn("packages", "import")
-		suite.Expect("state pull")
-		suite.ExpectExitCode(0, time.Second*60)
+		cp := ts.Spawn("packages", "import")
+		cp.Expect("state pull")
+		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
 			if runtime.GOOS == "darwin" {
 				suite.T().Skip("integ test primitives bug affecting darwin")
 			}
 
-			suite.Spawn("packages", "import")
-			suite.ExpectNotExitCode(0, time.Second*60)
+			cp := ts.Spawn("packages", "import")
+			cp.ExpectNotExitCode(0, time.Second*60)
 		})
 	})
 }
 
-func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
+func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"`
-	suite.Suite.PrepareActiveStateYAML(dir, asyData)
+	ts.PrepareActiveStateYAML(asyData)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

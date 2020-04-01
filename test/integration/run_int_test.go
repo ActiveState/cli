@@ -18,14 +18,13 @@ import (
 )
 
 type RunIntegrationTestSuite struct {
-	e2e.Suite
+	suite.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile() {
-
+func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(suite.WorkDirectory(), "interrupt.go"))
+	fileutils.CopyFile(interruptScript, filepath.Join(ts.WorkDirectory(), "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`
@@ -58,21 +57,18 @@ scripts:
     constraints:
       os: windows
 `)
-	suite.PrepareActiveStateYAML(configFileContent)
+	ts.PrepareActiveStateYAML(configFileContent)
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
-	suite.Suite.SetupTest()
 	if runtime.GOOS == "windows" {
 		if _, err := exec.LookPath("bash"); err != nil {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-	suite.createProjectFile()
 }
 
 func (suite *RunIntegrationTestSuite) TearDownTest() {
-	suite.Suite.TearDownTest()
 	projectfile.Reset()
 }
 
@@ -90,11 +86,14 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *conproc.Consol
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	cp := suite.Spawn("activate")
-	defer cp.Close()
+	suite.createProjectFile(ts)
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("activate")
 	cp.Expect("Activating state: ActiveState-CLI/Python3")
 	cp.WaitForInput(10 * time.Second)
 
@@ -114,11 +113,14 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
 
-	cp := suite.Spawn("run", "test-interrupt")
-	defer cp.Close()
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
 	// interrupt the first (very long) sleep
 	cp.SendCtrlC()
@@ -131,11 +133,14 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
 
-	cp := suite.Spawn("run", "test-interrupt")
-	defer cp.Close()
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
 	cp.SendCtrlC()
 	cp.Expect("received interrupt", 3*time.Second)
@@ -149,18 +154,25 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
 
-	cp := suite.Spawn("run", "helloWorld")
-	defer cp.Close()
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("run", "helloWorld")
+
 	cp.Expect("Hello World!")
 	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
-	cp := suite.Spawn("run", "-h")
-	defer cp.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
+
+	cp := ts.Spawn("run", "-h")
 	cp.Expect("Usage")
 	cp.Expect("Arguments")
 	cp.ExpectExitCode(0)

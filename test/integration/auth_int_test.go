@@ -25,20 +25,21 @@ func init() {
 }
 
 type AuthIntegrationTestSuite struct {
-	e2e.Suite
+	suite.Suite
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	username := suite.CreateNewUser()
-	suite.LogoutUser()
-	suite.interactiveLogin(username)
-	suite.LogoutUser()
-	suite.loginFlags(username)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	username := ts.CreateNewUser()
+	ts.LogoutUser()
+	suite.interactiveLogin(ts, username)
+	ts.LogoutUser()
+	suite.loginFlags(ts, username)
 }
 
-func (suite *AuthIntegrationTestSuite) interactiveLogin(username string) {
-	cp := suite.Spawn("auth")
-	defer cp.Close()
+func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
+	cp := ts.Spawn("auth")
 	cp.Expect("username:")
 	cp.SendLine(username)
 	cp.Expect("password:")
@@ -47,13 +48,13 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(username string) {
 	cp.ExpectExitCode(0)
 
 	// still logged in?
-	cp = suite.Spawn("auth")
-	cp.Expect("You are logged in")
-	cp.ExpectExitCode(0)
+	c2 := ts.Spawn("auth")
+	c2.Expect("You are logged in")
+	c2.ExpectExitCode(0)
 }
 
-func (suite *AuthIntegrationTestSuite) loginFlags(username string) {
-	cp := suite.Spawn("auth", "--username", username, "--password", "bad-password")
+func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
+	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
 	cp.Expect("Authentication failed")
 	cp.Expect("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(0)
@@ -76,9 +77,12 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
 
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
 	expected := string(data)
-	suite.LoginAsPersistentUser()
-	cp := suite.Spawn("auth", "--output", method)
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("auth", "--output", method)
 	cp.Expect("false}")
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
@@ -101,7 +105,10 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	suite.Require().NoError(err)
 	expected := string(data)
 
-	cp := suite.Spawn("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor.v0")
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())

@@ -17,7 +17,7 @@ import (
 )
 
 type ActivateIntegrationTestSuite struct {
-	e2e.Suite
+	suite.Suite
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
@@ -33,12 +33,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	suite.LoginAsPersistentUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
 
-	cp := suite.Spawn("activate", "ActiveState-CLI/Python3")
-	defer cp.Close()
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
-	cp.SendLine(suite.WorkDirectory())
+	cp.SendLine(ts.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
@@ -51,11 +52,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		suite.T().Skip("not currently testing this OS")
 	}
 
-	suite.LoginAsPersistentUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
 
 	projectName := "Python-LinuxWorks"
-	cp := suite.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+suite.WorkDirectory())
-	defer cp.Close()
+	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.WorkDirectory())
 
 	cp.Expect("Activating state")
 	cp.Expect("activated state", 120*time.Second)
@@ -71,16 +73,17 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	// temp skip // pythonExe := "python" + version
 
-	suite.LoginAsPersistentUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
 
-	cp := suite.SpawnWithOpts(
+	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Python"+version),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		e2e.AppendEnv(extraEnv...),
 	)
-	defer cp.Close()
 	cp.Expect("Where would you like to checkout")
-	cp.SendLine(suite.Session.Dirs.Work)
+	cp.SendLine(ts.WorkDirectory())
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state", 120*time.Second)
@@ -119,30 +122,31 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
 		project = "Python3"
 	}
 
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
 	contents := strings.TrimSpace(fmt.Sprintf(`
 project: "https://platform.activestate.com/ActiveState-CLI/%s"
 branch: %s
 version: %s
 `, project, constants.BranchName, constants.Version))
 
-	suite.PrepareActiveStateYAML(contents)
+	ts.PrepareActiveStateYAML(contents)
 
 	fmt.Printf("login \n")
-	suite.LoginAsPersistentUser()
+	ts.LoginAsPersistentUser()
 	fmt.Printf("logged in \n")
 
 	// Ensure we have the most up to date version of the project before activating
-	cp := suite.SpawnWithOpts(
+	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("pull"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	defer cp.Close()
 	cp.Expect("Your activestate.yaml has been updated to the latest version available")
 	cp.Expect("If you have any active instances of this project open in other terminals")
 	cp.ExpectExitCode(0)
 
-	c2 := suite.Spawn("activate")
-	defer c2.Close()
+	c2 := ts.Spawn("activate")
 	c2.Expect(fmt.Sprintf("Activating state: ActiveState-CLI/%s", project))
 
 	// not waiting for activation, as we test that part in a different test
@@ -152,9 +156,11 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
-	suite.LoginAsPersistentUser()
-	cp := suite.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
-	defer cp.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("activate", "ActiveState-CLI/Python3", "--output", method)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("[activated-JSON]")
@@ -162,7 +168,9 @@ func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
-	fail := fileutils.Mkdir(suite.WorkDirectory(), "foo", "bar", "baz")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	fail := fileutils.Mkdir(ts.WorkDirectory(), "foo", "bar", "baz")
 	suite.Require().NoError(fail.ToError())
 
 	// Create the project file at the root of the temp dir
@@ -172,21 +180,19 @@ branch: %s
 version: %s
 `, constants.BranchName, constants.Version))
 
-	suite.PrepareActiveStateYAML(content)
+	ts.PrepareActiveStateYAML(content)
 
 	// Pull to ensure we have an up to date config file
-	cp := suite.Spawn("pull")
-	defer cp.Close()
+	cp := ts.Spawn("pull")
 	cp.Expect("Your activestate.yaml has been updated to the latest version available")
 	cp.Expect("If you have any active instances of this project open in other terminals")
 	cp.ExpectExitCode(0)
 
 	// Activate in the subdirectory
-	c2 := suite.SpawnWithOpts(
+	c2 := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
-		e2e.WithWorkDirectory(filepath.Join(suite.WorkDirectory(), "foo", "bar", "baz")),
+		e2e.WithWorkDirectory(filepath.Join(ts.WorkDirectory(), "foo", "bar", "baz")),
 	)
-	defer c2.Close()
 	c2.Expect("Activating state: ActiveState-CLI/Python3")
 
 	c2.WaitForInput()

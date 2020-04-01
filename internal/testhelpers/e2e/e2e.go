@@ -27,43 +27,43 @@ func (s *Suite) TearDownTest() {
 }
 
 func (s *Suite) Spawn(args ...string) *conproc.ConsoleProcess {
-	return s.Session.Spawn(s.T(), args...)
+	return s.Session.Spawn(args...)
 }
 
 func (s *Suite) SpawnWithOpts(opts ...SpawnOptions) *conproc.ConsoleProcess {
-	return s.Session.SpawnWithOpts(s.T(), opts...)
+	return s.Session.SpawnWithOpts(opts...)
 }
 
 func (s *Suite) SpawnCustom(cmdName string, args ...string) *conproc.ConsoleProcess {
-	return s.Session.SpawnCustom(s.T(), cmdName, args...)
+	return s.Session.SpawnCustom(cmdName, args...)
 }
 
 func (s *Suite) SpawnCustomWithOpts(exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
-	return s.Session.SpawnCustomWithOpts(s.T(), exe, opts...)
+	return s.Session.SpawnCustomWithOpts(exe, opts...)
 }
 
 func (s *Suite) PrepareActiveStateYAML(contents string) {
-	s.Session.PrepareActiveStateYAML(s.T(), contents)
+	s.Session.PrepareActiveStateYAML(contents)
 }
 
 func (s *Suite) PrepareFile(path, contents string) {
-	s.Session.PrepareFile(s.T(), path, contents)
+	s.Session.PrepareFile(path, contents)
 }
 
 func (s *Suite) CreateNewUser() string {
-	return s.Session.CreateNewUser(s.T())
+	return s.Session.CreateNewUser()
 }
 
 func (s *Suite) LoginAsPersistentUser() {
-	s.Session.LoginAsPersistentUser(s.T())
+	s.Session.LoginAsPersistentUser()
 }
 
 func (s *Suite) LoginUser(userName string) {
-	s.Session.LoginUser(s.T(), userName)
+	s.Session.LoginUser(userName)
 }
 
 func (s *Suite) LogoutUser() {
-	s.Session.LogoutUser(s.T())
+	s.Session.LogoutUser()
 }
 
 func (s *Suite) WorkDirectory() string {
