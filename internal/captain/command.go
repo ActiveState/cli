@@ -73,6 +73,10 @@ func (c *Command) UsageText() string {
 	return c.cobra.UsageString()
 }
 
+func (c *Command) Short() string {
+	return c.cobra.Short
+}
+
 func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()

@@ -57,8 +57,8 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestRun() {
-	runner := NewClean(&testOutputer{}, &confirmMock{confirm: true})
-	err := runner.Run(&RunParams{
+	runner := NewUninstall(&testOutputer{}, &confirmMock{confirm: true})
+	err := runner.Run(&UninstallParams{
 		ConfigPath:  suite.configPath,
 		CachePath:   suite.cachePath,
 		InstallPath: suite.installPath,
@@ -78,8 +78,8 @@ func (suite *CleanTestSuite) TestRun() {
 }
 
 func (suite *CleanTestSuite) TestRun_PromptNo() {
-	runner := NewClean(&testOutputer{}, &confirmMock{})
-	err := runner.Run(&RunParams{})
+	runner := NewUninstall(&testOutputer{}, &confirmMock{})
+	err := runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 
 	suite.Require().DirExists(suite.configPath)
@@ -93,8 +93,8 @@ func (suite *CleanTestSuite) TestRun_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := NewClean(&testOutputer{}, &confirmMock{})
-	err := runner.Run(&RunParams{})
+	runner := NewUninstall(&testOutputer{}, &confirmMock{})
+	err := runner.Run(&UninstallParams{})
 	suite.Require().Error(err)
 }
 

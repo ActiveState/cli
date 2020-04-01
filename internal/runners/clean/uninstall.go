@@ -14,32 +14,32 @@ type confirmAble interface {
 	Confirm(message string, defaultChoice bool) (bool, *failures.Failure)
 }
 
-type Clean struct {
+type Uninstall struct {
 	out     output.Outputer
 	confirm confirmAble
 }
 
-type RunParams struct {
+type UninstallParams struct {
 	Force       bool
 	ConfigPath  string
 	CachePath   string
 	InstallPath string
 }
 
-func NewClean(outputer output.Outputer, confirmer confirmAble) *Clean {
-	return &Clean{
+func NewUninstall(outputer output.Outputer, confirmer confirmAble) *Uninstall {
+	return &Uninstall{
 		out:     outputer,
 		confirm: confirmer,
 	}
 }
 
-func (c *Clean) Run(params *RunParams) error {
+func (c *Uninstall) Run(params *UninstallParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
-		return errors.New(locale.T("err_clean_activated"))
+		return errors.New(locale.T("err_uninstall_activated"))
 	}
 
 	if !params.Force {
-		ok, fail := c.confirm.Confirm(locale.T("clean_confirm_remove"), false)
+		ok, fail := c.confirm.Confirm(locale.T("uninstall_confirm"), false)
 		if fail != nil {
 			return fail.ToError()
 		}
