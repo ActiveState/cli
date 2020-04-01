@@ -1462,3 +1462,5 @@ err_userrc_notfound:
   other: "Could not update your environment as your RC file could not be found, expecting to find one of '{{.V0}}' in your home directory."
 err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
+err_windows_registry:
+  other: Error while interacting with windows registry
