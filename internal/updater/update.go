@@ -62,6 +62,10 @@ func (u *Updater) fromStream(path string, updateWith io.Reader) (err error, errR
 		// copy unsuccessful
 		errRecover = os.Rename(oldPath, path)
 	} else {
+		// On macOS if the original binary file is removed we will
+		// not be able to start any child processes. Instead we
+		// leave the old file and it is up to the caller to use
+		// the RemoveOld() function
 		if runtime.GOOS != "darwin" {
 			// copy successful, remove the old binary
 			errRemove := os.Remove(oldPath)
