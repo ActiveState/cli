@@ -35,13 +35,13 @@ func NewUninstall(outputer output.Outputer, confirmer confirmAble) *Uninstall {
 	}
 }
 
-func (c *Uninstall) Run(params *UninstallParams) error {
+func (u *Uninstall) Run(params *UninstallParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
 		return errors.New(locale.T("err_uninstall_activated"))
 	}
 
 	if !params.Force {
-		ok, fail := c.confirm.Confirm(locale.T("uninstall_confirm"), false)
+		ok, fail := u.confirm.Confirm(locale.T("uninstall_confirm"), false)
 		if fail != nil {
 			return fail.ToError()
 		}
@@ -54,5 +54,5 @@ func (c *Uninstall) Run(params *UninstallParams) error {
 		"Cleaning the following paths:\n %s",
 		strings.Join([]string{params.CachePath, params.ConfigPath, params.InstallPath}, "\n "),
 	)
-	return runUninstall(params)
+	return runUninstall(params, u.confirm, u.out)
 }
