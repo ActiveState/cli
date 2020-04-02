@@ -20,6 +20,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // fromStream includes source code from: https://github.com/inconshreveable/go-update/blob/master/apply.go#L48
@@ -71,7 +73,10 @@ func (u *Updater) fromStream(path string, updateWith io.Reader) (err error, errR
 			errRemove := os.Remove(oldPath)
 			// windows has trouble with removing old binaries, so hide it instead
 			if errRemove != nil {
-				_ = hideFile(oldPath)
+				errHide := hideFile(oldPath)
+				if errHide != nil {
+					logging.Error("Encountered error attempting to hide file: %v", err)
+				}
 			}
 		}
 	}
