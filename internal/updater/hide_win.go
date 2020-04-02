@@ -26,6 +26,9 @@ func hideFile(path string) error {
 	setFileAttributes := kernel32.NewProc("SetFileAttributesW")
 
 	r1, _, err := setFileAttributes.Call(uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path))), 2)
+	if err != nil {
+		logging.Error("Encountered error setting file attributes: %v", err)
+	}
 
 	if r1 == 0 {
 		return err
