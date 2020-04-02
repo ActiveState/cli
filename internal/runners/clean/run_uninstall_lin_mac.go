@@ -30,10 +30,6 @@ func runUninstall(params *UninstallParams, confirm confirmAble, outputer output.
 	return nil
 }
 
-func removeCache(cachePath string) error {
-	return os.RemoveAll(cachePath)
-}
-
 func removeConfig(configPath string) error {
 	file, err := os.Open(filepath.Join(configPath, "log.txt"))
 	if err != nil {

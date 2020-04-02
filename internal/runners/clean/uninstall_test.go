@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -56,9 +57,11 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
 
-	_, fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
-	suite.Require().NoError(fail.ToError())
-	suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
+	if runtime.GOOS != "windows" {
+		_, fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
+		suite.Require().NoError(fail.ToError())
+		suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
+	}
 }
 
 func (suite *CleanTestSuite) TestUninstall() {
