@@ -148,7 +148,11 @@ func (em *pathErrorMatcher) Match(v interface{}) bool {
 	if !ok {
 		return false
 	}
-	return *pathError == em.pathError
+	expected := em.pathError
+	if expected.Path == "" {
+		expected.Path = pathError.Path
+	}
+	return *pathError == expected
 }
 
 func (em *pathErrorMatcher) Criteria() interface{} {
@@ -345,7 +349,7 @@ func StdinClosed(opts *ExpectOpts) error {
 	opts.Matchers = append(opts.Matchers, &pathErrorMatcher{
 		pathError: os.PathError{
 			Op:   "read",
-			Path: "|1",
+			Path: "",
 			Err:  os.ErrClosed,
 		},
 	})
