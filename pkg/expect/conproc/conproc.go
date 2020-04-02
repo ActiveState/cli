@@ -234,8 +234,11 @@ func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration)
 func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
 	// TODO: communicate exit code info properly
 	_, buf, err := cp.wait(timeout...)
-	if err == nil && exitCode != 0 {
-		return
+	if err == nil {
+		if exitCode != 0 {
+			return
+		}
+		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been 0"))
 	}
 	eexit, ok := err.(*exec.ExitError)
 	if !ok {

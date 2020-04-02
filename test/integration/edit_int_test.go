@@ -86,7 +86,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
 	cp.Stop()
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
