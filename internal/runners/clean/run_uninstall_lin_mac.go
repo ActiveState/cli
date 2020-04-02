@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-func run(params *UninstallParams, confirm confirmAble, outputer output.Outputer) error {
+func runUninstall(params *UninstallParams, confirm confirmAble, outputer output.Outputer) error {
 	err := removeCache(params.CachePath)
 	if err != nil {
 		return err
