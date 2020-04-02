@@ -57,7 +57,7 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
 	cp.Expect("Authentication failed")
 	cp.Expect("You are not authorized, did you provide valid login credentials?")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 }
 
 type userJSON struct {
