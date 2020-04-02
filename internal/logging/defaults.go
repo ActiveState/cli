@@ -45,13 +45,13 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 		if l.file != nil {
 			if err := l.file.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, err)
+				data["log_file_close_error"] = err.Error()
 			} else {
 				logData, err := ioutil.ReadFile(filename)
 				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
+					data["log_file_read_error"] = err.Error()
 				} else {
-					data["log_data"] = string(logData)
+					data["log_file_data"] = string(logData)
 				}
 			}
 			l.file = nil // unset so that it is reset later in this func
