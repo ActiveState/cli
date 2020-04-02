@@ -55,7 +55,7 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 }
 
 func newCacheCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewCache(output, prompt.New())
+	runner := clean.NewCache(output, prompt.New(), config.CachePath())
 	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
@@ -70,14 +70,13 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			params.Path = config.CachePath()
 			return runner.Run(&params)
 		},
 	)
 }
 
 func newConfigCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewConfig(output, prompt.New())
+	runner := clean.NewConfig(output, prompt.New(), config.ConfigPath())
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
 		"config",
@@ -92,7 +91,6 @@ func newConfigCommand(output output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			params.Path = config.ConfigPath()
 			return runner.Run(&params)
 		},
 	)

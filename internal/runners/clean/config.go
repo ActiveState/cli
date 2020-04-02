@@ -13,6 +13,7 @@ import (
 type Config struct {
 	output  output.Outputer
 	confirm confirmAble
+	path    string
 }
 
 type ConfigParams struct {
@@ -20,10 +21,11 @@ type ConfigParams struct {
 	Force bool
 }
 
-func NewConfig(out output.Outputer, confirmer confirmAble) *Config {
+func NewConfig(out output.Outputer, confirmer confirmAble, path string) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirmer,
+		path:    path,
 	}
 }
 

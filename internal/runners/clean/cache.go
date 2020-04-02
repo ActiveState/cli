@@ -13,17 +13,18 @@ import (
 type Cache struct {
 	output  output.Outputer
 	confirm confirmAble
+	path    string
 }
 
 type CacheParams struct {
-	Path  string
 	Force bool
 }
 
-func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
+func NewCache(out output.Outputer, confirmer confirmAble, path string) *Cache {
 	return &Cache{
 		output:  out,
 		confirm: confirmer,
+		path:    path,
 	}
 }
 
