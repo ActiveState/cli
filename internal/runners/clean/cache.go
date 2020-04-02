@@ -43,6 +43,6 @@ func (c *Cache) Run(params *CacheParams) error {
 		}
 	}
 
-	logging.Debug("Removing cache path: %s", params.Path)
-	return removeCache(params.Path)
+	logging.Debug("Removing cache path: %s", c.path)
+	return removeCache(c.path)
 }

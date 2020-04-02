@@ -17,7 +17,6 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Path  string
 	Force bool
 }
 
@@ -44,6 +43,6 @@ func (c *Config) Run(params *ConfigParams) error {
 		}
 	}
 
-	logging.Debug("Removing config directory: %s", params.Path)
-	return removeConfig(params.Path)
+	logging.Debug("Removing config directory: %s", c.path)
+	return removeConfig(c.path)
 }
