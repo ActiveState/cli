@@ -342,9 +342,18 @@ func CleanOld() error {
 	}
 	oldFile := filepath.Join(path, ".%s.old")
 
-	if fileutils.FileExists(oldFile) {
-		err = os.Remove(oldFile)
+	if !fileutils.FileExists(oldFile) {
+		return nil
 	}
 
-	return err
+	err = os.Remove(oldFile)
+	if err != nil {
+		errHide := hideFile(oldFile)
+		if errHide != nil {
+			return errHide
+		}
+		return err
+	}
+
+	return nil
 }
