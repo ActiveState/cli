@@ -1,22 +1,13 @@
 package runtime
 
 import (
-	"crypto/sha1"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -44,6 +35,9 @@ var (
 	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
 	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
 
+	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
+	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
+
 	// FailNoCommits represents a Failure due to a project not having commits yet (and thus no runtime).
 	FailNoCommits = failures.Type("runtime.runtime.nocommits", failures.FailUser)
 
@@ -67,83 +61,88 @@ var (
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	downloadDir        string
-	cacheDir           string
-	installDirs        []string
-	runtimeDownloader  Downloader
-	onDownload         func()
-	onInstall          func()
-	archiver           archiver.Archiver
-	progressUnarchiver unarchiver.Unarchiver // an unarchiver that can report its progress
+	cacheDir          string
+	runtimeDownloader Downloader
+	onDownload        func()
+	onInstall         func()
 }
 
 // InitInstaller creates a new RuntimeInstaller
 func InitInstaller() (*Installer, *failures.Failure) {
-	downloadDir, err := ioutil.TempDir("", "state-runtime-downloader")
-	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
-	}
-	logging.Debug("downloadDir: %s, cache path: %s", downloadDir, config.CachePath())
-	return NewInstaller(downloadDir, config.CachePath(), InitDownload(downloadDir))
+	logging.Debug("cache path: %s", config.CachePath())
+	return NewInstaller(config.CachePath(), InitDownload())
 }
 
 // NewInstaller creates a new RuntimeInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
-func NewInstaller(downloadDir string, cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
+func NewInstaller(cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		downloadDir:        downloadDir,
-		cacheDir:           cacheDir,
-		runtimeDownloader:  downloader,
-		archiver:           Archiver(),
-		progressUnarchiver: UnarchiverWithProgress(),
+		cacheDir:          cacheDir,
+		runtimeDownloader: downloader,
 	}
 
 	return installer, nil
 }
 
 // Install will download the installer archive and invoke InstallFromArchive
-func (installer *Installer) Install() (bool, *failures.Failure) {
+func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
-		return false, fail
+		return nil, false, fail
 	}
 
-	artifactMap, fail := installer.fetchArtifactMap()
+	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
 	if fail != nil {
-		return false, fail
+		return nil, false, fail
 	}
 
-	downloadArtfs := []*HeadChefArtifact{}
-	for installDir, artf := range artifactMap {
-		if !fileutils.DirExists(installDir) {
-			downloadArtfs = append(downloadArtfs, artf)
-		}
+	return installer.InstallArtifacts(artifacts)
+}
+
+func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResult) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+	var runtimeAssembler Assembler
+	if artifactsResult.IsAlternative {
+		runtimeAssembler, fail = NewAlternativeRuntime(artifactsResult.Artifacts, installer.cacheDir, artifactsResult.RecipeID)
+	} else {
+		runtimeAssembler, fail = NewCamelRuntime(artifactsResult.Artifacts, installer.cacheDir)
+	}
+	if fail != nil {
+		return nil, false, fail
 	}
 
-	if len(downloadArtfs) == 0 {
+	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
+
+	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
 		// Already installed, no need to download or install
 		logging.Debug("Nothing to download")
-		return false, nil
+		return runtimeAssembler, false, nil
 	}
 
 	if installer.onDownload != nil {
 		installer.onDownload()
 	}
-	progress := progress.New(nil)
+
+	progress := progress.New()
 	defer progress.Close()
 
-	archives, fail := installer.runtimeDownloader.Download(downloadArtfs, progress)
-	if fail != nil {
-		progress.Cancel()
-		return false, fail
+	if len(downloadArtfs) > 0 {
+		archives, fail := installer.runtimeDownloader.Download(downloadArtfs, runtimeAssembler, progress)
+		if fail != nil {
+			progress.Cancel()
+			return nil, false, fail
+		}
+
+		for k, v := range archives {
+			unpackArchives[k] = v
+		}
 	}
 
-	fail = installer.InstallFromArchives(archives, progress)
+	fail = installer.InstallFromArchives(unpackArchives, runtimeAssembler, progress)
 	if fail != nil {
 		progress.Cancel()
-		return false, fail
+		return nil, false, fail
 	}
 
-	return true, nil
+	return runtimeAssembler, true, nil
 }
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
@@ -167,34 +166,21 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 	return nil
 }
 
-func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *failures.Failure) {
-	artifactMap := map[string]*HeadChefArtifact{}
-
-	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
-	if fail != nil {
-		return artifactMap, fail
-	}
-
-	for _, artf := range artifacts {
-		installDir, fail := installer.installDir(artf)
-		if fail != nil {
-			return artifactMap, fail
-		}
-		artifactMap[installDir] = artf
-		installer.installDirs = append(installer.installDirs, installDir)
-	}
-
-	return artifactMap, nil
-}
-
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
 // script to install a runtime to the configured runtime dir. Any failures during this process will result in a
 // failed installation and the install-dir being removed.
-func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, progress *progress.Progress) *failures.Failure {
+func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
 	bar := progress.AddTotalBar(locale.T("installing"), len(archives))
 
+	fail := a.PreInstall()
+	if fail != nil {
+		progress.Cancel()
+		return fail
+	}
+
 	for archivePath, artf := range archives {
-		if fail := installer.InstallFromArchive(archivePath, artf, progress); fail != nil {
+		if fail := installer.InstallFromArchive(archivePath, artf, a, progress); fail != nil {
+			progress.Cancel()
 			return fail
 		}
 		bar.Increment()
@@ -204,80 +190,41 @@ func (installer *Installer) InstallFromArchives(archives map[string]*HeadChefArt
 }
 
 // InstallFromArchive will unpack artifact and install it
-func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, progress *progress.Progress) *failures.Failure {
-	var installDir string
-	var fail *failures.Failure
-	if installDir, fail = installer.installDir(artf); fail != nil {
-		return fail
-	}
-	installer.installDirs = append(installer.installDirs, installDir)
+func (installer *Installer) InstallFromArchive(archivePath string, artf *HeadChefArtifact, a Assembler, progress *progress.Progress) *failures.Failure {
 
-	if fail := fileutils.MkdirUnlessExists(installDir); fail != nil {
+	fail := a.PreUnpackArtifact(artf)
+	if fail != nil {
 		return fail
 	}
 
-	upb, fail := installer.unpackArchive(archivePath, installDir, progress)
+	installDir := a.InstallationDirectory(artf)
+	tmpRuntimeDir, upb, fail := installer.unpackArchive(a.Unarchiver(), archivePath, installDir, progress)
 	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
 
-	metaData, fail := InitMetaData(installDir)
+	fail = a.PostUnpackArtifact(artf, tmpRuntimeDir, archivePath, func() { upb.Increment() })
 	if fail != nil {
 		removeInstallDir(installDir)
 		return fail
 	}
-
-	if fail = installer.Relocate(metaData, upb); fail != nil {
-		removeInstallDir(installDir)
-		return fail
-	}
+	upb.Complete()
 
 	return nil
 }
 
-// InstallDirs returns all the artifact install paths required by the current configuration.
-// WARNING: This will always return an empty slice UNLESS Install() or InstallFromArchive() was called!
-func (installer *Installer) InstallDirs() []string {
-	return funk.Uniq(installer.installDirs).([]string)
-}
-
-func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failures.Failure) {
-	installDir := filepath.Join(installer.cacheDir, shortHash(artf.ArtifactID.String()))
-
-	if fileutils.FileExists(installDir) {
-		// install-dir exists, but is a regular file
-		return "", FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
-	}
-
-	return installDir, nil
-}
-
-func (installer *Installer) unpackArchive(archivePath string, installDir string, p *progress.Progress) (*progress.UnpackBar, *failures.Failure) {
-	// initial guess
-	if isEmpty, fail := fileutils.IsEmptyDir(installDir); fail != nil || !isEmpty {
-		if fail != nil {
-			return nil, fail
-		}
-		return nil, FailRuntimeInstallation.New("installer_err_installdir_notempty", installDir)
-	}
-
-	if fail := installer.validateArchive(archivePath); fail != nil {
-		return nil, fail
+func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath string, installDir string, p *progress.Progress) (string, *progress.UnpackBar, *failures.Failure) {
+	if fail := installer.validateArchive(ua, archivePath); fail != nil {
+		return "", nil, fail
 	}
 
 	tmpRuntimeDir := filepath.Join(installDir, uuid.New().String())
-	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
-
-	// the above only strips .gz, so account for .tar.gz use-case
-	// it's fine to run this on windows cause those files won't end in .tar anyway
-	archiveName = strings.TrimSuffix(archiveName, ".tar")
 
 	logging.Debug("Unarchiving %s", archivePath)
 
 	// During unpacking we count the number of files to unpack
 	var numUnpackedFiles int
-	ua := installer.progressUnarchiver
 	ua.SetNotifier(func(_ string, _ int64, isDir bool) {
 		if !isDir {
 			numUnpackedFiles++
@@ -286,8 +233,9 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 
 	// Prepare destination directory and open the archive file
 	archiveFile, archiveSize, err := ua.PrepareUnpacking(archivePath, tmpRuntimeDir)
+	logging.Debug("Unarchiving %s -> %s %d\n\n\n", archivePath, tmpRuntimeDir, archiveSize)
 	if err != nil {
-		return nil, FailArchiveInvalid.Wrap(err)
+		return tmpRuntimeDir, nil, FailArchiveInvalid.Wrap(err)
 
 	}
 	defer archiveFile.Close()
@@ -295,13 +243,13 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	// create an unpack bar and wrap the archiveFile, when we are done unpacking the
 	// bar should say `percentReportedAfterUnpack`%.
 	upb := p.AddUnpackBar(archiveSize, percentReportedAfterUnpack)
-	wrappedStream := progress.NewReaderProxy(upb, archiveFile)
+	wrappedStream := progress.NewReaderProxy(upb.Bar(), upb, archiveFile)
 
 	// unpack it
 	logging.Debug("Unarchiving to: %s", tmpRuntimeDir)
 	err = ua.Unarchive(wrappedStream, archiveSize, tmpRuntimeDir)
 	if err != nil {
-		return nil, FailArchiveInvalid.Wrap(err)
+		return tmpRuntimeDir, nil, FailArchiveInvalid.Wrap(err)
 	}
 
 	// report that we are unpacked.
@@ -313,44 +261,7 @@ func (installer *Installer) unpackArchive(archivePath string, installDir string,
 	// we reach 100%  (touching here means, renaming strings in Relocate())
 	upb.ReScale(numUnpackedFiles)
 
-	// Detect the install dir
-	// Python runtimes on MacOS work where they are unarchived so we do not
-	// need to do any detection of the install directory
-	var tmpInstallDir string
-	installDirs := strings.Split(constants.RuntimeInstallDirs, ",")
-	for _, dir := range installDirs {
-		currentDir := filepath.Join(tmpRuntimeDir, archiveName, dir)
-		if fileutils.DirExists(currentDir) {
-			tmpInstallDir = currentDir
-		}
-	}
-	if tmpInstallDir == "" {
-		// If no installDir was found assume the root of the archive
-		tmpInstallDir = filepath.Join(tmpRuntimeDir, archiveName)
-	}
-
-	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
-		return nil, FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
-	}
-
-	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
-	if fileutils.FileExists(tmpMetaFile) {
-		target := filepath.Join(installDir, constants.RuntimeMetaFile)
-		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
-			return nil, fail
-		}
-		if err := os.Rename(tmpMetaFile, target); err != nil {
-			return nil, FailRuntimeInstallation.Wrap(err)
-		}
-	}
-
-	if err = os.RemoveAll(tmpRuntimeDir); err != nil {
-		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
-		return nil, FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
-	}
-
-	return upb, nil
+	return tmpRuntimeDir, upb, nil
 }
 
 // OnDownload registers a function to be called when a download occurs
@@ -358,63 +269,12 @@ func (installer *Installer) OnDownload(f func()) {
 	installer.onDownload = f
 }
 
-// Relocate will look through all of the files in this installation and replace any
-// character sequence in those files containing the given prefix.
-func (installer *Installer) Relocate(metaData *MetaData, upb *progress.UnpackBar) *failures.Failure {
-	prefix := metaData.RelocationDir
-
-	if len(prefix) == 0 || prefix == metaData.Path {
-		upb.Complete()
-		return nil
-	}
-
-	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
-	binariesSeparate := runtime.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
-
-	// Replace plain text files
-	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
-		// Check if we want to include this
-		func(p string, contents []byte) bool {
-			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
-				upb.Increment()
-				return true
-			}
-			return false
-		})
-	if err != nil {
-		return FailRuntimeInstallation.Wrap(err)
-	}
-
-	if binariesSeparate {
-		replacement := filepath.Join(metaData.Path, metaData.RelocationTargetBinaries)
-		// Replace binary files
-		err = fileutils.ReplaceAllInDirectory(metaData.Path, prefix, replacement,
-			// Binaries only
-			func(p string, contents []byte) bool {
-				if fileutils.IsBinary(contents) {
-					upb.Increment()
-					return true
-				}
-				return false
-			})
-
-		if err != nil {
-			return FailRuntimeInstallation.Wrap(err)
-		}
-	}
-
-	upb.Complete()
-	logging.Debug("Done")
-
-	return nil
-}
-
 // validateArchive ensures the given path to archive is an actual file and that its suffix is a well-known
 // suffix for tar+gz files.
-func (installer *Installer) validateArchive(archivePath string) *failures.Failure {
+func (installer *Installer) validateArchive(ua unarchiver.Unarchiver, archivePath string) *failures.Failure {
 	if !fileutils.FileExists(archivePath) {
 		return FailArchiveInvalid.New("installer_err_archive_notfound", archivePath)
-	} else if installer.archiver.CheckExt(archivePath) != nil {
+	} else if err := ua.CheckExt(archivePath); err != nil {
 		return FailArchiveInvalid.New("installer_err_archive_badext", archivePath)
 	}
 	return nil
@@ -424,17 +284,4 @@ func removeInstallDir(installDir string) {
 	if err := os.RemoveAll(installDir); err != nil {
 		logging.Errorf("attempting to remove install dir '%s': %v", installDir, err)
 	}
-}
-
-// shortHash will return the first 4 bytes in base16 of the sha1 sum of the provided data.
-//
-// For example:
-//   shortHash("ActiveState-TestProject-python2")
-// 	 => e784c7e0
-//
-// This is useful for creating a shortened namespace for language installations.
-func shortHash(data ...string) string {
-	h := sha1.New()
-	io.WriteString(h, strings.Join(data, ""))
-	return fmt.Sprintf("%x", h.Sum(nil)[:4])
 }

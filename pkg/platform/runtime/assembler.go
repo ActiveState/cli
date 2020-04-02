@@ -1,0 +1,71 @@
+package runtime
+
+import (
+	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/unarchiver"
+)
+
+// EnvGetter provides a function to return variables for a runtime environment
+type EnvGetter interface {
+	// GetEnv returns a map between environment variable names and their values
+	GetEnv() (map[string]string, *failures.Failure)
+}
+
+// Assembler provides functionality to assemble a runtime environment for an
+// installation It is usually created by an installer.Installer and defines
+// which artifact tarballs to unpack where.
+// Once assembled, the Assembler can be used as an EnvGetter interface to get
+// the environment variables that need to be set to use the installed runtime.
+type Assembler interface {
+	EnvGetter
+	DownloadDirectoryProvider
+
+	// ArtifactsToDownloadAndUnpack returns the artifacts that need to be
+	// downloaded and the archives that already exist and *only* need to be unpacked.
+	// The second return value is a map from the archive paths to the artifact
+	// instances.
+	ArtifactsToDownloadAndUnpack() ([]*HeadChefArtifact, map[string]*HeadChefArtifact)
+
+	// InstallationDirectory returns the final installation directory, where the
+	// runtime should be installed to.
+	InstallationDirectory(artf *HeadChefArtifact) string
+
+	// BuildEngine returns the build engine that this runtime has been created
+	// with
+	BuildEngine() BuildEngine
+
+	// InstallerExtension is used to identify whether an artifact is one that we
+	// should care about
+	InstallerExtension() string
+
+	// Unarchiver initializes and returns the unarchiver for the expected
+	// artifact archive format
+	Unarchiver() unarchiver.Unarchiver
+
+	/* HOOKS */
+
+	// PreInstall is invoked by the installer after all artifact archives are
+	// downloaded, but before they are unpacked.
+	PreInstall() *failures.Failure
+
+	// PreUnpackArtifact is invoked by the installer for every artifact archive
+	// before it is being unpacked.
+	PreUnpackArtifact(artf *HeadChefArtifact) *failures.Failure
+
+	// PostUnpackArtifact is invoked by the installer for every artifact archive
+	// after it has been unpacked into its temporary installation directory tmpRuntimeDir
+	// Here, the final relocation to InstallationDirectory() needs to take place.
+	PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure
+}
+
+// BuildEngine describes the build engine that was used to build the runtime
+type BuildEngine int
+
+const (
+	// Camel is the legacy build engine, that builds Active{Python,Perl,Tcl}
+	// distributions
+	Camel BuildEngine = iota
+
+	// Alternative is the new alternative build orchestration framework
+	Alternative
+)

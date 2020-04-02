@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/archiver"
@@ -70,10 +69,12 @@ func (ar *TarGzArchive) ExtractNext(destination string) (f archiver.File, err er
 	if !ok {
 		return f, fmt.Errorf("expected header to be *tar.Header but was %T", f.Header)
 	}
-	return f, ar.untarFile(f, filepath.Join(destination, header.Name))
+	return f, ar.untarFile(f, destination, header.Name)
 }
 
-func (ar *TarGzArchive) untarFile(f archiver.File, to string) error {
+func (ar *TarGzArchive) untarFile(f archiver.File, destination string, relTo string) error {
+
+	to := filepath.Join(destination, relTo)
 	// do not overwrite existing files, if configured
 	if !f.IsDir() && !ar.OverwriteExisting && fileExists(to) {
 		return fmt.Errorf("file already exists: %s", to)
@@ -92,10 +93,9 @@ func (ar *TarGzArchive) untarFile(f archiver.File, to string) error {
 	case tar.TypeSymlink:
 		return writeNewSymbolicLink(to, hdr.Linkname)
 	case tar.TypeLink:
-		// NOTE: this is a hack that fixes an issue for choosing the correct path to the old file
-		// that is being linked to. This fix will only address calls to Unarchive, not Extract and
-		// is generally only known to be useful for ActiveState, at the moment.
-		return writeNewHardLink(to, path.Join(path.Dir(to), path.Base(hdr.Linkname)))
+		// hard links are always relative to the destination directory
+		link := filepath.Join(destination, hdr.Linkname)
+		return writeNewHardLink(to, link)
 	case tar.TypeXGlobalHeader:
 		return nil // ignore the pax global header from git-generated tarballs
 	default:

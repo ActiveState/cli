@@ -169,17 +169,9 @@ languages:
 	venv := Init()
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
-	assert.NotEmpty(t, venv.artifactPaths, "Pulled in artifacts")
 
-	for _, path := range venv.artifactPaths {
-		assert.Contains(t, venv.GetEnv(false)["PATH"], path, "Artifact path is added to PATH")
-	}
-
-	// Ensure we're not passing any empty env keys, which causes problems in bashrc and similar
 	env := venv.GetEnv(false)
-	for k := range env {
-		assert.NotEmpty(t, k, "Does not return any empty env keys")
-	}
+	assert.Contains(t, env, "PATH", "PATH is set")
 }
 
 func TestSkipActivateRuntimeEnvironment(t *testing.T) {
@@ -200,5 +192,4 @@ languages:
 	venv := Init()
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
-	assert.Empty(t, venv.artifactPaths, "Did not Pull in artifacts")
 }
