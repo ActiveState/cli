@@ -1,9 +1,7 @@
 package virtualenvironment
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -35,7 +33,7 @@ type VirtualEnvironment struct {
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	onUseCache          func()
-	artifactPaths       []string
+	getEnv              func() (map[string]string, *failures.Failure)
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -90,72 +88,38 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 	}
 
 	installer.OnDownload(v.onDownloadArtifacts)
-	installed, fail := installer.Install()
+
+	rt, installed, fail := installer.Install()
 	if fail != nil {
 		return fail
 	}
 
+	v.getEnv = rt.GetEnv
 	if !installed && v.onUseCache != nil {
 		v.onUseCache()
 	}
-
-	v.artifactPaths = installer.InstallDirs()
 
 	return nil
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
 func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
-	env := map[string]string{"PATH": os.Getenv("PATH")}
-	pjfile := projectfile.Get()
 
-	for _, artifactPath := range v.artifactPaths {
-		meta, fail := runtime.InitMetaData(artifactPath)
+	var env map[string]string
+	if v.getEnv == nil {
+		logging.Error("setting up environment in un-activated project")
+		env = make(map[string]string)
+		env["PATH"] = os.Getenv("PATH")
+	} else {
+		var fail *failures.Failure
+		env, fail = v.getEnv()
 		if fail != nil {
-			logging.Warning("Skipping Artifact '%s', could not retrieve metadata: %v", artifactPath, fail)
-			continue
-		}
-
-		// Unset AffectedEnv
-		if meta.AffectedEnv != "" {
-			env[meta.AffectedEnv] = ""
-		}
-
-		// Set up env according to artifact meta
-		templateMeta := struct {
-			RelocationDir string
-			ProjectDir    string
-		}{"", filepath.Dir(pjfile.Path())}
-		for k, v := range meta.Env {
-			templateMeta.RelocationDir = meta.RelocationDir
-			valueTemplate, err := template.New(k).Parse(v)
-			if err != nil {
-				logging.Error("Skipping artifact with invalid value: %s:%s, error: %v", k, v, err)
-				continue
-			}
-			var realValue bytes.Buffer
-			err = valueTemplate.Execute(&realValue, templateMeta)
-			if err != nil {
-				logging.Error("Skipping artifact whose value could not be parsed: %s:%s, error: %v", k, v, err)
-				continue
-			}
-			env[k] = realValue.String()
-		}
-
-		// Set up PATH according to binary locations
-		for _, v := range meta.BinaryLocations {
-			path := v.Path
-			if v.Relative {
-				path = filepath.Join(artifactPath, path)
-			}
-			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
-		}
-
-		// Add DLL dir to PATH on Windows
-		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
-			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
+			logging.Error("could not set-up the runtime environment: %v", fail)
+			return map[string]string{}
 		}
 	}
+
+	pjfile := projectfile.Get()
 
 	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
 	env[constants.ActivatedStateIDEnvVarName] = v.activationID

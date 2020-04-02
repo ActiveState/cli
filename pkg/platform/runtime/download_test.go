@@ -36,6 +36,10 @@ type RuntimeDLTestSuite struct {
 	rtMock *rtMock.Mock
 }
 
+func (suite *RuntimeDLTestSuite) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, *failures.Failure) {
+	return suite.dir, nil
+}
+
 func (suite *RuntimeDLTestSuite) BeforeTest(suiteName, testName string) {
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pj := &projectfile.Project{Project: projectURL}
@@ -83,15 +87,15 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
-	r := runtime.NewDownload(suite.project, suite.dir)
-	artfs, fail := r.FetchArtifacts()
+	r := runtime.NewDownload(suite.project)
+	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	files, fail := r.Download(artfs, suite.prg)
+	files, fail := r.Download(res.Artifacts, suite, suite.prg)
 	suite.Require().NoError(fail.ToError())
 
 	suite.Implements((*runtime.Downloader)(nil), r)
-	suite.Contains(files, filepath.Join(suite.dir, "python"+runtime.InstallerExtension))
-	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+runtime.InstallerExtension))
+	suite.Contains(files, filepath.Join(suite.dir, "python"+camelInstallerExtension()))
+	suite.Contains(files, filepath.Join(suite.dir, "legacy-python"+camelInstallerExtension()))
 
 	for file := range files {
 		suite.FileExists(file)
@@ -101,30 +105,20 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Skip)
 
-	r := runtime.NewDownload(suite.project, suite.dir)
+	r := runtime.NewDownload(suite.project)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
 	suite.Equal(runtime.FailNoArtifacts.Name, fail.Type.Name)
 }
 
-func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidArtifact() {
-	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Invalid)
-
-	r := runtime.NewDownload(suite.project, suite.dir)
-	_, fail := r.FetchArtifacts()
-	suite.Require().Error(fail.ToError())
-
-	suite.Equal(runtime.FailNoValidArtifact.Name, fail.Type.Name)
-}
-
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.BadURI)
 
-	r := runtime.NewDownload(suite.project, suite.dir)
-	files, fail := r.FetchArtifacts()
+	r := runtime.NewDownload(suite.project)
+	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
-	_, fail = r.Download(files, suite.prg)
+	_, fail = r.Download(res.Artifacts, suite, suite.prg)
 	suite.Require().Error(fail.ToError())
 
 	suite.Equal(model.FailSignS3URL.Name, fail.Type.Name)
@@ -133,7 +127,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 	suite.hcMock.MockBuilds(hcMock.Failed)
 
-	r := runtime.NewDownload(suite.project, suite.dir)
+	r := runtime.NewDownload(suite.project)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -143,7 +137,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
 	suite.hcMock.MockBuilds(hcMock.RunFail)
 
-	r := runtime.NewDownload(suite.project, suite.dir)
+	r := runtime.NewDownload(suite.project)
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
