@@ -103,6 +103,7 @@ func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
 				Name:        locale.T("export_new-api-key_arg_name"),
 				Description: locale.T("export_new-api-key_arg_name_description"),
 				Value:       &params.Name,
+				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
