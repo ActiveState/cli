@@ -36,6 +36,7 @@ func New(outputer output.Outputer) *CmdTree {
 		newRecipeCommand(),
 		newJWTCommand(),
 		newPrivateKeyCommand(),
+		newAPIKeyCommand(outputer),
 	)
 
 	platformsCmd := newPlatformsCommand(outputer)
