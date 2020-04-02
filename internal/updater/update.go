@@ -26,7 +26,7 @@ import (
 func (u *Updater) fromStream(path string, updateWith io.Reader) (err error, errRecover error) {
 	// Copy the contents of of newbinary to a the new executable file
 	updateDir := filepath.Dir(path)
-	newPath := filepath.Join(updateDir, fmt.Sprintf(newRename, "state"))
+	newPath := filepath.Join(updateDir, fmt.Sprintf(".%s.new", "state"))
 	fp, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
 	if err != nil {
 		return
@@ -39,7 +39,7 @@ func (u *Updater) fromStream(path string, updateWith io.Reader) (err error, errR
 	fp.Close()
 
 	// this is where we'll move the executable to so that we can swap in the updated replacement
-	oldPath := filepath.Join(updateDir, fmt.Sprintf(oldRename, "state"))
+	oldPath := filepath.Join(updateDir, fmt.Sprintf(".%s.old", "state"))
 
 	// delete any existing old exec file - this is necessary on Windows for two reasons:
 	// 1. after a successful update, Windows can't remove the .old file because the process is still running

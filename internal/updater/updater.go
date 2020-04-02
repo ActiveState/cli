@@ -32,11 +32,6 @@ var (
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
 
-const (
-	newRename = ".%s.new"
-	oldRename = ".%s.old"
-)
-
 // Info holds the version and sha info
 type Info struct {
 	Version  string
@@ -54,7 +49,6 @@ type Updater struct {
 	DesiredVersion string
 	info           Info
 	Requester      Requester
-	Cleanup        func()
 }
 
 // Info reports updater.info, but only if we have an actual update
@@ -346,7 +340,7 @@ func CleanOld() error {
 	if err != nil {
 		return err
 	}
-	oldFile := filepath.Join(path, oldRename)
+	oldFile := filepath.Join(path, ".%s.old")
 
 	if fileutils.FileExists(oldFile) {
 		err = os.Remove(oldFile)
