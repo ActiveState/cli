@@ -3,6 +3,7 @@ package clean
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -54,9 +55,13 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.cachePath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
+
+	_, fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
+	suite.Require().NoError(fail.ToError())
+	suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
 }
 
-func (suite *CleanTestSuite) TestRun() {
+func (suite *CleanTestSuite) TestUninstall() {
 	runner := NewUninstall(&testOutputer{}, &confirmMock{confirm: true})
 	err := runner.Run(&UninstallParams{
 		ConfigPath:  suite.configPath,
@@ -67,17 +72,17 @@ func (suite *CleanTestSuite) TestRun() {
 	time.Sleep(2 * time.Second)
 
 	if fileutils.DirExists(suite.configPath) {
-		suite.Fail("config directory should not exists after clean")
+		suite.Fail("config directory should not exist after uninstall")
 	}
 	if fileutils.DirExists(suite.cachePath) {
-		suite.Fail("cache directory should not exists after clean")
+		suite.Fail("cache directory should not exist after uninstall")
 	}
 	if fileutils.FileExists(suite.installPath) {
-		suite.Fail("installed file should not exists after clean")
+		suite.Fail("installed file should not exist after uninstall")
 	}
 }
 
-func (suite *CleanTestSuite) TestRun_PromptNo() {
+func (suite *CleanTestSuite) TestUninstall_PromptNo() {
 	runner := NewUninstall(&testOutputer{}, &confirmMock{})
 	err := runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -87,7 +92,7 @@ func (suite *CleanTestSuite) TestRun_PromptNo() {
 	suite.Require().FileExists(suite.installPath)
 }
 
-func (suite *CleanTestSuite) TestRun_Activated() {
+func (suite *CleanTestSuite) TestUninstall_Activated() {
 	os.Setenv(constants.ActivatedStateEnvVarName, "true")
 	defer func() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)

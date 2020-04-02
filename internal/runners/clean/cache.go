@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -41,5 +42,6 @@ func (c *Cache) Run(params *CacheParams) error {
 		}
 	}
 
+	logging.Debug("Removing cache path: %s", params.Path)
 	return removeCache(params.Path)
 }
