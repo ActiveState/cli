@@ -463,6 +463,10 @@ scripts_description:
   other: Show project scripts 
 flag_json_desc:
   other: Changes output to machine-readable JSON
+runtime_alternative_failed_artifact_order:
+  other: "Could not write runtime.json file: internal error" 
+runtime_alternative_failed_destination:
+  other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
   other: Name
 scripts_col_description:
@@ -818,6 +822,10 @@ warn_script_name_in_use:
     
     Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
 
+warn_move_incompatible_modes:
+  other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
+warn_move_destination_overwritten:
+  other: "Overwriting existing file {{.V1}} with file {{.V0}}"
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
 
@@ -1298,6 +1306,10 @@ err_project_from_path:
   other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
+err_incompatible_move_file_dir:
+  other: |
+    Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
+    This indicates that the requested build may be corrupted.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:
@@ -1448,3 +1460,18 @@ err_project_env_file_not_exist:
     Expected the following file to exist: {{.V0}}
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
+envdef_file_not_found:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot find runtime definition file at {{.V0}}.
+    You can try to manually delete the cache directory and re-activating the project.
+envdef_unmarshal_error:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot not parse runtime definition file at {{.V0}}
+    This indicates a problem with the build. You can try updating your project
+err_corrupted_build_request_response:
+  other: |
+    Internal error.  You can try manually updating the state tool.

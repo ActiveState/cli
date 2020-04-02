@@ -2,11 +2,23 @@ package progress
 
 import (
 	"math"
+	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
 )
+
+// Incrementer provides an increment function. This interface allows to test
+// progress reporting functionality without an actual progress bar.
+type Incrementer interface {
+	Increment(_ ...time.Duration)
+}
+
+// Completer provides a message for a progress report that can send a complete event at any time.
+type Completer interface {
+	Complete()
+}
 
 // UnpackBar wraps a regular progress bar that is specifically for unpacking
 // Note this peculiarities about unpacking:
@@ -74,6 +86,10 @@ func NewUnpackBar(bytesToRead int64, p *Progress, targetPercent ...int) *UnpackB
 	}
 }
 
+func (upb *UnpackBar) Bar() SingleReporter {
+	return upb.bar
+}
+
 // Complete completes the progress to 100% and should be called after all files are written to disc
 func (upb *UnpackBar) Complete() {
 	upb.bar.SetCurrent(upb.total)
@@ -81,6 +97,12 @@ func (upb *UnpackBar) Complete() {
 
 // ReScale sets a scaling factor that the specified number of increments fill the bar up to 100%
 func (upb *UnpackBar) ReScale(countsRemaining int, targetPercent ...int) {
+	// handle the case of no remaining counts to avoid divisions by zero...
+	if countsRemaining == 0 {
+		upb.targetPercent = 100
+		upb.barTotal = upb.total
+		return
+	}
 
 	var target = 100
 	if len(targetPercent) > 0 {
@@ -106,7 +128,6 @@ func (upb *UnpackBar) ReScale(countsRemaining int, targetPercent ...int) {
 }
 
 // Increment increments the counter manually this can be used after ReScaleBar to report progress
-func (upb *UnpackBar) Increment() {
+func (upb *UnpackBar) Increment(_ ...time.Duration) {
 	upb.bar.IncrBy(upb.scaleFactor)
-
 }
