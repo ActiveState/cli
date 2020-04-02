@@ -263,9 +263,10 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		t = timeout[0]
 	}
 
-	// TODO: This might need to be different for Windows; I think that Windows
-	// sends a different error message when we close the pseudo-terminal...
-	buf, err := cp.console.Expect(expect.PTSClosed, expect.EOF, expect.WithTimeout(t))
+	buf, err := cp.console.Expect(
+		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
+		expect.WithTimeout(t),
+	)
 	if err != nil {
 		if !os.IsTimeout(err) {
 			fmt.Fprintf(os.Stderr, "unknown error while waiting for process: %v", err)
