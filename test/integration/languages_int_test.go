@@ -61,8 +61,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp = ts.Spawn("languages", "update", "python")
 	cp.ExpectExitCode(0)
 
-	// XXX File a story for this bug
-	suite.T().Skip("After update the reported Python version is 2.7.14!  Fix in story ...")
+	suite.T().Skip("After update the reported Python version is 2.7.14!  See https://www.pivotaltracker.com/story/show/172131580")
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")

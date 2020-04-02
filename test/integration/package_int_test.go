@@ -274,12 +274,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("already added", func() {
-			/* XXX
-			if runtime.GOOS == "darwin" {
-				suite.T().Skip("integ test primitives bug affecting darwin")
-			}
-			*/
-
 			cp := ts.Spawn("packages", "import")
 			cp.Expect("Are you sure you want to do this")
 			cp.SendLine("n")
