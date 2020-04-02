@@ -267,17 +267,27 @@ func (s *Auth) CreateToken() *failures.Failure {
 		}
 	}
 
-	params := authentication.NewAddTokenParams()
-	params.SetTokenOptions(&mono_models.TokenEditable{Name: constants.APITokenName})
-	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())
-	if err != nil {
-		return FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
+	token, fail := s.NewAPIKey(constants.APITokenName)
+	if fail != nil {
+		return fail
 	}
 
-	token := tokenOK.Payload.Token
 	viper.Set("apiToken", token)
 
 	return nil
+}
+
+// NewAPIKey returns a new api key from the backend or the relevant failure.
+func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
+	params := authentication.NewAddTokenParams()
+	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
+
+	tokenOK, err := s.Client().Authentication.AddToken(params, s.ClientAuth())
+	if err != nil {
+		return "", FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
+	}
+
+	return tokenOK.Payload.Token, nil
 }
 
 func availableAPIToken() string {
