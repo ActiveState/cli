@@ -1464,3 +1464,20 @@ err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
 err_windows_registry:
   other: Error while interacting with windows registry
+deploy_install:
+  other: "[BLUE]Installing Runtime Environment[/RESET]"
+deploy_configure_shell:
+  other: "[BLUE]Configuring shell: {{.V0}} (set the SHELL environment variable to use a different shell)[/RESET]"
+deploy_info:
+  other: |
+    [BLUE]Deployment Information:[/RESET]
+    This information is provided for your reference, for most common use-cases you do not need to do anything with this.
+field_binarydirectories:
+  other: Binary Directories
+field_environment:
+  other: Environment Variables
+deploy_restart_shell:
+  other: |
+
+    [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly
+    configured Runtime Environment.[/RESET]

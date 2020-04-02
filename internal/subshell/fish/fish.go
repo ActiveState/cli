@@ -43,13 +43,13 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string) error {
+func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
-		return err
+		return failures.FailIO.Wrap(err)
 	}
 
-	return sscommon.WriteRcFile("fishrc_append.fish", filepath.Join(homeDir, ".config/fish/config.fish"), env).ToError()
+	return sscommon.WriteRcFile("fishrc_append.fish", filepath.Join(homeDir, ".config/fish/config.fish"), env)
 }
 
 // SetEnv - see subshell.SetEnv

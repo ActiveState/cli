@@ -114,7 +114,7 @@ func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure
 	}
 	logging.Debug("downloadDir: %s", downloadDir)
 	installer := &Installer{
-		downloader:         InitDownload(downloadDir),
+		downloader:         NewDownload(params.CommitID, params.Owner, params.ProjectName, downloadDir),
 		downloadDir:        downloadDir,
 		params:             params,
 		archiver:           Archiver(),

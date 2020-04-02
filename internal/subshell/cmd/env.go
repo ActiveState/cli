@@ -25,7 +25,7 @@ func NewCmdEnv() *CmdEnv {
 // unsetUserEnv clears a state cool configured environment variable
 // It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
 // responsible for setting it)
-func (c *CmdEnv) unset(name, ifValueEquals string) error {
+func (c *CmdEnv) unset(name, ifValueEquals string) *failures.Failure {
 	key, err := c.openKeyFn("Environment")
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
@@ -58,13 +58,13 @@ func (c *CmdEnv) unset(name, ifValueEquals string) error {
 		if err := key.DeleteValue(envBackupName(name)); err != nil {
 			return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 		}
-		return key.SetStringValue(name, backupValue)
+		return failures.FailOS.Wrap(key.SetStringValue(name, backupValue))
 	}
-	return key.DeleteValue(name)
+	return failures.FailOS.Wrap(key.DeleteValue(name))
 }
 
 // setUserEnv sets a variable in the user environment and saves the original as a backup
-func (c *CmdEnv) set(name, newValue string) error {
+func (c *CmdEnv) set(name, newValue string) *failures.Failure {
 	key, err := c.openKeyFn("Environment")
 	if err != nil {
 		return failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
@@ -82,11 +82,11 @@ func (c *CmdEnv) set(name, newValue string) error {
 		}
 	}
 
-	return key.SetStringValue(name, newValue)
+	return failures.FailOS.Wrap(key.SetStringValue(name, newValue))
 }
 
 // getUserEnv retrieves a variable from the user environment, this prioritizes a backup if it exists
-func (c *CmdEnv) get(name string) (string, error) {
+func (c *CmdEnv) get(name string) (string, *failures.Failure) {
 	key, err := c.openKeyFn("Environment")
 	if err != nil {
 		return "", failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
@@ -111,4 +111,3 @@ func (c *CmdEnv) get(name string) (string, error) {
 func envBackupName(name string) string {
 	return name + "_ORIGINAL"
 }
-

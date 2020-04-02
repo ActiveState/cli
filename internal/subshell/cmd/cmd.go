@@ -42,14 +42,14 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(env map[string]string) error {
+func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
 	cmdEnv := NewCmdEnv()
 
 	// Clean up old entries
 	oldEnv := viper.GetStringMap("user_env")
 	for k, v := range oldEnv {
-		if err := cmdEnv.unset(k, v.(string)); err != nil {
-			return err
+		if fail := cmdEnv.unset(k, v.(string)); fail != nil {
+			return fail
 		}
 	}
 
@@ -59,9 +59,9 @@ func (v *SubShell) WriteUserEnv(env map[string]string) error {
 	for k, v := range env {
 		value := v
 		if k == "PATH" {
-			path, err := cmdEnv.get("PATH")
-			if err != nil {
-				return err
+			path, fail := cmdEnv.get("PATH")
+			if fail != nil {
+				return fail
 			}
 			if path != "" {
 				path = ";" + path
@@ -71,9 +71,9 @@ func (v *SubShell) WriteUserEnv(env map[string]string) error {
 		}
 
 		// Set key/value in the user environment
-		err := cmdEnv.set(k, value)
-		if err != nil {
-			return err
+		fail := cmdEnv.set(k, value)
+		if fail != nil {
+			return fail
 		}
 	}
 	return nil
