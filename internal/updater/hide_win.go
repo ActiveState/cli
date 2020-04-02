@@ -19,6 +19,8 @@ package updater
 import (
 	"syscall"
 	"unsafe"
+
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 func hideFile(path string) error {
