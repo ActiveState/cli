@@ -75,7 +75,7 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 		opts:    opts,
 		errs:    make(chan error),
 		console: console,
-		vtstrip: vtStrip,
+		vtstrip: vtstrip,
 		cmd:     cmd,
 		cmdName: opts.CmdName,
 		ctx:     ctx,
