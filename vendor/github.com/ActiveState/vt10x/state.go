@@ -76,7 +76,7 @@ type cursor struct {
 	state uint8
 }
 
-type parseState func(c rune)
+type parseState func(c rune) bool
 
 // State represents the terminal emulation state. Use Lock/Unlock
 // methods to synchronize data access with VT.
@@ -189,8 +189,8 @@ func (t *State) restoreCursor() {
 	t.moveTo(t.cur.x, t.cur.y)
 }
 
-func (t *State) put(c rune) {
-	t.state(c)
+func (t *State) put(c rune) bool {
+	return t.state(c)
 }
 
 func (t *State) putTab(forward bool) {

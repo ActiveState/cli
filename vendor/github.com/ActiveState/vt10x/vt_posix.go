@@ -13,6 +13,8 @@ import (
 // VT represents the virtual terminal emulator.
 type VT struct {
 	dest *State
+	in   io.Reader
+	out  io.Writer
 	rwc  io.ReadWriteCloser
 	br   *bufio.Reader
 }
@@ -28,9 +30,24 @@ func Create(state *State, rwc io.ReadWriteCloser) (*VT, error) {
 	return t, nil
 }
 
+func New(state *State, in io.Reader, out io.Writer) (*VT, error) {
+	t := &VT{
+		dest: state,
+		in:   in,
+		out:  out,
+	}
+	t.init()
+	return t, nil
+}
+
 func (t *VT) init() {
-	t.br = bufio.NewReader(t.rwc)
-	t.dest.w = t.rwc
+	if t.rwc != nil {
+		t.br = bufio.NewReader(t.rwc)
+		t.dest.w = t.rwc
+	} else {
+		t.br = bufio.NewReader(t.in)
+		t.dest.w = t.out
+	}
 	t.dest.numlock = true
 	t.dest.state = t.dest.parse
 	t.dest.cur.attr.fg = DefaultFG
@@ -69,6 +86,9 @@ func (t *VT) Write(p []byte) (int, error) {
 
 // Close closes the io.ReadWriteCloser.
 func (t *VT) Close() error {
+	if t.rwc == nil {
+		return nil
+	}
 	return t.rwc.Close()
 }
 

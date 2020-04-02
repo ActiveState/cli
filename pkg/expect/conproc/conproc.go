@@ -13,10 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pborman/ansi"
-
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/expect"
+	"github.com/ActiveState/vt10x"
 )
 
 var (
@@ -27,6 +26,7 @@ type ConsoleProcess struct {
 	opts       Options
 	errs       chan error
 	console    *expect.Console
+	vtstrip    *vt10x.VTStrip
 	cmd        *exec.Cmd
 	cmdName    string
 	ctx        context.Context
@@ -52,9 +52,11 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 
 	expectObs := &expectObserverTransform{observeFn: opts.ObserveExpect}
 
+	vtstrip := vt10x.NewStripper()
+
 	console, err := expect.NewConsole(
 		expect.WithDefaultTimeout(opts.DefaultTimeout),
-		expect.WithReadBufferMutation(ansi.Strip),
+		expect.WithReadBufferMutation(vtstrip.Strip),
 		expect.WithSendObserver(expect.SendObserver(opts.ObserveSend)),
 		expect.WithExpectObserver(expectObs.observe),
 	)
@@ -73,6 +75,7 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 		opts:    opts,
 		errs:    make(chan error),
 		console: console,
+		vtstrip: vtStrip,
 		cmd:     cmd,
 		cmdName: opts.CmdName,
 		ctx:     ctx,
