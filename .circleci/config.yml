@@ -38,7 +38,6 @@ defaults:
           EXITCODE=$?
           set -e 
           cat out | tee ${TEST_RESULTS}/go-test.out
-          $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
           state auth --token $PLATFORM_API_TOKEN # Tests appear to be breaking the authentication
           exit $EXITCODE
     buildCli: &buildCli
@@ -61,7 +60,12 @@ defaults:
           set -e
 
           go test ./pkg/expect
-          go test ./test/integration -v
+          go test ./test/integration -v > out
+          EXITCODE=$?
+          set -e 
+          cat out | tee -a ${TEST_RESULTS}/go-test.out
+          $GOBIN/go-junit-report < ${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml
+          exit $EXITCODE
     deployBits: &deployBits
       run:
         name: Deploy bits
