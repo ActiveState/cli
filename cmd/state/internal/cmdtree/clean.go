@@ -18,9 +18,7 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			outputer.Print(ccmd.Short())
-			outputer.Print("")
-			outputer.Print(ccmd.UsageText())
+			outputer.Print(ccmd.Help())
 			return nil
 		},
 	)
