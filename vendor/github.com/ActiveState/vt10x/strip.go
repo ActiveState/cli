@@ -9,7 +9,7 @@ type VTStrip struct {
 	VT
 }
 
-func NewStripper() *VTStrip {
+func NewStrip() *VTStrip {
 	t := &VTStrip{
 		VT{
 			dest: &State{},
@@ -47,7 +47,7 @@ func (t *VTStrip) Strip(in []byte) ([]byte, error) {
 		// put rune for parsing and update state
 		isPrintable := t.dest.put(c)
 		if isPrintable {
-			copy(out[nout:w], in[i:w])
+			copy(out[nout:nout+w], in[i:i+w])
 			nout += w
 		}
 	}

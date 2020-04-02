@@ -6,8 +6,8 @@ github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:l
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
 github.com/ActiveState/sysinfo v0.0.0-20200318232021-f47d9f74532c h1:zIKZZYWLH9VZpLy1Oa5OcyN5bU+DOlbyyrLKoLXX+os=
 github.com/ActiveState/sysinfo v0.0.0-20200318232021-f47d9f74532c/go.mod h1:+AYqBZPPF2SzUiR6ZE8m2HkyePQZ/W3q+9CSFlck3D8=
-github.com/ActiveState/vt10x v1.0.3 h1:63IslAmHXG3PwSRIfbOnuTF3gAlWwbD1VZ/UOACSgZY=
-github.com/ActiveState/vt10x v1.0.3/go.mod h1:GQSo5+/OFdQ//xPd8gAvUiyHq0OYY++hjrd+Q/3ERos=
+github.com/ActiveState/vt10x v1.1.0 h1:0+Ha/nEPq/rq8cpGgIGHeaG2KfojWLdwv69LobgcJRg=
+github.com/ActiveState/vt10x v1.1.0/go.mod h1:GQSo5+/OFdQ//xPd8gAvUiyHq0OYY++hjrd+Q/3ERos=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 h1:w+iIsaOQNcT7OZ575w+acHgRric5iCyQh+xv+KJ4HB8=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=

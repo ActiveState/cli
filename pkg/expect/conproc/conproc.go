@@ -52,7 +52,7 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 
 	expectObs := &expectObserverTransform{observeFn: opts.ObserveExpect}
 
-	vtstrip := vt10x.NewStripper()
+	vtstrip := vt10x.NewStrip()
 
 	console, err := expect.NewConsole(
 		expect.WithDefaultTimeout(opts.DefaultTimeout),

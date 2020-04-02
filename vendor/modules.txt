@@ -6,7 +6,7 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200318232021-f47d9f74532c
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/vt10x v1.0.3
+# github.com/ActiveState/vt10x v1.1.0
 github.com/ActiveState/vt10x
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
