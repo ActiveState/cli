@@ -124,6 +124,10 @@ func (f *FailureType) New(message string, params ...string) *Failure {
 
 // Wrap wraps another error
 func (f *FailureType) Wrap(err error, message ...string) *Failure {
+	if err == nil {
+		return nil
+	}
+
 	if len(message) > 0 {
 		err = fmt.Errorf("%s: %v", err, strings.Join(message, ": "))
 	}
