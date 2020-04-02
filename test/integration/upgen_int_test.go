@@ -43,15 +43,15 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	var cp *conproc.ConsoleProcess
 
 	if runtime.GOOS == "windows" {
-		cp = ts.SpawnCustom("powershell.exe", "-nologo", "-noprofile", "-command",
+		cp = ts.SpawnCmd("powershell.exe", "-nologo", "-noprofile", "-command",
 			fmt.Sprintf("Expand-Archive -Path '%s' -DestinationPath '%s'", archivePath, tempPath))
 	} else {
-		cp = ts.SpawnCustom("tar", "-C", tempPath, "-xf", archivePath)
+		cp = ts.SpawnCmd("tar", "-C", tempPath, "-xf", archivePath)
 	}
 
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCustom(filepath.Join(tempPath, platform+exe), "--version")
+	cp = ts.SpawnCmd(filepath.Join(tempPath, platform+exe), "--version")
 	cp.Expect(constants.RevisionHashShort)
 	cp.ExpectExitCode(0)
 }

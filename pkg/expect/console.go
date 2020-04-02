@@ -217,8 +217,10 @@ func (c *Console) Read(b []byte) (int, error) {
 		return n, err
 	}
 
+	// fmt.Printf("before mutation: %s\n=====\n", string(b))
 	bs, err := c.opts.ReadBufMutation(b)
-	nc := copy(b, bs)
+	// fmt.Printf("after mutation: %s\n=====\n", string(bs))
+	nc := copy(b[0:len(bs)], bs)
 	return nc, err
 }
 

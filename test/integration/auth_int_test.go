@@ -84,6 +84,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("auth", "--output", method)
 	cp.Expect("false}")
+	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
 

@@ -80,22 +80,22 @@ func New(t *testing.T, retainDirs bool) *Session {
 
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(s.executablePath(), WithArgs(args...))
+	return s.SpawnCmdWithOpts(s.executablePath(), WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(s.executablePath(), opts...)
+	return s.SpawnCmdWithOpts(s.executablePath(), opts...)
 }
 
-// SpawnCustom executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCustom(cmdName string, args ...string) *conproc.ConsoleProcess {
-	return s.SpawnCustomWithOpts(cmdName, WithArgs(args...))
+// SpawnCmd executes an executable in a pseudo-terminal for integration tests
+func (s *Session) SpawnCmd(cmdName string, args ...string) *conproc.ConsoleProcess {
+	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
-// SpawnCustomWithOpts executes an executable in a pseudo-terminal for integration tests
+// SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCustomWithOpts(exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
+func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
 	if s.cp != nil {
 		s.cp.Close()
 	}

@@ -209,6 +209,7 @@ func (cp *ConsoleProcess) SendCtrlC() {
 }
 
 // Stop sends an interrupt signal for the tested process and fails if no process has been started yet.
+// Note: This is not supported on Windows
 func (cp *ConsoleProcess) Stop() error {
 	if cp.cmd == nil || cp.cmd.Process == nil {
 		return ErrNoProcess

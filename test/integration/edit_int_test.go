@@ -49,7 +49,7 @@ scripts:
 	if runtime.GOOS == "windows" {
 		extension = ".exe"
 	}
-	cp := ts.SpawnCustomWithOpts(
+	cp := ts.SpawnCmdWithOpts(
 		"go",
 		e2e.WithArgs("build", "-o", "editor"+extension),
 		e2e.WithWorkDirectory(editorScriptDir),
@@ -88,7 +88,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	cp.Expect("Watching file changes")
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
-	cp.Stop()
+	cp.SendCtrlC()
 	cp.ExpectExitCode(0)
 }
 
