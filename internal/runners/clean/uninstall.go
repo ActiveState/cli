@@ -54,5 +54,5 @@ func (c *Uninstall) Run(params *UninstallParams) error {
 		"Cleaning the following paths:\n %s",
 		strings.Join([]string{params.CachePath, params.ConfigPath, params.InstallPath}, "\n "),
 	)
-	return runUninstall(params, c.confirm, c.out)
+	return runUninstall(params)
 }
