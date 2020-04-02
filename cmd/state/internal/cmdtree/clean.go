@@ -24,13 +24,9 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 	)
 }
 
-type UninstallOpts struct {
-	Force bool
-}
-
 func newUninstallCommand(outputer output.Outputer) *captain.Command {
 	runner := clean.NewUninstall(outputer, prompt.New())
-	opts := UninstallOpts{}
+	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
 		locale.T("uninstall_description"),
@@ -39,7 +35,7 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 				Name:        "force",
 				Shorthand:   "f",
 				Description: locale.T("flag_state_clean_uninstall_force_description"),
-				Value:       &opts.Force,
+				Value:       &params.Force,
 			},
 		},
 		[]*captain.Argument{},
@@ -49,23 +45,18 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 				return err
 			}
 
-			return runner.Run(&clean.UninstallParams{
-				Force:       opts.Force,
-				ConfigPath:  config.ConfigPath(),
-				CachePath:   config.CachePath(),
-				InstallPath: installPath,
-			})
+			params.ConfigPath = config.ConfigPath()
+			params.CachePath = config.CachePath()
+			params.InstallPath = installPath
+
+			return runner.Run(&params)
 		},
 	)
 }
 
-type CacheOpts struct {
-	Force bool
-}
-
 func newCacheCommand(output output.Outputer) *captain.Command {
 	runner := clean.NewCache(output, prompt.New())
-	opts := CacheOpts{}
+	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
 		locale.T("cache_description"),
@@ -74,26 +65,20 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 				Name:        "force",
 				Shorthand:   "f",
 				Description: locale.T("flag_state_clean_cache_force_description"),
-				Value:       &opts.Force,
+				Value:       &params.Force,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run(&clean.CacheParams{
-				Force: opts.Force,
-				Path:  config.CachePath(),
-			})
+			params.Path = config.CachePath()
+			return runner.Run(&params)
 		},
 	)
 }
 
-type ConfigOpts struct {
-	Force bool
-}
-
 func newConfigCommand(output output.Outputer) *captain.Command {
 	runner := clean.NewConfig(output, prompt.New())
-	opts := ConfigOpts{}
+	params := clean.ConfigParams{}
 	return captain.NewCommand(
 		"config",
 		locale.T("config_description"),
@@ -102,15 +87,13 @@ func newConfigCommand(output output.Outputer) *captain.Command {
 				Name:        "force",
 				Shorthand:   "f",
 				Description: locale.T("flag_state_config_cache_force_description"),
-				Value:       &opts.Force,
+				Value:       &params.Force,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run(&clean.ConfigParams{
-				Force: opts.Force,
-				Path:  config.ConfigPath(),
-			})
+			params.Path = config.ConfigPath()
+			return runner.Run(&params)
 		},
 	)
 }
