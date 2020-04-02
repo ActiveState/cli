@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -25,6 +26,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
+	if _, err := exec.LookPath("zsh"); err != nil {
+		suite.T().Skip("This test requires a zsh shell in your PATH")
+	}
 	suite.activatePython("3", "SHELL=zsh")
 }
 
