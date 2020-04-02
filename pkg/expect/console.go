@@ -163,17 +163,16 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	}
 	closers := append(options.Closers)
 
-	passthroughPipe := NewPassthroughPipe(pty.TerminalOutPipe())
+	c := &Console{
+		opts: options,
+		Pty:  pty,
+	}
+	passthroughPipe := NewPassthroughPipe(c)
 
 	closers = append(options.Closers, passthroughPipe)
-
-	c := &Console{
-		opts:            options,
-		Pty:             pty,
-		passthroughPipe: passthroughPipe,
-		runeReader:      bufio.NewReaderSize(passthroughPipe, utf8.UTFMax),
-		closers:         closers,
-	}
+	c.passthroughPipe = passthroughPipe
+	c.runeReader = bufio.NewReaderSize(passthroughPipe, utf8.UTFMax)
+	c.closers = closers
 
 	for _, stdin := range options.Stdins {
 		go func(stdin io.Reader) {
