@@ -32,16 +32,6 @@ scripts:
 	ts.PrepareActiveStateYAML(configFileContent)
 }
 
-func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.setupConfigFile(ts)
-
-	cp := ts.Spawn("scripts", "--output", "editor.v0")
-	cp.Expect(`[{"name":"first-script"},{"name":"second-script"}]`)
-	cp.ExpectExitCode(0)
-}
-
 func TestScriptsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ScriptsIntegrationTestSuite))
 }

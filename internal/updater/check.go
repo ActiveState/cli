@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -71,7 +72,8 @@ func TimedCheck() (updated bool, resultVersion string) {
 		// Marker does not exist. Create it.
 		err = ioutil.WriteFile(updateCheckMarker, []byte(""), 0666)
 		if err != nil {
-			logging.Error("Unable to automatically check for updates: %s", err)
+			logging.Error("Unable to create/write update marker: %s", err)
+			_ = fileutils.LogPath(config.ConfigPath())
 			return false, ""
 		}
 	} else {
@@ -116,7 +118,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 	logging.Debug("Self-updating.")
 	err = update.Run()
 	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
+		logging.Error("Unable to self update: %s", err)
 		return false, ""
 	}
 
@@ -124,7 +126,7 @@ func TimedCheck() (updated bool, resultVersion string) {
 	// day.
 	err = os.Chtimes(updateCheckMarker, time.Now(), time.Now())
 	if err != nil {
-		logging.Error("Unable to automatically check for updates: %s", err)
+		logging.Error("Unable to update modification times of check marker: %s", err)
 		return false, ""
 	}
 

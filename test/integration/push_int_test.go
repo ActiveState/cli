@@ -14,26 +14,6 @@ type PushIntegrationTestSuite struct {
 	username string
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	username := ts.CreateNewUser()
-
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-	cp := ts.Spawn(
-		"init",
-		namespace,
-		"python3",
-		"--path", filepath.Join(ts.WorkDirectory(), namespace),
-		"--skeleton", "editor",
-	)
-	cp.ExpectExitCode(0)
-	wd := filepath.Join(ts.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
-	cp.ExpectExitCode(0)
-}
-
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

@@ -936,7 +936,7 @@ err_commit_count_missing_last:
 err_recipe_not_found:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_platform_data_remains:
-  other: No platform data remains after filtering; Please contact support
+  other: "Your current platform ({{.V0}}/{{.V1}}) does not appear to be configured in your project. You will need to add it before you are able to activate on this platform. Run 'state platforms --help' for more information on how to do this."
 err_no_artifacts:
   other: Your project does not seem to produce any artifacts
 err_no_valid_artifact:
@@ -1307,7 +1307,7 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
-arg_state_init_path_description:
+flag_state_init_path_description:
   other: The location to initialize the project
 arg_state_init_namespace:
   other: ORG/PROJECT

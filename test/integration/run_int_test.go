@@ -153,20 +153,6 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	)
 }
 
-func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	suite.createProjectFile(ts)
-
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
-
-	cp := ts.Spawn("run", "helloWorld")
-
-	cp.Expect("Hello World!")
-	cp.ExpectExitCode(0)
-}
-
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

@@ -221,7 +221,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	if len(pids) == 0 {
-		return nil, FailNoPlatformData.New("err_no_platform_data_remains")
+		return nil, FailNoPlatformData.New(
+			"err_no_platform_data_remains", hostPlatform, hostArch,
+		)
 	}
 
 	return pids, nil

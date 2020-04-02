@@ -46,7 +46,7 @@ func (suite *DeprecationTestSuite) TestDeprecationTimeout() {
 	suite.mock.MockExpiredTimed(deprecation.DefaultTimeout + time.Second)
 
 	_, fail := deprecation.Check()
-	suite.Equal(deprecation.FailTimeout.Name, fail.Type.Name)
+	suite.Equal(deprecation.FailTimeout.Name, fail.Type.Name, "Wrong failure type, error: %s", fail.Error())
 }
 
 func TestDeprecationTestSuite(t *testing.T) {

@@ -34,15 +34,6 @@ func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
 	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
 }
 
-func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
-	suite.runInitTest(
-		true,
-		locale.T("editor_yaml"),
-		"python3",
-		"--skeleton", "editor",
-	)
-}
-
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.runInitTest(true, sampleYAML, "python3")
 }

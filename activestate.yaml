@@ -103,6 +103,14 @@ scripts:
   - name: generate-locale
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
+  - name: build-wix
+    Description: Update the wxs file and build a helper for the MSI installer
+    constraints:
+      os: windows
+    value: |
+      $scripts.preprocess
+      go run scripts/wix/main.go public/wix/install.wxs
+      eval go build -o ./public/wix/rmpath/rmpath.exe $CLI_BUILDFLAGS ./public/wix/rmpath/main.go
   - name: test
     description: Runs unit tests (not integration tests)
     value: |
