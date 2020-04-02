@@ -111,7 +111,7 @@ func newConfigCommand(output output.Outputer) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&clean.ConfigParams{
 				Force: opts.Force,
-				Path:  config.CachePath(),
+				Path:  config.ConfigPath(),
 			})
 		},
 	)
