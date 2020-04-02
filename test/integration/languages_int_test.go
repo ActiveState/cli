@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
@@ -59,7 +60,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages", "update", "python")
-	cp.ExpectExitCode(0)
+	// This can take a little while
+	cp.ExpectExitCode(0, 30*time.Second)
 
 	suite.T().Skip("After update the reported Python version is 2.7.14!  See https://www.pivotaltracker.com/story/show/172131580")
 	cp = ts.Spawn("languages")
