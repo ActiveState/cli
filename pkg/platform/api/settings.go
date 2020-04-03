@@ -81,7 +81,9 @@ func GetServiceURL(service Service) *url.URL {
 	}
 
 	if insecure := os.Getenv(constants.APIInsecureEnvVarName); insecure == "true" {
-		serviceURL.Scheme = strings.TrimRight(serviceURL.Scheme, "s")
+		if serviceURL.Scheme == "https" || serviceURL.Scheme == "wss" {
+			serviceURL.Scheme = strings.TrimRight(serviceURL.Scheme, "s")
+		}
 	}
 
 	return serviceURL
