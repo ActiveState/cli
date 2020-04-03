@@ -48,6 +48,13 @@ func New(outputer output.Outputer) *CmdTree {
 	languagesCmd := newLanguagesCommand(outputer)
 	languagesCmd.AddChildren(newUpdateCommand(outputer))
 
+	cleanCmd := newCleanCommand(outputer)
+	cleanCmd.AddChildren(
+		newUninstallCommand(outputer),
+		newCacheCommand(outputer),
+		newConfigCommand(outputer),
+	)
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
@@ -60,7 +67,7 @@ func New(outputer output.Outputer) *CmdTree {
 		newRunCommand(),
 		platformsCmd,
 		newHistoryCommand(outputer),
-		newCleanCommand(outputer),
+		cleanCmd,
 		languagesCmd,
 	)
 

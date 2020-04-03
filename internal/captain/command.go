@@ -73,6 +73,10 @@ func (c *Command) UsageText() string {
 	return c.cobra.UsageString()
 }
 
+func (c *Command) Help() string {
+	return fmt.Sprintf("%s\n\n%s", c.cobra.Short, c.UsageText())
+}
+
 func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()

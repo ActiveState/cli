@@ -1414,13 +1414,31 @@ history_cmd_description:
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
 clean_description:
+  other: Clean caches, configuration files, or completely remove the state tool
+uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
-flag_state_clean_force_description:
-  other: Run clean operation without prompts
-err_clean_activated:
-  other: Cannot clean the State Tool install in an activated state. Please deactivate and try again
-clean_confirm_remove:
+cache_description:
+  other: Removes all cached Runtime Environments
+config_description:
+  other: Removes global State Tool configuration. Project configuration will not be affected.
+flag_state_clean_uninstall_force_description:
+  other: Run uninstall operation without prompts
+flag_state_clean_cache_force_description:
+  other: Run clean cache operation without prompts
+flag_state_clean_config_force_description:
+  other: Run clean config operation without prompts
+err_uninstall_activated:
+  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again
+err_clean_cache_activated:
+  other: Cannot remove the cache directory while in an activated state. Please deactivate and try again.
+err_clean_config_activated:
+  other: Cannot remove the config directory while in an activated state. Please deactivate and try again.
+uninstall_confirm:
   other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
+clean_cache_confirm:
+  other: You are about to remove the State Tool cache directory. Continue?
+clean_config_confirm:
+  other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
 push_already_exists:
