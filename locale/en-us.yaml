@@ -1034,7 +1034,7 @@ export_new_api_key_arg_name:
 export_new_api_key_arg_name_description:
   other: API key name
 export_apikey_user_notice:
-  other: [BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]
+  other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
 err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:
