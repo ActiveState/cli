@@ -97,8 +97,6 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 
 		err := cmd.Wait()
 
-		// fmt.Println("wait returned")
-
 		select {
 		case cp.errs <- err:
 		case <-cp.ctx.Done():
@@ -107,11 +105,7 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 			return
 		}
 
-		// fmt.Println("error code returned")
-
 		_ = console.CloseTTY()
-
-		// fmt.Println("console is closed")
 	}()
 
 	return &cp, nil
@@ -276,7 +270,6 @@ func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *
 		log.Printf("Failed to append to buffer: %v", err)
 	}
 
-	// fmt.Printf("final expect returned with error: %v\n", err)
 	err = cp.console.CloseReaders()
 	if err != nil {
 		log.Printf("Failed to close the console readers: %v", err)
@@ -316,7 +309,6 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		select {
 		case perr := <-cp.errs:
 			if deadlineExpired {
-				// fmt.Println("deadline expired")
 				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
 			}
 			return cp.waitForEOF(perr, deadline, buf)
