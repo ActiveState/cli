@@ -45,9 +45,9 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 				return err
 			}
 
-			params.ConfigPath = config.ConfigPath()
-			params.CachePath = config.CachePath()
-			params.InstallPath = installPath
+			runner.ConfigPath = config.ConfigPath()
+			runner.CachePath = config.CachePath()
+			runner.InstallPath = installPath
 
 			return runner.Run(&params)
 		},

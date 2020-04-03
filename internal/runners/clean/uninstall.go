@@ -17,15 +17,15 @@ type confirmAble interface {
 }
 
 type Uninstall struct {
-	out     output.Outputer
-	confirm confirmAble
-}
-
-type UninstallParams struct {
-	Force       bool
+	out         output.Outputer
+	confirm     confirmAble
 	ConfigPath  string
 	CachePath   string
 	InstallPath string
+}
+
+type UninstallParams struct {
+	Force bool
 }
 
 func NewUninstall(outputer output.Outputer, confirmer confirmAble) *Uninstall {
