@@ -302,7 +302,9 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 	for {
 		deadlineExpired := time.Now().After(deadline)
 		err := cp.console.Flush(100*time.Millisecond, buf)
-		// fmt.Printf("flush returned with error: %v\n", err)
+
+		fmt.Printf("flush error: %v\n", err)
+
 		if (err != nil && !os.IsTimeout(err)) || deadlineExpired {
 			log.Println("killing process")
 			if err = cp.cmd.Process.Kill(); err != nil {
