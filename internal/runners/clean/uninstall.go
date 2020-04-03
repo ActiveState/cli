@@ -3,12 +3,10 @@ package clean
 import (
 	"errors"
 	"os"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -50,9 +48,5 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		}
 	}
 
-	logging.Debug(
-		"Cleaning the following paths:\n %s",
-		strings.Join([]string{params.CachePath, params.ConfigPath, params.InstallPath}, "\n "),
-	)
-	return runUninstall(params, u.confirm, u.out)
+	return u.runUninstall()
 }

@@ -4,26 +4,25 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 )
 
-func runUninstall(params *UninstallParams, confirm confirmAble, outputer output.Outputer) error {
-	err := removeCache(params.CachePath)
+func (u *Uninstall) runUninstall() error {
+	err := removeCache(u.CachePath)
 	if err != nil {
 		return err
 	}
 
-	err = removeInstall(params.InstallPath)
+	err = removeInstall(u.InstallPath)
 	if err != nil {
 		return err
 	}
 
-	err = removeConfig(params.ConfigPath)
+	err = removeConfig(u.ConfigPath)
 	if err != nil {
 		return err
 	}
 
-	outputer.Print(locale.T("clean_success_message"))
+	u.out.Print(locale.T("clean_success_message"))
 	return nil
 }
 

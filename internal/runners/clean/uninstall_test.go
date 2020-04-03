@@ -66,11 +66,10 @@ func (suite *CleanTestSuite) SetupTest() {
 
 func (suite *CleanTestSuite) TestUninstall() {
 	runner := NewUninstall(&testOutputer{}, &confirmMock{confirm: true})
-	err := runner.Run(&UninstallParams{
-		ConfigPath:  suite.configPath,
-		CachePath:   suite.cachePath,
-		InstallPath: suite.installPath,
-	})
+	runner.ConfigPath = suite.configPath
+	runner.CachePath = suite.cachePath
+	runner.InstallPath = suite.installPath
+	err := runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 	time.Sleep(2 * time.Second)
 
