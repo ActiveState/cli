@@ -12,10 +12,10 @@ import (
 	"runtime"
 
 	"github.com/kardianos/osext"
-	update "gopkg.in/inconshreveable/go-update.v0"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
@@ -31,8 +31,6 @@ var (
 )
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
-
-var up = update.New()
 
 // Info holds the version and sha info
 type Info struct {
@@ -175,8 +173,11 @@ func (u *Updater) update() error {
 	if err != nil {
 		return err
 	}
+
+	logging.Debug("Attempting to open executable path at: %s", path)
 	old, err := os.Open(path)
 	if err != nil {
+		_ = fileutils.LogPath(path)
 		return err
 	}
 
@@ -195,9 +196,12 @@ func (u *Updater) update() error {
 
 	// close the old binary before installing because on windows
 	// it can't be renamed if a handle to the file is still open
-	old.Close()
+	err = old.Close()
+	if err != nil {
+		return err
+	}
 
-	err, errRecover := up.FromStream(bytes.NewBuffer(bin))
+	err, errRecover := u.fromStream(path, bytes.NewBuffer(bin))
 	if errRecover != nil {
 		return failures.FailVerify.New(fmt.Sprintf("update and recovery errors: %q %q", err, errRecover))
 	}
@@ -334,4 +338,28 @@ func verifySha(bin []byte, sha string) bool {
 	}
 
 	return bytesEqual
+}
+
+// CleanOld will remove any leftover binary files from previous updates
+func CleanOld() error {
+	path, err := osext.Executable()
+	if err != nil {
+		return err
+	}
+	oldFile := filepath.Join(path, ".%s.old")
+
+	if !fileutils.FileExists(oldFile) {
+		return nil
+	}
+
+	err = os.Remove(oldFile)
+	if err != nil {
+		errHide := hideFile(oldFile)
+		if errHide != nil {
+			return errHide
+		}
+		return err
+	}
+
+	return nil
 }

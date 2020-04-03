@@ -19,6 +19,7 @@ type Flag struct {
 	Description string
 	Persist     bool
 	Value       interface{}
+	Hidden      bool
 
 	OnUse func()
 }
@@ -54,6 +55,10 @@ func (c *Command) setFlags(flags []*Flag) error {
 			return failures.FailDeveloper.New(
 				"Unknown type:" + reflect.TypeOf(v).Name(),
 			)
+		}
+
+		if flag.Hidden {
+			c.markFlagHidden(flag.Name)
 		}
 	}
 

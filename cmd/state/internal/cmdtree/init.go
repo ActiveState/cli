@@ -22,7 +22,7 @@ func newInitCommand() *captain.Command {
 			{
 				Name:        "path",
 				Shorthand:   "",
-				Description: locale.T("arg_state_init_path_description"),
+				Description: locale.T("flag_state_init_path_description"),
 				Value:       &params.Path,
 			},
 			{
@@ -33,6 +33,12 @@ func newInitCommand() *captain.Command {
 					initialize.RecognizedSkeletonStyles(),
 				),
 				Value: &params.Style,
+			},
+			{
+				// Hidden flag for legacy Komodo support
+				Name:   "language",
+				Value:  &params.Language,
+				Hidden: true,
 			},
 		},
 		[]*captain.Argument{

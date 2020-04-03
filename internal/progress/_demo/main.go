@@ -68,6 +68,9 @@ func tarGzDownloadBarHeuristic(p *progress.Progress) (err error) {
 	ub := p.AddUnpackBar(aSize, 70)
 	aStream := progress.NewReaderProxy(ub, aFile)
 	err = tgz.Unarchive(aStream, aSize, dir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error unarchiving %v\n", err)
+	}
 	ub.Complete()
 
 	time.Sleep(100 * time.Millisecond)
@@ -123,6 +126,9 @@ func progressRun() (err error) {
 	totalBar2 := p.AddTotalBar("installing", 1)
 
 	err = tarGzDownloadBarHeuristic(p)
+	if err != nil {
+		return err
+	}
 
 	totalBar2.Increment()
 	return nil

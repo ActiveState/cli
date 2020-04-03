@@ -210,7 +210,7 @@ func CheckpointToLanguage(checkpoint Checkpoint) (*Language, *failures.Failure) 
 		return lang, nil
 	}
 
-	return nil, failures.FailNotFound.New(locale.T("err_no_language"))
+	return nil, failures.FailNotFound.New(locale.T("err_fetch_languages"))
 }
 
 func hostPlatformToPlatformID(os string) (string, *failures.Failure) {

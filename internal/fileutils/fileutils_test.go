@@ -3,6 +3,7 @@ package fileutils
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/progress/mock"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -447,4 +449,70 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 	copiedLinkContent, err := ioutil.ReadFile(info.destLink)
 	require.NoError(t, err)
 	require.Equal(t, content, string(copiedLinkContent))
+}
+
+type mockIncrementer struct {
+	Count int
+}
+
+func (mi *mockIncrementer) Increment() {
+	mi.Count++
+}
+
+func touchFile(t *testing.T, contents string, paths ...string) {
+	pd := filepath.Join(paths[:len(paths)-1]...)
+	fp := filepath.Join(pd, paths[len(paths)-1])
+	if pd != "" {
+		fail := MkdirUnlessExists(pd)
+		require.NoError(t, fail.ToError(), "creating parent directory %s", pd)
+	}
+	err := ioutil.WriteFile(fp, []byte(contents), 0666)
+	require.NoError(t, err, "Touching %s", fp)
+}
+
+func assertFileWithContent(t *testing.T, contents string, paths ...string) {
+	fp := filepath.Join(paths...)
+	res, err := ioutil.ReadFile(fp)
+	assert.NoError(t, err, "reading %s", fp)
+	assert.Equal(t, contents, string(res))
+}
+
+func TestMoveAllFilesRecursively(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "activestatecli-test")
+	require.NoError(t, err, "Created a temp dir")
+	defer os.RemoveAll(tempDir)
+
+	fromDir := filepath.Join(tempDir, "from")
+	toDir := filepath.Join(tempDir, "to")
+
+	touchFile(t, "1", fromDir, "only_in_1", "t1")
+	touchFile(t, "1", fromDir, "in_1_and_2", "only_in_1")
+	touchFile(t, "1", fromDir, "in_1_and_2", "in_1_and_2")
+	touchFile(t, "1", fromDir, "root_in_1_only")
+	touchFile(t, "1", fromDir, "root_in_1_and_2")
+	touchFile(t, "2", toDir, "only_in_2", "t2")
+	touchFile(t, "2", toDir, "in_1_and_2", "only_in_2")
+	touchFile(t, "2", toDir, "in_1_and_2", "in_1_and_2")
+	touchFile(t, "2", toDir, "root_in_2_only")
+	touchFile(t, "2", toDir, "root_in_1_and_2")
+
+	counter := mock.NewMockIncrementer()
+
+	MoveAllFilesRecursively(fromDir, toDir, func() { counter.Increment() })
+
+	assertFileWithContent(t, "1", toDir, "only_in_1", "t1")
+	assertFileWithContent(t, "1", toDir, "in_1_and_2", "only_in_1")
+	assertFileWithContent(t, "2", toDir, "only_in_2", "t2")
+	assertFileWithContent(t, "2", toDir, "in_1_and_2", "only_in_2")
+	assertFileWithContent(t, "1", toDir, "in_1_and_2", "in_1_and_2")
+	assertFileWithContent(t, "2", toDir, "root_in_2_only")
+	assertFileWithContent(t, "1", toDir, "root_in_1_and_2")
+
+	assert.Equal(t, 5, counter.Count)
+
+	fp, err := os.Open(fromDir)
+	require.NoError(t, err, "reading from dir")
+	_, err = fp.Readdirnames(1)
+	assert.Error(t, err, "reading dir contents %s", fromDir)
+	assert.IsType(t, io.EOF, err)
 }

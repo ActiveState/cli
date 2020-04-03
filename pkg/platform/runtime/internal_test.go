@@ -44,12 +44,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = NewInstallerByParams(InstallerParams{
-		CacheDir:    suite.cacheDir,
-		CommitID:    "00010001-0001-0001-0001-000100010001",
-		Owner:       "string",
-		ProjectName: "string",
-	})
+	suite.installer, fail = NewInstaller(suite.downloadDir, InitDownload())
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 

@@ -6,7 +6,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +39,7 @@ func (suite *MoveAllFilesTestSuite) TestFromDir_IsNotDirectory() {
 
 	failure := fileutils.MoveAllFiles(tmpFile.Name(), suite.toDir)
 	suite.Require().NotNil(failure, "moving files")
-	suite.Equal(failures.FailOS, failure.Type)
+	suite.Equal(fileutils.FailMoveSourceNotDirectory, failure.Type)
 	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), failure.Error())
 }
 
@@ -50,7 +49,7 @@ func (suite *MoveAllFilesTestSuite) TestToDir_IsNotDirectory() {
 
 	failure := fileutils.MoveAllFiles(suite.fromDir, tmpFile.Name())
 	suite.Require().NotNil(failure, "moving files")
-	suite.Equal(failures.FailOS, failure.Type)
+	suite.Equal(fileutils.FailMoveDestinationNotDirectory, failure.Type)
 	suite.Equal(locale.Tr("err_os_not_a_directory", tmpFile.Name()), failure.Error())
 }
 

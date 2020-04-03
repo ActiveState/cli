@@ -81,6 +81,9 @@ const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
 // ArtifactFile is the name of the artifact json file contained within artifacts
 const ArtifactFile = "artifact.json"
 
+// ArtifactArchiveName is the standardized name of an artifact archive
+const ArtifactArchiveName = "artifact.tar.gz"
+
 // UpdateStorageDir is the directory where updates will be stored
 const UpdateStorageDir = "update/"
 
@@ -177,6 +180,12 @@ const RuntimeInstallDirs = "INSTALLDIR,perl"
 
 // RuntimeMetaFile is the json file that holds meta information about our runtime
 const RuntimeMetaFile = "support/metadata.json"
+
+// RuntimeDefinitionFilename is the filename for runtime meta data bundled with artifacts, if they are built by the alternative builder
+const RuntimeDefinitionFilename = "runtime.json"
+
+// LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
+const LocalRuntimeEnvironmentDirectory = "_runtime_env"
 
 // RCAppendStartLine is the start line used to denote our environment config in RC files
 const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
