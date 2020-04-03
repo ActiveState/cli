@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -303,9 +304,8 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		deadlineExpired := time.Now().After(deadline)
 		err := cp.console.Flush(100*time.Millisecond, buf)
 
-		fmt.Printf("flush error: %v\n", err)
-
-		if (err != nil && !os.IsTimeout(err)) || deadlineExpired {
+		// we only expect timeout or EOF errors here, otherwise we will kill the process
+		if (err != nil && (!os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {
 			log.Println("killing process")
 			if err = cp.cmd.Process.Kill(); err != nil {
 				panic(err)
