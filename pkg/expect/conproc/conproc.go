@@ -260,19 +260,23 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	}
 }
 
-func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
+func (cp *ConsoleProcess) waitForEOF(skipExpect bool, processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
 	fmt.Println("expecting end of stream error")
-	b, expErr := cp.console.Expect(
-		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
-		expect.WithTimeout(deadline.Sub(time.Now())),
-	)
-	fmt.Printf("expect error: %v\n", expErr)
-	_, err := buf.WriteString(b)
-	if err != nil {
-		log.Printf("Failed to append to buffer: %v", err)
+	var expErr error
+	if !skipExpect {
+		b, err := cp.console.Expect(
+			expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
+			expect.WithTimeout(deadline.Sub(time.Now())),
+		)
+		expErr = err
+		fmt.Printf("expect error: %v\n", expErr)
+		_, err = buf.WriteString(b)
+		if err != nil {
+			log.Printf("Failed to append to buffer: %v", err)
+		}
 	}
 
-	err = cp.console.CloseReaders()
+	err := cp.console.CloseReaders()
 	if err != nil {
 		log.Printf("Failed to close the console readers: %v", err)
 	}
@@ -315,7 +319,7 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 			if deadlineExpired {
 				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
 			}
-			return cp.waitForEOF(perr, deadline, buf)
+			return cp.waitForEOF(runtime.GOOS == "darwin", perr, deadline, buf)
 		case <-cp.ctx.Done():
 			return nil, buf.String(), fmt.Errorf("ConsoleProcess context canceled")
 		default:
