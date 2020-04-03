@@ -45,12 +45,15 @@ func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
 	readLoop:
 		for {
 			n, err := r.Read(buf)
+			fmt.Printf("Read %d bytes with err: %v\n", n, err)
 
 			if err != nil {
 				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
 				select {
 				case p.errC <- err:
+					fmt.Printf("Signalled error: %v\n", err)
 				case <-ctx.Done():
+					fmt.Printf("Skipped error: %v\n", err)
 				}
 				break readLoop
 			}

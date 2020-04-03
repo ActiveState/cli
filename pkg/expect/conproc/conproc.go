@@ -260,10 +260,10 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	}
 }
 
-func (cp *ConsoleProcess) waitForEOF(skipExpect bool, processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
+func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
 	fmt.Println("expecting end of stream error")
 	var expErr error
-	if !skipExpect {
+	if true {
 		b, err := cp.console.Expect(
 			expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
 			expect.WithTimeout(deadline.Sub(time.Now())),
@@ -319,7 +319,7 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 			if deadlineExpired {
 				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
 			}
-			return cp.waitForEOF(runtime.GOOS == "darwin", perr, deadline, buf)
+			return cp.waitForEOF(perr, deadline, buf)
 		case <-cp.ctx.Done():
 			return nil, buf.String(), fmt.Errorf("ConsoleProcess context canceled")
 		default:
