@@ -1027,6 +1027,18 @@ export_recipe_cmd_commitid_arg_description:
   other: "Sets target commit by ID (default: current commit)"
 export_recipe_flag_pretty:
   other: Enables export format beautification
+export_new_api_key_cmd_description:
+  other: Create and print new API key
+export_new_api_key_arg_name:
+  other: name
+export_new_api_key_arg_name_description:
+  other: API key name
+export_apikey_user_notice:
+  other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
+err_apikey_name_required:
+  other: An API key name is required.
+err_cannot_obtain_apikey:
+  other: Cannot obtain API key.
 export_recipe_flag_platform:
   other: Sets target platform
 platforms_cmd_description:
