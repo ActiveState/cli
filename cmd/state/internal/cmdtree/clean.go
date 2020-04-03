@@ -1,10 +1,7 @@
 package cmdtree
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -25,7 +22,6 @@ func newCleanCommand(outputer output.Outputer) *captain.Command {
 }
 
 func newUninstallCommand(outputer output.Outputer) *captain.Command {
-	runner := clean.NewUninstall(outputer, prompt.New())
 	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
@@ -40,14 +36,10 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			installPath, err := os.Executable()
+			runner, err := clean.NewUninstall(outputer, prompt.New())
 			if err != nil {
 				return err
 			}
-
-			runner.ConfigPath = config.ConfigPath()
-			runner.CachePath = config.CachePath()
-			runner.InstallPath = installPath
 
 			return runner.Run(&params)
 		},
@@ -55,7 +47,7 @@ func newUninstallCommand(outputer output.Outputer) *captain.Command {
 }
 
 func newCacheCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewCache(output, prompt.New(), config.CachePath())
+	runner := clean.NewCache(output, prompt.New())
 	params := clean.CacheParams{}
 	return captain.NewCommand(
 		"cache",
@@ -76,7 +68,7 @@ func newCacheCommand(output output.Outputer) *captain.Command {
 }
 
 func newConfigCommand(output output.Outputer) *captain.Command {
-	runner := clean.NewConfig(output, prompt.New(), config.ConfigPath())
+	runner := clean.NewConfig(output, prompt.New())
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
 		"config",

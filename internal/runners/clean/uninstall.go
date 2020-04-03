@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -17,20 +18,28 @@ type confirmAble interface {
 type Uninstall struct {
 	out         output.Outputer
 	confirm     confirmAble
-	ConfigPath  string
-	CachePath   string
-	InstallPath string
+	configPath  string
+	cachePath   string
+	installPath string
 }
 
 type UninstallParams struct {
 	Force bool
 }
 
-func NewUninstall(outputer output.Outputer, confirmer confirmAble) *Uninstall {
-	return &Uninstall{
-		out:     outputer,
-		confirm: confirmer,
+func NewUninstall(outputer output.Outputer, confirmer confirmAble) (*Uninstall, error) {
+	installPath, err := os.Executable()
+	if err != nil {
+		return nil, err
 	}
+
+	return &Uninstall{
+		out:         outputer,
+		confirm:     confirmer,
+		installPath: installPath,
+		configPath:  config.ConfigPath(),
+		cachePath:   config.CachePath(),
+	}, nil
 }
 
 func (u *Uninstall) Run(params *UninstallParams) error {

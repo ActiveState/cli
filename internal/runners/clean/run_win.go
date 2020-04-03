@@ -7,7 +7,6 @@ import (
 	"os/exec"
 
 	"github.com/ActiveState/cli/internal/language"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/gobuffalo/packr"
 )
