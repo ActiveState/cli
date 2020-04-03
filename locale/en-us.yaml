@@ -1418,9 +1418,9 @@ clean_description:
 uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
-  other: Remove the State Tool's cache directory
+  other: Removes all cached Runtime Environments
 config_description:
-  other: Remove the State Tool's config directory
+  other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
 flag_state_clean_cache_force_description:
