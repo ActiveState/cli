@@ -97,6 +97,5 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
 	}
-	t.Skip("Skipping update integration test: fix in story ...")
 	suite.Run(t, new(UpdateIntegrationTestSuite))
 }

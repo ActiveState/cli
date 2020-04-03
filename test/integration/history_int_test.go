@@ -12,7 +12,6 @@ type HistoryIntegrationTestSuite struct {
 }
 
 func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
-	suite.T().Skip("This test currently does not work.  See story https://www.pivotaltracker.com/story/show/172131520")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

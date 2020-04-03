@@ -77,9 +77,6 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
-	if runtime.GOOS != "linux" {
-		suite.T().Skip("On MacOS/Windows the Ctrl-C event currently results in a double closed channel-error.  See https://www.pivotaltracker.com/story/show/172131439")
-	}
 	ts, env := suite.setup()
 	defer ts.Close()
 	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")

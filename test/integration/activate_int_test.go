@@ -71,10 +71,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("suite.AppendEnv() does not work on windows currently.  Skipping this test.")
-	}
-
 	// temp skip // pythonExe := "python" + version
 
 	ts := e2e.New(suite.T(), false)
