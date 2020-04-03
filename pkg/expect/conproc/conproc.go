@@ -298,7 +298,7 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		err := cp.console.Flush(100*time.Millisecond, buf)
 
 		// we only expect timeout or EOF errors here, otherwise we will kill the process
-		if (err != nil && (!os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {
+		if (err != nil && !(os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {
 			log.Println("killing process")
 			if err = cp.cmd.Process.Kill(); err != nil {
 				panic(err)
