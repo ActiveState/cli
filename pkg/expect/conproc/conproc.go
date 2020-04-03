@@ -88,6 +88,8 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 		defer close(cp.errs)
 
 		err := cmd.Wait()
+		// allow some time to read last bytes from console before we close it
+		time.Sleep(100 * time.Millisecond)
 		_ = console.Close()
 
 		select {
