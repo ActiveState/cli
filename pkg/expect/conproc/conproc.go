@@ -261,22 +261,16 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 }
 
 func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
-	fmt.Println("expecting end of stream error")
-	var expErr error
-	if true {
-		b, err := cp.console.Expect(
-			expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
-			expect.WithTimeout(deadline.Sub(time.Now())),
-		)
-		expErr = err
-		fmt.Printf("expect error: %v\n", expErr)
-		_, err = buf.WriteString(b)
-		if err != nil {
-			log.Printf("Failed to append to buffer: %v", err)
-		}
+	b, expErr := cp.console.Expect(
+		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
+		expect.WithTimeout(deadline.Sub(time.Now())),
+	)
+	_, err := buf.WriteString(b)
+	if err != nil {
+		log.Printf("Failed to append to buffer: %v", err)
 	}
 
-	err := cp.console.CloseReaders()
+	err = cp.console.CloseReaders()
 	if err != nil {
 		log.Printf("Failed to close the console readers: %v", err)
 	}

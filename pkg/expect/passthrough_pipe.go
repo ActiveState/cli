@@ -45,15 +45,12 @@ func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
 	readLoop:
 		for {
 			n, err := r.Read(buf)
-			fmt.Printf("Read %d bytes with err: %v\n", n, err)
 
 			if err != nil {
 				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
 				select {
 				case p.errC <- err:
-					fmt.Printf("Signalled error: %v\n", err)
 				case <-ctx.Done():
-					fmt.Printf("Skipped error: %v\n", err)
 				}
 				break readLoop
 			}
@@ -97,7 +94,10 @@ func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
 	ni := nStart
 	for ; ni < len(buf); ni++ {
 		select {
-		case b := <-p.pipeC:
+		case b, ok := <-p.pipeC:
+			if !ok {
+				return ni
+			}
 			buf[ni] = b
 		default:
 			return ni
@@ -121,9 +121,15 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 
 	// block until we read a byte, receive an error or time out
 	select {
-	case b := <-p.pipeC:
+	case b, ok := <-p.pipeC:
+		if !ok {
+			return 0, io.EOF
+		}
 		buf[0] = b
-	case e := <-p.errC:
+	case e, ok := <-p.errC:
+		if !ok {
+			return 0, io.EOF
+		}
 		return 0, e
 	case <-time.After(p.deadline.Sub(time.Now())):
 		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
