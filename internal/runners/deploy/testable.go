@@ -10,8 +10,8 @@ import (
 
 // Installable is an interface for runtime.Installer
 type Installable interface {
-	Install() (bool, *failures.Failure)
-	InstallDirs() ([]string, *failures.Failure)
+	Install() (envGetter runtime.EnvGetter, freshInstallation bool, fail *failures.Failure)
+	Env() (envGetter runtime.EnvGetter, fail *failures.Failure)
 }
 
 // NewInstallerFunc defines a testable type for runtime.InitInstaller

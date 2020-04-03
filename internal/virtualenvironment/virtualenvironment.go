@@ -26,6 +26,8 @@ var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", f
 // OS is used by tests to spoof a different value
 var OS = rt.GOOS
 
+type getEnvFunc func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	project             *project.Project
@@ -33,7 +35,7 @@ type VirtualEnvironment struct {
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	onUseCache          func()
-	getEnv              func() (map[string]string, *failures.Failure)
+	getEnv              getEnvFunc
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -53,10 +55,10 @@ func Init() *VirtualEnvironment {
 	}
 }
 
-func NewWithArtifacts(artifactPaths []string) *VirtualEnvironment {
+func New(getEnv getEnvFunc) *VirtualEnvironment {
 	return &VirtualEnvironment{
-		activationID:  uuid.New().String(),
-		artifactPaths: artifactPaths,
+		activationID: uuid.New().String(),
+		getEnv:       getEnv,
 	}
 }
 
@@ -107,8 +109,6 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 		v.onUseCache()
 	}
 
-	v.artifactPaths = installer.InstallDirsFromInstallCall()
-
 	return nil
 }
 
@@ -121,7 +121,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]
 		env["PATH"] = os.Getenv("PATH")
 	} else {
 		var fail *failures.Failure
-		env, fail = v.getEnv()
+		env, fail = v.getEnv(inherit, projectDir)
 		if fail != nil {
 			logging.Error("could not set-up the runtime environment: %v", fail)
 			return map[string]string{}

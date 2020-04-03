@@ -3,7 +3,6 @@ package runtime
 import (
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -85,18 +84,17 @@ type Download struct {
 	commitID    strfmt.UUID
 	owner       string
 	projectName string
-	targetDir   string
 }
 
 // InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload(targetDir string) Downloader {
+func InitDownload() Downloader {
 	pj := project.Get()
-	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name(), targetDir)
+	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(commitID strfmt.UUID, owner, projectName, targetDir string) Downloader {
-	return &Download{commitID, owner, projectName, targetDir}
+func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+	return &Download{commitID, owner, projectName}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef

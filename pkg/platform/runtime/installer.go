@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/archiver"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 
@@ -55,13 +54,16 @@ var (
 
 	// FailRequiresDownload is a failure due to not all artifacts having been downloaded
 	FailRequiresDownload = failures.Type("runtime.requires.download", failures.FailUserInput)
+
+	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
+	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	params             InstallerParams
+	params            InstallerParams
 	runtimeDownloader Downloader
 	onDownload        func()
 	onInstall         func()
@@ -97,8 +99,8 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, 
 // exists as a directory or can be created.
 func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		runtimeDownloader:  InitDownload(),
-		params:             params,
+		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
+		params:            params,
 	}
 
 	return installer, nil
@@ -106,29 +108,36 @@ func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	if fail := installer.validateCheckpoint(); fail != nil {
+	assembler, fail := installer.Assembler()
+	if fail != nil {
 		return nil, false, fail
+	}
+	return installer.InstallArtifacts(assembler)
+}
+
+// Env will grab the environment information for the given runtime. This will request build info.
+func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
+	return installer.Assembler()
+}
+
+func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
+	if fail := installer.validateCheckpoint(); fail != nil {
+		return nil, fail
 	}
 
 	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
 	if fail != nil {
-		return nil, false, fail
+		return nil, fail
 	}
 
-	return installer.InstallArtifacts(artifacts)
+	if artifacts.IsAlternative {
+		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
+	}
+
+	return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
 }
 
-func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResult) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	var runtimeAssembler Assembler
-	if artifactsResult.IsAlternative {
-		runtimeAssembler, fail = NewAlternativeRuntime(artifactsResult.Artifacts, installer.cacheDir, artifactsResult.RecipeID)
-	} else {
-		runtimeAssembler, fail = NewCamelRuntime(artifactsResult.Artifacts, installer.cacheDir)
-	}
-	if fail != nil {
-		return nil, false, fail
-	}
-
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
@@ -183,26 +192,6 @@ func (installer *Installer) validateCheckpoint() *failures.Failure {
 	}
 
 	return nil
-}
-
-func (installer *Installer) fetchArtifactMap() (map[string]*HeadChefArtifact, *failures.Failure) {
-	artifactMap := map[string]*HeadChefArtifact{}
-
-	artifacts, fail := installer.downloader.FetchArtifacts()
-	if fail != nil {
-		return artifactMap, fail
-	}
-
-	for _, artf := range artifacts {
-		installDir, fail := installer.installDir(artf)
-		if fail != nil {
-			return artifactMap, fail
-		}
-		artifactMap[installDir] = artf
-		installer.installDirs = append(installer.installDirs, installDir)
-	}
-
-	return artifactMap, nil
 }
 
 // InstallFromArchives will unpack the installer archive, locate the install script, and then use the installer
@@ -301,61 +290,6 @@ func (installer *Installer) unpackArchive(ua unarchiver.Unarchiver, archivePath 
 	upb.ReScale(numUnpackedFiles)
 
 	return tmpRuntimeDir, upb, nil
-}
-
-// InstallDirs will return the installDirs returned by `InstallDirsFromInstallCall`, and fall back on `InstallDirsStandalone`
-// if the former is empty. Effectively this should always give the InstallDirs without requiring the consumer to worry about
-// whether Install was called.
-// Yes this is awkward. But refactoring this package to remove this behavior altogether is out of scope at this time.
-func (installer *Installer) InstallDirs() ([]string, *failures.Failure) {
-	installDirs := installer.InstallDirsFromInstallCall()
-
-	if len(installDirs) == 0 {
-		return installer.InstallDirsStandalone()
-	}
-
-	return installDirs, nil
-}
-
-// InstallDirsFromInstallCall returns all the artifact install paths required by the current configuration.
-// WARNING: This will always return an empty slice UNLESS Install() or InstallFromArchive() was called!
-func (installer *Installer) InstallDirsFromInstallCall() []string {
-	return funk.Uniq(installer.installDirs).([]string)
-}
-
-// InstallDirsStandalone returns all the artifact paths detected for the given runtime environment, these are detected live
-// so Install() does not need to be called first. If even a single installDir is missing this will fail.
-// This does mean Install() needs to have been called at SOME POINT, just not during the same invocation.
-func (installer *Installer) InstallDirsStandalone() ([]string, *failures.Failure) {
-	if fail := installer.validateCheckpoint(); fail != nil {
-		return []string{}, fail
-	}
-
-	artifactMap, fail := installer.fetchArtifactMap()
-	if fail != nil {
-		return []string{}, fail
-	}
-
-	installDirs := []string{}
-	for installDir, _ := range artifactMap {
-		if !fileutils.DirExists(installDir) {
-			return []string{}, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
-		}
-		installDirs = append(installDirs, installDir)
-	}
-
-	return installDirs, nil
-}
-
-func (installer *Installer) installDir(artf *HeadChefArtifact) (string, *failures.Failure) {
-	installDir := filepath.Join(installer.params.CacheDir, shortHash(artf.ArtifactID.String()))
-
-	if fileutils.FileExists(installDir) {
-		// install-dir exists, but is a regular file
-		return "", FailInstallDirInvalid.New("installer_err_installdir_isfile", installDir)
-	}
-
-	return installDir, nil
 }
 
 // OnDownload registers a function to be called when a download occurs

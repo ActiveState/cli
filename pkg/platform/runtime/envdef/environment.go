@@ -7,8 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/failures"
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/failures"
 )
 
 // EnvironmentDefinition provides all the information needed to set up an
@@ -331,10 +332,20 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 // If an environment variable is configured to inherit from the OS
 // environment (`Inherit==true`), the base environment defined by the
 // `envLookup` method is joined with these environment variables.
-func (ed *EnvironmentDefinition) GetEnv() map[string]string {
-	res, err := ed.GetEnvBasedOn(os.LookupEnv)
-	if err != nil {
-		panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
+func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
+	if inherit {
+		res, err := ed.GetEnvBasedOn(os.LookupEnv)
+		if err != nil {
+			panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
+		}
+		return res
+	}
+
+	res := map[string]string{}
+
+	for _, ev := range ed.Env {
+		pev := &ev
+		res[pev.Name] = pev.ValueString()
 	}
 	return res
 }

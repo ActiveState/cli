@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -64,10 +65,14 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (Ins
 func runSteps(installer Installable, step Step, out output.Outputer) error {
 	logging.Debug("runSteps: %s", step.String())
 
+	var envGetter runtime.EnvGetter
+	var fail *failures.Failure
+
 	if step == UnsetStep || step == InstallStep {
 		logging.Debug("Running install step")
 		out.Notice(locale.T("deploy_install"))
-		installed, fail := installer.Install()
+		var installed bool
+		envGetter, installed, fail = installer.Install()
 		if fail != nil {
 			return fail
 		}
@@ -77,13 +82,23 @@ func runSteps(installer Installable, step Step, out output.Outputer) error {
 	}
 	if step == UnsetStep || step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if err := configure(installer, out); err != nil {
+		if envGetter == nil {
+			if envGetter, fail = installer.Env(); fail != nil {
+				return fail
+			}
+		}
+		if err := configure(envGetter, out); err != nil {
 			return err
 		}
 	}
 	if step == UnsetStep || step == ReportStep {
 		logging.Debug("Running report step")
-		if err := report(installer, out); err != nil {
+		if envGetter == nil {
+			if envGetter, fail = installer.Env(); fail != nil {
+				return fail
+			}
+		}
+		if err := report(envGetter, out); err != nil {
 			return err
 		}
 	}
@@ -91,18 +106,13 @@ func runSteps(installer Installable, step Step, out output.Outputer) error {
 	return nil
 }
 
-func configure(installer Installable, out output.Outputer) error {
-	installDirs, fail := installer.InstallDirs()
-	if fail != nil {
-		return fail.ToError()
-	}
-
+func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	sshell, fail := subshell.Get()
 	if fail != nil {
 		return fail.ToError()
 	}
 
-	venv := virtualenvironment.NewWithArtifacts(installDirs)
+	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
@@ -115,17 +125,10 @@ type Report struct {
 	Environment       map[string]string
 }
 
-func report(installer Installable, out output.Outputer) error {
+func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	out.Notice(locale.T("deploy_info"))
 
-	installDirs, fail := installer.InstallDirs()
-	if fail != nil {
-		return fail
-	}
-
-	logging.Debug("%v", installDirs)
-
-	venv := virtualenvironment.NewWithArtifacts(installDirs)
+	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
 	bins := []string{}
