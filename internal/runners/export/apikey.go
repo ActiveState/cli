@@ -6,17 +6,12 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 )
 
 // APIKeyProvider describes the behavior required to obtain a new api key.
 type APIKeyProvider interface {
 	NewAPIKey(string) (string, *failures.Failure)
-}
-
-// NoticePrinter describes a basic print and notice provider.
-type NoticePrinter interface {
-	Print(interface{})
-	Notice(interface{})
 }
 
 // APIKeyRunParams manages the request-specific parameters used to run the
@@ -41,11 +36,11 @@ func prepareAPIKeyRunParams(params APIKeyRunParams) (APIKeyRunParams, error) {
 // APIKey manages the core dependencies for the primary APIKey logic.
 type APIKey struct {
 	keyPro APIKeyProvider
-	out    NoticePrinter
+	out    output.Outputer
 }
 
 // NewAPIKey is a convenience construction function.
-func NewAPIKey(keyPro APIKeyProvider, out NoticePrinter) *APIKey {
+func NewAPIKey(keyPro APIKeyProvider, out output.Outputer) *APIKey {
 	return &APIKey{
 		out:    out,
 		keyPro: keyPro,
@@ -54,10 +49,6 @@ func NewAPIKey(keyPro APIKeyProvider, out NoticePrinter) *APIKey {
 
 // Run executes the primary APIKey logic.
 func (k *APIKey) Run(params APIKeyRunParams) error {
-	return runAPIKey(k.keyPro, k.out, params)
-}
-
-func runAPIKey(keyPro APIKeyProvider, out NoticePrinter, params APIKeyRunParams) error {
 	logging.Debug("Execute export API key")
 
 	ps, err := prepareAPIKeyRunParams(params)
@@ -65,12 +56,12 @@ func runAPIKey(keyPro APIKeyProvider, out NoticePrinter, params APIKeyRunParams)
 		return failures.FailUser.New(err.Error())
 	}
 
-	key, fail := keyPro.NewAPIKey(ps.Name)
+	key, fail := k.keyPro.NewAPIKey(ps.Name)
 	if err != nil {
 		return fail.WithDescription("err_cannot_obtain_apikey")
 	}
 
-	out.Notice(locale.T("export_apikey_user_notice"))
-	out.Print(key)
+	k.out.Notice(locale.T("export_apikey_user_notice"))
+	k.out.Print(key)
 	return nil
 }
