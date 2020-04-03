@@ -16,6 +16,7 @@ package expect
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -196,14 +197,23 @@ func (c *Console) Tty() *os.File {
 // Flush reads from the input stream until it catches up with the incoming stream off data.
 // This function can unblock the writer, if no further reads from the passthrough pipe are
 // needed
-func (c *Console) Flush(t time.Duration) error {
+func (c *Console) Flush(t time.Duration, buf *bytes.Buffer) error {
+	writer := io.MultiWriter(append(c.opts.Stdouts, buf)...)
+	runeWriter := bufio.NewWriterSize(writer, utf8.UTFMax)
+
 	c.passthroughPipe.SetReadDeadline(time.Now().Add(t))
 	for {
-		buf := make([]byte, 10)
-		n, err := c.passthroughPipe.Read(buf)
-		if n == 0 {
+		r, _, err := c.runeReader.ReadRune()
+		if err != nil {
 			return err
 		}
+		_, err = runeWriter.WriteRune(r)
+		if err != nil {
+			return err
+		}
+
+		// Immediately flush rune to the underlying writers.
+		err = runeWriter.Flush()
 		if err != nil {
 			return err
 		}
@@ -236,8 +246,13 @@ func (c *Console) Fd() uintptr {
 	return c.Pty.TerminalOutFd()
 }
 
-// Close closes Console's tty. Calling Close will unblock Expect and ExpectEOF.
-func (c *Console) Close() error {
+// CloseTTY closes Console's tty. Calling CloseTTY will unblock Expect and ExpectEOF.
+func (c *Console) CloseTTY() error {
+	// close the tty in the end
+	return c.Pty.Close()
+}
+
+func (c *Console) CloseReaders() error {
 	for _, fd := range c.closers {
 		err := fd.Close()
 		if err != nil {
@@ -245,8 +260,20 @@ func (c *Console) Close() error {
 		}
 	}
 
-	// close the tty in the end
-	return c.Pty.Close()
+	return c.passthroughPipe.Close()
+}
+
+// Close closes both the TTY and afterwards all the readers
+// You may want to split this up to give the readers time to read all the data
+// until they reach the EOF error
+func (c *Console) Close() error {
+	err := c.CloseTTY()
+	if err != nil {
+		c.Logf("failed to close TTY: %v", err)
+	}
+
+	// close the readers reading from the TTY
+	return c.CloseReaders()
 }
 
 // Send writes string s to Console's tty.

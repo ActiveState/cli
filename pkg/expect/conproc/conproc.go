@@ -1,9 +1,11 @@
 package conproc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -22,16 +24,21 @@ var (
 	ErrNoProcess = errors.New("no command process seems to be running")
 )
 
+type errWaitTimeout struct {
+	error
+}
+
+func (errWaitTimeout) Timeout() bool { return true }
+
 type ConsoleProcess struct {
-	opts       Options
-	errs       chan error
-	console    *expect.Console
-	vtstrip    *vt10x.VTStrip
-	cmd        *exec.Cmd
-	cmdName    string
-	ctx        context.Context
-	cancel     func()
-	wasAwaited bool
+	opts    Options
+	errs    chan error
+	console *expect.Console
+	vtstrip *vt10x.VTStrip
+	cmd     *exec.Cmd
+	cmdName string
+	ctx     context.Context
+	cancel  func()
 }
 
 // NewConsoleProcess bonds a command process with a console pty.
@@ -88,24 +95,28 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 		defer close(cp.errs)
 
 		err := cmd.Wait()
-		// allow some time to read last bytes from console before we close it
-		time.Sleep(100 * time.Millisecond)
-		_ = console.Close()
+
+		// fmt.Println("wait returned")
 
 		select {
 		case cp.errs <- err:
 		case <-cp.ctx.Done():
+			log.Println("ConsoleProcess cancelled!  You may have forgotten to call ExpectExitCode()")
+			_ = console.Close()
+			return
 		}
+
+		// fmt.Println("error code returned")
+
+		_ = console.CloseTTY()
+
+		// fmt.Println("console is closed")
 	}()
 
 	return &cp, nil
 }
 
 func (cp *ConsoleProcess) Close() error {
-	if !cp.wasAwaited {
-		fmt.Fprintf(os.Stderr, "WARNING: consoleProcess closed without being waited for!  You may have forgotten to call ExpectExitCode()\n")
-	}
-
 	cp.cancel()
 
 	_ = cp.opts.CleanUp()
@@ -221,7 +232,6 @@ func (cp *ConsoleProcess) Stop() error {
 
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration) {
-	// TODO: communicate exit code info properly
 	_, buf, err := cp.wait(timeout...)
 	if err == nil && exitCode == 0 {
 		return
@@ -238,7 +248,6 @@ func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration)
 
 // ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
 func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
-	// TODO: communicate exit code info properly
 	_, buf, err := cp.wait(timeout...)
 	if err == nil {
 		if exitCode != 0 {
@@ -256,6 +265,27 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	}
 }
 
+func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
+	b, expErr := cp.console.Expect(
+		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
+		expect.WithTimeout(deadline.Sub(time.Now())),
+	)
+	_, err := buf.WriteString(b)
+	if err != nil {
+		log.Printf("Failed to append to buffer: %v", err)
+	}
+
+	// fmt.Printf("final expect returned with error: %v\n", err)
+	err = cp.console.CloseReaders()
+	if err != nil {
+		log.Printf("Failed to close the console readers: %v", err)
+	}
+	if expErr != nil {
+		return nil, buf.String(), expErr
+	}
+	return cp.cmd.ProcessState, buf.String(), processErr
+}
+
 func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, string, error) {
 	if cp.cmd == nil || cp.cmd.Process == nil {
 		panic(ErrNoProcess.Error())
@@ -266,31 +296,31 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 		t = timeout[0]
 	}
 
-	buf, err := cp.console.Expect(
-		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
-		expect.WithTimeout(t),
-	)
-	if err != nil {
-		if !os.IsTimeout(err) {
-			fmt.Fprintf(os.Stderr, "unknown error while waiting for process: %v", err)
+	deadline := time.Now().Add(t)
+	buf := new(bytes.Buffer)
+	// run in a tight loop until process finished or until we timeout
+	for {
+		deadlineExpired := time.Now().After(deadline)
+		err := cp.console.Flush(100*time.Millisecond, buf)
+		// fmt.Printf("flush returned with error: %v\n", err)
+		if (err != nil && !os.IsTimeout(err)) || deadlineExpired {
+			log.Println("killing process")
+			if err = cp.cmd.Process.Kill(); err != nil {
+				panic(err)
+			}
+			return nil, buf.String(), err
 		}
-		fmt.Println("killing process")
-		if err = cp.cmd.Process.Kill(); err != nil {
-			panic(err)
-		}
-		cp.wasAwaited = true
-		return nil, buf, err
-	}
 
-	select {
-	case perr := <-cp.errs:
-		cp.wasAwaited = true
-		if perr != nil {
-			return cp.cmd.ProcessState, buf, perr
+		select {
+		case perr := <-cp.errs:
+			if deadlineExpired {
+				// fmt.Println("deadline expired")
+				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
+			}
+			return cp.waitForEOF(perr, deadline, buf)
+		case <-cp.ctx.Done():
+			return nil, buf.String(), fmt.Errorf("ConsoleProcess context canceled")
+		default:
 		}
-		return cp.cmd.ProcessState, buf, nil
-	case <-cp.ctx.Done():
-		cp.wasAwaited = true
-		return nil, buf, fmt.Errorf("context canceled")
 	}
 }

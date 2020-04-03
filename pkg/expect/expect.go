@@ -84,6 +84,7 @@ func (c *Console) Expect(opts ...ExpectOpt) (string, error) {
 
 		var r rune
 		r, _, err = c.runeReader.ReadRune()
+		// fmt.Printf("read a rune: %s with err %v\n", string(r), err)
 		if err != nil {
 			matcher = options.Match(err)
 			if matcher != nil {
