@@ -92,6 +92,9 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 
 	expectObs.setRawDataFn(cp.Snapshot)
 
+	// Asynchronously wait for the underlying process to finish and communicate
+	// results to `cp.errs` channel
+	// Once the error has been received (by the `wait` function, the TTY is closed)
 	go func() {
 		defer close(cp.errs)
 
@@ -260,6 +263,9 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	}
 }
 
+// waitForEOF is a helper function that consumes all bytes until we reach an EOF signal
+// and then closes up all the readers.
+// This function is called as a last step by cp.wait()
 func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
 	b, expErr := cp.console.Expect(
 		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
@@ -280,6 +286,11 @@ func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *
 	return cp.cmd.ProcessState, buf.String(), processErr
 }
 
+// wait waits for a console to finish and cleans up all resources
+// First it consistently flushes/drains the pipe until the underlying process finishes.
+// Note, that without draining the output pipe, the process might hang.
+// As soon as the process actually finishes, it waits for the underlying console to be closed
+// and gives all readers a chance to read remaining bytes.
 func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, string, error) {
 	if cp.cmd == nil || cp.cmd.Process == nil {
 		panic(ErrNoProcess.Error())

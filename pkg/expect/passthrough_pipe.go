@@ -107,6 +107,7 @@ func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
 }
 
 // Read reads from the PassthroughPipe and errors out if no data has been written to the pipe before the read deadline expired
+// If Read is called after the PassthroughPipe has been closed `0, io.EOF` is returned
 func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 
 	if time.Now().After(p.deadline) {
