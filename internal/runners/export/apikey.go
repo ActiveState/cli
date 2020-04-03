@@ -13,9 +13,10 @@ type APIKeyProvider interface {
 	NewAPIKey(string) (string, *failures.Failure)
 }
 
-// Printer describes a basic print provider.
-type Printer interface {
+// NoticePrinter describes a basic print and notice provider.
+type NoticePrinter interface {
 	Print(interface{})
+	Notice(interface{})
 }
 
 // APIKeyRunParams manages the request-specific parameters used to run the
@@ -40,11 +41,11 @@ func prepareAPIKeyRunParams(params APIKeyRunParams) (APIKeyRunParams, error) {
 // APIKey manages the core dependencies for the primary APIKey logic.
 type APIKey struct {
 	keyPro APIKeyProvider
-	out    Printer
+	out    NoticePrinter
 }
 
 // NewAPIKey is a convenience construction function.
-func NewAPIKey(keyPro APIKeyProvider, out Printer) *APIKey {
+func NewAPIKey(keyPro APIKeyProvider, out NoticePrinter) *APIKey {
 	return &APIKey{
 		out:    out,
 		keyPro: keyPro,
@@ -56,7 +57,7 @@ func (k *APIKey) Run(params APIKeyRunParams) error {
 	return runAPIKey(k.keyPro, k.out, params)
 }
 
-func runAPIKey(keyPro APIKeyProvider, out Printer, params APIKeyRunParams) error {
+func runAPIKey(keyPro APIKeyProvider, out NoticePrinter, params APIKeyRunParams) error {
 	logging.Debug("Execute export API key")
 
 	ps, err := prepareAPIKeyRunParams(params)
@@ -69,6 +70,7 @@ func runAPIKey(keyPro APIKeyProvider, out Printer, params APIKeyRunParams) error
 		return fail.WithDescription("err_cannot_obtain_apikey")
 	}
 
+	out.Notice(locale.T("export_apikey_user_notice"))
 	out.Print(key)
 	return nil
 }

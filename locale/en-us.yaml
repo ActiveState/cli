@@ -1033,6 +1033,8 @@ export_new_api_key_arg_name:
   other: name
 export_new_api_key_arg_name_description:
   other: API key name
+export_apikey_user_notice:
+  other: The State Tool does not save this key; It is up to you to store the value for later use.
 err_apikey_name_required:
   other: An API key name is required.
 err_cannot_obtain_apikey:
