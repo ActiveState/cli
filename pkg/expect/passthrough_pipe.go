@@ -45,16 +45,12 @@ func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
 	readLoop:
 		for {
 			n, err := r.Read(buf)
-			// fmt.Printf("read from reader %d (err: %v)\n", n, err)
 
 			if err != nil {
-				// fmt.Printf("about to signal error: %v\n", err)
 				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
 				select {
 				case p.errC <- err:
-					// fmt.Printf("signaling error: %v\n", err)
 				case <-ctx.Done():
-					// fmt.Printf("not signaling error: %v\n", err)
 				}
 				break readLoop
 			}
@@ -99,7 +95,6 @@ func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
 	for ; ni < len(buf); ni++ {
 		select {
 		case b := <-p.pipeC:
-			// fmt.Printf("consumed: %s\n", string(b))
 			buf[ni] = b
 		default:
 			return ni
@@ -110,7 +105,6 @@ func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
 
 // Read reads from the PassthroughPipe and errors out if no data has been written to the pipe before the read deadline expired
 func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
-	// fmt.Printf("reading from passthroughpipe up to %d bytes\n", len(buf))
 
 	if time.Now().After(p.deadline) {
 		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
@@ -119,17 +113,14 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 	// fill buffer with bytes that are already waiting in pipe channel
 	n = p.consume(0, buf)
 	if n > 0 {
-		// fmt.Printf("returned 1: %d\n", n)
 		return n, nil
 	}
 
 	// block until we read a byte, receive an error or time out
 	select {
 	case b := <-p.pipeC:
-		// fmt.Printf("got first byte %s\n", string(b))
 		buf[0] = b
 	case e := <-p.errC:
-		// fmt.Printf("received error: %v\n", e)
 		return 0, e
 	case <-time.After(p.deadline.Sub(time.Now())):
 		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
@@ -138,6 +129,5 @@ func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
 	// fill up buf or until the pipe channel is drained
 	n = p.consume(1, buf)
 
-	// fmt.Printf("returned %d\n", n)
 	return n, nil
 }
