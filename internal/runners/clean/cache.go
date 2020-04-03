@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -20,11 +21,11 @@ type CacheParams struct {
 	Force bool
 }
 
-func NewCache(out output.Outputer, confirmer confirmAble, path string) *Cache {
+func NewCache(out output.Outputer, confirmer confirmAble) *Cache {
 	return &Cache{
 		output:  out,
 		confirm: confirmer,
-		path:    path,
+		path:    config.CachePath(),
 	}
 }
 

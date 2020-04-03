@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -20,11 +21,11 @@ type ConfigParams struct {
 	Force bool
 }
 
-func NewConfig(out output.Outputer, confirmer confirmAble, path string) *Config {
+func NewConfig(out output.Outputer, confirmer confirmAble) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirmer,
-		path:    path,
+		path:    config.ConfigPath(),
 	}
 }
 
