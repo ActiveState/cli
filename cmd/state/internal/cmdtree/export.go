@@ -95,7 +95,7 @@ func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
 	params := export.APIKeyRunParams{}
 
 	return captain.NewCommand(
-		"new_api_key",
+		"new-api-key",
 		locale.T("export_new_api_key_cmd_description"),
 		[]*captain.Flag{},
 		[]*captain.Argument{
