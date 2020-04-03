@@ -1027,11 +1027,11 @@ export_recipe_cmd_commitid_arg_description:
   other: "Sets target commit by ID (default: current commit)"
 export_recipe_flag_pretty:
   other: Enables export format beautification
-export_new-api-key_cmd_description:
+export_new_api_key_cmd_description:
   other: Create and print new API key
-export_new-api-key_arg_name:
+export_new_api_key_arg_name:
   other: name
-export_new-api-key_arg_name_description:
+export_new_api_key_arg_name_description:
   other: API key name
 err_apikey_name_required:
   other: An API key name is required.
