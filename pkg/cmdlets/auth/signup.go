@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -82,13 +83,18 @@ func signupFromLogin(username string, password string) *failures.Failure {
 }
 
 func downloadTOS() (string, *failures.Failure) {
+	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
+
+	if fileutils.FileExists(tosPath) {
+		return tosPath, nil
+	}
+
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", failures.FailIO.Wrap(err)
 	}
 	defer resp.Body.Close()
 
-	tosPath := filepath.Join(config.ConfigPath(), "activestate_platform_terms_service_agreement.txt")
 	out, err := os.Create(tosPath)
 	if err != nil {
 		return "", failures.FailIO.Wrap(err)
@@ -115,7 +121,7 @@ func promptTOS() (bool, *failures.Failure) {
 		locale.T("tos_show_full"),
 	}
 	print.Line(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	choice, fail := Prompter.Select(locale.T("tos_acceptance"), choices, "Yes")
+	choice, fail := Prompter.Select(locale.T("tos_acceptance"), choices, locale.T("tos_not_accept"))
 	if fail != nil {
 		return false, fail
 	}
