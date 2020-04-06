@@ -189,3 +189,9 @@ const RuntimeDefinitionFilename = "runtime.json"
 
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
 const LocalRuntimeEnvironmentDirectory = "_runtime_env"
+
+// TermsOfServiceURLText is the URL to get the current terms of service in txt form
+const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
+
+// TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
+const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
