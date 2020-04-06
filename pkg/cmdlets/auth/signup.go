@@ -109,7 +109,11 @@ func promptTOS() (bool, *failures.Failure) {
 		return false, fail.WithDescription("err_download_tos")
 	}
 
-	choices := []string{"Yes", "No", "Show full ToS in terminal"}
+	choices := []string{
+		locale.T("tos_accept"),
+		locale.T("tos_not_accept"),
+		locale.T("tos_show_full"),
+	}
 	print.Line(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
 	choice, fail := Prompter.Select(locale.T("tos_acceptance"), choices, "Yes")
 	if fail != nil {
@@ -117,11 +121,11 @@ func promptTOS() (bool, *failures.Failure) {
 	}
 
 	switch choice {
-	case "Yes":
+	case locale.T("tos_accept"):
 		return true, nil
-	case "No":
+	case locale.T("tos_not_accept"):
 		return false, nil
-	default:
+	case locale.T("tos_show_full"):
 		tos, err := ioutil.ReadFile(tosFilePath)
 		if err != nil {
 			return false, failures.FailIO.Wrap(err)
@@ -129,6 +133,8 @@ func promptTOS() (bool, *failures.Failure) {
 		print.Line(string(tos))
 		return Prompter.Confirm(locale.T("tos_acceptance"), true)
 	}
+
+	return false, nil
 }
 
 func promptForSignup(input *signupInput) *failures.Failure {
