@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -63,6 +64,10 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (Ins
 }
 
 func runSteps(installer Installable, step Step, out output.Outputer) error {
+	return runStepsWithFuncs(installer, step, out, install, configure, report)
+}
+
+func runStepsWithFuncs(installer Installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -70,14 +75,13 @@ func runSteps(installer Installable, step Step, out output.Outputer) error {
 
 	if step == UnsetStep || step == InstallStep {
 		logging.Debug("Running install step")
-		out.Notice(locale.T("deploy_install"))
-		var installed bool
-		envGetter, installed, fail = installer.Install()
-		if fail != nil {
-			return fail
+		var err error
+		if envGetter, err = installf(installer, out); err != nil {
+			return err
 		}
-		if ! installed {
-			out.Notice(locale.T("using_cached_env"))
+
+		if step == UnsetStep {
+			out.Notice("") // Some space between steps
 		}
 	}
 	if step == UnsetStep || step == ConfigureStep {
@@ -87,8 +91,11 @@ func runSteps(installer Installable, step Step, out output.Outputer) error {
 				return fail
 			}
 		}
-		if err := configure(envGetter, out); err != nil {
+		if err := configuref(envGetter, out); err != nil {
 			return err
+		}
+		if step == UnsetStep {
+			out.Notice("") // Some space between steps
 		}
 	}
 	if step == UnsetStep || step == ReportStep {
@@ -98,13 +105,29 @@ func runSteps(installer Installable, step Step, out output.Outputer) error {
 				return fail
 			}
 		}
-		if err := report(envGetter, out); err != nil {
+		if err := reportf(envGetter, out); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
+
+type installFunc func(installer Installable, out output.Outputer) (runtime.EnvGetter, error)
+
+func install(installer Installable, out output.Outputer) (runtime.EnvGetter, error) {
+	out.Notice(locale.T("deploy_install"))
+	envGetter, installed, fail := installer.Install()
+	if fail != nil {
+		return envGetter, fail.ToError()
+	}
+	if ! installed {
+		out.Notice(locale.T("using_cached_env"))
+	}
+	return envGetter, nil
+}
+
+type configureFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
 
 func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	sshell, fail := subshell.Get()
@@ -114,6 +137,10 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
+
+	if len(env) == 0 {
+		return errors.New(locale.T("err_deploy_run_install"))
+	}
 
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
@@ -125,18 +152,24 @@ type Report struct {
 	Environment       map[string]string
 }
 
-func report(envGetter runtime.EnvGetter, out output.Outputer) error {
-	out.Notice(locale.T("deploy_info"))
+type reportFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
 
+func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
-	bins := []string{}
+	if len(env) == 0 {
+		return errors.New(locale.T("err_deploy_run_install"))
+	}
+
+	var bins []string
 
 	if path, ok := env["PATH"]; ok {
 		delete(env, "PATH")
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
+
+	out.Notice(locale.T("deploy_info"))
 
 	out.Print(Report{
 		BinaryDirectories: bins,

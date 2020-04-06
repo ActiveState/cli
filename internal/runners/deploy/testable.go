@@ -8,10 +8,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
+type EnvGetter = runtime.EnvGetter
+
 // Installable is an interface for runtime.Installer
 type Installable interface {
-	Install() (envGetter runtime.EnvGetter, freshInstallation bool, fail *failures.Failure)
-	Env() (envGetter runtime.EnvGetter, fail *failures.Failure)
+	Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure)
+	Env() (envGetter EnvGetter, fail *failures.Failure)
 }
 
 // NewInstallerFunc defines a testable type for runtime.InitInstaller

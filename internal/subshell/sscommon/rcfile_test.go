@@ -20,7 +20,7 @@ func TestWriteRcFile(t *testing.T) {
 		want *failures.Failure
 	}{
 		{
-			"fishrc",
+			"Write RC",
 			args{
 				"fishrc_append.fish",
 				fileutils.TempFileUnsafe().Name(),

@@ -260,6 +260,10 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 		env["PATH"] = os.Getenv("PATH")
 	}
 
+	if len(cr.installDirs) == 0 {
+		return nil, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
+	}
+
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)
 		if fail != nil {

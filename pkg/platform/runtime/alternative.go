@@ -294,7 +294,6 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 
 // GetEnv returns the environment variable configuration for this build
 func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
-
 	rt, fail := ar.assembleRuntimeDefinition()
 	if fail != nil {
 		return nil, fail
