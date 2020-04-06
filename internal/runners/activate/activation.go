@@ -36,6 +36,9 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			// something more actionable for the context they're in
 			return failures.FailUserInput.New("err_project_from_path")
 		}
+		if proj.CommitID() == "" {
+			return failures.FailUser.New(locale.Tr("err_activate_no_commit_id", proj.Namespace()))
+		}
 		print.Info(locale.T("info_activating_state", proj))
 
 		err := os.Chdir(targetPath)

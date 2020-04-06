@@ -88,6 +88,24 @@ func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
 	suite.ExpectNotExitCode(0)
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_Activation_NoCommitID() {
+	var err error
+	path, err := ioutil.TempDir("", "TestInit_Activation_NoCommitID")
+	suite.Require().NoError(err)
+	suite.SetWd(path)
+
+	suite.SetWd(path)
+	defer func() {
+		_ = os.RemoveAll(path)
+	}()
+
+	suite.Spawn("init", namespace, "python3")
+	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	suite.Spawn("activate")
+	suite.Expect(locale.Tr("err_activate_no_commit_id", namespace))
+	suite.Wait()
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }
