@@ -105,6 +105,34 @@ func TestPassthroughPipeDrain(t *testing.T) {
 	require.Equal(t, 0, n)
 }
 
+func TestPassthroughPipeReadAfterClose(t *testing.T) {
+	w, p, cleanup := prepare()
+	defer cleanup()
+
+	p.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+
+	w.Write([]byte("abc"))
+	w.Close()
+
+	b := make([]byte, 10)
+	n, err := p.Read(b)
+	require.NoError(t, err)
+	require.Equal(t, 3, n)
+	require.Equal(t, "abc", string(b[:n]))
+
+	n, err = p.Read(b)
+	require.Error(t, err)
+	require.Equal(t, 0, n)
+	require.Equal(t, io.EOF, err)
+
+	p.Close()
+
+	n, err = p.Read(b)
+	require.Error(t, err)
+	require.Equal(t, 0, n)
+	require.Equal(t, io.EOF, err)
+}
+
 func TestPassthroughPipeTimeout(t *testing.T) {
 	w, p, close := prepare()
 	defer close()
