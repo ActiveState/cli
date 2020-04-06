@@ -317,7 +317,6 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 			return nil, buf.String(), err
 		}
 
-		fmt.Println("checking for process error")
 		select {
 		case perr := <-cp.errs:
 			fmt.Printf("found perr: %v\n", perr)
