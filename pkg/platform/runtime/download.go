@@ -3,7 +3,6 @@ package runtime
 import (
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -53,30 +52,46 @@ var (
 // HeadChefArtifact is a convenient type alias cause swagger generates some really shitty code
 type HeadChefArtifact = headchef_models.Artifact
 
+// FetchArtifactsResult stores the information needed by the installer to
+// install and assemble a runtime environment.
+// This information is extracted from a build request response in the
+// FetchArtifacts() method
+type FetchArtifactsResult struct {
+	IsAlternative bool
+	Artifacts     []*HeadChefArtifact
+	RecipeID      strfmt.UUID
+}
+
+// DownloadDirectoryProvider provides download directories for individual artifacts
+type DownloadDirectoryProvider interface {
+
+	// DownloadDirectory returns the download path for a given artifact
+	DownloadDirectory(artf *HeadChefArtifact) (string, *failures.Failure)
+}
+
 // Downloader defines the behavior required to be a runtime downloader.
 type Downloader interface {
 	// Download will attempt to download some runtime locally and return back the filename of
 	// the downloaded archive or a Failure.
-	Download(artifacts []*HeadChefArtifact, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
+	Download(artifacts []*HeadChefArtifact, d DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure)
 
 	// FetchArtifacts will fetch artifact
-	FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure)
+	FetchArtifacts() (*FetchArtifactsResult, *failures.Failure)
 }
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	project   *project.Project
-	targetDir string
+	project *project.Project
 }
 
-// InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
-func InitDownload(targetDir string) Downloader {
-	return NewDownload(project.Get(), targetDir)
+// InitDownload creates a new RuntimeDownload instance and assumes default values for everything
+func InitDownload() Downloader {
+	return NewDownload(project.Get())
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(project *project.Project, targetDir string) Downloader {
-	return &Download{project, targetDir}
+func NewDownload(project *project.Project) Downloader {
+	return &Download{project}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
@@ -95,7 +110,12 @@ func (r *Download) fetchRecipe() (string, *failures.Failure) {
 }
 
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
-func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
+// The first return argument specifies whether we are dealing with an alternative build
+func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
+	result := &FetchArtifactsResult{
+		IsAlternative: false,
+	}
+
 	recipe, fail := r.fetchRecipe()
 	if fail != nil {
 		return nil, fail
@@ -109,45 +129,34 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 	logging.Debug("sending request to head-chef")
 	buildRequest, fail := headchef.NewBuildRequest(recipe, platProject.OrganizationID, platProject.ProjectID)
 	if fail != nil {
-		return nil, fail
+		return result, fail
 	}
 	buildStatus := headchef.InitClient().RequestBuild(buildRequest)
-
-	var artifacts []*HeadChefArtifact
 
 	for {
 		select {
 		case resp := <-buildStatus.Completed:
-			logging.Debug(resp.Message)
-
 			if len(resp.Artifacts) == 0 {
-				return nil, FailNoArtifacts.New(locale.T("err_no_artifacts"))
+				return result, FailNoArtifacts.New(locale.T("err_no_artifacts"))
 			}
 
-			for _, artf := range resp.Artifacts {
-				if artf.URI == "" {
-					continue
-				}
-
-				filename := filepath.Base(artf.URI.String())
-				if strings.HasSuffix(filename, InstallerExtension) && !strings.Contains(filename, InstallerTestsSubstr) {
-					artifacts = append(artifacts, artf)
-				}
+			result.IsAlternative = resp.BuildEngine != nil && *resp.BuildEngine == headchef_models.BuildStatusResponseBuildEngineAlternative
+			if resp.RecipeID == nil {
+				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
 			}
+			result.RecipeID = *resp.RecipeID
+			result.Artifacts = resp.Artifacts
+			logging.Debug("request isAlternative=%v, recipeID=%s", result.IsAlternative, result.RecipeID.String())
 
-			if len(artifacts) == 0 {
-				return nil, FailNoValidArtifact.New(locale.T("err_no_valid_artifact"))
-			}
-
-			return artifacts, nil
+			return result, nil
 
 		case msg := <-buildStatus.Failed:
 			logging.Debug("BuildFailed: %s", msg)
-			return nil, FailBuildFailed.New(msg)
+			return result, FailBuildFailed.New(msg)
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
-			return nil, FailBuildInProgress.New(locale.T("build_status_in_progress"))
+			return result, FailBuildInProgress.New(locale.T("build_status_in_progress"))
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
@@ -155,17 +164,17 @@ func (r *Download) FetchArtifacts() ([]*HeadChefArtifact, *failures.Failure) {
 			switch {
 			case fail.Type.Matches(headchef.FailBuildReqErrorResp):
 				l10n := locale.Tr("build_status_unknown_error", fail.Error())
-				return nil, FailBuildErrResponse.New(l10n)
+				return result, FailBuildErrResponse.New(l10n)
 			default:
 				l10n := locale.T("build_status_unknown")
-				return nil, FailBuildBadResponse.New(l10n)
+				return result, FailBuildBadResponse.New(l10n)
 			}
 		}
 	}
 }
 
 // Download is the main function used to kick off the runtime download
-func (r *Download) Download(artifacts []*HeadChefArtifact, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
+func (r *Download) Download(artifacts []*HeadChefArtifact, dp DownloadDirectoryProvider, progress *progress.Progress) (files map[string]*HeadChefArtifact, fail *failures.Failure) {
 	files = map[string]*HeadChefArtifact{}
 	entries := []*download.Entry{}
 
@@ -179,7 +188,12 @@ func (r *Download) Download(artifacts []*HeadChefArtifact, progress *progress.Pr
 			return files, fail
 		}
 
-		targetPath := filepath.Join(r.targetDir, filepath.Base(u.Path))
+		targetDir, fail := dp.DownloadDirectory(artf)
+		if fail != nil {
+			return files, fail
+		}
+
+		targetPath := filepath.Join(targetDir, filepath.Base(u.Path))
 		entries = append(entries, &download.Entry{
 			Path:     targetPath,
 			Download: u.String(),

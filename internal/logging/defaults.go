@@ -5,6 +5,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -40,7 +41,23 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	filename := filepath.Join(datadir, "log.txt")
 
 	if ctx.Level == "ERROR" && (constants.BranchName == constants.StableBranch || constants.BranchName == constants.UnstableBranch) {
-		rollbar.Error(fmt.Errorf(message, args...))
+		data := map[string]interface{}{}
+
+		if l.file != nil {
+			if err := l.file.Close(); err != nil {
+				data["log_file_close_error"] = err.Error()
+			} else {
+				logData, err := ioutil.ReadFile(filename)
+				if err != nil {
+					data["log_file_read_error"] = err.Error()
+				} else {
+					data["log_file_data"] = string(logData)
+				}
+			}
+			l.file = nil // unset so that it is reset later in this func
+		}
+
+		rollbar.Error(fmt.Errorf(message, args...), data)
 	}
 
 	message = l.formatter.Format(ctx, message, args...)

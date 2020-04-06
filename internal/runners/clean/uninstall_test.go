@@ -3,6 +3,8 @@ package clean
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -54,32 +56,39 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.cachePath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
+
+	if runtime.GOOS != "windows" {
+		_, fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
+		suite.Require().NoError(fail.ToError())
+		suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
+	}
 }
 
-func (suite *CleanTestSuite) TestRun() {
-	runner := NewClean(&testOutputer{}, &confirmMock{confirm: true})
-	err := runner.Run(&RunParams{
-		ConfigPath:  suite.configPath,
-		CachePath:   suite.cachePath,
-		InstallPath: suite.installPath,
-	})
+func (suite *CleanTestSuite) TestUninstall() {
+	runner, err := NewUninstall(&testOutputer{}, &confirmMock{confirm: true})
+	suite.Require().NoError(err)
+	runner.configPath = suite.configPath
+	runner.cachePath = suite.cachePath
+	runner.installPath = suite.installPath
+	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 	time.Sleep(2 * time.Second)
 
 	if fileutils.DirExists(suite.configPath) {
-		suite.Fail("config directory should not exists after clean")
+		suite.Fail("config directory should not exist after uninstall")
 	}
 	if fileutils.DirExists(suite.cachePath) {
-		suite.Fail("cache directory should not exists after clean")
+		suite.Fail("cache directory should not exist after uninstall")
 	}
 	if fileutils.FileExists(suite.installPath) {
-		suite.Fail("installed file should not exists after clean")
+		suite.Fail("installed file should not exist after uninstall")
 	}
 }
 
-func (suite *CleanTestSuite) TestRun_PromptNo() {
-	runner := NewClean(&testOutputer{}, &confirmMock{})
-	err := runner.Run(&RunParams{})
+func (suite *CleanTestSuite) TestUninstall_PromptNo() {
+	runner, err := NewUninstall(&testOutputer{}, &confirmMock{})
+	suite.Require().NoError(err)
+	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
 
 	suite.Require().DirExists(suite.configPath)
@@ -87,14 +96,15 @@ func (suite *CleanTestSuite) TestRun_PromptNo() {
 	suite.Require().FileExists(suite.installPath)
 }
 
-func (suite *CleanTestSuite) TestRun_Activated() {
+func (suite *CleanTestSuite) TestUninstall_Activated() {
 	os.Setenv(constants.ActivatedStateEnvVarName, "true")
 	defer func() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner := NewClean(&testOutputer{}, &confirmMock{})
-	err := runner.Run(&RunParams{})
+	runner, err := NewUninstall(&testOutputer{}, &confirmMock{})
+	suite.Require().NoError(err)
+	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)
 }
 

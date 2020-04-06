@@ -3,6 +3,7 @@ package api
 import (
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -78,6 +79,13 @@ func GetServiceURL(service Service) *url.URL {
 	} else if host := getProjectHost(); host != nil {
 		serviceURL.Host = *host
 	}
+
+	if insecure := os.Getenv(constants.APIInsecureEnvVarName); insecure == "true" {
+		if serviceURL.Scheme == "https" || serviceURL.Scheme == "wss" {
+			serviceURL.Scheme = strings.TrimRight(serviceURL.Scheme, "s")
+		}
+	}
+
 	return serviceURL
 }
 

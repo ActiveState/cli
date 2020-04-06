@@ -10,6 +10,7 @@
 		}
 	],
 	"build_request_id": "00010001-0001-0001-0001-000100010001",
+	"build_engine": "camel",
 	"errors": [],
 	"is_retryable": false,
 	"message": "Build completed",

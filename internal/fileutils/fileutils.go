@@ -21,6 +21,15 @@ import (
 // FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
 var FailFindInPathNotFound = failures.Type("fileutils.fail.notfoundinpath", failures.FailNotFound, failures.FailNonFatal)
 
+// FailMoveSourceNotDirectory indicates the specified source to be moved is not a directory
+var FailMoveSourceNotDirectory = failures.Type("fileutils.fail.move.sourcenotdirectory", failures.FailIO)
+
+// FailMoveDestinationNotDirectory indicates the specified source to be moved is not a directory
+var FailMoveDestinationNotDirectory = failures.Type("fileutils.fail.move.destinationnotdirectory", failures.FailIO)
+
+// FailMoveDestinationExists indicates the specified destination to move to already exists
+var FailMoveDestinationExists = failures.Type("fileutils.fail.movedestinationexists", failures.FailIO)
+
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
@@ -422,13 +431,21 @@ func IsEmptyDir(path string) (bool, *failures.Failure) {
 	return (len(files) == 0), nil
 }
 
-// MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
-// must already exist.
-func MoveAllFiles(fromPath, toPath string) *failures.Failure {
+// MoveAllFilesCallback is invoked for every file that we move
+type MoveAllFilesCallback func()
+
+// MoveAllFilesRecursively moves files and directories from one directory to another.
+// Unlike in MoveAllFiles, the destination directory does not need to be empty, and
+// may include directories that are moved from the source directory.
+// It also counts the moved files for use in a progress bar.
+// Warnings are printed if
+// - a source file overwrites an existing destination file
+// - a sub-directory exists in both the source and and the destination and their permissions do not match
+func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) *failures.Failure {
 	if !DirExists(fromPath) {
-		return failures.FailOS.New("err_os_not_a_directory", fromPath)
+		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
 	} else if !DirExists(toPath) {
-		return failures.FailOS.New("err_os_not_a_directory", toPath)
+		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
 	}
 
 	// read all child files and dirs
@@ -444,7 +461,67 @@ func MoveAllFiles(fromPath, toPath string) *failures.Failure {
 
 	// any found files and dirs
 	for _, fileInfo := range fileInfos {
-		err := os.Rename(filepath.Join(fromPath, fileInfo.Name()), filepath.Join(toPath, fileInfo.Name()))
+		subFromPath := filepath.Join(fromPath, fileInfo.Name())
+		subToPath := filepath.Join(toPath, fileInfo.Name())
+		toInfo, err := os.Stat(subToPath)
+		// if stat returns, the destination path exists (either file or directory)
+		toPathExists := err == nil
+		// handle case where destination exists
+		if toPathExists {
+			if fileInfo.IsDir() != toInfo.IsDir() {
+				return FailMoveDestinationExists.New("err_incompatible_move_file_dir", subFromPath, subToPath)
+			}
+			if fileInfo.Mode() != toInfo.Mode() {
+				logging.Warning(locale.T("warn_move_incompatible_modes", subFromPath, subToPath))
+			}
+		}
+		if toPathExists && toInfo.IsDir() {
+			fail := MoveAllFilesRecursively(subFromPath, subToPath, cb)
+			if fail != nil {
+				return fail
+			}
+			// source path should be empty now
+			err := os.Remove(subFromPath)
+			if err != nil {
+				return failures.FailOS.Wrap(err)
+			}
+		} else {
+			logging.Warning(locale.T("warn_move_destination_overwritten", subFromPath))
+			err = os.Rename(subFromPath, subToPath)
+			if err != nil {
+				return failures.FailOS.Wrap(err)
+			}
+			cb()
+		}
+	}
+	return nil
+}
+
+// MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
+// must already exist.
+func MoveAllFiles(fromPath, toPath string) *failures.Failure {
+	if !DirExists(fromPath) {
+		return FailMoveSourceNotDirectory.New("err_os_not_a_directory", fromPath)
+	} else if !DirExists(toPath) {
+		return FailMoveDestinationNotDirectory.New("err_os_not_a_directory", toPath)
+	}
+
+	// read all child files and dirs
+	dir, err := os.Open(fromPath)
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
+	if err != nil {
+		return failures.FailOS.Wrap(err)
+	}
+
+	// any found files and dirs
+	for _, fileInfo := range fileInfos {
+		fromPath := filepath.Join(fromPath, fileInfo.Name())
+		toPath := filepath.Join(toPath, fileInfo.Name())
+		err := os.Rename(fromPath, toPath)
 		if err != nil {
 			return failures.FailOS.Wrap(err)
 		}
@@ -641,4 +718,23 @@ func PrepareDir(path string) (string, error) {
 	}
 
 	return path, nil
+}
+
+// LogPath will walk the given file path and log the name, permissions, mod
+// time, and file size of all files it encounters
+func LogPath(path string) error {
+	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			logging.Error("Error walking filepath at: %s", path)
+			return err
+		}
+
+		logging.Debug(strings.Join([]string{
+			fmt.Sprintf("File name: %s", info.Name()),
+			fmt.Sprintf("File permissions: %s", info.Mode()),
+			fmt.Sprintf("File mod time: %s", info.ModTime()),
+			fmt.Sprintf("File size: %d", info.Size()),
+		}, "\n"))
+		return nil
+	})
 }

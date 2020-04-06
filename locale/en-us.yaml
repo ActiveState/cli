@@ -139,7 +139,7 @@ updating_to_version:
 err_update_failed:
   other: Update failed, check the error log for more information
 version_info:
-  other: | 
+  other: |
     ActiveState CLI version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
@@ -205,7 +205,7 @@ auth_err_unrecoverable_keypair:
 previous_password_prompt:
   other: "Enter your previous password:"
 secret_value_prompt_summary:
-  other: | 
+  other: |
 
     The action you are taking uses a secret that has not been given a value yet.
     Name: {{.V0}}
@@ -233,7 +233,7 @@ totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
   other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
-err_value_required: 
+err_value_required:
   other: value required
 err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
@@ -460,9 +460,13 @@ error_expand_variable_project_unrecognized_platform_var:
 run_description:
   other: Run your project scripts
 scripts_description:
-  other: Show project scripts 
+  other: Show project scripts
 flag_json_desc:
   other: Changes output to machine-readable JSON
+runtime_alternative_failed_artifact_order:
+  other: "Could not write runtime.json file: internal error"
+runtime_alternative_failed_destination:
+  other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
   other: Name
 scripts_col_description:
@@ -538,11 +542,11 @@ err_sscommon_unsupported_language:
 env_description:
   other: Manage Project Variables
 env_add_description:
-  other: 
+  other:
     >
     add variable
 env_remove_description:
-  other: 
+  other:
     >
     remove variable
 env_header_id:
@@ -709,7 +713,7 @@ secrets_err_base64_decoding:
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
 secrets_err_value_prompt:
-  other: The provided variable value is invalid 
+  other: The provided variable value is invalid
 secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
@@ -809,15 +813,19 @@ keypairs_err_override_with_delete:
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
-  other: | 
+  other: |
     The following script names are already in use:
-     
+
       - {{.V0}}
-    
+
     These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
-    
+
     Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
 
+warn_move_incompatible_modes:
+  other: "Permissions of files {{.V0}} and {{.V1}} differ. Using permissions of {{.V0}}"
+warn_move_destination_overwritten:
+  other: "Overwriting existing file {{.V1}} with file {{.V0}}"
 err_file_not_found_in_path:
   other: could not find file={{.V0}} in path={{.V1}}
 
@@ -879,7 +887,7 @@ installer_err_archive_badext:
 installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named one of '{{.V1}}'
 installer_err_runtime_missing_meta:
-  other: | 
+  other: |
     The requested runtime does not appear to have a metadata file and the metadata could not be inferred, this usually 
     means you're trying to use a much older build that is not supported by this version of the State Tool. It is 
     recommended that you produce a new build.
@@ -936,7 +944,7 @@ err_commit_count_missing_last:
 err_recipe_not_found:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_platform_data_remains:
-  other: No platform data remains after filtering; Please contact support
+  other: "Your current platform ({{.V0}}/{{.V1}}) does not appear to be configured in your project. You will need to add it before you are able to activate on this platform. Run 'state platforms --help' for more information on how to do this."
 err_no_artifacts:
   other: Your project does not seem to produce any artifacts
 err_no_valid_artifact:
@@ -964,20 +972,20 @@ activate_select_optout:
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
-  other: | 
+  other: |
     [YELLOW]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
-    
+
     Reason for deprecation: 
       {{.V1}}
-    
+
     Please update soon![/RESET]
 err_deprecation:
   other: |
     You are running a version of the State Tool that is no longer supported! You will be encountering issues. 
-    
+
     Reason for deprecation: 
       {{.V1}}
-      
+
     Please update now!"
 err_auth_required:
   other: Authentication is required
@@ -1001,7 +1009,7 @@ err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
 err_pull_update_commit_id:
   other: Cannot update commit id in project file
-pull_latest: 
+pull_latest:
   other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
@@ -1019,6 +1027,18 @@ export_recipe_cmd_commitid_arg_description:
   other: "Sets target commit by ID (default: current commit)"
 export_recipe_flag_pretty:
   other: Enables export format beautification
+export_new_api_key_cmd_description:
+  other: Create and print new API key
+export_new_api_key_arg_name:
+  other: name
+export_new_api_key_arg_name_description:
+  other: API key name
+export_apikey_user_notice:
+  other: "[BLUE]Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again.[/RESET]"
+err_apikey_name_required:
+  other: An API key name is required.
+err_cannot_obtain_apikey:
+  other: Cannot obtain API key.
 export_recipe_flag_platform:
   other: Sets target platform
 platforms_cmd_description:
@@ -1298,6 +1318,10 @@ err_project_from_path:
   other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
 err_must_provide_directory:
   other: You must provide a valid directory
+err_incompatible_move_file_dir:
+  other: |
+    Could not move {{.V0}} to {{.V1}}.  One is a file, the other a directory.
+    This indicates that the requested build may be corrupted.
 err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:
@@ -1307,8 +1331,6 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
-flag_state_init_path_description:
-  other: The location to initialize the project
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
@@ -1357,7 +1379,7 @@ err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
-field_name: 
+field_name:
   other: Name
 field_description:
   other: Description
@@ -1375,7 +1397,7 @@ field_date:
   other: Date
 field_author:
   other: Author
-field_id: 
+field_id:
   other: ID
 field_changes:
   other: Changes
@@ -1402,13 +1424,31 @@ history_cmd_description:
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
 clean_description:
+  other: Clean caches, configuration files, or completely remove the state tool
+uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
-flag_state_clean_force_description:
-  other: Run clean operation without prompts
-err_clean_activated:
-  other: Cannot clean the State Tool install in an activated state. Please deactivate and try again
-clean_confirm_remove:
+cache_description:
+  other: Removes all cached Runtime Environments
+config_description:
+  other: Removes global State Tool configuration. Project configuration will not be affected.
+flag_state_clean_uninstall_force_description:
+  other: Run uninstall operation without prompts
+flag_state_clean_cache_force_description:
+  other: Run clean cache operation without prompts
+flag_state_clean_config_force_description:
+  other: Run clean config operation without prompts
+err_uninstall_activated:
+  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again
+err_clean_cache_activated:
+  other: Cannot remove the cache directory while in an activated state. Please deactivate and try again.
+err_clean_config_activated:
+  other: Cannot remove the config directory while in an activated state. Please deactivate and try again.
+uninstall_confirm:
   other: You are about to remove the State Tool, installed laguage runtimes, and all configuration information. Continue?
+clean_cache_confirm:
+  other: You are about to remove the State Tool cache directory. Continue?
+clean_config_confirm:
+  other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
 push_already_exists:
@@ -1448,6 +1488,22 @@ err_project_env_file_not_exist:
     Expected the following file to exist: {{.V0}}
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
+envdef_file_not_found:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot find runtime definition file at {{.V0}}.
+    You can try to manually delete the cache directory and re-activating the project.
+envdef_unmarshal_error:
+  other: |
+    Your installation seems to be corrupted.
+
+    Cannot not parse runtime definition file at {{.V0}}
+    This indicates a problem with the build. You can try updating your project
+err_corrupted_build_request_response:
+  other: |
+    Internal error.  You can try manually updating the state tool.
+
 err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
 err_init_no_language:

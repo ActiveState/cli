@@ -114,6 +114,7 @@ func run(args []string, outputer output.Outputer) (int, error) {
 	updated, toVersion := autoUpdate(args)
 	if updated {
 		outputer.Notice(locale.Tr("auto_update_to_version", constants.Version, toVersion))
+		defer updater.CleanOld()
 		return relaunch() // will not return
 	}
 
@@ -257,11 +258,17 @@ func autoUpdate(args []string) (updated bool, resultVersion string) {
 // This function will never return to its caller.
 func relaunch() (int, error) {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	logging.Debug("Running command: %s", strings.Join(cmd.Args, " "))
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	cmd.Start()
-	err := cmd.Wait()
+	err := cmd.Start()
+	if err != nil {
+		logging.Error("Failed to start command: %v", err)
+	}
+
+	err = cmd.Wait()
 	if err != nil {
 		logging.Error("relaunched cmd returned error: %v", err)
 	}
+
 	return osutils.CmdExitCode(cmd), err
 }
