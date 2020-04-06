@@ -45,6 +45,22 @@ func (suite *E2eSessionTestSuite) TestE2eSession() {
 	}
 }
 
+func (suite *E2eSessionTestSuite) TestE2eSessionInterrupt() {
+	// create a new test-session
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	wd, err := os.Getwd()
+	require.NoError(suite.T(), err)
+
+	cp := ts.SpawnCmdWithOpts(
+		"go",
+		e2e.WithArgs("run", "./session-tester", "-sleep"),
+		e2e.WithWorkDirectory(wd),
+	)
+	cp.Expect("an expected string", 1*time.Second)
+	cp.SendCtrlC()
+	cp.ExpectNotExitCode(0, 1*time.Second)
+}
 func TestE2eSessionTestSuite(t *testing.T) {
 	suite.Run(t, new(E2eSessionTestSuite))
 }
