@@ -306,7 +306,7 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 	// run in a tight loop until process finished or until we timeout
 	for {
 		deadlineExpired := time.Now().After(deadline)
-		err := cp.console.Flush(100*time.Millisecond, buf)
+		err := cp.console.Drain(100*time.Millisecond, buf)
 
 		// we only expect timeout or EOF errors here, otherwise we will kill the process
 		if (err != nil && !(os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {

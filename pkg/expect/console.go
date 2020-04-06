@@ -16,6 +16,7 @@ package expect
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -191,6 +192,32 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 // terminal device.
 func (c *Console) Tty() *os.File {
 	return c.Pty.Tty()
+}
+
+// Drain reads from the input stream until it catches up with the incoming stream off data.
+// This function can unblock the writer, if no further reads from the passthrough pipe are
+// needed
+func (c *Console) Drain(t time.Duration, buf *bytes.Buffer) error {
+	writer := io.MultiWriter(append(c.opts.Stdouts, buf)...)
+	runeWriter := bufio.NewWriterSize(writer, utf8.UTFMax)
+
+	c.passthroughPipe.SetReadDeadline(time.Now().Add(t))
+	for {
+		r, _, err := c.runeReader.ReadRune()
+		if err != nil {
+			return err
+		}
+		_, err = runeWriter.WriteRune(r)
+		if err != nil {
+			return err
+		}
+
+		// Immediately flush rune to the underlying writers.
+		err = runeWriter.Flush()
+		if err != nil {
+			return err
+		}
+	}
 }
 
 // Read reads bytes b from Console's tty.
