@@ -110,11 +110,6 @@ func downloadTOS() (string, *failures.Failure) {
 }
 
 func promptTOS() (bool, *failures.Failure) {
-	tosFilePath, fail := downloadTOS()
-	if fail != nil {
-		return false, fail.WithDescription("err_download_tos")
-	}
-
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -132,6 +127,11 @@ func promptTOS() (bool, *failures.Failure) {
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
+		tosFilePath, fail := downloadTOS()
+		if fail != nil {
+			return false, fail.WithDescription("err_download_tos")
+		}
+
 		tos, err := ioutil.ReadFile(tosFilePath)
 		if err != nil {
 			return false, failures.FailIO.Wrap(err)
