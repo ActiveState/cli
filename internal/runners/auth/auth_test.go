@@ -288,6 +288,7 @@ func TestExecuteSignup(t *testing.T) {
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	asMock := httpmock.Activate("https://www.activestate.com")
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -296,6 +297,7 @@ func TestExecuteSignup(t *testing.T) {
 	httpmock.Register("GET", "/apikeys")
 	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
+	asMock.RegisterWithResponseBody("GET", strings.TrimPrefix(constants.TermsOfServiceURLText, "https://www.activestate.com"), 200, "")
 
 	var bodyKeypair *secretsModels.KeypairChange
 	var bodyErr error
@@ -307,6 +309,7 @@ func TestExecuteSignup(t *testing.T) {
 
 	user := setupUser()
 
+	pmock.OnMethod("Select").Once().Return("Yes", nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
