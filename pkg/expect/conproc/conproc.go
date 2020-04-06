@@ -319,7 +319,6 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 
 		select {
 		case perr := <-cp.errs:
-			fmt.Printf("found perr: %v\n", perr)
 			if deadlineExpired {
 				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
 			}
