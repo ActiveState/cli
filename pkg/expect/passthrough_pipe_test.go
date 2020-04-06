@@ -56,8 +56,10 @@ func TestPassthroughPipe(t *testing.T) {
 	p.SetReadDeadline(time.Now().Add(time.Second * 2))
 
 	go func() {
-		_, _ = w.Write([]byte("12abc"))
-		_ = w.Close()
+		_, err := w.Write([]byte("12abc"))
+		require.NoError(t, err, "writing bytes")
+		err = w.Close()
+		require.NoError(t, err, "closing writer")
 	}()
 
 	b := make([]byte, 2)
@@ -95,7 +97,8 @@ func TestPassthroughPipeReadDrain(t *testing.T) {
 		n, err := w.Write(b)
 		require.Equal(t, 100, n)
 		require.NoError(t, err)
-		_ = w.Close()
+		err = w.Close()
+		require.NoError(t, err, "closing writer")
 	}()
 	// pipewriter is concurrent; sleep to let buffer fill
 	time.Sleep(10 * time.Millisecond)
@@ -149,8 +152,10 @@ func TestPassthroughPipeTimeout(t *testing.T) {
 	p.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 
 	go func() {
-		_, _ = w.Write([]byte("abc"))
-		_ = w.Close()
+		_, err := w.Write([]byte("abc"))
+		require.NoError(t, err, "writing test string")
+		err = w.Close()
+		require.NoError(t, err, "closing writer")
 	}()
 
 	b := make([]byte, 10)
