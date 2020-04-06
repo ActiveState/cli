@@ -45,7 +45,7 @@ func Signup() *failures.Failure {
 
 	accepted, fail := promptTOS()
 	if fail != nil {
-		return fail.WithDescription("err_prompt_unknown")
+		return fail
 	}
 	if !accepted {
 		print.Warning(locale.T("tos_not_accepted"))
