@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
+	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -309,7 +310,7 @@ func TestExecuteSignup(t *testing.T) {
 
 	user := setupUser()
 
-	pmock.OnMethod("Select").Once().Return("Yes", nil)
+	pmock.OnMethod("Select").Once().Return(locale.T("tos_accept"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
@@ -323,6 +324,19 @@ func TestExecuteSignup(t *testing.T) {
 	require.NoError(t, bodyErr, "unmarshalling keypair save response")
 	assert.NotZero(t, bodyKeypair.EncryptedPrivateKey, "published private key")
 	assert.NotZero(t, bodyKeypair.PublicKey, "published public key")
+}
+
+func TestExecuteSignup_DenyTOS(t *testing.T) {
+	setup(t)
+	pmock := promptMock.Init()
+	authlet.Prompter = pmock
+
+	pmock.OnMethod("Select").Once().Return(locale.T("tos_not_accept"), nil)
+
+	err := runSignup()
+	assert.NoError(t, err, "Executed without error")
+	assert.Nil(t, authentication.ClientAuth(), "Not authenticated")
+	assert.NoError(t, failures.Handled(), "No failure occurred")
 }
 
 func TestExecuteToken(t *testing.T) {

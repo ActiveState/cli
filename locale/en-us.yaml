@@ -250,6 +250,12 @@ tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
 tos_not_accepted:
   other: You may not create an ActiveState Platform account without accepting the Terms of Service
+tos_accept:
+  other: Yes, I accept the ActiveState Terms of Service
+tos_not_accept:
+  other: No, I do not accept the ActiveState Terms of Service
+tos_show_full:
+  other: Display the full Terms of Service in this terminal window
 err_auth_failed:
   other: Authentication failed
 err_auth_username_check:
