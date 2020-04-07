@@ -8,19 +8,19 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
-type EnvGetter = runtime.EnvGetter
+type envGetter = runtime.EnvGetter
 
-// Installable is an interface for runtime.Installer
-type Installable interface {
-	Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure)
-	Env() (envGetter EnvGetter, fail *failures.Failure)
+// installable is an interface for runtime.Installer
+type installable interface {
+	Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure)
+	Env() (envGetter envGetter, fail *failures.Failure)
 }
 
-// NewInstallerFunc defines a testable type for runtime.InitInstaller
-type NewInstallerFunc func(commitID strfmt.UUID, owner, projectName string, targetDir string) (Installable, *failures.Failure)
+// newInstallerFunc defines a testable type for runtime.InitInstaller
+type newInstallerFunc func(commitID strfmt.UUID, owner, projectName string, targetDir string) (installable, *failures.Failure)
 
-// NewInstaller wraps runtime.NewInstaller so we can modify the return types
-func NewInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (Installable, *failures.Failure) {
+// newInstaller wraps runtime.newInstaller so we can modify the return types
+func newInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (installable, *failures.Failure) {
 	return runtime.NewInstallerByParams(runtime.NewInstallerParams(
 		targetDir,
 		commitID,
@@ -29,5 +29,5 @@ func NewInstaller(commitID strfmt.UUID, owner, projectName, targetDir string) (I
 	))
 }
 
-// DefaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName
-type DefaultBranchForProjectNameFunc func(owner, name string) (*mono_models.Branch, *failures.Failure)
+// defaultBranchForProjectNameFunc defines a testable type for model.DefaultBranchForProjectName
+type defaultBranchForProjectNameFunc func(owner, name string) (*mono_models.Branch, *failures.Failure)

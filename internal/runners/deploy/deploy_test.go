@@ -13,11 +13,11 @@ import (
 
 type InstallableMock struct{}
 
-func (i *InstallableMock) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
+func (i *InstallableMock) Install() (envGetter envGetter, freshInstallation bool, fail *failures.Failure) {
 	return nil, false, nil
 }
 
-func (i *InstallableMock) Env() (envGetter EnvGetter, fail *failures.Failure) {
+func (i *InstallableMock) Env() (envGetter envGetter, fail *failures.Failure) {
 	return nil, nil
 }
 
@@ -31,7 +31,7 @@ func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string,
 
 func Test_runStepsWithFuncs(t *testing.T) {
 	type args struct {
-		installer Installable
+		installer installable
 		step      Step
 	}
 	type want struct {
@@ -101,7 +101,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var installCalled bool
-			installFunc := func(Installable, output.Outputer) (runtime.EnvGetter, error) {
+			installFunc := func(installable, output.Outputer) (runtime.EnvGetter, error) {
 				installCalled = true
 				return nil, nil
 			}

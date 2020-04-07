@@ -29,15 +29,15 @@ type Params struct {
 type Deploy struct {
 	output output.Outputer
 
-	DefaultBranchForProjectName DefaultBranchForProjectNameFunc
-	NewRuntimeInstaller         NewInstallerFunc
+	DefaultBranchForProjectName defaultBranchForProjectNameFunc
+	NewRuntimeInstaller         newInstallerFunc
 }
 
 func NewDeploy(out output.Outputer) *Deploy {
 	return &Deploy{
 		out,
 		model.DefaultBranchForProjectName,
-		NewInstaller,
+		newInstaller,
 	}
 }
 
@@ -50,7 +50,7 @@ func (d *Deploy) Run(params *Params) error {
 	return runSteps(installer, params.Step, d.output)
 }
 
-func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (Installable, *failures.Failure) {
+func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, *failures.Failure) {
 	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
 	if fail != nil {
 		return nil, fail
@@ -63,11 +63,11 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (Ins
 	return d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
 }
 
-func runSteps(installer Installable, step Step, out output.Outputer) error {
+func runSteps(installer installable, step Step, out output.Outputer) error {
 	return runStepsWithFuncs(installer, step, out, install, configure, report)
 }
 
-func runStepsWithFuncs(installer Installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, reportf reportFunc) error {
+func runStepsWithFuncs(installer installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -113,9 +113,9 @@ func runStepsWithFuncs(installer Installable, step Step, out output.Outputer, in
 	return nil
 }
 
-type installFunc func(installer Installable, out output.Outputer) (runtime.EnvGetter, error)
+type installFunc func(installer installable, out output.Outputer) (runtime.EnvGetter, error)
 
-func install(installer Installable, out output.Outputer) (runtime.EnvGetter, error) {
+func install(installer installable, out output.Outputer) (runtime.EnvGetter, error) {
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {
