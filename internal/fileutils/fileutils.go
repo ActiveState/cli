@@ -401,8 +401,7 @@ func walkPathAndFindFile(dir, filename string) string {
 }
 
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
-// the file with 0644 perms if it does not exist. A File handle will be returned if no issues
-// arise. You will need to Close() the file.
+// the file with 0644 perms if it does not exist. 
 func Touch(path string) *failures.Failure {
 	fail := MkdirUnlessExists(filepath.Dir(path))
 	if fail != nil {
