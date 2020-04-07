@@ -30,7 +30,7 @@ func (r *RegistryKeyMock) GetStringValue(name string) (string, uint32, error) {
 	if v, ok := r.getResults[name]; ok {
 		return v.Value, 0, v.Error
 	}
-	return "", 0, errNotExist{}
+	return "", 0, notExistError()
 }
 
 func (r *RegistryKeyMock) SetStringValue(name, value string) error {

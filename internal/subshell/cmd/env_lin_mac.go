@@ -4,16 +4,12 @@ package cmd
 
 import "errors"
 
-type errNotExist struct{}
-
-func (e errNotExist) Error() string {
-	return "ErrNotExist"
+func notExistError() error {
+	return errors.New("NOT_EXIST_ERROR")
 }
 
-var ErrNotExist errNotExist
-
 func IsNotExistError(err error) bool {
-	return errors.Is(err, ErrNotExist)
+	return err.Error() == "NOT_EXIST_ERROR"
 }
 
 func OpenKey(path string) (RegistryKey, error) {
