@@ -2,6 +2,8 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/integration"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -211,6 +214,22 @@ version: %s
 	suite.SendLine("exit")
 	suite.ExpectExitCode(0)
 
+}
+
+func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
+	var err error
+	path, err := ioutil.TempDir("", "TestInit_Activation_NoCommitID")
+	suite.Require().NoError(err)
+	suite.SetWd(path)
+	defer func() {
+		_ = os.RemoveAll(path)
+	}()
+
+	suite.Spawn("init", namespace, "python3")
+	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	suite.Spawn("activate")
+	suite.Expect(locale.Tr("installer_err_runtime_no_commits", namespace))
+	suite.Wait()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
