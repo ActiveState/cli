@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"time"
 	"unicode/utf8"
 
@@ -158,7 +159,12 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	}
 
 	var pty *xpty.Xpty
-	pty, err := xpty.Open(80, 30)
+	// On Windows we are adding an extra row, because the last row appears to be empty usually
+	rows := uint16(30)
+	if runtime.GOOS == "windows" {
+		rows = 31
+	}
+	pty, err := xpty.Open(80, rows)
 	if err != nil {
 		return nil, err
 	}

@@ -215,8 +215,10 @@ func (cp *ConsoleProcess) Signal(sig os.Signal) error {
 }
 
 // SendCtrlC tries to emulate what would happen in an interactive shell, when the user presses Ctrl-C
+// Note: On Windows the Ctrl-C event is only reliable caught when the receiving process is
+// listening for os.Interrupt signals.
 func (cp *ConsoleProcess) SendCtrlC() {
-	cp.Send(string([]byte{0x03})) // 0x03 is ASCI character for ^C
+	cp.Send(string([]byte{0x03})) // 0x03 is ASCII character for ^C
 }
 
 // Stop sends an interrupt signal for the tested process and fails if no process has been started yet.
@@ -310,11 +312,16 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 
 		// we only expect timeout or EOF errors here, otherwise we will kill the process
 		if (err != nil && !(os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {
-			log.Println("killing process")
+			log.Printf("killing process: %v\n", err)
 			if err = cp.cmd.Process.Kill(); err != nil {
 				panic(err)
 			}
-			return nil, buf.String(), err
+			<-cp.errs
+			if deadlineExpired {
+				return nil, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
+			}
+			return nil, buf.String(), fmt.Errorf("unexpected error while waiting for exit code: %v", err)
+
 		}
 
 		select {

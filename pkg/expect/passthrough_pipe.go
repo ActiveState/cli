@@ -13,9 +13,6 @@ type errPassthroughTimeout struct {
 
 func (errPassthroughTimeout) Timeout() bool { return true }
 
-// bufsize is the size of the PassthroughPipe channel
-const bufsize = 1024
-
 // PassthroughPipe pipes data from a io.Reader and allows setting a read
 // deadline. If a timeout is reached the error is returned, otherwise the error
 // from the provided io.Reader returned is passed through instead.
