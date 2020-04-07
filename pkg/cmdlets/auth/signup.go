@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -83,25 +82,20 @@ func signupFromLogin(username string, password string) *failures.Failure {
 }
 
 func downloadTOS() (string, *failures.Failure) {
-	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
-
-	if fileutils.FileExists(tosPath) {
-		return tosPath, nil
-	}
-
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", failures.FailIO.Wrap(err)
 	}
 	defer resp.Body.Close()
 
-	out, err := os.Create(tosPath)
+	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
+	tosFile, err := os.Create(tosPath)
 	if err != nil {
 		return "", failures.FailIO.Wrap(err)
 	}
-	defer out.Close()
+	defer tosFile.Close()
 
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(tosFile, resp.Body)
 	if err != nil {
 		return "", failures.FailIO.Wrap(err)
 	}
