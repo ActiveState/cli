@@ -1473,7 +1473,7 @@ err_userrc_notfound:
 err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
 err_windows_registry:
-  other: Error while interacting with windows registry
+  other: Error while interacting with Windows registry
 err_deploy_run_install:
   other: You need to run the install step at least once before you can run the configure or report steps. Run 'state deploy --help' for more information.
 deploy_install:
