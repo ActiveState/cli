@@ -18,7 +18,7 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "path",
-				Description: locale.T("arg_state_deploy_path_description"),
+				Description: locale.T("flag_state_deploy_path_description"),
 				Value:       &params.Path,
 			},
 			{
