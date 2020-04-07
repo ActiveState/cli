@@ -44,7 +44,7 @@ func (suite *InternalTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = NewInstaller(suite.downloadDir, InitDownload())
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 
@@ -59,12 +59,12 @@ func (suite *InternalTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
-	pjfile := projectfile.Project{
-		Project: model.ProjectURL("string", "string", ""),
-	}
-	pjfile.Persist()
+	var fail *failures.Failure
+	suite.installer, fail = NewInstallerByParams(NewInstallerParams(suite.cacheDir, "", "string", "string"))
+	suite.Require().NoError(fail.ToError())
+	suite.Require().NotNil(suite.installer)
 
-	fail := suite.installer.validateCheckpoint()
+	fail = suite.installer.validateCheckpoint()
 	suite.Equal(FailNoCommits.Name, fail.Type.Name)
 }
 

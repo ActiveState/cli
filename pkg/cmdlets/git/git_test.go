@@ -49,7 +49,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	_, fail := projectfile.CreateWithProjectURL(projectURL, suite.dir)
 	suite.NoError(fail.ToError(), "could not create a projectfile")
 
-	fail := fileutils.Touch(filepath.Join(suite.dir, "test-file"))
+	fail = fileutils.Touch(filepath.Join(suite.dir, "test-file"))
 	suite.NoError(fail.ToError(), "could not create a temp file")
 
 	_, err = worktree.Add("test-file")

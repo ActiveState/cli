@@ -67,7 +67,7 @@ func TestPlain_Print(t *testing.T) {
 				"int":    int(1),
 				"float":  float32(9.1),
 			}},
-			"string: hello\nint: 1\nfloat: 9.10\n",
+			"\n float: 9.10 \n int: 1 \n string: hello \n",
 			"",
 		},
 		{

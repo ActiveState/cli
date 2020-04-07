@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/bndr/gotabulate"
@@ -193,6 +194,8 @@ func sprintMap(value interface{}) (string, error) {
 
 		result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
 	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
 
 	return "\n" + strings.Join(result, "\n"), nil
 }

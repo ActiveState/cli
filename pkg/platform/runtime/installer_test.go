@@ -54,8 +54,9 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 	suite.downloadDir, err = ioutil.TempDir("", "cli-installer-test-download")
 	suite.Require().NoError(err)
 
+	suite.prg = pmock.NewTestProgress()
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(suite.downloadDir, suite.cacheDir, runtime.InitDownload(suite.downloadDir))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 }
@@ -82,14 +83,15 @@ func (suite *InstallerTestSuite) testRelocation(archiveName string, executable s
 
 	fail = suite.installer.InstallFromArchives(archives, envGetter, suite.prg.Progress)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().NotEmpty(suite.installer.InstallDirs(), "Installs artifacts")
 
-	suite.Require().True(fileutils.DirExists(suite.installer.InstallDirs()[0]), "expected install-dir to exist")
+	suite.prg.AssertProperClose(suite.T())
 
-	pathToExecutable := filepath.Join(suite.installer.InstallDirs()[0], "bin", executable)
-	suite.Require().FileExists(pathToExecutable)
+	suite.Require().True(fileutils.DirExists(envGetter.InstallDirs()[0]), "expected install-dir to exist")
 
-	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(suite.installer.InstallDirs()[0], "bin", "a-script")))
+	pathToExecutable := filepath.Join(envGetter.InstallDirs()[0], "bin", executable)
+	suite.Require().FileExists(pathToExecutable, executable+" exists")
+
+	ascriptContents := string(fileutils.ReadFileUnsafe(path.Join(envGetter.InstallDirs()[0], "bin", "a-script")))
 	suite.Contains(ascriptContents, pathToExecutable)
 }
 
@@ -117,17 +119,11 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
 	cacheDir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(downloadDir, cacheDir, runtime.InitDownload(downloadDir))
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -151,14 +147,8 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
 	var fail *failures.Failure
-	suite.installer, fail = runtime.InitInstaller()
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	envGetter, freshInstall, fail := suite.installer.Install()
@@ -166,10 +156,13 @@ func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
 	suite.Assert().NotNil(envGetter)
 	suite.Assert().True(freshInstall)
 
-	suite.Require().Len(suite.installer.InstallDirs(), 2)
+	camelRt, ok := envGetter.(*runtime.CamelRuntime)
+	suite.Require().True(ok, "envGetter is CamelRuntime")
+
+	suite.Require().Len(camelRt.InstallDirs(), 2)
 
 	metaCount := 0
-	for _, installDir := range suite.installer.InstallDirs() {
+	for _, installDir := range camelRt.InstallDirs() {
 		if _, fail := runtime.InitMetaData(installDir); fail == nil {
 			metaCount = metaCount + 1
 		}
