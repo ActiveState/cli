@@ -12,11 +12,20 @@ import (
 )
 
 func cleanUser(username string) error {
+	err := os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		os.Setenv("ACTIVESTATE_API_HOST", "platform.testing.tld")
+	}()
+
 	fail := auth.AuthenticateWithCredentials(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
 	if fail != nil {
 		log.Fatalf("Could not authenticate test cleaning user: %v", fail)
+		return fail.ToError()
 	}
 
 	projects, err := getProjects(username)
