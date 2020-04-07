@@ -156,9 +156,9 @@ func SetupProjectRcFile(templateName, ext string) (*os.File, *failures.Failure) 
 	if err != nil {
 		return nil, failures.FailOS.Wrap(err)
 	}
+	defer tmpFile.Close()
 
 	tmpFile.WriteString(out.String())
-	tmpFile.Close()
 
 	logging.Debug("Using project RC: %s", out.String())
 
