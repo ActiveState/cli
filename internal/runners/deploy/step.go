@@ -3,15 +3,12 @@ package deploy
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
 // Step is the --step flag for the --deploy command, it implements captain.FlagMarshaler
 type Step int
-
-var _ captain.FlagMarshaler = func(t Step) *Step { return &t }(0)
 
 const (
 	UnsetStep Step = iota
