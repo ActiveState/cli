@@ -13,7 +13,7 @@ import (
 
 func cleanUser(username string) error {
 	fail := auth.AuthenticateWithCredentials(&mono_models.Credentials{
-		Token: os.Getenv("ACTIVESTATE_CLEAN_USER_TOKEN"),
+		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
 	if fail != nil {
 		log.Fatalf("Could not authenticate test cleaning user: %v", fail)

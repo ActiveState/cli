@@ -96,7 +96,7 @@ func (s *Suite) SetupTest() {
 
 // TearDownSuite will run after all the tests in a suite have run
 func (s *Suite) TearDownSuite() {
-	if os.Getenv("ACTIVESTATE_CLEAN_USER_TOKEN") == "" {
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		// Do not run if required authentication env var is not set
 		return
 	}
