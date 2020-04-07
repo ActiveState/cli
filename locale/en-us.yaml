@@ -239,6 +239,23 @@ err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
 prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
+err_download_tos:
+  other: Could not download terms of service file
+tos_disclaimer:
+  other: |
+    Your use of the ActiveState Platform is subject to the Term of Service.
+    You can review the Terms of Service at:
+      {{.V0}}
+tos_acceptance:
+  other: Do you accept the ActiveState Platform Terms of Service?
+tos_not_accepted:
+  other: You may not create an ActiveState Platform account without accepting the Terms of Service
+tos_accept:
+  other: Yes, I accept the ActiveState Terms of Service
+tos_not_accept:
+  other: No, I do not accept the ActiveState Terms of Service
+tos_show_full:
+  other: Display the full Terms of Service in this terminal window
 err_auth_failed:
   other: Authentication failed
 err_auth_username_check:
@@ -906,7 +923,7 @@ installer_err_runtime_move_files_failed:
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commits:
-  other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
+  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
