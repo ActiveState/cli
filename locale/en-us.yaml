@@ -1459,7 +1459,7 @@ err_project_env_file_not_exist:
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
 err_invalid_step:
-  other: "Invalid step specified: {{.V0}}. step must be one of: {{.V1}}."
+  other: "Invalid step specified: {{.V0}}. Step must be one of: {{.V1}}."
 arg_state_deploy_namespace:
   other: ORG/PROJECT
 arg_state_deploy_namespace_description:
