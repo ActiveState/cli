@@ -15,19 +15,20 @@ type RegistryKeyMock struct {
 	setCalls []string
 	delCalls []string
 
-	getResults map[string][]interface{}
+	getResults map[string]RegistryValue
 	setResults map[string]error
 	delResults map[string]error
+}
+
+type RegistryValue struct {
+	Value string
+	Error error
 }
 
 func (r *RegistryKeyMock) GetStringValue(name string) (string, uint32, error) {
 	r.getCalls = append(r.getCalls, name)
 	if v, ok := r.getResults[name]; ok {
-		var err error
-		if v[1] != nil {
-			err = v[1].(error)
-		}
-		return v[0].(string), 0, err
+		return v.Value, 0, v.Error
 	}
 	return "", 0, errNotExist{}
 }
@@ -94,8 +95,8 @@ func TestCmdEnv_unset(t *testing.T) {
 		{
 			"unset, value equals",
 			fields{&RegistryKeyMock{
-				getResults: map[string][]interface{}{
-					"key": []interface{}{"value_equals", nil},
+				getResults: map[string]RegistryValue{
+					"key": RegistryValue{"value_equals", nil},
 				},
 			}, nil},
 			args{
@@ -112,9 +113,9 @@ func TestCmdEnv_unset(t *testing.T) {
 		{
 			"unset, value equals, restore backup",
 			fields{&RegistryKeyMock{
-				getResults: map[string][]interface{}{
-					"key":          []interface{}{"value_equals", nil},
-					"key_ORIGINAL": []interface{}{"value_original", nil},
+				getResults: map[string]RegistryValue{
+					"key":          RegistryValue{"value_equals", nil},
+					"key_ORIGINAL": RegistryValue{"value_original", nil},
 				},
 			}, nil},
 			args{
@@ -184,8 +185,8 @@ func TestCmdEnv_set(t *testing.T) {
 		{
 			"set, with backup",
 			fields{&RegistryKeyMock{
-				getResults: map[string][]interface{}{
-					"key": []interface{}{"original_value", nil},
+				getResults: map[string]RegistryValue{
+					"key": RegistryValue{"original_value", nil},
 				},
 			}, nil},
 			args{
@@ -251,8 +252,8 @@ func TestCmdEnv_get(t *testing.T) {
 		{
 			"get existing, no backup",
 			fields{&RegistryKeyMock{
-				getResults: map[string][]interface{}{
-					"key": []interface{}{"value", nil},
+				getResults: map[string]RegistryValue{
+					"key": RegistryValue{"value", nil},
 				},
 			}, nil},
 			args{
@@ -267,9 +268,9 @@ func TestCmdEnv_get(t *testing.T) {
 		{
 			"get existing, has backup",
 			fields{&RegistryKeyMock{
-				getResults: map[string][]interface{}{
-					"key":          []interface{}{"value", nil},
-					"key_ORIGINAL": []interface{}{"value_original", nil},
+				getResults: map[string]RegistryValue{
+					"key":          RegistryValue{"value", nil},
+					"key_ORIGINAL": RegistryValue{"value_original", nil},
 				},
 			}, nil},
 			args{
