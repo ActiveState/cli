@@ -906,7 +906,7 @@ installer_err_runtime_move_files_failed:
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commits:
-  other: Your project does not have a language configured, please head over to {{.V0}} and configure a language.
+  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
@@ -1316,8 +1316,6 @@ err_project_notexist_asyaml:
   other: No activestate.yaml exists at the target directory, you should run 'state init' first.
 err_project_from_path:
   other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
-err_activate_no_commit_id:
-  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. Please run 'state push' and try again
 err_must_provide_directory:
   other: You must provide a valid directory
 err_incompatible_move_file_dir:
