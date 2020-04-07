@@ -139,7 +139,7 @@ updating_to_version:
 err_update_failed:
   other: Update failed, check the error log for more information
 version_info:
-  other: | 
+  other: |
     ActiveState CLI version {{.Version}}
     Revision {{.Revision}}
     Branch {{.Branch}}
@@ -205,7 +205,7 @@ auth_err_unrecoverable_keypair:
 previous_password_prompt:
   other: "Enter your previous password:"
 secret_value_prompt_summary:
-  other: | 
+  other: |
 
     The action you are taking uses a secret that has not been given a value yet.
     Name: {{.V0}}
@@ -233,7 +233,7 @@ totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
   other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
-err_value_required: 
+err_value_required:
   other: value required
 err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
@@ -477,11 +477,11 @@ error_expand_variable_project_unrecognized_platform_var:
 run_description:
   other: Run your project scripts
 scripts_description:
-  other: Show project scripts 
+  other: Show project scripts
 flag_json_desc:
   other: Changes output to machine-readable JSON
 runtime_alternative_failed_artifact_order:
-  other: "Could not write runtime.json file: internal error" 
+  other: "Could not write runtime.json file: internal error"
 runtime_alternative_failed_destination:
   other: Installation failed due to to failed write to directory {{.V0}}
 scripts_col_name:
@@ -559,11 +559,11 @@ err_sscommon_unsupported_language:
 env_description:
   other: Manage Project Variables
 env_add_description:
-  other: 
+  other:
     >
     add variable
 env_remove_description:
-  other: 
+  other:
     >
     remove variable
 env_header_id:
@@ -730,7 +730,7 @@ secrets_err_base64_decoding:
 secrets_err_no_publickey_found:
   other: Unable to find any public-key for User
 secrets_err_value_prompt:
-  other: The provided variable value is invalid 
+  other: The provided variable value is invalid
 secrets_expand_err_undefined:
   other: "Secret `{{.V0}}` not defined in project"
 secrets_expand_err_not_found:
@@ -830,13 +830,13 @@ keypairs_err_override_with_delete:
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running `state auth`.
 warn_script_name_in_use:
-  other: | 
+  other: |
     The following script names are already in use:
-     
+
       - {{.V0}}
-    
+
     These scripts were not aliased during activation but can still be run using `state run`, eg. `state run {{.V1}}`.
-    
+
     Note that you can also access scripts by prefixing their script with your project name ({{.V2}}), eg. `{{.V3}}`
 
 warn_move_incompatible_modes:
@@ -904,7 +904,7 @@ installer_err_archive_badext:
 installer_err_runtime_missing_install_dir:
   other: Expected runtime '{{.V0}}' to contain directory named one of '{{.V1}}'
 installer_err_runtime_missing_meta:
-  other: | 
+  other: |
     The requested runtime does not appear to have a metadata file and the metadata could not be inferred, this usually 
     means you're trying to use a much older build that is not supported by this version of the State Tool. It is 
     recommended that you produce a new build.
@@ -989,20 +989,20 @@ activate_select_optout:
 activate_namespace_location:
   other: Where would you like to checkout {{.V0}}?
 warn_deprecation:
-  other: | 
+  other: |
     [YELLOW]You are running a deprecated version of the State Tool. This version will stop working as of {{.V0}}. 
-    
+
     Reason for deprecation: 
       {{.V1}}
-    
+
     Please update soon![/RESET]
 err_deprecation:
   other: |
     You are running a version of the State Tool that is no longer supported! You will be encountering issues. 
-    
+
     Reason for deprecation: 
       {{.V1}}
-      
+
     Please update now!"
 err_auth_required:
   other: Authentication is required
@@ -1026,7 +1026,7 @@ err_pull_get_latest_commit_id:
   other: Cannot get latest commit id from project
 err_pull_update_commit_id:
   other: Cannot update commit id in project file
-pull_latest: 
+pull_latest:
   other: Pull in the latest version of your project from the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
@@ -1348,8 +1348,6 @@ init_success:
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
-flag_state_init_path_description:
-  other: The location to initialize the project
 arg_state_init_namespace:
   other: ORG/PROJECT
 arg_state_init_namespace_description:
@@ -1398,7 +1396,7 @@ err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
-field_name: 
+field_name:
   other: Name
 field_description:
   other: Description
@@ -1416,7 +1414,7 @@ field_date:
   other: Date
 field_author:
   other: Author
-field_id: 
+field_id:
   other: ID
 field_changes:
   other: Changes
@@ -1522,3 +1520,8 @@ envdef_unmarshal_error:
 err_corrupted_build_request_response:
   other: |
     Internal error.  You can try manually updating the state tool.
+
+err_arg_required:
+  other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
+err_init_no_language:
+  other: "You need to supply the [language] argument, run 'state init --help' for more information."

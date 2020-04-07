@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -92,7 +94,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: "",
 			},
-			newLanguageUnsupportedError(""),
+			errors.New(locale.T("err_init_no_language")),
 			osutil.PrepareDir(tempDir),
 			osutil.PrepareDir(tempDir),
 			"",
@@ -145,7 +147,7 @@ func TestInitialize_Run(t *testing.T) {
 				},
 				path: fileutils.Join(tempDir, "1"),
 			},
-			newLanguageUnsupportedError(""),
+			errors.New(locale.T("err_init_no_language")),
 			"",
 			tempDir,
 			"",

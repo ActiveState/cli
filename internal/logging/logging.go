@@ -32,6 +32,8 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
 const (
@@ -245,7 +247,7 @@ func Warningf(msg string, args ...interface{}) error {
 // Output ERROR level messages
 func Error(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
-		writeMessage("ERROR", msg, args...)
+		writeMessage("ERROR", msg+"\nStacktrace: "+stacktrace.Get().String(), args...)
 	}
 }
 
