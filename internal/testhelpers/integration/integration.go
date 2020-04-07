@@ -44,6 +44,7 @@ type Suite struct {
 	cmd        *exec.Cmd
 	env        []string
 	wd         *string
+	users      []string
 }
 
 // SetupTest sets up an integration test suite for testing the State Tool executable
@@ -91,6 +92,21 @@ func (s *Suite) SetupTest() {
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=true",
 		"ACTIVESTATE_PROJECT=",
 	})
+}
+
+// TearDownSuite will run after all the tests in a suite have run
+func (s *Suite) TearDownSuite() {
+	if os.Getenv("ACTIVESTATE_CLEAN_USER_TOKEN") == "" {
+		// Do not run if required authentication env var is not set
+		return
+	}
+
+	for _, user := range s.users {
+		err := cleanUser(user)
+		if err != nil {
+			s.Errorf(err, "Could not delete user: %s", user)
+		}
+	}
 }
 
 // PrepareTemporaryWorkingDirectory prepares a temporary working directory to run the tests in
@@ -430,6 +446,8 @@ func (s *Suite) CreateNewUser() string {
 	s.SendLine(email)
 	s.Expect("account has been registered", authnTimeout)
 	s.Wait()
+
+	s.users = append(s.users, username)
 
 	return username
 }
