@@ -221,6 +221,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	path, err := ioutil.TempDir("", "TestInit_Activation_NoCommitID")
 	suite.Require().NoError(err)
 	suite.SetWd(path)
+	suite.AppendEnv([]string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"})
 	defer func() {
 		_ = os.RemoveAll(path)
 	}()
