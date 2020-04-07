@@ -172,7 +172,15 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 
 	closers = append(options.Closers, passthroughPipe)
 	c.passthroughPipe = passthroughPipe
-	c.runeReader = bufio.NewReaderSize(passthroughPipe, utf8.UTFMax)
+
+	// We provide a generous 10kB buffer for the rune-reader, because when the buffer is full,
+	// the writer gets blocked.  In our case the writer is ultimately the terminal output pipe,
+	// ie., the pseudo-terminal.  It seems OS dependent on how the pseudo-terminal reacts when
+	// it cannot write anymore:
+	// On Linux and Windows, bytes seem to be discarded, whereas MacOS just blocks the entire process.
+	// If expected strings cannot be matched because of missing bytes, consider increasing the buffer
+	// size even more, or switching to a `bytes.Buffer`.
+	c.runeReader = bufio.NewReaderSize(passthroughPipe, 10*1024)
 	c.closers = closers
 
 	for _, stdin := range options.Stdins {
