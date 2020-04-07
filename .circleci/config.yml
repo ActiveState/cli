@@ -91,7 +91,7 @@ jobs:
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
     resource_class: large
     working_directory: /home/circleci/workdir/github.com/ActiveState/cli
     steps:
@@ -147,7 +147,7 @@ jobs:
           name: Install Dependencies
           command: |
             pushd /private/tmp
-            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
+            curl https://dl.google.com/go/go1.13.9.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
             popd
       - <<: *prepareEnv
@@ -165,7 +165,7 @@ jobs:
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
     docker:
-      - image: circleci/golang:1.12
+      - image: circleci/golang:1.13
     resource_class: large
     working_directory: /home/circleci/workdir/github.com/ActiveState/cli
     steps:
@@ -191,7 +191,7 @@ jobs:
           name: Install Dependencies
           command: |
             pushd /private/tmp
-            curl https://dl.google.com/go/go1.12.1.darwin-amd64.tar.gz -o golang.tar.gz
+            curl https://dl.google.com/go/go1.13.9.darwin-amd64.tar.gz -o golang.tar.gz
             tar -xzf golang.tar.gz
             popd
       - <<: *prepareEnv
