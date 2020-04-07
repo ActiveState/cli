@@ -243,7 +243,7 @@ err_download_tos:
   other: Could not download terms of service file
 tos_disclaimer:
   other: |
-    Your use of the ActiveState Platform is subject to the Term of Service.
+    Your use of the ActiveState Platform is subject to the Terms of Service.
     You can review the Terms of Service at:
       {{.V0}}
 tos_acceptance:
