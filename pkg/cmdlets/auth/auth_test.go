@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -117,6 +118,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	secretsapiMock := httpmock.Activate(secretsapi.Get().BaseURI)
+	asMock := httpmock.Activate("https://www.activestate.com")
 	defer httpmock.DeActivate()
 
 	httpmock.Register("GET", "/users/uniqueUsername/test")
@@ -125,12 +127,14 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	httpmock.Register("GET", "/apikeys")
 	httpmock.RegisterWithResponse("DELETE", "/apikeys/"+constants.APITokenName, 200, "/apikeys/"+constants.APITokenNamePrefix)
 	httpmock.Register("POST", "/apikeys")
+	asMock.RegisterWithResponseBody("GET", strings.TrimPrefix(constants.TermsOfServiceURLText, "https://www.activestate.com"), 200, "")
 
 	secretsapiMock.RegisterWithResponder("PUT", "/keypair", func(req *http.Request) (int, string) {
 		return 204, "empty"
 	})
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_action"), nil)
+	pmock.OnMethod("Select").Once().Return(locale.T("tos_accept"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)

@@ -239,6 +239,23 @@ err_prompt_unknown:
   other: An unknown error occurred whilst processing your response, check the error log for more information
 prompt_login_to_signup:
   other: No account was found for that username, would you like to register it?
+err_download_tos:
+  other: Could not download terms of service file
+tos_disclaimer:
+  other: |
+    Your use of the ActiveState Platform is subject to the Term of Service.
+    You can review the Terms of Service at:
+      {{.V0}}
+tos_acceptance:
+  other: Do you accept the ActiveState Platform Terms of Service?
+tos_not_accepted:
+  other: You may not create an ActiveState Platform account without accepting the Terms of Service
+tos_accept:
+  other: Yes, I accept the ActiveState Terms of Service
+tos_not_accept:
+  other: No, I do not accept the ActiveState Terms of Service
+tos_show_full:
+  other: Display the full Terms of Service in this terminal window
 err_auth_failed:
   other: Authentication failed
 err_auth_username_check:

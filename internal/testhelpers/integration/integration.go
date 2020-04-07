@@ -416,6 +416,8 @@ func (s *Suite) CreateNewUser() string {
 	email := fmt.Sprintf("%s@test.tld", username)
 
 	s.Spawn("auth", "signup")
+	s.Expect("Terms of Service")
+	s.SendLine("y")
 	s.Expect("username:")
 	s.SendLine(username)
 	s.Expect("password:")
