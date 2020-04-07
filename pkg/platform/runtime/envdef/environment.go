@@ -333,19 +333,13 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 // environment (`Inherit==true`), the base environment defined by the
 // `envLookup` method is joined with these environment variables.
 func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
-	if inherit {
-		res, err := ed.GetEnvBasedOn(os.LookupEnv)
-		if err != nil {
-			panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
-		}
-		return res
+	lookupEnv := os.LookupEnv
+	if !inherit {
+		lookupEnv = func(_ string) (string, bool) { return "", false }
 	}
-
-	res := map[string]string{}
-
-	for _, ev := range ed.Env {
-		pev := &ev
-		res[pev.Name] = pev.ValueString()
+	res, err := ed.GetEnvBasedOn(lookupEnv)
+	if err != nil {
+		panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
 	}
 	return res
 }
