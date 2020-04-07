@@ -46,7 +46,7 @@ scripts:
     value: |
       $scripts.preprocess
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update outFile
+      go run scripts/update-generator/main.go -o public/update `outFile`
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
