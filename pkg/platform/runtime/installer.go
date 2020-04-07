@@ -149,7 +149,7 @@ func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResu
 func (installer *Installer) validateCheckpoint() *failures.Failure {
 	pj := project.Get()
 	if pj.CommitID() == "" {
-		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(pj.Owner(), pj.Name(), ""))
+		return FailNoCommits.New("installer_err_runtime_no_commits", pj.Namespace())
 	}
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
