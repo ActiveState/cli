@@ -43,13 +43,15 @@ func main() {
 	// Handle panics gracefully
 	defer handlePanics(exiter)
 
-	outputer, fail := initOutputer(os.Args, "")
+	outFlags := parseOutputFlags(os.Args)
+
+	outputer, fail := initOutputer(outFlags, "")
 	if fail != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", fail.Error()))
 		exiter(1)
 	}
 
-	setPrinterColors(os.Args)
+	setPrinterColors(outFlags)
 
 	code, err := run(os.Args, outputer)
 	if err != nil {
@@ -59,51 +61,56 @@ func main() {
 	exiter(code)
 }
 
+type outputFlags struct {
+	// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
+	Output string `short:"o" long:"output"`
+	Mono   bool   `long:"mono"`
+}
+
+func (of outputFlags) DisableColor() bool {
+	_, noColorEnv := os.LookupEnv("NO_COLOR")
+	return of.Mono || noColorEnv || !terminal.StdoutSupportsColors()
+}
+
 // setPrinterColors disables colored output in the printer packages in case the
 // terminal does not support it, or if requested by the output arguments
-func setPrinterColors(args []string) {
-	formatName := parseOutputFlag(args)
-
-	disableColor := formatName == output.MonoFormatName || !terminal.StdoutSupportsColors()
+func setPrinterColors(flags outputFlags) {
+	disableColor := flags.DisableColor()
 	print.DisableColor = disableColor
 	survey.DisableColor = disableColor
 }
 
-func initOutputer(args []string, formatName string) (output.Outputer, *failures.Failure) {
+func initOutputer(flags outputFlags, formatName string) (output.Outputer, *failures.Failure) {
 	if formatName == "" {
-		formatName = parseOutputFlag(args)
+		formatName = flags.Output
 	}
 
 	outputer, fail := output.New(formatName, &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
-		Colored:     terminal.StdoutSupportsColors(),
+		Colored:     !flags.DisableColor(),
 		Interactive: true,
 	})
 	if fail != nil {
 		if fail.Type.Matches(output.FailNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutputer(args, output.PlainFormatName)
+			return initOutputer(flags, output.PlainFormatName)
 		}
 		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, fail.Error())
 	}
 	return outputer, fail
 }
 
-func parseOutputFlag(args []string) string {
-	var flagSet struct {
-		// These should be kept in sync with cmd/state/internal/cmdtree (output flag)
-		Output string `short:"o" long:"output"`
-	}
-
+func parseOutputFlags(args []string) outputFlags {
+	var flagSet outputFlags
 	parser := flags.NewParser(&flagSet, flags.IgnoreUnknown)
 	_, err := parser.ParseArgs(args)
 	if err != nil {
 		logging.Warningf("Could not parse output flag: %s", err.Error())
 	}
 
-	return flagSet.Output
+	return flagSet
 }
 
 func run(args []string, outputer output.Outputer) (int, error) {

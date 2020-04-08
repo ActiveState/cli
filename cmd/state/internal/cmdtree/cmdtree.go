@@ -80,8 +80,9 @@ func New(outputer output.Outputer) *CmdTree {
 }
 
 type globalOptions struct {
-	Verbose bool
-	Output  string
+	Verbose    bool
+	Output     string
+	Monochrome bool
 }
 
 func newGlobalOptions() *globalOptions {
@@ -114,6 +115,12 @@ func newStateCommand(globals *globalOptions) *captain.Command {
 					}
 				},
 				Value: &globals.Verbose,
+			},
+			{
+				Name:        "mono", // Name and Shorthand should be kept in sync with cmd/state/main.go
+				Persist:     true,
+				Description: locale.T("flag_state_monochrome_output_description"),
+				Value:       &globals.Monochrome,
 			},
 			{
 				Name:        "output", // Name and Shorthand should be kept in sync with cmd/state/main.go
