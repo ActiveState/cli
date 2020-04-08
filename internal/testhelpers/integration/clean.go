@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-	auth_model "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -30,12 +29,6 @@ func cleanUser(t *testing.T, username string) error {
 		return fail.ToError()
 	}
 
-	err = testSuperuser(t, username)
-	if err != nil {
-		t.Logf("Authenticated user is not a superuser, not running removal operation. Got error: %v", err)
-		return nil
-	}
-
 	projects, err := getProjects(username)
 	if err != nil {
 		return err
@@ -48,18 +41,6 @@ func cleanUser(t *testing.T, username string) error {
 	}
 
 	return deleteUser(username)
-}
-
-func testSuperuser(t *testing.T, username string) error {
-	params := auth_model.NewLoginAsParams()
-	params.SetUsername(username)
-	ok, err := authentication.Get().Client().Authentication.LoginAs(params, authentication.ClientAuth())
-	if err != nil {
-		t.Logf("Could not login as user, got: %s", ok.Error)
-		return err
-	}
-
-	return nil
 }
 
 func getProjects(org string) ([]*mono_models.Project, error) {
