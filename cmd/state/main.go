@@ -67,9 +67,16 @@ type outputFlags struct {
 	Mono   bool   `long:"mono"`
 }
 
-func (of outputFlags) DisableColor() bool {
+// DisableColor returns whether color output should be disabled
+// By default it only returns false if stdout is a terminal.  This check can be disabled with
+// the checkTerminal flag
+func (of outputFlags) DisableColor(checkTerminalFlag ...bool) bool {
+	checkTerminal := true
+	if len(checkTerminalFlag) > 0 {
+		checkTerminal = checkTerminalFlag[0]
+	}
 	_, noColorEnv := os.LookupEnv("NO_COLOR")
-	return of.Mono || noColorEnv || !terminal.StdoutSupportsColors()
+	return of.Mono || noColorEnv || (checkTerminal && !terminal.StdoutSupportsColors())
 }
 
 // setPrinterColors disables colored output in the printer packages in case the

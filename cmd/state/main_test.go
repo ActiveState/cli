@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
@@ -90,6 +91,19 @@ func (suite *MainTestSuite) TestParseOutputFlags() {
 	suite.Equal(outputFlags{"editor", false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
 	suite.Equal(outputFlags{"editor.v0", false}, parseOutputFlags([]string{"state", "foo", "-o", "editor.v0"}))
 	suite.Equal(outputFlags{"", true}, parseOutputFlags([]string{"state", "foo", "--mono"}))
+}
+
+func (suite *MainTestSuite) TestDisableColors() {
+	monoFlags := outputFlags{Mono: true}
+	nonMonoFlags := outputFlags{Mono: false}
+
+	err := os.Setenv("NO_COLOR", "")
+	suite.Require().NoError(err)
+	suite.True(nonMonoFlags.DisableColor(false), "disable colors if NO_COLOR is set")
+	err = os.Unsetenv("NO_COLOR")
+	suite.Require().NoError(err)
+	suite.False(nonMonoFlags.DisableColor(false), "do not disable colors by default")
+	suite.True(monoFlags.DisableColor(false), "disable colors if --mono is set")
 }
 
 func TestMainTestSuite(t *testing.T) {
