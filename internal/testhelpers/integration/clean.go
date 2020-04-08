@@ -19,7 +19,7 @@ func cleanUser(t *testing.T, username string) error {
 		return err
 	}
 	defer func() {
-		os.Setenv("ACTIVESTATE_API_HOST", "platform.testing.tld")
+		os.Unsetenv("ACTIVESTATE_API_HOST")
 	}()
 
 	fail := auth.AuthenticateWithCredentials(&mono_models.Credentials{
