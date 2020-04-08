@@ -133,7 +133,7 @@ func loadAndParseKeypair(keyFilename string) (Keypair, *failures.Failure) {
 
 func hasKeyOverride() bool {
 	if os.Getenv(constants.PrivateKeyEnvVarName) != "" {
-		return false
+		return true
 	}
 
 	tkn, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
@@ -141,8 +141,8 @@ func hasKeyOverride() bool {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
-		return false
+		return true
 	}
 
-	return true
+	return false
 }
