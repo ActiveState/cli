@@ -30,7 +30,7 @@ func cleanUser(t *testing.T, username string) error {
 		return fail.ToError()
 	}
 
-	err = testSuperuser(username)
+	err = testSuperuser(t, username)
 	if err != nil {
 		t.Logf("Authenticated user is not a superuser, not running removal operation. Got error: %v", err)
 		return nil
@@ -50,11 +50,12 @@ func cleanUser(t *testing.T, username string) error {
 	return deleteUser(username)
 }
 
-func testSuperuser(username string) error {
+func testSuperuser(t *testing.T, username string) error {
 	params := auth_model.NewLoginAsParams()
 	params.SetUsername(username)
-	_, err := authentication.Get().Client().Authentication.LoginAs(params, authentication.ClientAuth())
+	ok, err := authentication.Get().Client().Authentication.LoginAs(params, authentication.ClientAuth())
 	if err != nil {
+		t.Logf("Could not login as user, got: %s", ok.Error)
 		return err
 	}
 
