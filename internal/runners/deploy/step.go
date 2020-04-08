@@ -14,6 +14,7 @@ const (
 	UnsetStep Step = iota
 	InstallStep
 	ConfigureStep
+	SymlinkStep
 	ReportStep
 )
 
@@ -21,6 +22,7 @@ var StepMap = map[Step]string{
 	UnsetStep:     "unset",
 	InstallStep:   "install",
 	ConfigureStep: "configure",
+	SymlinkStep:   "symlink",
 	ReportStep:    "report",
 }
 
