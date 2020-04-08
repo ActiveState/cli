@@ -53,6 +53,12 @@ func (suite *MainTestSuite) TestOutputer() {
 	}
 
 	{
+		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.MonoFormatName}, "")
+		suite.Require().NoError(fail.ToError())
+		suite.IsType(&output.Plain{}, outputer, "Returns Mono outputer")
+	}
+
+	{
 		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.PlainFormatName}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
@@ -84,6 +90,7 @@ func (suite *MainTestSuite) TestOutputer() {
 }
 
 func (suite *MainTestSuite) TestParseOutputFlag() {
+	suite.Equal("mono", parseOutputFlag([]string{"state", "foo", "-o", "mono"}))
 	suite.Equal("plain", parseOutputFlag([]string{"state", "foo", "-o", "plain"}))
 	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "--output", "json"}))
 	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "-o", "json"}))

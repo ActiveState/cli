@@ -24,8 +24,10 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	survey "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -47,12 +49,24 @@ func main() {
 		exiter(1)
 	}
 
+	setPrinterColors(os.Args)
+
 	code, err := run(os.Args, outputer)
 	if err != nil {
 		outputer.Error(err.Error())
 	}
 
 	exiter(code)
+}
+
+// setPrinterColors disables colored output in the printer packages in case the
+// terminal does not support it, or if requested by the output arguments
+func setPrinterColors(args []string) {
+	formatName := parseOutputFlag(args)
+
+	disableColor := formatName == output.MonoFormatName || !terminal.StdoutSupportsColors()
+	print.DisableColor = disableColor
+	survey.DisableColor = disableColor
 }
 
 func initOutputer(args []string, formatName string) (output.Outputer, *failures.Failure) {
@@ -63,7 +77,7 @@ func initOutputer(args []string, formatName string) (output.Outputer, *failures.
 	outputer, fail := output.New(formatName, &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
-		Colored:     true,
+		Colored:     terminal.StdoutSupportsColors(),
 		Interactive: true,
 	})
 	if fail != nil {

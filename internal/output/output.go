@@ -11,6 +11,7 @@ import (
 // FormatName constants are tokens representing supported output formats.
 const (
 	PlainFormatName    = "plain"     // human readable
+	MonoFormatName     = "mono"      // human readable (no-color)
 	JSONFormatName     = "json"      // plain json
 	EditorFormatName   = "editor"    // alias of "json"
 	EditorV0FormatName = "editor.v0" // for Komodo: alias of "json"
@@ -36,6 +37,11 @@ func New(formatName string, config *Config) (Outputer, *failures.Failure) {
 		logging.Debug("Using Plain outputer")
 		plain, fail := NewPlain(config)
 		return &plain, fail
+	case MonoFormatName:
+		logging.Debug("Using Mono outputer")
+		config.Colored = false
+		mono, fail := NewPlain(config)
+		return &mono, fail
 	case JSONFormatName, EditorFormatName, EditorV0FormatName:
 		logging.Debug("Using JSON outputer")
 		json, fail := NewJSON(config)
