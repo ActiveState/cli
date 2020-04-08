@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"log"
 	"os"
 	"testing"
 
@@ -25,7 +24,6 @@ func cleanUser(t *testing.T, username string) error {
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
 	if fail != nil {
-		log.Fatalf("Could not authenticate test cleaning user: %v", fail)
 		return fail.ToError()
 	}
 
