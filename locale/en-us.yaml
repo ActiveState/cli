@@ -82,6 +82,8 @@ flag_state_locale_description:
   other: Set the localisation
 flag_state_verbose_description:
   other: Verbose output
+flag_state_monochrome_output_description:
+  other: Force monochrome text output
 flag_state_output_description:
   other: "Set the output method, possible values: plain, json, editor"
 flag_state_version_description:

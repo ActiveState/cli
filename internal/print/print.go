@@ -9,6 +9,9 @@ import (
 	ct "github.com/ActiveState/go-colortext"
 )
 
+// DisableColor is a flag that forces the print output to be monochrome
+var DisableColor bool
+
 // Printer holds our main printing logic
 type Printer struct {
 	output io.Writer
@@ -20,14 +23,18 @@ func New(output io.Writer, plain bool) *Printer {
 	return &Printer{output, plain}
 }
 
+func isPrinterPlain() bool {
+	return condition.InTest() || DisableColor
+}
+
 // Stderr returns a new printer that uses stderr
 func Stderr() *Printer {
-	return New(os.Stderr, condition.InTest())
+	return New(os.Stderr, isPrinterPlain())
 }
 
 // Stdout returns a new printer that uses stdout, you can probably just use the methods exposed on this package instead
 func Stdout() *Printer {
-	return New(os.Stdout, condition.InTest())
+	return New(os.Stdout, isPrinterPlain())
 }
 
 // Line prints a formatted message and ends with a line break
