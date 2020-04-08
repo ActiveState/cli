@@ -72,10 +72,10 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 func runSteps(overwrite bool, installer installable, step Step, out output.Outputer) error {
 	return runStepsWithFuncs(
 		overwrite, installer, step, out,
-		install, configure, report, symlink)
+		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(overwrite bool, installer installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, reportf reportFunc, symlinkf symlinkFunc) error {
+func runStepsWithFuncs(overwrite bool, installer installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
