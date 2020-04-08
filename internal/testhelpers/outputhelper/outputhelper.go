@@ -46,3 +46,25 @@ func (c *catcher) ErrorOutput() string {
 func (c *catcher) CombinedOutput() string {
 	return c.Output() + "\n" + c.ErrorOutput()
 }
+
+type TypedCatcher struct {
+	Prints  []interface{}
+	Errors  []interface{}
+	Notices []interface{}
+}
+
+func (t *TypedCatcher) Print(value interface{}) {
+	t.Prints = append(t.Prints, value)
+}
+
+func (t *TypedCatcher) Error(value interface{}) {
+	t.Errors = append(t.Errors, value)
+}
+
+func (t *TypedCatcher) Notice(value interface{}) {
+	t.Notices = append(t.Notices, value)
+}
+
+func (t *TypedCatcher) Config() *output.Config {
+	return &output.Config{}
+}

@@ -56,7 +56,7 @@ func (suite *InstallerTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.prg = pmock.NewTestProgress()
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(suite.cacheDir, runtime.InitDownload())
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 }
@@ -119,17 +119,11 @@ func (suite *InstallerTestSuite) TestInstall_Perl_Legacy_RelocationSuccessful() 
 }
 
 func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
 	cacheDir, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(cacheDir, runtime.InitDownload())
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	onDownloadCalled := false
@@ -153,14 +147,8 @@ func (suite *InstallerTestSuite) TestInstall_EventsCalled() {
 }
 
 func (suite *InstallerTestSuite) TestInstall_LegacyAndNew() {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
-	pjfile := projectfile.Project{
-		Project: projectURL,
-	}
-	pjfile.Persist()
-
 	var fail *failures.Failure
-	suite.installer, fail = runtime.InitInstaller()
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 
 	envGetter, freshInstall, fail := suite.installer.Install()

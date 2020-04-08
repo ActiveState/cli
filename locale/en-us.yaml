@@ -1505,6 +1505,44 @@ err_project_env_file_not_exist:
     Expected the following file to exist: {{.V0}}
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
+err_invalid_step:
+  other: "Invalid step specified: {{.V0}}. Step must be one of: {{.V1}}."
+arg_state_deploy_namespace:
+  other: ORG/PROJECT
+arg_state_deploy_namespace_description:
+  other: The namespace of the project that you wish to deploy
+err_requires_runtime_download:
+  other: You need to download the runtime environment before you can use it
+err_deploy_no_commits:
+  other: "The project '{{.V0}}' does not have any packages configured, please add add some packages first."
+err_userrc_notfound:
+  other: "Could not update your environment as your RC file could not be found, expecting to find one of '{{.V0}}' in your home directory."
+err_arg_required:
+  other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
+err_windows_registry:
+  other: Error while interacting with Windows registry
+err_deploy_run_install:
+  other: You need to run the install step at least once before you can run the configure or report steps. Run 'state deploy --help' for more information.
+deploy_install:
+  other: "[BLUE]Installing Runtime Environment[/RESET]"
+deploy_configure_shell:
+  other: "[BLUE]Configuring shell: {{.V0}} (set the SHELL environment variable to use a different shell)[/RESET]"
+deploy_info:
+  other: |
+    [BLUE]Deployment Information:[/RESET]
+    This information is provided for your reference, for most common use-cases you do not need to do anything with this.
+field_binarydirectories:
+  other: Binary Directories
+field_environment:
+  other: Environment Variables
+deploy_restart_shell:
+  other: |
+
+    [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
+flag_state_deploy_path_description:
+  other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
+flag_state_deploy_step_description:
+  other: The individual step to run. By default all steps are ran.
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.

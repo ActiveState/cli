@@ -61,6 +61,16 @@ func TestPlain_Print(t *testing.T) {
 			"",
 		},
 		{
+			"map with string, int and float",
+			args{map[string]interface{}{
+				"string": "hello",
+				"int":    int(1),
+				"float":  float32(9.1),
+			}},
+			"\n float: 9.10 \n int: 1 \n string: hello \n",
+			"",
+		},
+		{
 			"pointer",
 			args{&struct{ V string }{"hello"}},
 			"field_v: hello\n",
