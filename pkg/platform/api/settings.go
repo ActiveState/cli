@@ -74,10 +74,8 @@ func GetServiceURL(service Service) *url.URL {
 	if !validService {
 		logging.Panic("Invalid service: %s", string(service))
 	}
-	if host := getProjectHost(); host != nil {
+	if host := getProjectHost(service); host != nil {
 		serviceURL.Host = *host
-	} else if condition.InTest() {
-		serviceURL.Host = string(service) + ".testing.tld"
 	}
 
 	if insecure := os.Getenv(constants.APIInsecureEnvVarName); insecure == "true" {
@@ -89,9 +87,14 @@ func GetServiceURL(service Service) *url.URL {
 	return serviceURL
 }
 
-func getProjectHost() *string {
+func getProjectHost(service Service) *string {
 	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
 		return &apiHost
+	}
+
+	if condition.InTest() {
+		testingPlatform := string(service) + ".testing.tld"
+		return &testingPlatform
 	}
 
 	pj, fail := projectfile.GetOnce()

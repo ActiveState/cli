@@ -1,6 +1,7 @@
 package api
 
 import (
+	"os"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -13,6 +14,11 @@ func TestGetServiceURL(t *testing.T) {
 }
 
 func TestGetProjectHost(t *testing.T) {
-	host := getProjectHost()
+	os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
+	defer func() {
+		os.Unsetenv("ACTIVESTATE_API_TOKE")
+	}()
+
+	host := getProjectHost(ServiceMono)
 	assert.Equal(t, "platform.activestate.com", *host)
 }
