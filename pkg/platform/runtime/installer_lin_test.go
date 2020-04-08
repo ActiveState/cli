@@ -59,7 +59,7 @@ func (suite *InstallerLinuxTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 
 	var fail *failures.Failure
-	suite.installer, fail = runtime.NewInstaller(suite.cacheDir, runtime.InitDownload())
+	suite.installer, fail = runtime.NewInstallerByParams(runtime.NewInstallerParams(suite.cacheDir, "00010001-0001-0001-0001-000100010001", "string", "string"))
 	suite.Require().NoError(fail.ToError())
 	suite.Require().NotNil(suite.installer)
 }
@@ -105,9 +105,8 @@ func (suite *InstallerLinuxTestSuite) TestInstall_ArchiveNotTarGz() {
 
 	invalidArchive := path.Join(suite.dataDir, "empty.archive")
 
-	file, fail := fileutils.Touch(invalidArchive)
+	fail := fileutils.Touch(invalidArchive)
 	suite.Require().NoError(fail.ToError())
-	suite.Require().NoError(file.Close())
 
 	mockAssembler := new(rmock.Assembler)
 	suite.setMocks(mockAssembler, false)

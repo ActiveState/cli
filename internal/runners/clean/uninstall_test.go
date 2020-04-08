@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/stretchr/testify/suite"
 )
 
 type confirmMock struct {
@@ -58,7 +59,7 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.Require().DirExists(suite.cachePath)
 
 	if runtime.GOOS != "windows" {
-		_, fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
+		fail := fileutils.Touch(filepath.Join(suite.configPath, "log.txt"))
 		suite.Require().NoError(fail.ToError())
 		suite.Require().FileExists(filepath.Join(suite.configPath, "log.txt"))
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
@@ -114,8 +115,13 @@ func (m *MetaData) hasBinaryFile(executable string) bool {
 func (m *MetaData) setPythonEnv() {
 	if _, exists := m.Env["PYTHONPATH"]; !exists {
 		m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
+	} else {
+		logging.Debug("Not setting PYTHONPATH as the user already has it set")
 	}
+
 	if os.Getenv("PYTHONIOENCODING") == "" {
 		m.Env["PYTHONIOENCODING"] = "utf-8"
+	} else {
+		logging.Debug("Not setting PYTHONIOENCODING as the user already has it set")
 	}
 }

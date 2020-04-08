@@ -1,14 +1,17 @@
 package keypairs
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
@@ -76,7 +79,17 @@ func Delete(keyName string) *failures.Failure {
 // constants.KeypairLocalFileName). If the key override is set
 // (constants.PrivateKeyEnvVarName), that value will be parsed directly.
 func LoadWithDefaults() (Keypair, *failures.Failure) {
+	key, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
+	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
+		return nil, failures.FailNetwork.Wrap(err)
+	}
+	if err == nil && key != "" {
+		logging.Debug("Using private key sourced from gcloud")
+		return ParseRSA(key)
+	}
+
 	if key := os.Getenv(constants.PrivateKeyEnvVarName); key != "" {
+		logging.Debug("Using private key sourced from environment")
 		return ParseRSA(key)
 	}
 
@@ -119,5 +132,17 @@ func loadAndParseKeypair(keyFilename string) (Keypair, *failures.Failure) {
 }
 
 func hasKeyOverride() bool {
-	return os.Getenv(constants.PrivateKeyEnvVarName) != ""
+	if os.Getenv(constants.PrivateKeyEnvVarName) != "" {
+		return true
+	}
+
+	tkn, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
+	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
+		logging.Error("Could not retrieve gcloud secret: %v", err)
+	}
+	if err == nil && tkn != "" {
+		return true
+	}
+
+	return false
 }

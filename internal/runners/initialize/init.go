@@ -37,6 +37,10 @@ type Initialize struct {
 }
 
 func prepare(params *RunParams) error {
+	if params.Language == "" {
+		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
+		return failures.FailUserInput.New(locale.T("err_init_no_language"))
+	}
 	langParts := strings.Split(params.Language, "@")
 	if len(langParts) > 1 {
 		params.version = langParts[1]

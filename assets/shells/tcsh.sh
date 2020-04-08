@@ -5,9 +5,12 @@
 # `set` variables are not inherited when we spawn the sub shell via exec.  Only
 # `setenv` values are inherited.
 
-{{range $K, $V := .Env}}
-setenv {{$K}} "{{$V}}"
-{{end}}
+{{- range $K, $V := .Env}}
+{{- if eq $K "PATH"}}
+setenv {{$K}} "{{$V}}:$PATH"
+{{- else}}
+{{- end}}
+{{- end}}
 
 {{range $K, $CMD := .Scripts}}
 alias {{$K}} 'state run {{$CMD}}'

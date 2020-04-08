@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strings"
+
+	"github.com/bndr/gotabulate"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/bndr/gotabulate"
-	"github.com/go-openapi/strfmt"
 )
 
 // Plain is our plain outputer, it uses reflect to marshal the data.
@@ -95,6 +97,12 @@ func sprint(value interface{}) (string, error) {
 		}
 		return sprintSlice(value)
 
+	case reflect.Map:
+		if valueRfl.IsNil() {
+			return nilText, nil
+		}
+		return sprintMap(value)
+
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return fmt.Sprintf("%d", value), nil
@@ -168,6 +176,28 @@ func sprintSlice(value interface{}) (string, error) {
 	}
 
 	return strings.Join(result, "\n"), nil
+}
+
+// sprintMap will marshal and return the given map as a string
+func sprintMap(value interface{}) (string, error) {
+	mp, err := parseMap(value)
+	if err != nil {
+		return "", err
+	}
+
+	result := []string{}
+	for k, v := range mp {
+		stringValue, err := sprint(v)
+		if err != nil {
+			return "", err
+		}
+
+		result = append(result, fmt.Sprintf(" %s: %s ", k, stringValue))
+	}
+
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
+
+	return "\n" + strings.Join(result, "\n"), nil
 }
 
 // sprintTable will marshal and return the given slice of structs as a string, formatted as a table
