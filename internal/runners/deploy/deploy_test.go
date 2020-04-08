@@ -38,6 +38,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 		err           error
 		installCalled bool
 		configCalled  bool
+		symlinkCalled bool
 		reportCalled  bool
 	}
 	tests := []struct {
@@ -56,6 +57,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				true,
 				true,
 				true,
+				true,
 			},
 		},
 		{
@@ -67,6 +69,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			want{
 				nil,
 				true,
+				false,
 				false,
 				false,
 			},
@@ -82,6 +85,21 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				false,
 				true,
 				false,
+				false,
+			},
+		},
+		{
+			"Deploy with symlink step",
+			args{
+				&InstallableMock{},
+				SymlinkStep,
+			},
+			want{
+				nil,
+				false,
+				false,
+				true,
+				false,
 			},
 		},
 		{
@@ -92,6 +110,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			},
 			want{
 				nil,
+				false,
 				false,
 				false,
 				true,
@@ -110,13 +129,18 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				configCalled = true
 				return nil
 			}
+			var symlinkCalled bool
+			symlinkFunc := func(bool, runtime.EnvGetter, output.Outputer) error {
+				symlinkCalled = true
+				return nil
+			}
 			var reportCalled bool
 			reportFunc := func(runtime.EnvGetter, output.Outputer) error {
 				reportCalled = true
 				return nil
 			}
 			catcher := outputhelper.NewCatcher()
-			err := runStepsWithFuncs(tt.args.installer, tt.args.step, catcher.Outputer, installFunc, configFunc, reportFunc)
+			err := runStepsWithFuncs(true, tt.args.installer, tt.args.step, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
@@ -125,6 +149,9 @@ func Test_runStepsWithFuncs(t *testing.T) {
 			}
 			if configCalled != tt.want.configCalled {
 				t.Errorf("runStepsWithFuncs() configCalled = %v, want %v", configCalled, tt.want.configCalled)
+			}
+			if symlinkCalled != tt.want.symlinkCalled {
+				t.Errorf("runStepsWithFuncs() symlinkCalled = %v, want %v", symlinkCalled, tt.want.symlinkCalled)
 			}
 			if reportCalled != tt.want.reportCalled {
 				t.Errorf("runStepsWithFuncs() reportCalled = %v, want %v", reportCalled, tt.want.reportCalled)
