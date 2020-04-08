@@ -6,9 +6,10 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/stretchr/testify/suite"
 )
 
 type MoveAllFilesTestSuite struct {
@@ -54,9 +55,8 @@ func (suite *MoveAllFilesTestSuite) TestToDir_IsNotDirectory() {
 }
 
 func (suite *MoveAllFilesTestSuite) addFileToFrom(relPath string) {
-	file, failure := fileutils.Touch(path.Join(suite.fromDir, relPath))
-	suite.Require().Nil(failure, "touching test file: %s", relPath)
-	file.Close()
+	fail := fileutils.Touch(path.Join(suite.fromDir, relPath))
+	suite.Require().Nil(fail, "touching test file: %s", relPath)
 }
 
 func (suite *MoveAllFilesTestSuite) addDirToFrom(relPath string) {

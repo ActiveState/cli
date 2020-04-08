@@ -50,6 +50,10 @@ func (ns *Namespaced) String() string {
 	return fmt.Sprintf("%s%s%s", ns.Owner, sep, ns.Project)
 }
 
+func (ns *Namespaced) Type() string {
+	return "namespace"
+}
+
 // IsValid returns whether or not the namespace is set sufficiently.
 func (ns *Namespaced) IsValid() bool {
 	return ns != nil && ns.Owner != "" && ns.Project != ""

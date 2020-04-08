@@ -24,6 +24,7 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	}`
 
 	originalValue := os.Getenv("PYTHONIOENCODING")
+	os.Unsetenv("PYTHONIOENCODING")
 	defer func() {
 		os.Setenv("PYTHONIOENCODING", originalValue)
 	}()
@@ -39,9 +40,8 @@ func (suite *MetaDataTestSuite) TestMetaData_Prepare() {
 	suite.Require().NoError(fail.ToError())
 
 	pythonBinaryFilename := "python3"
-	tempBinary, fail := fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
+	fail = fileutils.Touch(filepath.Join(tempDir, pythonBinaryFilename))
 	suite.Require().NoError(fail.ToError())
-	defer tempBinary.Close()
 
 	contents := fmt.Sprintf(template, tempDir)
 	metaData, fail := runtime.ParseMetaData([]byte(contents))

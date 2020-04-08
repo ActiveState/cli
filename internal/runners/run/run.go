@@ -88,7 +88,7 @@ func run(name string, args []string) error {
 		}
 
 		subs.SetEnv(venv.GetEnvSlice(true))
-		path = venv.GetEnv(false)["PATH"]
+		path = venv.GetEnv(false, "")["PATH"]
 	}
 
 	if !langExec.Builtin() && !pathProvidesExec(configCachePath(), langExec.Name(), path) {

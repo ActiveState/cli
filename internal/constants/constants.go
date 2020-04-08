@@ -198,3 +198,9 @@ const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/20
 
 // TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
 const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
+
+// RCAppendStartLine is the start line used to denote our environment config in RC files
+const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
+
+// RCAppendEndLine is the end line used to denote our environment config in RC files
+const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"

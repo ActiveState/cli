@@ -5,9 +5,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
 type EnvironmentTestSuite struct {
@@ -141,7 +142,7 @@ func (suite *EnvironmentTestSuite) GetEnv() {
 		}`), &ed1)
 	require.NoError(suite.T(), err)
 
-	res := ed1.GetEnv()
+	res := ed1.GetEnv(true)
 	suite.Assert().Equal(map[string]string{
 		"V": "a:b",
 	}, res)

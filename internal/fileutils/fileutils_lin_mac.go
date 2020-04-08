@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const LineEnd = "\n"
+
 // IsExecutable determines if the file at the given path has any execute permissions.
 // This function does not care whether the current user can has enough privilege to
 // execute the file.

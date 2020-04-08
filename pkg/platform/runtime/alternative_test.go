@@ -7,14 +7,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/progress/mock"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
 )
 
 type AlternativeRuntimeTestSuite struct {
@@ -110,13 +111,13 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 		suite.Assert().Equal(1, counter.Count, "one executable moved to final installation directory")
 	}
 
-	expectedEnv := merged.GetEnv()
+	expectedEnv := merged.GetEnv(true)
 
 	mergedFilePath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeDefinitionFilename)
 	firstEnvDefPath := filepath.Join(installDir, constants.LocalRuntimeEnvironmentDirectory, fmt.Sprintf("%06d.json", 0))
 
 	suite.Assert().False(fileutils.FileExists(mergedFilePath))
-	env, fail := ar.GetEnv()
+	env, fail := ar.GetEnv(true, "")
 	suite.Require().NoError(fail.ToError())
 	suite.Assert().Equal(expectedEnv, env)
 	suite.Assert().True(fileutils.FileExists(mergedFilePath))
@@ -124,7 +125,7 @@ func (suite *AlternativeRuntimeTestSuite) Test_GetEnv() {
 	suite.Assert().NoError(err, "removing cached runtime definition file for first artifact")
 
 	// This should still work, as we have cached the merged result by now
-	env, fail = ar.GetEnv()
+	env, fail = ar.GetEnv(true, "")
 	suite.Require().NoError(fail.ToError())
 	suite.Assert().Equal(expectedEnv, env)
 }

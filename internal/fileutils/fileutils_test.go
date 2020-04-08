@@ -162,9 +162,8 @@ func TestEmptyDir_HasRegularFile(t *testing.T) {
 	tmpdir, err := ioutil.TempDir("", "test-dir-has-file")
 	require.NoError(t, err)
 
-	f, failure := Touch(path.Join(tmpdir, "regular-file"))
+	failure := Touch(path.Join(tmpdir, "regular-file"))
 	require.NoError(t, failure.ToError())
-	defer os.Remove(f.Name())
 
 	isEmpty, failure := IsEmptyDir(tmpdir)
 	require.NoError(t, failure.ToError())
@@ -270,15 +269,13 @@ func TestTouch(t *testing.T) {
 	path := path.Join(dir, "file.txt")
 
 	{
-		file, fail := Touch(path)
+		fail := Touch(path)
 		require.NoError(t, fail.ToError(), "File created without fail")
-		file.Close()
 	}
 
 	{
-		file, fail := Touch(noParentPath)
+		fail := Touch(noParentPath)
 		require.NoError(t, fail.ToError(), "File with missing parent created without fail")
-		file.Close()
 	}
 }
 
@@ -347,7 +344,7 @@ func TestCopyFiles(t *testing.T) {
 	fail := Mkdir(sourceDir)
 	require.NoError(t, fail.ToError())
 
-	_, fail = Touch(sourceFile)
+	fail = Touch(sourceFile)
 	require.NoError(t, fail.ToError())
 
 	if runtime.GOOS != "windows" {
@@ -430,7 +427,7 @@ func runSymlinkTest(t *testing.T, info symlinkTestInfo) {
 
 	fail := Mkdir(info.srcDir)
 	require.NoError(t, fail.ToError())
-	_, fail = Touch(info.srcFile)
+	fail = Touch(info.srcFile)
 	require.NoError(t, fail.ToError())
 
 	content := "stuff"
