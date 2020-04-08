@@ -16,7 +16,7 @@ func TestGetServiceURL(t *testing.T) {
 func TestGetProjectHost(t *testing.T) {
 	os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
 	defer func() {
-		os.Unsetenv("ACTIVESTATE_API_TOKE")
+		os.Unsetenv("ACTIVESTATE_API_HOST")
 	}()
 
 	host := getProjectHost(ServiceMono)
