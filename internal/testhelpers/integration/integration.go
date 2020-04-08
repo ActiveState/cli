@@ -102,7 +102,7 @@ func (s *Suite) TearDownSuite() {
 	}
 
 	for _, user := range s.users {
-		err := cleanUser(user)
+		err := cleanUser(s.T(), user)
 		if err != nil {
 			s.Errorf(err, "Could not delete user: %s", user)
 		}

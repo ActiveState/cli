@@ -3,15 +3,17 @@ package integration
 import (
 	"log"
 	"os"
+	"testing"
 
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	auth_model "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func cleanUser(username string) error {
+func cleanUser(t *testing.T, username string) error {
 	err := os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
 	if err != nil {
 		return err
@@ -28,6 +30,12 @@ func cleanUser(username string) error {
 		return fail.ToError()
 	}
 
+	err = testSuperuser(username)
+	if err != nil {
+		t.Logf("Authenticated user is not a superuser, not running removal operation. Got error: %v", err)
+		return nil
+	}
+
 	projects, err := getProjects(username)
 	if err != nil {
 		return err
@@ -40,6 +48,17 @@ func cleanUser(username string) error {
 	}
 
 	return deleteUser(username)
+}
+
+func testSuperuser(username string) error {
+	params := auth_model.NewLoginAsParams()
+	params.SetUsername(username)
+	_, err := authentication.Get().Client().Authentication.LoginAs(params, authentication.ClientAuth())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getProjects(org string) ([]*mono_models.Project, error) {
