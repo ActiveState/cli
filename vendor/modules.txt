@@ -31,9 +31,9 @@ github.com/alecthomas/template/parse
 # github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f
 github.com/asaskevich/govalidator
 # github.com/autarch/testify v1.2.2
-github.com/autarch/testify/require
 github.com/autarch/testify/assert
 github.com/autarch/testify/mock
+github.com/autarch/testify/require
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
@@ -363,7 +363,7 @@ google.golang.org/appengine/internal/socket
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/socket
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20200408120641-fbb3ad325eb7
+# google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/cloud/secretmanager/v1
 google.golang.org/genproto/googleapis/iam/v1
