@@ -7,7 +7,6 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
 	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
@@ -270,7 +269,7 @@ func (s *Auth) CreateToken() *failures.Failure {
 		}
 	}
 
-	key := constants.APITokenName + ":" + uuid.New().String()
+	key := constants.APITokenName + ":" + logging.UniqID()
 	token, fail := s.NewAPIKey(key)
 	if fail != nil {
 		return fail
