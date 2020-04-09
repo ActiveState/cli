@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -12,13 +13,15 @@ import (
 )
 
 func cleanUser(t *testing.T, username string) error {
-	err := os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
-	if err != nil {
-		return err
+	if os.Getenv(constants.APIHostEnvVarName) == "" {
+		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			os.Unsetenv(constants.APIHostEnvVarName)
+		}()
 	}
-	defer func() {
-		os.Unsetenv("ACTIVESTATE_API_HOST")
-	}()
 
 	fail := auth.AuthenticateWithCredentials(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),

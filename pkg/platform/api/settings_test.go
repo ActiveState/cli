@@ -14,11 +14,11 @@ func TestGetServiceURL(t *testing.T) {
 }
 
 func TestGetProjectHost(t *testing.T) {
-	os.Setenv("ACTIVESTATE_API_HOST", "platform.activestate.com")
+	os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
 	defer func() {
-		os.Unsetenv("ACTIVESTATE_API_HOST")
+		os.Unsetenv(constants.APIHostEnvVarName)
 	}()
 
 	host := getProjectHost(ServiceMono)
-	assert.Equal(t, "platform.activestate.com", *host)
+	assert.Equal(t, constants.DefaultAPIHost, *host)
 }
