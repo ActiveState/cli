@@ -63,7 +63,6 @@ require (
 	github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047 // indirect
 	github.com/nicksnyder/go-i18n v1.10.0
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect
-	github.com/pborman/ansi v0.0.0-20160920233902-86f499584b0a
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pelletier/go-toml v1.1.0 // indirect
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
