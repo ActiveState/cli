@@ -150,7 +150,6 @@ func (cr *CamelRuntime) PreUnpackArtifact(artf *HeadChefArtifact) *failures.Fail
 // PostUnpackArtifact parses the metadata file, runs the Relocation function (if
 // necessary) and moves the artifact to its final destination
 func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir string, archivePath string, cb func()) *failures.Failure {
-	logging.Debug("PostUnpackArtifact")
 	archiveName := strings.TrimSuffix(filepath.Base(archivePath), filepath.Ext(archivePath))
 
 	// the above only strips .gz, so account for .tar.gz use-case
@@ -234,7 +233,6 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 		return FailRuntimeInstallation.Wrap(err)
 	}
 
-	logging.Debug("Binaries separate: %t", binariesSeparate)
 	if binariesSeparate {
 		replacement := filepath.Join(metaData.Path, metaData.RelocationTargetBinaries)
 		// Replace binary files
