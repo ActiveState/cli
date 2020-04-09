@@ -1,6 +1,8 @@
 package analytics
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
@@ -76,6 +78,9 @@ func setup() {
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
+	}
+	if osVersion == "unknown" {
+		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
 	CustomDimensions = &customDimensions{
