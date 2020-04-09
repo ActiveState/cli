@@ -1,4 +1,4 @@
-package pkg
+package packages
 
 import (
 	"github.com/spf13/cobra"
