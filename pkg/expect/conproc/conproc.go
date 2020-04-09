@@ -289,6 +289,9 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 // and then closes up all the readers.
 // This function is called as a last step by cp.wait()
 func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *bytes.Buffer) (*os.ProcessState, string, error) {
+	if time.Now().After(deadline) {
+		return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
+	}
 	b, expErr := cp.console.Expect(
 		expect.OneOf(expect.PTSClosed, expect.StdinClosed, expect.EOF),
 		expect.WithTimeout(deadline.Sub(time.Now())),
@@ -306,6 +309,14 @@ func (cp *ConsoleProcess) waitForEOF(processErr error, deadline time.Time, buf *
 		return nil, buf.String(), expErr
 	}
 	return cp.cmd.ProcessState, buf.String(), processErr
+}
+
+// forceKill kills the underlying process and waits until it return the exit error
+func (cp *ConsoleProcess) forceKill() {
+	if err := cp.cmd.Process.Kill(); err != nil {
+		panic(err)
+	}
+	<-cp.errs
 }
 
 // wait waits for a console to finish and cleans up all resources
@@ -327,28 +338,23 @@ func (cp *ConsoleProcess) wait(timeout ...time.Duration) (*os.ProcessState, stri
 	buf := new(bytes.Buffer)
 	// run in a tight loop until process finished or until we timeout
 	for {
-		deadlineExpired := time.Now().After(deadline)
 		err := cp.console.Drain(100*time.Millisecond, buf)
 
+		if time.Now().After(deadline) {
+			log.Println("killing process after timeout")
+			cp.forceKill()
+			return nil, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
+		}
 		// we only expect timeout or EOF errors here, otherwise we will kill the process
-		if (err != nil && !(os.IsTimeout(err) || err == io.EOF)) || deadlineExpired {
-			log.Printf("killing process: %v\n", err)
-			if err = cp.cmd.Process.Kill(); err != nil {
-				panic(err)
-			}
-			<-cp.errs
-			if deadlineExpired {
-				return nil, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
-			}
+		if err != nil && !(os.IsTimeout(err) || err == io.EOF) {
+			log.Printf("killing process after unknown error: %v\n", err)
+			cp.forceKill()
 			return nil, buf.String(), fmt.Errorf("unexpected error while waiting for exit code: %v", err)
 
 		}
 
 		select {
 		case perr := <-cp.errs:
-			if deadlineExpired {
-				return cp.cmd.ProcessState, buf.String(), &errWaitTimeout{fmt.Errorf("timeout waiting for exit code")}
-			}
 			return cp.waitForEOF(perr, deadline, buf)
 		case <-cp.ctx.Done():
 			return nil, buf.String(), fmt.Errorf("ConsoleProcess context canceled")
