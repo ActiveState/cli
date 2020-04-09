@@ -230,38 +230,58 @@ func (cp *ConsoleProcess) Stop() error {
 	return cp.cmd.Process.Signal(os.Interrupt)
 }
 
+type exitCodeMatcher struct {
+	exitCode int
+	expected bool
+}
+
+func (em *exitCodeMatcher) Match(_ interface{}) bool {
+	return true
+}
+
+func (em *exitCodeMatcher) Criteria() interface{} {
+	comparator := "=="
+	if !em.expected {
+		comparator = "!="
+	}
+
+	return fmt.Sprintf("exit code %s %d", comparator, em.exitCode)
+}
+
 // ExpectExitCode waits for the program under test to terminate, and checks that the returned exit code meets expectations
 func (cp *ConsoleProcess) ExpectExitCode(exitCode int, timeout ...time.Duration) {
 	_, buf, err := cp.wait(timeout...)
 	if err == nil && exitCode == 0 {
 		return
 	}
+	matchers := []expect.Matcher{&exitCodeMatcher{exitCode, true}}
 	eexit, ok := err.(*exec.ExitError)
 	if !ok {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
+		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
 		return
 	}
 	if eexit.ExitCode() != exitCode {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: was %d (expected %d)", eexit.ExitCode(), exitCode))
+		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: was %d (expected %d)", eexit.ExitCode(), exitCode))
 	}
 }
 
 // ExpectNotExitCode waits for the program under test to terminate, and checks that the returned exit code is not the value provide
 func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Duration) {
 	_, buf, err := cp.wait(timeout...)
+	matchers := []expect.Matcher{&exitCodeMatcher{exitCode, false}}
 	if err == nil {
 		if exitCode != 0 {
 			return
 		}
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been 0"))
+		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been 0"))
 	}
 	eexit, ok := err.(*exec.ExitError)
 	if !ok {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
+		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("process failed with error: %v", err))
 		return
 	}
 	if eexit.ExitCode() == exitCode {
-		cp.opts.ObserveExpect(nil, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been %d", exitCode))
+		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been %d", exitCode))
 	}
 }
 
