@@ -8,6 +8,13 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
+type delayedLog struct {
+	level string
+	msg   interface{}
+}
+
+var delayedLogs []delayedLog
+
 func SetupRollbar() {
 	UpdateRollbarPerson("unknown", "unknown", "unknown") // call again at authentication
 	rollbar.SetToken(constants.RollbarToken)
@@ -26,6 +33,16 @@ func SetupRollbar() {
 	})
 
 	log.SetOutput(CurrentHandler().Output())
+
+	for _, l := range delayedLogs {
+		rollbar.Log(l.level, l.msg)
+	}
+}
+
+// SendToRollbarWhenReady sends a rollbar message after the client has been set up
+// This function can be used to report problems that happen early on during the state tool set-up process
+func SendToRollbarWhenReady(level string, msg interface{}) {
+	delayedLogs = append(delayedLogs, delayedLog{level, msg})
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
