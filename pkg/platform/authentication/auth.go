@@ -269,7 +269,8 @@ func (s *Auth) CreateToken() *failures.Failure {
 		}
 	}
 
-	token, fail := s.NewAPIKey(constants.APITokenName)
+	key := constants.APITokenName + ":" + logging.UniqID()
+	token, fail := s.NewAPIKey(key)
 	if fail != nil {
 		return fail
 	}
@@ -294,7 +295,7 @@ func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
 
 func availableAPIToken() string {
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
-	if err != nil && ! errors.Is(err, gcloud.ErrNotAvailable{}) {
+	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
