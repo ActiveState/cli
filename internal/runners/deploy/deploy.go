@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -48,34 +49,34 @@ func NewDeploy(out output.Outputer) *Deploy {
 }
 
 func (d *Deploy) Run(params *Params) error {
-	installer, err := d.createInstaller(params.Namespace, params.Path)
+	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
 	if err != nil {
 		return err
 	}
 
-	return runSteps(params.Force, installer, params.Step, d.output)
+	return runSteps(targetPath, params.Force, params.Step, installer, d.output)
 }
 
-func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, *failures.Failure) {
+func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, *failures.Failure) {
 	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
 	if fail != nil {
-		return nil, fail
+		return nil, "", fail
 	}
 
 	if branch.CommitID == nil {
-		return nil, FailNoCommitForProject.New(locale.Tr("err_deploy_no_commits", namespace.String()))
+		return nil, "", FailNoCommitForProject.New(locale.Tr("err_deploy_no_commits", namespace.String()))
 	}
 
 	return d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
 }
 
-func runSteps(overwrite bool, installer installable, step Step, out output.Outputer) error {
+func runSteps(targetPath string, force bool, step Step, installer installable, out output.Outputer) error {
 	return runStepsWithFuncs(
-		overwrite, installer, step, out,
+		targetPath, force, step, installer, out,
 		install, configure, symlink, report)
 }
 
-func runStepsWithFuncs(overwrite bool, installer installable, step Step, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
+func runStepsWithFuncs(targetPath string, force bool, step Step, installer installable, out output.Outputer, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
 	logging.Debug("runSteps: %s", step.String())
 
 	var envGetter runtime.EnvGetter
@@ -106,14 +107,14 @@ func runStepsWithFuncs(overwrite bool, installer installable, step Step, out out
 			out.Notice("") // Some space between steps
 		}
 	}
-	if step == UnsetStep || step == SymlinkStep {
+	if rt.GOOS == "linux" && (step == UnsetStep || step == SymlinkStep) {
 		logging.Debug("Running symlink step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
 				return fail
 			}
 		}
-		if err := symlinkf(overwrite, envGetter, out); err != nil {
+		if err := symlinkf(targetPath, force, envGetter, out); err != nil {
 			return err
 		}
 		if step == UnsetStep {
@@ -169,9 +170,9 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	return sshell.WriteUserEnv(env).ToError()
 }
 
-type symlinkFunc func(overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error
+type symlinkFunc func(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error
 
-func symlink(overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error {
+func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
@@ -185,12 +186,30 @@ func symlink(overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) e
 		return err
 	}
 
-	out.Notice(locale.Tr("deploy_symlink", path))
-
 	// Retrieve artifact binary directory
 	var bins []string
 	if p, ok := env["PATH"]; ok {
 		bins = strings.Split(p, string(os.PathListSeparator))
+	}
+
+	// Symlink to PATH (eg. /usr/local/bin)
+	if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
+		return err
+	}
+
+	// Symlink to targetDir/bin
+	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, out); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Outputer) error {
+	out.Notice(locale.Tr("deploy_symlink", path))
+
+	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
+		return fail.ToError()
 	}
 
 	for _, bin := range bins {
