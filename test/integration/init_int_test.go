@@ -48,14 +48,14 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 
 	computedArgs := append([]string{"init", namespace}, args...)
 	if addPath {
-		computedArgs = append(computedArgs, "--path", ts.WorkDirectory())
+		computedArgs = append(computedArgs, "--path", ts.Dirs.Work)
 	}
 
 	cp := ts.Spawn(computedArgs...)
 	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
 	cp.ExpectExitCode(0)
 
-	configFilepath := filepath.Join(ts.WorkDirectory(), constants.ConfigFileName)
+	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
 
 	content, err := ioutil.ReadFile(configFilepath)

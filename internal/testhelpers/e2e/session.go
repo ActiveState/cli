@@ -258,7 +258,3 @@ func (s *Session) Close() error {
 	}
 	return s.Dirs.Close()
 }
-
-func (s *Session) WorkDirectory() string {
-	return s.Dirs.Work
-}

@@ -43,7 +43,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python3")
 	cp.Expect("Where would you like to checkout")
-	cp.SendLine(ts.WorkDirectory())
+	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("activated state", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
@@ -61,7 +61,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	ts.LoginAsPersistentUser()
 
 	projectName := "Python-LinuxWorks"
-	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.WorkDirectory())
+	cp := ts.Spawn("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work)
 
 	cp.Expect("Activating state")
 	cp.Expect("activated state", 120*time.Second)
@@ -83,7 +83,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.AppendEnv(extraEnv...),
 	)
 	cp.Expect("Where would you like to checkout")
-	cp.SendLine(ts.WorkDirectory())
+	cp.SendLine(cp.WorkDirectory())
 	cp.Expect("Downloading", 20*time.Second)
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("activated state", 120*time.Second)
@@ -170,7 +170,7 @@ func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	fail := fileutils.Mkdir(ts.WorkDirectory(), "foo", "bar", "baz")
+	fail := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
 	suite.Require().NoError(fail.ToError())
 
 	// Create the project file at the root of the temp dir
@@ -191,7 +191,7 @@ version: %s
 	// Activate in the subdirectory
 	c2 := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
-		e2e.WithWorkDirectory(filepath.Join(ts.WorkDirectory(), "foo", "bar", "baz")),
+		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 	)
 	c2.Expect("Activating state: ActiveState-CLI/Python3")
 

@@ -24,7 +24,7 @@ type RunIntegrationTestSuite struct {
 func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(ts.WorkDirectory(), "interrupt.go"))
+	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`

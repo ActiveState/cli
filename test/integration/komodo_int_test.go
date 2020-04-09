@@ -143,11 +143,11 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 		"init",
 		namespace,
 		"python3",
-		"--path", filepath.Join(ts.WorkDirectory(), namespace),
+		"--path", filepath.Join(ts.Dirs.Work, namespace),
 		"--skeleton", "editor",
 	)
 	cp.ExpectExitCode(0)
-	wd := filepath.Join(ts.WorkDirectory(), namespace)
+	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
 	cp.ExpectExitCode(0)

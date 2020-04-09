@@ -26,7 +26,7 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 	root := environment.GetRootPathUnsafe()
 	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
 
-	fail := fileutils.CopyFile(editorScript, filepath.Join(ts.WorkDirectory(), "editor", "main.go"))
+	fail := fileutils.CopyFile(editorScript, filepath.Join(ts.Dirs.Work, "editor", "main.go"))
 	suite.Require().NoError(fail.ToError())
 
 	configFileContent := strings.TrimSpace(`
@@ -43,7 +43,7 @@ scripts:
 `)
 	ts.PrepareActiveStateYAML(configFileContent)
 
-	editorScriptDir := filepath.Join(ts.WorkDirectory(), "editor")
+	editorScriptDir := filepath.Join(ts.Dirs.Work, "editor")
 
 	var extension string
 	if runtime.GOOS == "windows" {

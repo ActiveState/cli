@@ -250,14 +250,14 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.WorkDirectory(), "--skeleton=editor")
+	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work, "--skeleton=editor")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
 	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
 	cp.ExpectExitCode(0)
 
-	reqsFilePath := filepath.Join(ts.WorkDirectory(), reqsFileName)
+	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)

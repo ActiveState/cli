@@ -24,11 +24,11 @@ func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
 		"init",
 		namespace,
 		"python3",
-		"--path", filepath.Join(ts.WorkDirectory(), namespace),
+		"--path", filepath.Join(ts.Dirs.Work, namespace),
 		"--skeleton", "editor",
 	)
 	cp.ExpectExitCode(0)
-	wd := filepath.Join(ts.WorkDirectory(), namespace)
+	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect(fmt.Sprintf("The project %s/%s already exists", username, "Python3"))
 	cp.ExpectExitCode(0)

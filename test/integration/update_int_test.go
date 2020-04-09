@@ -60,7 +60,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	pjfile.SetPath(filepath.Join(ts.WorkDirectory(), constants.ConfigFileName))
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
 
 	extraEnv := "ACTIVESTATE_CLI_DISABLE_UPDATES=false"
