@@ -3,18 +3,17 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
 )
 
 type InitIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 var (
@@ -28,47 +27,35 @@ var (
 )
 
 func (suite *InitIntegrationTestSuite) TestInit() {
-	suite.runInitTest("", sampleYAML, "python3")
+	suite.runInitTest(false, sampleYAML, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.runInitTest("", locale.T("editor_yaml"), "python3", "--skeleton", "editor")
+	suite.runInitTest(false, locale.T("editor_yaml"), "python3", "--skeleton", "editor")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
-	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
-	suite.Require().NoError(err)
-
-	suite.runInitTest(tempDir, sampleYAML, "python3", "--path", tempDir)
+	suite.runInitTest(true, sampleYAML, "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
-	tempDir, err := ioutil.TempDir("", "InitIntegrationTestSuite")
-	suite.Require().NoError(err)
-
-	suite.runInitTest(tempDir, sampleYAML, "python3@1.0")
+	suite.runInitTest(false, sampleYAML, "python3@1.0")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(path, config string, args ...string) {
-	if path == "" {
-		var err error
-		path, err = ioutil.TempDir("", "InitIntegrationTestSuite")
-		suite.Require().NoError(err)
-		suite.SetWd(path)
-	}
-
-	suite.SetWd(path)
-	defer func() {
-		_ = os.RemoveAll(path)
-	}()
+func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, args ...string) {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
 	computedArgs := append([]string{"init", namespace}, args...)
+	if addPath {
+		computedArgs = append(computedArgs, "--path", ts.Dirs.Work)
+	}
 
-	suite.Spawn(computedArgs...)
-	suite.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
-	suite.Wait()
+	cp := ts.Spawn(computedArgs...)
+	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	cp.ExpectExitCode(0)
 
-	configFilepath := filepath.Join(path, constants.ConfigFileName)
+	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
 
 	content, err := ioutil.ReadFile(configFilepath)
@@ -77,15 +64,11 @@ func (suite *InitIntegrationTestSuite) runInitTest(path, config string, args ...
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
-	path, err := ioutil.TempDir("", "InitIntegrationTestSuite")
-	suite.Require().NoError(err)
-	defer func() {
-		_ = os.RemoveAll(path)
-	}()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.SetWd(path)
-	suite.Spawn("init", namespace)
-	suite.ExpectNotExitCode(0)
+	cp := ts.Spawn("init", namespace)
+	cp.ExpectNotExitCode(0)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

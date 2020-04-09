@@ -3,20 +3,22 @@ package integration
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
 )
 
 type HistoryIntegrationTestSuite struct {
-	integration.Suite
-	cleanup func()
+	suite.Suite
 }
 
 func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
-	suite.LoginAsPersistentUser()
-	suite.Spawn("history", "--namespace", "ActiveState-CLI/History")
-	suite.Expect(`Platform  added`)
-	suite.Wait()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("history", "--namespace", "ActiveState-CLI/History")
+	cp.Expect(`Platform  added`)
+	cp.ExpectExitCode(0)
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {

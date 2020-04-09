@@ -5,72 +5,74 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
 )
 
 type LanguagesIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("LangaugesIntergrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(tempDir)
+	suite.PrepareActiveStateYAML(ts)
 
-	suite.Spawn("languages")
-	suite.Expect("Name")
-	suite.Expect("Python")
-	suite.Expect("3.6.6")
-	suite.Wait()
+	cp := ts.Spawn("languages")
+	cp.Expect("Name")
+	cp.Expect("Python")
+	cp.Expect("3.6.6")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
-	tempDir, cleanup := suite.PrepareTemporaryWorkingDirectory("LangaugesIntergrationTestSuite")
-	defer cleanup()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	username := suite.CreateNewUser()
-	suite.Spawn("auth", "--username", username, "--password", username)
-	suite.Expect("You are logged in")
-	suite.Wait()
+	username := ts.CreateNewUser()
+	cp := ts.Spawn("auth", "--username", username, "--password", username)
+	cp.Expect("You are logged in")
+	cp.ExpectExitCode(0)
 
-	path := tempDir
+	path := cp.WorkDirectory()
 	var err error
 	if runtime.GOOS != "windows" {
 		// On MacOS the tempdir is symlinked
-		path, err = filepath.EvalSymlinks(tempDir)
+		path, err = filepath.EvalSymlinks(cp.WorkDirectory())
 		suite.Require().NoError(err)
 	}
 
-	suite.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
-	suite.Expect("succesfully initialized")
-	suite.Wait()
+	cp = ts.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
+	cp.Expect("succesfully initialized")
+	cp.ExpectExitCode(0)
 
-	suite.Spawn("push")
-	suite.Expect("Project created")
-	suite.Wait()
+	cp = ts.Spawn("push")
+	cp.Expect("Project created")
+	cp.ExpectExitCode(0)
 
-	suite.Spawn("languages")
-	suite.Expect("Name")
-	suite.Expect("Python")
-	suite.Expect("3.6.6")
-	suite.Wait()
+	cp = ts.Spawn("languages")
+	cp.Expect("Name")
+	cp.Expect("Python")
+	cp.Expect("3.6.6")
+	cp.ExpectExitCode(0)
 
-	suite.Spawn("languages", "update", "python")
-	suite.Wait()
+	cp = ts.Spawn("languages", "update", "python")
+	// This can take a little while
+	cp.ExpectExitCode(0, 30*time.Second)
 
-	suite.Spawn("languages")
-	suite.Expect("Name")
-	suite.Expect("Python")
-	suite.Expect("3.8.1")
-	suite.Wait()
+	cp = ts.Spawn("languages")
+	cp.Expect("Name")
+	cp.Expect("Python")
+	cp.Expect("3.8.1")
+	cp.ExpectExitCode(0)
 }
 
-func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(dir string) {
+func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages"`
-	suite.Suite.PrepareActiveStateYAML(dir, asyData)
+	ts.PrepareActiveStateYAML(asyData)
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {
