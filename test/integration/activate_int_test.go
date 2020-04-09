@@ -209,7 +209,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	cp := ts.Spawn("init", namespace, "python3")
 	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
 	cp.ExpectExitCode(0)
-	cp = suite.SpawnWithOpts(
+	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
