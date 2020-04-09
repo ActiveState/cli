@@ -3,6 +3,7 @@ package deploy
 import (
 	"os"
 	"reflect"
+	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -56,7 +57,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				true,
 				true,
-				true,
+				rt.GOOS == "linux",
 				true,
 			},
 		},
@@ -98,7 +99,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				false,
 				false,
-				true,
+				rt.GOOS == "linux",
 				false,
 			},
 		},
@@ -130,7 +131,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			var symlinkCalled bool
-			symlinkFunc := func(bool, runtime.EnvGetter, output.Outputer) error {
+			symlinkFunc := func(string, bool, runtime.EnvGetter, output.Outputer) error {
 				symlinkCalled = true
 				return nil
 			}
@@ -140,7 +141,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			catcher := outputhelper.NewCatcher()
-			err := runStepsWithFuncs(true, tt.args.installer, tt.args.step, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
+			err := runStepsWithFuncs("", true, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
