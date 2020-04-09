@@ -33,7 +33,9 @@ type Session struct {
 	Dirs       *Dirs
 	env        []string
 	retainDirs bool
-	t          *testing.T
+	// users created during session
+	users []string
+	t     *testing.T
 }
 
 var (
@@ -214,6 +216,8 @@ func (s *Session) CreateNewUser() string {
 	p.Expect("account has been registered", authnTimeout)
 	p.ExpectExitCode(0)
 
+	s.users = append(s.users, username)
+
 	return username
 }
 
@@ -257,6 +261,18 @@ func (s *Session) Close() error {
 
 	if s.retainDirs {
 		return nil
+	}
+
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
+		s.T().Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
+		return
+	}
+
+	for _, user := range s.users {
+		err := cleanUser(s.T(), user)
+		if err != nil {
+			s.Errorf(err, "Could not delete user: %s", user)
+		}
 	}
 	return s.Dirs.Close()
 }
