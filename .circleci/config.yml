@@ -34,7 +34,7 @@ defaults:
         command: |
           # We have to get a little creative here because we don't want to exit before the test results have been reported
           set +e 
-          $GOROOT/bin/go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect` > out
+          $GOROOT/bin/go test -v -covermode=atomic -coverprofile=c.out `$GOROOT/bin/go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v e2e` > out
           EXITCODE=$?
           set -e 
           cat out | tee ${TEST_RESULTS}/go-test.out
@@ -62,7 +62,7 @@ defaults:
         command: |
           set -e
 
-          go test ./pkg/expect
+          go test ./pkg/expect ./internal/testhelpers/e2e
           go test ./test/integration -v
     deployBits: &deployBits
       run:
