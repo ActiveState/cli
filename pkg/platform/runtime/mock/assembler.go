@@ -1,10 +1,11 @@
 package mock
 
 import (
+	testifyMock "github.com/stretchr/testify/mock"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	testifyMock "github.com/stretchr/testify/mock"
 )
 
 var _ runtime.Assembler = &Assembler{}
@@ -17,7 +18,7 @@ func (a *Assembler) DownloadDirectory(artf *runtime.HeadChefArtifact) (string, *
 	args := a.Called(artf)
 	return args.String(0), args.Get(1).(*failures.Failure)
 }
-func (a *Assembler) GetEnv() (map[string]string, *failures.Failure) {
+func (a *Assembler) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
 	args := a.Called()
 	return args.Get(0).(map[string]string), args.Get(1).(*failures.Failure)
 }

@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
@@ -175,6 +177,11 @@ func (p *Project) Name() string {
 // CommitID returns project commitID
 func (p *Project) CommitID() string {
 	return p.commitID
+}
+
+// CommitUUID returns project commitID in UUID format
+func (p *Project) CommitUUID() strfmt.UUID {
+	return strfmt.UUID(p.commitID)
 }
 
 // NormalizedName returns the project name in a normalized format (alphanumeric, lowercase)

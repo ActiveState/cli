@@ -3,6 +3,7 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
@@ -84,5 +85,29 @@ func newPrivateKeyCommand() *captain.Command {
 			params.Auth = authentication.Get()
 
 			return privateKey.Run(&params)
+		})
+}
+
+func newAPIKeyCommand(outputer output.Outputer) *captain.Command {
+	auth := authentication.Get()
+
+	apikey := export.NewAPIKey(auth, outputer)
+	params := export.APIKeyRunParams{}
+
+	return captain.NewCommand(
+		"new-api-key",
+		locale.T("export_new_api_key_cmd_description"),
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("export_new_api_key_arg_name"),
+				Description: locale.T("export_new_api_key_arg_name_description"),
+				Value:       &params.Name,
+				Required:    true,
+			},
+		},
+		func(ccmd *captain.Command, args []string) error {
+			params.IsAuthed = auth.Authenticated
+			return apikey.Run(params)
 		})
 }

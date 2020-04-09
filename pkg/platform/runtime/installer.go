@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/progress"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // During installation after all files are unpacked to a temporary directory, the progress bar should advanced this much.
@@ -35,9 +34,6 @@ var (
 	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
 	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
 
-	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
-	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
-
 	// FailNoCommits represents a Failure due to a project not having commits yet (and thus no runtime).
 	FailNoCommits = failures.Type("runtime.runtime.nocommits", failures.FailUser)
 
@@ -55,30 +51,56 @@ var (
 
 	// FailRuntimeNoPrefixes represents a Failure due to there not being any prefixes for relocation
 	FailRuntimeNoPrefixes = failures.Type("runtime.runtime.noprefixes", FailRuntimeInvalid)
+
+	// FailRequiresDownload is a failure due to not all artifacts having been downloaded
+	FailRequiresDownload = failures.Type("runtime.requires.download", failures.FailUserInput)
+
+	// FailRuntimeInvalidEnvironment represents a Failure during set up of the runtime environment
+	FailRuntimeInvalidEnvironment = failures.Type("runtime.runtime.invalidenv", failures.FailIO)
 )
 
 // Installer implements an Installer that works with a runtime.Downloader and a
 // runtime.Installer. Effectively, upon calling Install, the Installer will first
 // try and Download an archive, then it will try to install that downloaded archive.
 type Installer struct {
-	cacheDir          string
+	params            InstallerParams
 	runtimeDownloader Downloader
 	onDownload        func()
 	onInstall         func()
 }
 
-// InitInstaller creates a new RuntimeInstaller
-func InitInstaller() (*Installer, *failures.Failure) {
-	logging.Debug("cache path: %s", config.CachePath())
-	return NewInstaller(config.CachePath(), InitDownload())
+type InstallerParams struct {
+	CacheDir    string
+	CommitID    strfmt.UUID
+	Owner       string
+	ProjectName string
 }
 
-// NewInstaller creates a new RuntimeInstaller after verifying the provided install-dir
+func NewInstallerParams(cacheDir string, commitID strfmt.UUID, owner string, projectName string) InstallerParams {
+	if cacheDir == "" {
+		cacheDir = config.CachePath()
+	}
+	return InstallerParams{cacheDir, commitID, owner, projectName}
+}
+
+// NewInstaller creates a new RuntimeInstaller
+func NewInstaller(commitID strfmt.UUID, owner, projectName string) (*Installer, *failures.Failure) {
+	logging.Debug("cache path: %s", config.CachePath())
+	return NewInstallerByParams(
+		InstallerParams{
+			config.CachePath(),
+			commitID,
+			owner,
+			projectName,
+		})
+}
+
+// NewInstallerByParams creates a new RuntimeInstaller after verifying the provided install-dir
 // exists as a directory or can be created.
-func NewInstaller(cacheDir string, downloader Downloader) (*Installer, *failures.Failure) {
+func NewInstallerByParams(params InstallerParams) (*Installer, *failures.Failure) {
 	installer := &Installer{
-		cacheDir:          cacheDir,
-		runtimeDownloader: downloader,
+		runtimeDownloader: NewDownload(params.CommitID, params.Owner, params.ProjectName),
+		params:            params,
 	}
 
 	return installer, nil
@@ -86,29 +108,36 @@ func NewInstaller(cacheDir string, downloader Downloader) (*Installer, *failures
 
 // Install will download the installer archive and invoke InstallFromArchive
 func (installer *Installer) Install() (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	if fail := installer.validateCheckpoint(); fail != nil {
+	assembler, fail := installer.Assembler()
+	if fail != nil {
 		return nil, false, fail
+	}
+	return installer.InstallArtifacts(assembler)
+}
+
+// Env will grab the environment information for the given runtime. This will request build info.
+func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) {
+	return installer.Assembler()
+}
+
+func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
+	if fail := installer.validateCheckpoint(); fail != nil {
+		return nil, fail
 	}
 
 	artifacts, fail := installer.runtimeDownloader.FetchArtifacts()
 	if fail != nil {
-		return nil, false, fail
+		return nil, fail
 	}
 
-	return installer.InstallArtifacts(artifacts)
+	if artifacts.IsAlternative {
+		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
+	}
+
+	return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
 }
 
-func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResult) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
-	var runtimeAssembler Assembler
-	if artifactsResult.IsAlternative {
-		runtimeAssembler, fail = NewAlternativeRuntime(artifactsResult.Artifacts, installer.cacheDir, artifactsResult.RecipeID)
-	} else {
-		runtimeAssembler, fail = NewCamelRuntime(artifactsResult.Artifacts, installer.cacheDir)
-	}
-	if fail != nil {
-		return nil, false, fail
-	}
-
+func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGetter EnvGetter, freshInstallation bool, fail *failures.Failure) {
 	downloadArtfs, unpackArchives := runtimeAssembler.ArtifactsToDownloadAndUnpack()
 
 	if len(downloadArtfs) == 0 && len(unpackArchives) == 0 {
@@ -147,12 +176,11 @@ func (installer *Installer) InstallArtifacts(artifactsResult *FetchArtifactsResu
 
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() *failures.Failure {
-	pj := project.Get()
-	if pj.CommitID() == "" {
-		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(pj.Owner(), pj.Name(), ""))
+	if installer.params.CommitID == "" {
+		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(installer.params.Owner, installer.params.ProjectName, ""))
 	}
 
-	checkpoint, _, fail := model.FetchCheckpointForCommit(strfmt.UUID(pj.CommitID()))
+	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.params.CommitID)
 	if fail != nil {
 		return fail
 	}

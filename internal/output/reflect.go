@@ -67,6 +67,25 @@ func parseSlice(v interface{}) ([]interface{}, error) {
 	return result, nil
 }
 
+// parseMap will turn an interface that is a map into a slice with interface entries
+func parseMap(v interface{}) (map[string]interface{}, error) {
+	structRfl := reflect.ValueOf(v)
+
+	result := map[string]interface{}{}
+
+	// Fail if the passed type is not a map
+	if structRfl.Kind() != reflect.Map {
+		return result, fmt.Errorf("Expected map, got: %s", structRfl.Kind().String())
+	}
+
+	mapRange := structRfl.MapRange()
+	for mapRange.Next() {
+		result[mapRange.Key().String()] = mapRange.Value().Interface()
+	}
+
+	return result, nil
+}
+
 func valueOf(v interface{}) reflect.Value {
 	return reflect.ValueOf(v)
 }

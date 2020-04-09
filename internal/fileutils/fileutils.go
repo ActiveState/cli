@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -346,11 +347,10 @@ func AmendFile(filePath string, data []byte, flag AmendOptions) *failures.Failur
 		return failures.FailInput.New(locale.Tr("fileutils_err_ammend_file"), filePath)
 	}
 
-	file, fail := Touch(filePath)
+	fail := Touch(filePath)
 	if fail != nil {
 		return fail
 	}
-	file.Close()
 
 	b, fail := ReadFile(filePath)
 	if fail != nil {
@@ -401,18 +401,20 @@ func walkPathAndFindFile(dir, filename string) string {
 }
 
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
-// the file with 0644 perms if it does not exist. A File handle will be returned if no issues
-// arise. You will need to Close() the file.
-func Touch(path string) (*os.File, *failures.Failure) {
+// the file with 0644 perms if it does not exist. 
+func Touch(path string) *failures.Failure {
 	fail := MkdirUnlessExists(filepath.Dir(path))
 	if fail != nil {
-		return nil, fail
+		return fail
 	}
-	file, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, FileMode)
+	file, err := os.OpenFile(path, os.O_CREATE, FileMode)
 	if err != nil {
-		return nil, failures.FailIO.Wrap(err)
+		return failures.FailIO.Wrap(err)
 	}
-	return file, nil
+	if err := file.Close(); err != nil {
+		return failures.FailIO.Wrap(err)
+	}
+	return nil
 }
 
 // IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
@@ -737,4 +739,14 @@ func LogPath(path string) error {
 		}, "\n"))
 		return nil
 	})
+}
+
+// HomeDir returns the users homedir
+func HomeDir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return usr.HomeDir, nil
 }

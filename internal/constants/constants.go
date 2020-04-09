@@ -63,8 +63,14 @@ const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
 // APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
 const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 
+// GcloudProjectEnvVarName is the name of the environment variable that specifies the credentials file for gcloud
+const GcloudProjectEnvVarName = "GOOGLE_APPLICATION_PROJECT"
+
 // APIHostEnvVarName is the name of the environment variable that specifies the API host, specifying this overrides the activestate.yaml api url config
 const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
+
+// APIInsecureEnvVarName is the name of the environment variable that specifies whether the API hostURI should be insecure.
+const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
 
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
@@ -186,3 +192,15 @@ const RuntimeDefinitionFilename = "runtime.json"
 
 // LocalRuntimeEnvironmentDirectory is the directory (relative to the installation of a runtime build) where runtime definition files are stored
 const LocalRuntimeEnvironmentDirectory = "_runtime_env"
+
+// TermsOfServiceURLText is the URL to get the current terms of service in txt form
+const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
+
+// TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
+const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
+
+// RCAppendStartLine is the start line used to denote our environment config in RC files
+const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
+
+// RCAppendEndLine is the end line used to denote our environment config in RC files
+const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"

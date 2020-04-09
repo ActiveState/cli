@@ -8,7 +8,10 @@ import (
 	rt "runtime"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -21,7 +24,6 @@ import (
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/sysinfo"
 )
 
 type RuntimeDLTestSuite struct {
@@ -87,7 +89,7 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
-	r := runtime.NewDownload(suite.project)
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
 	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	files, fail := r.Download(res.Artifacts, suite, suite.prg)
@@ -105,7 +107,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Skip)
 
-	r := runtime.NewDownload(suite.project)
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -115,7 +117,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.BadURI)
 
-	r := runtime.NewDownload(suite.project)
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
 	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	_, fail = r.Download(res.Artifacts, suite, suite.prg)
@@ -127,7 +129,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 	suite.hcMock.MockBuilds(hcMock.Failed)
 
-	r := runtime.NewDownload(suite.project)
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -137,7 +139,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
 	suite.hcMock.MockBuilds(hcMock.RunFail)
 
-	r := runtime.NewDownload(suite.project)
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 

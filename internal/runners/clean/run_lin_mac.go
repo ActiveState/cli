@@ -4,42 +4,26 @@ package clean
 
 import (
 	"os"
-
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
+	"path/filepath"
 )
 
-func run(params *RunParams, confirm confirmAble, outputer output.Outputer) error {
-	logging.Debug("Removing cache path: %s", params.CachePath)
-	err := os.RemoveAll(params.CachePath)
+func removeConfig(configPath string) error {
+	file, err := os.Open(filepath.Join(configPath, "log.txt"))
+	if err != nil {
+		return err
+	}
+	err = file.Sync()
+	if err != nil {
+		return err
+	}
+	err = file.Close()
 	if err != nil {
 		return err
 	}
 
-	logging.Debug("Removing State Tool binary: %s", params.InstallPath)
-	err = os.Remove(params.InstallPath)
-	if err != nil {
-		return err
-	}
+	return os.RemoveAll(configPath)
+}
 
-	logging.Debug("Removing config directory: %s", params.ConfigPath)
-	if file, ok := logging.CurrentHandler().Output().(*os.File); ok {
-		err := file.Sync()
-		if err != nil {
-			return err
-		}
-		err = file.Close()
-		if err != nil {
-			return err
-		}
-	}
-
-	err = os.RemoveAll(params.ConfigPath)
-	if err != nil {
-		return err
-	}
-
-	outputer.Print(locale.T("clean_success_message"))
-	return nil
+func removeInstall(installPath string) error {
+	return os.Remove(installPath)
 }

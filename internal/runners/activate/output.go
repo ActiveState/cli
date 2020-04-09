@@ -18,7 +18,7 @@ func activateOutput(targetPath string, output commands.Output) error {
 		return err
 	}
 
-	jsonString, err := envOutput(false)
+	jsonString, err := envOutput(false, targetPath)
 	if err != nil {
 		if output == commands.EditorV0 {
 			return updateOutputError(err)
@@ -31,14 +31,14 @@ func activateOutput(targetPath string, output commands.Output) error {
 	return nil
 }
 
-func envOutput(inherit bool) (string, error) {
+func envOutput(inherit bool, targetPath string) (string, error) {
 	venv := virtualenvironment.Get()
 	fail := venv.Activate()
 	if fail != nil {
 		return "", fail
 	}
 
-	env := venv.GetEnv(inherit)
+	env := venv.GetEnv(inherit, targetPath)
 	envJSON, err := json.Marshal(env)
 	if err != nil {
 		return "", err

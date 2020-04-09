@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
@@ -199,6 +200,21 @@ version: %s
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 
+}
+
+func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("init", namespace, "python3")
+	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	cp.ExpectExitCode(0)
+	cp = suite.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(locale.Tr("installer_err_runtime_no_commits", namespace))
+	cp.ExpectExitCode(0)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {

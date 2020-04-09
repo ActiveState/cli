@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -17,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/go-openapi/strfmt"
 )
 
 var _ Assembler = &AlternativeRuntime{}
@@ -292,11 +293,10 @@ func (ar *AlternativeRuntime) assembleRuntimeDefinition() (*envdef.EnvironmentDe
 }
 
 // GetEnv returns the environment variable configuration for this build
-func (ar *AlternativeRuntime) GetEnv() (map[string]string, *failures.Failure) {
-
+func (ar *AlternativeRuntime) GetEnv(inherit bool, _ string) (map[string]string, *failures.Failure) {
 	rt, fail := ar.assembleRuntimeDefinition()
 	if fail != nil {
 		return nil, fail
 	}
-	return rt.GetEnv(), nil
+	return rt.GetEnv(inherit), nil
 }

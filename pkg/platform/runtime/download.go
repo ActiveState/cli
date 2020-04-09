@@ -81,22 +81,25 @@ type Downloader interface {
 
 // Download is the main struct for orchestrating the download of all the artifacts belonging to a runtime
 type Download struct {
-	project *project.Project
+	commitID    strfmt.UUID
+	owner       string
+	projectName string
 }
 
-// InitDownload creates a new RuntimeDownload instance and assumes default values for everything
+// InitDownload creates a new RuntimeDownload instance and assumes default values for everything but the target dir
 func InitDownload() Downloader {
-	return NewDownload(project.Get())
+	pj := project.Get()
+	return NewDownload(pj.CommitUUID(), pj.Owner(), pj.Name())
 }
 
 // NewDownload creates a new RuntimeDownload using all custom args
-func NewDownload(project *project.Project) Downloader {
-	return &Download{project}
+func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
+	return &Download{commitID, owner, projectName}
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
 func (r *Download) fetchRecipe() (string, *failures.Failure) {
-	commitID := strfmt.UUID(r.project.CommitID())
+	commitID := strfmt.UUID(r.commitID)
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
@@ -121,7 +124,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		return nil, fail
 	}
 
-	platProject, fail := model.FetchProjectByName(r.project.Owner(), r.project.Name())
+	platProject, fail := model.FetchProjectByName(r.owner, r.projectName)
 	if fail != nil {
 		return nil, fail
 	}

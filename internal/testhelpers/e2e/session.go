@@ -199,6 +199,8 @@ func (s *Session) CreateNewUser() string {
 
 	p := s.Spawn("auth", "signup")
 
+	p.Expect("Terms of Service")
+	p.SendLine("y")
 	p.Expect("username:")
 	p.SendLine(username)
 	p.Expect("password:")

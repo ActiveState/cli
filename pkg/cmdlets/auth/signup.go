@@ -2,6 +2,14 @@ package auth
 
 import (
 	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 
@@ -35,7 +43,16 @@ type signupInput struct {
 func Signup() *failures.Failure {
 	input := &signupInput{}
 
-	fail := promptForSignup(input)
+	accepted, fail := promptTOS()
+	if fail != nil {
+		return fail
+	}
+	if !accepted {
+		print.Warning(locale.T("tos_not_accepted"))
+		return nil
+	}
+
+	fail = promptForSignup(input)
 	if fail != nil {
 		return fail.WithDescription("err_prompt_unknown")
 	}
@@ -62,6 +79,62 @@ func signupFromLogin(username string, password string) *failures.Failure {
 	}
 
 	return doSignup(input)
+}
+
+func downloadTOS() (string, *failures.Failure) {
+	resp, err := http.Get(constants.TermsOfServiceURLText)
+	if err != nil {
+		return "", failures.FailIO.Wrap(err)
+	}
+	defer resp.Body.Close()
+
+	tosPath := filepath.Join(config.ConfigPath(), "platform_tos.txt")
+	tosFile, err := os.Create(tosPath)
+	if err != nil {
+		return "", failures.FailIO.Wrap(err)
+	}
+	defer tosFile.Close()
+
+	_, err = io.Copy(tosFile, resp.Body)
+	if err != nil {
+		return "", failures.FailIO.Wrap(err)
+	}
+
+	return tosPath, nil
+}
+
+func promptTOS() (bool, *failures.Failure) {
+	choices := []string{
+		locale.T("tos_accept"),
+		locale.T("tos_not_accept"),
+		locale.T("tos_show_full"),
+	}
+	print.Line(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
+	choice, fail := Prompter.Select(locale.T("tos_acceptance"), choices, locale.T("tos_accept"))
+	if fail != nil {
+		return false, fail
+	}
+
+	switch choice {
+	case locale.T("tos_accept"):
+		return true, nil
+	case locale.T("tos_not_accept"):
+		return false, nil
+	case locale.T("tos_show_full"):
+		tosFilePath, fail := downloadTOS()
+		if fail != nil {
+			return false, fail.WithDescription("err_download_tos")
+		}
+
+		tos, err := ioutil.ReadFile(tosFilePath)
+		if err != nil {
+			return false, failures.FailIO.Wrap(err)
+		}
+		print.Line(string(tos))
+		return Prompter.Confirm(locale.T("tos_acceptance"), true)
+	}
+
+	return false, nil
 }
 
 func promptForSignup(input *signupInput) *failures.Failure {
@@ -112,11 +185,13 @@ func promptForSignup(input *signupInput) *failures.Failure {
 
 func doSignup(input *signupInput) *failures.Failure {
 	params := users.NewAddUserParams()
+	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
-		Email:    input.Email,
-		Username: input.Username,
-		Password: input.Password,
-		Name:     input.Name,
+		Email:        input.Email,
+		Username:     input.Username,
+		Password:     input.Password,
+		Name:         input.Name,
+		EULAAccepted: &eulaHelper,
 	})
 	addUserOK, err := mono.Get().Users.AddUser(params)
 

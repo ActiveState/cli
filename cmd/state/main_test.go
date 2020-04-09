@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
@@ -47,48 +48,62 @@ func (suite *MainTestSuite) TestExpired() {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, "")
+		outputer, fail := initOutputer(outputFlags{"", false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.PlainFormatName}, "")
+		outputer, fail := initOutputer(outputFlags{output.PlainFormatName, false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.Plain{}, outputer, "Returns Plain outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo", "--output", output.JSONFormatName}, "")
+		outputer, fail := initOutputer(outputFlags{output.JSONFormatName, false}, "")
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.JSONFormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, output.JSONFormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorFormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, output.EditorFormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 
 	{
-		outputer, fail := initOutputer([]string{"state", "foo"}, output.EditorV0FormatName)
+		outputer, fail := initOutputer(outputFlags{"", false}, output.EditorV0FormatName)
 		suite.Require().NoError(fail.ToError())
 		suite.IsType(&output.JSON{}, outputer, "Returns JSON outputer")
 	}
 }
 
-func (suite *MainTestSuite) TestParseOutputFlag() {
-	suite.Equal("plain", parseOutputFlag([]string{"state", "foo", "-o", "plain"}))
-	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "--output", "json"}))
-	suite.Equal("json", parseOutputFlag([]string{"state", "foo", "-o", "json"}))
-	suite.Equal("editor", parseOutputFlag([]string{"state", "foo", "--output", "editor"}))
-	suite.Equal("editor.v0", parseOutputFlag([]string{"state", "foo", "-o", "editor.v0"}))
+func (suite *MainTestSuite) TestParseOutputFlags() {
+	suite.Equal(outputFlags{"plain", false}, parseOutputFlags([]string{"state", "foo", "-o", "plain"}))
+	suite.Equal(outputFlags{"json", false}, parseOutputFlags([]string{"state", "foo", "--output", "json"}))
+	suite.Equal(outputFlags{"json", false}, parseOutputFlags([]string{"state", "foo", "-o", "json"}))
+	suite.Equal(outputFlags{"editor", false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
+	suite.Equal(outputFlags{"editor.v0", false}, parseOutputFlags([]string{"state", "foo", "-o", "editor.v0"}))
+	suite.Equal(outputFlags{"", true}, parseOutputFlags([]string{"state", "foo", "--mono"}))
+}
+
+func (suite *MainTestSuite) TestDisableColors() {
+	monoFlags := outputFlags{Mono: true}
+	nonMonoFlags := outputFlags{Mono: false}
+
+	err := os.Setenv("NO_COLOR", "")
+	suite.Require().NoError(err)
+	suite.True(nonMonoFlags.DisableColor(false), "disable colors if NO_COLOR is set")
+	err = os.Unsetenv("NO_COLOR")
+	suite.Require().NoError(err)
+	suite.False(nonMonoFlags.DisableColor(false), "do not disable colors by default")
+	suite.True(monoFlags.DisableColor(false), "disable colors if --mono is set")
 }
 
 func TestMainTestSuite(t *testing.T) {

@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/spf13/viper"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -39,24 +41,42 @@ func (v *SubShell) SetBinary(binary string) {
 	v.binary = binary
 }
 
-// RcFile - see subshell.SubShell
-func (v *SubShell) RcFile() *os.File {
-	return v.rcFile
-}
+// WriteUserEnv - see subshell.SubShell
+func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
+	cmdEnv := NewCmdEnv()
 
-// SetRcFile - see subshell.SubShell
-func (v *SubShell) SetRcFile(rcFile *os.File) {
-	v.rcFile = rcFile
-}
+	// Clean up old entries
+	oldEnv := viper.GetStringMap("user_env")
+	for k, v := range oldEnv {
+		if fail := cmdEnv.unset(k, v.(string)); fail != nil {
+			return fail
+		}
+	}
 
-// RcFileExt - see subshell.SubShell
-func (v *SubShell) RcFileExt() string {
-	return ".bat"
-}
+	// Store new entries
+	viper.Set("user_env", env)
 
-// RcFileTemplate - see subshell.SubShell
-func (v *SubShell) RcFileTemplate() string {
-	return "config.bat"
+	for k, v := range env {
+		value := v
+		if k == "PATH" {
+			path, fail := cmdEnv.get("PATH")
+			if fail != nil {
+				return fail
+			}
+			if path != "" {
+				path = ";" + path
+			}
+
+			value = v + path
+		}
+
+		// Set key/value in the user environment
+		fail := cmdEnv.set(k, value)
+		if fail != nil {
+			return fail
+		}
+	}
+	return nil
 }
 
 // SetEnv - see subshell.SetEnv
@@ -71,6 +91,11 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
+	var fail *failures.Failure
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("config.bat", ".bat"); fail != nil {
+		return fail
+	}
+
 	shellArgs := []string{"/K", v.rcFile.Name()}
 
 	cmd := exec.Command("cmd", shellArgs...)

@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"errors"
 	"os"
 
 	"github.com/go-openapi/runtime"
@@ -8,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/viper"
 
+	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 var (
@@ -267,21 +269,41 @@ func (s *Auth) CreateToken() *failures.Failure {
 		}
 	}
 
-	params := authentication.NewAddTokenParams()
-	params.SetTokenOptions(&mono_models.TokenEditable{Name: constants.APITokenName})
-	tokenOK, err := client.Authentication.AddToken(params, s.ClientAuth())
-	if err != nil {
-		return FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
+	key := constants.APITokenName + ":" + logging.UniqID()
+	token, fail := s.NewAPIKey(key)
+	if fail != nil {
+		return fail
 	}
 
-	token := tokenOK.Payload.Token
 	viper.Set("apiToken", token)
 
 	return nil
 }
 
+// NewAPIKey returns a new api key from the backend or the relevant failure.
+func (s *Auth) NewAPIKey(name string) (string, *failures.Failure) {
+	params := authentication.NewAddTokenParams()
+	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
+
+	tokenOK, err := s.Client().Authentication.AddToken(params, s.ClientAuth())
+	if err != nil {
+		return "", FailTokenCreate.New(locale.Tr("err_token_create", err.Error()))
+	}
+
+	return tokenOK.Payload.Token, nil
+}
+
 func availableAPIToken() string {
-	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
+	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
+		logging.Error("Could not retrieve gcloud secret: %v", err)
+	}
+	if err == nil && tkn != "" {
+		logging.Debug("Using api token sourced from gcloud")
+		return tkn
+	}
+
+	if tkn = os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}

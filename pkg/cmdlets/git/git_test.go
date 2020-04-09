@@ -9,6 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -16,9 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 type GitTestSuite struct {
@@ -48,11 +49,8 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 	_, fail := projectfile.CreateWithProjectURL(projectURL, suite.dir)
 	suite.NoError(fail.ToError(), "could not create a projectfile")
 
-	tempFile, fail := fileutils.Touch(filepath.Join(suite.dir, "test-file"))
+	fail = fileutils.Touch(filepath.Join(suite.dir, "test-file"))
 	suite.NoError(fail.ToError(), "could not create a temp file")
-
-	err = tempFile.Close()
-	suite.NoError(err, "could not close file")
 
 	_, err = worktree.Add("test-file")
 	suite.NoError(err, "could not add tempfile to staging")
@@ -147,8 +145,8 @@ func (suite *GitTestSuite) TestMoveFilesDirNoEmpty() {
 	err := os.MkdirAll(anotherDir, 0755)
 	suite.NoError(err, "should be able to create another temp directory")
 
-	_, fail := fileutils.Touch(filepath.Join(anotherDir, "file.txt"))
-	suite.Require().NoError(err)
+	fail := fileutils.Touch(filepath.Join(anotherDir, "file.txt"))
+	suite.Require().NoError(fail.ToError())
 
 	fail = moveFiles(suite.dir, anotherDir)
 	expected := FailTargetDirInUse.New(locale.T("error_git_target_dir_not_empty"))

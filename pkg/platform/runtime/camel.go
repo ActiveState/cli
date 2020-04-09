@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var _ Assembler = &CamelRuntime{}
@@ -255,10 +254,15 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 }
 
 // GetEnv returns the environment that is needed to use the installed runtime
-func (cr *CamelRuntime) GetEnv() (map[string]string, *failures.Failure) {
-	pjFile := projectfile.Get()
-	projectPath := pjFile.Path()
-	env := map[string]string{"PATH": os.Getenv("PATH")}
+func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
+	env := map[string]string{"PATH": ""}
+	if inherit {
+		env["PATH"] = os.Getenv("PATH")
+	}
+
+	if len(cr.installDirs) == 0 {
+		return nil, FailRequiresDownload.New(locale.T("err_requires_runtime_download"))
+	}
 
 	for _, artifactPath := range cr.installDirs {
 		meta, fail := InitMetaData(artifactPath)
@@ -275,8 +279,14 @@ func (cr *CamelRuntime) GetEnv() (map[string]string, *failures.Failure) {
 		templateMeta := struct {
 			RelocationDir string
 			ProjectDir    string
-		}{"", filepath.Dir(projectPath)}
+		}{"", projectDir}
 		for k, v := range meta.Env {
+			// Dirty workaround until https://www.pivotaltracker.com/story/show/172033094 is implemented
+			// This avoids projectDir dependant env vars from being written
+			if projectDir == "" && strings.Contains(v, "ProjectDir") {
+				continue
+			}
+
 			// XXX: This will replace the RelocationDir string with the funky string that camel introduces during build time.
 			// We probably want: templateMeta.RelocationDir = artifactPath
 			// BUT: From what I know there is no metadata file that actually uses this feature.
@@ -303,13 +313,21 @@ func (cr *CamelRuntime) GetEnv() (map[string]string, *failures.Failure) {
 			if v.Relative {
 				path = filepath.Join(artifactPath, path)
 			}
-			env["PATH"] = path + string(os.PathListSeparator) + env["PATH"]
+			env["PATH"] = prependPath(env["PATH"], path)
 		}
 
 		// Add DLL dir to PATH on Windows
 		if meta.RelocationTargetBinaries != "" && rt.GOOS == "windows" {
-			env["PATH"] = filepath.Join(meta.Path, meta.RelocationTargetBinaries) + string(os.PathListSeparator) + env["PATH"]
+			env["PATH"] = prependPath(env["PATH"], filepath.Join(meta.Path, meta.RelocationTargetBinaries))
 		}
 	}
 	return env, nil
+}
+
+func prependPath(PATH, prefix string) string {
+	var suffix string
+	if PATH != "" {
+		suffix = string(os.PathListSeparator) + PATH
+	}
+	return prefix + suffix
 }

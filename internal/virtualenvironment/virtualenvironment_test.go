@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -132,7 +132,7 @@ func TestEnv(t *testing.T) {
 	os.Setenv(constants.ProjectEnvVarName, projectfile.Get().Path())
 
 	venv := Init()
-	env := venv.GetEnv(false)
+	env := venv.GetEnv(false, projectfile.Get().Path())
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
 	assert.NotEmpty(t, env[constants.ActivatedStateIDEnvVarName])
@@ -170,7 +170,7 @@ languages:
 	fail := venv.Activate()
 	require.NoError(t, fail.ToError(), "Should activate")
 
-	env := venv.GetEnv(false)
+	env := venv.GetEnv(false, project.Path())
 	assert.Contains(t, env, "PATH", "PATH is set")
 }
 

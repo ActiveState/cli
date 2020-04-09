@@ -26,6 +26,8 @@ var FailAlreadyActive = failures.Type("virtualenvironment.fail.alreadyactive", f
 // OS is used by tests to spoof a different value
 var OS = rt.GOOS
 
+type getEnvFunc func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
+
 // VirtualEnvironment represents our virtual environment, it pulls together and virtualizes the runtime environment
 type VirtualEnvironment struct {
 	project             *project.Project
@@ -33,7 +35,7 @@ type VirtualEnvironment struct {
 	onDownloadArtifacts func()
 	onInstallArtifacts  func()
 	onUseCache          func()
-	getEnv              func() (map[string]string, *failures.Failure)
+	getEnv              getEnvFunc
 }
 
 // Get returns a persisted version of VirtualEnvironment{}
@@ -50,6 +52,13 @@ func Init() *VirtualEnvironment {
 	return &VirtualEnvironment{
 		project:      project.Get(),
 		activationID: uuid.New().String(),
+	}
+}
+
+func New(getEnv getEnvFunc) *VirtualEnvironment {
+	return &VirtualEnvironment{
+		activationID: uuid.New().String(),
+		getEnv:       getEnv,
 	}
 }
 
@@ -82,7 +91,8 @@ func (v *VirtualEnvironment) OnUseCache(f func()) { v.onUseCache = f }
 
 // activateRuntime sets up a runtime environment
 func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
-	installer, fail := runtime.InitInstaller()
+	pj := project.Get()
+	installer, fail := runtime.NewInstaller(pj.CommitUUID(), pj.Owner(), pj.Name())
 	if fail != nil {
 		return fail
 	}
@@ -103,8 +113,7 @@ func (v *VirtualEnvironment) activateRuntime() *failures.Failure {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
-
+func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]string {
 	var env map[string]string
 	if v.getEnv == nil {
 		logging.Error("setting up environment in un-activated project")
@@ -112,17 +121,17 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 		env["PATH"] = os.Getenv("PATH")
 	} else {
 		var fail *failures.Failure
-		env, fail = v.getEnv()
+		env, fail = v.getEnv(inherit, projectDir)
 		if fail != nil {
 			logging.Error("could not set-up the runtime environment: %v", fail)
 			return map[string]string{}
 		}
 	}
 
-	pjfile := projectfile.Get()
-
-	env[constants.ActivatedStateEnvVarName] = filepath.Dir(pjfile.Path())
-	env[constants.ActivatedStateIDEnvVarName] = v.activationID
+	if projectDir != "" {
+		env[constants.ActivatedStateEnvVarName] = projectDir
+		env[constants.ActivatedStateIDEnvVarName] = v.activationID
+	}
 
 	if inherit {
 		return inheritEnv(env)
@@ -133,7 +142,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool) map[string]string {
 
 // GetEnvSlice returns the same results as GetEnv, but formatted in a way that the process package can handle
 func (v *VirtualEnvironment) GetEnvSlice(inherit bool) []string {
-	envMap := v.GetEnv(inherit)
+	envMap := v.GetEnv(inherit, filepath.Dir(projectfile.Get().Path()))
 	var env []string
 	for k, v := range envMap {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
