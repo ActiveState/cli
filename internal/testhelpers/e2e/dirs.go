@@ -6,12 +6,6 @@ import (
 	"path/filepath"
 )
 
-// TODO
-// - Suite becomes session in e2e directory
-// - Suite just holds a session created at BeforeTest() and removed at AfterTest()
-// - Suite sets up a session and tears it down <- dismissed because it hinders us from using parallel tests
-// - so no special test suite anymore!!!
-
 // Dirs represents directories that are temporarily created for this end-to-end testing session
 type Dirs struct {
 	base string
