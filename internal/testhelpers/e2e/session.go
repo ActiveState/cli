@@ -258,21 +258,22 @@ func (s *Session) Close() error {
 	if s.cp != nil {
 		s.cp.Close()
 	}
+	defer s.Dirs.Close()
 
 	if s.retainDirs {
 		return nil
 	}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		s.T().Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
-		return
+		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
+		return nil
 	}
 
 	for _, user := range s.users {
-		err := cleanUser(s.T(), user)
+		err := cleanUser(s.t, user)
 		if err != nil {
-			s.Errorf(err, "Could not delete user: %s", user)
+			s.t.Errorf("Could not delete user %s: %v", user, err)
 		}
 	}
-	return s.Dirs.Close()
+	return nil
 }
