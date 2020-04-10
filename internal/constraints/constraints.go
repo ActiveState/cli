@@ -286,13 +286,211 @@ func environmentIsConstrained(constraints string) bool {
 
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
-func IsConstrained(constraint projectfile.Constraint) bool {
+// The second return value is for the specificity of the constraint (i.e, how
+// many constraints were specified and checked)
+func IsConstrained(constraint projectfile.Constraint) (bool, int) {
 	if constraint.Platform == "" &&
 		constraint.Environment == "" &&
 		constraint.OS == "" {
-		return false
+		return false, 0
 	}
-	return (constraint.OS != "" && osIsConstrained(constraint.OS)) ||
-		(constraint.Platform != "" && platformIsConstrained(constraint.Platform)) ||
-		(constraint.Environment != "" && environmentIsConstrained(constraint.Environment))
+	specificity := 0
+	constrained := false
+	if constraint.OS != "" {
+		specificity++
+		constrained = constrained || osIsConstrained(constraint.OS)
+	}
+	if constraint.Platform != "" {
+		specificity++
+		constrained = constrained || platformIsConstrained(constraint.Platform)
+	}
+	if constraint.Environment != "" {
+		specificity++
+		constrained = constrained || environmentIsConstrained(constraint.Environment)
+	}
+	return constrained, specificity
+}
+
+// FilterUnconstrained filters a list of constrained entities and returns only
+// those which are unconstrained. If two items with the same name exist, only
+// the most specific item will be added to the results.
+func FilterUnconstrained(items []projectfile.ConstrainedEntity) []int {
+	type itemIndex struct {
+		specificity int
+		index       int
+	}
+	selected := make(map[string]itemIndex)
+
+	for i, item := range items {
+		c := item.ConstraintsFilter()
+		constrained, specificity := IsConstrained(c)
+		if !constrained {
+			if s, exists := selected[item.ID()]; !exists || s.specificity < specificity {
+				selected[item.ID()] = itemIndex{specificity, i}
+			}
+		}
+	}
+	res := make([]int, 0, len(selected))
+	for _, s := range selected {
+		res = append(res, s.index)
+	}
+	return res
+}
+
+// FilterUnconstrainedEvents filters events that are not constrained.
+// If two events with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedEvents(events []projectfile.Event) []*projectfile.Event {
+	items := make([]projectfile.ConstrainedEntity, 0, len(events))
+	for _, ev := range events {
+		items = append(items, ev)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Event, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, &events[item])
+	}
+	return res
+}
+
+// FilterUnconstrainedLanguages filters languages that are not constrained.
+// If two languages with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedLanguages(languages []projectfile.Language) []*projectfile.Language {
+	items := make([]projectfile.ConstrainedEntity, 0, len(languages))
+	for _, l := range languages {
+		items = append(items, l)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Language, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, &languages[item])
+	}
+	return res
+}
+
+// FilterUnconstrainedScripts filters scripts that are not constrained.
+// If two scripts with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedScripts(scripts []projectfile.Script) []*projectfile.Script {
+	items := make([]projectfile.ConstrainedEntity, 0, len(scripts))
+	for _, s := range scripts {
+		items = append(items, s)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Script, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, &scripts[item])
+	}
+	return res
+}
+
+// FilterUnconstrainedConstants filters constants that are not constrained.
+// If two constants with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedConstants(constants []*projectfile.Constant) []*projectfile.Constant {
+	items := make([]projectfile.ConstrainedEntity, 0, len(constants))
+	for _, c := range constants {
+		items = append(items, c)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Constant, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, constants[item])
+	}
+	return res
+}
+
+// FilterUnconstrainedPackages filters packages that are not constrained.
+// If two packages with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedPackages(packages []projectfile.Package) []*projectfile.Package {
+	items := make([]projectfile.ConstrainedEntity, 0, len(packages))
+	for _, p := range packages {
+		items = append(items, p)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Package, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, &packages[item])
+	}
+	return res
+}
+
+// FilterUnconstrainedSecrets filters secrets that are not constrained.
+// If two secrets with the same name exist are unconstrained, only the most
+// specific one will be returned.
+func FilterUnconstrainedSecrets(secrets []*projectfile.Secret) []*projectfile.Secret {
+	items := make([]projectfile.ConstrainedEntity, 0, len(secrets))
+	for _, s := range secrets {
+		items = append(items, s)
+	}
+	filtered := FilterUnconstrained(items)
+	res := make([]*projectfile.Secret, 0, len(filtered))
+	for _, item := range filtered {
+		res = append(res, secrets[item])
+	}
+	return res
+}
+
+// MostSpecificUnconstrained searches for entities named name and returns the
+// unconstrained with the most specific constraint definition (if it exists).
+// It also returns the index of the found item in the list (which is -1 if none
+// could be found)
+func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntity) (int, projectfile.ConstrainedEntity) {
+	var maxSpecificity int = -1
+	var value projectfile.ConstrainedEntity
+	var index int = -1
+
+	for i, item := range items {
+		c := item.ConstraintsFilter()
+		constrained, specificity := IsConstrained(c)
+		if item.ID() == name && !constrained {
+			if specificity > maxSpecificity {
+				maxSpecificity = specificity
+				value = item
+				index = i
+			}
+		}
+	}
+	return index, value
+}
+
+// MostSpecificUnconstrainedEvent searches for events named name and returns the
+// unconstrained with the most specific constraint definition (if it exists).
+// It also returns the index of the found item in the list (which is -1 if none
+// could be found)
+func MostSpecificUnconstrainedEvent(name string, events []projectfile.Event) (int, projectfile.Event) {
+	items := make([]projectfile.ConstrainedEntity, 0, len(events))
+	for _, ev := range events {
+		items = append(items, ev)
+	}
+	i, v := MostSpecificUnconstrained(name, items)
+	return i, v.(projectfile.Event)
+}
+
+// MostSpecificUnconstrainedConstant searches for constants named name and returns the
+// unconstrained with the most specific constraint definition (if it exists).
+// It also returns the index of the found item in the list (which is -1 if none
+// could be found)
+func MostSpecificUnconstrainedConstant(name string, constants []*projectfile.Constant) (int, *projectfile.Constant) {
+	items := make([]projectfile.ConstrainedEntity, 0, len(constants))
+	for _, c := range constants {
+		items = append(items, c)
+	}
+	i, v := MostSpecificUnconstrained(name, items)
+	return i, v.(*projectfile.Constant)
+}
+
+// MostSpecificUnconstrainedScript searches for scripts named name and returns the
+// unconstrained with the most specific constraint definition (if it exists).
+// It also returns the index of the found item in the list (which is -1 if none
+// could be found)
+func MostSpecificUnconstrainedScript(name string, scripts []projectfile.Script) (int, projectfile.Script) {
+	items := make([]projectfile.ConstrainedEntity, 0, len(scripts))
+	for _, s := range scripts {
+		items = append(items, s)
+	}
+	i, v := MostSpecificUnconstrained(name, items)
+	return i, v.(projectfile.Script)
 }

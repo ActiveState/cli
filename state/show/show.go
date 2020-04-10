@@ -41,6 +41,7 @@ var Args struct {
 	Remote string
 }
 
+// Flags holds global flags passed through the command line.
 var Flags struct {
 	Output *string
 }
@@ -123,10 +124,9 @@ func printEvents(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	for _, event := range project.Events {
-		if !constraints.IsConstrained(event.Constraints) {
-			rows = append(rows, []interface{}{event.Name})
-		}
+	es := constraints.FilterUnconstrainedEvents(project.Events)
+	for _, event := range es {
+		rows = append(rows, []interface{}{event.Name})
 	}
 
 	print.BoldInline("%s:", locale.T("print_state_show_events"))
@@ -139,10 +139,9 @@ func printScripts(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	for _, script := range project.Scripts {
-		if !constraints.IsConstrained(script.Constraints) {
-			rows = append(rows, []interface{}{script.Name, script.Description})
-		}
+	scripts := constraints.FilterUnconstrainedScripts(project.Scripts)
+	for _, script := range scripts {
+		rows = append(rows, []interface{}{script.Name, script.Description})
 	}
 
 	print.BoldInline("%s:", locale.T("print_state_show_scripts"))
@@ -155,10 +154,9 @@ func printLanguages(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	for _, language := range project.Languages {
-		if !constraints.IsConstrained(language.Constraints) {
-			rows = append(rows, []interface{}{language.Name, language.Version})
-		}
+	languages := constraints.FilterUnconstrainedLanguages(project.Languages)
+	for _, language := range languages {
+		rows = append(rows, []interface{}{language.Name, language.Version})
 	}
 
 	print.BoldInline("%s:", locale.T("print_state_show_languages"))

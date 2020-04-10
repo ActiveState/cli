@@ -119,11 +119,35 @@ type Language struct {
 	Packages    []Package  `yaml:"packages,omitempty"`
 }
 
+var _ ConstrainedEntity = Language{}
+
+// ID returns the language name
+func (l Language) ID() string {
+	return l.Name
+}
+
+// ConstraintsFilter returns the language constraints
+func (l Language) ConstraintsFilter() Constraint {
+	return l.Constraints
+}
+
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = &Constant{}
+
+// ID returns the constant name
+func (c *Constant) ID() string {
+	return c.Name
+}
+
+// ConstraintsFilter returns the constant constraints
+func (c *Constant) ConstraintsFilter() Constraint {
+	return c.Constraints
 }
 
 // SecretScopes holds secret scopes, scopes define what the secrets belong to
@@ -139,11 +163,32 @@ type Secret struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
+var _ ConstrainedEntity = &Secret{}
+
+// ID returns the secret name
+func (s *Secret) ID() string {
+	return s.Name
+}
+
+// ConstraintsFilter returns the secret constraints
+func (s *Secret) ConstraintsFilter() Constraint {
+	return s.Constraints
+}
+
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
 	OS          string `yaml:"os,omitempty"`
 	Platform    string `yaml:"platform,omitempty"`
 	Environment string `yaml:"environment,omitempty"`
+}
+
+// ConstrainedEntity is an entity in a project file that can be filtered with constraints
+type ConstrainedEntity interface {
+	// ID returns the name of the entity
+	ID() string
+
+	// ConstraintsFilter returns the specified constraints for this entity
+	ConstraintsFilter() Constraint
 }
 
 // Package covers the package structure, which goes under the language struct
@@ -154,11 +199,35 @@ type Package struct {
 	Build       Build      `yaml:"build,omitempty"`
 }
 
+var _ ConstrainedEntity = Package{}
+
+// ID returns the package name
+func (p Package) ID() string {
+	return p.Name
+}
+
+// ConstraintsFilter returns the package constraints
+func (p Package) ConstraintsFilter() Constraint {
+	return p.Constraints
+}
+
 // Event covers the event structure, which goes under Project
 type Event struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = Event{}
+
+// ID returns the event name
+func (e Event) ID() string {
+	return e.Name
+}
+
+// ConstraintsFilter returns the event constraints
+func (e Event) ConstraintsFilter() Constraint {
+	return e.Constraints
 }
 
 // Script covers the script structure, which goes under Project
@@ -170,6 +239,18 @@ type Script struct {
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = Script{}
+
+// ID returns the script name
+func (s Script) ID() string {
+	return s.Name
+}
+
+// ConstraintsFilter returns the script constraints
+func (s Script) ConstraintsFilter() Constraint {
+	return s.Constraints
 }
 
 var persistentProject *Project
@@ -297,7 +378,7 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	return out, nil
 }
 
-// Returns the path to the project activestate.yaml
+// GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, *failures.Failure) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath != "" {
@@ -386,6 +467,7 @@ func FromPath(path string) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
 	Owner      string
 	Project    string

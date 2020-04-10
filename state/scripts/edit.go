@@ -328,14 +328,11 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	}
 
 	projectFile := project.Get().Source()
-	for i, projectScript := range projectFile.Scripts {
-		if projectScript.Name == EditArgs.Name {
-			if !constraints.IsConstrained(projectScript.Constraints) {
-				projectFile.Scripts[i].Value = string(updatedScript)
-				break
-			}
-		}
+	i, _ := constraints.MostSpecificUnconstrainedScript(EditArgs.Name, projectFile.Scripts)
+	if i < 0 { // no script found
+		return nil
 	}
-
+	projectFile.Scripts[i].Value = string(updatedScript)
 	return projectFile.Save()
+
 }

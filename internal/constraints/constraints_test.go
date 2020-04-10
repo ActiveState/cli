@@ -89,36 +89,56 @@ func TestMatchConstraint(t *testing.T) {
 	}
 
 	constraint := projectfile.Constraint{sysinfo.OS().String(), variableLabel, "dev"}
-	assert.True(t, IsConstrained(constraint))
+	constrained, specificity := IsConstrained(constraint)
+	assert.True(t, constrained)
+	assert.Equal(t, 3, specificity)
 	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
 		beConstrained = "linux"
 	}
-	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{beConstrained, "", ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
 
+	constrained, specificity = IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""})
 	// Confirm passing only one constraint doesn't get constrained when we don't expect
-	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
+	assert.False(t, constrained)
+	assert.Equal(t, 1, specificity)
 	{
 		osOverride = "windows"
 		osVersionOverride = "10"
-		assert.False(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+		constrained, specificity = IsConstrained(projectfile.Constraint{"", "Windows10Label", ""})
+		assert.False(t, constrained)
+		assert.Equal(t, 1, specificity)
 		osOverride = ""
 		osVersionOverride = ""
 	}
 	{
 		os.Setenv("ACTIVESTATE_ENVIRONMENT", "itworks")
-		assert.False(t, IsConstrained(projectfile.Constraint{"", "", "itworks"}))
+		constrained, specificity = IsConstrained(projectfile.Constraint{"", "", "itworks"})
+		assert.False(t, constrained)
+		assert.Equal(t, 1, specificity)
 		os.Setenv("ACTIVESTATE_ENVIRONMENT", "")
 	}
-	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", ""})
+	assert.False(t, constrained)
+	assert.Equal(t, 0, specificity)
 
 	// Confirm we DO get constrained with only one value set
-	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
-	assert.True(t, IsConstrained(projectfile.Constraint{"", variableLabel, ""}))
-	assert.True(t, IsConstrained(projectfile.Constraint{"", "", "dev"}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{beConstrained, "", ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", variableLabel, ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", "dev"})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
 
 	// Don't constrain at all if nothing is passed in
-	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", ""})
+	assert.False(t, constrained)
+	assert.Equal(t, 0, specificity)
 }
 
 func TestOsMatches(t *testing.T) {
