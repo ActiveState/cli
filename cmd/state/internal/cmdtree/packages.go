@@ -109,3 +109,30 @@ func newPackagesRemoveCommand() *captain.Command {
 		},
 	)
 }
+
+func newPackagesImportCommand() *captain.Command {
+	runner := packages.NewImport()
+
+	params := packages.NewImportRunParams()
+
+	return captain.NewCommand(
+		"import",
+		locale.T("packages_import_cmd_description"),
+		[]*captain.Flag{
+			{
+				Name:        "file",
+				Description: "package_import_flag_filename_description",
+				Value:       &params.FileName,
+			},
+			{
+				Name:        "force",
+				Description: "package_import_flag_force_description",
+				Value:       &params.Force,
+			},
+		},
+		[]*captain.Argument{},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(*params)
+		},
+	)
+}
