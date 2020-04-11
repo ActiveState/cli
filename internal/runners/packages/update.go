@@ -1,60 +1,42 @@
 package packages
 
 import (
-	"github.com/spf13/cobra"
-
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// UpdateArgs hold the arg values passed through the command line
-var UpdateArgs struct {
+// UpdateRunParams tracks the info required for running Update.
+type UpdateRunParams struct {
 	Name string
 }
 
-// UpdateCommand is the `state package update` command struct
-var UpdateCommand = &commands.Command{
-	Name:        "update",
-	Description: "package_update_description",
+// Update manages the updating execution context.
+type Update struct{}
 
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "package_arg_nameversion",
-			Description: "package_arg_nameversion_description",
-			Variable:    &UpdateArgs.Name,
-			Required:    true,
-		},
-	},
+// NewUpdate prepares an update execution context for use.
+func NewUpdate() *Update {
+	return &Update{}
 }
 
-func init() {
-	UpdateCommand.Run = ExecuteUpdate // Work around initialization loop
-}
-
-// ExecuteUpdate is run when `state package update` is run
-func ExecuteUpdate(cmd *cobra.Command, allArgs []string) {
+// Run executes the update behavior.
+func (u *Update) Run(params UpdateRunParams) error {
 	logging.Debug("ExecuteUpdate")
 
 	pj := project.Get()
 	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_fetch_languages"))
-		return
+		return fail.WithDescription("err_fetch_languages")
 	}
 
-	name, version := splitNameAndVersion(UpdateArgs.Name)
+	name, version := splitNameAndVersion(params.Name)
 	if version == "" {
 		ingredientVersion, fail := model.IngredientWithLatestVersion(language, name)
 		if fail != nil {
-			failures.Handle(fail, locale.T("package_ingredient_not_found"))
-			return
+			return fail.WithDescription("package_ingredient_not_found")
 		}
 		version = *ingredientVersion.Version.Version
 	}
 
-	executeAddUpdate(UpdateCommand, language, name, version, model.OperationUpdated)
+	return executeAddUpdate(language, name, version, model.OperationUpdated)
 }

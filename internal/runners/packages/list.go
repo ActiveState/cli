@@ -13,59 +13,64 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// ListFlags holds the list-related flag values passed through the command line
-var ListFlags struct {
+// ListRunParams tracks the info required for running List.
+type ListRunParams struct {
 	Commit  string
 	Name    string
 	Project string
 }
 
-// ExecuteList lists the current packages in a project
-func ExecuteList() {
+// List manages the listing execution context.
+type List struct{}
+
+// NewList prepares a list execution context for use.
+func NewList() *List {
+	return &List{}
+}
+
+// Run executes the list behavior.
+func (l *List) Run(params ListRunParams) error {
 	logging.Debug("ExecuteList")
 
 	var commit *strfmt.UUID
 	var fail *failures.Failure
 	switch {
-	case ListFlags.Commit != "":
-		commit, fail = targetFromCommit(ListFlags.Commit)
+	case params.Commit != "":
+		commit, fail = targetFromCommit(params.Commit)
 		if fail != nil {
-			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-			return
+			return fail.WithDescription("package_err_cannot_obtain_commit")
 		}
-	case ListFlags.Project != "":
-		commit, fail = targetFromProject(ListFlags.Project)
+	case params.Project != "":
+		commit, fail = targetFromProject(params.Project)
 		if fail != nil {
-			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-			return
+			return fail.WithDescription("package_err_cannot_obtain_commit")
 		}
 	default:
 		commit, fail = targetFromProjectFile()
 		if fail != nil {
-			failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-			return
+			return fail.WithDescription("package_err_cannot_obtain_commit")
 		}
 	}
 
 	checkpoint, fail := fetchCheckpoint(commit)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
-		return
+		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 	if len(checkpoint) == 0 {
 		print.Line(locale.T("package_no_packages"))
-		return
+		return nil
 	}
 
-	table := newFilteredRequirementsTable(checkpoint, ListFlags.Name)
+	table := newFilteredRequirementsTable(checkpoint, params.Name)
 	sortByFirstCol(table.data)
 
 	output := table.output()
 	if output == "" {
-		print.Line(locale.T("package_no_packages"))
-		return
+		output = locale.T("package_no_packages")
 	}
+
 	print.Line(output)
+	return nil
 }
 
 func targetFromCommit(commitOpt string) (*strfmt.UUID, *failures.Failure) {

@@ -1,51 +1,35 @@
 package packages
 
 import (
-	"github.com/spf13/cobra"
-
-	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// AddArgs hold the arg values passed through the command line
-var AddArgs struct {
+// AddRunParams tracks the info required for running Add.
+type AddRunParams struct {
 	Name string
 }
 
-// AddCommand is the `package add` command struct
-var AddCommand = &commands.Command{
-	Name:        "add",
-	Description: "package_add_description",
+// Add manages the adding execution context.
+type Add struct{}
 
-	Arguments: []*commands.Argument{
-		&commands.Argument{
-			Name:        "package_arg_nameversion",
-			Description: "package_arg_nameversion_description",
-			Variable:    &AddArgs.Name,
-			Required:    true,
-		},
-	},
+// NewAdd prepares an add execution context for use.
+func NewAdd() *Add {
+	return &Add{}
 }
 
-func init() {
-	AddCommand.Run = ExecuteAdd // Work around initialization loop
-}
-
-// ExecuteAdd is executed with `state package add` is ran
-func ExecuteAdd(cmd *cobra.Command, allArgs []string) {
+// Run executes the add behavior.
+func (a *Add) Run(params AddRunParams) error {
 	logging.Debug("ExecuteAdd")
 
 	pj := project.Get()
 	language, fail := model.DefaultLanguageForProject(pj.Owner(), pj.Name())
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_fetch_languages"))
-		return
+		return fail.WithDescription("err_fetch_languages")
 	}
 
-	name, version := splitNameAndVersion(AddArgs.Name)
-	executeAddUpdate(AddCommand, language, name, version, model.OperationAdded)
+	name, version := splitNameAndVersion(params.Name)
+
+	return executeAddUpdate(language, name, version, model.OperationAdded)
 }
