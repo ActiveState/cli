@@ -14,7 +14,7 @@ type AddRunParams struct {
 // Add manages the adding execution context.
 type Add struct{}
 
-// NewAdd prepares an add execution context for use.
+// NewAdd prepares an addition execution context for use.
 func NewAdd() *Add {
 	return &Add{}
 }
