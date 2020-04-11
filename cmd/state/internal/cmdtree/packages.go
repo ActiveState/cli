@@ -86,3 +86,26 @@ func newPackagesUpdateCommand() *captain.Command {
 		},
 	)
 }
+
+func newPackagesRemoveCommand() *captain.Command {
+	runner := packages.NewRemove()
+
+	params := packages.RemoveRunParams{}
+
+	return captain.NewCommand(
+		"remove",
+		locale.T("packages_remove_cmd_description"),
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "packages_arg_name",
+				Description: "packages_arg_name_description",
+				Value:       &params.Name,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+}
