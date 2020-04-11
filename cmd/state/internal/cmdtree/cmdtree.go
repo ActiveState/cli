@@ -39,6 +39,15 @@ func New(outputer output.Outputer) *CmdTree {
 		newAPIKeyCommand(outputer),
 	)
 
+	packagesCmd := newPackagesCommand()
+	packagesCmd.AddChildren(
+		newPackagesAddCommand(),
+		newPackagesUpdateCommand(),
+	//Command.Append(RemoveCommand)
+	//Command.Append(SearchCommand)
+	//Command.Append(ImportCommand)
+	)
+
 	platformsCmd := newPlatformsCommand(outputer)
 	platformsCmd.AddChildren(
 		newPlatformsSearchCommand(outputer),
