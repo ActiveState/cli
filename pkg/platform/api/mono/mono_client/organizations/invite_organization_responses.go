@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // InviteOrganizationReader is a Reader for the InviteOrganization structure.
@@ -25,35 +24,30 @@ type InviteOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *InviteOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewInviteOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewInviteOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewInviteOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewInviteOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewInviteOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -83,6 +77,10 @@ func (o *InviteOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationOK  %+v", 200, o.Payload)
 }
 
+func (o *InviteOrganizationOK) GetPayload() []*mono_models.Invitation {
+	return o.Payload
+}
+
 func (o *InviteOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -108,6 +106,10 @@ type InviteOrganizationBadRequest struct {
 
 func (o *InviteOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *InviteOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *InviteOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,6 +141,10 @@ func (o *InviteOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationForbidden  %+v", 403, o.Payload)
 }
 
+func (o *InviteOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *InviteOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -168,6 +174,10 @@ func (o *InviteOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *InviteOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *InviteOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -195,6 +205,10 @@ type InviteOrganizationInternalServerError struct {
 
 func (o *InviteOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *InviteOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *InviteOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

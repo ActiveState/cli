@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // MutateOrganizationReader is a Reader for the MutateOrganization structure.
@@ -24,42 +23,36 @@ type MutateOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *MutateOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewMutateOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewMutateOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewMutateOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewMutateOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewMutateOrganizationConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewMutateOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type MutateOrganizationOK struct {
 
 func (o *MutateOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationOK  %+v", 200, o.Payload)
+}
+
+func (o *MutateOrganizationOK) GetPayload() *mono_models.Organization {
+	return o.Payload
 }
 
 func (o *MutateOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *MutateOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *MutateOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *MutateOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -145,6 +146,10 @@ type MutateOrganizationForbidden struct {
 
 func (o *MutateOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationForbidden  %+v", 403, o.Payload)
+}
+
+func (o *MutateOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *MutateOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *MutateOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *MutateOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *MutateOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -205,6 +214,10 @@ func (o *MutateOrganizationConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationConflict  %+v", 409, o.Payload)
 }
 
+func (o *MutateOrganizationConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *MutateOrganizationConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -232,6 +245,10 @@ type MutateOrganizationInternalServerError struct {
 
 func (o *MutateOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *MutateOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *MutateOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

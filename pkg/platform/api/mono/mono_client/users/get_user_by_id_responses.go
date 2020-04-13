@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetUserByIDReader is a Reader for the GetUserByID structure.
@@ -24,21 +23,18 @@ type GetUserByIDReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetUserByIDReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetUserByIDOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetUserByIDNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetUserByIDInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetUserByIDOK struct {
 
 func (o *GetUserByIDOK) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdOK  %+v", 200, o.Payload)
+}
+
+func (o *GetUserByIDOK) GetPayload() *mono_models.User {
+	return o.Payload
 }
 
 func (o *GetUserByIDOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetUserByIDNotFound) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetUserByIDNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetUserByIDNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetUserByIDInternalServerError struct {
 
 func (o *GetUserByIDInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetUserByIDInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetUserByIDInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

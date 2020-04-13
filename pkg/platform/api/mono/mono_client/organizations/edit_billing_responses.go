@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditBillingReader is a Reader for the EditBilling structure.
@@ -24,35 +23,30 @@ type EditBillingReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditBillingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditBillingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditBillingBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditBillingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditBillingNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditBillingInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type EditBillingOK struct {
 
 func (o *EditBillingOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingOK  %+v", 200, o.Payload)
+}
+
+func (o *EditBillingOK) GetPayload() *mono_models.BillingInformation {
+	return o.Payload
 }
 
 func (o *EditBillingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *EditBillingBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditBillingBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditBillingBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type EditBillingForbidden struct {
 
 func (o *EditBillingForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditBillingForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditBillingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *EditBillingNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditBillingNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditBillingNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type EditBillingInternalServerError struct {
 
 func (o *EditBillingInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditBillingInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditBillingInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

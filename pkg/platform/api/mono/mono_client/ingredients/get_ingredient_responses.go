@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetIngredientReader is a Reader for the GetIngredient structure.
@@ -24,21 +23,18 @@ type GetIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetIngredientOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetIngredientNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetIngredientInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetIngredientOK struct {
 
 func (o *GetIngredientOK) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientOK  %+v", 200, o.Payload)
+}
+
+func (o *GetIngredientOK) GetPayload() *mono_models.Ingredient {
+	return o.Payload
 }
 
 func (o *GetIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetIngredientNotFound) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetIngredientNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetIngredientNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetIngredientInternalServerError struct {
 
 func (o *GetIngredientInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetIngredientInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetIngredientInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

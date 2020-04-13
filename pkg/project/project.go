@@ -511,7 +511,7 @@ func (s *Secret) Save(value string) *failures.Failure {
 		return fail
 	}
 
-	remoteProject, fail := model.FetchProjectByName(org.Urlname, s.project.Name())
+	remoteProject, fail := model.FetchProjectByName(org.URLname, s.project.Name())
 	if fail != nil {
 		return fail
 	}

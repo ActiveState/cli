@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddTokenReader is a Reader for the AddToken structure.
@@ -24,14 +23,12 @@ type AddTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddTokenOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddTokenBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *AddTokenOK) Error() string {
 	return fmt.Sprintf("[POST /apikeys][%d] addTokenOK  %+v", 200, o.Payload)
 }
 
+func (o *AddTokenOK) GetPayload() *mono_models.NewToken {
+	return o.Payload
+}
+
 func (o *AddTokenOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.NewToken)
@@ -88,6 +89,10 @@ type AddTokenBadRequest struct {
 
 func (o *AddTokenBadRequest) Error() string {
 	return fmt.Sprintf("[POST /apikeys][%d] addTokenBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *AddTokenBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddTokenBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

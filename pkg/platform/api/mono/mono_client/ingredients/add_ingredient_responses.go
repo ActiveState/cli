@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddIngredientReader is a Reader for the AddIngredient structure.
@@ -24,28 +23,24 @@ type AddIngredientReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddIngredientReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddIngredientOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddIngredientBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddIngredientForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddIngredientConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type AddIngredientOK struct {
 
 func (o *AddIngredientOK) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientOK  %+v", 200, o.Payload)
+}
+
+func (o *AddIngredientOK) GetPayload() *mono_models.Ingredient {
+	return o.Payload
 }
 
 func (o *AddIngredientOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *AddIngredientBadRequest) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddIngredientBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddIngredientBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *AddIngredientForbidden) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientForbidden  %+v", 403, o.Payload)
 }
 
+func (o *AddIngredientForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddIngredientForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type AddIngredientConflict struct {
 
 func (o *AddIngredientConflict) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientConflict  %+v", 409, o.Payload)
+}
+
+func (o *AddIngredientConflict) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddIngredientConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

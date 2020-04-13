@@ -6,13 +6,14 @@ package sessions
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new sessions API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,21 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetSession gets a single session record
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetSession(params *GetSessionParams, authInfo runtime.ClientAuthInfoWriter) (*GetSessionOK, error)
 
-Retrieve the session by ID
+	ListSessions(params *ListSessionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSessionsOK, error)
+
+	TerminateSession(params *TerminateSessionParams, authInfo runtime.ClientAuthInfoWriter) (*TerminateSessionOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetSession gets a single session record
+
+  Retrieve the session by ID
 */
 func (a *Client) GetSession(params *GetSessionParams, authInfo runtime.ClientAuthInfoWriter) (*GetSessionOK, error) {
 	// TODO: Validate the params before sending
@@ -40,7 +52,7 @@ func (a *Client) GetSession(params *GetSessionParams, authInfo runtime.ClientAut
 		Method:             "GET",
 		PathPattern:        "/sessions/{sessionID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetSessionReader{formats: a.formats},
@@ -51,14 +63,20 @@ func (a *Client) GetSession(params *GetSessionParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetSessionOK), nil
-
+	success, ok := result.(*GetSessionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getSession: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListSessions lists of all matching sessions
+  ListSessions lists of all matching sessions
 
-Retrieve all sessions from the system that the user has access to
+  Retrieve all sessions from the system that the user has access to
 */
 func (a *Client) ListSessions(params *ListSessionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSessionsOK, error) {
 	// TODO: Validate the params before sending
@@ -82,14 +100,20 @@ func (a *Client) ListSessions(params *ListSessionsParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListSessionsOK), nil
-
+	success, ok := result.(*ListSessionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listSessions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-TerminateSession terminates an orphaned session
+  TerminateSession terminates an orphaned session
 
-If you believe a session is erroneously active this will mark it as complete
+  If you believe a session is erroneously active this will mark it as complete
 */
 func (a *Client) TerminateSession(params *TerminateSessionParams, authInfo runtime.ClientAuthInfoWriter) (*TerminateSessionOK, error) {
 	// TODO: Validate the params before sending
@@ -102,7 +126,7 @@ func (a *Client) TerminateSession(params *TerminateSessionParams, authInfo runti
 		Method:             "POST",
 		PathPattern:        "/sessions/{sessionID}/terminate",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &TerminateSessionReader{formats: a.formats},
@@ -113,8 +137,14 @@ func (a *Client) TerminateSession(params *TerminateSessionParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*TerminateSessionOK), nil
-
+	success, ok := result.(*TerminateSessionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for terminateSession: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

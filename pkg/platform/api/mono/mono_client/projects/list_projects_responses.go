@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListProjectsReader is a Reader for the ListProjects structure.
@@ -24,21 +23,18 @@ type ListProjectsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListProjectsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListProjectsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewListProjectsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewListProjectsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *ListProjectsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsOK  %+v", 200, o.Payload)
 }
 
+func (o *ListProjectsOK) GetPayload() []*mono_models.Project {
+	return o.Payload
+}
+
 func (o *ListProjectsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -93,6 +93,10 @@ type ListProjectsNotFound struct {
 
 func (o *ListProjectsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsNotFound  %+v", 404, o.Payload)
+}
+
+func (o *ListProjectsNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListProjectsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -122,6 +126,10 @@ type ListProjectsInternalServerError struct {
 
 func (o *ListProjectsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ListProjectsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListProjectsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

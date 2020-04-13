@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetUserReader is a Reader for the GetUser structure.
@@ -24,21 +23,18 @@ type GetUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetUserNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetUserInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetUserOK struct {
 
 func (o *GetUserOK) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserOK  %+v", 200, o.Payload)
+}
+
+func (o *GetUserOK) GetPayload() *mono_models.User {
+	return o.Payload
 }
 
 func (o *GetUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetUserNotFound) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetUserNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetUserInternalServerError struct {
 
 func (o *GetUserInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetUserInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

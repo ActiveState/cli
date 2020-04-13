@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditReleaseReader is a Reader for the EditRelease structure.
@@ -24,35 +23,30 @@ type EditReleaseReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditReleaseReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditReleaseOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditReleaseBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditReleaseForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditReleaseNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditReleaseInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type EditReleaseOK struct {
 
 func (o *EditReleaseOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseOK  %+v", 200, o.Payload)
+}
+
+func (o *EditReleaseOK) GetPayload() *mono_models.Release {
+	return o.Payload
 }
 
 func (o *EditReleaseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *EditReleaseBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditReleaseBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditReleaseBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type EditReleaseForbidden struct {
 
 func (o *EditReleaseForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditReleaseForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditReleaseForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *EditReleaseNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditReleaseNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditReleaseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type EditReleaseInternalServerError struct {
 
 func (o *EditReleaseInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditReleaseInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditReleaseInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

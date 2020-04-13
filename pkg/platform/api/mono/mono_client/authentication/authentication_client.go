@@ -6,13 +6,14 @@ package authentication
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new authentication API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,45 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetLoginJwtToken logins with a valid j w t and redirect to a platform URL
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetLoginJwtToken(params *GetLoginJwtTokenParams) error
 
-Login with a valid JWT and redirect to a platform URL
+	GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
+
+	GetRenew(params *GetRenewParams) (*GetRenewOK, error)
+
+	PostLogin(params *PostLoginParams) (*PostLoginOK, error)
+
+	AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenOK, error)
+
+	ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter) (*ChangePasswordOK, error)
+
+	DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteTokenOK, error)
+
+	DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*DisableTOTPOK, error)
+
+	EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*EnableTOTPOK, error)
+
+	ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListTokensOK, error)
+
+	LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter) (*LoginAsOK, error)
+
+	LoginWithGithub(params *LoginWithGithubParams) error
+
+	NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*NewTOTPOK, error)
+
+	RequestReset(params *RequestResetParams) (*RequestResetOK, error)
+
+	ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetLoginJwtToken logins with a valid j w t and redirect to a platform URL
+
+  Login with a valid JWT and redirect to a platform URL
 */
 func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
 	// TODO: Validate the params before sending
@@ -40,7 +76,7 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
 		Method:             "GET",
 		PathPattern:        "/login/jwt/{token}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetLoginJwtTokenReader{formats: a.formats},
@@ -51,13 +87,12 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
 		return err
 	}
 	return nil
-
 }
 
 /*
-GetLogout renews a valid j w t
+  GetLogout renews a valid j w t
 
-Log out of the current session
+  Log out of the current session
 */
 func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error) {
 	// TODO: Validate the params before sending
@@ -70,7 +105,7 @@ func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
 		Method:             "GET",
 		PathPattern:        "/logout",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetLogoutReader{formats: a.formats},
@@ -80,14 +115,20 @@ func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetLogoutNoContent), nil
-
+	success, ok := result.(*GetLogoutNoContent)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetLogout: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetRenew renews a valid j w t
+  GetRenew renews a valid j w t
 
-Renew your current JWT to forestall expiration
+  Renew your current JWT to forestall expiration
 */
 func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 	// TODO: Validate the params before sending
@@ -100,7 +141,7 @@ func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 		Method:             "GET",
 		PathPattern:        "/renew",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetRenewReader{formats: a.formats},
@@ -110,14 +151,20 @@ func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetRenewOK), nil
-
+	success, ok := result.(*GetRenewOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRenew: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-PostLogin trades your credentials for a j w t
+  PostLogin trades your credentials for a j w t
 
-Supply either username/password OR token
+  Supply either username/password OR token
 */
 func (a *Client) PostLogin(params *PostLoginParams) (*PostLoginOK, error) {
 	// TODO: Validate the params before sending
@@ -140,14 +187,20 @@ func (a *Client) PostLogin(params *PostLoginParams) (*PostLoginOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PostLoginOK), nil
-
+	success, ok := result.(*PostLoginOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PostLogin: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-AddToken generates an API token for current user
+  AddToken generates an API token for current user
 
-Produces an API token for use with automated API clients
+  Produces an API token for use with automated API clients
 */
 func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -171,14 +224,20 @@ func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddTokenOK), nil
-
+	success, ok := result.(*AddTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ChangePassword changes the current password
+  ChangePassword changes the current password
 
-Prompts for current password which is used to change it to something new.
+  Prompts for current password which is used to change it to something new.
 */
 func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter) (*ChangePasswordOK, error) {
 	// TODO: Validate the params before sending
@@ -202,14 +261,20 @@ func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ChangePasswordOK), nil
-
+	success, ok := result.(*ChangePasswordOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for changePassword: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteToken deletes an API token
+  DeleteToken deletes an API token
 
-Deletes the specified API Token
+  Deletes the specified API Token
 */
 func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -222,7 +287,7 @@ func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientA
 		Method:             "DELETE",
 		PathPattern:        "/apikeys/{tokenID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &DeleteTokenReader{formats: a.formats},
@@ -233,14 +298,20 @@ func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteTokenOK), nil
-
+	success, ok := result.(*DeleteTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DisableTOTP disables t o t p
+  DisableTOTP disables t o t p
 
-Disable TOTP authentication
+  Disable TOTP authentication
 */
 func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*DisableTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -253,7 +324,7 @@ func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientA
 		Method:             "DELETE",
 		PathPattern:        "/totp",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &DisableTOTPReader{formats: a.formats},
@@ -264,14 +335,20 @@ func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DisableTOTPOK), nil
-
+	success, ok := result.(*DisableTOTPOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for disableTOTP: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EnableTOTP enables t o t p
+  EnableTOTP enables t o t p
 
-Enable TOTP authentication by performing initial code validation
+  Enable TOTP authentication by performing initial code validation
 */
 func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*EnableTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -284,7 +361,7 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 		Method:             "POST",
 		PathPattern:        "/totp",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &EnableTOTPReader{formats: a.formats},
@@ -295,14 +372,20 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EnableTOTPOK), nil
-
+	success, ok := result.(*EnableTOTPOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for enableTOTP: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListTokens lists current user s API tokens
+  ListTokens lists current user s API tokens
 
-List of all active API Tokens for current user
+  List of all active API Tokens for current user
 */
 func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListTokensOK, error) {
 	// TODO: Validate the params before sending
@@ -315,7 +398,7 @@ func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAut
 		Method:             "GET",
 		PathPattern:        "/apikeys",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &ListTokensReader{formats: a.formats},
@@ -326,12 +409,18 @@ func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListTokensOK), nil
-
+	success, ok := result.(*ListTokensOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listTokens: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-LoginAs logins as given user requires you to be a superuser
+  LoginAs logins as given user requires you to be a superuser
 */
 func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter) (*LoginAsOK, error) {
 	// TODO: Validate the params before sending
@@ -355,12 +444,18 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*LoginAsOK), nil
-
+	success, ok := result.(*LoginAsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for loginAs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-LoginWithGithub callbacks endpoint for github auth
+  LoginWithGithub callbacks endpoint for github auth
 */
 func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
 	// TODO: Validate the params before sending
@@ -372,8 +467,8 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
 		ID:                 "loginWithGithub",
 		Method:             "GET",
 		PathPattern:        "/githubLogin",
-		ProducesMediaTypes: []string{""},
-		ConsumesMediaTypes: []string{""},
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &LoginWithGithubReader{formats: a.formats},
@@ -384,13 +479,12 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
 		return err
 	}
 	return nil
-
 }
 
 /*
-NewTOTP sets up a new t o t p key
+  NewTOTP sets up a new t o t p key
 
-Establish the private key for two-factor authentication
+  Establish the private key for two-factor authentication
 */
 func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*NewTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -403,7 +497,7 @@ func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoW
 		Method:             "GET",
 		PathPattern:        "/totp",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &NewTOTPReader{formats: a.formats},
@@ -414,14 +508,20 @@ func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*NewTOTPOK), nil
-
+	success, ok := result.(*NewTOTPOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for newTOTP: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-RequestReset requests a password recovery email
+  RequestReset requests a password recovery email
 
-Sends a link which can be used to reset a forgotten password.
+  Sends a link which can be used to reset a forgotten password.
 */
 func (a *Client) RequestReset(params *RequestResetParams) (*RequestResetOK, error) {
 	// TODO: Validate the params before sending
@@ -444,14 +544,20 @@ func (a *Client) RequestReset(params *RequestResetParams) (*RequestResetOK, erro
 	if err != nil {
 		return nil, err
 	}
-	return result.(*RequestResetOK), nil
-
+	success, ok := result.(*RequestResetOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for requestReset: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ResetPassword resets a forgotten password
+  ResetPassword resets a forgotten password
 
-Sends a link which can be used to reset a forgotten password.
+  Sends a link which can be used to reset a forgotten password.
 */
 func (a *Client) ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, error) {
 	// TODO: Validate the params before sending
@@ -474,8 +580,14 @@ func (a *Client) ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, e
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ResetPasswordOK), nil
-
+	success, ok := result.(*ResetPasswordOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for resetPassword: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

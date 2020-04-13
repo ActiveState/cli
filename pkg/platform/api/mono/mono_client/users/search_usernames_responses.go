@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SearchUsernamesReader is a Reader for the SearchUsernames structure.
@@ -25,21 +24,18 @@ type SearchUsernamesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *SearchUsernamesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewSearchUsernamesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewSearchUsernamesForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewSearchUsernamesInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -69,6 +65,10 @@ func (o *SearchUsernamesOK) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesOK  %+v", 200, o.Payload)
 }
 
+func (o *SearchUsernamesOK) GetPayload() []*mono_models.User {
+	return o.Payload
+}
+
 func (o *SearchUsernamesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -94,6 +94,10 @@ type SearchUsernamesForbidden struct {
 
 func (o *SearchUsernamesForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesForbidden  %+v", 403, o.Payload)
+}
+
+func (o *SearchUsernamesForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SearchUsernamesForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -123,6 +127,10 @@ type SearchUsernamesInternalServerError struct {
 
 func (o *SearchUsernamesInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *SearchUsernamesInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SearchUsernamesInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

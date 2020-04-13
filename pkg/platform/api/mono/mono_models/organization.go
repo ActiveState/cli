@@ -8,19 +8,19 @@ package mono_models
 import (
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Organization organization
+//
 // swagger:model Organization
 type Organization struct {
 
-	// urlname
-	Urlname string `json:"URLname,omitempty"`
+	// u r lname
+	URLname string `json:"URLname,omitempty"`
 
 	// add ons
 	AddOns map[string]AddOn `json:"addOns,omitempty"`

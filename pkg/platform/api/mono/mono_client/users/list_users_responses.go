@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListUsersReader is a Reader for the ListUsers structure.
@@ -24,14 +23,12 @@ type ListUsersReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListUsersReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListUsersOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 500:
 		result := NewListUsersInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *ListUsersOK) Error() string {
 	return fmt.Sprintf("[GET /users][%d] listUsersOK  %+v", 200, o.Payload)
 }
 
+func (o *ListUsersOK) GetPayload() []*mono_models.User {
+	return o.Payload
+}
+
 func (o *ListUsersOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -86,6 +87,10 @@ type ListUsersInternalServerError struct {
 
 func (o *ListUsersInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users][%d] listUsersInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ListUsersInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListUsersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

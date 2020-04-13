@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // CalculateTaxReader is a Reader for the CalculateTax structure.
@@ -24,28 +23,24 @@ type CalculateTaxReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *CalculateTaxReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewCalculateTaxOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewCalculateTaxBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewCalculateTaxForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewCalculateTaxInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -75,6 +70,10 @@ func (o *CalculateTaxOK) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxOK  %+v", 200, o.Payload)
 }
 
+func (o *CalculateTaxOK) GetPayload() int64 {
+	return o.Payload
+}
+
 func (o *CalculateTaxOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -100,6 +99,10 @@ type CalculateTaxBadRequest struct {
 
 func (o *CalculateTaxBadRequest) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *CalculateTaxBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *CalculateTaxBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -131,6 +134,10 @@ func (o *CalculateTaxForbidden) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxForbidden  %+v", 403, o.Payload)
 }
 
+func (o *CalculateTaxForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *CalculateTaxForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -158,6 +165,10 @@ type CalculateTaxInternalServerError struct {
 
 func (o *CalculateTaxInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *CalculateTaxInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *CalculateTaxInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

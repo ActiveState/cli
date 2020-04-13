@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetRenewReader is a Reader for the GetRenew structure.
@@ -24,21 +23,18 @@ type GetRenewReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetRenewReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetRenewOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetRenewNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetRenewInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetRenewOK struct {
 
 func (o *GetRenewOK) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewOK  %+v", 200, o.Payload)
+}
+
+func (o *GetRenewOK) GetPayload() *mono_models.JWT {
+	return o.Payload
 }
 
 func (o *GetRenewOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetRenewNotFound) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetRenewNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetRenewNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetRenewInternalServerError struct {
 
 func (o *GetRenewInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetRenewInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetRenewInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

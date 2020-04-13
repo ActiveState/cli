@@ -6,23 +6,27 @@ package version_control
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewGetCommitHistoryParams creates a new GetCommitHistoryParams object
 // with the default values initialized.
 func NewGetCommitHistoryParams() *GetCommitHistoryParams {
-	var ()
+	var (
+		limitDefault  = int64(10)
+		offsetDefault = int64(0)
+	)
 	return &GetCommitHistoryParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -31,8 +35,13 @@ func NewGetCommitHistoryParams() *GetCommitHistoryParams {
 // NewGetCommitHistoryParamsWithTimeout creates a new GetCommitHistoryParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetCommitHistoryParamsWithTimeout(timeout time.Duration) *GetCommitHistoryParams {
-	var ()
+	var (
+		limitDefault  = int64(10)
+		offsetDefault = int64(0)
+	)
 	return &GetCommitHistoryParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
 
 		timeout: timeout,
 	}
@@ -41,8 +50,13 @@ func NewGetCommitHistoryParamsWithTimeout(timeout time.Duration) *GetCommitHisto
 // NewGetCommitHistoryParamsWithContext creates a new GetCommitHistoryParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetCommitHistoryParamsWithContext(ctx context.Context) *GetCommitHistoryParams {
-	var ()
+	var (
+		limitDefault  = int64(10)
+		offsetDefault = int64(0)
+	)
 	return &GetCommitHistoryParams{
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
 
 		Context: ctx,
 	}
@@ -51,8 +65,13 @@ func NewGetCommitHistoryParamsWithContext(ctx context.Context) *GetCommitHistory
 // NewGetCommitHistoryParamsWithHTTPClient creates a new GetCommitHistoryParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetCommitHistoryParamsWithHTTPClient(client *http.Client) *GetCommitHistoryParams {
-	var ()
+	var (
+		limitDefault  = int64(10)
+		offsetDefault = int64(0)
+	)
 	return &GetCommitHistoryParams{
+		Limit:      &limitDefault,
+		Offset:     &offsetDefault,
 		HTTPClient: client,
 	}
 }
@@ -64,6 +83,16 @@ type GetCommitHistoryParams struct {
 
 	/*CommitID*/
 	CommitID strfmt.UUID
+	/*Limit
+	  The numbers of items to return.
+
+	*/
+	Limit *int64
+	/*Offset
+	  The number of items to skip before starting to collect the result set.
+
+	*/
+	Offset *int64
 
 	timeout    time.Duration
 	Context    context.Context
@@ -114,6 +143,28 @@ func (o *GetCommitHistoryParams) SetCommitID(commitID strfmt.UUID) {
 	o.CommitID = commitID
 }
 
+// WithLimit adds the limit to the get commit history params
+func (o *GetCommitHistoryParams) WithLimit(limit *int64) *GetCommitHistoryParams {
+	o.SetLimit(limit)
+	return o
+}
+
+// SetLimit adds the limit to the get commit history params
+func (o *GetCommitHistoryParams) SetLimit(limit *int64) {
+	o.Limit = limit
+}
+
+// WithOffset adds the offset to the get commit history params
+func (o *GetCommitHistoryParams) WithOffset(offset *int64) *GetCommitHistoryParams {
+	o.SetOffset(offset)
+	return o
+}
+
+// SetOffset adds the offset to the get commit history params
+func (o *GetCommitHistoryParams) SetOffset(offset *int64) {
+	o.Offset = offset
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetCommitHistoryParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -125,6 +176,38 @@ func (o *GetCommitHistoryParams) WriteToRequest(r runtime.ClientRequest, reg str
 	// path param commitID
 	if err := r.SetPathParam("commitID", o.CommitID.String()); err != nil {
 		return err
+	}
+
+	if o.Limit != nil {
+
+		// query param limit
+		var qrLimit int64
+		if o.Limit != nil {
+			qrLimit = *o.Limit
+		}
+		qLimit := swag.FormatInt64(qrLimit)
+		if qLimit != "" {
+			if err := r.SetQueryParam("limit", qLimit); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	if o.Offset != nil {
+
+		// query param offset
+		var qrOffset int64
+		if o.Offset != nil {
+			qrOffset = *o.Offset
+		}
+		qOffset := swag.FormatInt64(qrOffset)
+		if qOffset != "" {
+			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if len(res) > 0 {

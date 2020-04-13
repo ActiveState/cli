@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetEmailsByUserReader is a Reader for the GetEmailsByUser structure.
@@ -24,21 +23,18 @@ type GetEmailsByUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetEmailsByUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetEmailsByUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetEmailsByUserForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetEmailsByUserInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *GetEmailsByUserOK) Error() string {
 	return fmt.Sprintf("[GET /users/{username}/emails][%d] getEmailsByUserOK  %+v", 200, o.Payload)
 }
 
+func (o *GetEmailsByUserOK) GetPayload() []*mono_models.Email {
+	return o.Payload
+}
+
 func (o *GetEmailsByUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -93,6 +93,10 @@ type GetEmailsByUserForbidden struct {
 
 func (o *GetEmailsByUserForbidden) Error() string {
 	return fmt.Sprintf("[GET /users/{username}/emails][%d] getEmailsByUserForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetEmailsByUserForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetEmailsByUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -122,6 +126,10 @@ type GetEmailsByUserInternalServerError struct {
 
 func (o *GetEmailsByUserInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/{username}/emails][%d] getEmailsByUserInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetEmailsByUserInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetEmailsByUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

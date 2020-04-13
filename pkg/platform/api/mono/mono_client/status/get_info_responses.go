@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetInfoReader is a Reader for the GetInfo structure.
@@ -24,21 +23,18 @@ type GetInfoReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetInfoReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetInfoOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 401:
 		result := NewGetInfoUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewGetInfoForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetInfoOK struct {
 
 func (o *GetInfoOK) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoOK  %+v", 200, o.Payload)
+}
+
+func (o *GetInfoOK) GetPayload() *mono_models.SysInfo {
+	return o.Payload
 }
 
 func (o *GetInfoOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetInfoUnauthorized) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoUnauthorized  %+v", 401, o.Payload)
 }
 
+func (o *GetInfoUnauthorized) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetInfoUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetInfoForbidden struct {
 
 func (o *GetInfoForbidden) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetInfoForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetInfoForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

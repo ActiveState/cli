@@ -6,13 +6,13 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // Checkpoint checkpoint
+//
 // swagger:model Checkpoint
 type Checkpoint struct {
 
@@ -26,7 +26,7 @@ type Checkpoint struct {
 	VersionConstraint string `json:"version_constraint,omitempty"`
 
 	// version constraints
-	VersionConstraints Constraints `json:"version_constraints"`
+	VersionConstraints Constraints `json:"version_constraints,omitempty"`
 }
 
 // Validate validates this checkpoint

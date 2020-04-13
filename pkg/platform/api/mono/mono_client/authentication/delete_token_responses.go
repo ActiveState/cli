@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteTokenReader is a Reader for the DeleteToken structure.
@@ -24,21 +23,18 @@ type DeleteTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteTokenOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewDeleteTokenBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteTokenForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *DeleteTokenOK) Error() string {
 	return fmt.Sprintf("[DELETE /apikeys/{tokenID}][%d] deleteTokenOK  %+v", 200, o.Payload)
 }
 
+func (o *DeleteTokenOK) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteTokenOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -95,6 +95,10 @@ type DeleteTokenBadRequest struct {
 
 func (o *DeleteTokenBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /apikeys/{tokenID}][%d] deleteTokenBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *DeleteTokenBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteTokenBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

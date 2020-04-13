@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UpdateBillingDateReader is a Reader for the UpdateBillingDate structure.
@@ -25,35 +24,30 @@ type UpdateBillingDateReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateBillingDateReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateBillingDateOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdateBillingDateBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUpdateBillingDateForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewUpdateBillingDateNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewUpdateBillingDateInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -81,6 +75,10 @@ type UpdateBillingDateOK struct {
 
 func (o *UpdateBillingDateOK) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateOK  %+v", 200, o.Payload)
+}
+
+func (o *UpdateBillingDateOK) GetPayload() *mono_models.Organization {
+	return o.Payload
 }
 
 func (o *UpdateBillingDateOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -112,6 +110,10 @@ func (o *UpdateBillingDateBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *UpdateBillingDateBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *UpdateBillingDateBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -139,6 +141,10 @@ type UpdateBillingDateForbidden struct {
 
 func (o *UpdateBillingDateForbidden) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateForbidden  %+v", 403, o.Payload)
+}
+
+func (o *UpdateBillingDateForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UpdateBillingDateForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -170,6 +176,10 @@ func (o *UpdateBillingDateNotFound) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateNotFound  %+v", 404, o.Payload)
 }
 
+func (o *UpdateBillingDateNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *UpdateBillingDateNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -197,6 +207,10 @@ type UpdateBillingDateInternalServerError struct {
 
 func (o *UpdateBillingDateInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *UpdateBillingDateInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UpdateBillingDateInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
