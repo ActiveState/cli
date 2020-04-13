@@ -1213,19 +1213,19 @@ editor_yaml:
     events:
       - name: ACTIVATE
         value: $scripts.intro
-package_description:
+package_cmd_description:
   other: Manage packages used in your project
 users_plural:
   other: users
-package_add_description:
+package_add_cmd_description:
   other: Add a new package to your project
-package_list_description:
+package_list_cmd_description:
   other: List the packages currently used by this project
-package_update_description:
+package_update_cmd_description:
   other: Update a package in your project to the latest available version
-package_remove_description:
+package_remove_cmd_description:
   other: Remove a package from your project
-package_import_description:
+package_import_cmd_description:
   other: Import packages from a list of dependencies
 package_search_description:
   other: Search for available packages that can be added to your project
@@ -1249,6 +1249,8 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
+package_import_flag_force_description:
+  other: Run import operation without prompts
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
