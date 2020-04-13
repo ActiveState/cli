@@ -1,90 +1,58 @@
 package packages
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-// SearchArgs holds the arg values passed through the command line
-var SearchArgs struct {
-	Name string
-}
-
-// SearchFlags holds the search-related flag values passed through the command line
-var SearchFlags struct {
+// SearchRunParams tracks the info required for running search.
+type SearchRunParams struct {
 	Language  string
 	ExactTerm bool
+	Name      string
 }
 
-// SearchCommand is the `packages search` command struct
-var SearchCommand = &commands.Command{
-	Name:        "search",
-	Description: "package_search_description",
+// Search manages the searching execution context.
+type Search struct{}
 
-	Arguments: []*commands.Argument{
-		{
-			Name:        "package_arg_name",
-			Description: "package_arg_name_description",
-			Variable:    &SearchArgs.Name,
-			Required:    true,
-		},
-	},
-	Flags: []*commands.Flag{
-		{
-			Name:        "language",
-			Description: "package_search_flag_language_description",
-			Type:        commands.TypeString,
-			StringVar:   &SearchFlags.Language,
-		},
-		{
-			Name:        "exact-term",
-			Description: "package_search_flag_exact-term_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &SearchFlags.ExactTerm,
-		},
-	},
+// NewSearch prepares a searching execution context for use.
+func NewSearch() *Search {
+	return &Search{}
 }
 
-func init() {
-	SearchCommand.Run = ExecuteSearch // Work around initialization loop
-}
-
-// ExecuteSearch is executed when `state packages search` is ran
-func ExecuteSearch(cmd *cobra.Command, allArgs []string) {
+// Run is executed when `state packages search` is ran
+func (s *Search) Run(params SearchRunParams) error {
 	logging.Debug("ExecuteSearch")
 
-	language, fail := targetedLanguage(SearchFlags.Language)
+	language, fail := targetedLanguage(params.Language)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_language"))
-		return
+		return fail.WithDescription("package_err_cannot_obtain_language")
 	}
 
 	searchIngredients := model.SearchIngredients
-	if SearchFlags.ExactTerm {
+	if params.ExactTerm {
 		searchIngredients = model.SearchIngredientsStrict
 	}
 
-	packages, fail := searchIngredients(language, SearchArgs.Name)
+	packages, fail := searchIngredients(language, params.Name)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_search_results"))
-		return
+		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
 		print.Line(locale.T("package_no_packages"))
-		return
+		return nil
 	}
 
 	table := newPackagesTable(packages)
 	sortByFirstTwoCols(table.data)
 
 	print.Line(table.output())
+
+	return nil
 }
 
 func targetedLanguage(languageOpt string) (string, *failures.Failure) {
