@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetLoginJwtTokenReader is a Reader for the GetLoginJwtToken structure.
@@ -24,21 +23,18 @@ type GetLoginJwtTokenReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLoginJwtTokenReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 302:
 		result := NewGetLoginJwtTokenFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 400:
 		result := NewGetLoginJwtTokenBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetLoginJwtTokenInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -89,6 +85,10 @@ func (o *GetLoginJwtTokenBadRequest) Error() string {
 	return fmt.Sprintf("[GET /login/jwt/{token}][%d] getLoginJwtTokenBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *GetLoginJwtTokenBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetLoginJwtTokenBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -116,6 +116,10 @@ type GetLoginJwtTokenInternalServerError struct {
 
 func (o *GetLoginJwtTokenInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /login/jwt/{token}][%d] getLoginJwtTokenInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetLoginJwtTokenInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetLoginJwtTokenInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,13 +6,14 @@ package version_control
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new version control API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +25,27 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter) (*AddCommitOK, error)
+
+	GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter) (*GetBranchOK, error)
+
+	GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter) (*GetCheckpointOK, error)
+
+	GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitOK, error)
+
+	GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitHistoryOK, error)
+
+	GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrderOK, error)
+
+	UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBranchOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-AddCommit add commit API
+  AddCommit add commit API
 */
 func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter) (*AddCommitOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +69,18 @@ func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddCommitOK), nil
-
+	success, ok := result.(*AddCommitOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addCommit: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetBranch get branch API
+  GetBranch get branch API
 */
 func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter) (*GetBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -78,12 +104,18 @@ func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetBranchOK), nil
-
+	success, ok := result.(*GetBranchOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetCheckpoint get checkpoint API
+  GetCheckpoint get checkpoint API
 */
 func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter) (*GetCheckpointOK, error) {
 	// TODO: Validate the params before sending
@@ -107,12 +139,18 @@ func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetCheckpointOK), nil
-
+	success, ok := result.(*GetCheckpointOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getCheckpoint: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetCommit get commit API
+  GetCommit get commit API
 */
 func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitOK, error) {
 	// TODO: Validate the params before sending
@@ -136,12 +174,18 @@ func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetCommitOK), nil
-
+	success, ok := result.(*GetCommitOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getCommit: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetCommitHistory get commit history API
+  GetCommitHistory get commit history API
 */
 func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitHistoryOK, error) {
 	// TODO: Validate the params before sending
@@ -165,12 +209,53 @@ func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetCommitHistoryOK), nil
-
+	success, ok := result.(*GetCommitHistoryOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getCommitHistory: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-UpdateBranch update branch API
+  GetOrder get order API
+*/
+func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrderOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOrderParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getOrder",
+		Method:             "GET",
+		PathPattern:        "/vcs/commits/{commitID}/order",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetOrderReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetOrderOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrder: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  UpdateBranch update branch API
 */
 func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -194,8 +279,14 @@ func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateBranchOK), nil
-
+	success, ok := result.(*UpdateBranchOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updateBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

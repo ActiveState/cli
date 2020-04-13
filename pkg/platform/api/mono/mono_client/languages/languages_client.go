@@ -6,13 +6,14 @@ package languages
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new languages API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,19 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-AddLanguage creates a new builder language
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter) (*AddLanguageOK, error)
 
-Create a new language
+	ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLanguagesOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddLanguage creates a new builder language
+
+  Create a new language
 */
 func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter) (*AddLanguageOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +61,20 @@ func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddLanguageOK), nil
-
+	success, ok := result.(*AddLanguageOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addLanguage: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListLanguages lists of builder languages
+  ListLanguages lists of builder languages
 
-Retrieve a list of all valid builder languages
+  Retrieve a list of all valid builder languages
 */
 func (a *Client) ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLanguagesOK, error) {
 	// TODO: Validate the params before sending
@@ -82,8 +98,14 @@ func (a *Client) ListLanguages(params *ListLanguagesParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListLanguagesOK), nil
-
+	success, ok := result.(*ListLanguagesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listLanguages: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

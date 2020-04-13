@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteEmailReader is a Reader for the DeleteEmail structure.
@@ -25,35 +24,30 @@ type DeleteEmailReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteEmailReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteEmailOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewDeleteEmailBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteEmailForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewDeleteEmailNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewDeleteEmailInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -81,6 +75,10 @@ type DeleteEmailOK struct {
 
 func (o *DeleteEmailOK) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailOK  %+v", 200, o.Payload)
+}
+
+func (o *DeleteEmailOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -112,6 +110,10 @@ func (o *DeleteEmailBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *DeleteEmailBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -139,6 +141,10 @@ type DeleteEmailForbidden struct {
 
 func (o *DeleteEmailForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailForbidden  %+v", 403, o.Payload)
+}
+
+func (o *DeleteEmailForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -170,6 +176,10 @@ func (o *DeleteEmailNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailNotFound  %+v", 404, o.Payload)
 }
 
+func (o *DeleteEmailNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -197,6 +207,10 @@ type DeleteEmailInternalServerError struct {
 
 func (o *DeleteEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *DeleteEmailInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

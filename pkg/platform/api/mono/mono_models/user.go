@@ -8,14 +8,14 @@ package mono_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // User user
+//
 // swagger:model User
 type User struct {
 
@@ -213,11 +213,12 @@ func (m *User) UnmarshalBinary(b []byte) error {
 }
 
 // UserOrganizationsItems0 user organizations items0
+//
 // swagger:model UserOrganizationsItems0
 type UserOrganizationsItems0 struct {
 
-	// urlname
-	Urlname string `json:"URLname,omitempty"`
+	// u r lname
+	URLname string `json:"URLname,omitempty"`
 
 	// organization ID
 	// Format: uuid

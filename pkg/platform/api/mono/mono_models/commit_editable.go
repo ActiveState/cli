@@ -8,20 +8,20 @@ package mono_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CommitEditable commit editable
+//
 // swagger:model CommitEditable
 type CommitEditable struct {
 
 	// When resolving depdencies, updates made after this time will be ignored.
 	// Format: date-time
-	AtTime strfmt.DateTime `json:"atTime,omitempty"`
+	AtTime *strfmt.DateTime `json:"atTime,omitempty"`
 
 	// what changed in this commit
 	Changeset []*CommitChangeEditable `json:"changeset"`

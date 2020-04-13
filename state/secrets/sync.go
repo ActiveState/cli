@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -48,7 +48,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 		return failure
 	}
 
-	members, failure := model.FetchOrgMembers(org.Urlname)
+	members, failure := model.FetchOrgMembers(org.URLname)
 	if failure != nil {
 		return failure
 	}

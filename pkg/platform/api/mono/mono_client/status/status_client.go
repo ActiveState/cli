@@ -6,13 +6,14 @@ package status
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new status API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,25 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetInfo tests method for developer testing
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter) (*GetInfoOK, error)
 
-Helpful for testing JWT operation
+	ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter) (*ConfigFileOK, error)
+
+	ListActivities(params *ListActivitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListActivitiesOK, error)
+
+	PythonPlugins(params *PythonPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*PythonPluginsOK, error)
+
+	Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter) (*UsageOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetInfo tests method for developer testing
+
+  Helpful for testing JWT operation
 */
 func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter) (*GetInfoOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +67,20 @@ func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetInfoOK), nil
-
+	success, ok := result.(*GetInfoOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInfo: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ConfigFile downloads a sample config file
+  ConfigFile downloads a sample config file
 
-Your own personal config file
+  Your own personal config file
 */
 func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter) (*ConfigFileOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +93,7 @@ func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAut
 		Method:             "GET",
 		PathPattern:        "/config",
 		ProducesMediaTypes: []string{"text/plain"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &ConfigFileReader{formats: a.formats},
@@ -82,14 +104,20 @@ func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ConfigFileOK), nil
-
+	success, ok := result.(*ConfigFileOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for configFile: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListActivities recents s and c activity
+  ListActivities recents s and c activity
 
-List of recent user and application activity
+  List of recent user and application activity
 */
 func (a *Client) ListActivities(params *ListActivitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListActivitiesOK, error) {
 	// TODO: Validate the params before sending
@@ -102,7 +130,7 @@ func (a *Client) ListActivities(params *ListActivitiesParams, authInfo runtime.C
 		Method:             "GET",
 		PathPattern:        "/activities",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &ListActivitiesReader{formats: a.formats},
@@ -113,14 +141,20 @@ func (a *Client) ListActivities(params *ListActivitiesParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListActivitiesOK), nil
-
+	success, ok := result.(*ListActivitiesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listActivities: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-PythonPlugins availables python plugin installers
+  PythonPlugins availables python plugin installers
 
-Listing of available Python plugin installer files (sorted by version, descending)
+  Listing of available Python plugin installer files (sorted by version, descending)
 */
 func (a *Client) PythonPlugins(params *PythonPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*PythonPluginsOK, error) {
 	// TODO: Validate the params before sending
@@ -144,14 +178,20 @@ func (a *Client) PythonPlugins(params *PythonPluginsParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*PythonPluginsOK), nil
-
+	success, ok := result.(*PythonPluginsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for pythonPlugins: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-Usage reports platform usage statistics
+  Usage reports platform usage statistics
 
-Active users by date range
+  Active users by date range
 */
 func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter) (*UsageOK, error) {
 	// TODO: Validate the params before sending
@@ -175,8 +215,14 @@ func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWrite
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UsageOK), nil
-
+	success, ok := result.(*UsageOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for usage: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

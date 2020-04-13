@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditOrganizationLimitsReader is a Reader for the EditOrganizationLimits structure.
@@ -24,35 +23,30 @@ type EditOrganizationLimitsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditOrganizationLimitsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditOrganizationLimitsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditOrganizationLimitsBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditOrganizationLimitsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditOrganizationLimitsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditOrganizationLimitsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type EditOrganizationLimitsOK struct {
 
 func (o *EditOrganizationLimitsOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsOK  %+v", 200, o.Payload)
+}
+
+func (o *EditOrganizationLimitsOK) GetPayload() *mono_models.Limits {
+	return o.Payload
 }
 
 func (o *EditOrganizationLimitsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *EditOrganizationLimitsBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditOrganizationLimitsBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditOrganizationLimitsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type EditOrganizationLimitsForbidden struct {
 
 func (o *EditOrganizationLimitsForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditOrganizationLimitsForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditOrganizationLimitsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *EditOrganizationLimitsNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditOrganizationLimitsNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditOrganizationLimitsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type EditOrganizationLimitsInternalServerError struct {
 
 func (o *EditOrganizationLimitsInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditOrganizationLimitsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditOrganizationLimitsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

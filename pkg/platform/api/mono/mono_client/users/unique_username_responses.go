@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UniqueUsernameReader is a Reader for the UniqueUsername structure.
@@ -24,21 +23,18 @@ type UniqueUsernameReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UniqueUsernameReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUniqueUsernameOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUniqueUsernameBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewUniqueUsernameConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type UniqueUsernameOK struct {
 
 func (o *UniqueUsernameOK) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameOK  %+v", 200, o.Payload)
+}
+
+func (o *UniqueUsernameOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UniqueUsernameOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *UniqueUsernameBadRequest) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *UniqueUsernameBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *UniqueUsernameBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type UniqueUsernameConflict struct {
 
 func (o *UniqueUsernameConflict) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameConflict  %+v", 409, o.Payload)
+}
+
+func (o *UniqueUsernameConflict) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UniqueUsernameConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

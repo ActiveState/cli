@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
@@ -12,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 // FailUserNotFound is a failure due to the user not being found
@@ -74,16 +75,15 @@ func printCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 			return fail
 		}
 
-		out.Print("\n")
+		out.Print("")
 		out.Print(locale.Tr("history_commit", c.CommitID.String()))
 		out.Print(locale.Tr("history_author", username))
 		out.Print(locale.Tr("history_date", time.Time(c.Added).Format(constants.DateTimeFormatUser)))
 		if c.Message != "" {
 			out.Print(locale.Tr("history_description", c.Message))
 		}
-		out.Print("\n")
+		out.Print("")
 		out.Print(formatChanges(c))
-		out.Print("\n")
 	}
 
 	return nil

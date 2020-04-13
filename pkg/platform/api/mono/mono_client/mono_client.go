@@ -8,8 +8,7 @@ package mono_client
 import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/components"
@@ -73,43 +72,24 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 
 	cli := new(Mono)
 	cli.Transport = transport
-
 	cli.Authentication = authentication.New(transport, formats)
-
 	cli.Components = components.New(transport, formats)
-
 	cli.Identities = identities.New(transport, formats)
-
 	cli.Ingredients = ingredients.New(transport, formats)
-
 	cli.Invoices = invoices.New(transport, formats)
-
 	cli.Languages = languages.New(transport, formats)
-
 	cli.Licenses = licenses.New(transport, formats)
-
 	cli.Limits = limits.New(transport, formats)
-
 	cli.Organizations = organizations.New(transport, formats)
-
 	cli.Platforms = platforms.New(transport, formats)
-
 	cli.Projects = projects.New(transport, formats)
-
 	cli.S3 = s3.New(transport, formats)
-
 	cli.Scans = scans.New(transport, formats)
-
 	cli.Sessions = sessions.New(transport, formats)
-
 	cli.Status = status.New(transport, formats)
-
 	cli.Tiers = tiers.New(transport, formats)
-
 	cli.Users = users.New(transport, formats)
-
 	cli.VersionControl = version_control.New(transport, formats)
-
 	return cli
 }
 
@@ -154,41 +134,41 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // Mono is a client for mono
 type Mono struct {
-	Authentication *authentication.Client
+	Authentication authentication.ClientService
 
-	Components *components.Client
+	Components components.ClientService
 
-	Identities *identities.Client
+	Identities identities.ClientService
 
-	Ingredients *ingredients.Client
+	Ingredients ingredients.ClientService
 
-	Invoices *invoices.Client
+	Invoices invoices.ClientService
 
-	Languages *languages.Client
+	Languages languages.ClientService
 
-	Licenses *licenses.Client
+	Licenses licenses.ClientService
 
-	Limits *limits.Client
+	Limits limits.ClientService
 
-	Organizations *organizations.Client
+	Organizations organizations.ClientService
 
-	Platforms *platforms.Client
+	Platforms platforms.ClientService
 
-	Projects *projects.Client
+	Projects projects.ClientService
 
-	S3 *s3.Client
+	S3 s3.ClientService
 
-	Scans *scans.Client
+	Scans scans.ClientService
 
-	Sessions *sessions.Client
+	Sessions sessions.ClientService
 
-	Status *status.Client
+	Status status.ClientService
 
-	Tiers *tiers.Client
+	Tiers tiers.ClientService
 
-	Users *users.Client
+	Users users.ClientService
 
-	VersionControl *version_control.Client
+	VersionControl version_control.ClientService
 
 	Transport runtime.ClientTransport
 }
@@ -196,41 +176,22 @@ type Mono struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
-
 	c.Authentication.SetTransport(transport)
-
 	c.Components.SetTransport(transport)
-
 	c.Identities.SetTransport(transport)
-
 	c.Ingredients.SetTransport(transport)
-
 	c.Invoices.SetTransport(transport)
-
 	c.Languages.SetTransport(transport)
-
 	c.Licenses.SetTransport(transport)
-
 	c.Limits.SetTransport(transport)
-
 	c.Organizations.SetTransport(transport)
-
 	c.Platforms.SetTransport(transport)
-
 	c.Projects.SetTransport(transport)
-
 	c.S3.SetTransport(transport)
-
 	c.Scans.SetTransport(transport)
-
 	c.Sessions.SetTransport(transport)
-
 	c.Status.SetTransport(transport)
-
 	c.Tiers.SetTransport(transport)
-
 	c.Users.SetTransport(transport)
-
 	c.VersionControl.SetTransport(transport)
-
 }

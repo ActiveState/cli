@@ -8,14 +8,14 @@ package mono_models
 import (
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // CommitChangeEditable commit change editable
+//
 // swagger:model CommitChangeEditable
 type CommitChangeEditable struct {
 
@@ -33,7 +33,7 @@ type CommitChangeEditable struct {
 	VersionConstraint string `json:"version_constraint,omitempty"`
 
 	// version constraints
-	VersionConstraints Constraints `json:"version_constraints"`
+	VersionConstraints Constraints `json:"version_constraints,omitempty"`
 }
 
 // Validate validates this commit change editable

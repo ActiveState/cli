@@ -10,8 +10,7 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // ConfigFileReader is a Reader for the ConfigFile structure.
@@ -22,7 +21,6 @@ type ConfigFileReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ConfigFileReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewConfigFileOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -50,6 +48,10 @@ type ConfigFileOK struct {
 
 func (o *ConfigFileOK) Error() string {
 	return fmt.Sprintf("[GET /config][%d] configFileOK  %+v", 200, o.Payload)
+}
+
+func (o *ConfigFileOK) GetPayload() string {
+	return o.Payload
 }
 
 func (o *ConfigFileOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

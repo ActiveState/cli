@@ -6,13 +6,14 @@ package users
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new users API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,51 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-AddEmail creates new email for a user
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter) (*AddEmailOK, error)
 
-Create new email
+	AddUser(params *AddUserParams) (*AddUserOK, error)
+
+	DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEmailOK, error)
+
+	DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserOK, error)
+
+	EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserOK, error)
+
+	GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailVerificationLinkOK, error)
+
+	GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailsByUserOK, error)
+
+	GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetInvitationByCodeOK, error)
+
+	GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserOK, error)
+
+	GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserByIDOK, error)
+
+	ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInvitationsOK, error)
+
+	ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter) (*ListUsersOK, error)
+
+	SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchEmailsOK, error)
+
+	SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter) (*SearchUsernamesOK, error)
+
+	SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter) (*SendEmailVerificationOK, error)
+
+	SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter) (*SetPreferredEmailOK, error)
+
+	UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK, error)
+
+	VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter) (*VerifyEmailOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddEmail creates new email for a user
+
+  Create new email
 */
 func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter) (*AddEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +93,20 @@ func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddEmailOK), nil
-
+	success, ok := result.(*AddEmailOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addEmail: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-AddUser creates a new user
+  AddUser creates a new user
 
-Create a new user
+  Create a new user
 */
 func (a *Client) AddUser(params *AddUserParams) (*AddUserOK, error) {
 	// TODO: Validate the params before sending
@@ -81,14 +129,20 @@ func (a *Client) AddUser(params *AddUserParams) (*AddUserOK, error) {
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddUserOK), nil
-
+	success, ok := result.(*AddUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteEmail deletes email for a user
+  DeleteEmail deletes email for a user
 
-Delete email
+  Delete email
 */
 func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -112,14 +166,20 @@ func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteEmailOK), nil
-
+	success, ok := result.(*DeleteEmailOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteEmail: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteUser deletes a user
+  DeleteUser deletes a user
 
-Delete a user
+  Delete a user
 */
 func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserOK, error) {
 	// TODO: Validate the params before sending
@@ -132,7 +192,7 @@ func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAut
 		Method:             "DELETE",
 		PathPattern:        "/users/{username}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &DeleteUserReader{formats: a.formats},
@@ -143,14 +203,20 @@ func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteUserOK), nil
-
+	success, ok := result.(*DeleteUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EditUser edits a user
+  EditUser edits a user
 
-Edit a user record
+  Edit a user record
 */
 func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserOK, error) {
 	// TODO: Validate the params before sending
@@ -174,14 +240,20 @@ func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditUserOK), nil
-
+	success, ok := result.(*EditUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetEmailVerificationLink gets the verification link for the given unverified email
+  GetEmailVerificationLink gets the verification link for the given unverified email
 
-Returns the link needed to verify ownership of the provided email address, if it exists and is unverified. Only available to superusers.
+  Returns the link needed to verify ownership of the provided email address, if it exists and is unverified. Only available to superusers.
 */
 func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailVerificationLinkOK, error) {
 	// TODO: Validate the params before sending
@@ -205,14 +277,20 @@ func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetEmailVerificationLinkOK), nil
-
+	success, ok := result.(*GetEmailVerificationLinkOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getEmailVerificationLink: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetEmailsByUser retrieves a user s emails
+  GetEmailsByUser retrieves a user s emails
 
-Return a list of emails matching username
+  Return a list of emails matching username
 */
 func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailsByUserOK, error) {
 	// TODO: Validate the params before sending
@@ -225,7 +303,7 @@ func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime
 		Method:             "GET",
 		PathPattern:        "/users/{username}/emails",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetEmailsByUserReader{formats: a.formats},
@@ -236,14 +314,20 @@ func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetEmailsByUserOK), nil
-
+	success, ok := result.(*GetEmailsByUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getEmailsByUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetInvitationByCode returns the invitation with the corresponding code
+  GetInvitationByCode returns the invitation with the corresponding code
 
-Returns the invitation with the corresponding code
+  Returns the invitation with the corresponding code
 */
 func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetInvitationByCodeOK, error) {
 	// TODO: Validate the params before sending
@@ -256,7 +340,7 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 		Method:             "GET",
 		PathPattern:        "/invitations/code/{code}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetInvitationByCodeReader{formats: a.formats},
@@ -267,14 +351,20 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetInvitationByCodeOK), nil
-
+	success, ok := result.(*GetInvitationByCodeOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getInvitationByCode: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetUser retrieves a user record
+  GetUser retrieves a user record
 
-Return a specific user matching username
+  Return a specific user matching username
 */
 func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserOK, error) {
 	// TODO: Validate the params before sending
@@ -287,7 +377,7 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 		Method:             "GET",
 		PathPattern:        "/users/{username}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetUserReader{formats: a.formats},
@@ -298,14 +388,20 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetUserOK), nil
-
+	success, ok := result.(*GetUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetUserByID retrieves a user record by their user ID
+  GetUserByID retrieves a user record by their user ID
 
-Return a specific user matching user ID
+  Return a specific user matching user ID
 */
 func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserByIDOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +414,7 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 		Method:             "GET",
 		PathPattern:        "/users/id/{userID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetUserByIDReader{formats: a.formats},
@@ -329,14 +425,20 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetUserByIDOK), nil
-
+	success, ok := result.(*GetUserByIDOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getUserByID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListInvitations lists of pending invitations for an email address
+  ListInvitations lists of pending invitations for an email address
 
-Has this email address been invited to any orginzations
+  Has this email address been invited to any orginzations
 */
 func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInvitationsOK, error) {
 	// TODO: Validate the params before sending
@@ -360,14 +462,20 @@ func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListInvitationsOK), nil
-
+	success, ok := result.(*ListInvitationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listInvitations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListUsers lists of visible users
+  ListUsers lists of visible users
 
-Retrieve all users from the system that the user has access to
+  Retrieve all users from the system that the user has access to
 */
 func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter) (*ListUsersOK, error) {
 	// TODO: Validate the params before sending
@@ -391,12 +499,18 @@ func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListUsersOK), nil
-
+	success, ok := result.(*ListUsersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listUsers: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-SearchEmails Search for users by email address, requires superuser
+  SearchEmails Search for users by email address, requires superuser
 */
 func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchEmailsOK, error) {
 	// TODO: Validate the params before sending
@@ -420,12 +534,18 @@ func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SearchEmailsOK), nil
-
+	success, ok := result.(*SearchEmailsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for searchEmails: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-SearchUsernames Search for users, requires superuser
+  SearchUsernames Search for users, requires superuser
 */
 func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter) (*SearchUsernamesOK, error) {
 	// TODO: Validate the params before sending
@@ -449,14 +569,20 @@ func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SearchUsernamesOK), nil
-
+	success, ok := result.(*SearchUsernamesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for searchUsernames: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-SendEmailVerification sends a verification email to user
+  SendEmailVerification sends a verification email to user
 
-Send a verification email to user
+  Send a verification email to user
 */
 func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter) (*SendEmailVerificationOK, error) {
 	// TODO: Validate the params before sending
@@ -469,7 +595,7 @@ func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, auth
 		Method:             "POST",
 		PathPattern:        "/users/{username}/emails/{email}/verification/send",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &SendEmailVerificationReader{formats: a.formats},
@@ -480,14 +606,20 @@ func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SendEmailVerificationOK), nil
-
+	success, ok := result.(*SendEmailVerificationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for sendEmailVerification: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-SetPreferredEmail updates preferred email
+  SetPreferredEmail updates preferred email
 
-Update preferred email
+  Update preferred email
 */
 func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter) (*SetPreferredEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -500,7 +632,7 @@ func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo run
 		Method:             "PATCH",
 		PathPattern:        "/users/{username}/emails/{email}/preferred",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &SetPreferredEmailReader{formats: a.formats},
@@ -511,14 +643,20 @@ func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*SetPreferredEmailOK), nil
-
+	success, ok := result.(*SetPreferredEmailOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for setPreferredEmail: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-UniqueUsername checks if a username is already taken in the system
+  UniqueUsername checks if a username is already taken in the system
 
-Is the supplied username already assigned
+  Is the supplied username already assigned
 */
 func (a *Client) UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK, error) {
 	// TODO: Validate the params before sending
@@ -541,14 +679,20 @@ func (a *Client) UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UniqueUsernameOK), nil
-
+	success, ok := result.(*UniqueUsernameOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for uniqueUsername: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-VerifyEmail verifies the designated email
+  VerifyEmail verifies the designated email
 
-Verify the designated email
+  Verify the designated email
 */
 func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter) (*VerifyEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -561,7 +705,7 @@ func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientA
 		Method:             "POST",
 		PathPattern:        "/users/{username}/emails/{email}/verification/check",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &VerifyEmailReader{formats: a.formats},
@@ -572,8 +716,14 @@ func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*VerifyEmailOK), nil
-
+	success, ok := result.(*VerifyEmailOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for verifyEmail: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

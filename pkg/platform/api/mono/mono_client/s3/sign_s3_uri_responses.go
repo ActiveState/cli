@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SignS3URIReader is a Reader for the SignS3URI structure.
@@ -24,28 +23,24 @@ type SignS3URIReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *SignS3URIReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewSignS3URIOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewSignS3URIBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewSignS3URIForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewSignS3URIInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type SignS3URIOK struct {
 
 func (o *SignS3URIOK) Error() string {
 	return fmt.Sprintf("[GET /s3/sign/{URI}][%d] signS3UriOK  %+v", 200, o.Payload)
+}
+
+func (o *SignS3URIOK) GetPayload() *mono_models.SignedURI {
+	return o.Payload
 }
 
 func (o *SignS3URIOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *SignS3URIBadRequest) Error() string {
 	return fmt.Sprintf("[GET /s3/sign/{URI}][%d] signS3UriBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *SignS3URIBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *SignS3URIBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *SignS3URIForbidden) Error() string {
 	return fmt.Sprintf("[GET /s3/sign/{URI}][%d] signS3UriForbidden  %+v", 403, o.Payload)
 }
 
+func (o *SignS3URIForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *SignS3URIForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type SignS3URIInternalServerError struct {
 
 func (o *SignS3URIInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /s3/sign/{URI}][%d] signS3UriInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *SignS3URIInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SignS3URIInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

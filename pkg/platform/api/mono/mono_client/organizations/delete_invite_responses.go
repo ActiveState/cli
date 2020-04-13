@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteInviteReader is a Reader for the DeleteInvite structure.
@@ -24,28 +23,24 @@ type DeleteInviteReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteInviteReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteInviteOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewDeleteInviteForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewDeleteInviteNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewDeleteInviteInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type DeleteInviteOK struct {
 
 func (o *DeleteInviteOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteOK  %+v", 200, o.Payload)
+}
+
+func (o *DeleteInviteOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteInviteOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *DeleteInviteForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteForbidden  %+v", 403, o.Payload)
 }
 
+func (o *DeleteInviteForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteInviteForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *DeleteInviteNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteNotFound  %+v", 404, o.Payload)
 }
 
+func (o *DeleteInviteNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteInviteNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type DeleteInviteInternalServerError struct {
 
 func (o *DeleteInviteInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *DeleteInviteInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteInviteInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

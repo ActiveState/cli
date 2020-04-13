@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationTierReader is a Reader for the GetOrganizationTier structure.
@@ -24,28 +23,24 @@ type GetOrganizationTierReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOrganizationTierReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOrganizationTierOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetOrganizationTierForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewGetOrganizationTierNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetOrganizationTierInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type GetOrganizationTierOK struct {
 
 func (o *GetOrganizationTierOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierOK  %+v", 200, o.Payload)
+}
+
+func (o *GetOrganizationTierOK) GetPayload() *mono_models.Tier {
+	return o.Payload
 }
 
 func (o *GetOrganizationTierOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *GetOrganizationTierForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierForbidden  %+v", 403, o.Payload)
 }
 
+func (o *GetOrganizationTierForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationTierForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *GetOrganizationTierNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetOrganizationTierNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationTierNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type GetOrganizationTierInternalServerError struct {
 
 func (o *GetOrganizationTierInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetOrganizationTierInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetOrganizationTierInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

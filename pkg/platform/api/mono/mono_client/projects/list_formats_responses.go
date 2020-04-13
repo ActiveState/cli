@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListFormatsReader is a Reader for the ListFormats structure.
@@ -24,21 +23,18 @@ type ListFormatsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListFormatsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListFormatsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewListFormatsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewListFormatsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -68,6 +64,10 @@ func (o *ListFormatsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsOK  %+v", 200, o.Payload)
 }
 
+func (o *ListFormatsOK) GetPayload() []*mono_models.Format {
+	return o.Payload
+}
+
 func (o *ListFormatsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -93,6 +93,10 @@ type ListFormatsNotFound struct {
 
 func (o *ListFormatsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsNotFound  %+v", 404, o.Payload)
+}
+
+func (o *ListFormatsNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListFormatsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -122,6 +126,10 @@ type ListFormatsInternalServerError struct {
 
 func (o *ListFormatsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ListFormatsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListFormatsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

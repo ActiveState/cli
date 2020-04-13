@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetTiersPricingReader is a Reader for the GetTiersPricing structure.
@@ -24,28 +23,24 @@ type GetTiersPricingReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetTiersPricingReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetTiersPricingOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetTiersPricingForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewGetTiersPricingNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetTiersPricingInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -75,6 +70,10 @@ func (o *GetTiersPricingOK) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingOK  %+v", 200, o.Payload)
 }
 
+func (o *GetTiersPricingOK) GetPayload() []*mono_models.TierPricing {
+	return o.Payload
+}
+
 func (o *GetTiersPricingOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -100,6 +99,10 @@ type GetTiersPricingForbidden struct {
 
 func (o *GetTiersPricingForbidden) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetTiersPricingForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetTiersPricingForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -131,6 +134,10 @@ func (o *GetTiersPricingNotFound) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetTiersPricingNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetTiersPricingNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -158,6 +165,10 @@ type GetTiersPricingInternalServerError struct {
 
 func (o *GetTiersPricingInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetTiersPricingInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetTiersPricingInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
