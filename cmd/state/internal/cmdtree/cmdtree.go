@@ -44,8 +44,8 @@ func New(outputer output.Outputer) *CmdTree {
 		newPackagesAddCommand(),
 		newPackagesUpdateCommand(),
 		newPackagesRemoveCommand(),
+		newPackagesImportCommand(),
 		//Command.Append(SearchCommand)
-		//Command.Append(ImportCommand)
 	)
 
 	platformsCmd := newPlatformsCommand(outputer)

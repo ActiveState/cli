@@ -14,38 +14,44 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+const (
+	defaultImportFile = "requirements.txt"
+)
+
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
 	Confirm(msg string, defaultOpt bool) (bool, *failures.Failure)
 }
 
-// ChangesetProvider describes the behavior required to convert some file data into a changeset.
+// ChangesetProvider describes the behavior required to convert some file data
+// into a changeset.
 type ChangesetProvider interface {
 	Changeset([]byte) (model.Changeset, error)
 }
 
-type Import struct{}
-
-func NewImport() *Import {
-	return &Import{}
-}
-
-const (
-	defaultImportFile = "requirements.txt"
-)
-
-// ImportFlags holds the import-related flag values passed through the command line
+// ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
 	FileName string
 	Force    bool
 }
 
+// NewImportRunParams prepares the info required for running Import with default
+// values.
 func NewImportRunParams() *ImportRunParams {
 	return &ImportRunParams{
 		FileName: defaultImportFile,
 	}
 }
 
+// Import manages the importing execution context.
+type Import struct{}
+
+// NewImport prepares an importation execution context for use.
+func NewImport() *Import {
+	return &Import{}
+}
+
+// Run executes the import behavior.
 func (i *Import) Run(params ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
