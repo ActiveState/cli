@@ -6,25 +6,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/stretchr/testify/suite"
 )
 
 type InitIntegrationTestSuite struct {
 	suite.Suite
 }
-
-var (
-	testUser    = "test-user"
-	testProject = "test-project"
-	namespace   = fmt.Sprintf("%s/%s", testUser, testProject)
-	sampleYAML  = locale.T("sample_yaml", map[string]interface{}{
-		"Owner":   testUser,
-		"Project": testProject,
-	})
-)
 
 func (suite *InitIntegrationTestSuite) TestInit() {
 	suite.runInitTest(false, sampleYAML, "python3")
