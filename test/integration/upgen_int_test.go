@@ -31,7 +31,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 
 	archivePath := filepath.Join(root, "public/update", constants.BranchName, constants.Version, platform+ext)
-	suite.Require().FileExists(archivePath)
+	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
 	suite.T().Logf("file %s exists\n", archivePath)
 
 	tempPath, err := ioutil.TempDir("", "")
