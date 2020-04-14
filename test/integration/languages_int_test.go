@@ -60,13 +60,9 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp.Expect("3.6.6")
 	cp.ExpectExitCode(0)
 
-	// cp = ts.Spawn("languages", "update", "python")
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("languages", "update", "python"),
-		e2e.AppendEnv("VERBOSE=true"),
-	)
+	cp = ts.Spawn("languages", "update", "python")
 	// This can take a little while
-	cp.ExpectExitCode(1, 30*time.Second)
+	cp.ExpectExitCode(0, 60*time.Second)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
