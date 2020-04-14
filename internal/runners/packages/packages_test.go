@@ -3,8 +3,6 @@ package packages
 import (
 	"fmt"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
@@ -15,19 +13,24 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type PkgTestSuite struct {
-	suite.Suite
+var (
+	regNone = func() {}
+	yesErr  = true
+	noErr   = false
+)
+
+type dependencies struct {
 	apiMock   *apiMock.Mock
 	authMock  *authMock.Mock
 	invMock   *invMock.Mock
 	graphMock *graphMock.Mock
 }
 
-func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
-	suite.apiMock = apiMock.Init()
-	suite.invMock = invMock.Init()
-	suite.authMock = authMock.Init()
-	suite.graphMock = graphMock.Init()
+func (ds *dependencies) setUp() {
+	ds.apiMock = apiMock.Init()
+	ds.invMock = invMock.Init()
+	ds.authMock = authMock.Init()
+	ds.graphMock = graphMock.Init()
 
 	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 	pjfile := projectfile.Project{
@@ -36,16 +39,16 @@ func (suite *PkgTestSuite) BeforeTest(suiteName, testName string) {
 	pjfile.Persist()
 
 	httpmock.Register("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001")
-	suite.authMock.MockLoggedin()
-	suite.invMock.MockIngredientsByName()
-	suite.apiMock.MockCommit()
-	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
-	suite.graphMock.Checkpoint(graphMock.NoOptions)
+	ds.authMock.MockLoggedin()
+	ds.invMock.MockIngredientsByName()
+	ds.apiMock.MockCommit()
+	ds.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
+	ds.graphMock.Checkpoint(graphMock.NoOptions)
 }
 
-func (suite *PkgTestSuite) AfterTest(suiteName, testName string) {
-	suite.invMock.Close()
-	suite.apiMock.Close()
-	suite.authMock.Close()
-	suite.graphMock.Close()
+func (ds *dependencies) cleanUp() {
+	ds.invMock.Close()
+	ds.apiMock.Close()
+	ds.authMock.Close()
+	ds.graphMock.Close()
 }
