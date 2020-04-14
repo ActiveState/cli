@@ -99,9 +99,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	time.Sleep(time.Second * 2) // let CI env catch up
 
 	project := projectfile.Get()
-	i, script := constraints.MostSpecificUnconstrainedScript("test-script", project.Scripts)
+	i := constraints.MostSpecificUnconstrainedScript("test-script", project.Scripts)
 	suite.Require().GreaterOrEqual(0, i)
-	suite.Contains(script.Value, "more info!")
+	suite.Contains(project.Scripts[i].Value, "more info!")
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

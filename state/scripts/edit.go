@@ -328,7 +328,7 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 	}
 
 	projectFile := project.Get().Source()
-	i, _ := constraints.MostSpecificUnconstrainedScript(EditArgs.Name, projectFile.Scripts)
+	i := constraints.MostSpecificUnconstrainedScript(EditArgs.Name, projectFile.Scripts)
 	if i < 0 { // no script found
 		return nil
 	}

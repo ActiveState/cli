@@ -147,11 +147,11 @@ func PlatformExpander(name string, meta string, isFunction bool, project *Projec
 func EventExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
 
-	i, ev := constraints.MostSpecificUnconstrainedEvent(name, projectFile.Events)
+	i := constraints.MostSpecificUnconstrainedEvent(name, projectFile.Events)
 	if i < 0 {
 		return "", nil
 	}
-	return ev.Value, nil
+	return projectFile.Events[i].Value, nil
 }
 
 // ScriptExpander expands scripts defined in the project-file.
@@ -189,9 +189,9 @@ func expandPath(name string, script *Script) (string, *failures.Failure) {
 // ConstantExpander expands constants defined in the project-file.
 func ConstantExpander(name string, meta string, isFunction bool, project *Project) (string, *failures.Failure) {
 	projectFile := project.Source()
-	i, c := constraints.MostSpecificUnconstrainedConstant(name, projectFile.Constants)
+	i := constraints.MostSpecificUnconstrainedConstant(name, projectFile.Constants)
 	if i < 0 {
 		return "", nil
 	}
-	return c.Value, nil
+	return projectFile.Constants[i].Value, nil
 }

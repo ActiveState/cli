@@ -612,11 +612,8 @@ func TestMostSpecificUnconstrainedEvent(t *testing.T) {
 				Constraints: mockConstraint(true, "TEST_ENV"),
 			})
 
-			index, ev := MostSpecificUnconstrainedEvent(c.Item, items)
+			index := MostSpecificUnconstrainedEvent(c.Item, items)
 			assert.Equal(t, c.Index, index)
-			if c.Index != -1 {
-				assert.Equal(t, &items[c.Index], ev)
-			}
 		})
 	}
 }
@@ -649,11 +646,8 @@ func TestMostSpecificUnconstrainedConstant(t *testing.T) {
 				Constraints: mockConstraint(true, "TEST_ENV"),
 			})
 
-			index, ev := MostSpecificUnconstrainedConstant(c.Item, items)
+			index := MostSpecificUnconstrainedConstant(c.Item, items)
 			assert.Equal(t, c.Index, index)
-			if c.Index != -1 {
-				assert.Equal(t, items[c.Index], ev)
-			}
 		})
 	}
 }
@@ -686,11 +680,8 @@ func TestMostSpecificUnconstrainedScript(t *testing.T) {
 				Constraints: mockConstraint(true, "TEST_ENV"),
 			})
 
-			index, ev := MostSpecificUnconstrainedScript(c.Item, items)
+			index := MostSpecificUnconstrainedScript(c.Item, items)
 			assert.Equal(t, c.Index, index)
-			if c.Index != -1 {
-				assert.Equal(t, &items[c.Index], ev)
-			}
 		})
 	}
 }

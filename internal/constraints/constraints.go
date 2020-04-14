@@ -437,9 +437,8 @@ func FilterUnconstrainedSecrets(secrets []*projectfile.Secret) []*projectfile.Se
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntity) (int, projectfile.ConstrainedEntity) {
+func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntity) int {
 	var maxSpecificity int = -1
-	var value projectfile.ConstrainedEntity
 	var index int = -1
 
 	for i, item := range items {
@@ -448,58 +447,48 @@ func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntit
 		if item.ID() == name && !constrained {
 			if specificity > maxSpecificity {
 				maxSpecificity = specificity
-				value = item
 				index = i
 			}
 		}
 	}
-	return index, value
+	return index
 }
 
 // MostSpecificUnconstrainedEvent searches for events named name and returns the
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrainedEvent(name string, events []projectfile.Event) (int, *projectfile.Event) {
+func MostSpecificUnconstrainedEvent(name string, events []projectfile.Event) int {
 	items := make([]projectfile.ConstrainedEntity, 0, len(events))
 	for i := range events {
 		items = append(items, &events[i])
 	}
-	i, v := MostSpecificUnconstrained(name, items)
-	if v == nil {
-		return i, nil
-	}
-	return i, v.(*projectfile.Event)
+	i := MostSpecificUnconstrained(name, items)
+	return i
 }
 
 // MostSpecificUnconstrainedConstant searches for constants named name and returns the
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrainedConstant(name string, constants []*projectfile.Constant) (int, *projectfile.Constant) {
+func MostSpecificUnconstrainedConstant(name string, constants []*projectfile.Constant) int {
 	items := make([]projectfile.ConstrainedEntity, 0, len(constants))
 	for _, c := range constants {
 		items = append(items, c)
 	}
-	i, v := MostSpecificUnconstrained(name, items)
-	if v == nil {
-		return i, nil
-	}
-	return i, v.(*projectfile.Constant)
+	i := MostSpecificUnconstrained(name, items)
+	return i
 }
 
 // MostSpecificUnconstrainedScript searches for scripts named name and returns the
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrainedScript(name string, scripts []projectfile.Script) (int, *projectfile.Script) {
+func MostSpecificUnconstrainedScript(name string, scripts []projectfile.Script) int {
 	items := make([]projectfile.ConstrainedEntity, 0, len(scripts))
 	for i := range scripts {
 		items = append(items, &scripts[i])
 	}
-	i, v := MostSpecificUnconstrained(name, items)
-	if v == nil {
-		return i, nil
-	}
-	return i, v.(*projectfile.Script)
+	i := MostSpecificUnconstrained(name, items)
+	return i
 }
