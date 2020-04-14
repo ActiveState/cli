@@ -15,7 +15,7 @@ constants:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      GOFLAGS='-mod=vendor'
+      GOFLAGS='-mod=vendor' 
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
