@@ -189,6 +189,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		}
 	}
 
+	tmpRelocFile := filepath.Join(tmpRuntimeDir, archiveName, "support/reloc.txt")
+	if fileutils.FileExists(tmpRelocFile) {
+		target := filepath.Join(installDir, "support/reloc.txt")
+		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
+			return fail
+		}
+		if err := os.Rename(tmpRelocFile, target); err != nil {
+			return FailRuntimeInstallation.Wrap(err)
+		}
+	}
+
 	if err := os.RemoveAll(tmpRuntimeDir); err != nil {
 		logging.Error("removing %s after unpacking runtime: %v", tmpRuntimeDir, err)
 		return FailRuntimeInstallation.New("installer_err_runtime_rm_installdir", tmpRuntimeDir)
@@ -222,6 +233,9 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
+			if inRelocationFile(metaData, p) {
+				return true
+			}
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
 				return true
