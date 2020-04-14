@@ -17,9 +17,8 @@ import (
 )
 
 var (
-	regNone = func() {}
-	yesErr  = true
-	noErr   = false
+	yesErr = true
+	noErr  = false
 )
 
 type dependencies struct {
