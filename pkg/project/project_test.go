@@ -125,9 +125,16 @@ func (suite *ProjectTestSuite) TestEvents() {
 
 func (suite *ProjectTestSuite) TestLanguages() {
 	languages := suite.project.Languages()
-	suite.Equal(2, len(languages), "Should match 1 out of three constrained items")
+	suite.Equal(2, len(languages), "Should match 2 out of three constrained items")
 
-	lang := languages[0]
+	var lang *project.Language
+	// ignore packages language
+	for i := 0; i < len(languages); i++ {
+		if languages[i].Name() == "packages" {
+			continue
+		}
+		lang = languages[i]
+	}
 	name := lang.Name()
 	version := lang.Version()
 	id := lang.ID()
