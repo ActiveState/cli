@@ -71,6 +71,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
+	replaceBytesLen := len(replaceBytes)
 
 	regexExpandBytes := []byte("${1}")
 	replaceBytes = append(replaceBytes, regexExpandBytes...)
@@ -82,11 +83,12 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		// Replacement regex for binary files must account for null characters
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, find))
-		if len(replaceBytes) > len(findBytes) {
+		quoteEscapeFind := regexp.QuoteMeta(find)
+		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
+		if replaceBytesLen > len(findBytes) {
 			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return errors.New("replacement text cannot be longer than search text in a binary file")
-		} else if len(findBytes) > len(replaceBytes) {
+		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
 			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
