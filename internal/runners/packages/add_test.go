@@ -8,7 +8,7 @@ import (
 	"github.com/kami-zh/go-capturer"
 )
 
-func TestRun(t *testing.T) {
+func TestAdd(t *testing.T) {
 	deps := &dependencies{}
 	regCommitError := func() {
 		httpmock.RegisterWithCode("PUT", "/vcs/branch/00010001-0001-0001-0001-000100010001", 404)
