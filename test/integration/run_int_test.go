@@ -9,12 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type RunIntegrationTestSuite struct {
@@ -34,7 +35,7 @@ scripts:
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
-        go build -o ./interrupt .
+        go build -o ./interrupt ./interrupt.go
         ./interrupt
     constraints:
         os: linux,macos
@@ -42,7 +43,7 @@ scripts:
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
-        go build -o .\interrupt.exe .
+        go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
     constraints:
         os: windows
