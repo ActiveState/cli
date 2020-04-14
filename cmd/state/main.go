@@ -10,6 +10,8 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/thoas/go-funk"
 
+	survey "gopkg.in/AlecAivazis/survey.v1/core"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
@@ -27,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	survey "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -266,7 +267,7 @@ func handlePanics(exiter func(int)) {
 
 func autoUpdate(args []string) (updated bool, resultVersion string) {
 	switch {
-	case (condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"):
+	case condition.InTest() || strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true":
 		return false, ""
 	case funk.Contains(args, "update"):
 		// Don't auto-update if we're 'state update'ing
