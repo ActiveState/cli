@@ -460,13 +460,16 @@ func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntit
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrainedEvent(name string, events []projectfile.Event) (int, projectfile.Event) {
+func MostSpecificUnconstrainedEvent(name string, events []projectfile.Event) (int, *projectfile.Event) {
 	items := make([]projectfile.ConstrainedEntity, 0, len(events))
-	for _, ev := range events {
-		items = append(items, ev)
+	for i := range events {
+		items = append(items, &events[i])
 	}
 	i, v := MostSpecificUnconstrained(name, items)
-	return i, v.(projectfile.Event)
+	if v == nil {
+		return i, nil
+	}
+	return i, v.(*projectfile.Event)
 }
 
 // MostSpecificUnconstrainedConstant searches for constants named name and returns the
@@ -479,6 +482,9 @@ func MostSpecificUnconstrainedConstant(name string, constants []*projectfile.Con
 		items = append(items, c)
 	}
 	i, v := MostSpecificUnconstrained(name, items)
+	if v == nil {
+		return i, nil
+	}
 	return i, v.(*projectfile.Constant)
 }
 
@@ -486,11 +492,14 @@ func MostSpecificUnconstrainedConstant(name string, constants []*projectfile.Con
 // unconstrained with the most specific constraint definition (if it exists).
 // It also returns the index of the found item in the list (which is -1 if none
 // could be found)
-func MostSpecificUnconstrainedScript(name string, scripts []projectfile.Script) (int, projectfile.Script) {
+func MostSpecificUnconstrainedScript(name string, scripts []projectfile.Script) (int, *projectfile.Script) {
 	items := make([]projectfile.ConstrainedEntity, 0, len(scripts))
-	for _, s := range scripts {
-		items = append(items, s)
+	for i := range scripts {
+		items = append(items, &scripts[i])
 	}
 	i, v := MostSpecificUnconstrained(name, items)
-	return i, v.(projectfile.Script)
+	if v == nil {
+		return i, nil
+	}
+	return i, v.(*projectfile.Script)
 }
