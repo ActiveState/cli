@@ -148,11 +148,36 @@ func (em *pathErrorMatcher) Match(v interface{}) bool {
 	if !ok {
 		return false
 	}
-	return *pathError == em.pathError
+	expected := em.pathError
+	if expected.Path == "" {
+		expected.Path = pathError.Path
+	}
+	return *pathError == expected
 }
 
 func (em *pathErrorMatcher) Criteria() interface{} {
 	return em.pathError
+}
+
+type oneOfMatcher struct {
+	options ExpectOpts
+}
+
+func (om *oneOfMatcher) Match(v interface{}) bool {
+	for _, matcher := range om.options.Matchers {
+		if matcher.Match(v) {
+			return true
+		}
+	}
+	return false
+}
+
+func (om *oneOfMatcher) Criteria() interface{} {
+	var criterias []interface{}
+	for _, matcher := range om.options.Matchers {
+		criterias = append(criterias, matcher.Criteria())
+	}
+	return criterias
 }
 
 // stringMatcher fulfills the Matcher interface to match strings against a given
@@ -315,4 +340,34 @@ func PTSClosed(opts *ExpectOpts) error {
 		},
 	})
 	return nil
+}
+
+// StdinClosed adds an Expect condition to exit if we read from
+// stdin after it has been closed which can occur on Windows while
+// reading from the Pseudo-terminal after it is closed
+func StdinClosed(opts *ExpectOpts) error {
+	opts.Matchers = append(opts.Matchers, &pathErrorMatcher{
+		pathError: os.PathError{
+			Op:   "read",
+			Path: "",
+			Err:  os.ErrClosed,
+		},
+	})
+	return nil
+}
+
+func OneOf(expectOpts ...ExpectOpt) ExpectOpt {
+	return func(opts *ExpectOpts) error {
+		var options ExpectOpts
+		for _, opt := range expectOpts {
+			if err := opt(&options); err != nil {
+				return err
+			}
+		}
+
+		opts.Matchers = append(opts.Matchers, &oneOfMatcher{
+			options: options,
+		})
+		return nil
+	}
 }

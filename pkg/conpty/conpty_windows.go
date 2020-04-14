@@ -171,9 +171,7 @@ func (c *ConPty) Spawn(argv0 string, argv []string, attr *syscall.ProcAttr) (pid
 		dirp, // use current directory later: dirp,
 		&c.startupInfo.startupInfo,
 		pi)
-	/*ev, err := windows.WaitForSingleObject(pi.Process, 20000)
-	fmt.Printf("event was: %d\n", ev)
-	*/
+
 	if err != nil {
 		fmt.Printf("error creating process: %v", err)
 	}

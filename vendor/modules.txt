@@ -10,12 +10,12 @@ github.com/ActiveState/go-colortext
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200318232021-f47d9f74532c
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/vt10x v0.0.0-20191029051734-cc7690d8c8ba
+# github.com/ActiveState/vt10x v1.1.0
 github.com/ActiveState/vt10x
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
-# github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
+# github.com/Netflix/go-expect v0.0.0-20200312175327-da48e75238e2
 github.com/Netflix/go-expect
 # github.com/PuerkitoBio/purell v1.1.0
 github.com/PuerkitoBio/purell
@@ -33,6 +33,7 @@ github.com/asaskevich/govalidator
 # github.com/autarch/testify v1.2.2
 github.com/autarch/testify/assert
 github.com/autarch/testify/mock
+github.com/autarch/testify/require
 # github.com/aws/aws-sdk-go v1.13.8
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/awserr
@@ -66,7 +67,7 @@ github.com/aws/aws-sdk-go/service/sts
 github.com/blang/semver
 # github.com/bndr/gotabulate v0.0.0-20170315142410-bc555436bfd5
 github.com/bndr/gotabulate
-# github.com/creack/pty v1.1.7
+# github.com/creack/pty v1.1.9
 github.com/creack/pty
 # github.com/dave/jennifer v0.18.0
 github.com/dave/jennifer/jen
@@ -214,8 +215,6 @@ github.com/nicksnyder/go-i18n/i18n/language
 github.com/nicksnyder/go-i18n/i18n/translation
 # github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae
 github.com/nwaples/rardecode
-# github.com/pborman/ansi v0.0.0-20160920233902-86f499584b0a
-github.com/pborman/ansi
 # github.com/pelletier/go-toml v1.1.0
 github.com/pelletier/go-toml
 # github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
@@ -364,7 +363,7 @@ google.golang.org/appengine/internal/socket
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/socket
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20200408120641-fbb3ad325eb7
+# google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/cloud/secretmanager/v1
 google.golang.org/genproto/googleapis/iam/v1

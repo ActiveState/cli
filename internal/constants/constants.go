@@ -63,9 +63,6 @@ const PrivateKeyEnvVarName = "ACTIVESTATE_PRIVATE_KEY"
 // APIKeyEnvVarName is the name of the environment variable that specifies the API Key to use for api authentication (overriding user config).
 const APIKeyEnvVarName = "ACTIVESTATE_API_KEY"
 
-// GcloudProjectEnvVarName is the name of the environment variable that specifies the credentials file for gcloud
-const GcloudProjectEnvVarName = "GOOGLE_APPLICATION_PROJECT"
-
 // APIHostEnvVarName is the name of the environment variable that specifies the API host, specifying this overrides the activestate.yaml api url config
 const APIHostEnvVarName = "ACTIVESTATE_API_HOST"
 

@@ -16,11 +16,13 @@ package expect
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"time"
 	"unicode/utf8"
 
@@ -157,23 +159,35 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	}
 
 	var pty *xpty.Xpty
-	pty, err := xpty.Open(80, 30)
+	// On Windows we are adding an extra row, because the last row appears to be empty usually
+	rows := uint16(30)
+	if runtime.GOOS == "windows" {
+		rows = 31
+	}
+	pty, err := xpty.Open(80, rows)
 	if err != nil {
 		return nil, err
 	}
 	closers := append(options.Closers)
 
-	passthroughPipe := NewPassthroughPipe(pty.TerminalOutPipe())
+	c := &Console{
+		opts: options,
+		Pty:  pty,
+	}
+	passthroughPipe := NewPassthroughPipe(c)
 
 	closers = append(options.Closers, passthroughPipe)
+	c.passthroughPipe = passthroughPipe
 
-	c := &Console{
-		opts:            options,
-		Pty:             pty,
-		passthroughPipe: passthroughPipe,
-		runeReader:      bufio.NewReaderSize(passthroughPipe, utf8.UTFMax),
-		closers:         closers,
-	}
+	// We provide a generous 10kB buffer for the rune-reader, because when the buffer is full,
+	// the writer gets blocked.  In our case the writer is ultimately the terminal output pipe,
+	// ie., the pseudo-terminal.  It seems OS dependent on how the pseudo-terminal reacts when
+	// it cannot write anymore:
+	// On Linux and Windows, bytes seem to be discarded, whereas MacOS just blocks the entire process.
+	// If expected strings cannot be matched because of missing bytes, consider increasing the buffer
+	// size even more, or switching to a `bytes.Buffer`.
+	c.runeReader = bufio.NewReaderSize(passthroughPipe, 10*1024)
+	c.closers = closers
 
 	for _, stdin := range options.Stdins {
 		go func(stdin io.Reader) {
@@ -197,8 +211,27 @@ func (c *Console) Tty() *os.File {
 // Drain reads from the input stream until it catches up with the incoming stream off data.
 // This function can unblock the writer, if no further reads from the passthrough pipe are
 // needed
-func (c *Console) Drain() {
-	c.passthroughPipe.Drain()
+func (c *Console) Drain(t time.Duration, buf *bytes.Buffer) error {
+	writer := io.MultiWriter(append(c.opts.Stdouts, buf)...)
+	runeWriter := bufio.NewWriterSize(writer, utf8.UTFMax)
+
+	c.passthroughPipe.SetReadDeadline(time.Now().Add(t))
+	for {
+		r, _, err := c.runeReader.ReadRune()
+		if err != nil {
+			return err
+		}
+		_, err = runeWriter.WriteRune(r)
+		if err != nil {
+			return err
+		}
+
+		// Immediately flush rune to the underlying writers.
+		err = runeWriter.Flush()
+		if err != nil {
+			return err
+		}
+	}
 }
 
 // Read reads bytes b from Console's tty.
@@ -208,9 +241,9 @@ func (c *Console) Read(b []byte) (int, error) {
 		return n, err
 	}
 
-	bs, err := c.opts.ReadBufMutation(b)
-	nc := copy(b, bs)
-	return nc, err
+	bs, err := c.opts.ReadBufMutation(b[:n])
+	copy(b[0:len(bs)], bs)
+	return len(bs), err
 }
 
 // Write writes bytes b to Console's tty.
@@ -225,8 +258,13 @@ func (c *Console) Fd() uintptr {
 	return c.Pty.TerminalOutFd()
 }
 
-// Close closes Console's tty. Calling Close will unblock Expect and ExpectEOF.
-func (c *Console) Close() error {
+// CloseTTY closes Console's tty. Calling CloseTTY will unblock Expect and ExpectEOF.
+func (c *Console) CloseTTY() error {
+	// close the tty in the end
+	return c.Pty.Close()
+}
+
+func (c *Console) CloseReaders() error {
 	for _, fd := range c.closers {
 		err := fd.Close()
 		if err != nil {
@@ -234,8 +272,20 @@ func (c *Console) Close() error {
 		}
 	}
 
-	// close the tty in the end
-	return c.Pty.Close()
+	return c.passthroughPipe.Close()
+}
+
+// Close closes both the TTY and afterwards all the readers
+// You may want to split this up to give the readers time to read all the data
+// until they reach the EOF error
+func (c *Console) Close() error {
+	err := c.CloseTTY()
+	if err != nil {
+		c.Logf("failed to close TTY: %v", err)
+	}
+
+	// close the readers reading from the TTY
+	return c.CloseReaders()
 }
 
 // Send writes string s to Console's tty.

@@ -9,17 +9,25 @@ scripts:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+      function goOS() {
+        local goos
+        goos=${1-$(go env GOHOSTOS)}
+        [[ ! ${goos} =~ ^(windows|darwin|linux)$ ]] && >&2 echo "'${goos}' is not a supported build target" && return 2
+        echo ${goos}
+      }
       function outFile() {
-        local goos=${2-$(go env GOHOSTOS)}
-        [[ ! $goos =~ ^(windows|darwin|linux)$ ]] && >&2 echo "'$goos' is not a supported build target" && return 2
-        local out=./build/state
-        [[ $goos == windows ]] && out=${out}.exe
+        local goos out
+        goos=$(goOS ${1}) || return $?
+        out=./build/state
+        [[ ${goos} == windows ]] && out=${out}.exe
         echo ${out}
       }
       function buildProject() {
-        local type=${1-internal}
+        local type goos out
+        type=${1-internal}
         [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "'$type' is not a supported build type" && return 2
-        local out=`outFile`
+        goos=$(goOS ${2}) || return $?
+        out=$(outFile ${2}) || return $?
         export GOOS=$goos
         eval go build -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
         unset GOOS
@@ -45,8 +53,9 @@ scripts:
     description: Generate update files
     value: |
       $scripts.preprocess
+      outfile=$(outFile) || exit $?
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update `outFile`
+      go run scripts/update-generator/main.go -o public/update ${outfile}
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |

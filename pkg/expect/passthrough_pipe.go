@@ -2,7 +2,7 @@ package expect
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"time"
 )
@@ -13,15 +13,11 @@ type errPassthroughTimeout struct {
 
 func (errPassthroughTimeout) Timeout() bool { return true }
 
-// bufsize is the size of the PassthroughPipe channel
-const bufsize = 1024
-
 // PassthroughPipe pipes data from a io.Reader and allows setting a read
 // deadline. If a timeout is reached the error is returned, otherwise the error
 // from the provided io.Reader returned is passed through instead.
 type PassthroughPipe struct {
-	pipeC    chan byte
-	errC     chan error
+	rdr      io.Reader
 	deadline time.Time
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -29,41 +25,17 @@ type PassthroughPipe struct {
 
 // NewPassthroughPipe returns a new pipe for a io.Reader that passes through
 // non-timeout errors.
-func NewPassthroughPipe(r io.Reader) (p *PassthroughPipe) {
+func NewPassthroughPipe(r io.Reader) *PassthroughPipe {
 	ctx, cancel := context.WithCancel(context.Background())
-	p = &PassthroughPipe{
-		pipeC:    make(chan byte, bufsize),
-		errC:     make(chan error, 0),
+
+	p := PassthroughPipe{
+		rdr:      r,
 		deadline: time.Now(),
 		ctx:      ctx,
 		cancel:   cancel,
 	}
-	go func() {
-		defer close(p.pipeC)
-		defer close(p.errC)
-		buf := make([]byte, bufsize)
-	readLoop:
-		for {
-			n, err := r.Read(buf)
 
-			if err != nil {
-				// break on error or context timeout (note, that error channel blocks unless there is a reader (buffer size 0)
-				select {
-				case p.errC <- err:
-				case <-ctx.Done():
-				}
-				break readLoop
-			}
-			for _, b := range buf[:n] {
-				// forward the byte into the pipe channel, unless context times out
-				select {
-				case p.pipeC <- b:
-				case <-ctx.Done():
-				}
-			}
-		}
-	}()
-	return p
+	return &p
 }
 
 // SetReadDeadline sets a deadline for a successful read
@@ -73,64 +45,61 @@ func (p *PassthroughPipe) SetReadDeadline(d time.Time) {
 
 // Close releases all resources allocated by the pipe
 func (p *PassthroughPipe) Close() error {
+	p.Drain()
 	p.cancel()
 	return nil
 }
 
 // Drain flushes the pipe by consuming all the data written to it
 func (p *PassthroughPipe) Drain() {
-
-	buf := make([]byte, bufsize)
-
+	buf := make([]byte, 1<<5)
 	for {
-		n := p.consume(0, buf)
-		if n == 0 {
+		n, err := p.rdr.Read(buf)
+		if n == 0 || err != nil {
 			return
 		}
 	}
-
 }
 
-func (p *PassthroughPipe) consume(nStart int, buf []byte) int {
-	ni := nStart
-	for ; ni < len(buf); ni++ {
-		select {
-		case b := <-p.pipeC:
-			buf[ni] = b
-		default:
-			return ni
-		}
-	}
-	return ni
+type chunk struct {
+	size int
+	err  error
 }
 
 // Read reads from the PassthroughPipe and errors out if no data has been written to the pipe before the read deadline expired
+// If read is called after the PassthroughPipe has been closed `0, io.EOF` is returned
 func (p *PassthroughPipe) Read(buf []byte) (n int, err error) {
+	cs := make(chan chunk)
+	done := make(chan struct{})
+	defer close(done)
 
-	if time.Now().After(p.deadline) {
-		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
-	}
+	go func() {
+		defer close(cs)
 
-	// fill buffer with bytes that are already waiting in pipe channel
-	n = p.consume(0, buf)
-	if n > 0 {
-		return n, nil
-	}
+		select {
+		case <-done:
+			return
+		default:
+		}
 
-	// block until we read a byte, receive an error or time out
+		n, err := p.rdr.Read(buf)
+
+		select {
+		case <-done:
+			return
+		default:
+			cs <- chunk{n, err}
+		}
+	}()
+
 	select {
-	case b := <-p.pipeC:
-		buf[0] = b
-	case e := <-p.errC:
-		return 0, e
+	case c := <-cs:
+		return c.size, c.err
+
+	case <-p.ctx.Done():
+		return 0, io.EOF
+
 	case <-time.After(p.deadline.Sub(time.Now())):
-		// force stop consuming
-		p.cancel()
-		return 0, &errPassthroughTimeout{fmt.Errorf("i/o timeout")}
+		return 0, &errPassthroughTimeout{errors.New("passthrough i/o timeout")}
 	}
-
-	// fill up buf or until the pipe channel is drained
-	n = p.consume(1, buf)
-
-	return n, nil
 }

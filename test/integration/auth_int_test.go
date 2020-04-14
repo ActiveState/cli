@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 var uid uuid.UUID
@@ -25,74 +25,39 @@ func init() {
 }
 
 type AuthIntegrationTestSuite struct {
-	integration.Suite
-	username string
-	password string
-	email    string
-}
-
-func (suite *AuthIntegrationTestSuite) SetupTest() {
-	suite.Suite.SetupTest()
-
-	suite.username = fmt.Sprintf("user-%s", uid.String()[0:8])
-	suite.password = suite.username
-	suite.email = fmt.Sprintf("%s@test.tld", suite.username)
+	suite.Suite
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	suite.signup()
-	suite.logout()
-	suite.login()
-	suite.logout()
-	suite.loginFlags()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	username := ts.CreateNewUser()
+	ts.LogoutUser()
+	suite.interactiveLogin(ts, username)
+	ts.LogoutUser()
+	suite.loginFlags(ts, username)
 }
 
-func (suite *AuthIntegrationTestSuite) signup() {
-	suite.Spawn("auth", "signup")
-	defer suite.Stop()
-
-	suite.Expect("username:")
-	suite.SendLine(suite.username)
-	suite.Expect("password:")
-	suite.SendLine(suite.password)
-	suite.Expect("again:")
-	suite.SendLine(suite.password)
-	suite.Expect("name:")
-	suite.SendLine(suite.username)
-	suite.Expect("email:")
-	suite.SendLine(suite.email)
-	suite.Expect("account has been registered", 30*time.Second)
-	suite.Wait()
-}
-
-func (suite *AuthIntegrationTestSuite) logout() {
-	suite.Spawn("auth", "logout")
-	defer suite.Stop()
-
-	suite.Expect("You have been logged out")
-	suite.Wait()
-}
-
-func (suite *AuthIntegrationTestSuite) login() {
-	suite.Spawn("auth")
-	suite.Expect("username:")
-	suite.SendLine(suite.username)
-	suite.Expect("password:")
-	suite.SendLine(suite.password)
-	suite.Expect("successfully authenticated", 20*time.Second)
-	suite.Wait()
+func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
+	cp := ts.Spawn("auth")
+	cp.Expect("username:")
+	cp.SendLine(username)
+	cp.Expect("password:")
+	cp.SendLine(username)
+	cp.Expect("successfully authenticated", 20*time.Second)
+	cp.ExpectExitCode(0)
 
 	// still logged in?
-	suite.Spawn("auth")
-	suite.Expect("You are logged in")
-	suite.Wait()
+	c2 := ts.Spawn("auth")
+	c2.Expect("You are logged in")
+	c2.ExpectExitCode(0)
 }
 
-func (suite *AuthIntegrationTestSuite) loginFlags() {
-	suite.Spawn("auth", "--username", suite.username, "--password", "bad-password")
-	suite.Expect("Authentication failed")
-	suite.Expect("You are not authorized, did you provide valid login credentials?")
-	suite.Wait()
+func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
+	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
+	cp.Expect("Authentication failed")
+	cp.Expect("You are not authorized, did you provide valid login credentials?")
+	cp.ExpectExitCode(1)
 }
 
 type userJSON struct {
@@ -112,11 +77,15 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
 
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
 	expected := string(data)
-	suite.LoginAsPersistentUser()
-	suite.Spawn("auth", "--output", method)
-	suite.Expect("false}")
-	suite.Equal(fmt.Sprintf("%s", string(expected)), suite.UnsyncedTrimSpaceOutput())
+	ts.LoginAsPersistentUser()
+	cp := ts.Spawn("auth", "--output", method)
+	cp.Expect("false}")
+	cp.ExpectExitCode(0)
+	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {

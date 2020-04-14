@@ -9,26 +9,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 )
 
 type RunIntegrationTestSuite struct {
-	integration.Suite
-	tmpDirCleanup func()
+	suite.Suite
 }
 
-func (suite *RunIntegrationTestSuite) createProjectFile(projectDir string) {
-
-	var err error
+func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 	interruptScript := filepath.Join(root, "test", "integration", "assets", "run", "interrupt.go")
-	fileutils.CopyFile(interruptScript, filepath.Join(projectDir, "interrupt.go"))
+	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`
@@ -61,44 +57,28 @@ scripts:
     constraints:
       os: windows
 `)
-	projectfile.Reset()
-	projectFile := &projectfile.Project{}
-	err = yaml.Unmarshal([]byte(configFileContent), projectFile)
-	suite.Require().NoError(err)
-
-	projectFile.SetPath(filepath.Join(projectDir, constants.ConfigFileName))
-	fail := projectFile.Save()
-	suite.Require().NoError(fail.ToError())
-
-	suite.SetWd(projectDir)
+	ts.PrepareActiveStateYAML(configFileContent)
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
-	suite.Suite.SetupTest()
 	if runtime.GOOS == "windows" {
 		if _, err := exec.LookPath("bash"); err != nil {
 			suite.T().Skip("This test requires a bash shell in your PATH")
 		}
 	}
-	tmpDir, cleanup := suite.PrepareTemporaryWorkingDirectory("RunIntegrationTestSuite")
-	suite.tmpDirCleanup = cleanup
-
-	suite.createProjectFile(tmpDir)
 }
 
 func (suite *RunIntegrationTestSuite) TearDownTest() {
-	suite.Suite.TearDownTest()
-	suite.tmpDirCleanup()
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *conproc.ConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
-		suite.Expect("Terminate batch job")
+		cp.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
-		suite.SendLine("N")
-		suite.Expect("N", 500*time.Millisecond)
+		cp.SendLine("N")
+		cp.Expect("N", 500*time.Millisecond)
 	}
 }
 
@@ -106,65 +86,82 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob() {
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
 
-	suite.Spawn("activate")
-	suite.Expect("Activating state: ActiveState-CLI/Python3")
-	suite.WaitForInput(10 * time.Second)
+	suite.createProjectFile(ts)
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
 
-	suite.SendLine(fmt.Sprintf("%s run test-interrupt", suite.Executable()))
-	suite.Expect("Start of script", 5*time.Second)
-	suite.SendCtrlC()
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.SendCtrlC()
-	suite.expectTerminateBatchJob()
+	cp := ts.Spawn("activate")
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.WaitForInput(10 * time.Second)
 
-	suite.SendLine("exit 0")
-	suite.ExpectExitCode(0)
+	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
+	cp.Expect("Start of script", 5*time.Second)
+	cp.SendCtrlC()
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.SendCtrlC()
+	suite.expectTerminateBatchJob(cp)
+
+	cp.SendLine("exit 0")
+	cp.ExpectExitCode(0)
 	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "not printed after second interrupt",
+		cp.TrimmedSnapshot(), "not printed after second interrupt",
 	)
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
 
-	suite.Spawn("run", "test-interrupt")
-	suite.Expect("Start of script")
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("run", "test-interrupt")
+	cp.Expect("Start of script")
 	// interrupt the first (very long) sleep
-	suite.SendCtrlC()
+	cp.SendCtrlC()
 
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.Expect("After second sleep")
-	suite.expectTerminateBatchJob()
-	suite.ExpectExitCode(0)
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.Expect("After second sleep")
+	suite.expectTerminateBatchJob(cp)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.LoginAsPersistentUser()
-	defer suite.LogoutUser()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
 
-	suite.Spawn("run", "test-interrupt")
-	suite.Expect("Start of script")
-	suite.SendCtrlC()
-	suite.Expect("received interrupt", 3*time.Second)
-	suite.Expect("After first sleep or interrupt", 2*time.Second)
-	suite.SendCtrlC()
-	suite.expectTerminateBatchJob()
-	suite.ExpectExitCode(123)
+	ts.LoginAsPersistentUser()
+	defer ts.LogoutUser()
+
+	cp := ts.Spawn("run", "test-interrupt")
+	cp.Expect("Start of script")
+	cp.SendCtrlC()
+	cp.Expect("received interrupt", 3*time.Second)
+	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.SendCtrlC()
+	suite.expectTerminateBatchJob(cp)
+	cp.ExpectExitCode(123)
 	suite.Require().NotContains(
-		suite.TerminalSnapshot(), "not printed after second interrupt",
+		cp.TrimmedSnapshot(), "not printed after second interrupt",
 	)
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
-	suite.Spawn("run", "-h")
-	suite.Expect("Usage")
-	suite.Expect("Arguments")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.createProjectFile(ts)
+
+	cp := ts.Spawn("run", "-h")
+	cp.Expect("Usage")
+	cp.Expect("Arguments")
+	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {

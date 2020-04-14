@@ -11,11 +11,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/testhelpers/integration"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/pkg/expect/conproc"
 )
 
 type UpdateGenIntegrationTestSuite struct {
-	integration.Suite
+	suite.Suite
 }
 
 func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
@@ -31,24 +32,28 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	archivePath := filepath.Join(root, "public/update", constants.BranchName, constants.Version, platform+ext)
 	suite.Require().FileExists(archivePath)
+	suite.T().Logf("file %s exists\n", archivePath)
 
 	tempPath, err := ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	var cp *conproc.ConsoleProcess
+
 	if runtime.GOOS == "windows" {
-		suite.SpawnCustom("powershell.exe", "-nologo", "-noprofile", "-command",
+		cp = ts.SpawnCmd("powershell.exe", "-nologo", "-noprofile", "-command",
 			fmt.Sprintf("Expand-Archive -Path '%s' -DestinationPath '%s'", archivePath, tempPath))
 	} else {
-		suite.SpawnCustom("tar", "-C", tempPath, "-xf", archivePath)
+		cp = ts.SpawnCmd("tar", "-C", tempPath, "-xf", archivePath)
 	}
 
-	ps, err := suite.Wait()
-	suite.Require().NoError(err)
-	suite.Equal(0, ps.ExitCode(), "Exits with code 0")
+	cp.ExpectExitCode(0)
 
-	suite.SpawnCustom(filepath.Join(tempPath, platform+exe), "--version")
-	suite.Expect(constants.RevisionHashShort)
-	suite.Wait()
+	cp = ts.SpawnCmd(filepath.Join(tempPath, platform+exe), "--version")
+	cp.Expect(constants.RevisionHashShort)
+	cp.ExpectExitCode(0)
 }
 
 func TestUpdateGenIntegrationTestSuite(t *testing.T) {
