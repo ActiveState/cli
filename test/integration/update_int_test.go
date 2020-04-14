@@ -19,37 +19,50 @@ type UpdateIntegrationTestSuite struct {
 	suite.Suite
 }
 
-var envs e2e.SpawnOptions
+type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
 
-func (suite *UpdateIntegrationTestSuite) SetupTest() {
-	envs = e2e.AppendEnv(
+func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
+	env := []string{
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
-		"ACTIVESTATE_CLI_UPDATE_BRANCH=master")
+		"ACTIVESTATE_CLI_UPDATE_BRANCH=master",
+	}
+
+	if disableUpdates {
+		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=true")
+	} else {
+		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
+	}
+
+	return env
 }
 
-func (suite *UpdateIntegrationTestSuite) getVersion(ts *e2e.Session, extraEnv ...string) string {
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), envs, e2e.AppendEnv(extraEnv...))
+func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(disableUpdates)...))
 	cp.Expect("ActiveState CLI version ")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	return regex.FindString(cp.TrimmedSnapshot())
+	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
+
+	suite.GreaterOrEqual(len(resultVersions), 1,
+		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
+	)
+
+	_ = matcher(expected, resultVersions[len(resultVersions)-1], fmt.Sprintf("Version could not be matched, output:\n\n%s", cp.Snapshot()))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	extraEnv := "ACTIVESTATE_CLI_DISABLE_UPDATES=true"
-	suite.NotEqual(constants.VersionNumber, suite.getVersion(ts, extraEnv), "Versions should match as auto-update should not have occurred")
+	suite.versionCompare(ts, true, constants.VersionNumber, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	extraEnv := "ACTIVESTATE_CLI_DISABLE_UPDATES=false"
-	suite.NotEqual(constants.VersionNumber, suite.getVersion(ts, extraEnv), "Versions shouldn't match as auto-update should have occurred")
+	suite.versionCompare(ts, false, constants.VersionNumber, suite.NotEqual)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
@@ -63,24 +76,22 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save()
 
-	extraEnv := "ACTIVESTATE_CLI_DISABLE_UPDATES=false"
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "--lock"),
-		e2e.AppendEnv(extraEnv),
+		e2e.AppendEnv(suite.env(false)...),
 	)
 
 	cp.Expect("Version locked at")
 	cp.ExpectExitCode(0)
 
-	suite.NotEqual(constants.VersionNumber, suite.getVersion(ts, extraEnv), "Versions should match because locking is enabled")
+	suite.versionCompare(ts, false, constants.VersionNumber, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	extraEnv := "ACTIVESTATE_CLI_DISABLE_UPDATES=true"
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(extraEnv))
+	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...))
 	// on master branch, we might already have the latest version available
 	if os.Getenv("GIT_BRANCH") == "master" {
 		cp.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
@@ -88,9 +99,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 		cp.Expect("Update completed", 60*time.Second)
 	}
 	cp.ExpectExitCode(0)
-	fmt.Println("Version after update: ", suite.getVersion(ts))
 
-	suite.NotEqual(constants.VersionNumber, suite.getVersion(ts), "Versions shouldn't match as we ran update")
+	suite.versionCompare(ts, false, constants.VersionNumber, suite.NotEqual)
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
