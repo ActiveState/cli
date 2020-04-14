@@ -40,9 +40,7 @@ func executeAddUpdate(language, name, version string, operation model.Operation)
 		return fail.WithDescription("package_ingredient_err")
 	}
 	if ingredient == nil {
-		print.Error(locale.T("package_ingredient_not_found"))
-		// TODO: use reasonable error
-		return errors.New("unreasonable message")
+		return errors.New(locale.T("package_ingredient_not_found"))
 	}
 
 	// Commit the package
