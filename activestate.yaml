@@ -119,7 +119,10 @@ scripts:
     standalone: true
   - name: integration-tests
     description: Runs integration tests.
-    value: go test ./test/integration
+    value: |
+      unset ACTIVESTATE_ACTIVATED
+      go test ./pkg/expect ./internal/testhelpers/e2e
+      go test ./test/integration -v
   - name: clean
     description: Cleans out the build dir.
     value: |
