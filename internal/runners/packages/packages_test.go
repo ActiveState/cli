@@ -2,6 +2,8 @@ package packages
 
 import (
 	"fmt"
+	"strings"
+	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
@@ -9,6 +11,7 @@ import (
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/kami-zh/go-capturer"
 
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -51,4 +54,31 @@ func (ds *dependencies) cleanUp() {
 	ds.apiMock.Close()
 	ds.authMock.Close()
 	ds.graphMock.Close()
+}
+
+func handleTest(t *testing.T, run func() error, wantContains string, wantErr bool) {
+	deps := &dependencies{}
+	deps.setUp()
+	defer deps.cleanUp()
+
+	var err error
+	out := capturer.CaptureOutput(func() {
+		err = run()
+	})
+	if !wantErr && err != nil {
+		t.Errorf("got %v, want nil", err)
+		return
+	}
+
+	if wantErr {
+		if err == nil {
+			t.Errorf("got nil, want err")
+			return
+		}
+		out = err.Error()
+	}
+
+	if !strings.Contains(out, wantContains) {
+		t.Errorf("got %s, want (contains) %s", out, wantContains)
+	}
 }
