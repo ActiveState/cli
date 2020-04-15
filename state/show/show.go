@@ -124,7 +124,9 @@ func printEvents(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	es := constraints.FilterUnconstrainedEvents(project.Events)
+	es := projectfile.MakeEventsFromConstrainedEntities(
+		constraints.FilterUnconstrained(project.Events.AsConstrainedEntities()),
+	)
 	for _, event := range es {
 		rows = append(rows, []interface{}{event.Name})
 	}
@@ -139,7 +141,9 @@ func printScripts(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	scripts := constraints.FilterUnconstrainedScripts(project.Scripts)
+	scripts := projectfile.MakeScriptsFromConstrainedEntities(
+		constraints.FilterUnconstrained(project.Scripts.AsConstrainedEntities()),
+	)
 	for _, script := range scripts {
 		rows = append(rows, []interface{}{script.Name, script.Description})
 	}
@@ -154,7 +158,9 @@ func printLanguages(project *projectfile.Project) {
 	}
 
 	rows := [][]interface{}{}
-	languages := constraints.FilterUnconstrainedLanguages(project.Languages)
+	languages := projectfile.MakeLanguagesFromConstrainedEntities(
+		constraints.FilterUnconstrained(project.Languages.AsConstrainedEntities()),
+	)
 	for _, language := range languages {
 		rows = append(rows, []interface{}{language.Name, language.Version})
 	}

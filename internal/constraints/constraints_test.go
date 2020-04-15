@@ -365,7 +365,7 @@ func mockConstraint(unconstrained bool, env ...string) projectfile.Constraint {
 	return projectfile.Constraint{beConstrained, "", ""}
 }
 
-func TestFilterUnconstrainedEvents(t *testing.T) {
+func TestFilterUnconstrained(t *testing.T) {
 	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
 	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
 	cases := []struct {
@@ -382,7 +382,7 @@ func TestFilterUnconstrainedEvents(t *testing.T) {
 	for _, c := range cases {
 
 		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Event, 0, 4)
+			items := make(projectfile.Events, 0, 4)
 			for i := 0; i < 3; i++ {
 				items = append(items, projectfile.Event{
 					Name:        fmt.Sprintf("event%d", i),
@@ -396,7 +396,9 @@ func TestFilterUnconstrainedEvents(t *testing.T) {
 				})
 			}
 
-			res := FilterUnconstrainedEvents(items)
+			res := projectfile.MakeEventsFromConstrainedEntities(
+				FilterUnconstrained(items.AsConstrainedEntities()),
+			)
 			expected := make([]*projectfile.Event, 0, len(c.Selected))
 			for _, ii := range c.Selected {
 				expected = append(expected, &items[ii])
@@ -410,181 +412,7 @@ func TestFilterUnconstrainedEvents(t *testing.T) {
 	}
 }
 
-func TestFilterUnconstrainedLanguages(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Selected []int
-	}{
-		{"all selected", []int{0, 1, 2}},
-		{"none selected", []int{}},
-		{"one selected", []int{1}},
-	}
-
-	for _, c := range cases {
-
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Language, 0, 3)
-			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Language{
-					Name:        fmt.Sprintf("event%d", i),
-					Constraints: mockConstraint(sliceContains(c.Selected, i)),
-				})
-			}
-
-			res := FilterUnconstrainedLanguages(items)
-			expected := make([]*projectfile.Language, 0, len(c.Selected))
-			for _, ii := range c.Selected {
-				expected = append(expected, &items[ii])
-			}
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Name < res[j].Name
-			})
-			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
-			assert.Equal(tt, expected, res, "select unconstrained items")
-		})
-	}
-}
-
-func TestFilterUnconstrainedScripts(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Selected []int
-	}{
-		{"all selected", []int{0, 1, 2}},
-		{"none selected", []int{}},
-		{"one selected", []int{1}},
-	}
-
-	for _, c := range cases {
-
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Script, 0, 3)
-			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Script{
-					Name:        fmt.Sprintf("event%d", i),
-					Constraints: mockConstraint(sliceContains(c.Selected, i)),
-				})
-			}
-
-			res := FilterUnconstrainedScripts(items)
-			expected := make([]*projectfile.Script, 0, len(c.Selected))
-			for _, ii := range c.Selected {
-				expected = append(expected, &items[ii])
-			}
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Name < res[j].Name
-			})
-			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
-			assert.Equal(tt, expected, res, "select unconstrained items")
-		})
-	}
-}
-func TestFilterUnconstrainedConstants(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Selected []int
-	}{
-		{"all selected", []int{0, 1, 2}},
-		{"none selected", []int{}},
-		{"one selected", []int{1}},
-	}
-
-	for _, c := range cases {
-
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]*projectfile.Constant, 0, 3)
-			for i := 0; i < 3; i++ {
-				items = append(items, &projectfile.Constant{
-					Name:        fmt.Sprintf("event%d", i),
-					Constraints: mockConstraint(sliceContains(c.Selected, i)),
-				})
-			}
-
-			res := FilterUnconstrainedConstants(items)
-			expected := make([]*projectfile.Constant, 0, len(c.Selected))
-			for _, ii := range c.Selected {
-				expected = append(expected, items[ii])
-			}
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Name < res[j].Name
-			})
-			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
-			assert.Equal(tt, expected, res, "select unconstrained items")
-		})
-	}
-}
-
-func TestFilterUnconstrainedSecrets(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Selected []int
-	}{
-		{"all selected", []int{0, 1, 2}},
-		{"none selected", []int{}},
-		{"one selected", []int{1}},
-	}
-
-	for _, c := range cases {
-
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]*projectfile.Secret, 0, 3)
-			for i := 0; i < 3; i++ {
-				items = append(items, &projectfile.Secret{
-					Name:        fmt.Sprintf("secret%d", i),
-					Constraints: mockConstraint(sliceContains(c.Selected, i)),
-				})
-			}
-
-			res := FilterUnconstrainedSecrets(items)
-			expected := make([]*projectfile.Secret, 0, len(c.Selected))
-			for _, ii := range c.Selected {
-				expected = append(expected, items[ii])
-			}
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Name < res[j].Name
-			})
-			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
-			assert.Equal(tt, expected, res, "select unconstrained items")
-		})
-	}
-}
-
-func TestFilterUnconstrainedPackages(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Selected []int
-	}{
-		{"all selected", []int{0, 1, 2}},
-		{"none selected", []int{}},
-		{"one selected", []int{1}},
-	}
-
-	for _, c := range cases {
-
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Package, 0, 3)
-			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Package{
-					Name:        fmt.Sprintf("event%d", i),
-					Constraints: mockConstraint(sliceContains(c.Selected, i)),
-				})
-			}
-
-			res := FilterUnconstrainedPackages(items)
-			expected := make([]*projectfile.Package, 0, len(c.Selected))
-			for _, ii := range c.Selected {
-				expected = append(expected, &items[ii])
-			}
-			sort.Slice(res, func(i, j int) bool {
-				return res[i].Name < res[j].Name
-			})
-			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
-			assert.Equal(tt, expected, res, "select unconstrained items")
-		})
-	}
-}
-
-func TestMostSpecificUnconstrainedEvent(t *testing.T) {
+func TestMostSpecificUnconstrained(t *testing.T) {
 	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
 	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
 
@@ -600,7 +428,7 @@ func TestMostSpecificUnconstrainedEvent(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Event, 0, 4)
+			items := make(projectfile.Events, 0, 4)
 			for i := 0; i < 3; i++ {
 				items = append(items, projectfile.Event{
 					Name:        fmt.Sprintf("event%d", i),
@@ -612,75 +440,7 @@ func TestMostSpecificUnconstrainedEvent(t *testing.T) {
 				Constraints: mockConstraint(true, "TEST_ENV"),
 			})
 
-			index := MostSpecificUnconstrainedEvent(c.Item, items)
-			assert.Equal(t, c.Index, index)
-		})
-	}
-}
-
-func TestMostSpecificUnconstrainedConstant(t *testing.T) {
-	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
-	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
-
-	cases := []struct {
-		Name  string
-		Item  string
-		Index int
-	}{
-		{"select most specific", "Constant0", 3},
-		{"select none", "none", -1},
-		{"select simple", "Constant1", 1},
-	}
-
-	for _, c := range cases {
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]*projectfile.Constant, 0, 4)
-			for i := 0; i < 3; i++ {
-				items = append(items, &projectfile.Constant{
-					Name:        fmt.Sprintf("Constant%d", i),
-					Constraints: mockConstraint(true),
-				})
-			}
-			items = append(items, &projectfile.Constant{
-				Name:        "Constant0",
-				Constraints: mockConstraint(true, "TEST_ENV"),
-			})
-
-			index := MostSpecificUnconstrainedConstant(c.Item, items)
-			assert.Equal(t, c.Index, index)
-		})
-	}
-}
-
-func TestMostSpecificUnconstrainedScript(t *testing.T) {
-	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
-	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
-
-	cases := []struct {
-		Name  string
-		Item  string
-		Index int
-	}{
-		{"select most specific", "Script0", 3},
-		{"select none", "none", -1},
-		{"select simple", "Script1", 1},
-	}
-
-	for _, c := range cases {
-		t.Run(c.Name, func(tt *testing.T) {
-			items := make([]projectfile.Script, 0, 4)
-			for i := 0; i < 3; i++ {
-				items = append(items, projectfile.Script{
-					Name:        fmt.Sprintf("Script%d", i),
-					Constraints: mockConstraint(true),
-				})
-			}
-			items = append(items, projectfile.Script{
-				Name:        "Script0",
-				Constraints: mockConstraint(true, "TEST_ENV"),
-			})
-
-			index := MostSpecificUnconstrainedScript(c.Item, items)
+			index := MostSpecificUnconstrained(c.Item, items.AsConstrainedEntities())
 			assert.Equal(t, c.Index, index)
 		})
 	}

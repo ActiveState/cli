@@ -48,7 +48,9 @@ func (p *Project) Platforms() []*Platform {
 
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
-	ls := constraints.FilterUnconstrainedLanguages(p.projectfile.Languages)
+	ls := projectfile.MakeLanguagesFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Languages.AsConstrainedEntities()),
+	)
 	languages := []*Language{}
 	for _, l := range ls {
 		languages = append(languages, &Language{l, p})
@@ -58,7 +60,9 @@ func (p *Project) Languages() []*Language {
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
-	cs := constraints.FilterUnconstrainedConstants(p.projectfile.Constants)
+	cs := projectfile.MakeConstantsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Constants.AsConstrainedEntities()),
+	)
 	constants := []*Constant{}
 	for _, c := range cs {
 		constants = append(constants, &Constant{c, p})
@@ -83,13 +87,17 @@ func (p *Project) Secrets() []*Secret {
 		return secrets
 	}
 	if p.projectfile.Secrets.User != nil {
-		secs := constraints.FilterUnconstrainedSecrets(p.projectfile.Secrets.User)
+		secs := projectfile.MakeSecretsFromConstrainedEntities(
+			constraints.FilterUnconstrained(p.projectfile.Secrets.User.AsConstrainedEntities()),
+		)
 		for _, s := range secs {
 			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
-		secs := constraints.FilterUnconstrainedSecrets(p.projectfile.Secrets.Project)
+		secs := projectfile.MakeSecretsFromConstrainedEntities(
+			constraints.FilterUnconstrained(p.projectfile.Secrets.Project.AsConstrainedEntities()),
+		)
 		for _, secret := range secs {
 			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
 		}
@@ -109,7 +117,9 @@ func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
 
 // Events returns a reference to projectfile.Events
 func (p *Project) Events() []*Event {
-	es := constraints.FilterUnconstrainedEvents(p.projectfile.Events)
+	es := projectfile.MakeEventsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Events.AsConstrainedEntities()),
+	)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
 		events = append(events, &Event{e, p})
@@ -119,7 +129,9 @@ func (p *Project) Events() []*Event {
 
 // Scripts returns a reference to projectfile.Scripts
 func (p *Project) Scripts() []*Script {
-	scs := constraints.FilterUnconstrainedScripts(p.projectfile.Scripts)
+	scs := projectfile.MakeScriptsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Scripts.AsConstrainedEntities()),
+	)
 	scripts := make([]*Script, 0, len(scs))
 	for _, s := range scs {
 		scripts = append(scripts, &Script{s, p})
@@ -355,7 +367,10 @@ func (l *Language) Build() *Build {
 
 // Packages returned are constrained set
 func (l *Language) Packages() []Package {
-	ps := constraints.FilterUnconstrainedPackages(l.language.Packages)
+
+	ps := projectfile.MakePackagesFromConstrainedEntities(
+		constraints.FilterUnconstrained(l.language.Packages.AsConstrainedEntities()),
+	)
 	validPackages := make([]Package, 0, len(ps))
 	for _, pkg := range ps {
 		validPackages = append(validPackages, Package{pkg: pkg, project: l.project})
