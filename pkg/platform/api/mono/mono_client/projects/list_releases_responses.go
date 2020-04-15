@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListReleasesReader is a Reader for the ListReleases structure.
@@ -24,14 +23,12 @@ type ListReleasesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListReleasesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListReleasesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewListReleasesNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *ListReleasesOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases][%d] listReleasesOK  %+v", 200, o.Payload)
 }
 
+func (o *ListReleasesOK) GetPayload() []*mono_models.Release {
+	return o.Payload
+}
+
 func (o *ListReleasesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -86,6 +87,10 @@ type ListReleasesNotFound struct {
 
 func (o *ListReleasesNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases][%d] listReleasesNotFound  %+v", 404, o.Payload)
+}
+
+func (o *ListReleasesNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListReleasesNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

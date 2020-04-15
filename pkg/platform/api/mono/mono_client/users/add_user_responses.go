@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddUserReader is a Reader for the AddUser structure.
@@ -24,28 +23,24 @@ type AddUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddUserBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddUserConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddUserInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type AddUserOK struct {
 
 func (o *AddUserOK) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserOK  %+v", 200, o.Payload)
+}
+
+func (o *AddUserOK) GetPayload() *mono_models.JWT {
+	return o.Payload
 }
 
 func (o *AddUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *AddUserBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddUserBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *AddUserConflict) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddUserConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddUserConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type AddUserInternalServerError struct {
 
 func (o *AddUserInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddUserInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -9,8 +9,7 @@ import (
 	"fmt"
 
 	"github.com/go-openapi/runtime"
-
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // LoginWithGithubReader is a Reader for the LoginWithGithub structure.
@@ -21,7 +20,6 @@ type LoginWithGithubReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *LoginWithGithubReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 302:
 		result := NewLoginWithGithubFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {

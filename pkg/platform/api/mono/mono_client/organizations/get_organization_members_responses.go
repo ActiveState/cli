@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationMembersReader is a Reader for the GetOrganizationMembers structure.
@@ -24,28 +23,24 @@ type GetOrganizationMembersReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOrganizationMembersReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOrganizationMembersOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetOrganizationMembersForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewGetOrganizationMembersNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetOrganizationMembersInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -75,6 +70,10 @@ func (o *GetOrganizationMembersOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersOK  %+v", 200, o.Payload)
 }
 
+func (o *GetOrganizationMembersOK) GetPayload() []*mono_models.Member {
+	return o.Payload
+}
+
 func (o *GetOrganizationMembersOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -100,6 +99,10 @@ type GetOrganizationMembersForbidden struct {
 
 func (o *GetOrganizationMembersForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetOrganizationMembersForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetOrganizationMembersForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -131,6 +134,10 @@ func (o *GetOrganizationMembersNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetOrganizationMembersNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationMembersNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -158,6 +165,10 @@ type GetOrganizationMembersInternalServerError struct {
 
 func (o *GetOrganizationMembersInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetOrganizationMembersInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetOrganizationMembersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

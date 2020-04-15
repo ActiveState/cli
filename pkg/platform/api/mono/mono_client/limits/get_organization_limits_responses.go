@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationLimitsReader is a Reader for the GetOrganizationLimits structure.
@@ -24,28 +23,24 @@ type GetOrganizationLimitsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOrganizationLimitsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOrganizationLimitsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetOrganizationLimitsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewGetOrganizationLimitsNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetOrganizationLimitsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type GetOrganizationLimitsOK struct {
 
 func (o *GetOrganizationLimitsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsOK  %+v", 200, o.Payload)
+}
+
+func (o *GetOrganizationLimitsOK) GetPayload() *mono_models.Limits {
+	return o.Payload
 }
 
 func (o *GetOrganizationLimitsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *GetOrganizationLimitsForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsForbidden  %+v", 403, o.Payload)
 }
 
+func (o *GetOrganizationLimitsForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationLimitsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *GetOrganizationLimitsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetOrganizationLimitsNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationLimitsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type GetOrganizationLimitsInternalServerError struct {
 
 func (o *GetOrganizationLimitsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetOrganizationLimitsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetOrganizationLimitsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIdentitiesReader is a Reader for the ListIdentities structure.
@@ -24,7 +23,6 @@ type ListIdentitiesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListIdentitiesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListIdentitiesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,6 +50,10 @@ type ListIdentitiesOK struct {
 
 func (o *ListIdentitiesOK) Error() string {
 	return fmt.Sprintf("[GET /identities][%d] listIdentitiesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListIdentitiesOK) GetPayload() []*mono_models.Identity {
+	return o.Payload
 }
 
 func (o *ListIdentitiesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

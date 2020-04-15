@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetProjectByIDReader is a Reader for the GetProjectByID structure.
@@ -24,21 +23,18 @@ type GetProjectByIDReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetProjectByIDReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetProjectByIDOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetProjectByIDNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetProjectByIDInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetProjectByIDOK struct {
 
 func (o *GetProjectByIDOK) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdOK  %+v", 200, o.Payload)
+}
+
+func (o *GetProjectByIDOK) GetPayload() *mono_models.Project {
+	return o.Payload
 }
 
 func (o *GetProjectByIDOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetProjectByIDNotFound) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetProjectByIDNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetProjectByIDNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetProjectByIDInternalServerError struct {
 
 func (o *GetProjectByIDInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetProjectByIDInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetProjectByIDInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // KomodoAuthorizedReader is a Reader for the KomodoAuthorized structure.
@@ -24,28 +23,24 @@ type KomodoAuthorizedReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *KomodoAuthorizedReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewKomodoAuthorizedOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewKomodoAuthorizedBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewKomodoAuthorizedForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewKomodoAuthorizedInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -96,6 +91,10 @@ func (o *KomodoAuthorizedBadRequest) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *KomodoAuthorizedBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *KomodoAuthorizedBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -125,6 +124,10 @@ func (o *KomodoAuthorizedForbidden) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedForbidden  %+v", 403, o.Payload)
 }
 
+func (o *KomodoAuthorizedForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *KomodoAuthorizedForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -152,6 +155,10 @@ type KomodoAuthorizedInternalServerError struct {
 
 func (o *KomodoAuthorizedInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *KomodoAuthorizedInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *KomodoAuthorizedInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

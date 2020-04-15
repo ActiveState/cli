@@ -8,14 +8,14 @@ package mono_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Distro A fully resolved list of Source Packages and Languages that has been compiled for a specific Platform.
+//
 //
 // swagger:model Distro
 type Distro struct {

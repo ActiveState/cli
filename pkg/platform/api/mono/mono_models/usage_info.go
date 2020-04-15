@@ -8,14 +8,14 @@ package mono_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // UsageInfo usage info
+//
 // swagger:model UsageInfo
 type UsageInfo struct {
 
@@ -84,6 +84,7 @@ func (m *UsageInfo) UnmarshalBinary(b []byte) error {
 }
 
 // UsageInfoActiveUsersItems0 usage info active users items0
+//
 // swagger:model UsageInfoActiveUsersItems0
 type UsageInfoActiveUsersItems0 struct {
 

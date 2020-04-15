@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // RequestResetReader is a Reader for the RequestReset structure.
@@ -24,21 +23,18 @@ type RequestResetReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *RequestResetReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewRequestResetOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewRequestResetBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewRequestResetInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type RequestResetOK struct {
 
 func (o *RequestResetOK) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetOK  %+v", 200, o.Payload)
+}
+
+func (o *RequestResetOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *RequestResetOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *RequestResetBadRequest) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *RequestResetBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *RequestResetBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type RequestResetInternalServerError struct {
 
 func (o *RequestResetInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *RequestResetInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *RequestResetInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

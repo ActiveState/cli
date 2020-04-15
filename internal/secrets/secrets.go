@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/logging"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -52,7 +52,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 		return failure
 	}
 
-	members, failure := model.FetchOrgMembers(org.Urlname)
+	members, failure := model.FetchOrgMembers(org.URLname)
 	if failure != nil {
 		return failure
 	}

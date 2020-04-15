@@ -6,13 +6,14 @@ package components
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new components API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,21 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetComponent gets a single component record
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetComponent(params *GetComponentParams, authInfo runtime.ClientAuthInfoWriter) (*GetComponentOK, error)
 
-Retrieve the component by ID
+	GetComponentsByIdentity(params *GetComponentsByIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*GetComponentsByIdentityOK, error)
+
+	ListComponents(params *ListComponentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListComponentsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetComponent gets a single component record
+
+  Retrieve the component by ID
 */
 func (a *Client) GetComponent(params *GetComponentParams, authInfo runtime.ClientAuthInfoWriter) (*GetComponentOK, error) {
 	// TODO: Validate the params before sending
@@ -40,7 +52,7 @@ func (a *Client) GetComponent(params *GetComponentParams, authInfo runtime.Clien
 		Method:             "GET",
 		PathPattern:        "/components/{componentID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetComponentReader{formats: a.formats},
@@ -51,14 +63,20 @@ func (a *Client) GetComponent(params *GetComponentParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetComponentOK), nil
-
+	success, ok := result.(*GetComponentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetComponentsByIdentity alls components seen for specifid identity
+  GetComponentsByIdentity alls components seen for specifid identity
 
-Retrieve all components for this identity
+  Retrieve all components for this identity
 */
 func (a *Client) GetComponentsByIdentity(params *GetComponentsByIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*GetComponentsByIdentityOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +89,7 @@ func (a *Client) GetComponentsByIdentity(params *GetComponentsByIdentityParams, 
 		Method:             "GET",
 		PathPattern:        "/identities/{identityID}/components",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetComponentsByIdentityReader{formats: a.formats},
@@ -82,14 +100,20 @@ func (a *Client) GetComponentsByIdentity(params *GetComponentsByIdentityParams, 
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetComponentsByIdentityOK), nil
-
+	success, ok := result.(*GetComponentsByIdentityOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getComponentsByIdentity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListComponents lists of all matching components
+  ListComponents lists of all matching components
 
-Retrieve all components from the system that the user has access to
+  Retrieve all components from the system that the user has access to
 */
 func (a *Client) ListComponents(params *ListComponentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListComponentsOK, error) {
 	// TODO: Validate the params before sending
@@ -113,8 +137,14 @@ func (a *Client) ListComponents(params *ListComponentsParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListComponentsOK), nil
-
+	success, ok := result.(*ListComponentsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

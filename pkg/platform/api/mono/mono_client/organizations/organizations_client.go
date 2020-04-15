@@ -6,13 +6,14 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new organizations API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,55 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-AddOrganization creates a new organization
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddOrganization(params *AddOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*AddOrganizationOK, error)
 
-Create a new organization
+	DeleteInvite(params *DeleteInviteParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteInviteOK, error)
+
+	DeleteOrganization(params *DeleteOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteOrganizationOK, error)
+
+	EditBilling(params *EditBillingParams, authInfo runtime.ClientAuthInfoWriter) (*EditBillingOK, error)
+
+	EditMember(params *EditMemberParams, authInfo runtime.ClientAuthInfoWriter) (*EditMemberOK, error)
+
+	EditOrganization(params *EditOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationOK, error)
+
+	GetBilling(params *GetBillingParams, authInfo runtime.ClientAuthInfoWriter) (*GetBillingOK, error)
+
+	GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetNextMutationIDOK, error)
+
+	GetOrganization(params *GetOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationOK, error)
+
+	GetOrganizationInvitations(params *GetOrganizationInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationInvitationsOK, error)
+
+	GetOrganizationMembers(params *GetOrganizationMembersParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationMembersOK, error)
+
+	GetOrganizationMutations(params *GetOrganizationMutationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationMutationsOK, error)
+
+	GetOrganizationTier(params *GetOrganizationTierParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationTierOK, error)
+
+	InviteOrganization(params *InviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*InviteOrganizationOK, error)
+
+	JoinOrganization(params *JoinOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*JoinOrganizationOK, error)
+
+	KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runtime.ClientAuthInfoWriter) (*KomodoAuthorizedOK, error)
+
+	ListOrganizations(params *ListOrganizationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOrganizationsOK, error)
+
+	MutateOrganization(params *MutateOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*MutateOrganizationOK, error)
+
+	QuitOrganization(params *QuitOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*QuitOrganizationOK, error)
+
+	UpdateBillingDate(params *UpdateBillingDateParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBillingDateOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddOrganization creates a new organization
+
+  Create a new organization
 */
 func (a *Client) AddOrganization(params *AddOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*AddOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +97,20 @@ func (a *Client) AddOrganization(params *AddOrganizationParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddOrganizationOK), nil
-
+	success, ok := result.(*AddOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteInvite invites a user to an organization
+  DeleteInvite invites a user to an organization
 
-Revoke a user's invitation
+  Revoke a user's invitation
 */
 func (a *Client) DeleteInvite(params *DeleteInviteParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteInviteOK, error) {
 	// TODO: Validate the params before sending
@@ -82,14 +134,20 @@ func (a *Client) DeleteInvite(params *DeleteInviteParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteInviteOK), nil
-
+	success, ok := result.(*DeleteInviteOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteOrganization deletes an organization
+  DeleteOrganization deletes an organization
 
-Delete an organization
+  Delete an organization
 */
 func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -102,7 +160,7 @@ func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo r
 		Method:             "DELETE",
 		PathPattern:        "/organizations/{organizationIdentifier}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &DeleteOrganizationReader{formats: a.formats},
@@ -113,14 +171,20 @@ func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteOrganizationOK), nil
-
+	success, ok := result.(*DeleteOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EditBilling updates an orgs billing information
+  EditBilling updates an orgs billing information
 
-Update an orgs billing information
+  Update an orgs billing information
 */
 func (a *Client) EditBilling(params *EditBillingParams, authInfo runtime.ClientAuthInfoWriter) (*EditBillingOK, error) {
 	// TODO: Validate the params before sending
@@ -144,14 +208,20 @@ func (a *Client) EditBilling(params *EditBillingParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditBillingOK), nil
-
+	success, ok := result.(*EditBillingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editBilling: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EditMember edits a member of an organization
+  EditMember edits a member of an organization
 
-Edit a member of an organization
+  Edit a member of an organization
 */
 func (a *Client) EditMember(params *EditMemberParams, authInfo runtime.ClientAuthInfoWriter) (*EditMemberOK, error) {
 	// TODO: Validate the params before sending
@@ -175,14 +245,20 @@ func (a *Client) EditMember(params *EditMemberParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditMemberOK), nil
-
+	success, ok := result.(*EditMemberOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editMember: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EditOrganization edits an organization
+  EditOrganization edits an organization
 
-Edit an organization
+  Edit an organization
 */
 func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -206,14 +282,20 @@ func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditOrganizationOK), nil
-
+	success, ok := result.(*EditOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetBilling retrieves an orgs billing information
+  GetBilling retrieves an orgs billing information
 
-Retrieve an orgs billing information
+  Retrieve an orgs billing information
 */
 func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAuthInfoWriter) (*GetBillingOK, error) {
 	// TODO: Validate the params before sending
@@ -226,7 +308,7 @@ func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAut
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}/billing",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetBillingReader{formats: a.formats},
@@ -237,14 +319,20 @@ func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetBillingOK), nil
-
+	success, ok := result.(*GetBillingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getBilling: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetNextMutationID nexts mutation ID
+  GetNextMutationID nexts mutation ID
 
-Get the id that the next mutation of this org should use
+  Get the id that the next mutation of this org should use
 */
 func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetNextMutationIDOK, error) {
 	// TODO: Validate the params before sending
@@ -257,7 +345,7 @@ func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo run
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}/nextMutationID",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetNextMutationIDReader{formats: a.formats},
@@ -268,14 +356,20 @@ func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetNextMutationIDOK), nil
-
+	success, ok := result.(*GetNextMutationIDOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getNextMutationID: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganization retrieves an organization
+  GetOrganization retrieves an organization
 
-Return a specific organization
+  Return a specific organization
 */
 func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -288,7 +382,7 @@ func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetOrganizationReader{formats: a.formats},
@@ -299,14 +393,20 @@ func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationOK), nil
-
+	success, ok := result.(*GetOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganizationInvitations organizations invitations
+  GetOrganizationInvitations organizations invitations
 
-Return a list of pending invitations
+  Return a list of pending invitations
 */
 func (a *Client) GetOrganizationInvitations(params *GetOrganizationInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationInvitationsOK, error) {
 	// TODO: Validate the params before sending
@@ -319,7 +419,7 @@ func (a *Client) GetOrganizationInvitations(params *GetOrganizationInvitationsPa
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/invitations",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetOrganizationInvitationsReader{formats: a.formats},
@@ -330,14 +430,20 @@ func (a *Client) GetOrganizationInvitations(params *GetOrganizationInvitationsPa
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationInvitationsOK), nil
-
+	success, ok := result.(*GetOrganizationInvitationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationInvitations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganizationMembers organizations membership
+  GetOrganizationMembers organizations membership
 
-Return a list of users who are members of the organization
+  Return a list of users who are members of the organization
 */
 func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationMembersOK, error) {
 	// TODO: Validate the params before sending
@@ -350,7 +456,7 @@ func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, au
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/members",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetOrganizationMembersReader{formats: a.formats},
@@ -361,14 +467,20 @@ func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationMembersOK), nil
-
+	success, ok := result.(*GetOrganizationMembersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationMembers: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganizationMutations gets history of mutations applied to an organization
+  GetOrganizationMutations gets history of mutations applied to an organization
 
-Query mutation records for the org
+  Query mutation records for the org
 */
 func (a *Client) GetOrganizationMutations(params *GetOrganizationMutationsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationMutationsOK, error) {
 	// TODO: Validate the params before sending
@@ -392,14 +504,20 @@ func (a *Client) GetOrganizationMutations(params *GetOrganizationMutationsParams
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationMutationsOK), nil
-
+	success, ok := result.(*GetOrganizationMutationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationMutations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganizationTier gets information about an organization s tier
+  GetOrganizationTier gets information about an organization s tier
 
-Get information about an organization's tier
+  Get information about an organization's tier
 */
 func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationTierOK, error) {
 	// TODO: Validate the params before sending
@@ -412,7 +530,7 @@ func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}/tier",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetOrganizationTierReader{formats: a.formats},
@@ -423,14 +541,20 @@ func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationTierOK), nil
-
+	success, ok := result.(*GetOrganizationTierOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationTier: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-InviteOrganization invites a user to an organization
+  InviteOrganization invites a user to an organization
 
-Invite a user to an organization's roster
+  Invite a user to an organization's roster
 */
 func (a *Client) InviteOrganization(params *InviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*InviteOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -454,14 +578,20 @@ func (a *Client) InviteOrganization(params *InviteOrganizationParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*InviteOrganizationOK), nil
-
+	success, ok := result.(*InviteOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for inviteOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-JoinOrganization joins a user to an organization
+  JoinOrganization joins a user to an organization
 
-Add a user to an organization's roster
+  Add a user to an organization's roster
 */
 func (a *Client) JoinOrganization(params *JoinOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*JoinOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -485,14 +615,20 @@ func (a *Client) JoinOrganization(params *JoinOrganizationParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*JoinOrganizationOK), nil
-
+	success, ok := result.(*JoinOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for joinOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-KomodoAuthorized is user authorized to use komodo ID e
+  KomodoAuthorized is user authorized to use komodo ID e
 
-Check that the authenticated user is permitted to use Komodo IDE
+  Check that the authenticated user is permitted to use Komodo IDE
 */
 func (a *Client) KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runtime.ClientAuthInfoWriter) (*KomodoAuthorizedOK, error) {
 	// TODO: Validate the params before sending
@@ -504,8 +640,8 @@ func (a *Client) KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runti
 		ID:                 "komodoAuthorized",
 		Method:             "GET",
 		PathPattern:        "/status/komodo",
-		ProducesMediaTypes: []string{""},
-		ConsumesMediaTypes: []string{""},
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &KomodoAuthorizedReader{formats: a.formats},
@@ -516,14 +652,20 @@ func (a *Client) KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*KomodoAuthorizedOK), nil
-
+	success, ok := result.(*KomodoAuthorizedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for komodoAuthorized: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListOrganizations lists of visible organizations
+  ListOrganizations lists of visible organizations
 
-Retrieve all organizations from the system that the user has access to
+  Retrieve all organizations from the system that the user has access to
 */
 func (a *Client) ListOrganizations(params *ListOrganizationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOrganizationsOK, error) {
 	// TODO: Validate the params before sending
@@ -547,14 +689,20 @@ func (a *Client) ListOrganizations(params *ListOrganizationsParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListOrganizationsOK), nil
-
+	success, ok := result.(*ListOrganizationsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listOrganizations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-MutateOrganization mutates organization
+  MutateOrganization mutates organization
 
-Perform an atomic mutation on the org
+  Perform an atomic mutation on the org
 */
 func (a *Client) MutateOrganization(params *MutateOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*MutateOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -578,14 +726,20 @@ func (a *Client) MutateOrganization(params *MutateOrganizationParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	return result.(*MutateOrganizationOK), nil
-
+	success, ok := result.(*MutateOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for mutateOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-QuitOrganization drops a user from an organization
+  QuitOrganization drops a user from an organization
 
-Remove a user from an organization's roster
+  Remove a user from an organization's roster
 */
 func (a *Client) QuitOrganization(params *QuitOrganizationParams, authInfo runtime.ClientAuthInfoWriter) (*QuitOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -609,14 +763,20 @@ func (a *Client) QuitOrganization(params *QuitOrganizationParams, authInfo runti
 	if err != nil {
 		return nil, err
 	}
-	return result.(*QuitOrganizationOK), nil
-
+	success, ok := result.(*QuitOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for quitOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-UpdateBillingDate changes billing date for organization
+  UpdateBillingDate changes billing date for organization
 
-Set a new billing date
+  Set a new billing date
 */
 func (a *Client) UpdateBillingDate(params *UpdateBillingDateParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBillingDateOK, error) {
 	// TODO: Validate the params before sending
@@ -640,8 +800,14 @@ func (a *Client) UpdateBillingDate(params *UpdateBillingDateParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	return result.(*UpdateBillingDateOK), nil
-
+	success, ok := result.(*UpdateBillingDateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for updateBillingDate: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

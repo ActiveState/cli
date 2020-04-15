@@ -6,13 +6,14 @@ package scans
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new scans API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,19 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetScan gets a single scan record
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetScan(params *GetScanParams, authInfo runtime.ClientAuthInfoWriter) (*GetScanOK, error)
 
-Retrieve the scan by ID
+	ListScans(params *ListScansParams, authInfo runtime.ClientAuthInfoWriter) (*ListScansOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetScan gets a single scan record
+
+  Retrieve the scan by ID
 */
 func (a *Client) GetScan(params *GetScanParams, authInfo runtime.ClientAuthInfoWriter) (*GetScanOK, error) {
 	// TODO: Validate the params before sending
@@ -40,7 +50,7 @@ func (a *Client) GetScan(params *GetScanParams, authInfo runtime.ClientAuthInfoW
 		Method:             "GET",
 		PathPattern:        "/scans/{scanID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetScanReader{formats: a.formats},
@@ -51,14 +61,20 @@ func (a *Client) GetScan(params *GetScanParams, authInfo runtime.ClientAuthInfoW
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetScanOK), nil
-
+	success, ok := result.(*GetScanOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getScan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListScans recents scan requests
+  ListScans recents scan requests
 
-List of recent scan requests
+  List of recent scan requests
 */
 func (a *Client) ListScans(params *ListScansParams, authInfo runtime.ClientAuthInfoWriter) (*ListScansOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +87,7 @@ func (a *Client) ListScans(params *ListScansParams, authInfo runtime.ClientAuthI
 		Method:             "GET",
 		PathPattern:        "/scans",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &ListScansReader{formats: a.formats},
@@ -82,8 +98,14 @@ func (a *Client) ListScans(params *ListScansParams, authInfo runtime.ClientAuthI
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListScansOK), nil
-
+	success, ok := result.(*ListScansOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listScans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

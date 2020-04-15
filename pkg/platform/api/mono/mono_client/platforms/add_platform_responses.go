@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddPlatformReader is a Reader for the AddPlatform structure.
@@ -24,35 +23,30 @@ type AddPlatformReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddPlatformReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddPlatformOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddPlatformBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddPlatformForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddPlatformConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddPlatformInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type AddPlatformOK struct {
 
 func (o *AddPlatformOK) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformOK  %+v", 200, o.Payload)
+}
+
+func (o *AddPlatformOK) GetPayload() *mono_models.Platform {
+	return o.Payload
 }
 
 func (o *AddPlatformOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *AddPlatformBadRequest) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddPlatformBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddPlatformBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type AddPlatformForbidden struct {
 
 func (o *AddPlatformForbidden) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddPlatformForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddPlatformForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *AddPlatformConflict) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddPlatformConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddPlatformConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type AddPlatformInternalServerError struct {
 
 func (o *AddPlatformInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddPlatformInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddPlatformInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditIdentityReader is a Reader for the EditIdentity structure.
@@ -24,21 +23,18 @@ type EditIdentityReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditIdentityReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditIdentityOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditIdentityBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditIdentityNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type EditIdentityOK struct {
 
 func (o *EditIdentityOK) Error() string {
 	return fmt.Sprintf("[POST /identities/{identityID}][%d] editIdentityOK  %+v", 200, o.Payload)
+}
+
+func (o *EditIdentityOK) GetPayload() *mono_models.Identity {
+	return o.Payload
 }
 
 func (o *EditIdentityOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *EditIdentityBadRequest) Error() string {
 	return fmt.Sprintf("[POST /identities/{identityID}][%d] editIdentityBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditIdentityBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditIdentityBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type EditIdentityNotFound struct {
 
 func (o *EditIdentityNotFound) Error() string {
 	return fmt.Sprintf("[POST /identities/{identityID}][%d] editIdentityNotFound  %+v", 404, o.Payload)
+}
+
+func (o *EditIdentityNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditIdentityNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

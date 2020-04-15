@@ -114,7 +114,7 @@ func userToJSON(username string) ([]byte, *failures.Failure) {
 		privateProjects = (tier == t.Name && t.RequiresPayment)
 	}
 
-	userJ := userJSON{username, organization.Urlname, tier, privateProjects}
+	userJ := userJSON{username, organization.URLname, tier, privateProjects}
 	bs, err := json.Marshal(userJ)
 	if err != nil {
 		return nil, failures.FailMarshal.Wrap(err)

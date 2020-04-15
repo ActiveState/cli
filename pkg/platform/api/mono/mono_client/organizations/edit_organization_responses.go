@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditOrganizationReader is a Reader for the EditOrganization structure.
@@ -24,35 +23,30 @@ type EditOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type EditOrganizationOK struct {
 
 func (o *EditOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationOK  %+v", 200, o.Payload)
+}
+
+func (o *EditOrganizationOK) GetPayload() *mono_models.Organization {
+	return o.Payload
 }
 
 func (o *EditOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *EditOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type EditOrganizationForbidden struct {
 
 func (o *EditOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *EditOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type EditOrganizationInternalServerError struct {
 
 func (o *EditOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

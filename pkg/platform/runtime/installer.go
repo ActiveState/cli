@@ -34,8 +34,8 @@ var (
 	// FailRuntimeInvalid represents a Failure due to a runtime being invalid in some way prior to installation.
 	FailRuntimeInvalid = failures.Type("runtime.runtime.invalid", failures.FailIO)
 
-	// FailNoCommits represents a Failure due to a project not having commits yet (and thus no runtime).
-	FailNoCommits = failures.Type("runtime.runtime.nocommits", failures.FailUser)
+	// FailNoCommitID represents a Failure due to a missing commit ID
+	FailNoCommitID = failures.Type("runtime.runtime.notcommitid", failures.FailUser)
 
 	// FailPrePlatformNotSupported represents a Failure due to the runtime containing pre-platform bits.
 	FailPrePlatformNotSupported = failures.Type("runtime.runtime.preplatform", failures.FailUser)
@@ -177,7 +177,7 @@ func (installer *Installer) InstallArtifacts(runtimeAssembler Assembler) (envGet
 // validateCheckpoint tries to see if the checkpoint has any chance of succeeding
 func (installer *Installer) validateCheckpoint() *failures.Failure {
 	if installer.params.CommitID == "" {
-		return FailNoCommits.New("installer_err_runtime_no_commits", model.ProjectURL(installer.params.Owner, installer.params.ProjectName, ""))
+		return FailNoCommitID.New("installer_err_runtime_no_commitid")
 	}
 
 	checkpoint, _, fail := model.FetchCheckpointForCommit(installer.params.CommitID)

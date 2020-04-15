@@ -6,13 +6,14 @@ package tiers
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new tiers API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,8 +25,17 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error)
+
+	GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
 /*
-GetTiers gets information about all available tiers
+  GetTiers gets information about all available tiers
 */
 func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error) {
 	// TODO: Validate the params before sending
@@ -49,12 +59,18 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetTiersOK), nil
-
+	success, ok := result.(*GetTiersOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getTiers: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetTiersPricing gets information about all available tiers including their price in cents per user per year
+  GetTiersPricing gets information about all available tiers including their price in cents per user per year
 */
 func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error) {
 	// TODO: Validate the params before sending
@@ -67,7 +83,7 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 		Method:             "GET",
 		PathPattern:        "/tiers/pricing",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetTiersPricingReader{formats: a.formats},
@@ -78,8 +94,14 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetTiersPricingOK), nil
-
+	success, ok := result.(*GetTiersPricingOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getTiersPricing: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

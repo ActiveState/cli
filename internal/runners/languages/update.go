@@ -2,11 +2,13 @@ package languages
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+
+	"github.com/blang/semver"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -30,21 +32,16 @@ func (u *Update) Run(params *UpdateParams) error {
 	if err != nil {
 		return err
 	}
-
-	switch lang.Version {
-	case "":
-		lang.Version, err = latestVersion(lang.Name)
-		if err != nil {
-			return err
-		}
-	default:
-		err = ensureVersion(lang.Name, lang.Version)
-		if err != nil {
-			return err
-		}
+	err = ensureLanguage(lang)
+	if err != nil {
+		return err
 	}
 
-	logging.Debug("Using language: %s %s", lang.Name, lang.Version)
+	err = ensureVersion(lang)
+	if err != nil {
+		return err
+	}
+
 	err = removeLanguage(params, lang.Name)
 	if err != nil {
 		return err
@@ -53,87 +50,106 @@ func (u *Update) Run(params *UpdateParams) error {
 	return addLanguage(params, lang)
 }
 
-func parseLanguage(param string) (*model.Language, error) {
-	if !strings.Contains(param, "@") {
-		return processName(param)
+func parseLanguage(langName string) (*model.Language, error) {
+	if !strings.Contains(langName, "@") {
+		return &model.Language{
+			Name:    langName,
+			Version: "",
+		}, nil
 	}
 
-	split := strings.Split(param, "@")
+	split := strings.Split(langName, "@")
 	if len(split) != 2 {
 		return nil, errors.New(locale.T("err_language_format"))
 	}
 	name := split[0]
 	version := split[1]
 
-	err := ensureLanguage(name)
-	if err != nil {
-		return nil, err
-	}
-
-	return processNameVersion(name, version)
-}
-
-func processName(name string) (*model.Language, error) {
-	version, err := latestVersion(name)
-	if err != nil {
-		return nil, err
-	}
-
 	return &model.Language{
 		Name:    name,
 		Version: version,
 	}, nil
 }
 
-func processNameVersion(name, version string) (*model.Language, error) {
-	err := ensureVersion(name, version)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Language{
-		Name:    name,
-		Version: version,
-	}, nil
-}
-
-func ensureLanguage(name string) error {
+func ensureLanguage(language *model.Language) error {
 	platformLanguages, fail := model.FetchLanguages()
 	if fail != nil {
 		return fail.ToError()
 	}
 
 	for _, pl := range platformLanguages {
-		if strings.ToLower(pl.Name) == strings.ToLower(name) {
+		if strings.ToLower(pl.Name) == strings.ToLower(language.Name) {
 			return nil
 		}
 	}
 
-	return errors.New(locale.Tr("err_update_not_found", name))
+	return errors.New(locale.Tr("err_update_not_found", language.Name))
 }
 
-func ensureVersion(name, version string) error {
-	versions, fail := model.FetchLanguageVersions(name)
+type fetchVersionsFunc func(name string) ([]string, *failures.Failure)
+
+func ensureVersion(language *model.Language) error {
+	return ensureVersionTestable(language, model.FetchLanguageVersions, latestVersion)
+}
+
+func ensureVersionTestable(language *model.Language, fetchVersions fetchVersionsFunc, latestVersion latestVersionFunc) error {
+	versions, fail := fetchVersions(language.Name)
 	if fail != nil {
 		return fail.ToError()
 	}
 
+	if language.Version == "" {
+		var err error
+		language.Version, err = latestVersion(language.Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, ver := range versions {
-		if version == ver {
+		if language.Version == ver {
 			return nil
 		}
 	}
 
-	return failures.FailUser.New(locale.Tr("err_language_version_not_found", version, name))
+	return failures.FailUser.New(locale.Tr("err_language_version_not_found", language.Version, language.Name))
 }
 
+type latestVersionFunc func(name string) (string, error)
+
 func latestVersion(name string) (string, error) {
-	versions, fail := model.FetchLanguageVersions(name)
+	return latestVersionTestable(name, model.FetchLanguageVersions)
+}
+
+func latestVersionTestable(name string, fetchVersions fetchVersionsFunc) (string, error) {
+	versions, fail := fetchVersions(name)
 	if fail != nil {
 		return "", fail.ToError()
 	}
 
-	return versions[len(versions)-1], nil
+	result := struct {
+		semver  *semver.Version
+		version string
+	}{
+		nil, "",
+	}
+	for _, version := range versions {
+		v, err := semver.ParseTolerant(version)
+		if err != nil {
+			return "", fmt.Errorf("could not parse version: %s, error: %w", version, err)
+		}
+
+		if result.semver == nil || v.Compare(*result.semver) == 1 {
+			result.version = version
+			result.semver = &v
+		}
+	}
+
+	if result.semver == nil {
+		return "", errors.New("no language versions could be found")
+	}
+
+	return result.version, nil
 }
 
 func removeLanguage(params *UpdateParams, current string) error {

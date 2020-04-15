@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
@@ -14,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 // MaxParallelRequests is the maximum number of invite requests that we want to send in parallel
@@ -82,7 +83,7 @@ func isInvitationPossible(organization *mono_models.Organization, numInvites int
 		))
 	}
 
-	limits, fail := model.FetchOrganizationLimits(organization.Urlname)
+	limits, fail := model.FetchOrganizationLimits(organization.URLname)
 	if fail != nil {
 		return failures.FailRuntime.New(locale.T("invite_limit_fetch_err"))
 	}

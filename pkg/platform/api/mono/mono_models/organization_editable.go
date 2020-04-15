@@ -6,19 +6,19 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // OrganizationEditable organization editable
+//
 // swagger:model OrganizationEditable
 type OrganizationEditable struct {
 
-	// urlname
-	Urlname string `json:"URLname,omitempty"`
+	// u r lname
+	URLname string `json:"URLname,omitempty"`
 
 	// add ons
 	AddOns map[string]AddOn `json:"addOns,omitempty"`

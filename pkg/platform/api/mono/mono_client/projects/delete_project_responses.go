@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteProjectReader is a Reader for the DeleteProject structure.
@@ -24,35 +23,30 @@ type DeleteProjectReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteProjectReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteProjectOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewDeleteProjectBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteProjectForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewDeleteProjectNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewDeleteProjectInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type DeleteProjectOK struct {
 
 func (o *DeleteProjectOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectOK  %+v", 200, o.Payload)
+}
+
+func (o *DeleteProjectOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteProjectOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *DeleteProjectBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *DeleteProjectBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteProjectBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type DeleteProjectForbidden struct {
 
 func (o *DeleteProjectForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectForbidden  %+v", 403, o.Payload)
+}
+
+func (o *DeleteProjectForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteProjectForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *DeleteProjectNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectNotFound  %+v", 404, o.Payload)
 }
 
+func (o *DeleteProjectNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteProjectNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type DeleteProjectInternalServerError struct {
 
 func (o *DeleteProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *DeleteProjectInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteProjectInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,13 +6,14 @@ package identities
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new identities API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,25 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-AddIdentity creates a new identity
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddIdentity(params *AddIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*AddIdentityOK, error)
 
-Create a new identity
+	DeleteIdentity(params *DeleteIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIdentityOK, error)
+
+	EditIdentity(params *EditIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*EditIdentityOK, error)
+
+	GetIdentity(params *GetIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*GetIdentityOK, error)
+
+	ListIdentities(params *ListIdentitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListIdentitiesOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddIdentity creates a new identity
+
+  Create a new identity
 */
 func (a *Client) AddIdentity(params *AddIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*AddIdentityOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +67,20 @@ func (a *Client) AddIdentity(params *AddIdentityParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddIdentityOK), nil
-
+	success, ok := result.(*AddIdentityOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addIdentity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-DeleteIdentity deletes an identity
+  DeleteIdentity deletes an identity
 
-Delete an identity
+  Delete an identity
 */
 func (a *Client) DeleteIdentity(params *DeleteIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIdentityOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +93,7 @@ func (a *Client) DeleteIdentity(params *DeleteIdentityParams, authInfo runtime.C
 		Method:             "DELETE",
 		PathPattern:        "/identities/{identityID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &DeleteIdentityReader{formats: a.formats},
@@ -82,14 +104,20 @@ func (a *Client) DeleteIdentity(params *DeleteIdentityParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*DeleteIdentityOK), nil
-
+	success, ok := result.(*DeleteIdentityOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteIdentity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-EditIdentity edits an identity
+  EditIdentity edits an identity
 
-Edit an identity
+  Edit an identity
 */
 func (a *Client) EditIdentity(params *EditIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*EditIdentityOK, error) {
 	// TODO: Validate the params before sending
@@ -113,14 +141,20 @@ func (a *Client) EditIdentity(params *EditIdentityParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditIdentityOK), nil
-
+	success, ok := result.(*EditIdentityOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editIdentity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetIdentity retrieves an identity
+  GetIdentity retrieves an identity
 
-Return a specific identity matching identityID
+  Return a specific identity matching identityID
 */
 func (a *Client) GetIdentity(params *GetIdentityParams, authInfo runtime.ClientAuthInfoWriter) (*GetIdentityOK, error) {
 	// TODO: Validate the params before sending
@@ -133,7 +167,7 @@ func (a *Client) GetIdentity(params *GetIdentityParams, authInfo runtime.ClientA
 		Method:             "GET",
 		PathPattern:        "/identities/{identityID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetIdentityReader{formats: a.formats},
@@ -144,14 +178,20 @@ func (a *Client) GetIdentity(params *GetIdentityParams, authInfo runtime.ClientA
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetIdentityOK), nil
-
+	success, ok := result.(*GetIdentityOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getIdentity: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListIdentities lists of visible identities
+  ListIdentities lists of visible identities
 
-Retrieve all identities from the system that the user has access to
+  Retrieve all identities from the system that the user has access to
 */
 func (a *Client) ListIdentities(params *ListIdentitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListIdentitiesOK, error) {
 	// TODO: Validate the params before sending
@@ -175,8 +215,14 @@ func (a *Client) ListIdentities(params *ListIdentitiesParams, authInfo runtime.C
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListIdentitiesOK), nil
-
+	success, ok := result.(*ListIdentitiesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listIdentities: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetCommitReader is a Reader for the GetCommit structure.
@@ -24,21 +23,18 @@ type GetCommitReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetCommitReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetCommitOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetCommitNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetCommitInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetCommitOK struct {
 
 func (o *GetCommitOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitOK  %+v", 200, o.Payload)
+}
+
+func (o *GetCommitOK) GetPayload() *mono_models.Commit {
+	return o.Payload
 }
 
 func (o *GetCommitOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetCommitNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetCommitNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetCommitNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetCommitInternalServerError struct {
 
 func (o *GetCommitInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetCommitInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetCommitInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddOrganizationReader is a Reader for the AddOrganization structure.
@@ -24,35 +23,30 @@ type AddOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddOrganizationConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type AddOrganizationOK struct {
 
 func (o *AddOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationOK  %+v", 200, o.Payload)
+}
+
+func (o *AddOrganizationOK) GetPayload() *mono_models.Organization {
+	return o.Payload
 }
 
 func (o *AddOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *AddOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type AddOrganizationForbidden struct {
 
 func (o *AddOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *AddOrganizationConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddOrganizationConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddOrganizationConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type AddOrganizationInternalServerError struct {
 
 func (o *AddOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

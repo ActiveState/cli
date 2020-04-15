@@ -6,13 +6,14 @@ package licenses
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new licenses API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,19 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-GetLicense retrieves a license
+// ClientService is the interface for Client methods
+type ClientService interface {
+	GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter) (*GetLicenseOK, error)
 
-Return a specific license matching licenseID
+	ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLicensesOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetLicense retrieves a license
+
+  Return a specific license matching licenseID
 */
 func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter) (*GetLicenseOK, error) {
 	// TODO: Validate the params before sending
@@ -40,7 +50,7 @@ func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAut
 		Method:             "GET",
 		PathPattern:        "/licenses/{licenseID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetLicenseReader{formats: a.formats},
@@ -51,14 +61,20 @@ func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAut
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetLicenseOK), nil
-
+	success, ok := result.(*GetLicenseOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getLicense: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListLicenses lists of known licenses
+  ListLicenses lists of known licenses
 
-Retrieve all licenses from the system that the user has access to
+  Retrieve all licenses from the system that the user has access to
 */
 func (a *Client) ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLicensesOK, error) {
 	// TODO: Validate the params before sending
@@ -82,8 +98,14 @@ func (a *Client) ListLicenses(params *ListLicensesParams, authInfo runtime.Clien
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListLicensesOK), nil
-
+	success, ok := result.(*ListLicensesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listLicenses: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

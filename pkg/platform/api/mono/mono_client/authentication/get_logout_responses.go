@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetLogoutReader is a Reader for the GetLogout structure.
@@ -24,14 +23,12 @@ type GetLogoutReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLogoutReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 204:
 		result := NewGetLogoutNoContent()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 500:
 		result := NewGetLogoutInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +77,10 @@ type GetLogoutInternalServerError struct {
 
 func (o *GetLogoutInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /logout][%d] getLogoutInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetLogoutInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetLogoutInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

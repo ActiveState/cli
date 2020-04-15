@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIngredientVersionsReader is a Reader for the ListIngredientVersions structure.
@@ -24,14 +23,12 @@ type ListIngredientVersionsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListIngredientVersionsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListIngredientVersionsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewListIngredientVersionsBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *ListIngredientVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}/versions][%d] listIngredientVersionsOK  %+v", 200, o.Payload)
 }
 
+func (o *ListIngredientVersionsOK) GetPayload() []*mono_models.IngredientVersion {
+	return o.Payload
+}
+
 func (o *ListIngredientVersionsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -86,6 +87,10 @@ type ListIngredientVersionsBadRequest struct {
 
 func (o *ListIngredientVersionsBadRequest) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}/versions][%d] listIngredientVersionsBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *ListIngredientVersionsBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListIngredientVersionsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

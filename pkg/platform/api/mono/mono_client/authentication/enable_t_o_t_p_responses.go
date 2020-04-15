@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EnableTOTPReader is a Reader for the EnableTOTP structure.
@@ -24,14 +23,12 @@ type EnableTOTPReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EnableTOTPReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEnableTOTPOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEnableTOTPBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *EnableTOTPOK) Error() string {
 	return fmt.Sprintf("[POST /totp][%d] enableTOTPOK  %+v", 200, o.Payload)
 }
 
+func (o *EnableTOTPOK) GetPayload() *mono_models.User {
+	return o.Payload
+}
+
 func (o *EnableTOTPOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.User)
@@ -88,6 +89,10 @@ type EnableTOTPBadRequest struct {
 
 func (o *EnableTOTPBadRequest) Error() string {
 	return fmt.Sprintf("[POST /totp][%d] enableTOTPBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *EnableTOTPBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EnableTOTPBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

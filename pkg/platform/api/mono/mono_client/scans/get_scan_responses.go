@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetScanReader is a Reader for the GetScan structure.
@@ -24,14 +23,12 @@ type GetScanReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetScanReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetScanOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetScanNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *GetScanOK) Error() string {
 	return fmt.Sprintf("[GET /scans/{scanID}][%d] getScanOK  %+v", 200, o.Payload)
 }
 
+func (o *GetScanOK) GetPayload() *mono_models.Scan {
+	return o.Payload
+}
+
 func (o *GetScanOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Scan)
@@ -88,6 +89,10 @@ type GetScanNotFound struct {
 
 func (o *GetScanNotFound) Error() string {
 	return fmt.Sprintf("[GET /scans/{scanID}][%d] getScanNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetScanNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetScanNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

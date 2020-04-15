@@ -8,14 +8,14 @@ package mono_models
 import (
 	"encoding/json"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // BranchEditable branchEditable
+//
 // swagger:model BranchEditable
 type BranchEditable struct {
 

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // UpdateBranchReader is a Reader for the UpdateBranch structure.
@@ -24,35 +23,30 @@ type UpdateBranchReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateBranchReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewUpdateBranchOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewUpdateBranchBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewUpdateBranchForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewUpdateBranchNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewUpdateBranchInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type UpdateBranchOK struct {
 
 func (o *UpdateBranchOK) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchOK  %+v", 200, o.Payload)
+}
+
+func (o *UpdateBranchOK) GetPayload() *mono_models.Branch {
+	return o.Payload
 }
 
 func (o *UpdateBranchOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *UpdateBranchBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *UpdateBranchBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *UpdateBranchBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type UpdateBranchForbidden struct {
 
 func (o *UpdateBranchForbidden) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchForbidden  %+v", 403, o.Payload)
+}
+
+func (o *UpdateBranchForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UpdateBranchForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *UpdateBranchNotFound) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchNotFound  %+v", 404, o.Payload)
 }
 
+func (o *UpdateBranchNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *UpdateBranchNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type UpdateBranchInternalServerError struct {
 
 func (o *UpdateBranchInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *UpdateBranchInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *UpdateBranchInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

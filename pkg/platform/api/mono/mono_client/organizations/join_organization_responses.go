@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // JoinOrganizationReader is a Reader for the JoinOrganization structure.
@@ -25,35 +24,30 @@ type JoinOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *JoinOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewJoinOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewJoinOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewJoinOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewJoinOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewJoinOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -83,6 +77,10 @@ func (o *JoinOrganizationOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationOK  %+v", 200, o.Payload)
 }
 
+func (o *JoinOrganizationOK) GetPayload() []*mono_models.Member {
+	return o.Payload
+}
+
 func (o *JoinOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -108,6 +106,10 @@ type JoinOrganizationBadRequest struct {
 
 func (o *JoinOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *JoinOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *JoinOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,6 +141,10 @@ func (o *JoinOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationForbidden  %+v", 403, o.Payload)
 }
 
+func (o *JoinOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *JoinOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -168,6 +174,10 @@ func (o *JoinOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *JoinOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *JoinOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -195,6 +205,10 @@ type JoinOrganizationInternalServerError struct {
 
 func (o *JoinOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *JoinOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *JoinOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

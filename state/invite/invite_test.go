@@ -175,7 +175,7 @@ func (s *InviteTestSuite) TestCallInParallel() {
 func (s *InviteTestSuite) getTestOrg(personal bool, memberCount int, orgName string) *mono_models.Organization {
 	added, _ := time.Parse(time.RFC1123, "1970-01-01T00:00:00Z")
 	return &mono_models.Organization{
-		Urlname:        orgName,
+		URLname:        orgName,
 		Name:           orgName,
 		Personal:       personal,
 		AddOns:         nil,

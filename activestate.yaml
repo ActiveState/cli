@@ -1,61 +1,47 @@
 project: https://platform.activestate.com/ActiveState/cli?commitID=0ba549cb-e0af-4334-8d47-dcd245956ad2
-scripts:
+constants:
+  - name: CLI_BUILDFLAGS
+    value: -ldflags="-s -w"
+  - name: CLI_PKGS
+    value: ./cmd/state
+  - name: BUILD_TARGET
+    constraints:
+      os: macos,linux
+    value: ./build/state
+  - name: BUILD_TARGET
+    constraints:
+      os: windows
+    value: ./build/state.exe
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      CLI_PKGS=./cmd/state
-      CLI_BUILDFLAGS='-ldflags="-s -w"'
       GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-      function goOS() {
-        local goos
-        goos=${1-$(go env GOHOSTOS)}
-        [[ ! ${goos} =~ ^(windows|darwin|linux)$ ]] && >&2 echo "'${goos}' is not a supported build target" && return 2
-        echo ${goos}
-      }
-      function outFile() {
-        local goos out
-        goos=$(goOS ${1}) || return $?
-        out=./build/state
-        [[ ${goos} == windows ]] && out=${out}.exe
-        echo ${out}
-      }
-      function buildProject() {
-        local type goos out
-        type=${1-internal}
-        [[ ! $type =~ ^(internal|external)$ ]] && >&2 echo "'$type' is not a supported build type" && return 2
-        goos=$(goOS ${2}) || return $?
-        out=$(outFile ${2}) || return $?
-        export GOOS=$goos
-        eval go build -tags $type -o $out $CLI_BUILDFLAGS $CLI_PKGS
-        unset GOOS
-        echo ${out}
-      }
+scripts:
   - name: preprocess
     description: Generates assets required by the project that aren't just specific to the build
     value: |
-      $scripts.SET_ENV
+      $constants.SET_ENV
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
     description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      buildProject internal ${1}
+      go build -tags internal -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-external
     description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      buildProject external ${1}
+      go build -tags external -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     description: Generate update files
     value: |
       $scripts.preprocess
-      outfile=$(outFile) || exit $?
       mkdir -p public/update
-      go run scripts/update-generator/main.go -o public/update ${outfile}
+      go run scripts/update-generator/main.go -o public/update $constants.BUILD_TARGET
   - name: install
     description: Installs the current HEAD version into GOBIN
     value: |
@@ -133,7 +119,10 @@ scripts:
     standalone: true
   - name: integration-tests
     description: Runs integration tests.
-    value: go test ./test/integration
+    value: |
+      unset ACTIVESTATE_ACTIVATED
+      go test ./pkg/expect ./internal/testhelpers/e2e
+      go test ./test/integration -v
   - name: clean
     description: Cleans out the build dir.
     value: |
@@ -151,7 +140,6 @@ events:
         echo "go is not installed. Please install Go version 1.11 or above."
         exit 1
       fi
-      $scripts.SET_ENV
       $scripts.preprocess
       git config core.hooksPath .githooks
       if ! type "packr" &> /dev/null; then
