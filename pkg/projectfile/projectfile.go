@@ -80,11 +80,11 @@ type Project struct {
 	Version      string        `yaml:"version,omitempty"`
 	Environments string        `yaml:"environments,omitempty"`
 	Platforms    []Platform    `yaml:"platforms,omitempty"`
-	Languages    []Language    `yaml:"languages,omitempty"`
-	Constants    []*Constant   `yaml:"constants,omitempty"`
+	Languages    Languages     `yaml:"languages,omitempty"`
+	Constants    Constants     `yaml:"constants,omitempty"`
 	Secrets      *SecretScopes `yaml:"secrets,omitempty"`
-	Events       []Event       `yaml:"events,omitempty"`
-	Scripts      []Script      `yaml:"scripts,omitempty"`
+	Events       Events        `yaml:"events,omitempty"`
+	Scripts      Scripts       `yaml:"scripts,omitempty"`
 	path         string        // "private"
 
 	// Deprecated
@@ -116,7 +116,41 @@ type Language struct {
 	Version     string     `yaml:"version,omitempty"`
 	Constraints Constraint `yaml:"constraints,omitempty"`
 	Build       Build      `yaml:"build,omitempty"`
-	Packages    []Package  `yaml:"packages,omitempty"`
+	Packages    Packages   `yaml:"packages,omitempty"`
+}
+
+var _ ConstrainedEntity = Language{}
+
+// ID returns the language name
+func (l Language) ID() string {
+	return l.Name
+}
+
+// ConstraintsFilter returns the language constraints
+func (l Language) ConstraintsFilter() Constraint {
+	return l.Constraints
+}
+
+// Languages is a slice of Language definitions
+type Languages []Language
+
+// AsConstrainedEntities boxes languages as a slice of ConstrainedEntities
+func (languages Languages) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for i := range languages {
+		items = append(items, &languages[i])
+	}
+	return items
+}
+
+// MakeLanguagesFromConstrainedEntities unboxes ConstraintedEntities as Languages
+func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages []*Language) {
+	languages = make([]*Language, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Language); ok {
+			languages = append(languages, o)
+		}
+	}
+	return languages
 }
 
 // Constant covers the constant structure, which goes under Project
@@ -126,10 +160,44 @@ type Constant struct {
 	Constraints Constraint `yaml:"constraints,omitempty"`
 }
 
+var _ ConstrainedEntity = &Constant{}
+
+// ID returns the constant name
+func (c *Constant) ID() string {
+	return c.Name
+}
+
+// ConstraintsFilter returns the constant constraints
+func (c *Constant) ConstraintsFilter() Constraint {
+	return c.Constraints
+}
+
+// Constants is a slice of constant values
+type Constants []*Constant
+
+// AsConstrainedEntities boxes constants as a slice ConstrainedEntities
+func (constants Constants) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for _, c := range constants {
+		items = append(items, c)
+	}
+	return items
+}
+
+// MakeConstantsFromConstrainedEntities unboxes ConstraintedEntities as Constants
+func MakeConstantsFromConstrainedEntities(items []ConstrainedEntity) (constants []*Constant) {
+	constants = make([]*Constant, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Constant); ok {
+			constants = append(constants, o)
+		}
+	}
+	return constants
+}
+
 // SecretScopes holds secret scopes, scopes define what the secrets belong to
 type SecretScopes struct {
-	User    []*Secret `yaml:"user,omitempty"`
-	Project []*Secret `yaml:"project,omitempty"`
+	User    Secrets `yaml:"user,omitempty"`
+	Project Secrets `yaml:"project,omitempty"`
 }
 
 // Secret covers the variable structure, which goes under Project
@@ -139,11 +207,54 @@ type Secret struct {
 	Constraints Constraint `yaml:"constraints"`
 }
 
+var _ ConstrainedEntity = &Secret{}
+
+// ID returns the secret name
+func (s *Secret) ID() string {
+	return s.Name
+}
+
+// ConstraintsFilter returns the secret constraints
+func (s *Secret) ConstraintsFilter() Constraint {
+	return s.Constraints
+}
+
+// Secrets is a slice of Secret definitions
+type Secrets []*Secret
+
+// AsConstrainedEntities box Secrets as a slice of ConstrainedEntities
+func (secrets Secrets) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for _, s := range secrets {
+		items = append(items, s)
+	}
+	return items
+}
+
+// MakeSecretsFromConstrainedEntities unboxes ConstraintedEntities as Secrets
+func MakeSecretsFromConstrainedEntities(items []ConstrainedEntity) (secrets []*Secret) {
+	secrets = make([]*Secret, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Secret); ok {
+			secrets = append(secrets, o)
+		}
+	}
+	return secrets
+}
+
 // Constraint covers the constraint structure, which can go under almost any other struct
 type Constraint struct {
 	OS          string `yaml:"os,omitempty"`
 	Platform    string `yaml:"platform,omitempty"`
 	Environment string `yaml:"environment,omitempty"`
+}
+
+// ConstrainedEntity is an entity in a project file that can be filtered with constraints
+type ConstrainedEntity interface {
+	// ID returns the name of the entity
+	ID() string
+
+	// ConstraintsFilter returns the specified constraints for this entity
+	ConstraintsFilter() Constraint
 }
 
 // Package covers the package structure, which goes under the language struct
@@ -154,11 +265,79 @@ type Package struct {
 	Build       Build      `yaml:"build,omitempty"`
 }
 
+var _ ConstrainedEntity = Package{}
+
+// ID returns the package name
+func (p Package) ID() string {
+	return p.Name
+}
+
+// ConstraintsFilter returns the package constraints
+func (p Package) ConstraintsFilter() Constraint {
+	return p.Constraints
+}
+
+// Packages is a slice of Package configurations
+type Packages []Package
+
+// AsConstrainedEntities boxes Packages as a slice of ConstrainedEntities
+func (packages Packages) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for i := range packages {
+		items = append(items, &packages[i])
+	}
+	return items
+}
+
+// MakePackagesFromConstrainedEntities unboxes ConstraintedEntities as Packages
+func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []*Package) {
+	packages = make([]*Package, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Package); ok {
+			packages = append(packages, o)
+		}
+	}
+	return packages
+}
+
 // Event covers the event structure, which goes under Project
 type Event struct {
 	Name        string     `yaml:"name"`
 	Value       string     `yaml:"value"`
 	Constraints Constraint `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = Event{}
+
+// ID returns the event name
+func (e Event) ID() string {
+	return e.Name
+}
+
+// ConstraintsFilter returns the event constraints
+func (e Event) ConstraintsFilter() Constraint {
+	return e.Constraints
+}
+
+// Events is a slice of Event definitions
+type Events []Event
+
+// AsConstrainedEntities boxes events as a slice of ConstrainedEntities
+func (events Events) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for i := range events {
+		items = append(items, &events[i])
+	}
+	return items
+}
+
+// MakeEventsFromConstrainedEntities unboxes ConstraintedEntities as Events
+func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Event) {
+	events = make([]*Event, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Event); ok {
+			events = append(events, o)
+		}
+	}
+	return events
 }
 
 // Script covers the script structure, which goes under Project
@@ -170,6 +349,40 @@ type Script struct {
 	Standalone  bool              `yaml:"standalone,omitempty"`
 	Language    language.Language `yaml:"language,omitempty"`
 	Constraints Constraint        `yaml:"constraints,omitempty"`
+}
+
+var _ ConstrainedEntity = Script{}
+
+// ID returns the script name
+func (s Script) ID() string {
+	return s.Name
+}
+
+// ConstraintsFilter returns the script constraints
+func (s Script) ConstraintsFilter() Constraint {
+	return s.Constraints
+}
+
+// Scripts is a slice of scripts
+type Scripts []Script
+
+// AsConstrainedEntities boxes scripts as a slice of ConstrainedEntities
+func (scripts Scripts) AsConstrainedEntities() (items []ConstrainedEntity) {
+	for i := range scripts {
+		items = append(items, &scripts[i])
+	}
+	return items
+}
+
+// MakeScriptsFromConstrainedEntities unboxes ConstraintedEntities as Scripts
+func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*Script) {
+	scripts = make([]*Script, 0, len(items))
+	for _, v := range items {
+		if o, ok := v.(*Script); ok {
+			scripts = append(scripts, o)
+		}
+	}
+	return scripts
 }
 
 var persistentProject *Project
@@ -297,7 +510,7 @@ func setCommitInYAML(data []byte, commitID string) ([]byte, *failures.Failure) {
 	return out, nil
 }
 
-// Returns the path to the project activestate.yaml
+// GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, *failures.Failure) {
 	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
 	if projectFilePath != "" {
@@ -386,6 +599,7 @@ func FromPath(path string) (*Project, *failures.Failure) {
 	return project, nil
 }
 
+// CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
 	Owner      string
 	Project    string

@@ -103,9 +103,8 @@ func TestExpandProjectSecret(t *testing.T) {
 	project.RegisterExpander("secrets", func(category string, meta string, isFunction bool, pj *project.Project) (string, *failures.Failure) {
 		if category == project.ProjectCategory {
 			return "proj-value", nil
-		} else {
-			return "user-proj-value", nil
 		}
+		return "user-proj-value", nil
 	})
 
 	expanded := project.ExpandFromProject("$ $secrets.user.user-proj-secret", pj)
@@ -151,7 +150,7 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	prj := loadProject(t)
 
 	expanded := project.ExpandFromProject("$scripts.recursive", prj)
-	assert.Error(t, project.Failure().ToError(), "Ran with failure")
+	require.Error(t, project.Failure().ToError(), "Ran with failure")
 	assert.Equal(t, "", expanded, "Failed to expand")
 	assert.True(t, project.Failure().Type.Matches(project.FailExpandVariableRecursion), "Handled unknown category")
 }

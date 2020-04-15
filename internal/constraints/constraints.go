@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -286,13 +287,80 @@ func environmentIsConstrained(constraints string) bool {
 
 // IsConstrained returns whether or not the given constraints are constraining
 // based on given project configuration.
-func IsConstrained(constraint projectfile.Constraint) bool {
+// The second return value is for the specificity of the constraint (i.e, how
+// many constraints were specified and checked)
+func IsConstrained(constraint projectfile.Constraint) (bool, int) {
 	if constraint.Platform == "" &&
 		constraint.Environment == "" &&
 		constraint.OS == "" {
-		return false
+		return false, 0
 	}
-	return (constraint.OS != "" && osIsConstrained(constraint.OS)) ||
-		(constraint.Platform != "" && platformIsConstrained(constraint.Platform)) ||
-		(constraint.Environment != "" && environmentIsConstrained(constraint.Environment))
+	specificity := 0
+	constrained := false
+	if constraint.OS != "" {
+		specificity++
+		constrained = constrained || osIsConstrained(constraint.OS)
+	}
+	if constraint.Platform != "" {
+		specificity++
+		constrained = constrained || platformIsConstrained(constraint.Platform)
+	}
+	if constraint.Environment != "" {
+		specificity++
+		constrained = constrained || environmentIsConstrained(constraint.Environment)
+	}
+	return constrained, specificity
+}
+
+// FilterUnconstrained filters a list of constrained entities and returns only
+// those which are unconstrained. If two items with the same name exist, only
+// the most specific item will be added to the results.
+func FilterUnconstrained(items []projectfile.ConstrainedEntity) []projectfile.ConstrainedEntity {
+	type itemIndex struct {
+		specificity int
+		index       int
+	}
+	selected := make(map[string]itemIndex)
+
+	for i, item := range items {
+		c := item.ConstraintsFilter()
+		constrained, specificity := IsConstrained(c)
+		if !constrained {
+			if s, exists := selected[item.ID()]; !exists || s.specificity < specificity {
+				selected[item.ID()] = itemIndex{specificity, i}
+			}
+		}
+	}
+	indices := make([]int, 0, len(selected))
+	for _, s := range selected {
+		indices = append(indices, s.index)
+	}
+	// ensure that the items are returned in the order we get them
+	sort.Ints(indices)
+	var res []projectfile.ConstrainedEntity
+	for _, index := range indices {
+		res = append(res, items[index])
+	}
+	return res
+}
+
+// MostSpecificUnconstrained searches for entities named name and returns the
+// unconstrained with the most specific constraint definition (if it exists).
+// It also returns the index of the found item in the list (which is -1 if none
+// could be found)
+func MostSpecificUnconstrained(name string, items []projectfile.ConstrainedEntity) int {
+	var maxSpecificity int = -1
+	var index int = -1
+
+	for i, item := range items {
+		c := item.ConstraintsFilter()
+		constrained, specificity := IsConstrained(c)
+		if item.ID() == name && !constrained {
+			if specificity > maxSpecificity {
+				maxSpecificity = specificity
+				index = i
+			}
+		}
+	}
+	return index
 }
