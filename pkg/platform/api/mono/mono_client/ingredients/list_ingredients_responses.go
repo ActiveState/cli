@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListIngredientsReader is a Reader for the ListIngredients structure.
@@ -24,7 +23,6 @@ type ListIngredientsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListIngredientsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListIngredientsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,6 +50,10 @@ type ListIngredientsOK struct {
 
 func (o *ListIngredientsOK) Error() string {
 	return fmt.Sprintf("[GET /ingredients][%d] listIngredientsOK  %+v", 200, o.Payload)
+}
+
+func (o *ListIngredientsOK) GetPayload() []*mono_models.Ingredient {
+	return o.Payload
 }
 
 func (o *ListIngredientsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

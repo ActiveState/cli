@@ -65,7 +65,7 @@ func (suite *InternalTestSuite) TestValidateCheckpointNoCommit() {
 	suite.Require().NotNil(suite.installer)
 
 	fail = suite.installer.validateCheckpoint()
-	suite.Equal(FailNoCommits.Name, fail.Type.Name)
+	suite.Equal(FailNoCommitID.Name, fail.Type.Name)
 }
 
 func (suite *InternalTestSuite) TestValidateCheckpointPrePlatform() {

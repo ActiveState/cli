@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditUserReader is a Reader for the EditUser structure.
@@ -24,35 +23,30 @@ type EditUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditUserBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditUserForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditUserNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditUserInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type EditUserOK struct {
 
 func (o *EditUserOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserOK  %+v", 200, o.Payload)
+}
+
+func (o *EditUserOK) GetPayload() *mono_models.User {
+	return o.Payload
 }
 
 func (o *EditUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *EditUserBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditUserBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type EditUserForbidden struct {
 
 func (o *EditUserForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditUserForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *EditUserNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditUserNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type EditUserInternalServerError struct {
 
 func (o *EditUserInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditUserInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

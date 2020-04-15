@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // VerifyEmailReader is a Reader for the VerifyEmail structure.
@@ -24,35 +23,30 @@ type VerifyEmailReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *VerifyEmailReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewVerifyEmailOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewVerifyEmailBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewVerifyEmailForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewVerifyEmailNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewVerifyEmailInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type VerifyEmailOK struct {
 
 func (o *VerifyEmailOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailOK  %+v", 200, o.Payload)
+}
+
+func (o *VerifyEmailOK) GetPayload() *mono_models.Email {
+	return o.Payload
 }
 
 func (o *VerifyEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *VerifyEmailBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *VerifyEmailBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *VerifyEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type VerifyEmailForbidden struct {
 
 func (o *VerifyEmailForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailForbidden  %+v", 403, o.Payload)
+}
+
+func (o *VerifyEmailForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *VerifyEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *VerifyEmailNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailNotFound  %+v", 404, o.Payload)
 }
 
+func (o *VerifyEmailNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *VerifyEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type VerifyEmailInternalServerError struct {
 
 func (o *VerifyEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *VerifyEmailInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *VerifyEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

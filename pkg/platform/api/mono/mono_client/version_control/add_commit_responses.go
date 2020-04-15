@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddCommitReader is a Reader for the AddCommit structure.
@@ -24,42 +23,36 @@ type AddCommitReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddCommitReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddCommitOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddCommitBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddCommitForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewAddCommitNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddCommitConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddCommitInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type AddCommitOK struct {
 
 func (o *AddCommitOK) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitOK  %+v", 200, o.Payload)
+}
+
+func (o *AddCommitOK) GetPayload() *mono_models.Commit {
+	return o.Payload
 }
 
 func (o *AddCommitOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *AddCommitBadRequest) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddCommitBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddCommitBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -145,6 +146,10 @@ type AddCommitForbidden struct {
 
 func (o *AddCommitForbidden) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddCommitForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddCommitForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *AddCommitNotFound) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitNotFound  %+v", 404, o.Payload)
 }
 
+func (o *AddCommitNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddCommitNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -205,6 +214,10 @@ func (o *AddCommitConflict) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddCommitConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddCommitConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -232,6 +245,10 @@ type AddCommitInternalServerError struct {
 
 func (o *AddCommitInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddCommitInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddCommitInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

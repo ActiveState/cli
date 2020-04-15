@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // PythonPluginsReader is a Reader for the PythonPlugins structure.
@@ -24,7 +23,6 @@ type PythonPluginsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PythonPluginsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPythonPluginsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,6 +50,10 @@ type PythonPluginsOK struct {
 
 func (o *PythonPluginsOK) Error() string {
 	return fmt.Sprintf("[GET /plugins/python][%d] pythonPluginsOK  %+v", 200, o.Payload)
+}
+
+func (o *PythonPluginsOK) GetPayload() []*mono_models.PythonPlugin {
+	return o.Payload
 }
 
 func (o *PythonPluginsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

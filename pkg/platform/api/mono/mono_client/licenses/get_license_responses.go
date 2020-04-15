@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetLicenseReader is a Reader for the GetLicense structure.
@@ -24,14 +23,12 @@ type GetLicenseReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetLicenseReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetLicenseOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetLicenseNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *GetLicenseOK) Error() string {
 	return fmt.Sprintf("[GET /licenses/{licenseID}][%d] getLicenseOK  %+v", 200, o.Payload)
 }
 
+func (o *GetLicenseOK) GetPayload() *mono_models.License {
+	return o.Payload
+}
+
 func (o *GetLicenseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.License)
@@ -88,6 +89,10 @@ type GetLicenseNotFound struct {
 
 func (o *GetLicenseNotFound) Error() string {
 	return fmt.Sprintf("[GET /licenses/{licenseID}][%d] getLicenseNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetLicenseNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetLicenseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddProjectReader is a Reader for the AddProject structure.
@@ -24,42 +23,36 @@ type AddProjectReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddProjectReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddProjectOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddProjectBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddProjectForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewAddProjectNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddProjectConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddProjectInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type AddProjectOK struct {
 
 func (o *AddProjectOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectOK  %+v", 200, o.Payload)
+}
+
+func (o *AddProjectOK) GetPayload() *mono_models.Project {
+	return o.Payload
 }
 
 func (o *AddProjectOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *AddProjectBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddProjectBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddProjectBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -145,6 +146,10 @@ type AddProjectForbidden struct {
 
 func (o *AddProjectForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddProjectForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddProjectForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *AddProjectNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectNotFound  %+v", 404, o.Payload)
 }
 
+func (o *AddProjectNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddProjectNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -205,6 +214,10 @@ func (o *AddProjectConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddProjectConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddProjectConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -232,6 +245,10 @@ type AddProjectInternalServerError struct {
 
 func (o *AddProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddProjectInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddProjectInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

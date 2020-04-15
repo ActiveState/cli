@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListInvitationsReader is a Reader for the ListInvitations structure.
@@ -24,28 +23,24 @@ type ListInvitationsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListInvitationsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListInvitationsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewListInvitationsBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewListInvitationsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewListInvitationsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -75,6 +70,10 @@ func (o *ListInvitationsOK) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsOK  %+v", 200, o.Payload)
 }
 
+func (o *ListInvitationsOK) GetPayload() []*mono_models.Invitation {
+	return o.Payload
+}
+
 func (o *ListInvitationsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -100,6 +99,10 @@ type ListInvitationsBadRequest struct {
 
 func (o *ListInvitationsBadRequest) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *ListInvitationsBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListInvitationsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -131,6 +134,10 @@ func (o *ListInvitationsForbidden) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsForbidden  %+v", 403, o.Payload)
 }
 
+func (o *ListInvitationsForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *ListInvitationsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -158,6 +165,10 @@ type ListInvitationsInternalServerError struct {
 
 func (o *ListInvitationsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ListInvitationsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ListInvitationsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

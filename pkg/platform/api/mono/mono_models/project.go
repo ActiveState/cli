@@ -8,14 +8,14 @@ package mono_models
 import (
 	"strconv"
 
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Project project
+//
 // swagger:model Project
 type Project struct {
 
@@ -24,7 +24,7 @@ type Project struct {
 	Added strfmt.DateTime `json:"added,omitempty"`
 
 	// branches
-	Branches Branches `json:"branches"`
+	Branches Branches `json:"branches,omitempty"`
 
 	// created by
 	CreatedBy *string `json:"createdBy,omitempty"`
@@ -281,6 +281,7 @@ func (m *Project) UnmarshalBinary(b []byte) error {
 }
 
 // ProjectForkedFrom project forked from
+//
 // swagger:model ProjectForkedFrom
 type ProjectForkedFrom struct {
 
@@ -315,6 +316,7 @@ func (m *ProjectForkedFrom) UnmarshalBinary(b []byte) error {
 }
 
 // ProjectLanguagesItems0 project languages items0
+//
 // swagger:model ProjectLanguagesItems0
 type ProjectLanguagesItems0 struct {
 
@@ -372,6 +374,7 @@ func (m *ProjectLanguagesItems0) UnmarshalBinary(b []byte) error {
 }
 
 // ProjectPlatformsItems0 project platforms items0
+//
 // swagger:model ProjectPlatformsItems0
 type ProjectPlatformsItems0 struct {
 

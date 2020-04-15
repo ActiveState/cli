@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SearchEmailsReader is a Reader for the SearchEmails structure.
@@ -25,21 +24,18 @@ type SearchEmailsReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *SearchEmailsReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewSearchEmailsOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewSearchEmailsForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewSearchEmailsInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -69,6 +65,10 @@ func (o *SearchEmailsOK) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsOK  %+v", 200, o.Payload)
 }
 
+func (o *SearchEmailsOK) GetPayload() []*mono_models.User {
+	return o.Payload
+}
+
 func (o *SearchEmailsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -94,6 +94,10 @@ type SearchEmailsForbidden struct {
 
 func (o *SearchEmailsForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsForbidden  %+v", 403, o.Payload)
+}
+
+func (o *SearchEmailsForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SearchEmailsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -123,6 +127,10 @@ type SearchEmailsInternalServerError struct {
 
 func (o *SearchEmailsInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *SearchEmailsInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SearchEmailsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -6,13 +6,14 @@ package ingredients
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new ingredients API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,25 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-AddIngredient creates a new builder ingredient
+// ClientService is the interface for Client methods
+type ClientService interface {
+	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOK, error)
 
-Create a new package
+	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error)
+
+	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error)
+
+	ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientVersionsOK, error)
+
+	ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  AddIngredient creates a new builder ingredient
+
+  Create a new package
 */
 func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +67,20 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*AddIngredientOK), nil
-
+	success, ok := result.(*AddIngredientOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addIngredient: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetIngredient gets an ingredient
+  GetIngredient gets an ingredient
 
-fetch a specific ingredient
+  fetch a specific ingredient
 */
 func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +93,7 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 		Method:             "GET",
 		PathPattern:        "/ingredients/{ingredientID}",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetIngredientReader{formats: a.formats},
@@ -82,12 +104,18 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetIngredientOK), nil
-
+	success, ok := result.(*GetIngredientOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getIngredient: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetIngredientVersion List of valid versions for an ingredient
+  GetIngredientVersion List of valid versions for an ingredient
 */
 func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -111,12 +139,18 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetIngredientVersionOK), nil
-
+	success, ok := result.(*GetIngredientVersionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getIngredientVersion: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListIngredientVersions List of valid versions for an ingredient
+  ListIngredientVersions List of valid versions for an ingredient
 */
 func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -140,14 +174,20 @@ func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListIngredientVersionsOK), nil
-
+	success, ok := result.(*ListIngredientVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listIngredientVersions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-ListIngredients lists of builder ingredients
+  ListIngredients lists of builder ingredients
 
-Retrieve a list of all valid builder ingredients
+  Retrieve a list of all valid builder ingredients
 */
 func (a *Client) ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -171,8 +211,14 @@ func (a *Client) ListIngredients(params *ListIngredientsParams, authInfo runtime
 	if err != nil {
 		return nil, err
 	}
-	return result.(*ListIngredientsOK), nil
-
+	success, ok := result.(*ListIngredientsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for listIngredients: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

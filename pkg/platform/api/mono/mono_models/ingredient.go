@@ -6,14 +6,14 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
 // Ingredient An ingredient is a single source code item that we build, such as a language core, C library, or language package.  This information is mirrored from the kitchen service which is the ultimate source of this data.  Architecture is likley to change as that service is developed.
+//
 //
 // swagger:model Ingredient
 type Ingredient struct {

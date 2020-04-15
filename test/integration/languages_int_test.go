@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
 type LanguagesIntegrationTestSuite struct {
@@ -61,7 +62,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 
 	cp = ts.Spawn("languages", "update", "python")
 	// This can take a little while
-	cp.ExpectExitCode(0, 30*time.Second)
+	cp.ExpectExitCode(0, 60*time.Second)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")

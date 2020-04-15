@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddFormatReader is a Reader for the AddFormat structure.
@@ -24,35 +23,30 @@ type AddFormatReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddFormatReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddFormatOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddFormatBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddFormatForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddFormatConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddFormatInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type AddFormatOK struct {
 
 func (o *AddFormatOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatOK  %+v", 200, o.Payload)
+}
+
+func (o *AddFormatOK) GetPayload() *mono_models.Format {
+	return o.Payload
 }
 
 func (o *AddFormatOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *AddFormatBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddFormatBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddFormatBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type AddFormatForbidden struct {
 
 func (o *AddFormatForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddFormatForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddFormatForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *AddFormatConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddFormatConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddFormatConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type AddFormatInternalServerError struct {
 
 func (o *AddFormatInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddFormatInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddFormatInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

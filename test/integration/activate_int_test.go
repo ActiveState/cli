@@ -52,6 +52,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.ExpectExitCode(123, 10*time.Second)
 }
 
+// TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS != "linux" {
 		suite.T().Skip("not currently testing this OS")
@@ -213,8 +214,8 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(locale.Tr("installer_err_runtime_no_commits", namespace))
-	cp.ExpectExitCode(0)
+	cp.Expect(locale.Tr("err_project_no_commit", url))
+	cp.ExpectExitCode(1)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {

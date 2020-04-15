@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -114,6 +114,25 @@ func LatestCommitID(ownerName, projectName string) (*strfmt.UUID, *failures.Fail
 
 // CommitHistory will return the commit history for the given owner / project
 func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failures.Failure) {
+	offset := int64(0)
+	limit := int64(100)
+	var commits []*mono_models.Commit
+
+	cont := true
+	for cont {
+		payload, fail := CommitHistoryPaged(ownerName, projectName, offset, limit)
+		if fail != nil {
+			return commits, fail
+		}
+		commits = append(commits, payload.Commits...)
+		cont = payload.TotalCommits > (offset + limit)
+	}
+
+	return commits, nil
+}
+
+// CommitHistory will return the commit history for the given owner / project
+func CommitHistoryPaged(ownerName, projectName string, offset, limit int64) (*mono_models.CommitHistoryInfo, *failures.Failure) {
 	latestCID, fail := LatestCommitID(ownerName, projectName)
 	if fail != nil {
 		return nil, fail
@@ -121,9 +140,11 @@ func CommitHistory(ownerName, projectName string) ([]*mono_models.Commit, *failu
 
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(*latestCID)
+	params.Limit = &limit
+	params.Offset = &offset
 	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	if err != nil {
-		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", err.Error()))
+		return nil, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", api.ErrorMessageFromPayload(err)))
 	}
 
 	return res.Payload, nil
@@ -157,7 +178,7 @@ func CommitsBehindLatest(ownerName, projectName, commitID string) (int, *failure
 		return 0, FailGetCommitHistory.New(locale.Tr("err_get_commit_history", err.Error()))
 	}
 
-	indexed := makeIndexedCommits(res.Payload)
+	indexed := makeIndexedCommits(res.Payload.Commits)
 	return indexed.countBetween(commitID, latestCID.String())
 }
 

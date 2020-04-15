@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddLanguageReader is a Reader for the AddLanguage structure.
@@ -24,28 +23,24 @@ type AddLanguageReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddLanguageReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddLanguageOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddLanguageBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddLanguageForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddLanguageConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type AddLanguageOK struct {
 
 func (o *AddLanguageOK) Error() string {
 	return fmt.Sprintf("[POST /languages][%d] addLanguageOK  %+v", 200, o.Payload)
+}
+
+func (o *AddLanguageOK) GetPayload() *mono_models.Language {
+	return o.Payload
 }
 
 func (o *AddLanguageOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *AddLanguageBadRequest) Error() string {
 	return fmt.Sprintf("[POST /languages][%d] addLanguageBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddLanguageBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddLanguageBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *AddLanguageForbidden) Error() string {
 	return fmt.Sprintf("[POST /languages][%d] addLanguageForbidden  %+v", 403, o.Payload)
 }
 
+func (o *AddLanguageForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddLanguageForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type AddLanguageConflict struct {
 
 func (o *AddLanguageConflict) Error() string {
 	return fmt.Sprintf("[POST /languages][%d] addLanguageConflict  %+v", 409, o.Payload)
+}
+
+func (o *AddLanguageConflict) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddLanguageConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

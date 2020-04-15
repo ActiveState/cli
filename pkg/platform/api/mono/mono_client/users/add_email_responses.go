@@ -10,11 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddEmailReader is a Reader for the AddEmail structure.
@@ -25,42 +24,36 @@ type AddEmailReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddEmailReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddEmailOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddEmailBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddEmailForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewAddEmailNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddEmailConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddEmailInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -88,6 +81,10 @@ type AddEmailOK struct {
 
 func (o *AddEmailOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailOK  %+v", 200, o.Payload)
+}
+
+func (o *AddEmailOK) GetPayload() *mono_models.Email {
+	return o.Payload
 }
 
 func (o *AddEmailOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -119,6 +116,10 @@ func (o *AddEmailBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddEmailBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddEmailBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -146,6 +147,10 @@ type AddEmailForbidden struct {
 
 func (o *AddEmailForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddEmailForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddEmailForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -177,6 +182,10 @@ func (o *AddEmailNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailNotFound  %+v", 404, o.Payload)
 }
 
+func (o *AddEmailNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddEmailNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -206,6 +215,10 @@ func (o *AddEmailConflict) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddEmailConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddEmailConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -233,6 +246,10 @@ type AddEmailInternalServerError struct {
 
 func (o *AddEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddEmailInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddEmailInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

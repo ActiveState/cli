@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetBranchReader is a Reader for the GetBranch structure.
@@ -24,14 +23,12 @@ type GetBranchReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetBranchReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetBranchOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetBranchNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *GetBranchOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/branch/{branchID}][%d] getBranchOK  %+v", 200, o.Payload)
 }
 
+func (o *GetBranchOK) GetPayload() *mono_models.Branch {
+	return o.Payload
+}
+
 func (o *GetBranchOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Branch)
@@ -88,6 +89,10 @@ type GetBranchNotFound struct {
 
 func (o *GetBranchNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/branch/{branchID}][%d] getBranchNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetBranchNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetBranchNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

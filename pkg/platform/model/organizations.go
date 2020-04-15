@@ -3,6 +3,9 @@ package model
 import (
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -10,10 +13,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	clientOrgs "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 // FailOrgResponseLen is a failure due to the response length not matching the request length
@@ -85,7 +86,7 @@ func InviteUserToOrg(org *mono_models.Organization, asOwner bool, email string) 
 		AddedOnly: true,
 		AsOwner:   asOwner,
 	}
-	params.SetOrganizationName(org.Urlname)
+	params.SetOrganizationName(org.URLname)
 	params.SetAttributes(body)
 	params.SetEmail(email)
 	resOk, err := authentication.Client().Organizations.InviteOrganization(params, authentication.ClientAuth())

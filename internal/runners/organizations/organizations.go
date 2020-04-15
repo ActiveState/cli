@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/bndr/gotabulate"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/bndr/gotabulate"
 )
 
 type Organizations struct{}
@@ -71,7 +72,7 @@ func orgsAsJSON(orgs []*mono_models.Organization) ([]byte, *failures.Failure) {
 		if val, ok := tiersToPrivMap[org.Tier]; ok {
 			orgsRaw[i] = orgRaw{
 				Name:            org.Name,
-				URLName:         org.Urlname,
+				URLName:         org.URLname,
 				Tier:            org.Tier,
 				PrivateProjects: val,
 			}

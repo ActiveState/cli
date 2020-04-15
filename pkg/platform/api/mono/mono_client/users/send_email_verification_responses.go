@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // SendEmailVerificationReader is a Reader for the SendEmailVerification structure.
@@ -24,35 +23,30 @@ type SendEmailVerificationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *SendEmailVerificationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewSendEmailVerificationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewSendEmailVerificationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewSendEmailVerificationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewSendEmailVerificationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewSendEmailVerificationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type SendEmailVerificationOK struct {
 
 func (o *SendEmailVerificationOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/send][%d] sendEmailVerificationOK  %+v", 200, o.Payload)
+}
+
+func (o *SendEmailVerificationOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SendEmailVerificationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *SendEmailVerificationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/send][%d] sendEmailVerificationBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *SendEmailVerificationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *SendEmailVerificationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type SendEmailVerificationForbidden struct {
 
 func (o *SendEmailVerificationForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/send][%d] sendEmailVerificationForbidden  %+v", 403, o.Payload)
+}
+
+func (o *SendEmailVerificationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SendEmailVerificationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *SendEmailVerificationNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/send][%d] sendEmailVerificationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *SendEmailVerificationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *SendEmailVerificationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type SendEmailVerificationInternalServerError struct {
 
 func (o *SendEmailVerificationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/send][%d] sendEmailVerificationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *SendEmailVerificationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *SendEmailVerificationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
