@@ -235,9 +235,9 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 			logging.Debug("Calling inRelocationFile")
 			relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
 			if fileutils.FileExists(relocFilePath) {
-				return checkRelocationFile(relocFilePath, p)
+				return checkRelocationFile(relocFilePath, p, cb)
 			}
-			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) && rt.GOOS != "windows" {
+			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
 				return true
 			}
