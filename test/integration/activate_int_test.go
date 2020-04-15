@@ -190,6 +190,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.WaitForInput()
 
 	cp.SendLine(perlExe + " -e \"use DBD::Pg\"")
+	// Expect no output as an error would be printed if the module wasn't available
 	cp.Expect("")
 }
 
