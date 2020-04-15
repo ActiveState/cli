@@ -53,26 +53,23 @@ func (m *MetaData) perlRelocationDir() (string, *failures.Failure) {
 	return match[1], nil
 }
 
-func inRelocationFile(metaData *MetaData, path string) bool {
-	relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
-	if fileutils.FileExists(relocFilePath) {
-		relocBytes, err := ioutil.ReadFile(relocFilePath)
-		if err != nil {
-			logging.Debug("Could not open relocation file: %v", err)
-			return false
+func checkRelocationFile(relocFilePath, path string) bool {
+	relocBytes, err := ioutil.ReadFile(relocFilePath)
+	if err != nil {
+		logging.Debug("Could not open relocation file: %v", err)
+		return false
+	}
+	reloc := string(relocBytes)
+	entries := strings.Split(reloc, "\n")
+	for _, entry := range entries {
+		if entry == "" {
+			continue
 		}
-		reloc := string(relocBytes)
-		entries := strings.Split(reloc, "\n")
-		for _, entry := range entries {
-			if entry == "" {
-				continue
-			}
-			info := strings.Split(entry, " ")
-			relativeRelocPath := info[1]
-			if strings.HasSuffix(path, relativeRelocPath) {
-				logging.Debug("File: %s, is in relocation file", path)
-				return true
-			}
+		info := strings.Split(entry, " ")
+		relativeRelocPath := info[1]
+		if strings.HasSuffix(path, relativeRelocPath) {
+			logging.Debug("File: %s, is in relocation file", path)
+			return true
 		}
 	}
 	return false

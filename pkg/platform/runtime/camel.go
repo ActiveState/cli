@@ -225,7 +225,6 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	if len(prefix) == 0 || prefix == metaData.Path {
 		return nil
 	}
-
 	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
 	binariesSeparate := rt.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
 
@@ -233,8 +232,10 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
-			if inRelocationFile(metaData, p) {
-				return true
+			logging.Debug("Calling inRelocationFile")
+			relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
+			if fileutils.FileExists(relocFilePath) {
+				return checkRelocationFile(relocFilePath, p)
 			}
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
