@@ -79,11 +79,11 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	var replaceRegex *regexp.Regexp
+	quoteEscapeFind := regexp.QuoteMeta(find)
 	if IsBinary(fileBytes) {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		// Replacement regex for binary files must account for null characters
-		quoteEscapeFind := regexp.QuoteMeta(find)
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
 		if replaceBytesLen > len(findBytes) {
 			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
@@ -96,7 +96,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s(.*)`, find))
+		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s(.*)`, quoteEscapeFind))
 		logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
