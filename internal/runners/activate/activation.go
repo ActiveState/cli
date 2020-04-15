@@ -2,6 +2,7 @@ package activate
 
 import (
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"path"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -37,6 +39,10 @@ func activationLoop(targetPath string, activator activateFunc) error {
 			return failures.FailUserInput.New("err_project_from_path")
 		}
 		print.Info(locale.T("info_activating_state", proj))
+
+		if proj.CommitID() == "" {
+			return errors.New(locale.Tr("err_project_no_commit", model.ProjectURL(proj.Owner(), proj.Name(), "")))
+		}
 
 		err := os.Chdir(targetPath)
 		if err != nil {
