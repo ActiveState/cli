@@ -55,14 +55,14 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.versionCompare(ts, true, constants.VersionNumber, suite.Equal)
+	suite.versionCompare(ts, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.versionCompare(ts, false, constants.VersionNumber, suite.NotEqual)
+	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
@@ -84,7 +84,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	cp.Expect("Version locked at")
 	cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, false, constants.VersionNumber, suite.Equal)
+	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -100,7 +100,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	}
 	cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, false, constants.VersionNumber, suite.NotEqual)
+	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
