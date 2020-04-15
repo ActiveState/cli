@@ -232,7 +232,6 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
-			logging.Debug("Calling inRelocationFile")
 			relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
 			if fileutils.FileExists(relocFilePath) {
 				return checkRelocationFile(relocFilePath, p, cb)
