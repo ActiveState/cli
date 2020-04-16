@@ -854,7 +854,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
+  other:  Could not determine the state tool version to use to run this command. Please ensure your activestate.yaml is formatted correctly
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 downloading_state_version:
