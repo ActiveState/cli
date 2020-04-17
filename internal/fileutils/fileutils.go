@@ -133,6 +133,19 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 	return nil
 }
 
+func ReplaceAllInDirectoryNew(path, find string, replace string, include includeFunc) error {
+	r := replacer{
+		find:    find,
+		replace: replace,
+		include: include,
+	}
+
+	logging.Debug("Calling replace all in dir")
+	r.replaceAllInDirectory(path)
+
+	return nil
+}
+
 // IsBinary checks if the given bytes are for a binary file
 func IsBinary(fileBytes []byte) bool {
 	return bytes.IndexByte(fileBytes, nullByte) != -1
@@ -401,7 +414,7 @@ func walkPathAndFindFile(dir, filename string) string {
 }
 
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
-// the file with 0644 perms if it does not exist. 
+// the file with 0644 perms if it does not exist.
 func Touch(path string) *failures.Failure {
 	fail := MkdirUnlessExists(filepath.Dir(path))
 	if fail != nil {

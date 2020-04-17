@@ -219,11 +219,10 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	binariesSeparate := rt.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
 
 	// Replace plain text files
-	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
+	err := fileutils.ReplaceAllInDirectoryNew(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
-				cb()
 				return true
 			}
 			return false
@@ -231,6 +230,7 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	if err != nil {
 		return FailRuntimeInstallation.Wrap(err)
 	}
+	cb()
 
 	if binariesSeparate {
 		replacement := filepath.Join(metaData.Path, metaData.RelocationTargetBinaries)
