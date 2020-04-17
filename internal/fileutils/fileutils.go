@@ -134,16 +134,8 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 }
 
 func ReplaceAllInDirectoryNew(path, find string, replace string, include includeFunc) error {
-	r := replacer{
-		find:    find,
-		replace: replace,
-		include: include,
-	}
-
-	logging.Debug("Calling replace all in dir")
-	r.replaceAllInDirectory(path)
-
-	return nil
+	r := newReplacer(path, find, replace, include)
+	return r.run()
 }
 
 // IsBinary checks if the given bytes are for a binary file
