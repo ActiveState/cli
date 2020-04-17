@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -10,11 +11,14 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/thoas/go-funk"
 
+	survey "gopkg.in/AlecAivazis/survey.v1/core"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config" // MUST be first!
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/deprecation"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -27,7 +31,6 @@ import (
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	survey "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
@@ -55,6 +58,7 @@ func main() {
 
 	code, err := run(os.Args, outputer)
 	if err != nil {
+		err = processErrs(err)
 		outputer.Error(err.Error())
 	}
 
@@ -299,4 +303,26 @@ func relaunch() (int, error) {
 	}
 
 	return osutils.CmdExitCode(cmd), err
+}
+
+func processErrs(err error) error {
+	var ee *errs.Error
+	isErrs := errors.As(err, ee)
+	if ! isErrs {
+		return err
+	}
+
+	// Log error if this isn't a user input error
+	if ! errors.Is(err, errs.UserInputErr) {
+		logging.Error("Returning error: %s, created at: %s", ee.Error(), ee.Stack().String())
+	}
+
+	// Log if the error isn't localized
+	if _, ok := err.(locale.ErrorLocalizer); !ok {
+		logging.Error("MUST ADDRESS: Error does not have localization: %s", err.Error())
+		return err
+	}
+
+	// Receive the localized error
+	return locale.JoinErrors(err, "\n")
 }

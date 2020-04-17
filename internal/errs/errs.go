@@ -57,5 +57,12 @@ func New(message string, args ...interface{}) error {
 
 // Wrap will wrap one error around another, allowing it to unwrap to the wrapTarget
 func Wrap(err error, wrapTarget error) error {
+	// Just amend the existing error if we already have an errs.Error type and the wrapped is nil
+	ee := ToError(err).(*Error)
+	if ee.wrapped == nil {
+		ee.wrapped = wrapTarget
+		return ee
+	}
+	
 	return newError(err, wrapTarget)
 }
