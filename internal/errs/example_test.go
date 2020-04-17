@@ -3,7 +3,6 @@ package errs_test
 import (
 	"errors"
 	"fmt"
-	"os"
 	"runtime"
 	"testing"
 
@@ -16,24 +15,21 @@ func TestExample(t *testing.T) {
 	err := errs.New("Regular error message on %s", runtime.GOOS)
 
 	// Wrap & Localize it
-	err = errs.Localize(err, locale.T("err_localized"))
-
-	fmt.Printf("isLocale: %v", errs.IsLocale(err))
+	err = errs.Wrap(locale.NewError("err_localized", "Hello {{.V0}}!", "World!"), err)
 
 	// Or just create a localized one on the fly
-	err = errs.NewLocalized(locale.T("err_localized"))
+	err = locale.NewError("err_localized", "Hello {{.V0}}!", "World!")
 
-	// Wrap an error
-	path := "/"
-	_, err = os.Create(path)
-	if err != nil {
-		err = errs.NewWrapped(err, "Could not create file at %s", path)
+	// Assert locale (this is a shortcut for errors.Is(), so you can use a one-liner)
+	fmt.Printf("isLocale: %v", locale.IsError(err))
 
-		// Or localize it
-		err = errs.Localize(err, locale.Tr("err_localized"))
-	}
-
-	// Create our own error, but ALL errors should be funneled through errs
+	// Create our own error, but ALL errors should be funneled through errs to add stack traces (FOR NOW, due to legacy code)
 	type MyError struct{ error }
-	err = errs.NewError(&MyError{errors.New("My Error!")})
+	err = errs.ToError(&MyError{errors.New("My Error!")})
+
+	// Add Property to check if due to user input
+	err = errs.Wrap(errs.New("Some Error"), errs.UserInputErr)
+	if errors.Is(err, errs.UserInputErr) {
+		fmt.Printf(err.Error())
+	}
 }

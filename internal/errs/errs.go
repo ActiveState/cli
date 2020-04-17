@@ -1,66 +1,61 @@
 package errs
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
-type WrappedError struct {
+type Error struct {
 	error
 	wrapped error
+	stack   *stacktrace.Stacktrace
 }
 
-func (e *WrappedError) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.wrapped
 }
 
-type LocalizedError struct {
+func (e *Error) Stack() *stacktrace.Stacktrace {
+	return e.stack
+}
+
+type UserInputError struct {
 	error
 }
 
-func (e *LocalizedError) Localized() bool {
-	return true
+func (e *UserInputError) Unwrap() error {
+	return e.error
 }
 
-type Localizer interface {
-	Localized() bool
-}
+var UserInputErr = &UserInputError{}
 
-func New(message string, args ...interface{}) error {
-	return errors.New(fmt.Sprintf(message, args...))
-}
-
-func NewWrapped(err error, message string, args ...interface{}) error {
-	return &WrappedError{
-		New(message, args...),
+func newError(err error, wrapTarget error) error {
+	return &Error{
 		err,
+		wrapTarget,
+		stacktrace.GetWithSkip([]string{rtutils.CurrentFile()}),
 	}
 }
 
-func NewLocalized(locale string) error {
-	return &LocalizedError{New(locale)}
+// ToError ensures the given error is wrapped in errs.Error
+func ToError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if ee, ok := err.(*Error); ok {
+		return ee
+	}
+	return newError(err, nil)
 }
 
-func NewError(err error) error {
-	return NewErrorWithLogger(err, logging.Error)
+// New creates a new error, similar to errors.New
+func New(message string, args ...interface{}) error {
+	return newError(fmt.Errorf(message, args...), nil)
 }
 
-// NewErrorWithLogger is used by tests primarily, so we can unit test the logging part
-// perhaps this would live better in a struct so we can not rely on globals at all, but for now that's not worth the effort
-func NewErrorWithLogger(err error, logger func(v string, args ...interface{})) error {
-	stack := stacktrace.Get()
-	logger("Error created: %s. Stack:\n%s", err.Error(), stack.String())
-	return err
-}
-
-func Localize(err error, locale string) error {
-	return &LocalizedError{&WrappedError{errors.New(locale), err}}
-}
-
-func IsLocale(err error) bool {
-	var errLocale Localizer = &LocalizedError{}
-	return errors.As(err, &errLocale)
+// Wrap will wrap one error around another, allowing it to unwrap to the wrapTarget
+func Wrap(err error, wrapTarget error) error {
+	return newError(err, wrapTarget)
 }
