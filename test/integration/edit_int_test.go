@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type EditIntegrationTestSuite struct {
@@ -26,7 +27,8 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 	root := environment.GetRootPathUnsafe()
 	editorScript := filepath.Join(root, "test", "integration", "assets", "editor", "main.go")
 
-	fail := fileutils.CopyFile(editorScript, filepath.Join(ts.Dirs.Work, "editor", "main.go"))
+	target := filepath.Join(ts.Dirs.Work, "editor", "main.go")
+	fail := fileutils.CopyFile(editorScript, target)
 	suite.Require().NoError(fail.ToError())
 
 	configFileContent := strings.TrimSpace(`
@@ -51,7 +53,7 @@ scripts:
 	}
 	cp := ts.SpawnCmdWithOpts(
 		"go",
-		e2e.WithArgs("build", "-o", "editor"+extension),
+		e2e.WithArgs("build", "-o", "editor"+extension, target),
 		e2e.WithWorkDirectory(editorScriptDir),
 	)
 	cp.ExpectExitCode(0)
@@ -70,8 +72,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
 	cp.Expect("Are you done editing?")
-	// Can't consistently get this line detected on CI
-	// suite.Expect("Script changes detected")
+	cp.Expect("Script changes detected")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 }
@@ -86,7 +87,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
 	cp.SendCtrlC()
-	cp.ExpectExitCode(0)
+	cp.Wait()
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
@@ -99,13 +100,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	time.Sleep(time.Second * 2) // let CI env catch up
 
 	project := projectfile.Get()
-	for _, script := range project.Scripts {
-		if script.Name == "test-script" {
-			if !constraints.IsConstrained(script.Constraints) {
-				suite.Contains(script.Value, "more info!")
-			}
-		}
-	}
+	i := constraints.MostSpecificUnconstrained("test-script", project.Scripts.AsConstrainedEntities())
+	suite.Require().GreaterOrEqual(0, i)
+	suite.Contains(project.Scripts[i].Value, "more info!")
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

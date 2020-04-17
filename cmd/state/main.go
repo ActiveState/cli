@@ -270,12 +270,12 @@ func handlePanics(exiter func(int)) {
 
 func autoUpdate(args []string) (updated bool, resultVersion string) {
 	switch {
-	case (condition.InTest() && strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"):
+	case condition.InTest() || strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true":
 		return false, ""
 	case funk.Contains(args, "update"):
 		// Don't auto-update if we're 'state update'ing
 		return false, ""
-	case os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "":
+	case (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false":
 		// Do not auto-update if we are on CI.
 		// For CircleCI, TravisCI, and AppVeyor use the CI
 		// environment variable. For GCB we check BUILDER_OUTPUT

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ChangePasswordReader is a Reader for the ChangePassword structure.
@@ -24,35 +23,30 @@ type ChangePasswordReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ChangePasswordReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewChangePasswordOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewChangePasswordBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewChangePasswordForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewChangePasswordNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewChangePasswordInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type ChangePasswordOK struct {
 
 func (o *ChangePasswordOK) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordOK  %+v", 200, o.Payload)
+}
+
+func (o *ChangePasswordOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ChangePasswordOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *ChangePasswordBadRequest) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *ChangePasswordBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *ChangePasswordBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type ChangePasswordForbidden struct {
 
 func (o *ChangePasswordForbidden) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordForbidden  %+v", 403, o.Payload)
+}
+
+func (o *ChangePasswordForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ChangePasswordForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *ChangePasswordNotFound) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordNotFound  %+v", 404, o.Payload)
 }
 
+func (o *ChangePasswordNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *ChangePasswordNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type ChangePasswordInternalServerError struct {
 
 func (o *ChangePasswordInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ChangePasswordInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ChangePasswordInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

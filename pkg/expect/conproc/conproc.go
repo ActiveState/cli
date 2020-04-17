@@ -16,9 +16,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/vt10x"
+
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/expect"
-	"github.com/ActiveState/vt10x"
 )
 
 var (
@@ -282,6 +283,14 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	}
 	if eexit.ExitCode() == exitCode {
 		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been %d", exitCode))
+	}
+}
+
+// Wait waits for the program under test to terminate, not caring about the exit code at all
+func (cp *ConsoleProcess) Wait(timeout ...time.Duration) {
+	_, _, err := cp.wait(timeout...)
+	if err != nil {
+		fmt.Printf("Process exited with error: %v (This is not fatal when using Wait())", err)
 	}
 }
 

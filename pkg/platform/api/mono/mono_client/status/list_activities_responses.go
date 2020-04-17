@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListActivitiesReader is a Reader for the ListActivities structure.
@@ -24,7 +23,6 @@ type ListActivitiesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListActivitiesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListActivitiesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,6 +50,10 @@ type ListActivitiesOK struct {
 
 func (o *ListActivitiesOK) Error() string {
 	return fmt.Sprintf("[GET /activities][%d] listActivitiesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListActivitiesOK) GetPayload() []*mono_models.Activity {
+	return o.Payload
 }
 
 func (o *ListActivitiesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

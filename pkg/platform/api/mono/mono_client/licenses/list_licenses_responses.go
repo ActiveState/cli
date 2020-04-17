@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ListLicensesReader is a Reader for the ListLicenses structure.
@@ -24,7 +23,6 @@ type ListLicensesReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ListLicensesReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewListLicensesOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,6 +50,10 @@ type ListLicensesOK struct {
 
 func (o *ListLicensesOK) Error() string {
 	return fmt.Sprintf("[GET /licenses][%d] listLicensesOK  %+v", 200, o.Payload)
+}
+
+func (o *ListLicensesOK) GetPayload() []*mono_models.License {
+	return o.Payload
 }
 
 func (o *ListLicensesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

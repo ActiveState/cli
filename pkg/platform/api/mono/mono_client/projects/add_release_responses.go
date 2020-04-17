@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddReleaseReader is a Reader for the AddRelease structure.
@@ -24,42 +23,36 @@ type AddReleaseReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddReleaseReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddReleaseOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddReleaseBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddReleaseForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewAddReleaseNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddReleaseConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddReleaseInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type AddReleaseOK struct {
 
 func (o *AddReleaseOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseOK  %+v", 200, o.Payload)
+}
+
+func (o *AddReleaseOK) GetPayload() *mono_models.Release {
+	return o.Payload
 }
 
 func (o *AddReleaseOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *AddReleaseBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddReleaseBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddReleaseBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -145,6 +146,10 @@ type AddReleaseForbidden struct {
 
 func (o *AddReleaseForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddReleaseForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddReleaseForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *AddReleaseNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseNotFound  %+v", 404, o.Payload)
 }
 
+func (o *AddReleaseNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddReleaseNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -205,6 +214,10 @@ func (o *AddReleaseConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddReleaseConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddReleaseConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -232,6 +245,10 @@ type AddReleaseInternalServerError struct {
 
 func (o *AddReleaseInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddReleaseInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddReleaseInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

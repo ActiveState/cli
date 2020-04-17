@@ -6,13 +6,14 @@ package limits
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/go-openapi/runtime"
+	"fmt"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new limits API client.
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Client {
+func New(transport runtime.ClientTransport, formats strfmt.Registry) ClientService {
 	return &Client{transport: transport, formats: formats}
 }
 
@@ -24,10 +25,19 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-/*
-EditOrganizationLimits updates an orgs limits
+// ClientService is the interface for Client methods
+type ClientService interface {
+	EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationLimitsOK, error)
 
-Update an orgs limits
+	GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationLimitsOK, error)
+
+	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  EditOrganizationLimits updates an orgs limits
+
+  Update an orgs limits
 */
 func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationLimitsOK, error) {
 	// TODO: Validate the params before sending
@@ -51,14 +61,20 @@ func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, au
 	if err != nil {
 		return nil, err
 	}
-	return result.(*EditOrganizationLimitsOK), nil
-
+	success, ok := result.(*EditOrganizationLimitsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editOrganizationLimits: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 /*
-GetOrganizationLimits organizations limitations
+  GetOrganizationLimits organizations limitations
 
-Returns the limitations that apply to the org (inherited from their tier)
+  Returns the limitations that apply to the org (inherited from their tier)
 */
 func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationLimitsOK, error) {
 	// TODO: Validate the params before sending
@@ -71,7 +87,7 @@ func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, auth
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}/limits",
 		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{""},
+		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
 		Params:             params,
 		Reader:             &GetOrganizationLimitsReader{formats: a.formats},
@@ -82,8 +98,14 @@ func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, auth
 	if err != nil {
 		return nil, err
 	}
-	return result.(*GetOrganizationLimitsOK), nil
-
+	success, ok := result.(*GetOrganizationLimitsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationLimits: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
 }
 
 // SetTransport changes the transport on the client

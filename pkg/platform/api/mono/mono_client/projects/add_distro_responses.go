@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // AddDistroReader is a Reader for the AddDistro structure.
@@ -24,35 +23,30 @@ type AddDistroReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *AddDistroReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewAddDistroOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewAddDistroBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewAddDistroForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewAddDistroConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewAddDistroInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type AddDistroOK struct {
 
 func (o *AddDistroOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroOK  %+v", 200, o.Payload)
+}
+
+func (o *AddDistroOK) GetPayload() *mono_models.Distro {
+	return o.Payload
 }
 
 func (o *AddDistroOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *AddDistroBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *AddDistroBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddDistroBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type AddDistroForbidden struct {
 
 func (o *AddDistroForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroForbidden  %+v", 403, o.Payload)
+}
+
+func (o *AddDistroForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddDistroForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *AddDistroConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroConflict  %+v", 409, o.Payload)
 }
 
+func (o *AddDistroConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *AddDistroConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type AddDistroInternalServerError struct {
 
 func (o *AddDistroInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *AddDistroInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *AddDistroInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetOrganizationReader is a Reader for the GetOrganization structure.
@@ -24,21 +23,18 @@ type GetOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -66,6 +62,10 @@ type GetOrganizationOK struct {
 
 func (o *GetOrganizationOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationOK  %+v", 200, o.Payload)
+}
+
+func (o *GetOrganizationOK) GetPayload() *mono_models.Organization {
+	return o.Payload
 }
 
 func (o *GetOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -97,6 +97,10 @@ func (o *GetOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -124,6 +128,10 @@ type GetOrganizationInternalServerError struct {
 
 func (o *GetOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

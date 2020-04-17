@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // PostLoginReader is a Reader for the PostLogin structure.
@@ -24,35 +23,30 @@ type PostLoginReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *PostLoginReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewPostLoginOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewPostLoginBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 401:
 		result := NewPostLoginUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 449:
 		result := NewPostLoginRetryWith()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewPostLoginInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type PostLoginOK struct {
 
 func (o *PostLoginOK) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginOK  %+v", 200, o.Payload)
+}
+
+func (o *PostLoginOK) GetPayload() *mono_models.JWT {
+	return o.Payload
 }
 
 func (o *PostLoginOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *PostLoginBadRequest) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *PostLoginBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *PostLoginBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type PostLoginUnauthorized struct {
 
 func (o *PostLoginUnauthorized) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginUnauthorized  %+v", 401, o.Payload)
+}
+
+func (o *PostLoginUnauthorized) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *PostLoginUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *PostLoginRetryWith) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginRetryWith  %+v", 449, o.Payload)
 }
 
+func (o *PostLoginRetryWith) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *PostLoginRetryWith) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type PostLoginInternalServerError struct {
 
 func (o *PostLoginInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *PostLoginInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *PostLoginInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

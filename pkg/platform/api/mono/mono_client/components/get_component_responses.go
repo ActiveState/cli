@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetComponentReader is a Reader for the GetComponent structure.
@@ -24,14 +23,12 @@ type GetComponentReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetComponentReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetComponentOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 404:
 		result := NewGetComponentNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -61,6 +58,10 @@ func (o *GetComponentOK) Error() string {
 	return fmt.Sprintf("[GET /components/{componentID}][%d] getComponentOK  %+v", 200, o.Payload)
 }
 
+func (o *GetComponentOK) GetPayload() *mono_models.Component {
+	return o.Payload
+}
+
 func (o *GetComponentOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Component)
@@ -88,6 +89,10 @@ type GetComponentNotFound struct {
 
 func (o *GetComponentNotFound) Error() string {
 	return fmt.Sprintf("[GET /components/{componentID}][%d] getComponentNotFound  %+v", 404, o.Payload)
+}
+
+func (o *GetComponentNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetComponentNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

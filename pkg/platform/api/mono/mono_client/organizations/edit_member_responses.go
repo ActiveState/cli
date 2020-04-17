@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditMemberReader is a Reader for the EditMember structure.
@@ -24,35 +23,30 @@ type EditMemberReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditMemberReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditMemberOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditMemberBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditMemberForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditMemberNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditMemberInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -82,6 +76,10 @@ func (o *EditMemberOK) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberOK  %+v", 200, o.Payload)
 }
 
+func (o *EditMemberOK) GetPayload() []*mono_models.Member {
+	return o.Payload
+}
+
 func (o *EditMemberOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -107,6 +105,10 @@ type EditMemberBadRequest struct {
 
 func (o *EditMemberBadRequest) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberBadRequest  %+v", 400, o.Payload)
+}
+
+func (o *EditMemberBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditMemberBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -138,6 +140,10 @@ func (o *EditMemberForbidden) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberForbidden  %+v", 403, o.Payload)
 }
 
+func (o *EditMemberForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditMemberForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -167,6 +173,10 @@ func (o *EditMemberNotFound) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditMemberNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditMemberNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -194,6 +204,10 @@ type EditMemberInternalServerError struct {
 
 func (o *EditMemberInternalServerError) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditMemberInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditMemberInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

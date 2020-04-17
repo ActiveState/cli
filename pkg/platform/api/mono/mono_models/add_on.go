@@ -6,12 +6,12 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	strfmt "github.com/go-openapi/strfmt"
-
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // AddOn add on
+//
 // swagger:model AddOn
 type AddOn struct {
 
@@ -20,6 +20,9 @@ type AddOn struct {
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// name
+	Name string `json:"name,omitempty"`
 }
 
 // Validate validates this add on

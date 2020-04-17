@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // GetTiersReader is a Reader for the GetTiers structure.
@@ -24,28 +23,24 @@ type GetTiersReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *GetTiersReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewGetTiersOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 403:
 		result := NewGetTiersForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewGetTiersNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewGetTiersInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -75,6 +70,10 @@ func (o *GetTiersOK) Error() string {
 	return fmt.Sprintf("[GET /tiers][%d] getTiersOK  %+v", 200, o.Payload)
 }
 
+func (o *GetTiersOK) GetPayload() []*mono_models.Tier {
+	return o.Payload
+}
+
 func (o *GetTiersOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	// response payload
@@ -100,6 +99,10 @@ type GetTiersForbidden struct {
 
 func (o *GetTiersForbidden) Error() string {
 	return fmt.Sprintf("[GET /tiers][%d] getTiersForbidden  %+v", 403, o.Payload)
+}
+
+func (o *GetTiersForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetTiersForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -131,6 +134,10 @@ func (o *GetTiersNotFound) Error() string {
 	return fmt.Sprintf("[GET /tiers][%d] getTiersNotFound  %+v", 404, o.Payload)
 }
 
+func (o *GetTiersNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *GetTiersNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -158,6 +165,10 @@ type GetTiersInternalServerError struct {
 
 func (o *GetTiersInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /tiers][%d] getTiersInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *GetTiersInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *GetTiersInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

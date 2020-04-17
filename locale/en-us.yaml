@@ -924,8 +924,8 @@ installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}'
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
-installer_err_runtime_no_commits:
-  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again
+installer_err_runtime_no_commitid:
+  other: A CommitID is required to install this runtime environment
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
@@ -1431,13 +1431,13 @@ namespace_label_platform:
 namespace_label_preplatform:
   other: "Bits"
 history_commit:
-  other: "[BLUE]commit {{.V0}}[/RESET]\n"
+  other: "[BLUE]commit {{.V0}}[/RESET]"
 history_author:
-  other: "Author: {{.V0}}\n"
+  other: "Author: {{.V0}}"
 history_date:
-  other: "Date: {{.V0}}\n"
+  other: "Date: {{.V0}}"
 history_description:
-  other: "Description: {{.V0}}\n"
+  other: "Description: {{.V0}}"
 history_cmd_description:
   other: View history of the active or given project
 arg_state_history_namespace_description:
@@ -1577,3 +1577,5 @@ err_arg_required:
   other: "The following argument is required:\n  Name: {{.V0}}\n  Description: {{.V1}}"
 err_init_no_language:
   other: "You need to supply the [language] argument, run 'state init --help' for more information."
+err_project_no_commit:
+  other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again.

@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // EditProjectReader is a Reader for the EditProject structure.
@@ -24,42 +23,36 @@ type EditProjectReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *EditProjectReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewEditProjectOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewEditProjectBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewEditProjectForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewEditProjectNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 409:
 		result := NewEditProjectConflict()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewEditProjectInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -87,6 +80,10 @@ type EditProjectOK struct {
 
 func (o *EditProjectOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectOK  %+v", 200, o.Payload)
+}
+
+func (o *EditProjectOK) GetPayload() *mono_models.Project {
+	return o.Payload
 }
 
 func (o *EditProjectOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,6 +115,10 @@ func (o *EditProjectBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *EditProjectBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditProjectBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -145,6 +146,10 @@ type EditProjectForbidden struct {
 
 func (o *EditProjectForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectForbidden  %+v", 403, o.Payload)
+}
+
+func (o *EditProjectForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditProjectForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -176,6 +181,10 @@ func (o *EditProjectNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectNotFound  %+v", 404, o.Payload)
 }
 
+func (o *EditProjectNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditProjectNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -205,6 +214,10 @@ func (o *EditProjectConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectConflict  %+v", 409, o.Payload)
 }
 
+func (o *EditProjectConflict) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *EditProjectConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -232,6 +245,10 @@ type EditProjectInternalServerError struct {
 
 func (o *EditProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *EditProjectInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *EditProjectInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

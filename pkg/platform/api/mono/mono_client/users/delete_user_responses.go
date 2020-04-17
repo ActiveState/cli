@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteUserReader is a Reader for the DeleteUser structure.
@@ -24,35 +23,30 @@ type DeleteUserReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteUserReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteUserOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewDeleteUserBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteUserForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewDeleteUserNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewDeleteUserInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type DeleteUserOK struct {
 
 func (o *DeleteUserOK) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserOK  %+v", 200, o.Payload)
+}
+
+func (o *DeleteUserOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteUserOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *DeleteUserBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *DeleteUserBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteUserBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type DeleteUserForbidden struct {
 
 func (o *DeleteUserForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserForbidden  %+v", 403, o.Payload)
+}
+
+func (o *DeleteUserForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteUserForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *DeleteUserNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserNotFound  %+v", 404, o.Payload)
 }
 
+func (o *DeleteUserNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteUserNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type DeleteUserInternalServerError struct {
 
 func (o *DeleteUserInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *DeleteUserInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteUserInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

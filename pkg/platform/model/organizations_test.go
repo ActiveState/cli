@@ -3,11 +3,12 @@ package model_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/locale"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/stretchr/testify/suite"
 )
 
 type OrganizationsTestSuite struct {
@@ -42,7 +43,7 @@ func (suite *OrganizationsTestSuite) TestOrganizations_FetchByURLName() {
 
 	org, fail := model.FetchOrgByURLName("string")
 	suite.NoError(fail.ToError(), "Fetched organizations")
-	suite.Equal("string", org.Urlname)
+	suite.Equal("string", org.URLname)
 	suite.Equal("string", org.Name)
 }
 

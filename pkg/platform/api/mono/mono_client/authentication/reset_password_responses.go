@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // ResetPasswordReader is a Reader for the ResetPassword structure.
@@ -24,28 +23,24 @@ type ResetPasswordReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ResetPasswordReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewResetPasswordOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewResetPasswordBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewResetPasswordForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewResetPasswordInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -73,6 +68,10 @@ type ResetPasswordOK struct {
 
 func (o *ResetPasswordOK) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordOK  %+v", 200, o.Payload)
+}
+
+func (o *ResetPasswordOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ResetPasswordOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -104,6 +103,10 @@ func (o *ResetPasswordBadRequest) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *ResetPasswordBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *ResetPasswordBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -133,6 +136,10 @@ func (o *ResetPasswordForbidden) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordForbidden  %+v", 403, o.Payload)
 }
 
+func (o *ResetPasswordForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *ResetPasswordForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -160,6 +167,10 @@ type ResetPasswordInternalServerError struct {
 
 func (o *ResetPasswordInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *ResetPasswordInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *ResetPasswordInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -48,22 +48,24 @@ func (p *Project) Platforms() []*Platform {
 
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
+	ls := projectfile.MakeLanguagesFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Languages.AsConstrainedEntities()),
+	)
 	languages := []*Language{}
-	for i, language := range p.projectfile.Languages {
-		if !constraints.IsConstrained(language.Constraints) {
-			languages = append(languages, &Language{&p.projectfile.Languages[i], p})
-		}
+	for _, l := range ls {
+		languages = append(languages, &Language{l, p})
 	}
 	return languages
 }
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
+	cs := projectfile.MakeConstantsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Constants.AsConstrainedEntities()),
+	)
 	constants := []*Constant{}
-	for i, constant := range p.projectfile.Constants {
-		if !constraints.IsConstrained(constant.Constraints) {
-			constants = append(constants, &Constant{p.projectfile.Constants[i], p})
-		}
+	for _, c := range cs {
+		constants = append(constants, &Constant{c, p})
 	}
 	return constants
 }
@@ -81,18 +83,23 @@ func (p *Project) ConstantByName(name string) *Constant {
 // Secrets returns a reference to projectfile.Secrets
 func (p *Project) Secrets() []*Secret {
 	secrets := []*Secret{}
-	if p.projectfile.Secrets != nil && p.projectfile.Secrets.User != nil {
-		for _, secret := range p.projectfile.Secrets.User {
-			if !constraints.IsConstrained(secret.Constraints) {
-				secrets = append(secrets, p.NewSecret(secret, SecretScopeUser))
-			}
+	if p.projectfile.Secrets == nil {
+		return secrets
+	}
+	if p.projectfile.Secrets.User != nil {
+		secs := projectfile.MakeSecretsFromConstrainedEntities(
+			constraints.FilterUnconstrained(p.projectfile.Secrets.User.AsConstrainedEntities()),
+		)
+		for _, s := range secs {
+			secrets = append(secrets, p.NewSecret(s, SecretScopeUser))
 		}
 	}
-	if p.projectfile.Secrets != nil && p.projectfile.Secrets.User != nil {
-		for _, secret := range p.projectfile.Secrets.Project {
-			if !constraints.IsConstrained(secret.Constraints) {
-				secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
-			}
+	if p.projectfile.Secrets.Project != nil {
+		secs := projectfile.MakeSecretsFromConstrainedEntities(
+			constraints.FilterUnconstrained(p.projectfile.Secrets.Project.AsConstrainedEntities()),
+		)
+		for _, secret := range secs {
+			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject))
 		}
 	}
 	return secrets
@@ -110,22 +117,24 @@ func (p *Project) SecretByName(name string, scope SecretScope) *Secret {
 
 // Events returns a reference to projectfile.Events
 func (p *Project) Events() []*Event {
-	events := []*Event{}
-	for i, event := range p.projectfile.Events {
-		if !constraints.IsConstrained(event.Constraints) {
-			events = append(events, &Event{&p.projectfile.Events[i], p})
-		}
+	es := projectfile.MakeEventsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Events.AsConstrainedEntities()),
+	)
+	events := make([]*Event, 0, len(es))
+	for _, e := range es {
+		events = append(events, &Event{e, p})
 	}
 	return events
 }
 
 // Scripts returns a reference to projectfile.Scripts
 func (p *Project) Scripts() []*Script {
-	scripts := []*Script{}
-	for i, script := range p.projectfile.Scripts {
-		if !constraints.IsConstrained(script.Constraints) {
-			scripts = append(scripts, &Script{&p.projectfile.Scripts[i], p})
-		}
+	scs := projectfile.MakeScriptsFromConstrainedEntities(
+		constraints.FilterUnconstrained(p.projectfile.Scripts.AsConstrainedEntities()),
+	)
+	scripts := make([]*Script, 0, len(scs))
+	for _, s := range scs {
+		scripts = append(scripts, &Script{s, p})
 	}
 	return scripts
 }
@@ -358,14 +367,13 @@ func (l *Language) Build() *Build {
 
 // Packages returned are constrained set
 func (l *Language) Packages() []Package {
-	validPackages := []Package{}
-	for i, pkg := range l.language.Packages {
-		if !constraints.IsConstrained(pkg.Constraints) {
-			newPkg := Package{}
-			newPkg.pkg = &l.language.Packages[i]
-			newPkg.project = l.project
-			validPackages = append(validPackages, newPkg)
-		}
+
+	ps := projectfile.MakePackagesFromConstrainedEntities(
+		constraints.FilterUnconstrained(l.language.Packages.AsConstrainedEntities()),
+	)
+	validPackages := make([]Package, 0, len(ps))
+	for _, pkg := range ps {
+		validPackages = append(validPackages, Package{pkg: pkg, project: l.project})
 	}
 	return validPackages
 }
@@ -511,7 +519,7 @@ func (s *Secret) Save(value string) *failures.Failure {
 		return fail
 	}
 
-	remoteProject, fail := model.FetchProjectByName(org.Urlname, s.project.Name())
+	remoteProject, fail := model.FetchProjectByName(org.URLname, s.project.Name())
 	if fail != nil {
 		return fail
 	}

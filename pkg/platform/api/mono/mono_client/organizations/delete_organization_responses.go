@@ -10,10 +10,9 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
-	strfmt "github.com/go-openapi/strfmt"
-
-	mono_models "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 // DeleteOrganizationReader is a Reader for the DeleteOrganization structure.
@@ -24,35 +23,30 @@ type DeleteOrganizationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *DeleteOrganizationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-
 	case 200:
 		result := NewDeleteOrganizationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
-
 	case 400:
 		result := NewDeleteOrganizationBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 403:
 		result := NewDeleteOrganizationForbidden()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 404:
 		result := NewDeleteOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
-
 	case 500:
 		result := NewDeleteOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -80,6 +74,10 @@ type DeleteOrganizationOK struct {
 
 func (o *DeleteOrganizationOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationOK  %+v", 200, o.Payload)
+}
+
+func (o *DeleteOrganizationOK) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -111,6 +109,10 @@ func (o *DeleteOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationBadRequest  %+v", 400, o.Payload)
 }
 
+func (o *DeleteOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -138,6 +140,10 @@ type DeleteOrganizationForbidden struct {
 
 func (o *DeleteOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationForbidden  %+v", 403, o.Payload)
+}
+
+func (o *DeleteOrganizationForbidden) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -169,6 +175,10 @@ func (o *DeleteOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationNotFound  %+v", 404, o.Payload)
 }
 
+func (o *DeleteOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
 func (o *DeleteOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
@@ -196,6 +206,10 @@ type DeleteOrganizationInternalServerError struct {
 
 func (o *DeleteOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationInternalServerError  %+v", 500, o.Payload)
+}
+
+func (o *DeleteOrganizationInternalServerError) GetPayload() *mono_models.Message {
+	return o.Payload
 }
 
 func (o *DeleteOrganizationInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
