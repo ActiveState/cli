@@ -228,13 +228,19 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
 	binariesSeparate := rt.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
 
+	relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
+	relocMap := map[string]bool{}
+	if fileutils.FileExists(relocFilePath) {
+		relocMap = loadRelocationFile(relocFilePath)
+	}
+
 	// Replace plain text files
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
-			relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
-			if fileutils.FileExists(relocFilePath) {
-				return checkRelocationFile(relocFilePath, p, cb)
+			suffix := strings.TrimPrefix(p, metaData.Path)
+			if relocMap[suffix] {
+				return true
 			}
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
