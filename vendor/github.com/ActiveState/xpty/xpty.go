@@ -97,8 +97,8 @@ func (p *Xpty) openVT(cols uint16, rows uint16) (err error) {
 	return nil
 }
 
-// Open opens a pseudo-terminal of the given size
-func Open(cols uint16, rows uint16) (*Xpty, error) {
+// New opens a pseudo-terminal of the given size
+func New(cols uint16, rows uint16) (*Xpty, error) {
 	xpImpl, err := open(cols, rows)
 	if err != nil {
 		return nil, err

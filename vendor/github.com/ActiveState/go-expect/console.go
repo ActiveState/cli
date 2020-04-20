@@ -26,8 +26,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/xpty"
+	"github.com/ActiveState/go-expect/internal/osutils"
+	"github.com/ActiveState/xpty"
 )
 
 // Console is an interface to automate input and output for interactive
@@ -164,7 +164,7 @@ func NewConsole(opts ...ConsoleOpt) (*Console, error) {
 	if runtime.GOOS == "windows" {
 		rows = 31
 	}
-	pty, err := xpty.Open(80, rows)
+	pty, err := xpty.New(80, rows)
 	if err != nil {
 		return nil, err
 	}

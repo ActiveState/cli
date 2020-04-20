@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/ActiveState/cli/pkg/conpty"
+	conpty "github.com/ActiveState/go-conpty"
 )
 
 type impl struct {
