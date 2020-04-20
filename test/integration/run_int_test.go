@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/termtest"
 )
 
 type RunIntegrationTestSuite struct {
@@ -73,7 +73,7 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *conproc.ConsoleProcess) {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.ConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")

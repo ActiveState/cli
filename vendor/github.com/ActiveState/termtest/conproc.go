@@ -1,4 +1,8 @@
-package conproc
+// Copyright 2020 ActiveState Software. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file
+
+package termtest
 
 import (
 	"bytes"
@@ -18,11 +22,12 @@ import (
 
 	"github.com/ActiveState/vt10x"
 
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/pkg/expect"
+	expect "github.com/ActiveState/go-expect"
+	"github.com/ActiveState/termtest/internal/osutils"
 )
 
 var (
+	// ErrNoProcess is returned when a process was expected to be running
 	ErrNoProcess = errors.New("no command process seems to be running")
 )
 
@@ -32,6 +37,7 @@ type errWaitTimeout struct {
 
 func (errWaitTimeout) Timeout() bool { return true }
 
+// ConsoleProcess bonds a command with a pseudo-terminal for automation
 type ConsoleProcess struct {
 	opts    Options
 	errs    chan error
@@ -43,8 +49,8 @@ type ConsoleProcess struct {
 	cancel  func()
 }
 
-// NewConsoleProcess bonds a command process with a console pty.
-func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
+// New bonds a command process with a console pty.
+func New(opts Options) (*ConsoleProcess, error) {
 	if err := opts.Normalize(); err != nil {
 		return nil, err
 	}
@@ -115,6 +121,8 @@ func NewConsoleProcess(opts Options) (*ConsoleProcess, error) {
 	return &cp, nil
 }
 
+// Close cleans up all the resources allocated by the ConsoleProcess
+// If the underlying process is still running, it is terminated with a SIGTERM signal.
 func (cp *ConsoleProcess) Close() error {
 	cp.cancel()
 
@@ -135,14 +143,17 @@ func (cp *ConsoleProcess) Close() error {
 	return cp.cmd.Process.Signal(syscall.SIGTERM)
 }
 
+// Executable returns the command name to be executed
 func (cp *ConsoleProcess) Executable() string {
 	return cp.cmdName
 }
 
+// WorkDirectory returns the directory in which the command shall be run
 func (cp *ConsoleProcess) WorkDirectory() string {
 	return cp.opts.WorkDirectory
 }
 
+// Snapshot returns a string containing a terminal snap-shot as a user would see it in a "real" terminal
 func (cp *ConsoleProcess) Snapshot() string {
 	return cp.console.Pty.State.String()
 }
@@ -271,10 +282,10 @@ func (cp *ConsoleProcess) ExpectNotExitCode(exitCode int, timeout ...time.Durati
 	_, buf, err := cp.wait(timeout...)
 	matchers := []expect.Matcher{&exitCodeMatcher{exitCode, false}}
 	if err == nil {
-		if exitCode != 0 {
-			return
+		if exitCode == 0 {
+			cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been 0"))
 		}
-		cp.opts.ObserveExpect(matchers, cp.TrimmedSnapshot(), buf, fmt.Errorf("exit code wrong: should not have been 0"))
+		return
 	}
 	eexit, ok := err.(*exec.ExitError)
 	if !ok {
