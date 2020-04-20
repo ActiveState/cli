@@ -73,15 +73,17 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 	replaceBytes := []byte(replace)
 	replaceBytesLen := len(replaceBytes)
 
-	regexExpandBytes := []byte("${1}")
-	replaceBytes = append(replaceBytes, regexExpandBytes...)
-
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
 	var replaceRegex *regexp.Regexp
 	quoteEscapeFind := regexp.QuoteMeta(find)
 	if IsBinary(fileBytes) {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
+
+		regexExpandBytes := []byte("${1}")
+		// Must account for the expand characters (ie. '${1}') in the
+		// replacement bytes in order for the binary paddding to be correct
+		replaceBytes = append(replaceBytes, regexExpandBytes...)
 
 		// Replacement regex for binary files must account for null characters
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
