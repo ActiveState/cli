@@ -96,7 +96,7 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
-		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s(.*)`, quoteEscapeFind))
+		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
 		logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
