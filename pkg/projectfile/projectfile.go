@@ -737,7 +737,7 @@ func ParseVersionInfo() (*VersionInfo, *failures.Failure) {
 	version := strings.TrimSpace(versionStruct.Version)
 	match, fail := regexp.MatchString(`^\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`, version)
 	if fail != nil || !match {
-		return nil, FailInvalidVersion.New(locale.T("err_invalid_version"))
+		return &versionStruct, FailInvalidVersion.New(locale.T("err_invalid_version"))
 	}
 
 	return &versionStruct, nil

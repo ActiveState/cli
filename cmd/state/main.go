@@ -159,6 +159,8 @@ func run(args []string, outputer output.Outputer) (int, error) {
 		// if we are running `state update`, we just print the error message, but don't fail, as we can still update the state tool executable
 		logging.Error("Could not parse version info from projectifle: %s", fail.Error())
 		if funk.Contains(args, "update") {
+			// invalidate versionInfo, as it could not be parsed
+			versionInfo = nil
 			outputer.Error(locale.T("err_version_parse"))
 		} else {
 			return 1, failures.FailUser.Wrap(fail, locale.T("err_version_parse"))
