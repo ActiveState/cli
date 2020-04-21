@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -27,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/internal/profile"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
@@ -306,20 +308,29 @@ func relaunch() (int, error) {
 }
 
 func processErrs(err error) error {
-	var ee *errs.Error
-	isErrs := errors.As(err, ee)
+	if err == nil {
+		return nil
+	}
+
+	ee := &errs.WrappedErr{}
+	isErrs := errors.As(err, &ee)
 	if ! isErrs {
 		return err
 	}
 
 	// Log error if this isn't a user input error
-	if ! errors.Is(err, errs.UserInputErr) {
-		logging.Error("Returning error: %s, created at: %s", ee.Error(), ee.Stack().String())
+	if ! locale.IsInputError(err) {
+		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(ee, "\n").Error(), ee.Stack().String())
 	}
 
 	// Log if the error isn't localized
-	if _, ok := err.(locale.ErrorLocalizer); !ok {
+	if ! locale.IsError(err) {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", err.Error())
+
+		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
+		if ! rtutils.BuiltViaCI {
+			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s", err.Error(), ee.Stack().String()))
+		}
 		return err
 	}
 

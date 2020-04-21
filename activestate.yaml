@@ -30,12 +30,12 @@ scripts:
     description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      go build -tags internal -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-external
     description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
     value: |
       $scripts.preprocess
-      go build -tags external -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "external $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     description: Generate update files
     value: |

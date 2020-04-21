@@ -1,68 +1,67 @@
 package errs
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
-type Error struct {
-	error
+// Error enforces errors that include a stacktrace
+type Error interface {
+	Unwrap() error
+	Stack() *stacktrace.Stacktrace
+}
+
+// WrappedErr is what we use for errors created from this package, this does not mean every error returned from this
+// package is wrapping something, it simply has the plumbing to.
+type WrappedErr struct {
+	msg     string
 	wrapped error
 	stack   *stacktrace.Stacktrace
 }
 
-func (e *Error) Unwrap() error {
+// Error returns the error message
+func (e *WrappedErr) Error() string {
+	return e.msg
+}
+
+// Unwrap returns the parent error, if one exists
+func (e *WrappedErr) Unwrap() error {
 	return e.wrapped
 }
 
-func (e *Error) Stack() *stacktrace.Stacktrace {
+// Stack returns the stacktrace for where this error was created
+func (e *WrappedErr) Stack() *stacktrace.Stacktrace {
 	return e.stack
 }
 
-type UserInputError struct {
-	error
-}
-
-func (e *UserInputError) Unwrap() error {
-	return e.error
-}
-
-var UserInputErr = &UserInputError{}
-
-func newError(err error, wrapTarget error) error {
-	return &Error{
+func newError(err string, wrapTarget error) error {
+	return &WrappedErr{
 		err,
 		wrapTarget,
 		stacktrace.GetWithSkip([]string{rtutils.CurrentFile()}),
 	}
 }
 
-// ToError ensures the given error is wrapped in errs.Error
-func ToError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if ee, ok := err.(*Error); ok {
-		return ee
-	}
-	return newError(err, nil)
-}
-
 // New creates a new error, similar to errors.New
 func New(message string, args ...interface{}) error {
-	return newError(fmt.Errorf(message, args...), nil)
+	return newError(fmt.Sprintf(message, args...), nil)
 }
 
-// Wrap will wrap one error around another, allowing it to unwrap to the wrapTarget
-func Wrap(err error, wrapTarget error) error {
-	// Just amend the existing error if we already have an errs.Error type and the wrapped is nil
-	ee := ToError(err).(*Error)
-	if ee.wrapped == nil {
-		ee.wrapped = wrapTarget
-		return ee
+// Wrap creates a new error that wraps the given error
+func Wrap(wrapTarget error, message string, args ...interface{}) error {
+	return newError(fmt.Sprintf(message, args...), wrapTarget)
+}
+
+// Join all error messages in the Unwrap stack
+func Join(err error, sep string) error {
+	var message []string
+	for err != nil {
+		message = append(message, err.Error())
+		err = errors.Unwrap(err)
 	}
-	
-	return newError(err, wrapTarget)
+	return Wrap(err, strings.Join(message, sep))
 }

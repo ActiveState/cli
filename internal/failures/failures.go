@@ -192,6 +192,16 @@ func (e *Failure) Handle(description string) {
 	}
 }
 
+// Dirty hack to check failure type without importing the failure package
+// We're getting rid of failures, not going to dance around to do this cleaner
+func (e *Failure) IsFailure() {
+}
+
+// InputError tells us whether this is a user input error or not
+func (e *Failure) InputError() bool {
+	return e.Type.User
+}
+
 // Type returns a FailureType that can be used to create your own failure types
 func Type(name string, parents ...*FailureType) *FailureType {
 	user := false
