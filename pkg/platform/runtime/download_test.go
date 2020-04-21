@@ -89,7 +89,7 @@ func (suite *RuntimeDLTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
-	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-000100010001"), "string", "string")
 	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	files, fail := r.Download(res.Artifacts, suite, suite.prg)
@@ -107,7 +107,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.Skip)
 
-	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-000100010001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -117,7 +117,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLNoArtifacts() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 	suite.hcMock.MockBuilds(hcMock.Completed, hcMock.BadURI)
 
-	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-000100010001"), "string", "string")
 	res, fail := r.FetchArtifacts()
 	suite.Require().NoError(fail.ToError())
 	_, fail = r.Download(res.Artifacts, suite, suite.prg)
@@ -129,7 +129,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLInvalidURL() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 	suite.hcMock.MockBuilds(hcMock.Failed)
 
-	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-000100010001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 
@@ -139,7 +139,7 @@ func (suite *RuntimeDLTestSuite) TestGetRuntimeDLBuildFailure() {
 func (suite *RuntimeDLTestSuite) TestGetRuntimeDLFailure() {
 	suite.hcMock.MockBuilds(hcMock.RunFail)
 
-	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-0001-00010000100001"), "string", "string")
+	r := runtime.NewDownload(strfmt.UUID("00010001-0001-0001-0001-000100010001"), "string", "string")
 	_, fail := r.FetchArtifacts()
 	suite.Require().Error(fail.ToError())
 

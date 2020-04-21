@@ -46,6 +46,7 @@ func (m *Mock) Close() {
 func (m *Mock) MockFullRuntime() {
 	m.authMock.MockLoggedin()
 	m.apiMock.MockSignS3URI()
+	m.apiMock.MockCommitsOrder()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
 	m.GraphMock.ProjectByOrgAndName(graphMock.NoOptions)

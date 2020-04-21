@@ -35,6 +35,7 @@ func (suite *RecipeTestSuite) BeforeTest(suiteName, testName string) {
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
 	suite.invMock.MockOrderRecipes()
 	suite.invMock.MockPlatforms()
+	suite.apiMock.MockCommitsOrder()
 
 	if runtime.GOOS == "darwin" {
 		model.HostPlatform = sysinfo.Linux.String() // mac is not supported yet, so spoof linux
