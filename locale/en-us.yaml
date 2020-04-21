@@ -938,6 +938,10 @@ err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
   other: Project branch has no commits
+err_order_recipe:
+  other: Could not get order from commit ID
+err_order_marshal:
+  other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
 err_no_langauge:

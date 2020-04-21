@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -521,4 +522,18 @@ func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
 	}
 
 	return changeset
+}
+
+// FetchOrderFromCommit retrieves an order that is ready for submission from
+// a given commit ID
+func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
+	params := vcsClient.NewGetOrderParams()
+	params.CommitID = commitID
+
+	res, err := authentication.Client().VersionControl.GetOrder(params, authentication.ClientAuth())
+	if err != nil {
+		return nil, errors.New(api.ErrorMessageFromPayload(err))
+	}
+
+	return res.Payload, err
 }
