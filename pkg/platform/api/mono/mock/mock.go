@@ -157,3 +157,10 @@ func (m *Mock) MockInviteUserToOrg404() {
 func (m *Mock) MockCommit() {
 	m.httpmock.Register("POST", "/vcs/commit")
 }
+
+// MockCommitOrder registers a mock for a VCS commits to order for all platforms
+func (m *Mock) MockCommitsOrder() {
+	m.httpmock.Register("GET", "/vcs/commits/00010001-0001-0001-0001-000100010001/order")
+	m.httpmock.Register("GET", "/vcs/commits/00020002-0002-0002-0002-000200020002/order")
+	m.httpmock.Register("GET", "/vcs/commits/00030003-0003-0003-0003-000300030003/order")
+}

@@ -45,6 +45,7 @@ func (suite *RecipeCommandTestSuite) BeforeTest(suiteName, testName string) {
 	suite.invm.MockOrderRecipes()
 	suite.graphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	suite.graphMock.Checkpoint(graphMock.NoOptions)
+	suite.apim.MockCommitsOrder()
 }
 
 func (suite *RecipeCommandTestSuite) AfterTest(suiteName, testName string) {
