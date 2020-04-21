@@ -174,8 +174,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	}
 
 	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
+		underlyingError := fail.ToError()
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, underlyingError)
+
+		// It is possible that we get an Access Denied error (on Windows) while moving files to the installation directory.
+		// Eg., https://rollbar.com/activestate/state-tool/items/297/occurrences/118875103987/
+		// This might happen due to virus software or other access control software running on the user's machine,
+		// and therefore we forward this information to the user.
+		if os.IsPermission(underlyingError) {
+			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", installDir)
+		}
+		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, installDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
