@@ -921,7 +921,10 @@ installer_err_fail_obtain_prefixes:
 installer_err_runtime_already_exists:
   other: A runtime is already installed at '{{.V0}}'
 installer_err_runtime_move_files_access_denied:
-  other: Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V1}}'
+  other: |
+    Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V1}}'
+    Please check the state tool forum for more information and suggestions:
+    https://community.activestate.com/c/state-tool/9
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
