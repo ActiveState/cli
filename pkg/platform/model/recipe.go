@@ -98,7 +98,7 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 			return "", FailOrderRecipes.New("err_order_bad_request", msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return "", FailOrderRecipes.Wrap("err_order_unknown", err)
+			return "", FailOrderRecipes.Wrap(err, "err_order_unknown")
 		}
 	}
 
