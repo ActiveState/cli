@@ -141,7 +141,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				return nil
 			}
 			catcher := outputhelper.NewCatcher()
-			err := runStepsWithFuncs("", true, tt.args.step, tt.args.installer, catcher, installFunc, configFunc, symlinkFunc, reportFunc)
+			err := runStepsWithFuncs("", true, tt.args.step, tt.args.installer, catcher.Outputer, installFunc, configFunc, symlinkFunc, reportFunc)
 			if err != tt.want.err {
 				t.Errorf("runStepsWithFuncs() error = %v, wantErr %v", err, tt.want.err)
 			}
@@ -201,16 +201,16 @@ func Test_report(t *testing.T) {
 				t.FailNow()
 			}
 			report, ok := catcher.Prints[0].(Report)
-			if !ok {
+			if ! ok {
 				t.Errorf("Printed unknown structure, expected Report type. Value: %v", report)
 				t.FailNow()
 			}
 
-			if !reflect.DeepEqual(report.Environment, tt.wantEnv) {
+			if ! reflect.DeepEqual(report.Environment, tt.wantEnv) {
 				t.Errorf("Expected envs to be the same. Want: %v, got: %v", tt.wantEnv, report.Environment)
 			}
 
-			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
+			if ! reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
 			}
 		})

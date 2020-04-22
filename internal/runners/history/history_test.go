@@ -65,7 +65,7 @@ func Test_printCommits(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			catcher := outputhelper.NewCatcher()
-			if got := printCommits(catcher, tt.args.commits, tt.args.orgs); !reflect.DeepEqual(got, tt.wantFailure) {
+			if got := printCommits(catcher.Outputer, tt.args.commits, tt.args.orgs); !reflect.DeepEqual(got, tt.wantFailure) {
 				t.Errorf("printCommits() = %v, want %v", got, tt.wantFailure)
 				for _, v := range tt.wantStrings {
 					require.Contains(t, catcher.Output(), v)
