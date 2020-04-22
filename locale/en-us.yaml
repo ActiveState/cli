@@ -1492,6 +1492,12 @@ field_languages:
   other: Languages
 err_no_recipes:
   other: No build recipes could be generated for the current project
+err_solve_order:
+  other: "Could not solve order: {{.V0}}"
+err_order_bad_request:
+  other: "Bad request while resolving order: {{.V0}}"
+err_order_unknown:
+  other: Unknown error resolving order"
 using_cached_env:
   other: Reusing cached runtime environment
 auto_update_to_version:

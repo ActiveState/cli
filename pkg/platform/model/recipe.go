@@ -91,14 +91,14 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		case *iop.ResolveRecipesDefault:
 			msg := *rrErr.Payload.Message
 			logging.Error("Could not resolve order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New(msg)
+			return "", FailOrderRecipes.New("err_solve_order", msg)
 		case *iop.ResolveRecipesBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", FailOrderRecipes.New(msg)
+			return "", FailOrderRecipes.New("err_order_bad_request", msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return "", FailOrderRecipes.Wrap(err)
+			return "", FailOrderRecipes.Wrap("err_order_unknown", err)
 		}
 	}
 
@@ -131,23 +131,19 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 			return nil, FailOrderRecipes.New("request_timed_out")
 		}
 
-		orderBody, err2 := json.Marshal(params.Order)
-		if err2 != nil {
-			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
-		}
-
+		orderBody, _ := json.Marshal(params.Order)
 		switch rrErr := err.(type) {
 		case *iop.SolveOrderDefault:
 			msg := *rrErr.Payload.Message
-			logging.Error("Could not solver order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New(msg)
+			logging.Error("Could not solve order, error: %s, order: %s", msg, string(orderBody))
+			return nil, FailOrderRecipes.New("err_solve_order", msg)
 		case *iop.SolveOrderBadRequest:
 			msg := *rrErr.Payload.Message
 			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, FailOrderRecipes.New(msg)
+			return nil, FailOrderRecipes.New("err_order_bad_request", msg)
 		default:
 			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return nil, FailOrderRecipes.Wrap(err)
+			return nil, FailOrderRecipes.Wrap(err, "err_order_unknown")
 		}
 	}
 
