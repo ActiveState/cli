@@ -140,6 +140,8 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 		}
 	}
 
+	// Because we filter platforms in the request we should only
+	// recieve one recipe ID
 	if len(recipeID.Payload) != 1 {
 		return nil, FailOrderRecipes.New("err_recipe_payload")
 	}
