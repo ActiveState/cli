@@ -41,12 +41,12 @@ func init() {
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
 func FetchRawRecipeForCommit(commitID strfmt.UUID) (string, *failures.Failure) {
-	return fetchRecipe(commitID, nil)
+	return fetchRawRecipe(commitID, nil)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
 func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, platform string) (string, *failures.Failure) {
-	return fetchRecipe(commitID, &platform)
+	return fetchRawRecipe(commitID, &platform)
 }
 
 // FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
@@ -67,7 +67,7 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string
 	return fetchRecipeID(commitID, &hostPlatform)
 }
 
-func fetchRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
+func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
 	client := inventory.Init()
 
 	var fail *failures.Failure
