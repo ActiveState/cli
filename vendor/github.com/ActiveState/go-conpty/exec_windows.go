@@ -1,6 +1,4 @@
 // Copyright 2009 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
 
 // This file has copies of unexported functions form the go source code,
 // hence the above copyright message
@@ -30,22 +28,22 @@ func makeCmdLine(args []string) string {
 func isSlash(c uint8) bool {
 	return c == '\\' || c == '/'
 }
-	
+
 func normalizeDir(dir string) (name string, err error) {
-	ndir, err := syscall.FullPath(dir)   
+	ndir, err := syscall.FullPath(dir)
 	if err != nil {
-			return "", err 
+		return "", err
 	}
 	if len(ndir) > 2 && isSlash(ndir[0]) && isSlash(ndir[1]) {
-			// dir cannot have \\server\share\path form
-			return "", syscall.EINVAL
+		// dir cannot have \\server\share\path form
+		return "", syscall.EINVAL
 	}
 	return ndir, nil
 }
-	 
+
 func volToUpper(ch int) int {
 	if 'a' <= ch && ch <= 'z' {
-			ch += 'A' - 'a'
+		ch += 'A' - 'a'
 	}
 	return ch
 }

@@ -157,6 +157,43 @@ version: %s
 	c2.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
+	perlExe := "perl"
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Perl not supported on macOS")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Where would you like to checkout")
+	cp.SendLine(cp.WorkDirectory())
+	cp.Expect("Downloading", 20*time.Second)
+	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state", 120*time.Second)
+
+	// ensure that terminal contains output "Installing x/y" with x, y numbers and x=y
+	installingString := regexp.MustCompile(
+		"Installing *([0-9]+) */ *([0-9]+)",
+	).FindAllStringSubmatch(cp.TrimmedSnapshot(), 1)
+	suite.Require().Len(installingString, 1, "no match for Installing x / x in\n%s", cp.TrimmedSnapshot())
+	suite.Require().Equalf(
+		installingString[0][1], installingString[0][2],
+		"expected all artifacts are reported to be installed, got %s", installingString[0][0],
+	)
+
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine(perlExe + " -e \"use DBD::Pg\"")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ActivateIntegrationTestSuite) testOutput(method string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

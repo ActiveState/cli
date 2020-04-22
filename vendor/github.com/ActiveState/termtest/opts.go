@@ -1,4 +1,8 @@
-package conproc
+// Copyright 2020 ActiveState Software. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file
+
+package termtest
 
 import (
 	"io/ioutil"
@@ -6,11 +10,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/expect"
+	expect "github.com/ActiveState/go-expect"
 )
 
+// SendObserver is function that is called when text is send to the console
+// Arguments are the message, number of bytes written and an error message
+// See TestSendObserveFn for an example
 type SendObserver func(msg string, num int, err error)
 
+// ExpectObserver is called when an expectation could not be met
+// Arguments are matchers that have been matched, the raw bytes that have been
+// parsed, the terminal snapshot, and the error if any occurred during the
+// matching.
+// See TestExpectObserveFn for an example
 type ExpectObserver func(matchers []expect.Matcher, raw, pty string, err error)
 
 // Options contain optional values for ConsoleProcess construction and usage.
@@ -25,6 +37,7 @@ type Options struct {
 	Args           []string
 }
 
+// Normalize fills in default options
 func (opts *Options) Normalize() error {
 	if opts.DefaultTimeout == 0 {
 		opts.DefaultTimeout = time.Second * 20
@@ -49,6 +62,7 @@ func (opts *Options) Normalize() error {
 	return nil
 }
 
+// CleanUp cleans up the environment
 func (opts *Options) CleanUp() error {
 	if !opts.RetainWorkDir {
 		return os.RemoveAll(opts.WorkDirectory)

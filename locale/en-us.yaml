@@ -854,7 +854,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
+  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 downloading_state_version:
@@ -920,8 +920,13 @@ installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for runtime '{{.V0}}'
 installer_err_runtime_already_exists:
   other: A runtime is already installed at '{{.V0}}'
+installer_err_runtime_move_files_access_denied:
+  other: |
+    Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V1}}'
+    If you believe this is happening due to antivirus software please report your issue on our forums: 
+    https://community.activestate.com/c/state-tool/9
 installer_err_runtime_move_files_failed:
-  other: Unable to move runtime files from '{{.V0}}'
+  other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commitid:

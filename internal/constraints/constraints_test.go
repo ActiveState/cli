@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -89,36 +90,56 @@ func TestMatchConstraint(t *testing.T) {
 	}
 
 	constraint := projectfile.Constraint{sysinfo.OS().String(), variableLabel, "dev"}
-	assert.True(t, IsConstrained(constraint))
+	constrained, specificity := IsConstrained(constraint)
+	assert.True(t, constrained)
+	assert.Equal(t, 3, specificity)
 	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
 		beConstrained = "linux"
 	}
-	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{beConstrained, "", ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
 
+	constrained, specificity = IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""})
 	// Confirm passing only one constraint doesn't get constrained when we don't expect
-	assert.False(t, IsConstrained(projectfile.Constraint{sysinfo.OS().String(), "", ""}))
+	assert.False(t, constrained)
+	assert.Equal(t, 1, specificity)
 	{
 		osOverride = "windows"
 		osVersionOverride = "10"
-		assert.False(t, IsConstrained(projectfile.Constraint{"", "Windows10Label", ""}))
+		constrained, specificity = IsConstrained(projectfile.Constraint{"", "Windows10Label", ""})
+		assert.False(t, constrained)
+		assert.Equal(t, 1, specificity)
 		osOverride = ""
 		osVersionOverride = ""
 	}
 	{
 		os.Setenv("ACTIVESTATE_ENVIRONMENT", "itworks")
-		assert.False(t, IsConstrained(projectfile.Constraint{"", "", "itworks"}))
+		constrained, specificity = IsConstrained(projectfile.Constraint{"", "", "itworks"})
+		assert.False(t, constrained)
+		assert.Equal(t, 1, specificity)
 		os.Setenv("ACTIVESTATE_ENVIRONMENT", "")
 	}
-	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", ""})
+	assert.False(t, constrained)
+	assert.Equal(t, 0, specificity)
 
 	// Confirm we DO get constrained with only one value set
-	assert.True(t, IsConstrained(projectfile.Constraint{beConstrained, "", ""}))
-	assert.True(t, IsConstrained(projectfile.Constraint{"", variableLabel, ""}))
-	assert.True(t, IsConstrained(projectfile.Constraint{"", "", "dev"}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{beConstrained, "", ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", variableLabel, ""})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", "dev"})
+	assert.True(t, constrained)
+	assert.Equal(t, 1, specificity)
 
 	// Don't constrain at all if nothing is passed in
-	assert.False(t, IsConstrained(projectfile.Constraint{"", "", ""}))
+	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", ""})
+	assert.False(t, constrained)
+	assert.Equal(t, 0, specificity)
 }
 
 func TestOsMatches(t *testing.T) {
@@ -316,5 +337,111 @@ func TestSysinfoMacOSEnv(t *testing.T) {
 	assert.NoError(t, err, "No errors detecting a compiler")
 	for _, compiler := range compilers {
 		assert.True(t, compiler.Major > 0, "Determined compiler version")
+	}
+}
+
+func sliceContains(s []int, v int) bool {
+	for _, sv := range s {
+		if sv == v {
+			return true
+		}
+	}
+	return false
+}
+
+func mockConstraint(unconstrained bool, env ...string) projectfile.Constraint {
+	environ := ""
+	if len(env) == 1 {
+		environ = env[0]
+	}
+	if unconstrained {
+		return projectfile.Constraint{sysinfo.OS().String(), "", environ}
+	}
+
+	beConstrained := "windows"
+	if sysinfo.OS() == sysinfo.Windows {
+		beConstrained = "linux"
+	}
+	return projectfile.Constraint{beConstrained, "", ""}
+}
+
+func TestFilterUnconstrained(t *testing.T) {
+	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
+	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
+	cases := []struct {
+		Name     string
+		Selected []int
+		Override bool
+	}{
+		{"all selected", []int{0, 1, 2}, false},
+		{"none selected", []int{}, false},
+		{"one selected", []int{1}, false},
+		{"one overridden", []int{3, 1, 2}, true},
+	}
+
+	for _, c := range cases {
+
+		t.Run(c.Name, func(tt *testing.T) {
+			items := make(projectfile.Events, 0, 4)
+			for i := 0; i < 3; i++ {
+				items = append(items, projectfile.Event{
+					Name:        fmt.Sprintf("event%d", i),
+					Constraints: mockConstraint(sliceContains(c.Selected, i) || c.Override),
+				})
+			}
+			if c.Override {
+				items = append(items, projectfile.Event{
+					Name:        "event0",
+					Constraints: mockConstraint(true, "TEST_ENV"),
+				})
+			}
+
+			res := projectfile.MakeEventsFromConstrainedEntities(
+				FilterUnconstrained(items.AsConstrainedEntities()),
+			)
+			expected := make([]*projectfile.Event, 0, len(c.Selected))
+			for _, ii := range c.Selected {
+				expected = append(expected, &items[ii])
+			}
+			sort.Slice(res, func(i, j int) bool {
+				return res[i].Name < res[j].Name
+			})
+			assert.Len(tt, res, len(c.Selected), "select %d unconstrained items", len(c.Selected))
+			assert.Equal(tt, expected, res, "select unconstrained items")
+		})
+	}
+}
+
+func TestMostSpecificUnconstrained(t *testing.T) {
+	os.Setenv("ACTIVESTATE_ENVIRONMENT", "TEST_ENV")
+	defer os.Unsetenv("ACTIVESTATE_ENVIRONMENT")
+
+	cases := []struct {
+		Name  string
+		Item  string
+		Index int
+	}{
+		{"select most specific", "event0", 3},
+		{"select none", "none", -1},
+		{"select simple", "event1", 1},
+	}
+
+	for _, c := range cases {
+		t.Run(c.Name, func(tt *testing.T) {
+			items := make(projectfile.Events, 0, 4)
+			for i := 0; i < 3; i++ {
+				items = append(items, projectfile.Event{
+					Name:        fmt.Sprintf("event%d", i),
+					Constraints: mockConstraint(true),
+				})
+			}
+			items = append(items, projectfile.Event{
+				Name:        "event0",
+				Constraints: mockConstraint(true, "TEST_ENV"),
+			})
+
+			index := MostSpecificUnconstrained(c.Item, items.AsConstrainedEntities())
+			assert.Equal(t, c.Index, index)
+		})
 	}
 }

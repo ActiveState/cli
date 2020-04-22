@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -68,51 +69,42 @@ func ReplaceAll(filename, find string, replace string, include includeFunc) erro
 		return nil
 	}
 
-	logging.Debug("Replacing %s with %s in %s", find, replace, filename)
-
 	findBytes := []byte(find)
 	replaceBytes := []byte(replace)
+	replaceBytesLen := len(replaceBytes)
 
 	// Check if the file is a binary file. If so, the search and replace byte
 	// arrays must be of equal length (replacement being NUL-padded as necessary).
+	var replaceRegex *regexp.Regexp
+	quoteEscapeFind := regexp.QuoteMeta(find)
 	if IsBinary(fileBytes) {
 		logging.Debug("Assuming file '%s' is a binary file", filename)
-		if len(replaceBytes) > len(findBytes) {
-			logging.Debug("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
+
+		regexExpandBytes := []byte("${1}")
+		// Must account for the expand characters (ie. '${1}') in the
+		// replacement bytes in order for the binary paddding to be correct
+		replaceBytes = append(replaceBytes, regexExpandBytes...)
+
+		// Replacement regex for binary files must account for null characters
+		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
+		if replaceBytesLen > len(findBytes) {
+			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return errors.New("replacement text cannot be longer than search text in a binary file")
-		} else if len(findBytes) > len(replaceBytes) {
+		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
 			logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
-			paddedReplaceBytes := make([]byte, len(findBytes))
+			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
+		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
 		logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
-	chunks := bytes.Split(fileBytes, findBytes)
-	if len(chunks) < 2 {
-		// nothing to replace
-		return nil
-	}
-
-	// Open a temporary file for the replacement file and then perform the search
-	// and replace.
+	replaced := replaceRegex.ReplaceAll(fileBytes, replaceBytes)
 	buffer := bytes.NewBuffer([]byte{})
-
-	for i, chunk := range chunks {
-		// Write chunk up to found bytes.
-		if _, err := buffer.Write(chunk); err != nil {
-			return err
-		}
-		if i < len(chunks)-1 {
-			// Write replacement bytes.
-			if _, err := buffer.Write(replaceBytes); err != nil {
-				return err
-			}
-		}
-	}
+	buffer.Write(replaced)
 
 	return WriteFile(filename, buffer.Bytes()).ToError()
 }
@@ -401,7 +393,7 @@ func walkPathAndFindFile(dir, filename string) string {
 }
 
 // Touch will attempt to "touch" a given filename by trying to open it read-only or create
-// the file with 0644 perms if it does not exist. 
+// the file with 0644 perms if it does not exist.
 func Touch(path string) *failures.Failure {
 	fail := MkdirUnlessExists(filepath.Dir(path))
 	if fail != nil {

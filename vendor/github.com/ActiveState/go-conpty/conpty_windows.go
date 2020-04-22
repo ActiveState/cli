@@ -1,9 +1,7 @@
-// Package conpty provides functions for creating a process attached to a
-// ConPTY pseudo-terminal.  This allows the process to call console specific
-// API functions without an actual terminal being present.
-//
-// The concept is best explained in this blog post:
-// https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
+// Copyright 2020 ActiveState Software. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file
+
 package conpty
 
 import (
@@ -173,7 +171,7 @@ func (c *ConPty) Spawn(argv0 string, argv []string, attr *syscall.ProcAttr) (pid
 		pi)
 
 	if err != nil {
-		fmt.Printf("error creating process: %v", err)
+		return 0, 0, err
 	}
 	defer windows.CloseHandle(windows.Handle(pi.Thread))
 
@@ -210,6 +208,10 @@ func (c *ConPty) createPseudoConsoleAndPipes() (err error) {
 	c.outPipe = os.NewFile(uintptr(c.pipeFdOut), "|1")
 
 	return
+}
+
+func (c *ConPty) Resize(cols uint16, rows uint16) error {
+	return resizePseudoConsole(*c.hpCon, uintptr(cols)+(uintptr(rows)<<16))
 }
 
 func (c *ConPty) initializeStartupInfoAttachedToPTY() (err error) {
