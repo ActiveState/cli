@@ -3,11 +3,12 @@ package cmdtree
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/packages"
 )
 
-func newPackagesCommand() *captain.Command {
-	runner := packages.NewList()
+func newPackagesCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewList(out)
 
 	params := packages.ListRunParams{}
 
@@ -41,8 +42,8 @@ func newPackagesCommand() *captain.Command {
 	return cmd
 }
 
-func newPackagesAddCommand() *captain.Command {
-	runner := packages.NewAdd()
+func newPackagesAddCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewAdd(out)
 
 	params := packages.AddRunParams{}
 
@@ -64,8 +65,8 @@ func newPackagesAddCommand() *captain.Command {
 	)
 }
 
-func newPackagesUpdateCommand() *captain.Command {
-	runner := packages.NewUpdate()
+func newPackagesUpdateCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewUpdate(out)
 
 	params := packages.UpdateRunParams{}
 
@@ -87,8 +88,8 @@ func newPackagesUpdateCommand() *captain.Command {
 	)
 }
 
-func newPackagesRemoveCommand() *captain.Command {
-	runner := packages.NewRemove()
+func newPackagesRemoveCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewRemove(out)
 
 	params := packages.RemoveRunParams{}
 
@@ -110,8 +111,8 @@ func newPackagesRemoveCommand() *captain.Command {
 	)
 }
 
-func newPackagesImportCommand() *captain.Command {
-	runner := packages.NewImport()
+func newPackagesImportCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewImport(out)
 
 	params := packages.NewImportRunParams()
 
@@ -137,8 +138,8 @@ func newPackagesImportCommand() *captain.Command {
 	)
 }
 
-func newPackagesSearchCommand() *captain.Command {
-	runner := packages.NewSearch()
+func newPackagesSearchCommand(out output.Outputer) *captain.Command {
+	runner := packages.NewSearch(out)
 
 	params := packages.SearchRunParams{}
 

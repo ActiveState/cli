@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -13,7 +13,7 @@ import (
 
 const latestVersion = "latest"
 
-func executeAddUpdate(language, name, version string, operation model.Operation) error {
+func executeAddUpdate(out output.Outputer, language, name, version string, operation model.Operation) error {
 	// Use our own interpolation string since we don't want to assume our swagger schema will never change
 	var operationStr = "add"
 	if operation == model.OperationUpdated {
@@ -52,13 +52,13 @@ func executeAddUpdate(language, name, version string, operation model.Operation)
 
 	// Print the result
 	if version != "" {
-		print.Line(locale.Tr("package_version_"+operationStr, name, version))
+		out.Print(locale.Tr("package_version_"+operationStr, name, version))
 	} else {
-		print.Line(locale.Tr("package_"+operationStr, name))
+		out.Print(locale.Tr("package_"+operationStr, name))
 	}
 
 	// Remind user to update their activestate.yaml
-	print.Warning(locale.T("package_update_config_file"))
+	out.Notice(locale.T("package_update_config_file"))
 	return nil
 }
 

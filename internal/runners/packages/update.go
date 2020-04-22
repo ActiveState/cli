@@ -2,6 +2,7 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -12,11 +13,15 @@ type UpdateRunParams struct {
 }
 
 // Update manages the updating execution context.
-type Update struct{}
+type Update struct {
+	out output.Outputer
+}
 
 // NewUpdate prepares an update execution context for use.
-func NewUpdate() *Update {
-	return &Update{}
+func NewUpdate(out output.Outputer) *Update {
+	return &Update{
+		out: out,
+	}
 }
 
 // Run executes the update behavior.
@@ -38,5 +43,5 @@ func (u *Update) Run(params UpdateRunParams) error {
 		version = *ingredientVersion.Version.Version
 	}
 
-	return executeAddUpdate(language, name, version, model.OperationUpdated)
+	return executeAddUpdate(u.out, language, name, version, model.OperationUpdated)
 }

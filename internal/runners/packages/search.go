@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -17,11 +17,15 @@ type SearchRunParams struct {
 }
 
 // Search manages the searching execution context.
-type Search struct{}
+type Search struct {
+	out output.Outputer
+}
 
 // NewSearch prepares a searching execution context for use.
-func NewSearch() *Search {
-	return &Search{}
+func NewSearch(out output.Outputer) *Search {
+	return &Search{
+		out: out,
+	}
 }
 
 // Run is executed when `state packages search` is ran
@@ -43,14 +47,14 @@ func (s *Search) Run(params SearchRunParams) error {
 		return fail.WithDescription("package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
-		print.Line(locale.T("package_no_packages"))
+		s.out.Print(locale.T("package_no_packages"))
 		return nil
 	}
 
 	table := newPackagesTable(packages)
 	sortByFirstTwoCols(table.data)
 
-	print.Line(table.output())
+	s.out.Print(table.output())
 
 	return nil
 }

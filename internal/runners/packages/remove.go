@@ -2,7 +2,7 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -14,11 +14,15 @@ type RemoveRunParams struct {
 }
 
 // Remove manages the removing execution context.
-type Remove struct{}
+type Remove struct {
+	out output.Outputer
+}
 
 // NewRemove prepares a removal execution context for use.
-func NewRemove() *Remove {
-	return &Remove{}
+func NewRemove(out output.Outputer) *Remove {
+	return &Remove{
+		out: out,
+	}
 }
 
 // Run executes the remove behavior.
@@ -36,10 +40,10 @@ func (r *Remove) Run(params RemoveRunParams) error {
 	}
 
 	// Print the result
-	print.Line(locale.Tr("package_removed", params.Name))
+	r.out.Print(locale.Tr("package_removed", params.Name))
 
 	// Remind user to update their activestate.yaml
-	print.Warning(locale.T("package_update_config_file"))
+	r.out.Notice(locale.T("package_update_config_file"))
 
 	return nil
 }

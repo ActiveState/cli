@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -44,11 +44,15 @@ func NewImportRunParams() *ImportRunParams {
 }
 
 // Import manages the importing execution context.
-type Import struct{}
+type Import struct {
+	out output.Outputer
+}
 
 // NewImport prepares an importation execution context for use.
-func NewImport() *Import {
-	return &Import{}
+func NewImport(out output.Outputer) *Import {
+	return &Import{
+		out: out,
+	}
 }
 
 // Run executes the import behavior.
@@ -98,7 +102,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return fail.WithDescription("err_cannot_commit_changeset")
 	}
 
-	print.Warning(locale.T("package_update_config_file"))
+	i.out.Notice(locale.T("package_update_config_file"))
 
 	return nil
 }

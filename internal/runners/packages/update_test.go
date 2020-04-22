@@ -2,6 +2,8 @@ package packages
 
 import (
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 func TestUpdate(t *testing.T) {
@@ -17,14 +19,15 @@ func TestUpdate(t *testing.T) {
 
 	for tn, tt := range tests {
 		t.Run(tn, func(t *testing.T) {
+			out := outputhelper.NewCatcher()
 			params := UpdateRunParams{Name: tt.namevers}
-			runner := NewUpdate()
+			runner := NewUpdate(out.Outputer)
 
 			run := func() error {
 				return runner.Run(params)
 			}
 
-			handleTest(t, run, tt.wantContains, tt.wantErr)
+			handleTest(t, out.Output, run, tt.wantContains, tt.wantErr)
 		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 func TestAdd(t *testing.T) {
@@ -25,8 +26,9 @@ func TestAdd(t *testing.T) {
 
 	for tn, tt := range tests {
 		t.Run(tn, func(t *testing.T) {
+			out := outputhelper.NewCatcher()
 			params := AddRunParams{Name: tt.namevers}
-			runner := NewAdd()
+			runner := NewAdd(out.Outputer)
 
 			run := func() error {
 				tt.registerMocks()
@@ -34,7 +36,7 @@ func TestAdd(t *testing.T) {
 				return runner.Run(params)
 			}
 
-			handleTest(t, run, tt.wantContains, tt.wantErr)
+			handleTest(t, out.Output, run, tt.wantContains, tt.wantErr)
 		})
 	}
 }

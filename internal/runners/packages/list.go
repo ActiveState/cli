@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -21,11 +21,15 @@ type ListRunParams struct {
 }
 
 // List manages the listing execution context.
-type List struct{}
+type List struct {
+	out output.Outputer
+}
 
 // NewList prepares a list execution context for use.
-func NewList() *List {
-	return &List{}
+func NewList(out output.Outputer) *List {
+	return &List{
+		out: out,
+	}
 }
 
 // Run executes the list behavior.
@@ -57,7 +61,7 @@ func (l *List) Run(params ListRunParams) error {
 		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 	if len(checkpoint) == 0 {
-		print.Line(locale.T("package_no_packages"))
+		l.out.Print(locale.T("package_no_packages"))
 		return nil
 	}
 
@@ -69,7 +73,7 @@ func (l *List) Run(params ListRunParams) error {
 		output = locale.T("package_no_packages")
 	}
 
-	print.Line(output)
+	l.out.Print(output)
 	return nil
 }
 

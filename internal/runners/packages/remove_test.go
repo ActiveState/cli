@@ -2,6 +2,8 @@ package packages
 
 import (
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
 func TestRemove(t *testing.T) {
@@ -15,14 +17,15 @@ func TestRemove(t *testing.T) {
 
 	for tn, tt := range tests {
 		t.Run(tn, func(t *testing.T) {
+			out := outputhelper.NewCatcher()
 			params := RemoveRunParams{Name: tt.namevers}
-			runner := NewRemove()
+			runner := NewRemove(out.Outputer)
 
 			run := func() error {
 				return runner.Run(params)
 			}
 
-			handleTest(t, run, tt.wantContains, tt.wantErr)
+			handleTest(t, out.Output, run, tt.wantContains, tt.wantErr)
 		})
 	}
 }
