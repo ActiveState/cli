@@ -26,6 +26,7 @@ var (
 	FailRecipeNotFound = failures.Type("model.fail.recipe.notfound", failures.FailNonFatal)
 
 	FailUnsupportedPlatform = failures.Type("model.fail.unsupportedplatform")
+	FailNoRecipes           = failures.Type("model.fail.norecipes", api.FailNotFound)
 )
 
 // HostPlatform stores a reference to current platform
@@ -40,12 +41,12 @@ func init() {
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
 func FetchRawRecipeForCommit(commitID strfmt.UUID) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, nil)
+	return fetchRecipe(commitID, nil)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
 func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, platform string) (string, *failures.Failure) {
-	return fetchRawRecipe(commitID, &platform)
+	return fetchRecipe(commitID, &platform)
 }
 
 // FetchRawRecipeForPlatform returns the available recipe matching the default branch commit id and platform string
@@ -66,8 +67,8 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string
 	return fetchRecipeID(commitID, &hostPlatform)
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
-	_, transport := inventory.Init()
+func fetchRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
+	client := inventory.Init()
 
 	var fail *failures.Failure
 	params := iop.NewResolveRecipesParams()
@@ -76,7 +77,7 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		return "", fail
 	}
 
-	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
+	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return "", FailOrderRecipes.New("request_timed_out")
@@ -101,7 +102,17 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		}
 	}
 
-	return recipe, nil
+	recipes := recipe.Payload.Recipes
+	if len(recipes) == 0 {
+		return "", FailNoRecipes.New(locale.T("err_no_recipes"))
+	}
+
+	recipeBinary, err := recipes[0].MarshalBinary()
+	if err != nil {
+		return "", failures.FailMarshal.Wrap(err)
+	}
+
+	return string(recipeBinary), nil
 }
 
 func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
@@ -112,7 +123,7 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 		return nil, fail
 	}
 
-	client, _ := inventory.Init()
+	client := inventory.Init()
 
 	recipeID, err := client.SolveOrder(params, authentication.ClientAuth())
 	if err != nil {
