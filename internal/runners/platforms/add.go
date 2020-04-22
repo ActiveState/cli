@@ -1,7 +1,9 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -26,12 +28,19 @@ func (a *Add) Run(ps AddRunParams) error {
 
 	params, err := prepareParams(ps.Params)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	return model.CommitPlatform(
+	fail := model.CommitPlatform(
 		ps.Project.Owner(), ps.Project.Name(),
 		model.OperationAdded,
 		params.Name, params.Version, params.BitWidth,
 	)
+	if fail != nil {
+		return fail
+	}
+
+	print.Line(locale.Tr("platform_added", params.Name, params.Version))
+
+	return nil
 }
