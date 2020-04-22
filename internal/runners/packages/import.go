@@ -1,20 +1,21 @@
-package pkg
+package packages
 
 import (
 	"io/ioutil"
 
-	"github.com/spf13/cobra"
-
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+)
+
+const (
+	defaultImportFile = "requirements.txt"
 )
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
@@ -22,100 +23,88 @@ type Confirmer interface {
 	Confirm(msg string, defaultOpt bool) (bool, *failures.Failure)
 }
 
-// ChangesetProvider describes the behavior required to convert some file data into a changeset.
+// ChangesetProvider describes the behavior required to convert some file data
+// into a changeset.
 type ChangesetProvider interface {
 	Changeset([]byte) (model.Changeset, error)
 }
 
-const (
-	defaultImportFile = "requirements.txt"
-)
-
-// ImportFlags holds the import-related flag values passed through the command line
-var ImportFlags = struct {
+// ImportRunParams tracks the info required for running Import.
+type ImportRunParams struct {
 	FileName string
 	Force    bool
-}{
-	defaultImportFile,
-	false,
 }
 
-// ImportCommand is the `package import` command struct
-var ImportCommand = &commands.Command{
-	Name:        "import",
-	Description: "package_import_description",
-	Flags: []*commands.Flag{
-		{
-			Name:        "file",
-			Description: "package_import_flag_filename_description",
-			Type:        commands.TypeString,
-			StringVar:   &ImportFlags.FileName,
-		},
-		{
-			Name:        "force",
-			Description: "package_import_flag_force_description",
-			Type:        commands.TypeBool,
-			BoolVar:     &ImportFlags.Force,
-		},
-	},
-	Run: ExecuteImport,
+// NewImportRunParams prepares the info required for running Import with default
+// values.
+func NewImportRunParams() *ImportRunParams {
+	return &ImportRunParams{
+		FileName: defaultImportFile,
+	}
 }
 
-// ExecuteImport is executed with `state package import` is ran
-func ExecuteImport(cmd *cobra.Command, allArgs []string) {
+// Import manages the importing execution context.
+type Import struct {
+	out output.Outputer
+}
+
+// NewImport prepares an importation execution context for use.
+func NewImport(out output.Outputer) *Import {
+	return &Import{
+		out: out,
+	}
+}
+
+// Run executes the import behavior.
+func (i *Import) Run(params ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
-	if ImportFlags.FileName == "" {
-		ImportFlags.FileName = defaultImportFile
+	if params.FileName == "" {
+		params.FileName = defaultImportFile
 	}
 
 	fail := auth.RequireAuthentication(locale.T("auth_required_activate"))
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_activate_auth_required"))
-		return
+		return fail.WithDescription("err_activate_auth_required")
 	}
 
 	proj, fail := project.GetSafe()
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_project_unavailable"))
-		return
+		return fail.WithDescription("err_project_unavailable")
 	}
 
 	latestCommit, fail := model.LatestCommitID(proj.Owner(), proj.Name())
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_obtain_commit"))
-		return
+		return fail.WithDescription("package_err_cannot_obtain_commit")
 	}
 
 	reqs, fail := fetchCheckpoint(latestCommit)
 	if fail != nil {
-		failures.Handle(fail, locale.T("package_err_cannot_fetch_checkpoint"))
-		return
+		return fail.WithDescription("package_err_cannot_fetch_checkpoint")
 	}
 
-	changeset, err := fetchImportChangeset(reqsimport.Init(), ImportFlags.FileName)
+	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName)
 	if err != nil {
-		failures.Handle(err, locale.T("err_obtaining_change_request"))
-		return
+		return fail.WithDescription("err_obtaining_change_request")
 	}
 
 	if len(reqs) > 0 {
-		force := ImportFlags.Force
+		force := params.Force
 		fail = removeRequirements(prompt.New(), proj.Owner(), proj.Name(), force, reqs)
 		if fail != nil {
-			failures.Handle(fail, locale.T("err_cannot_remove_existing"))
-			return
+			return fail.WithDescription("err_cannot_remove_existing")
 		}
 	}
 
 	msg := locale.T("commit_reqstext_message")
 	fail = model.CommitChangeset(proj.Owner(), proj.Name(), msg, changeset)
 	if fail != nil {
-		failures.Handle(fail, locale.T("err_cannot_commit_changeset"))
-		return
+		return fail.WithDescription("err_cannot_commit_changeset")
 	}
 
-	print.Warning(locale.T("package_update_config_file"))
+	i.out.Notice(locale.T("package_update_config_file"))
+
+	return nil
 }
 
 func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs model.Checkpoint) *failures.Failure {
@@ -143,7 +132,7 @@ func removeRequirements(conf Confirmer, pjOwner, pjName string, force bool, reqs
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string) (model.Changeset, error) {
-	data, err := ioutil.ReadFile(ImportFlags.FileName)
+	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
