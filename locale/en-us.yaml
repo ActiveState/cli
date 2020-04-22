@@ -1407,7 +1407,7 @@ field_organization:
 request_timed_out:
   other: A request for data took too long - Trying again may help
 err_recipe_payload:
-  other: Expected recipe ID for host platform
+  other: Received multiple platform recipes where only one was expected
 no_commits:
   other: No commits exist yet for {{.V0}}
 err_orgs_length:
