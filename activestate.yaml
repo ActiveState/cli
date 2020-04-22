@@ -24,15 +24,19 @@ scripts:
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       $constants.SET_ENV
-      packr
-      go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      (
+        unset GOOS GOARCH
+        packr
+        go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      )
   - name: build
-    description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
+    description: Builds the project.
     value: |
       $scripts.preprocess
-      go build -tags internal -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      [[ "${GOOS}" == "windows" && "$(go env GOHOSTOS)" != "windows" ]] && outExt=".exe"
+      go build -tags internal -o $constants.BUILD_TARGET${outExt} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
+    description: Builds the project for external use (limiting its feature-set).
     value: |
       $scripts.preprocess
       go build -tags external -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
