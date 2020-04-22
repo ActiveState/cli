@@ -36,7 +36,7 @@ func TestAdd(t *testing.T) {
 				return runner.Run(params)
 			}
 
-			handleTest(t, out.Output, run, tt.wantContains, tt.wantErr)
+			handleTest(t, out, run, tt.wantContains, tt.wantErr)
 		})
 	}
 }

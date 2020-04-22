@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
@@ -54,7 +55,7 @@ func (ds *dependencies) cleanUp() {
 	ds.graphMock.Close()
 }
 
-func handleTest(t *testing.T, output func() string, run func() error, wantContains string, wantErr bool) {
+func handleTest(t *testing.T, out *outputhelper.Catcher, run func() error, wantContains string, wantErr bool) {
 	deps := &dependencies{}
 	deps.setUp()
 	defer deps.cleanUp()
@@ -64,7 +65,7 @@ func handleTest(t *testing.T, output func() string, run func() error, wantContai
 		t.Errorf("got %v, want nil", err)
 		return
 	}
-	outTxt := output()
+	outTxt := out.Output()
 
 	if wantErr {
 		if err == nil {
