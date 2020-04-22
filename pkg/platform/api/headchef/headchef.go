@@ -2,7 +2,6 @@ package headchef
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -82,7 +81,6 @@ func (r *Client) RequestBuild(recipe BuildRequest) *BuildStatus {
 
 type BuildRequest struct {
 	headchef_models.V1BuildRequest
-	Recipe json.RawMessage `json:"recipe,omitempty"`
 }
 
 func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (BuildRequest, *failures.Failure) {
@@ -99,7 +97,6 @@ func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (BuildRequest, *failur
 			Format:   &format,
 			RecipeID: recipeID,
 		},
-		nil,
 	}
 
 	return br, nil
