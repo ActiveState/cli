@@ -8,7 +8,7 @@ import (
 )
 
 type Catcher struct {
-	Outputer  *output.Plain
+	output.Outputer
 	outWriter *bytes.Buffer
 	errWriter *bytes.Buffer
 }
@@ -19,7 +19,7 @@ func NewCatcher() *Catcher {
 	catch.outWriter = &bytes.Buffer{}
 	catch.errWriter = &bytes.Buffer{}
 
-	outputer, fail := output.NewPlain(&output.Config{
+	plainOutput, fail := output.NewPlain(&output.Config{
 		OutWriter:   catch.outWriter,
 		ErrWriter:   catch.errWriter,
 		Colored:     false,
@@ -30,7 +30,7 @@ func NewCatcher() *Catcher {
 		panic(fmt.Sprintf("Could not create plain outputer: %s", fail.Error()))
 	}
 
-	catch.Outputer = &outputer
+	catch.Outputer = &plainOutput
 
 	return catch
 }

@@ -19,7 +19,7 @@ func TestRemove(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
 			params := RemoveRunParams{Name: tt.namevers}
-			runner := NewRemove(out.Outputer)
+			runner := NewRemove(out)
 
 			run := func() error {
 				return runner.Run(params)

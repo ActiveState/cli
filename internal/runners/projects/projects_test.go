@@ -23,7 +23,7 @@ func TestProjects(t *testing.T) {
 	httpmock.Register("GET", "/organizations/organizationName/projects")
 
 	catcher := outputhelper.NewCatcher()
-	pjs := NewProjects(catcher.Outputer, authentication.Get())
+	pjs := NewProjects(catcher, authentication.Get())
 
 	projects, fail := pjs.fetchProjects()
 	assert.NoError(t, fail.ToError(), "Fetched projects")
@@ -48,7 +48,7 @@ func TestProjectsEmpty(t *testing.T) {
 	})
 
 	catcher := outputhelper.NewCatcher()
-	pjs := NewProjects(catcher.Outputer, authentication.Get())
+	pjs := NewProjects(catcher, authentication.Get())
 
 	projects, fail := pjs.fetchProjects()
 	assert.NoError(t, fail.ToError(), "Fetched projects")
@@ -66,7 +66,7 @@ func TestClientError(t *testing.T) {
 	authentication.Get().AuthenticateWithToken("")
 
 	catcher := outputhelper.NewCatcher()
-	pjs := NewProjects(catcher.Outputer, authentication.Get())
+	pjs := NewProjects(catcher, authentication.Get())
 
 	_, fail := pjs.fetchProjects()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch organizations without mock")
@@ -86,7 +86,7 @@ func TestAuthError(t *testing.T) {
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 
 	catcher := outputhelper.NewCatcher()
-	pjs := NewProjects(catcher.Outputer, authentication.Get())
+	pjs := NewProjects(catcher, authentication.Get())
 
 	_, fail := pjs.fetchProjects()
 	assert.Error(t, fail.ToError(), "Should not be able to fetch projects without being authenticated")

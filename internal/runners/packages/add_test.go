@@ -28,7 +28,7 @@ func TestAdd(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
 			params := AddRunParams{Name: tt.namevers}
-			runner := NewAdd(out.Outputer)
+			runner := NewAdd(out)
 
 			run := func() error {
 				tt.registerMocks()

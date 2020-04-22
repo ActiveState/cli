@@ -21,7 +21,7 @@ func TestUpdate(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			out := outputhelper.NewCatcher()
 			params := UpdateRunParams{Name: tt.namevers}
-			runner := NewUpdate(out.Outputer)
+			runner := NewUpdate(out)
 
 			run := func() error {
 				return runner.Run(params)
