@@ -85,7 +85,7 @@ type BuildRequest struct {
 	Recipe json.RawMessage `json:"recipe,omitempty"`
 }
 
-func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *failures.Failure) {
+func NewBuildRequest(recipeID, orgID, projID strfmt.UUID) (BuildRequest, *failures.Failure) {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 	format := "raw"
 
@@ -96,9 +96,10 @@ func NewBuildRequest(recipe string, orgID, projID strfmt.UUID) (BuildRequest, *f
 				ProjectID:      &projID,
 				UserID:         uid,
 			},
-			Format: &format,
+			Format:   &format,
+			RecipeID: recipeID,
 		},
-		json.RawMessage(recipe),
+		nil,
 	}
 
 	return br, nil

@@ -107,5 +107,68 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		}
 	}
 
+	// logging.Debug("returning recipe: %s", recipe)
 	return recipe, nil
+}
+
+func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string) (*strfmt.UUID, *failures.Failure) {
+	return fetchRecipeID(commitID, &hostPlatform)
+}
+
+func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
+	checkpoint, atTime, fail := FetchCheckpointForCommit(commitID)
+	if fail != nil {
+		return nil, fail
+	}
+
+	params := iop.NewSolveOrderParams()
+	params.Order = CheckpointToOrder(commitID, atTime, checkpoint)
+	if fail != nil {
+		return nil, fail
+	}
+
+	if hostPlatform != nil {
+		params.Order.Platforms, fail = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		if fail != nil {
+			return nil, fail
+		}
+	}
+
+	client, _ := inventory.Init()
+
+	recipeID, err := client.SolveOrder(params, authentication.ClientAuth())
+	if err != nil {
+		if err == context.DeadlineExceeded {
+			return nil, FailOrderRecipes.New("request_timed_out")
+		}
+
+		orderBody, err2 := json.Marshal(params.Order)
+		if err2 != nil {
+			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
+		}
+
+		switch rrErr := err.(type) {
+		case *iop.SolveOrderDefault:
+			msg := *rrErr.Payload.Message
+			logging.Error("Could not solver order, error: %s, order: %s", msg, string(orderBody))
+			return nil, FailOrderRecipes.New(msg)
+		case *iop.SolveOrderBadRequest:
+			msg := *rrErr.Payload.Message
+			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
+			return nil, FailOrderRecipes.New(msg)
+		default:
+			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
+			return nil, FailOrderRecipes.Wrap(err)
+		}
+	}
+
+	if len(recipeID.Payload) > 1 {
+		return nil, FailOrderRecipes.New("Map too long!")
+	}
+
+	for _, id := range recipeID.Payload {
+		return id.RecipeID, nil
+	}
+
+	return nil, FailNoData.New("No recipe found")
 }
