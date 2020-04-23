@@ -1548,6 +1548,19 @@ deploy_info:
   other: |
     [BLUE]Deployment Information:[/RESET]
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
+deploy_cmd_description:
+  other: |
+    Deploys the given runtime environment on the local system and sets it up so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
+    If you're setting up a local development environment you probably won't need the sub-commands.
+deploy_install_cmd_description:
+  other: Only install the runtime environment files, but do not configure it in any way (effectively caches the runtime environment)
+deploy_configure_cmd_description:
+  other: Configure the runtime environment for your current shell (must have ran install first or this will fail)
+deploy_symlink_cmd_description:
+  other: Symlink the executables to your PATH and to the target directory (must have ran install first or this will fail)
+deploy_report_cmd_description:
+  other: Reports information about the deployed runtime environment, useful for further manual setup (must have ran install first or this will fail)
 field_binarydirectories:
   other: Binary Directories
 field_environment:
@@ -1558,10 +1571,6 @@ deploy_restart_shell:
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
-flag_state_deploy_step_description:
-  other: "The individual step to run. By default all steps are ran. Available steps: install, configure, report."
-flag_state_deploy_step_description_linux:
-  other: "The individual step to run. By default all steps are ran. Available steps: install, configure, symlink (Linux only), report."
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
 envdef_file_not_found:

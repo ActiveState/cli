@@ -35,14 +35,16 @@ type Params struct {
 
 type Deploy struct {
 	output output.Outputer
+	step   Step
 
 	DefaultBranchForProjectName defaultBranchForProjectNameFunc
 	NewRuntimeInstaller         newInstallerFunc
 }
 
-func NewDeploy(out output.Outputer) *Deploy {
+func NewDeploy(step Step, out output.Outputer) *Deploy {
 	return &Deploy{
 		out,
+		step,
 		model.DefaultBranchForProjectName,
 		newInstaller,
 	}
@@ -54,7 +56,7 @@ func (d *Deploy) Run(params *Params) error {
 		return err
 	}
 
-	return runSteps(targetPath, params.Force, params.Step, installer, d.output)
+	return runSteps(targetPath, params.Force, d.step, installer, d.output)
 }
 
 func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, *failures.Failure) {
