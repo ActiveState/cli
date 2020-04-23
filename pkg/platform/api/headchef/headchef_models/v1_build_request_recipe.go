@@ -45,6 +45,10 @@ type V1BuildRequestRecipe struct {
 	// Min Items: 1
 	// Unique: true
 	ResolvedIngredients []*V1BuildRequestRecipeResolvedIngredientsItems `json:"resolved_ingredients"`
+
+	// The version of the solver that was used to create this recipe
+	// Required: true
+	SolverVersion *int64 `json:"solver_version"`
 }
 
 // Validate validates this v1 build request recipe
@@ -64,6 +68,10 @@ func (m *V1BuildRequestRecipe) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateResolvedIngredients(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSolverVersion(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -152,6 +160,15 @@ func (m *V1BuildRequestRecipe) validateResolvedIngredients(formats strfmt.Regist
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipe) validateSolverVersion(formats strfmt.Registry) error {
+
+	if err := validate.Required("solver_version", "body", m.SolverVersion); err != nil {
+		return err
 	}
 
 	return nil

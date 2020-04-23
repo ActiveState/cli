@@ -18,7 +18,7 @@ import (
 
 // V1BuildRequest Build Request V1
 //
-// A build request (v1) which is submitted to the Head Chef REST API.
+// A build request (v1) which is submitted to the Head Chef REST API. A build request may contain either a full recipe or just the ID of a recipe stored in the inventory API.
 // swagger:model v1BuildRequest
 type V1BuildRequest struct {
 
@@ -34,8 +34,11 @@ type V1BuildRequest struct {
 	Format *string `json:"format,omitempty"`
 
 	// recipe
-	// Required: true
-	Recipe *V1BuildRequestRecipe `json:"recipe"`
+	Recipe *V1BuildRequestRecipe `json:"recipe,omitempty"`
+
+	// The ID of a recipe solved using the inventory API solutions endpoint
+	// Format: uuid
+	RecipeID strfmt.UUID `json:"recipe_id,omitempty"`
 
 	// requester
 	Requester *V1BuildRequestRequester `json:"requester,omitempty"`
@@ -54,6 +57,10 @@ func (m *V1BuildRequest) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRecipe(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRecipeID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -165,8 +172,8 @@ func (m *V1BuildRequest) validateFormat(formats strfmt.Registry) error {
 
 func (m *V1BuildRequest) validateRecipe(formats strfmt.Registry) error {
 
-	if err := validate.Required("recipe", "body", m.Recipe); err != nil {
-		return err
+	if swag.IsZero(m.Recipe) { // not required
+		return nil
 	}
 
 	if m.Recipe != nil {
@@ -176,6 +183,19 @@ func (m *V1BuildRequest) validateRecipe(formats strfmt.Registry) error {
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequest) validateRecipeID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RecipeID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("recipe_id", "body", "uuid", m.RecipeID.String(), formats); err != nil {
+		return err
 	}
 
 	return nil
