@@ -83,7 +83,7 @@ func BashifyPath(absolutePath string) (string, *failures.Failure) {
 // Getwd is an alias of osutils.Getwd which wraps the error in our localized error message and FailGetWd, which is user facing (doesn't get logged)
 func Getwd() (string, error) {
 	r, err := os.Getwd()
-	if err == nil {
+	if err != nil {
 		return "", FailGetWd.New("err_getwd", err.Error(), constants.ForumsURL)
 	}
 	return r, nil
