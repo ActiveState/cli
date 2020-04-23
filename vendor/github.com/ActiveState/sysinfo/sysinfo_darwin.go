@@ -13,17 +13,20 @@ func OS() OsInfo {
 	return Mac
 }
 
+var (
+	versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
+)
+
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
 	// Fetch OS version.
-	version, err := exec.Command("sw_vers", "-productVersion").Output()
+	version, err := getDarwinProductVersion()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to determine OS version: %s", err)
+		return nil, fmt.Errorf("Unable to determine OS version: %v", err)
 	}
-	version = bytes.TrimSpace(version)
+
 	// Parse OS version parts.
-	regex := regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
-	parts := regex.FindStringSubmatch(string(version))
+	parts := versionRegex.FindStringSubmatch(version)
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("Unable to parse version string '%s'", version)
 	}
@@ -47,7 +50,7 @@ func OSVersion() (*OSVersionInfo, error) {
 	}
 	// Fetch OS name.
 	name, err := exec.Command("sw_vers", "-productName").Output()
-	return &OSVersionInfo{string(version), major, minor, micro, string(name)}, nil
+	return &OSVersionInfo{version, major, minor, micro, string(name)}, nil
 }
 
 // Libc returns the system's C library.
@@ -89,4 +92,24 @@ func Compilers() ([]*CompilerInfo, error) {
 	}
 
 	return compilers, nil
+}
+
+func getDarwinProductVersion() (string, error) {
+	version, err := exec.Command("sw_vers", "-productVersion").Output()
+	if err == nil {
+		return string(bytes.TrimSpace(version)), nil
+	}
+	swversErr := err
+
+	plistBuddyArgs := []string{
+		"-c",
+		"Print:ProductVersion",
+		"/System/Library/CoreServices/SystemVersion.plist",
+	}
+	version, err = exec.Command("/usr/libexec/PlistBuddy", plistBuddyArgs...).Output()
+	if err != nil {
+		fmt.Sprintf("PlistBuddy error: %v. swver error: %v", err, swversErr)
+	}
+
+	return string(bytes.TrimSpace(version)), nil
 }
