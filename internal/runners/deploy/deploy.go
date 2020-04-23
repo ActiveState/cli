@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -235,6 +236,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 			// Create symlink
 			logging.Debug("Creating symlink, oldname: %s newname: %s", fpath, target)
+			fmt.Printf("Creating symlink, oldname: %s newname: %s\n", fpath, target)
 			return os.Symlink(fpath, target)
 		})
 		if err != nil {
