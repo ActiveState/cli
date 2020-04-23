@@ -68,7 +68,7 @@ func FetchRecipeIDForCommitAndPlatform(commitID strfmt.UUID, hostPlatform string
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failures.Failure) {
-	client := inventory.Init()
+	_, transport := inventory.Init()
 
 	var fail *failures.Failure
 	params := iop.NewResolveRecipesParams()
@@ -77,7 +77,7 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		return "", fail
 	}
 
-	recipe, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	recipe, err := inventory.ResolveRecipes(transport, params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return "", FailOrderRecipes.New("request_timed_out")
@@ -102,17 +102,7 @@ func fetchRawRecipe(commitID strfmt.UUID, hostPlatform *string) (string, *failur
 		}
 	}
 
-	recipes := recipe.Payload.Recipes
-	if len(recipes) == 0 {
-		return "", FailNoRecipes.New(locale.T("err_no_recipes"))
-	}
-
-	recipeBinary, err := recipes[0].MarshalBinary()
-	if err != nil {
-		return "", failures.FailMarshal.Wrap(err)
-	}
-
-	return string(recipeBinary), nil
+	return recipe, nil
 }
 
 func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *failures.Failure) {
@@ -123,7 +113,7 @@ func fetchRecipeID(commitID strfmt.UUID, hostPlatform *string) (*strfmt.UUID, *f
 		return nil, fail
 	}
 
-	client := inventory.Init()
+	client, _ := inventory.Init()
 
 	recipeID, err := client.SolveOrder(params, authentication.ClientAuth())
 	if err != nil {
