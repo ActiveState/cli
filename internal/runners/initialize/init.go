@@ -2,7 +2,6 @@ package initialize
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -73,7 +73,7 @@ func prepare(params *RunParams) error {
 
 	if params.Path == "" {
 		var wd string
-		wd, err := os.Getwd()
+		wd, err := osutils.Getwd()
 		if err != nil {
 			return err
 		}

@@ -922,9 +922,9 @@ installer_err_runtime_already_exists:
   other: A runtime is already installed at '{{.V0}}'
 installer_err_runtime_move_files_access_denied:
   other: |
-    Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V1}}'
+    Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V0}}'
     If you believe this is happening due to antivirus software please report your issue on our forums: 
-    https://community.activestate.com/c/state-tool/9
+    {{.V0}}
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
@@ -1599,3 +1599,7 @@ err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
   other: "{{.V0}}@{{.V1}} has been added."
+err_getwd:
+  other: |
+    Could not retrieve your working directory, error received: {{.V0}}.
+    If this problem continues please report it on our forums: {{.V1}}

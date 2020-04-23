@@ -182,7 +182,7 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 		// This might happen due to virus software or other access control software running on the user's machine,
 		// and therefore we forward this information to the user.
 		if os.IsPermission(underlyingError) {
-			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", installDir)
+			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", installDir, constants.ForumsURL)
 		}
 		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, installDir)
 	}
