@@ -3,13 +3,16 @@ package runtime
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // installActivePerl will unpack the installer archive, locate the install script, and then use the installer
@@ -48,4 +51,24 @@ func (m *MetaData) perlRelocationDir() (string, *failures.Failure) {
 	}
 
 	return match[1], nil
+}
+
+func loadRelocationFile(relocFilePath string) map[string]bool {
+	relocBytes, err := ioutil.ReadFile(relocFilePath)
+	if err != nil {
+		logging.Debug("Could not open relocation file: %v", err)
+		return nil
+	}
+	reloc := string(relocBytes)
+	relocMap := map[string]bool{}
+	entries := strings.Split(reloc, "\n")
+	for _, entry := range entries {
+		if entry == "" {
+			continue
+		}
+		info := strings.Split(entry, " ")
+		// Place path suffix into map
+		relocMap[info[1]] = true
+	}
+	return relocMap
 }

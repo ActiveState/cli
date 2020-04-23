@@ -22,7 +22,7 @@ func newOrganizationsCommand(globals *globalOptions) *captain.Command {
 		},
 	)
 
-	cmd.SetAliases([]string{"orgs"})
+	cmd.SetAliases("orgs")
 
 	return cmd
 }

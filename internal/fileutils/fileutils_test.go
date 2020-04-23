@@ -2,11 +2,9 @@ package fileutils
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -82,71 +80,6 @@ func TestReplaceAllTextFile(t *testing.T) {
 	assert.NoError(t, err, "Read new text file")
 	assert.NotEqual(t, string(oldBytes), string(newBytes), "Copy succeeded")
 	assert.Equal(t, string(bytes.Replace(oldBytes, []byte("%%FIND%%"), []byte("REPL"), -1)), string(newBytes), "Copy succeeded")
-}
-
-func TestReplaceAllExe(t *testing.T) {
-	gobin := "go"
-	goroot := os.Getenv("GOROOT")
-	if goroot != "" {
-		gobin = filepath.Join(goroot, "bin", "go")
-	}
-
-	root, err := environment.GetRootPath()
-	assert.NoError(t, err, "Should detect root path")
-	cwd, err := os.Getwd()
-	assert.NoError(t, err, "Determined working directory")
-
-	// Copy test.go to temp dir.
-	tmpfile := copyFileToTempDir(t, filepath.Join(root, "internal", "fileutils", "testdata", "test.go"))
-	defer os.RemoveAll(filepath.Dir(tmpfile))
-
-	// Build test.go in the temp dir.
-	err = os.Chdir(filepath.Dir(tmpfile))
-	defer os.Chdir(cwd) // restore
-	assert.NoError(t, err, "Changed to the tempfile's directory")
-	exe := "test"
-	if runtime.GOOS == "windows" {
-		exe += ".exe"
-	}
-	cmd := exec.Command(gobin, "build", "-o", exe, filepath.Base(tmpfile))
-	err = cmd.Run()
-	assert.NoError(t, err, "Ran go build")
-	oldExeStat, err := os.Stat(filepath.Join(filepath.Dir(tmpfile), exe))
-	assert.NoError(t, err, "Can read attributes of exe")
-	oldExeSize := oldExeStat.Size() // read now since exe will be replaced
-
-	// Run the exe and fetch original output.
-	sep := ":"
-	if runtime.GOOS == "windows" {
-		sep = ";"
-	}
-	path := os.Getenv("PATH")
-	os.Setenv("PATH", fmt.Sprintf("%s%s%s", filepath.Dir(tmpfile), sep, path))
-	defer os.Setenv("PATH", path) // restore
-	cmd = exec.Command(exe)
-	oldOutput, err := cmd.Output()
-	assert.NoError(t, err, "Go exe ran")
-	assert.True(t, len(oldOutput) > 0, "Stdout read")
-
-	// Perform binary replace.
-	err = ReplaceAll(exe, "%%FIND%%", "REPLTOOLONG", func(string, []byte) bool { return true })
-	assert.Error(t, err, "Replacement text was too long")
-	err = ReplaceAll(exe, "%%FIND%%", "REPL", func(string, []byte) bool { return true })
-	assert.NoError(t, err, "Replacement worked")
-
-	// Verify the file size is identical for binary files.
-	newExeStat, err := os.Stat(filepath.Join(filepath.Dir(tmpfile), exe))
-	assert.NoError(t, err, "Can read attributes of replacement exe")
-	assert.True(t, oldExeSize == newExeStat.Size(), "Replacement exe is same size")
-
-	// Run the replacement exe and fetch new output.
-	// Note: executables produced by Go appear to encode string length somewhere,
-	// rather than terminate strings with NUL bytes like C/C++-compiled
-	// executables. Account for that.
-	cmd = exec.Command(exe)
-	newOutput, err := cmd.Output()
-	assert.NoError(t, err, "Replacement exe ran")
-	assert.Equal(t, bytes.Replace(oldOutput, []byte("%%FIND%%"), []byte("REPL\x00\x00\x00\x00"), -1), newOutput, "Copy succeeded")
 }
 
 func TestEmptyDir_IsEmpty(t *testing.T) {
