@@ -24,7 +24,7 @@ scripts:
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       $constants.SET_ENV
-      (
+      ( # ensure `go run` is not affected by GOOS/GOARCH; runs in temporary scope to protect current values
         unset GOOS GOARCH
         packr
         go run scripts/constants-generator/main.go -- internal/constants/generated.go
