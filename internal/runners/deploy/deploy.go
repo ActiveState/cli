@@ -2,9 +2,9 @@ package deploy
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -216,8 +216,8 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are executable
-			if info == nil || info.IsDir() || info.Mode()&0111 == 0 { // check if executable by anyone
+			// Filter out files that are not executable
+			if info == nil || info.IsDir() || notExecutable(fpath, info) { // check if executable by anyone
 				return nil // not executable
 			}
 
@@ -236,7 +236,6 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 			// Create symlink
 			logging.Debug("Creating symlink, oldname: %s newname: %s", fpath, target)
-			fmt.Printf("Creating symlink, oldname: %s newname: %s\n", fpath, target)
 			return os.Symlink(fpath, target)
 		})
 		if err != nil {
@@ -245,6 +244,16 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 	}
 
 	return nil
+}
+
+func notExecutable(path string, info os.FileInfo) bool {
+	if rt.GOOS == "windows" {
+		if filepath.Ext(path) == ".exe" {
+			return false
+		}
+		return true
+	}
+	return info.Mode()&0111 == 0
 }
 
 type Report struct {

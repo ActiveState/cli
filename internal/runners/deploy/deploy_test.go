@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	rt "runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"golang.org/x/sys/windows/registry"
 )
 
 type InstallableMock struct{}
@@ -232,6 +234,10 @@ func Test_report(t *testing.T) {
 }
 
 func Test_symlinkWithTarget(t *testing.T) {
+	if !isWindowsDeveloperModeActive() {
+		t.Skip("Windows developer mode is not active")
+	}
+
 	root, err := environment.GetRootPath()
 	if err != nil {
 		t.Error(err)
@@ -265,10 +271,12 @@ func Test_symlinkWithTarget(t *testing.T) {
 		t.Error(fail.ToError())
 	}
 
-	cmd = exec.Command("chmod", "+x", filepath.Join(installDir, binaryName))
-	err = cmd.Run()
-	if err != nil {
-		t.Error(err)
+	if rt.GOOS != "windows" {
+		cmd = exec.Command("chmod", "+x", filepath.Join(installDir, binaryName))
+		err = cmd.Run()
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 	type args struct {
@@ -300,6 +308,7 @@ func Test_symlinkWithTarget(t *testing.T) {
 			defer func() {
 				os.RemoveAll(installDir)
 				os.RemoveAll(targetDir)
+				os.Remove(filepath.Join(testDataDir, binaryName))
 			}()
 
 			cmd := exec.Command(filepath.Join(targetDir, binaryName))
@@ -307,9 +316,23 @@ func Test_symlinkWithTarget(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			if string(out) != "Hello World!" {
+			if strings.TrimSpace(string(out)) != "Hello World!" {
 				t.Fatalf("Unexpected output: %s", string(out))
 			}
 		})
 	}
+}
+
+func isWindowsDeveloperModeActive() bool {
+	key, err := registry.OpenKey(registry.LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock", registry.READ)
+	if err != nil {
+		return false
+	}
+
+	val, _, err := key.GetIntegerValue("AllowDevelopmentWithoutDevLicense")
+	if err != nil {
+		return false
+	}
+
+	return val != 0
 }
