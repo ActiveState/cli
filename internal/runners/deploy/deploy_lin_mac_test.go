@@ -2,6 +2,6 @@
 
 package deploy
 
-func isWindowsDeveloperModeActive() bool {
+func runSymlinkTests() bool {
 	return true
 }

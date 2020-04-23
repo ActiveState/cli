@@ -46,6 +46,7 @@ func (o *OutputterMock) Config() *output.Config {
 }
 
 func Test_runStepsWithFuncs(t *testing.T) {
+	runSymlinks := runSymlinkTests()
 	type args struct {
 		installer installable
 		step      Step
@@ -72,7 +73,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				true,
 				true,
-				rt.GOOS == "linux",
+				runSymlinks,
 				true,
 			},
 		},
@@ -114,7 +115,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				false,
 				false,
-				rt.GOOS == "linux",
+				runSymlinks,
 				false,
 			},
 		},
@@ -233,7 +234,7 @@ func Test_report(t *testing.T) {
 }
 
 func Test_symlinkWithTarget(t *testing.T) {
-	if !isWindowsDeveloperModeActive() {
+	if !runSymlinkTests() {
 		t.Skip("Windows developer mode is not active")
 	}
 
