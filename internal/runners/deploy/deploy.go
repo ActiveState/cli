@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -109,7 +108,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 			out.Notice("") // Some space between steps
 		}
 	}
-	if rt.GOOS == "linux" && (step == UnsetStep || step == SymlinkStep) {
+	if step == UnsetStep || step == SymlinkStep {
 		logging.Debug("Running symlink step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
@@ -146,7 +145,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if fail != nil {
 		return envGetter, fail.ToError()
 	}
-	if ! installed {
+	if !installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
 	return envGetter, nil
@@ -235,6 +234,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 			}
 
 			// Create symlink
+			logging.Debug("Creating symlink, oldname: %s newname: %s", fpath, target)
 			return os.Symlink(fpath, target)
 		})
 		if err != nil {
