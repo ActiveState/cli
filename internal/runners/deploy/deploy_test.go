@@ -234,10 +234,6 @@ func Test_report(t *testing.T) {
 }
 
 func Test_symlinkWithTarget(t *testing.T) {
-	if !runSymlinkTests() {
-		t.Skip("Windows developer mode is not active")
-	}
-
 	root, err := environment.GetRootPath()
 	if err != nil {
 		t.Error(err)
@@ -311,7 +307,13 @@ func Test_symlinkWithTarget(t *testing.T) {
 				os.Remove(filepath.Join(testDataDir, binaryName))
 			}()
 
+			if rt.GOOS == "windows" {
+				binaryName = strings.TrimSuffix(binaryName, ".exe")
+				binaryName += ".lnk"
+			}
+
 			cmd := exec.Command(filepath.Join(targetDir, binaryName))
+			cmd.Env = os.Environ()
 			out, err := cmd.Output()
 			if err != nil {
 				t.Error(err)
