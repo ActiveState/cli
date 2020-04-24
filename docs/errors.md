@@ -8,7 +8,7 @@ for now this is necessary due to our legacy code not using wrapped errors.
 
 When creating your own custom error types, always wrap them in errs.Wrap  
 or locale.WrapError so that the stack traces gets added, or implement your
-own `Stacktrace()` method (see the errs.Error interface).
+own `Stack()` method (see the errs.Error interface).
 
 See errs/example_test.go for basic error usage
 
