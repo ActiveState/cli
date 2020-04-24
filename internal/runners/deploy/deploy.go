@@ -7,7 +7,6 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -161,6 +160,7 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	if len(env) == 0 {
 		return errors.New(locale.T("err_deploy_run_install"))
 	}
+	prepareDeployEnv(env)
 
 	// Configure Shell
 	sshell, fail := subshell.Get()
@@ -234,6 +234,11 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				}
 			}
 
+			if rt.GOOS == "windows" {
+				// Create shortcut
+				logging.Debug("Creating shortcut, oldname: %s newname: %s", fpath, target)
+				return createShortcut(fpath, target)
+			}
 			// Create symlink
 			logging.Debug("Creating symlink, oldname: %s newname: %s", fpath, target)
 			return os.Symlink(fpath, target)
@@ -277,6 +282,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 		delete(env, "PATH")
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
+	prepareDeployEnv(env)
 
 	out.Notice(locale.T("deploy_info"))
 
@@ -303,13 +309,8 @@ func usablePath() (string, error) {
 	}
 	var result string
 	for _, path := range paths {
-		// Check if we can write to this path
-		fpath := filepath.Join(path, uuid.New().String())
-		if err := fileutils.Touch(fpath); err != nil {
+		if !isWritable(path) {
 			continue
-		}
-		if errr := os.Remove(fpath); errr != nil {
-			logging.Error("Could not clean up test file: %v", errr)
 		}
 
 		// Record result
@@ -324,4 +325,11 @@ func usablePath() (string, error) {
 	}
 
 	return "", errors.New(locale.Tr("err_deploy_path_noperm", os.Getenv("PATH")))
+}
+
+func prepareDeployEnv(env map[string]string) {
+	if rt.GOOS == "windows" {
+		originalExtenstions := os.Getenv("PATHEXT")
+		env["PATHEXT"] = originalExtenstions + ".LNK;"
+	}
 }
