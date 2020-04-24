@@ -157,7 +157,7 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return locale.NewError("err_deploy_run_install", "Please run the install step at least once")
+		return locale.InputError().New("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	// Configure Shell
@@ -272,7 +272,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return locale.NewError("err_deploy_run_install", "Please run the install step at least once")
+		return locale.InputError().New("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	var bins []string
