@@ -854,7 +854,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other: Could not parse the version field, please ensure your activestate.yaml is formatted correctly
+  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_version:
   other: "Invalid version specified in your activestate.yaml, should be in the format of: {number}.{number}.{number}-{hash}"
 downloading_state_version:
@@ -920,8 +920,13 @@ installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for runtime '{{.V0}}'
 installer_err_runtime_already_exists:
   other: A runtime is already installed at '{{.V0}}'
+installer_err_runtime_move_files_access_denied:
+  other: |
+    Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V0}}'
+    If you believe this is happening due to antivirus software please report your issue on our forums: 
+    {{.V0}}
 installer_err_runtime_move_files_failed:
-  other: Unable to move runtime files from '{{.V0}}'
+  other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
   other: Unable to remove '{{.V0}}' after unpacking runtime
 installer_err_runtime_no_commitid:
@@ -1213,19 +1218,19 @@ editor_yaml:
     events:
       - name: ACTIVATE
         value: $scripts.intro
-package_description:
+package_cmd_description:
   other: Manage packages used in your project
 users_plural:
   other: users
-package_add_description:
+package_add_cmd_description:
   other: Add a new package to your project
-package_list_description:
+package_list_cmd_description:
   other: List the packages currently used by this project
-package_update_description:
+package_update_cmd_description:
   other: Update a package in your project to the latest available version
-package_remove_description:
+package_remove_cmd_description:
   other: Remove a package from your project
-package_import_description:
+package_import_cmd_description:
   other: Import packages from a list of dependencies
 package_search_description:
   other: Search for available packages that can be added to your project
@@ -1249,6 +1254,8 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
+package_import_flag_force_description:
+  other: Run import operation without prompts
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1406,6 +1413,8 @@ field_organization:
   other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
+err_recipe_payload:
+  other: Received multiple platform recipes where only one was expected
 no_commits:
   other: No commits exist yet for {{.V0}}
 err_orgs_length:
@@ -1490,6 +1499,12 @@ field_languages:
   other: Languages
 err_no_recipes:
   other: No build recipes could be generated for the current project
+err_solve_order:
+  other: "Could not solve order: {{.V0}}"
+err_order_bad_request:
+  other: "Bad request while resolving order: {{.V0}}"
+err_order_unknown:
+  other: Unknown error resolving order"
 using_cached_env:
   other: Reusing cached runtime environment
 auto_update_to_version:
@@ -1537,6 +1552,19 @@ deploy_info:
   other: |
     [BLUE]Deployment Information:[/RESET]
     This information is provided for your reference, for most common use-cases you do not need to do anything with this.
+deploy_cmd_description:
+  other: |
+    Deploys the given runtime environment on the local system and sets it up so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
+    If you're setting up a local development environment you probably won't need the sub-commands.
+deploy_install_cmd_description:
+  other: Only install the runtime environment files, but do not configure it in any way (effectively caches the runtime environment)
+deploy_configure_cmd_description:
+  other: Configure the runtime environment for your current shell (must have ran install first or this will fail)
+deploy_symlink_cmd_description:
+  other: Symlink the executables to your PATH and to the target directory (must have ran install first or this will fail)
+deploy_report_cmd_description:
+  other: Reports information about the deployed runtime environment, useful for further manual setup (must have ran install first or this will fail)
 field_binarydirectories:
   other: Binary Directories
 field_environment:
@@ -1547,10 +1575,6 @@ deploy_restart_shell:
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
-flag_state_deploy_step_description:
-  other: "The individual step to run. By default all steps are ran. Available steps: install, configure, report."
-flag_state_deploy_step_description_linux:
-  other: "The individual step to run. By default all steps are ran. Available steps: install, configure, symlink (Linux only), report."
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
 envdef_file_not_found:
@@ -1575,3 +1599,11 @@ err_init_no_language:
   other: "You need to supply the [language] argument, run 'state init --help' for more information."
 err_project_no_commit:
   other: The activatestate.yaml for the project {{.V0}} does not contain a commit ID. If this project was created with 'state init', please run 'state push' and try again.
+err_bad_platform_version:
+  other: You have to supply a platform version.
+platform_added:
+  other: "{{.V0}}@{{.V1}} has been added."
+err_getwd:
+  other: |
+    Could not retrieve your working directory, error received: {{.V0}}.
+    If this problem continues please report it on our forums: {{.V1}}

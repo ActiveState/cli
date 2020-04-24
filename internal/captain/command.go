@@ -85,7 +85,7 @@ func (c *Command) Execute(args []string) error {
 	return setupSensibleErrors(err)
 }
 
-func (c *Command) SetAliases(aliases []string) {
+func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
 }
 

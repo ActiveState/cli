@@ -174,8 +174,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 	}
 
 	if fail := fileutils.MoveAllFilesCrossDisk(tmpInstallDir, installDir); fail != nil {
-		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, fail.ToError())
-		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir)
+		underlyingError := fail.ToError()
+		logging.Error("moving files from %s after unpacking runtime: %v", tmpInstallDir, underlyingError)
+
+		// It is possible that we get an Access Denied error (on Windows) while moving files to the installation directory.
+		// Eg., https://rollbar.com/activestate/state-tool/items/297/occurrences/118875103987/
+		// This might happen due to virus software or other access control software running on the user's machine,
+		// and therefore we forward this information to the user.
+		if os.IsPermission(underlyingError) {
+			return FailRuntimeInstallation.New("installer_err_runtime_move_files_access_denied", installDir, constants.ForumsURL)
+		}
+		return FailRuntimeInstallation.New("installer_err_runtime_move_files_failed", tmpInstallDir, installDir)
 	}
 
 	tmpMetaFile := filepath.Join(tmpRuntimeDir, archiveName, constants.RuntimeMetaFile)
@@ -185,6 +194,17 @@ func (cr *CamelRuntime) PostUnpackArtifact(artf *HeadChefArtifact, tmpRuntimeDir
 			return fail
 		}
 		if err := os.Rename(tmpMetaFile, target); err != nil {
+			return FailRuntimeInstallation.Wrap(err)
+		}
+	}
+
+	tmpRelocFile := filepath.Join(tmpRuntimeDir, archiveName, "support/reloc.txt")
+	if fileutils.FileExists(tmpRelocFile) {
+		target := filepath.Join(installDir, "support/reloc.txt")
+		if fail := fileutils.MkdirUnlessExists(filepath.Dir(target)); fail != nil {
+			return fail
+		}
+		if err := os.Rename(tmpRelocFile, target); err != nil {
 			return FailRuntimeInstallation.Wrap(err)
 		}
 	}
@@ -214,14 +234,23 @@ func Relocate(metaData *MetaData, cb func()) *failures.Failure {
 	if len(prefix) == 0 || prefix == metaData.Path {
 		return nil
 	}
-
 	logging.Debug("relocating '%s' to '%s'", prefix, metaData.Path)
 	binariesSeparate := rt.GOOS == "linux" && metaData.RelocationTargetBinaries != ""
+
+	relocFilePath := filepath.Join(metaData.Path, "support", "reloc.txt")
+	relocMap := map[string]bool{}
+	if fileutils.FileExists(relocFilePath) {
+		relocMap = loadRelocationFile(relocFilePath)
+	}
 
 	// Replace plain text files
 	err := fileutils.ReplaceAllInDirectory(metaData.Path, prefix, metaData.Path,
 		// Check if we want to include this
 		func(p string, contents []byte) bool {
+			suffix := strings.TrimPrefix(p, metaData.Path)
+			if relocMap[suffix] {
+				return true
+			}
 			if !strings.HasSuffix(p, constants.RuntimeMetaFile) && (!binariesSeparate || !fileutils.IsBinary(contents)) {
 				cb()
 				return true

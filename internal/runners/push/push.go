@@ -1,19 +1,20 @@
 package push
 
 import (
-	"os"
-
-	"github.com/ActiveState/cli/internal/print"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/print"
 
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+
+	"github.com/spf13/viper"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/viper"
 )
 
 type configGetter interface {
@@ -33,7 +34,7 @@ func (r *Push) Run() *failures.Failure {
 		return failures.FailUserInput.New("err_api_not_authenticated")
 	}
 
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	if err != nil {
 		return failures.FailIO.Wrap(err, locale.T("err_wd"))
 	}

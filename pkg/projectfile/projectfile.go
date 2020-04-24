@@ -10,14 +10,16 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -520,7 +522,7 @@ func GetProjectFilePath() (string, *failures.Failure) {
 		return projectFilePath, nil
 	}
 
-	root, err := os.Getwd()
+	root, err := osutils.Getwd()
 	if err != nil {
 		logging.Warning("Could not get project root path: %v", err)
 		return "", failures.FailOS.Wrap(err)
