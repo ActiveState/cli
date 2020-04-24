@@ -62,7 +62,7 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 	}
 
 	if branch.CommitID == nil {
-		return nil, "", locale.InputError().New(
+		return nil, "", locale.NewInputError(
 			"err_deploy_no_commits",
 			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 	}
@@ -157,7 +157,7 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return locale.InputError().New("err_deploy_run_install", "Please run the install step at least once")
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	// Configure Shell
@@ -182,7 +182,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return locale.InputError().New("err_deploy_run_install", "Please run the install step at least once")
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	// Retrieve path to write symlinks to
@@ -214,7 +214,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 	out.Notice(locale.Tr("deploy_symlink", path))
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
-		return locale.InputError().Wrap(
+		return locale.WrapInputError(
 			fail, "err_deploy_mkdir",
 			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", path, filepath.Dir(path))
 	}
@@ -232,12 +232,12 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				if overwrite {
 					out.Notice(locale.Tr("deploy_overwrite_target", target))
 					if err := os.Remove(target); err != nil {
-						return locale.InputError().Wrap(
+						return locale.WrapInputError(
 							err, "err_deploy_overwrite",
 							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
 					}
 				} else {
-					return locale.InputError().New(
+					return locale.NewInputError(
 						"err_deploy_symlink_target_exists",
 						"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", target)
 				}
@@ -246,7 +246,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 			// Create symlink
 			err = os.Symlink(fpath, target)
 			if err != nil {
-				return locale.InputError().Wrap(
+				return locale.WrapInputError(
 					err, "err_deploy_symlink",
 					"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", target, filepath.Dir(target))
 			}
@@ -272,7 +272,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return locale.InputError().New("err_deploy_run_install", "Please run the install step at least once")
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	var bins []string
@@ -298,7 +298,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 	if len(paths) == 0 {
-		return "", locale.InputError().New("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")
+		return "", locale.NewInputError("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")
 	}
 
 	preferredPaths := []string{
@@ -327,5 +327,5 @@ func usablePath() (string, error) {
 		return result, nil
 	}
 
-	return "", locale.InputError().New("err_deploy_path_noperm", "No permission to create symlinks on any of the PATH entries: {{.V0}}.", os.Getenv("PATH"))
+	return "", locale.NewInputError("err_deploy_path_noperm", "No permission to create symlinks on any of the PATH entries: {{.V0}}.", os.Getenv("PATH"))
 }

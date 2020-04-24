@@ -35,7 +35,7 @@ func TestExample(t *testing.T) {
 	assert.True(t, errors.Is(err, myError), "Error is instance of myError")
 
 	// Create user input error
-	err = locale.InputError().New("", "Invalid input!")
+	err = locale.NewInputError("", "Invalid input!")
 	assert.Error(t, err)
 	assert.True(t, locale.IsError(err))
 	assert.True(t, locale.IsInputError(err))

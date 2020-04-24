@@ -57,32 +57,37 @@ func InputError() *LocalizedError {
 	return &LocalizedError{inputErr: true}
 }
 
-// New is like NewError and is meant to initialize the InputError
-func (e *LocalizedError) New(id, locale string, args ...string) error {
-	return e.Wrap(nil, id, locale, args...)
-}
-
-// Wrap is like WrapError and is meant to initialize the InputError
-func (e *LocalizedError) Wrap(err error, id, locale string, args ...string) error {
-	translation := Tl(id, locale, args...)
-	e.wrapped = err
-	e.localized = translation
-	e.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
-	return e
-}
-
 // NewError creates a new error, it does a locale.Tt lookup of the given id, if the lookup fails it will use the
 // locale string instead
 func NewError(id, locale string, args ...string) error {
-	l := &LocalizedError{}
-	return l.New(id, locale, args...)
+	return WrapError(nil, id, locale, args...)
 }
 
 // WrapError creates a new error that wraps the given error, it does a locale.Tt lookup of the given id, if the lookup
 // fails it will use the locale string instead
 func WrapError(err error, id, locale string, args ...string) error {
 	l := &LocalizedError{}
-	return l.Wrap(err, id, locale, args...)
+	translation := Tl(id, locale, args...)
+	l.wrapped = err
+	l.localized = translation
+	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+	return l
+}
+
+// NewInputError is like NewError but marks it as an input error
+func NewInputError(id, locale string, args ...string) error {
+	return WrapInputError(nil, id, locale, args...)
+}
+
+// WrapInputError is like WrapError but marks it as an input error
+func WrapInputError(err error, id, locale string, args ...string) error {
+	l := &LocalizedError{}
+	translation := Tl(id, locale, args...)
+	l.inputErr = true
+	l.wrapped = err
+	l.localized = translation
+	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+	return l
 }
 
 // IsError checks if the given error is an ErrorLocalizer

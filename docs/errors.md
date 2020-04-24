@@ -26,7 +26,7 @@ refactorings of old code as long as it doesn't add significant scope creep.
 - Errors should always talk about what went wrong in the current context
   don't speculate about what might have went wrong down the chain, that's
   what the wrapped errors are for
-- When an error is due to user input use locale.InputError().(New|Wrap)
+- When an error is due to user input use locale.NewInputError or locale.WrapInputError
 - Errors returned from runners must always be localized
   - Any other errors should only be localized if we feel the error provides
     actionable feedback to the end-user (because non-localized errors will
