@@ -306,13 +306,15 @@ func Test_symlinkWithTarget(t *testing.T) {
 				os.Remove(filepath.Join(testDataDir, binaryName))
 			}()
 
+			var cmd *exec.Cmd
 			if rt.GOOS == "windows" {
-				binaryName = strings.TrimSuffix(binaryName, ".exe")
-				binaryName += ".lnk"
+				shortcut := strings.TrimSuffix(binaryName, ".exe")
+				shortcut += ".lnk"
+				cmd = exec.Command("cmd.exe", "/c", filepath.Join(targetDir, shortcut))
+			} else {
+				cmd = exec.Command(filepath.Join(targetDir, binaryName))
 			}
 
-			cmd := exec.Command(filepath.Join(targetDir, binaryName))
-			cmd.Env = os.Environ()
 			out, err := cmd.Output()
 			if err != nil {
 				t.Error(err)
