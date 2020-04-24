@@ -8,20 +8,20 @@ github.com/ActiveState/archiver
 github.com/ActiveState/go-colortext
 # github.com/ActiveState/go-conpty v0.1.1
 github.com/ActiveState/go-conpty
-# github.com/ActiveState/go-expect v0.1.0
+# github.com/ActiveState/go-expect v0.1.0 => ../go-expect
 github.com/ActiveState/go-expect
 github.com/ActiveState/go-expect/internal/osutils
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 github.com/ActiveState/go-ogle-analytics
 # github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200
 github.com/ActiveState/sysinfo
-# github.com/ActiveState/termtest v0.1.0
+# github.com/ActiveState/termtest v0.1.0 => ../termtest
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace
-# github.com/ActiveState/vt10x v1.1.0
+# github.com/ActiveState/vt10x v1.1.0 => ../vt10x
 github.com/ActiveState/vt10x
-# github.com/ActiveState/xpty v0.1.1
+# github.com/ActiveState/xpty v0.1.1 => ../xpty
 github.com/ActiveState/xpty
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 github.com/Azure/go-ansiterm
