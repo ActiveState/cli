@@ -41,7 +41,7 @@ func (t *Stacktrace) String() string {
 
 // Get returns a stacktrace
 func Get() *Stacktrace {
-	return GetWithSkip([]string{})
+	return GetWithSkip(nil)
 }
 
 func GetWithSkip(skipFiles []string) *Stacktrace {
