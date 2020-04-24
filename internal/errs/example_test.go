@@ -31,8 +31,8 @@ func TestExample(t *testing.T) {
 	myErrorCopy := &MyError{errors.New("")}
 	err = errs.Wrap(myError, "My WrappedErr!")
 	assert.Error(t, err)
-	assert.True(t, errors.As(err, &myErrorCopy))
-	assert.True(t, errors.Is(err, myError))
+	assert.True(t, errors.As(err, &myErrorCopy), "Error can be accessed as myErrorCopy")
+	assert.True(t, errors.Is(err, myError), "Error is instance of myError")
 
 	// Create user input error
 	err = locale.InputError().New("", "Invalid input!")
