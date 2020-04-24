@@ -329,6 +329,8 @@ func usablePath() (string, error) {
 
 func prepareDeployEnv(env map[string]string) {
 	if rt.GOOS == "windows" {
+		// In order for Windows to find shortcuts on the user PATH
+		// we must set the PATHEXT with the correct extension
 		originalExtenstions := os.Getenv("PATHEXT")
 		env["PATHEXT"] = originalExtenstions + ".LNK;"
 	}
