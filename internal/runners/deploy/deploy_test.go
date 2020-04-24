@@ -46,7 +46,6 @@ func (o *OutputterMock) Config() *output.Config {
 }
 
 func Test_runStepsWithFuncs(t *testing.T) {
-	runSymlinks := runSymlinkTests()
 	type args struct {
 		installer installable
 		step      Step
@@ -73,7 +72,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				true,
 				true,
-				runSymlinks,
+				true,
 				true,
 			},
 		},
@@ -115,7 +114,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				false,
 				false,
-				runSymlinks,
+				true,
 				false,
 			},
 		},

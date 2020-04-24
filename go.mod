@@ -28,7 +28,7 @@ require (
 	github.com/fatih/color v1.5.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-ini/ini v1.32.0 // indirect
-	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/go-ole/go-ole v1.2.4
 	github.com/go-openapi/analysis v0.0.0-20180418034448-863ac7f90e00 // indirect
 	github.com/go-openapi/errors v0.0.0-20171226161601-7bcb96a367ba
 	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa // indirect
