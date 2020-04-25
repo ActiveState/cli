@@ -32,7 +32,7 @@ func TestExample(t *testing.T) {
 	err = errs.Wrap(myError, "My WrappedErr!")
 	assert.Error(t, err)
 	assert.True(t, errors.As(err, &myErrorCopy), "Error can be accessed as myErrorCopy")
-	assert.True(t, errors.Is(err, myError), "Error is instance of myError")
+	assert.True(t, errors.Is(err, myError), "err is equivalent to myError") // ptrs same addr, non-ptrs struct equality
 
 	// Create user input error
 	err = locale.NewInputError("", "Invalid input!")
