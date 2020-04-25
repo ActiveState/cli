@@ -52,11 +52,6 @@ type ErrorInput interface {
 	InputError() bool
 }
 
-// InputError returns a LocalizedError with InputError returning as true
-func InputError() *LocalizedError {
-	return &LocalizedError{inputErr: true}
-}
-
 // NewError creates a new error, it does a locale.Tt lookup of the given id, if the lookup fails it will use the
 // locale string instead
 func NewError(id, locale string, args ...string) error {
