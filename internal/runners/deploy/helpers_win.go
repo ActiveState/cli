@@ -87,11 +87,11 @@ func link(src, dst string) error {
 	return nil
 }
 
-func notExecutable(path string, info os.FileInfo) bool {
+func executable(path string, info os.FileInfo) bool {
 	if filepath.Ext(path) == ".exe" {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
 func deployMessage() string {
