@@ -33,8 +33,6 @@ github.com/ActiveState/go-expect v0.1.0 h1:jYAXquqUo/p5/5uPFx57X0XhcYq6OR5wH35CK
 github.com/ActiveState/go-expect v0.1.0/go.mod h1:0e6cYjneSJu01p3Md6xk1txrZty+Jbia5PXIRx3LFf4=
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:lW+qgVXf/iAnSs8SgagWxh8d6nsbpmwyhmeg9/fp0Os=
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
-github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200 h1:w8DlaJ77XAncsXcEI/zndSyyAMTGq3yrw9FSwQ+t6Yk=
-github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200/go.mod h1:+AYqBZPPF2SzUiR6ZE8m2HkyePQZ/W3q+9CSFlck3D8=
 github.com/ActiveState/sysinfo v0.0.0-20200427212524-a721d56d99c5 h1:nY9JeP2xpbdEoQC5eEgj3bWovvq+Z+Rtz9vJc0Dg8WI=
 github.com/ActiveState/sysinfo v0.0.0-20200427212524-a721d56d99c5/go.mod h1:+AYqBZPPF2SzUiR6ZE8m2HkyePQZ/W3q+9CSFlck3D8=
 github.com/ActiveState/termtest v0.1.0 h1:U1OR7uKSJu73fmfe9lRlIY2MtQUdr4mgcqMl4SQEac8=
