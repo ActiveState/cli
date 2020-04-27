@@ -69,8 +69,6 @@ func New(t *testing.T, retainDirs bool) *Session {
 	var env []string
 	env = append(env, os.Environ()...)
 	env = append(env, []string{
-		"DEBUG=true",
-		"VERBOSE=true",
 		"ACTIVESTATE_CLI_CONFIGDIR=" + dirs.Config,
 		"ACTIVESTATE_CLI_CACHEDIR=" + dirs.Cache,
 		"ACTIVESTATE_CLI_DISABLE_UPDATES=true",

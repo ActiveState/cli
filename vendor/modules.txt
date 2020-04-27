@@ -6,7 +6,7 @@ cloud.google.com/go/secretmanager/apiv1
 github.com/ActiveState/archiver
 # github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 github.com/ActiveState/go-colortext
-# github.com/ActiveState/go-conpty v0.1.1 => ../go-conpty
+# github.com/ActiveState/go-conpty v0.2.1 => ../go-conpty
 github.com/ActiveState/go-conpty
 # github.com/ActiveState/go-expect v0.1.0 => ../go-expect
 github.com/ActiveState/go-expect
@@ -19,7 +19,7 @@ github.com/ActiveState/sysinfo
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
 github.com/ActiveState/termtest/internal/osutils/stacktrace
-# github.com/ActiveState/vt10x v1.1.0 => ../vt10x
+# github.com/ActiveState/vt10x v1.2.0 => ../vt10x
 github.com/ActiveState/vt10x
 # github.com/ActiveState/xpty v0.1.1 => ../xpty
 github.com/ActiveState/xpty
