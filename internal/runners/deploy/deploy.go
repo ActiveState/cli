@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -234,14 +233,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				}
 			}
 
-			if rt.GOOS == "windows" {
-				// Create shortcut
-				logging.Debug("Creating shortcut, oldname: %s newname: %s", fpath, target)
-				return createShortcut(fpath, target)
-			}
-			// Create symlink
-			logging.Debug("Creating symlink, oldname: %s newname: %s", fpath, target)
-			return os.Symlink(fpath, target)
+			return link(fpath, target)
 		})
 		if err != nil {
 			return err
@@ -249,16 +241,6 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 	}
 
 	return nil
-}
-
-func notExecutable(path string, info os.FileInfo) bool {
-	if rt.GOOS == "windows" {
-		if filepath.Ext(path) == ".exe" {
-			return false
-		}
-		return true
-	}
-	return info.Mode()&0111 == 0
 }
 
 type Report struct {
@@ -295,13 +277,6 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	return nil
 }
 
-func deployMessage() string {
-	if rt.GOOS == "windows" {
-		return locale.T("deploy_restart_cmd")
-	}
-	return locale.T("deploy_restart_shell")
-}
-
 // usablePath will find a writable directory under PATH
 func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
@@ -331,13 +306,4 @@ func usablePath() (string, error) {
 	}
 
 	return "", errors.New(locale.Tr("err_deploy_path_noperm", os.Getenv("PATH")))
-}
-
-func prepareDeployEnv(env map[string]string) {
-	if rt.GOOS == "windows" {
-		// In order for Windows to find shortcuts on the user PATH
-		// we must set the PATHEXT with the correct extension
-		originalExtenstions := os.Getenv("PATHEXT")
-		env["PATHEXT"] = originalExtenstions + ";.LNK"
-	}
 }

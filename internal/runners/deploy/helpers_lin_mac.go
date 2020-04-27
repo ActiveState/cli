@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/google/uuid"
 )
@@ -25,4 +26,21 @@ func isWritable(path string) bool {
 	}
 
 	return true
+}
+
+func link(src, dst string) error {
+	logging.Debug("Creating symlink, oldname: %s newname: %s", src, dst)
+	return os.Symlink(src, dst)
+}
+
+func notExecutable(path string, info os.FileInfo) bool {
+	return info.Mode()&0111 == 0
+}
+
+func deployMessage() string {
+	return locale.T("deploy_restart_shell")
+}
+
+func prepareDeployEnv(env map[string]string) {
+	return
 }
