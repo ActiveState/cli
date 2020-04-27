@@ -47,7 +47,7 @@ func isWritable(path string) bool {
 }
 
 func link(src, dst string) error {
-	logging.Debug("Creating shortcut, oldname: %s newname: %s", fpath, target)
+	logging.Debug("Creating shortcut, oldname: %s newname: %s", src, dst)
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
