@@ -327,7 +327,7 @@ func processErrs(err error) error {
 
 	// Log error if this isn't a user input error
 	if ! locale.IsInputError(err) {
-		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(ee, "\n").Error(), ee.Stack().String())
+		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), ee.Stack().String())
 	}
 
 	// Log if the error isn't localized

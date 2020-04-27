@@ -67,7 +67,8 @@ func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (ins
 			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 	}
 
-	return d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	installable, cacheDir, fail := d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
+	return installable, cacheDir, fail.ToError()
 }
 
 func runSteps(targetPath string, force bool, step Step, installer installable, out output.Outputer) error {
@@ -81,6 +82,15 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 
 	var envGetter runtime.EnvGetter
 	var fail *failures.Failure
+
+	installed, fail := installer.IsInstalled()
+	if fail != nil {
+		return fail
+	}
+
+	if !installed && step != UnsetStep && step != InstallStep {
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
+	}
 
 	if step == UnsetStep || step == InstallStep {
 		logging.Debug("Running install step")
@@ -156,9 +166,6 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
-	if len(env) == 0 {
-		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
-	}
 	prepareDeployEnv(env)
 
 	// Configure Shell
@@ -181,10 +188,6 @@ type symlinkFunc func(installPath string, overwrite bool, envGetter runtime.EnvG
 func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
-
-	if len(env) == 0 {
-		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
-	}
 
 	// Retrieve path to write symlinks to
 	path, err := usablePath()
@@ -264,10 +267,6 @@ type reportFunc func(envGetter runtime.EnvGetter, out output.Outputer) error
 func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
-
-	if len(env) == 0 {
-		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
-	}
 
 	var bins []string
 	if path, ok := env["PATH"]; ok {
