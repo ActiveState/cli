@@ -33,6 +33,11 @@ func (a *Assembler) InstallationDirectory(artf *runtime.HeadChefArtifact) string
 	return args.String(0)
 }
 
+func (a *Assembler) InstallDirs() []string {
+	args := a.Called()
+	return args.Get(0).([]string)
+}
+
 func (a *Assembler) PreInstall() *failures.Failure {
 	args := a.Called()
 	if args.Get(0) == nil {
