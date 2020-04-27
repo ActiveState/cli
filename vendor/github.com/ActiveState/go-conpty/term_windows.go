@@ -29,7 +29,7 @@ func InitTerminal() (func(), error) {
 	fmt.Printf("old modes: <%d >%d\n", oldInMode, oldOutMode)
 
 	newInMode := oldInMode                                                // | winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING
-	newOutMode := oldOutMode | winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING // | winterm.DISABLE_NEWLINE_AUTO_RETURN
+	newOutMode := oldOutMode &^ winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING // | winterm.DISABLE_NEWLINE_AUTO_RETURN
 
 	err = winterm.SetConsoleMode(uintptr(stdinFd), newInMode)
 	if err != nil {
