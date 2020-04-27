@@ -66,7 +66,9 @@ func New(opts Options) (*ConsoleProcess, error) {
 	cmd.Dir = opts.WorkDirectory
 	cmd.Env = opts.Environment
 	for _, e := range cmd.Env {
-		fmt.Printf("ev: %s\n", e)
+		if strings.HasPrefix(e, "ACTIVESTATE_CLI") {
+			fmt.Printf("ev: %s\n", e)
+		}
 	}
 
 	// Create the process in a new process group.
