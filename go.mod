@@ -8,7 +8,7 @@ require (
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 	github.com/ActiveState/go-expect v0.1.0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200
+	github.com/ActiveState/sysinfo v0.0.0-20200427212524-a721d56d99c5
 	github.com/ActiveState/termtest v0.1.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/Netflix/go-expect v0.0.0-20200312175327-da48e75238e2 // indirect
