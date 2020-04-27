@@ -93,6 +93,9 @@ func IsError(err error) bool {
 
 // IsInputError checks if the given error contains a InputError anywhere in the unwrap stack
 func IsInputError(err error) bool {
+	if err == nil {
+		return false
+	}
 	var errInput ErrorInput = &LocalizedError{}
 	for err != nil && errors.As(err, &errInput) {
 		if errors.As(err, &errInput) && errInput.InputError() {
