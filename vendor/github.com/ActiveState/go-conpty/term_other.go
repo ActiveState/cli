@@ -2,6 +2,6 @@
 
 package conpty
 
-func InitTerminal() (func(), error) {
+func InitTerminal(_ bool) (func(), error) {
 	return func() {}, nil
 }

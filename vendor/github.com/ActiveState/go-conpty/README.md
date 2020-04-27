@@ -20,3 +20,13 @@ state tool](https://www.activestate.com/products/platform/state-tool/).
 ## Example
 
 See cmd/example/main.go
+
+## Client configuration
+
+On Windows, you may have to adjust the programme that you are running in the
+pseudo-console, by configuring the standard output handler to process virtual
+terminal codes. See https://docs.microsoft.com/en-us/windows/console/setconsolemode
+
+This package comes with a convenience function `InitTerminal()` that you can
+use in your client to set this option.
+

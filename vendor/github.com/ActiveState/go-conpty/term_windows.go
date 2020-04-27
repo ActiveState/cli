@@ -10,47 +10,29 @@ import (
 	"github.com/Azure/go-ansiterm/winterm"
 )
 
-func InitTerminal() (func(), error) {
-	stdinFd := int(syscall.Stdin)
+func InitTerminal(disableNewlineAutoReturn bool) (func(), error) {
 	stdoutFd := int(syscall.Stdout)
 
-	fmt.Printf("file descriptors <%d >%d\n", stdinFd, stdoutFd)
-
-	oldInMode, err := winterm.GetConsoleMode(uintptr(stdinFd))
-	if err != nil {
-		return func() {}, fmt.Errorf("failed to retrieve stdin mode: %w", err)
-	}
+	// fmt.Printf("file descriptors <%d >%d\n", stdinFd, stdoutFd)
 
 	oldOutMode, err := winterm.GetConsoleMode(uintptr(stdoutFd))
 	if err != nil {
 		return func() {}, fmt.Errorf("failed to retrieve stdout mode: %w", err)
 	}
 
-	fmt.Printf("old modes: <%d >%d\n", oldInMode, oldOutMode)
-
-	newInMode := oldInMode                                                // | winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING
-	newOutMode := oldOutMode &^ winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING // | winterm.DISABLE_NEWLINE_AUTO_RETURN
-
-	err = winterm.SetConsoleMode(uintptr(stdinFd), newInMode)
-	if err != nil {
-		return func() {}, fmt.Errorf("failed to set stdin mode: %w", err)
+	// fmt.Printf("old modes: <%d >%d\n", oldInMode, oldOutMode)
+	newOutMode := oldOutMode | winterm.ENABLE_VIRTUAL_TERMINAL_PROCESSING
+	if disableNewlineAutoReturn {
+		newOutMode |= winterm.DISABLE_NEWLINE_AUTO_RETURN
 	}
-
-	dump(uintptr(stdinFd))
 
 	err = winterm.SetConsoleMode(uintptr(stdoutFd), newOutMode)
 	if err != nil {
 		return func() {}, fmt.Errorf("failed to set stdout mode: %w", err)
 	}
 
-	dump(uintptr(stdoutFd))
-
+	// dump(uintptr(stdoutFd))
 	return func() {
-		err = winterm.SetConsoleMode(uintptr(stdinFd), oldInMode)
-		if err != nil {
-			log.Fatalf("Failed to reset input terminal mode to %d: %v\n", oldInMode, err)
-		}
-
 		err = winterm.SetConsoleMode(uintptr(stdoutFd), oldOutMode)
 		if err != nil {
 			log.Fatalf("Failed to reset output terminal mode to %d: %v\n", oldOutMode, err)
