@@ -3,18 +3,21 @@ package locale
 // This package may NOT depend on failures (directly or indirectly)
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/spf13/viper"
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Supported languages
@@ -104,11 +107,43 @@ func T(translationID string, args ...interface{}) string {
 
 // Tr is like T but it accepts string params that will be used as numbered params, eg. V0, V1, V2 etc
 func Tr(translationID string, values ...string) string {
+	return T(translationID, parseInput(values...))
+}
+
+// Tl is like Tr but it accepts a fallback locale for if the translationID is not found
+func Tl(translationID, locale string, values ...string) string {
+	translation := Tr(translationID, values...)
+
+	if translation == translationID {
+		translation = locale
+		input := parseInput(values...)
+
+		// prepare template
+		tmpl, err := template.New("locale error").Parse(translation)
+		if err != nil {
+			logging.Error("Invalid translation template: %w", err)
+			return translation
+		}
+
+		// parse template
+		var out bytes.Buffer
+		err = tmpl.Execute(&out, input)
+		if err != nil {
+			logging.Error("Could not execute translation template: %w", err)
+			return translation
+		}
+		translation = out.String()
+	}
+
+	return translation
+}
+
+func parseInput(values ...string) map[string]interface{} {
 	var input = map[string]interface{}{}
 	for k, v := range values {
 		input["V"+strconv.Itoa(k)] = v
 	}
-	return T(translationID, input)
+	return input
 }
 
 // Tt aliases to T, but before returning the string it replaces `[[` and `]]` with `{{` and `}}`,
