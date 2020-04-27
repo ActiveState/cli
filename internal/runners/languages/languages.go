@@ -1,6 +1,7 @@
 package languages
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/output"
@@ -35,6 +36,9 @@ func (l *Languages) Run(params *LanguagesParams) error {
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("languages: %+v\n\n", langs)
+	fmt.Printf("languages listing: %+v\n", Listing{langs})
 
 	formatLangs(langs)
 
