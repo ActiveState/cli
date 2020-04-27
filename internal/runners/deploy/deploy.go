@@ -166,8 +166,6 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	venv := virtualenvironment.New(envGetter.GetEnv)
 	env := venv.GetEnv(false, "")
 
-	prepareDeployEnv(env)
-
 	// Configure Shell
 	sshell, fail := subshell.Get()
 	if fail != nil {
@@ -273,7 +271,6 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 		delete(env, "PATH")
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
-	prepareDeployEnv(env)
 
 	out.Notice(locale.T("deploy_info"))
 

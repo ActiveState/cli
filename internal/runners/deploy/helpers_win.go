@@ -97,10 +97,3 @@ func executable(path string, info os.FileInfo) bool {
 func deployMessage() string {
 	return locale.T("deploy_restart_cmd")
 }
-
-func prepareDeployEnv(env map[string]string) {
-	// In order for Windows to find shortcuts on the user PATH
-	// we must set the PATHEXT with the correct extension
-	originalExtenstions := os.Getenv("PATHEXT")
-	env["PATHEXT"] = originalExtenstions + ";.LNK"
-}

@@ -46,7 +46,3 @@ func executable(path string, info os.FileInfo) bool {
 func deployMessage() string {
 	return locale.T("deploy_restart_shell")
 }
-
-func prepareDeployEnv(env map[string]string) {
-	return
-}
