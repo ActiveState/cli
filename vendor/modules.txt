@@ -6,7 +6,7 @@ cloud.google.com/go/secretmanager/apiv1
 github.com/ActiveState/archiver
 # github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
 github.com/ActiveState/go-colortext
-# github.com/ActiveState/go-conpty v0.1.1
+# github.com/ActiveState/go-conpty v0.1.1 => ../go-conpty
 github.com/ActiveState/go-conpty
 # github.com/ActiveState/go-expect v0.1.0 => ../go-expect
 github.com/ActiveState/go-expect
@@ -310,12 +310,13 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 go.opencensus.io/trace/tracestate
-# golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+# golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
+golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
+golang.org/x/crypto/chacha20
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
-golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/armor
@@ -326,6 +327,7 @@ golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
+golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
