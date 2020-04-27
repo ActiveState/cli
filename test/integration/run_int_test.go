@@ -56,7 +56,10 @@ scripts:
     standalone: true
     value: echo Hello World!
     constraints:
-      os: windows
+    os: windows
+  - name: helloWorldPython
+    value: print("Hello Python!")
+    language: python3
 `)
 	ts.PrepareActiveStateYAML(configFileContent)
 }
@@ -163,6 +166,20 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 	cp.Expect("Usage")
 	cp.Expect("Arguments")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts)
+
+	cp := ts.Spawn("activate")
+	cp.Expect("Activating state: ActiveState-CLI/Python3")
+	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
+	cp.Expect("Hello Python!", 5*time.Second)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
