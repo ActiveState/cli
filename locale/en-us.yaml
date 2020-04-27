@@ -1577,6 +1577,10 @@ deploy_restart_shell:
   other: |
 
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
+deploy_restart_shell:
+  other: |
+
+    [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:

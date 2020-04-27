@@ -295,6 +295,13 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	return nil
 }
 
+func deployMessage() string {
+	if rt.GOOS == "windows" {
+		return locale.T("deploy_restart_cmd")
+	}
+	return locale.T("deploy_restart_shell")
+}
+
 // usablePath will find a writable directory under PATH
 func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
@@ -331,6 +338,6 @@ func prepareDeployEnv(env map[string]string) {
 		// In order for Windows to find shortcuts on the user PATH
 		// we must set the PATHEXT with the correct extension
 		originalExtenstions := os.Getenv("PATHEXT")
-		env["PATHEXT"] = originalExtenstions + ".LNK;"
+		env["PATHEXT"] = originalExtenstions + ";.LNK"
 	}
 }
