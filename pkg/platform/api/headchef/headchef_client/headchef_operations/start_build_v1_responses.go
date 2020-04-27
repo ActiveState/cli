@@ -39,6 +39,27 @@ func (o *StartBuildV1Reader) ReadResponse(response runtime.ClientResponse, consu
 		}
 		return result, nil
 
+	case 400:
+		result := NewStartBuildV1BadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	case 401:
+		result := NewStartBuildV1Unauthorized()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
+	case 403:
+		result := NewStartBuildV1Forbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+
 	default:
 		result := NewStartBuildV1Default(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -100,6 +121,93 @@ func (o *StartBuildV1Accepted) Error() string {
 func (o *StartBuildV1Accepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.BuildStatusResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewStartBuildV1BadRequest creates a StartBuildV1BadRequest with default headers values
+func NewStartBuildV1BadRequest() *StartBuildV1BadRequest {
+	return &StartBuildV1BadRequest{}
+}
+
+/*StartBuildV1BadRequest handles this case with default header values.
+
+The submitted build request was invalid. Consult the message in the response body for further details.
+*/
+type StartBuildV1BadRequest struct {
+	Payload *headchef_models.RestAPIError
+}
+
+func (o *StartBuildV1BadRequest) Error() string {
+	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1BadRequest  %+v", 400, o.Payload)
+}
+
+func (o *StartBuildV1BadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.RestAPIError)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewStartBuildV1Unauthorized creates a StartBuildV1Unauthorized with default headers values
+func NewStartBuildV1Unauthorized() *StartBuildV1Unauthorized {
+	return &StartBuildV1Unauthorized{}
+}
+
+/*StartBuildV1Unauthorized handles this case with default header values.
+
+The submitted build request contains a private recipe ID but the request couldn't be authenticated
+*/
+type StartBuildV1Unauthorized struct {
+	Payload *headchef_models.RestAPIError
+}
+
+func (o *StartBuildV1Unauthorized) Error() string {
+	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Unauthorized  %+v", 401, o.Payload)
+}
+
+func (o *StartBuildV1Unauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.RestAPIError)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewStartBuildV1Forbidden creates a StartBuildV1Forbidden with default headers values
+func NewStartBuildV1Forbidden() *StartBuildV1Forbidden {
+	return &StartBuildV1Forbidden{}
+}
+
+/*StartBuildV1Forbidden handles this case with default header values.
+
+The submitted build request contains a private recipe ID but the authenticated user isn't allow to access it
+*/
+type StartBuildV1Forbidden struct {
+	Payload *headchef_models.RestAPIError
+}
+
+func (o *StartBuildV1Forbidden) Error() string {
+	return fmt.Sprintf("[POST /v1/builds][%d] startBuildV1Forbidden  %+v", 403, o.Payload)
+}
+
+func (o *StartBuildV1Forbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(headchef_models.RestAPIError)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

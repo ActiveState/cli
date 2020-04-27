@@ -98,18 +98,18 @@ func NewDownload(commitID strfmt.UUID, owner, projectName string) Downloader {
 }
 
 // fetchRecipe juggles API's to get the build request that can be sent to the head-chef
-func (r *Download) fetchRecipe() (string, *failures.Failure) {
+func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 	commitID := strfmt.UUID(r.commitID)
 	if commitID == "" {
 		return "", FailNoCommit.New(locale.T("err_no_commit"))
 	}
 
-	recipe, fail := model.FetchRawRecipeForCommitAndPlatform(commitID, model.HostPlatform)
+	recipeID, fail := model.FetchRecipeIDForCommitAndPlatform(commitID, model.HostPlatform)
 	if fail != nil {
 		return "", fail
 	}
 
-	return recipe, nil
+	return *recipeID, nil
 }
 
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
@@ -119,7 +119,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 		IsAlternative: false,
 	}
 
-	recipe, fail := r.fetchRecipe()
+	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
 		return nil, fail
 	}
@@ -130,7 +130,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 	}
 
 	logging.Debug("sending request to head-chef")
-	buildRequest, fail := headchef.NewBuildRequest(recipe, platProject.OrganizationID, platProject.ProjectID)
+	buildRequest, fail := headchef.NewBuildRequest(recipeID, platProject.OrganizationID, platProject.ProjectID)
 	if fail != nil {
 		return result, fail
 	}
