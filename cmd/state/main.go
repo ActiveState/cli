@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -29,12 +30,18 @@ import (
 	"github.com/ActiveState/cli/internal/terminal"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	conpty "github.com/ActiveState/go-conpty"
 )
 
 // FailMainPanic is a failure due to a panic occuring while runnig the main function
 var FailMainPanic = failures.Type("main.fail.panic", failures.FailUser)
 
 func main() {
+	reset, err := conpty.InitTerminal()
+	if err != nil {
+		log.Fatalf("Could not initialize terminal: %v\n", err)
+	}
+	defer reset()
 	logging.SetupRollbar()
 
 	exiter := func(code int) {

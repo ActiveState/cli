@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.56.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
 	github.com/ActiveState/go-colortext v0.0.0-20190402165444-9cd201a66eb0
+	github.com/ActiveState/go-conpty v0.1.1
 	github.com/ActiveState/go-expect v0.1.0
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 	github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200
@@ -85,7 +86,7 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v4 v4.10.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/crypto v0.0.0-20200423211502-4bdfaf469ed5
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200413165638-669c56c373c4
@@ -99,6 +100,11 @@ require (
 )
 
 replace github.com/ActiveState/termtest => ../termtest
+
 replace github.com/ActiveState/xpty => ../xpty
+
 replace github.com/ActiveState/go-expect => ../go-expect
+
 replace github.com/ActiveState/vt10x => ../vt10x
+
+replace github.com/ActiveState/go-conpty => ../go-conpty
