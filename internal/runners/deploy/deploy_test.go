@@ -177,6 +177,12 @@ func Test_runStepsWithFuncs(t *testing.T) {
 }
 
 func Test_report(t *testing.T) {
+	baseEnv := map[string]string{
+		"KEY1": "VAL1",
+		"KEY2": "VAL2",
+	}
+	prepareDeployEnv(baseEnv)
+
 	type args struct {
 		envGetter runtime.EnvGetter
 	}
@@ -192,19 +198,13 @@ func Test_report(t *testing.T) {
 			args{
 				&EnvGetMock{
 					func(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
-						return map[string]string{
-							"KEY1": "VAL1",
-							"KEY2": "VAL2",
-							"PATH": "PATH1" + string(os.PathListSeparator) + "PATH2",
-						}, nil
+						baseEnv["PATH"] = "PATH1" + string(os.PathListSeparator) + "PATH2"
+						return baseEnv, nil
 					},
 				},
 			},
 			[]string{"PATH1", "PATH2"},
-			map[string]string{
-				"KEY1": "VAL1",
-				"KEY2": "VAL2",
-			},
+			baseEnv,
 			nil,
 		},
 	}

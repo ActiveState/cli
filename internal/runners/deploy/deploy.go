@@ -277,7 +277,6 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	}
 
 	var bins []string
-
 	if path, ok := env["PATH"]; ok {
 		delete(env, "PATH")
 		bins = strings.Split(path, string(os.PathListSeparator))
