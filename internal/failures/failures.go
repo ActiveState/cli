@@ -199,6 +199,9 @@ func (e *Failure) IsFailure() {
 
 // InputError tells us whether this is a user input error or not
 func (e *Failure) InputError() bool {
+	if e == nil {
+		return false
+	}
 	return e.Type.User
 }
 

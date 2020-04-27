@@ -31,6 +31,7 @@ type AlternativeRuntime struct {
 	artifactMap    map[string]*HeadChefArtifact
 	artifactOrder  map[string]int
 	tempInstallDir string
+	installDirs    []string
 }
 
 // NewAlternativeRuntime returns a new alternative runtime assembler
@@ -64,6 +65,8 @@ func NewAlternativeRuntime(artifacts []*HeadChefArtifact, cacheDir string, recip
 
 		artifactMap[downloadDir] = artf
 		artifactOrder[artf.ArtifactID.String()] = i
+
+		ar.installDirs = append(ar.installDirs, ar.InstallationDirectory(artf))
 	}
 
 	if len(artifactMap) == 0 {
@@ -83,6 +86,11 @@ func (ar *AlternativeRuntime) InstallerExtension() string {
 // Unarchiver always returns an unarchiver for gzipped tarballs
 func (ar *AlternativeRuntime) Unarchiver() unarchiver.Unarchiver {
 	return unarchiver.NewTarGz()
+}
+
+// InstallDirs returns the installation directories for the artifacts
+func (ar *AlternativeRuntime) InstallDirs() []string {
+	return ar.installDirs
 }
 
 // BuildEngine always returns Alternative

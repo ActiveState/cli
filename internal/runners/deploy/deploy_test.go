@@ -22,6 +22,10 @@ func (i *InstallableMock) Env() (envGetter envGetter, fail *failures.Failure) {
 	return nil, nil
 }
 
+func (i *InstallableMock) IsInstalled() (bool, *failures.Failure) {
+	return true, nil
+}
+
 type EnvGetMock struct {
 	callback func(inherit bool, projectDir string) (map[string]string, *failures.Failure)
 }
