@@ -65,6 +65,9 @@ func New(opts Options) (*ConsoleProcess, error) {
 	cmd := exec.Command(opts.CmdName, opts.Args...)
 	cmd.Dir = opts.WorkDirectory
 	cmd.Env = opts.Environment
+	for _, e := range cmd.Env {
+		fmt.Printf("ev: %s\n")
+	}
 
 	// Create the process in a new process group.
 	// This makes the behavior more consistent, as it isolates the signal handling from
