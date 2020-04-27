@@ -1,13 +1,13 @@
 package deploy
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,10 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
-)
-
-var (
-	FailNoCommitForProject = failures.Type("deploy.fail.nocommit")
 )
 
 type Params struct {
@@ -51,20 +47,24 @@ func NewDeploy(step Step, out output.Outputer) *Deploy {
 func (d *Deploy) Run(params *Params) error {
 	installer, targetPath, err := d.createInstaller(params.Namespace, params.Path)
 	if err != nil {
-		return err
+		return locale.WrapError(
+			err, "err_deploy_create_install",
+			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
 	}
 
 	return runSteps(targetPath, params.Force, d.step, installer, d.output)
 }
 
-func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, *failures.Failure) {
+func (d *Deploy) createInstaller(namespace project.Namespaced, path string) (installable, string, error) {
 	branch, fail := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
 	if fail != nil {
-		return nil, "", fail
+		return nil, "", errs.Wrap(fail, "Could not create installer")
 	}
 
 	if branch.CommitID == nil {
-		return nil, "", FailNoCommitForProject.New(locale.Tr("err_deploy_no_commits", namespace.String()))
+		return nil, "", locale.NewInputError(
+			"err_deploy_no_commits",
+			"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 	}
 
 	return d.NewRuntimeInstaller(*branch.CommitID, namespace.Owner, namespace.Project, path)
@@ -97,7 +97,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 		logging.Debug("Running configure step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
-				return fail
+				return errs.Wrap(fail, "Could not retrieve env for Configure step")
 			}
 		}
 		if err := configuref(envGetter, out); err != nil {
@@ -111,7 +111,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 		logging.Debug("Running symlink step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
-				return fail
+				return errs.Wrap(fail, "Could not retrieve env for Symlink step")
 			}
 		}
 		if err := symlinkf(targetPath, force, envGetter, out); err != nil {
@@ -125,7 +125,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 		logging.Debug("Running report step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
-				return fail
+				return errs.Wrap(fail, "Could not retrieve env for Report step")
 			}
 		}
 		if err := reportf(envGetter, out); err != nil {
@@ -142,7 +142,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	out.Notice(locale.T("deploy_install"))
 	envGetter, installed, fail := installer.Install()
 	if fail != nil {
-		return envGetter, fail.ToError()
+		return envGetter, errs.Wrap(fail, "Install failed")
 	}
 	if !installed {
 		out.Notice(locale.T("using_cached_env"))
@@ -157,18 +157,23 @@ func configure(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return errors.New(locale.T("err_deploy_run_install"))
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 	prepareDeployEnv(env)
 
 	// Configure Shell
 	sshell, fail := subshell.Get()
 	if fail != nil {
-		return fail.ToError()
+		return locale.WrapError(fail, "err_deploy_subshell_get", "Could not retrieve information about your shell environment.")
 	}
 	out.Notice(locale.Tr("deploy_configure_shell", sshell.Shell()))
 
-	return sshell.WriteUserEnv(env).ToError()
+	fail = sshell.WriteUserEnv(env)
+	if fail != nil {
+		return locale.WrapError(fail, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
+	}
+
+	return nil
 }
 
 type symlinkFunc func(installPath string, overwrite bool, envGetter runtime.EnvGetter, out output.Outputer) error
@@ -178,13 +183,13 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return errors.New(locale.T("err_deploy_run_install"))
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	// Retrieve path to write symlinks to
 	path, err := usablePath()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not retrieve a usable PATH")
 	}
 
 	// Retrieve artifact binary directory
@@ -195,12 +200,12 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 
 	// Symlink to PATH (eg. /usr/local/bin)
 	if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
-		return err
+		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
 	}
 
 	// Symlink to targetDir/bin
 	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, out); err != nil {
-		return err
+		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
 	}
 
 	return nil
@@ -210,7 +215,9 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 	out.Notice(locale.Tr("deploy_symlink", path))
 
 	if fail := fileutils.MkdirUnlessExists(path); fail != nil {
-		return fail.ToError()
+		return locale.WrapInputError(
+			fail, "err_deploy_mkdir",
+			"Could not create directory at {{.V0}}, make sure you have permissions to write to %s.", path, filepath.Dir(path))
 	}
 
 	for _, bin := range bins {
@@ -226,10 +233,14 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				if overwrite {
 					out.Notice(locale.Tr("deploy_overwrite_target", target))
 					if err := os.Remove(target); err != nil {
-						return err
+						return locale.WrapInputError(
+							err, "err_deploy_overwrite",
+							"Could not overwrite {{.V0}}, make sure you have permissions to write to this file.", target)
 					}
 				} else {
-					return errors.New(locale.Tr("err_deploy_symlink_target_exists", target))
+					return locale.NewInputError(
+						"err_deploy_symlink_target_exists",
+						"Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files.", target)
 				}
 			}
 
@@ -255,7 +266,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	if len(env) == 0 {
-		return errors.New(locale.T("err_deploy_run_install"))
+		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
 	var bins []string
@@ -281,7 +292,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 func usablePath() (string, error) {
 	paths := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
 	if len(paths) == 0 {
-		return "", errors.New(locale.T("err_deploy_path_empty"))
+		return "", locale.NewInputError("err_deploy_path_empty", "Your system does not have any PATH entries configured, so symlinks can not be created.")
 	}
 
 	preferredPaths := []string{
@@ -305,5 +316,5 @@ func usablePath() (string, error) {
 		return result, nil
 	}
 
-	return "", errors.New(locale.Tr("err_deploy_path_noperm", os.Getenv("PATH")))
+	return "", locale.NewInputError("err_deploy_path_noperm", "No permission to create symlinks on any of the PATH entries: {{.V0}}.", os.Getenv("PATH"))
 }

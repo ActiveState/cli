@@ -2,9 +2,10 @@ package stacktrace
 
 import (
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // Stacktrace represents a stacktrace
@@ -40,6 +41,10 @@ func (t *Stacktrace) String() string {
 
 // Get returns a stacktrace
 func Get() *Stacktrace {
+	return GetWithSkip(nil)
+}
+
+func GetWithSkip(skipFiles []string) *Stacktrace {
 	stacktrace := &Stacktrace{}
 	pc := make([]uintptr, FrameCap)
 	n := runtime.Callers(1, pc)
@@ -49,19 +54,16 @@ func Get() *Stacktrace {
 
 	pc = pc[:n]
 	frames := runtime.CallersFrames(pc)
-
-	var skipFile, skipPkg string
+	skipFiles = append(skipFiles, rtutils.CurrentFile()) // Also skip the file we're in
+LOOP:
 	for {
 		frame, more := frames.Next()
-		pkg := strings.Split(filepath.Base(frame.Func.Name()), ".")[0]
+		pkg := strings.Split(frame.Func.Name(), ".")[0]
 
-		// Skip our own path
-		if skipFile == "" {
-			skipFile = filepath.Dir(frame.File)
-			skipPkg = pkg
-		}
-		if strings.Contains(frame.File, skipFile) && pkg == skipPkg {
-			continue
+		for _, skipFile := range skipFiles {
+			if frame.File == skipFile {
+				continue LOOP
+			}
 		}
 
 		stacktrace.Frames = append(stacktrace.Frames, Frame{

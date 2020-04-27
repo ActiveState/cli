@@ -1538,12 +1538,8 @@ err_windows_registry:
   other: Error while interacting with Windows registry
 err_deploy_run_install:
   other: You need to run the install step at least once before you can run the configure or report steps. Run 'state deploy --help' for more information.
-err_deploy_path_empty:
-  other: Your system does not have any PATH entries configured, so symlinks can not be created.
 err_deploy_path_noperm:
   other: "No permission to create symlinks on any of the PATH entries: {{.V0}}"
-err_deploy_symlink_target_exists:
-  other: "Cannot create symlink as the target already exists: {{.V0}}. Use '--force' to overwrite any existing files."
 deploy_install:
   other: "[BLUE]Installing Runtime Environment[/RESET]"
 deploy_configure_shell:

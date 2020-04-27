@@ -30,7 +30,13 @@ func isWritable(path string) bool {
 
 func link(src, dst string) error {
 	logging.Debug("Creating symlink, oldname: %s newname: %s", src, dst)
-	return os.Symlink(src, dst)
+	err := os.Symlink(src, dst)
+	if err != nil {
+		return locale.WrapInputError(
+			err, "err_deploy_symlink",
+			"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", target, filepath.Dir(target))
+	}
+	return nil
 }
 
 func notExecutable(path string, info os.FileInfo) bool {
