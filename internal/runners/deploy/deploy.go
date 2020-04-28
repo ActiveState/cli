@@ -154,7 +154,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if fail != nil {
 		return envGetter, errs.Wrap(fail, "Install failed")
 	}
-	if !installed {
+	if ! installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
 	return envGetter, nil
