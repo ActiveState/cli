@@ -224,7 +224,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
 			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !executable(fpath, info) { // check if executable by anyone
+			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
 				return nil // not executable
 			}
 
@@ -297,7 +297,7 @@ func usablePath() (string, error) {
 	}
 	var result string
 	for _, path := range paths {
-		if !isWritable(path) {
+		if path == "" || !fileutils.IsWritable(path) {
 			continue
 		}
 

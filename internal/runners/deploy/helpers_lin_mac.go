@@ -12,22 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func isWritable(path string) bool {
-	// Check if we can write to this path
-	fpath := filepath.Join(path, uuid.New().String())
-	if err := fileutils.Touch(fpath); err != nil {
-		logging.Error("Could not create file: %v", err)
-		return false
-	}
-
-	if errr := os.Remove(fpath); errr != nil {
-		logging.Error("Could not clean up test file: %v", errr)
-		return false
-	}
-
-	return true
-}
-
 func link(src, dst string) error {
 	logging.Debug("Creating symlink, oldname: %s newname: %s", src, dst)
 	err := os.Symlink(src, dst)

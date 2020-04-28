@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/google/uuid"
 )
 
 // FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
@@ -741,4 +742,31 @@ func HomeDir() (string, error) {
 	}
 
 	return usr.HomeDir, nil
+}
+
+// IsWritable returns true if the given directory is writable
+func IsWritable(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		logging.Debug("Could not stat path: %s, got error: %v", path, err)
+		return false
+	}
+
+	if !info.IsDir() {
+		logging.Debug("Given path is not a directory: %s", path)
+		return false
+	}
+
+	fpath := filepath.Join(path, uuid.New().String())
+	if fail := Touch(fpath); fail != nil {
+		logging.Error("Could not create file: %v", fail.ToError())
+		return false
+	}
+
+	if errr := os.Remove(fpath); errr != nil {
+		logging.Error("Could not clean up test file: %v", errr)
+		return false
+	}
+
+	return true
 }
