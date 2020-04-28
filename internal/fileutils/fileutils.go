@@ -744,19 +744,8 @@ func HomeDir() (string, error) {
 	return usr.HomeDir, nil
 }
 
-// IsWritable returns true if the given directory is writable
+// IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil {
-		logging.Debug("Could not stat path: %s, got error: %v", path, err)
-		return false
-	}
-
-	if !info.IsDir() {
-		logging.Debug("Given path is not a directory: %s", path)
-		return false
-	}
-
 	fpath := filepath.Join(path, uuid.New().String())
 	if fail := Touch(fpath); fail != nil {
 		logging.Error("Could not create file: %v", fail.ToError())
