@@ -134,13 +134,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) map[string]
 		env[constants.ActivatedStateIDEnvVarName] = v.activationID
 	}
 
-	if rt.GOOS == "windows" {
-		// In order for Windows to find shortcuts on the user PATH
-		// we must set the PATHEXT with the correct extension
-		originalExtenstions := os.Getenv("PATHEXT")
-		env["PATHEXT"] = originalExtenstions + ";.LNK"
-	}
-
 	if inherit {
 		return inheritEnv(env)
 	}
