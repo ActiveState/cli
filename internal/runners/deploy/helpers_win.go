@@ -3,8 +3,6 @@
 package deploy
 
 import (
-	"os"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -53,13 +51,6 @@ func link(src, dst string) error {
 	}
 
 	return nil
-}
-
-func executable(path string, info os.FileInfo) bool {
-	if filepath.Ext(path) == ".exe" {
-		return true
-	}
-	return false
 }
 
 func deployMessage() string {

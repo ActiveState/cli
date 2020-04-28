@@ -21,10 +21,6 @@ func link(src, dst string) error {
 	return nil
 }
 
-func executable(path string, info os.FileInfo) bool {
-	return info.Mode()&0111 != 0
-}
-
 func deployMessage() string {
 	return locale.T("deploy_restart_shell")
 }
