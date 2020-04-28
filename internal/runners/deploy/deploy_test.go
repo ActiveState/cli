@@ -3,6 +3,7 @@ package deploy
 import (
 	"os"
 	"reflect"
+	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -165,6 +166,16 @@ func Test_runStepsWithFuncs(t *testing.T) {
 }
 
 func Test_report(t *testing.T) {
+	baseEnv := map[string]string{
+		"KEY1": "VAL1",
+		"KEY2": "VAL2",
+	}
+
+	if rt.GOOS == "windows" {
+		originalExtenstions := os.Getenv("PATHEXT")
+		baseEnv["PATHEXT"] = originalExtenstions + ";.LNK"
+	}
+
 	type args struct {
 		envGetter runtime.EnvGetter
 	}
@@ -180,19 +191,13 @@ func Test_report(t *testing.T) {
 			args{
 				&EnvGetMock{
 					func(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
-						return map[string]string{
-							"KEY1": "VAL1",
-							"KEY2": "VAL2",
-							"PATH": "PATH1" + string(os.PathListSeparator) + "PATH2",
-						}, nil
+						baseEnv["PATH"] = "PATH1" + string(os.PathListSeparator) + "PATH2" 
+						return baseEnv, nil
 					},
 				},
 			},
 			[]string{"PATH1", "PATH2"},
-			map[string]string{
-				"KEY1": "VAL1",
-				"KEY2": "VAL2",
-			},
+			baseEnv,
 			nil,
 		},
 	}
