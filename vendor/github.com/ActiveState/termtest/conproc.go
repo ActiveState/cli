@@ -109,6 +109,7 @@ func New(opts Options) (*ConsoleProcess, error) {
 			fmt.Printf("ev: %s\n", e)
 		}
 	}
+	cmd.Env = dedupEnv(cmd.Env)
 
 	// Create the process in a new process group.
 	// This makes the behavior more consistent, as it isolates the signal handling from
