@@ -13,7 +13,7 @@ github.com/ActiveState/go-expect
 github.com/ActiveState/go-expect/internal/osutils
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/sysinfo v0.0.0-20200423001731-044271ffd200
+# github.com/ActiveState/sysinfo v0.0.0-20200427212524-a721d56d99c5
 github.com/ActiveState/sysinfo
 # github.com/ActiveState/termtest v0.1.0
 github.com/ActiveState/termtest
