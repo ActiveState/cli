@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -20,21 +21,17 @@ func link(src, dst string) error {
 
 	root, err := environment.GetRootPath()
 	if err != nil {
-		return err
+		return locale.WrapError(
+			err, "err_link_get_root",
+			"Could not get root path of shortcut script",
+		)
 	}
+	scriptPath := filepath.Join(root, "assets", "scripts", "createShortcut.ps1")
 
 	// Some paths may contain spaces so we must quote
 	src = strconv.Quote(src)
 	dst = strconv.Quote(dst)
 
-	scriptPath := filepath.Join(root, "assets", "scripts", "createShortcut.ps1")
 	cmd := exec.Command("powershell.exe", "-Command", scriptPath, src, dst)
-	out, err := cmd.Output()
-	logging.Debug("Link output: %s", out)
-	logging.Debug("Link error: %s", err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
