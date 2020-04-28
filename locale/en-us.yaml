@@ -1573,7 +1573,7 @@ deploy_restart_shell:
   other: |
 
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
-deploy_restart_shell:
+deploy_restart_cmd:
   other: |
 
     [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
