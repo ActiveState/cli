@@ -56,6 +56,38 @@ func NewTest(t *testing.T, opts Options) (*ConsoleProcess, error) {
 	return New(opts)
 }
 
+// dedupEnv returns a copy of env with any duplicates removed, in favor of
+// later values.
+// Items not of the normal environment "key=value" form are preserved unchanged.
+func dedupEnv(env []string) []string {
+	return dedupEnvCase(runtime.GOOS == "windows", env)
+}
+
+// dedupEnvCase is dedupEnv with a case option for testing.
+// If caseInsensitive is true, the case of keys is ignored.
+func dedupEnvCase(caseInsensitive bool, env []string) []string {
+	out := make([]string, 0, len(env))
+	saw := make(map[string]int, len(env)) // key => index into out
+	for _, kv := range env {
+		eq := strings.Index(kv, "=")
+		if eq < 0 {
+			out = append(out, kv)
+			continue
+		}
+		k := kv[:eq]
+		if caseInsensitive {
+			k = strings.ToLower(k)
+		}
+		if dupIdx, isDup := saw[k]; isDup {
+			out[dupIdx] = kv
+			continue
+		}
+		saw[k] = len(out)
+		out = append(out, kv)
+	}
+	return out
+}
+
 // New bonds a command process with a console pty.
 func New(opts Options) (*ConsoleProcess, error) {
 	if err := opts.Normalize(); err != nil {
@@ -66,6 +98,13 @@ func New(opts Options) (*ConsoleProcess, error) {
 	cmd.Dir = opts.WorkDirectory
 	cmd.Env = opts.Environment
 	for _, e := range cmd.Env {
+		if strings.HasPrefix(e, "ACTIVESTATE_CLI") {
+			fmt.Printf("ev: %s\n", e)
+		}
+	}
+
+	fmt.Println("after dedup-ing")
+	for _, e := range dedupEnv(cmd.Env) {
 		if strings.HasPrefix(e, "ACTIVESTATE_CLI") {
 			fmt.Printf("ev: %s\n", e)
 		}

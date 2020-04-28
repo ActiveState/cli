@@ -24,13 +24,12 @@ func WithWorkDirectory(wd string) SpawnOptions {
 
 func AppendEnv(env ...string) SpawnOptions {
 	return func(opts *termtest.Options) error {
-		opts.Environment = appendEnv(opts.Environment, env...)
+		opts.Environment = append(opts.Environment, env...)
 		return nil
 	}
 }
 
-
-func appendEnv(currentEnv []string, env ...string) []string {		// Scan for duplicates
+func appendEnv(currentEnv []string, env ...string) []string { // Scan for duplicates
 	for _, v := range env {
 		k := strings.Split(v, "=")[0]
 		for i, vv := range currentEnv {
