@@ -1,18 +1,11 @@
 package deploy
 
 import (
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"reflect"
-	rt "runtime"
-	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/failures"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -38,15 +31,6 @@ type EnvGetMock struct {
 
 func (e *EnvGetMock) GetEnv(inherit bool, projectDir string) (map[string]string, *failures.Failure) {
 	return e.callback(inherit, projectDir)
-}
-
-type OutputterMock struct{}
-
-func (o *OutputterMock) Print(value interface{})  {}
-func (o *OutputterMock) Error(value interface{})  {}
-func (o *OutputterMock) Notice(value interface{}) {}
-func (o *OutputterMock) Config() *output.Config {
-	return nil
 }
 
 func Test_runStepsWithFuncs(t *testing.T) {
@@ -231,100 +215,6 @@ func Test_report(t *testing.T) {
 
 			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
-			}
-		})
-	}
-}
-
-func Test_symlinkWithTarget(t *testing.T) {
-	root, err := environment.GetRootPath()
-	if err != nil {
-		t.Error(err)
-	}
-
-	testDataDir := filepath.Join(root, "internal", "runners", "deploy", "testdata")
-	testFile := filepath.Join(testDataDir, "main.go")
-	binaryName := "test-bin"
-	if rt.GOOS == "windows" {
-		binaryName += ".exe"
-	}
-
-	cmd := exec.Command("go", "build", "-o", filepath.Join(testDataDir, binaryName), testFile)
-	err = cmd.Run()
-	if err != nil {
-		t.Error(err)
-	}
-
-	installDir, err := ioutil.TempDir("", "install-dir")
-	if err != nil {
-		t.Error(err)
-	}
-
-	targetDir, err := ioutil.TempDir("", "target-dir")
-	if err != nil {
-		t.Error(err)
-	}
-
-	fail := fileutils.CopyFile(filepath.Join(testDataDir, binaryName), filepath.Join(installDir, binaryName))
-	if fail != nil {
-		t.Error(fail.ToError())
-	}
-
-	if rt.GOOS != "windows" {
-		cmd = exec.Command("chmod", "+x", filepath.Join(installDir, binaryName))
-		err = cmd.Run()
-		if err != nil {
-			t.Error(err)
-		}
-	}
-
-	type args struct {
-		overwrite bool
-		path      string
-		bins      []string
-		out       output.Outputer
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Symlink binary file",
-			args: args{
-				overwrite: false,
-				path:      targetDir,
-				bins:      []string{installDir},
-				out:       &OutputterMock{},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := symlinkWithTarget(tt.args.overwrite, tt.args.path, tt.args.bins, tt.args.out); (err != nil) != tt.wantErr {
-				t.Errorf("symlinkWithTarget() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			defer func() {
-				os.RemoveAll(installDir)
-				os.RemoveAll(targetDir)
-				os.Remove(filepath.Join(testDataDir, binaryName))
-			}()
-
-			var cmd *exec.Cmd
-			if rt.GOOS == "windows" {
-				shortcut := strings.TrimSuffix(binaryName, ".exe")
-				shortcut += ".lnk"
-				cmd = exec.Command("cmd.exe", "/c", filepath.Join(targetDir, shortcut))
-			} else {
-				cmd = exec.Command(filepath.Join(targetDir, binaryName))
-			}
-
-			out, err := cmd.Output()
-			if err != nil {
-				t.Error(err)
-			}
-			if strings.TrimSpace(string(out)) != "Hello World!" {
-				t.Fatalf("Unexpected output: %s", string(out))
 			}
 		})
 	}
