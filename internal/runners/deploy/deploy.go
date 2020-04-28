@@ -302,13 +302,7 @@ func usablePath() (string, error) {
 	}
 	var result string
 	for _, path := range paths {
-		info, err := os.Stat(path)
-		if err != nil {
-			logging.Debug("Could not stat path: %v", err)
-			continue
-		}
-
-		if path == "" || !info.IsDir() || !fileutils.IsWritable(path) {
+		if path == "" || !fileutils.IsDir(path) || !fileutils.IsWritable(path) {
 			continue
 		}
 

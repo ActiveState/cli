@@ -759,3 +759,13 @@ func IsWritable(path string) bool {
 
 	return true
 }
+
+// IsDir returns true if the given path is a directory
+func IsDir(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		logging.Debug("Could not stat path: %s, got error: %v", path, err)
+		return false
+	}
+	return info.IsDir()
+}
