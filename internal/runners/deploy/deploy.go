@@ -279,7 +279,7 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 		Environment:       env,
 	})
 
-	out.Notice(locale.T("deploy_restart_shell"))
+	out.Notice(deployMessage())
 
 	return nil
 }
