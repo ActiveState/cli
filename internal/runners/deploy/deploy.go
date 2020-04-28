@@ -3,6 +3,7 @@ package deploy
 import (
 	"os"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -279,7 +280,11 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 		Environment:       env,
 	})
 
-	out.Notice(deployMessage())
+	if rt.GOOS == "windows" {
+		out.Notice(locale.T("deploy_restart_cmd"))
+	} else {
+		out.Notice(locale.T("deploy_restart_shell"))
+	}
 
 	return nil
 }

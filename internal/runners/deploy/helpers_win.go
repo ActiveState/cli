@@ -62,7 +62,3 @@ func link(src, dst string) error {
 
 	return nil
 }
-
-func deployMessage() string {
-	return locale.T("deploy_restart_cmd")
-}
