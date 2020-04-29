@@ -76,8 +76,6 @@ func (v *VirtualEnvironment) Activate() *failures.Failure {
 		if failure := v.activateRuntime(); failure != nil {
 			return failure
 		}
-	} else {
-		fmt.Println("Skipping runtime activation")
 	}
 
 	return nil

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -42,13 +41,11 @@ func FetchLanguagesForProject(orgName string, projectName string) ([]Language, *
 	if fail != nil {
 		return nil, fail
 	}
-	fmt.Printf("found platProject: %s\n", platProject.Name)
 
 	branch, fail := DefaultBranchForProject(platProject)
 	if fail != nil {
 		return nil, fail
 	}
-	fmt.Printf("default branch: %s %s\n", branch.Label, branch.BranchID)
 
 	return FetchLanguagesForBranch(branch)
 }
@@ -71,9 +68,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, *failures.Failur
 
 	languages := []Language{}
 	for _, requirement := range checkpoint {
-		fmt.Printf("filtering requirement: %s %s\n", requirement.Namespace, requirement.Requirement)
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			fmt.Println("adding")
 			languages = append(languages, Language{
 				Name:    requirement.Requirement,
 				Version: requirement.VersionConstraint,

@@ -54,8 +54,6 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_update() {
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
-	time.Sleep(2 * time.Second)
-
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
