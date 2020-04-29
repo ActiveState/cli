@@ -190,7 +190,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine(perlExe + " -e \"use DBD::Pg\"")
+	cp.SendLine(perlExe + " -e \"use DBD::Pg\" && echo \"exit:$?\"")
+	cp.Expect("exit:0")
+
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
 
