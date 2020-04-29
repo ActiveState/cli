@@ -108,11 +108,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
 			e2e.AppendEnv("SHELL=bash"),
 		)
 	} else {
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+		cp = ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	}
 
 	cp.Expect("Configuring shell", 60*time.Second)
