@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	expect "github.com/ActiveState/go-expect"
 	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/termtest/expect"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
@@ -242,11 +242,12 @@ func (s *Session) Close() error {
 	if s.cp != nil {
 		s.cp.Close()
 	}
-	defer s.Dirs.Close()
-
-	if s.retainDirs {
-		return nil
-	}
+	defer func() {
+		if s.retainDirs {
+			return
+		}
+		s.Dirs.Close()
+	}()
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")

@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	expect "github.com/ActiveState/go-expect"
+	expect "github.com/ActiveState/termtest/expect"
 )
 
 // SendObserver is function that is called when text is send to the console
@@ -27,6 +27,7 @@ type Options struct {
 	ObserveExpect  expect.ExpectObserver
 	CmdName        string
 	Args           []string
+	ExtraOpts      []expect.ConsoleOpt
 }
 
 // Normalize fills in default options

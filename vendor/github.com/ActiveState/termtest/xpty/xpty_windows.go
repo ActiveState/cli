@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	conpty "github.com/ActiveState/go-conpty"
+	conpty "github.com/ActiveState/termtest/conpty"
 )
 
 type impl struct {
