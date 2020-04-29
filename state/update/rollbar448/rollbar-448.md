@@ -28,7 +28,7 @@ Unable to self update: mkdir /usr/local/bin/update: permission denied Stacktrace
 
 #### Unable to self update: read tcp ...: read: connection reset by peer (x1)
 
-Unable to self update: read tcp 192.168.1.5:34226->52.95.146.124:443: read: connection reset by peer Stacktrace: /home/circleci/workdir/github.com/ActiveState/cli/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 /home/circleci/workdir/github.com/ActiveState/cli/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:121 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.autoUpdate:288 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.run:143 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.main:57 /usr/local/go/src/runtime/proc.go:runtime.main:203 /usr/local/go/src/runtime/asm_amd64.s:runtime.goexit:1357``
+Unable to self update: read tcp 192.168.1.5:34226->52.95.146.124:443: read: connection reset by peer Stacktrace: /home/circleci/workdir/github.com/ActiveState/cli/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 /home/circleci/workdir/github.com/ActiveState/cli/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:121 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.autoUpdate:288 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.run:143 /home/circleci/workdir/github.com/ActiveState/cli/cmd/state/main.go:main.main:57 /usr/local/go/src/runtime/proc.go:runtime.main:203 /usr/local/go/src/runtime/asm_amd64.s:runtime.goexit:1357
 
 ### windows
 
