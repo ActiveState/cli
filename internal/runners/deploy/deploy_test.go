@@ -3,7 +3,6 @@ package deploy
 import (
 	"os"
 	"reflect"
-	rt "runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/failures"
@@ -61,7 +60,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				true,
 				true,
-				rt.GOOS == "linux",
+				true,
 				true,
 			},
 		},
@@ -103,7 +102,7 @@ func Test_runStepsWithFuncs(t *testing.T) {
 				nil,
 				false,
 				false,
-				rt.GOOS == "linux",
+				true,
 				false,
 			},
 		},
@@ -205,16 +204,16 @@ func Test_report(t *testing.T) {
 				t.FailNow()
 			}
 			report, ok := catcher.Prints[0].(Report)
-			if ! ok {
+			if !ok {
 				t.Errorf("Printed unknown structure, expected Report type. Value: %v", report)
 				t.FailNow()
 			}
 
-			if ! reflect.DeepEqual(report.Environment, tt.wantEnv) {
+			if !reflect.DeepEqual(report.Environment, tt.wantEnv) {
 				t.Errorf("Expected envs to be the same. Want: %v, got: %v", tt.wantEnv, report.Environment)
 			}
 
-			if ! reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
+			if !reflect.DeepEqual(report.BinaryDirectories, tt.wantBinary) {
 				t.Errorf("Expected bins to be the same. Want: %v, got: %v", tt.wantBinary, report.BinaryDirectories)
 			}
 		})

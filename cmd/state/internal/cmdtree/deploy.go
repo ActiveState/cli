@@ -22,13 +22,11 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 		},
 	}
 
-	if runtime.GOOS == "linux" {
-		flags = append(flags, &captain.Flag{
-			Name:        "force",
-			Description: locale.T("flag_state_deploy_force_description"),
-			Value:       &params.Force,
-		})
-	}
+	flags = append(flags, &captain.Flag{
+		Name:        "force",
+		Description: locale.T("flag_state_deploy_force_description"),
+		Value:       &params.Force,
+	})
 
 	return captain.NewCommand(
 		"deploy",
