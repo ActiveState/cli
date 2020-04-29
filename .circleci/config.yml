@@ -92,6 +92,7 @@ jobs:
       GOROOT: /usr/local/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     docker:
       - image: circleci/golang:1.13
     resource_class: large
@@ -102,7 +103,6 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   build-windows:
@@ -112,6 +112,7 @@ jobs:
       GOROOT: /c/go
       GOFLAGS: -p=8 -mod=vendor
       TEST_RESULTS: /c/tmp/test-results
+      GO_BUILD_TAGS: CI
     executor:
       name: win/vs2019
       shell: bash.exe
@@ -140,6 +141,7 @@ jobs:
       GOROOT: /private/tmp/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     macos:
       xcode: 9.3.0
     resource_class: large
@@ -157,7 +159,6 @@ jobs:
       - <<: *runTests
       - <<: *buildCli
       - <<: *deployBits
-      - <<: *runIntegrationTests
       - <<: *storeArtifacts
       - <<: *storeTestResults
   test-linux:
@@ -168,6 +169,7 @@ jobs:
       GOROOT: /usr/local/go
       GOFLAGS: -p=8 -mod=vendor
       SHELL: bash
+      GO_BUILD_TAGS: CI
     docker:
       - image: circleci/golang:1.13
     resource_class: large
