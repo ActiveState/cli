@@ -100,7 +100,7 @@ jobs:
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
-      - <<: *runIntegrationTests
+      #- <<: *runIntegrationTests
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
@@ -157,7 +157,7 @@ jobs:
       - <<: *prepareEnv
       - <<: *runTests
       - <<: *buildCli
-      - <<: *runIntegrationTests
+      #- <<: *runIntegrationTests
       - <<: *deployBits
       - <<: *storeArtifacts
       - <<: *storeTestResults
