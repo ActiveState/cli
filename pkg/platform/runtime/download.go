@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"net/url"
+	"path"
 	"path/filepath"
 
 	"github.com/go-openapi/strfmt"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/progress"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -155,25 +157,31 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 
 		case msg := <-buildStatus.Failed:
 			logging.Debug("BuildFailed: %s", msg)
-			return result, FailBuildFailed.New(msg)
+			return result, FailBuildFailed.New(locale.Tr("build_status_failed", r.projectURL(), msg))
 
 		case <-buildStatus.Started:
 			logging.Debug("BuildStarted")
-			return result, FailBuildInProgress.New(locale.T("build_status_in_progress"))
+			return result, FailBuildInProgress.New(locale.Tr("build_status_in_progress", r.projectURL()))
 
 		case fail := <-buildStatus.RunFail:
 			logging.Debug("Failure: %v", fail)
 
 			switch {
 			case fail.Type.Matches(headchef.FailBuildReqErrorResp):
-				l10n := locale.Tr("build_status_unknown_error", fail.Error())
+				l10n := locale.Tr("build_status_unknown_error", fail.Error(), r.projectURL())
 				return result, FailBuildErrResponse.New(l10n)
 			default:
-				l10n := locale.T("build_status_unknown")
+				l10n := locale.Tr("build_status_unknown", r.projectURL())
 				return result, FailBuildBadResponse.New(l10n)
 			}
 		}
 	}
+}
+
+func (r *Download) projectURL() string {
+	url := api.GetPlatformURL()
+	url.Path = path.Join(r.owner, r.projectName)
+	return url.String()
 }
 
 // Download is the main function used to kick off the runtime download
