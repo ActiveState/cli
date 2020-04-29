@@ -114,8 +114,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	}
 
 	env := s.env
-	tw, err := expect.NewTestWriter(s.t)
-	require.NoError(s.t, err, "initialize test writer")
 
 	pOpts := termtest.Options{
 		DefaultTimeout: defaultTimeout,
@@ -125,7 +123,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 		ObserveExpect:  observeExpectFn(s),
 		ObserveSend:    observeSendFn(s),
 		CmdName:        execu,
-		ExtraOpts:      []expect.ConsoleOpt{expect.WithStdout(tw)},
 	}
 
 	for _, opt := range opts {
