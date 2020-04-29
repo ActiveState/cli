@@ -191,7 +191,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	// Retrieve path to write symlinks to
 	path, err := usablePath()
 	if err != nil {
-		return errs.Wrap(err, "Could not retrieve a usable PATH")
+		return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
 	}
 
 	// Retrieve artifact binary directory
@@ -200,14 +200,21 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	// Symlink to PATH (eg. /usr/local/bin)
-	if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
-		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
+	ow := "0"
+	if overwrite {
+		ow = "1"
+	}
+
+	if rt.GOOS == "linux" {
+		// Symlink to PATH (eg. /usr/local/bin)
+		if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
+			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}, overwrite: {{.V1}}.", path, ow)
+		}
 	}
 
 	// Symlink to targetDir/bin
 	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, out); err != nil {
-		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
+		return locale.WrapError(err, "Could not create symlinks to {{.V0}}, overwrite: {{.V1}}.", path, ow)
 	}
 
 	return nil

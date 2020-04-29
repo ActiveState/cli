@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"runtime"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -71,14 +69,9 @@ func New(outputer output.Outputer) *CmdTree {
 	deployCmd.AddChildren(
 		newDeployInstallCommand(outputer),
 		newDeployConfigureCommand(outputer),
+		newDeploySymlinkCommand(outputer),
 		newDeployReportCommand(outputer),
 	)
-
-	if runtime.GOOS == "linux" {
-		deployCmd.AddChildren(
-			newDeploySymlinkCommand(outputer),
-		)
-	}
 
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
