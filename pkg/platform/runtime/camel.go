@@ -76,7 +76,6 @@ func (cr *CamelRuntime) Unarchiver() unarchiver.Unarchiver {
 }
 
 // InstallDirs returns the installation directories for the artifacts
-// Note that this only used for testing
 func (cr *CamelRuntime) InstallDirs() []string {
 	return cr.installDirs
 }

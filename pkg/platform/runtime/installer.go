@@ -120,6 +120,23 @@ func (installer *Installer) Env() (envGetter EnvGetter, fail *failures.Failure) 
 	return installer.Assembler()
 }
 
+// IsInstalled will check if the installer has already ran (ie. the artifacts already exist at the target dir)
+func (installer *Installer) IsInstalled() (bool, *failures.Failure) {
+	assembler, fail := installer.Assembler()
+	if fail != nil {
+		return false, fail
+	}
+
+	dirs := assembler.InstallDirs()
+	for _, dir := range dirs {
+		if ! fileutils.DirExists(dir) {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
 func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	if fail := installer.validateCheckpoint(); fail != nil {
 		return nil, fail
