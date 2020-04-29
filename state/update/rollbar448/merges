@@ -1,0 +1,64 @@
+#! /usr/bin/env bash
+
+function secondIsLatest() {
+	[[ "${1}" == "" && "${2}" != "" ]] && return 0
+	[[ "${1}" != "" && "${2}" == "" ]] && return 1
+
+	echo -e "${1}\n${2}" |
+		sort -r |
+		head -n 1 |
+		grep "${2}" 2>&1 >/dev/null
+}
+
+function timeByHashInOrdered() {
+	local orderedCommits="${1}"
+	local commitHash="${2}"
+
+	echo "${orderedCommits}" |
+		grep "${commitHash}" |
+		cut -d " " -f 1,2
+}
+
+function ordered() {
+	git log --date=iso-local --pretty="%cd	%H	%s" |
+		grep "Merge pull request" |
+		sort -h -r |
+		cut -f1,2 |
+		sed -E 's/(\t[0-9a-z]{7}).*/\1/'
+}
+
+function latestIn() {
+	local commitsCSV="${1}"
+	local orderedCommits="$(ordered)"
+	local lTime
+	local lHash
+
+	while read -r iHash; do
+		local iTime="$(timeByHashInOrdered "${orderedCommits}" "${iHash}")"
+
+		if secondIsLatest "${lTime}" "${iTime}"; then
+			lTime="${iTime}"
+			lHash="${iHash}"
+		fi
+	done < <(echo "${commitsCSV}" | tr "," "\n")
+
+	echo "${lTime}" "${lHash}"
+}
+
+function main() {
+	local cmd="${1}"
+
+	case "${cmd}" in
+	ordered)
+		ordered
+		;;
+	latest-in)
+		latestIn "${2}"
+		;;
+	*)
+		echo >&2 "cmd '${cmd}' not found"
+		;;
+	esac
+}
+
+main ${@}

@@ -3,7 +3,7 @@
 ## Summary
 
 - Darwin: Komodo-related
-- Linux: file/directory access permissions
+- Linux: file/directory access permissions in CircleCI
 - Windows: "used by another process" and "missing file" errors
 
 ## Example Data
@@ -14,7 +14,7 @@
 
 Unable to self update: rename /Users/administrator/Library/Application Support/KomodoIDE/12.0/XRE/state/.state.new /Users/administrator/Library/Application Support/KomodoIDE/12.0/XRE/state/state: no such file or directory
 
-Most recent commit: https://github.com/ActiveState/cli/commit/10194c2 (20200423T1614-0700)
+Latest: 2020-04-23 16:14:04 https://github.com/ActiveState/cli/commit/10194c2
 
 ### linux
 
@@ -36,22 +36,34 @@ Unable to self update: read tcp 192.168.1.5:34226->52.95.146.124:443: read: conn
 
 Unable to automatically check for updates: rename {homedir}\AppData\Roaming\ActiveState\bin\.state.exe.new {homedir}\AppData\Roaming\ActiveState\bin\state.exe: The process cannot access the file because it is being used by another process.
 
+Latest: 2020-03-19 16:10:23 https://github.com/ActiveState/cli/commit/481af82
+
 #### Unable to self update: rename .state.new state.exe: used by another process. (x17)
 
 Unable to self update: rename {homedir}\AppData\Roaming\ActiveState\bin\.state.new {homedir}\AppData\Roaming\ActiveState\bin\state.exe: The process cannot access the file because it is being used by another process. Stacktrace: d:/a/1/s/internal/osutils/stacktrace/stacktrace.go:github.com/ActiveState/cli/internal/osutils/stacktrace.Get:45 d:/a/1/s/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 d:/a/1/s/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:121 d:/a/1/s/cmd/state/main.go:main.autoUpdate:280 d:/a/1/s/cmd/state/main.go:main.run:142 d:/a/1/s/cmd/state/main.go:main.main:56 C:/Go1.14.1/src/runtime/proc.go:runtime.main:203 C:/Go1.14.1/src/runtime/asm_amd64.s:runtime.goexit:1373
+
+Latest: 2020-04-22 15:03:58 https://github.com/ActiveState/cli/commit/fd7c4e0
 
 #### Unable to automatically check for updates: rename state.exe .state.exe.old: used by another process. (x30)
 
 Unable to automatically check for updates: rename {homedir}\AppData\Roaming\ActiveState\bin\state.exe {homedir}\AppData\Roaming\ActiveState\bin\.state.exe.old: The process cannot access the file because it is being used by another process.
 
+Latest: 2020-03-27 15:49:46 https://github.com/ActiveState/cli/commit/366cd79
+
 #### Unable to self update: rename state.exe .state.old: used by another process. (x90)
 
-Unable to self update: rename {homedir}\AppData\Roaming\ActiveState\bin\state.exe {homedir}\AppData\Roaming\ActiveState\bin\.state.old: The process cannot access the file because it is being used by another process.
+Unable to self update: rename {homedir}\AppData\Roaming\ActiveState\bin\state.exe {homedir}\AppData\Roaming\ActiveState\bin\.state.old: The process cannot access the file because it is being used by another process. Stacktrace: d:/a/1/s/internal/osutils/stacktrace/stacktrace.go:github.com/ActiveState/cli/internal/osutils/stacktrace.Get:45 d:/a/1/s/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 d:/a/1/s/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:121 d:/a/1/s/cmd/state/main.go:main.autoUpdate:288 d:/a/1/s/cmd/state/main.go:main.run:143 d:/a/1/s/cmd/state/main.go:main.main:57 C:/Go1.14.2/src/runtime/proc.go:runtime.main:203 C:/Go1.14.2/src/runtime/asm_amd64.s:runtime.goexit:1373
+
+Latest: 2020-04-23 16:14:04 https://github.com/ActiveState/cli/commit/10194c2
 
 #### Unable to self update: rename state.exe .state.old: cannot find the file specified. (x18)
 
 Unable to self update: rename {homedir}\AppData\Roaming\ActiveState\bin\state.exe {homedir}\AppData\Roaming\ActiveState\bin\.state.old: The system cannot find the file specified. Stacktrace: d:/a/1/s/internal/osutils/stacktrace/stacktrace.go:github.com/ActiveState/cli/internal/osutils/stacktrace.Get:45 d:/a/1/s/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 d:/a/1/s/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:121 d:/a/1/s/cmd/state/main.go:main.autoUpdate:280 d:/a/1/s/cmd/state/main.go:main.run:142 d:/a/1/s/cmd/state/main.go:main.main:56 C:/Go1.14.1/src/runtime/proc.go:runtime.main:203 C:/Go1.14.1/src/runtime/asm_amd64.s:runtime.goexit:1373
 
+Latest: 2020-04-23 14:36:26 https://github.com/ActiveState/cli/commit/11b65eb
+
 #### Unable to automatically check for updates: Couldn't get url=...: no such host (x1)
 
 Unable to automatically check for updates: Couldn't get url=https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/windows-amd64.json: Get "https://s3.ca-central-1.amazonaws.com/cli-update/update/state/unstable/windows-amd64.json": dial tcp: lookup s3.ca-central-1.amazonaws.com: no such host Stacktrace: d:/a/1/s/internal/osutils/stacktrace/stacktrace.go:github.com/ActiveState/cli/internal/osutils/stacktrace.Get:45 d:/a/1/s/internal/logging/logging.go:github.com/ActiveState/cli/internal/logging.Error:250 d:/a/1/s/internal/updater/check.go:github.com/ActiveState/cli/internal/updater.TimedCheck:107 d:/a/1/s/cmd/state/main.go:main.autoUpdate:288 d:/a/1/s/cmd/state/main.go:main.run:143 d:/a/1/s/cmd/state/main.go:main.main:57 C:/Go1.14.2/src/runtime/proc.go:runtime.main:203 C:/Go1.14.2/src/runtime/asm_amd64.s:runtime.goexit:1373
+
+Latest: https://github.com/ActiveState/cli/commit/d10e630 (non-pr)
