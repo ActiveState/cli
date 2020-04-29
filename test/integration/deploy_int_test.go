@@ -33,7 +33,7 @@ func init() {
 
 func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping deploy integration test when not running on CI, as it modifies bashrc/registry")
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -94,7 +94,7 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 
 func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping deploy integration test when not running on CI, as it modifies bashrc/registry")
+		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -139,6 +139,10 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
+	if runtime.GOOS == "linux" && !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeploySymlink when not running on CI, as it modifies PATH")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
