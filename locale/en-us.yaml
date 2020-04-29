@@ -924,7 +924,7 @@ installer_err_runtime_move_files_access_denied:
   other: |
     Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V0}}'
     If you believe this is happening due to antivirus software please report your issue on our forums: 
-    {{.V0}}
+    {{.V1}}
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
