@@ -153,6 +153,7 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	fail := projectFile.Save()
 	require.NoError(s.t, fail.ToError(), msg)
+	projectFile.Persist()
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
