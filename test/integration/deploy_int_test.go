@@ -46,10 +46,10 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 			e2e.AppendEnv("SHELL=bash"),
 		)
 	} else {
-		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+		cp = ts.Spawn("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 	}
 
-	cp.Expect("Installing", 60*time.Second)
+	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("Configuring")
 	cp.Expect("Deployment Information")
 	cp.ExpectRe(fmt.Sprintf(`%s[\w\\\/\.\s]*bin`, regexp.QuoteMeta(ts.Dirs.Work))) // expect bin dir
@@ -60,7 +60,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	if runtime.GOOS == "linux" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
-		suite.Contains(execPath, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+		link, err := os.Readlink(execPath)
+		suite.Require().NoError(err)
+		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 
 	suite.AssertConfig(ts)
@@ -84,9 +86,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 
-	cp.Expect("Installing Runtime", 60*time.Second)
+	cp.Expect("Installing Runtime")
 	cp.Expect("Downloading")
-	cp.Expect("Installing")
+	cp.Expect("Installing", 120*time.Second)
 	cp.ExpectExitCode(0)
 }
 
@@ -103,7 +105,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
-	
+
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
@@ -146,7 +148,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	cp.ExpectExitCode(1)
 	suite.InstallAndAssert(ts)
 
-	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work, "--force")
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
@@ -157,7 +159,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	if runtime.GOOS == "linux" {
 		execPath, err := exec.LookPath("python3")
 		suite.Require().NoError(err)
-		suite.Contains(execPath, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
+		link, err := os.Readlink(execPath)
+		suite.Require().NoError(err)
+		suite.Contains(link, ts.Dirs.Work, "python3 executable resolves to the one on our target dir")
 	}
 }
 
