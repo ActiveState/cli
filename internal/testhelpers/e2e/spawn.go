@@ -19,3 +19,10 @@ func WithWorkDirectory(wd string) SpawnOptions {
 		return nil
 	}
 }
+
+func AppendEnv(env ...string) SpawnOptions {
+	return func(opts *termtest.Options) error {
+		opts.Environment = append(opts.Environment, env...)
+		return nil
+	}
+}
