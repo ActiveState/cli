@@ -15,7 +15,7 @@ var (
 	FailNoCommitID = failures.Type("platforms.fail.nocommitid", failures.FailNonFatal)
 )
 
-// ListRunParams tracks the info required for running Add.
+// ListRunParams tracks the info required for running List.
 type ListRunParams struct {
 	Project *project.Project
 }

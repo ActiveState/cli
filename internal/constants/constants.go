@@ -201,3 +201,6 @@ const RCAppendStartLine = "-- START ACTIVESTATE RUNTIME ENVIRONMENT"
 
 // RCAppendEndLine is the end line used to denote our environment config in RC files
 const RCAppendStopLine = "-- STOP ACTIVESTATE RUNTIME ENVIRONMENT"
+
+// ForumsURL is the URL to the state tool forums
+const ForumsURL = "https://community.activestate.com/c/state-tool/9"

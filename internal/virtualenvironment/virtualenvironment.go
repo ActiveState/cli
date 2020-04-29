@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -153,7 +154,7 @@ func (v *VirtualEnvironment) GetEnvSlice(inherit bool) []string {
 
 // WorkingDirectory returns the working directory to use for the current environment
 func (v *VirtualEnvironment) WorkingDirectory() string {
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	if err != nil {
 		// Shouldn't happen unless something is seriously wrong with your system
 		panic(locale.T("panic_couldnt_detect_wd", map[string]interface{}{"Error": err.Error()}))

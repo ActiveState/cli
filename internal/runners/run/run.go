@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -41,7 +42,9 @@ func (r *Run) Run(name string, args []string) error {
 }
 
 func run(name string, args []string) error {
-	checker.RunCommitsBehindNotifier()
+	if authentication.Get().Authenticated() {
+		checker.RunCommitsBehindNotifier()
+	}
 
 	logging.Debug("Execute")
 

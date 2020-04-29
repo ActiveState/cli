@@ -1,13 +1,13 @@
 package activate
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -94,7 +94,7 @@ func (r *Activate) setupPath(namespace string, preferredPath string) (string, er
 		targetPath, err = preferredPath, nil
 	// Get path from working directory
 	default:
-		targetPath, err = os.Getwd()
+		targetPath, err = osutils.Getwd()
 	}
 	if err != nil {
 		return "", err

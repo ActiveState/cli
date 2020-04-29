@@ -1,6 +1,8 @@
 package cmdtree
 
 import (
+	"runtime"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -39,6 +41,15 @@ func New(outputer output.Outputer) *CmdTree {
 		newAPIKeyCommand(outputer),
 	)
 
+	packagesCmd := newPackagesCommand(outputer)
+	packagesCmd.AddChildren(
+		newPackagesAddCommand(outputer),
+		newPackagesUpdateCommand(outputer),
+		newPackagesRemoveCommand(outputer),
+		newPackagesImportCommand(outputer),
+		newPackagesSearchCommand(outputer),
+	)
+
 	platformsCmd := newPlatformsCommand(outputer)
 	platformsCmd.AddChildren(
 		newPlatformsSearchCommand(outputer),
@@ -56,6 +67,19 @@ func New(outputer output.Outputer) *CmdTree {
 		newConfigCommand(outputer),
 	)
 
+	deployCmd := newDeployCommand(outputer)
+	deployCmd.AddChildren(
+		newDeployInstallCommand(outputer),
+		newDeployConfigureCommand(outputer),
+		newDeployReportCommand(outputer),
+	)
+
+	if runtime.GOOS == "linux" {
+		deployCmd.AddChildren(
+			newDeploySymlinkCommand(outputer),
+		)
+	}
+
 	stateCmd := newStateCommand(globals)
 	stateCmd.AddChildren(
 		newActivateCommand(globals),
@@ -66,11 +90,12 @@ func New(outputer output.Outputer) *CmdTree {
 		exportCmd,
 		newOrganizationsCommand(globals),
 		newRunCommand(),
+		packagesCmd,
 		platformsCmd,
 		newHistoryCommand(outputer),
 		cleanCmd,
 		languagesCmd,
-		newDeployCommand(outputer),
+		deployCmd,
 	)
 
 	applyLegacyChildren(stateCmd, globals)

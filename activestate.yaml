@@ -27,15 +27,21 @@ scripts:
       packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
   - name: build
-    description: Builds the project. One argument may be provided to set the build target OS (windows|darwin|linux).
+    description: Builds the project with the host OS as the target OS.
     value: |
       $scripts.preprocess
-      go build -tags internal -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+  - name: build-for
+    description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
+    value: |
+      $scripts.preprocess
+      export GOOS=${1}
+      go build -tags "internal $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-external
-    description: Builds the project for external use (limiting its feature-set). One argument may be provided to set the build target OS (windows|darwin|linux).
+    description: Builds the project for external use (limiting its feature-set).
     value: |
       $scripts.preprocess
-      go build -tags external -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "external $GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: generate-update
     description: Generate update files
     value: |

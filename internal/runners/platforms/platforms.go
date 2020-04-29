@@ -60,7 +60,7 @@ func prepareParams(ps Params) (Params, error) {
 	}
 
 	if ps.Version == "" {
-		return ps, errors.New(locale.T("bad_platform_version"))
+		return ps, errors.New(locale.T("err_bad_platform_version"))
 	}
 
 	return ps, nil

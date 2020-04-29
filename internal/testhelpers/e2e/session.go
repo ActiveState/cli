@@ -14,9 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
-	"github.com/ActiveState/cli/pkg/expect"
-	"github.com/ActiveState/cli/pkg/expect/conproc"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	expect "github.com/ActiveState/go-expect"
+	"github.com/ActiveState/termtest"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
@@ -29,7 +29,7 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp         *conproc.ConsoleProcess
+	cp         *termtest.ConsoleProcess
 	Dirs       *Dirs
 	env        []string
 	retainDirs bool
@@ -81,23 +81,23 @@ func New(t *testing.T, retainDirs bool) *Session {
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(args ...string) *conproc.ConsoleProcess {
+func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(s.executablePath(), WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *conproc.ConsoleProcess {
+func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(s.executablePath(), opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCmd(cmdName string, args ...string) *conproc.ConsoleProcess {
+func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *conproc.ConsoleProcess {
+func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {
 	if s.cp != nil {
 		s.cp.Close()
 	}
@@ -116,7 +116,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *conproc.Co
 
 	env := s.env
 
-	pOpts := conproc.Options{
+	pOpts := termtest.Options{
 		DefaultTimeout: defaultTimeout,
 		Environment:    env,
 		WorkDirectory:  s.Dirs.Work,
@@ -130,7 +130,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *conproc.Co
 		opt(&pOpts)
 	}
 
-	console, err := conproc.NewConsoleProcess(pOpts)
+	console, err := termtest.New(pOpts)
 	require.NoError(s.t, err)
 	s.cp = console
 

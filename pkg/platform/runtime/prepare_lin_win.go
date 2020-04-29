@@ -3,10 +3,7 @@
 package runtime
 
 import (
-	"os"
-	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/failures"
@@ -62,16 +59,6 @@ func (m *MetaData) Prepare() *failures.Failure {
 		// AffectedEnv
 		if m.AffectedEnv == "" {
 			m.AffectedEnv = "PERL5LIB"
-		}
-
-		// On Linux we must set the PERL5LIB in order for the modules to
-		// be useable
-		if runtime.GOOS == "linux" {
-			// Currently only Perl 5.x.x is supported by the platform
-			lib := filepath.Join(m.Path, "lib", "perl5")
-			sitePerl := filepath.Join(m.Path, "lib", "perl5", "site_perl")
-
-			m.Env["PERL5LIB"] = strings.Join([]string{m.Env["PERL5LIB"], lib, sitePerl}, string(os.PathListSeparator))
 		}
 	} else {
 		logging.Debug("No language detected for %s", m.Path)

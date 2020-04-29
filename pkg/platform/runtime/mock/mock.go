@@ -48,6 +48,7 @@ func (m *Mock) MockFullRuntime() {
 	m.apiMock.MockSignS3URI()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()
+	m.invMock.MockSolutions()
 	m.GraphMock.ProjectByOrgAndName(graphMock.NoOptions)
 	m.GraphMock.Checkpoint(graphMock.NoOptions)
 	m.hcMock.MockBuilds(hcMock.Completed)

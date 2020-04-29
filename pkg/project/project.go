@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -272,7 +273,7 @@ func GetSafe() (*Project, *failures.Failure) {
 
 // GetOnce returns project struct the same as Get and GetSafe, but it avoids persisting the project
 func GetOnce() (*Project, *failures.Failure) {
-	wd, err := os.Getwd()
+	wd, err := osutils.Getwd()
 	if err != nil {
 		return nil, failures.FailIO.Wrap(err)
 	}
