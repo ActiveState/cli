@@ -23,6 +23,14 @@ type DeployIntegrationTestSuite struct {
 	suite.Suite
 }
 
+var symlinkExt = ""
+
+func init() {
+	if runtime.GOOS == "windows" {
+		symlinkExt = ".lnk"
+	}
+}
+
 func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping deploy integration test when not running on CI, as it modifies bashrc/registry")
@@ -91,10 +99,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	defer ts.Close()
 
 	// Install step is required
-	cp := ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp := ts.Spawn("deploy", "configure", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
-
+	suite.InstallAndAssert(ts)
+	
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("deploy", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
@@ -132,16 +141,17 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	defer ts.Close()
 
 	// Install step is required
-	cp := ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
+	cp := ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
+	suite.InstallAndAssert(ts)
 
 	cp = ts.Spawn("deploy", "symlink", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 
 	cp.Expect("Symlinking executables")
 	cp.ExpectExitCode(0)
 
-	suite.True(fileutils.DirExists(filepath.Join(ts.Dirs.Work, "bin")), "Target dir should have artifacts written to it")
+	suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 
 	// Linux symlinks to /usr/local/bin, so we can verify right away
 	if runtime.GOOS == "linux" {
@@ -159,7 +169,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	cp := ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
-
 	suite.InstallAndAssert(ts)
 
 	cp = ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
