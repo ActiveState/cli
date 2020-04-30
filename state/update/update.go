@@ -38,21 +38,50 @@ var Flags struct {
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
-	if Flags.Lock {
-		ExecuteLock(cmd, args)
+	if Flags.Lock { // targeting project
+		projectVersion := projectfile.Get().Version
+		version := constants.Version
+
+		if projectVersion != "" { // existing lock
+			info, err := newUpdater(projectVersion, constants.Version).Info()
+			// TODO: what happens if constants.Version (desired) is before projectVersion (current)?
+			if err != nil {
+				failures.Handle(err, locale.T("err_no_update_info"))
+				return
+			}
+
+			logging.Debug("Update info: %v", info)
+			logging.Debug("Current version: %s", projectVersion)
+
+			if info == nil {
+				print.Info(locale.T("no_update_available"))
+				return
+			}
+
+			version = info.Version
+
+			print.Info(locale.T("updating_to_version", map[string]interface{}{
+				"fromVersion": projectVersion,
+				"toVersion":   version,
+			}))
+		} else {
+			print.Info(locale.Tr("locking_version", version))
+		}
+
+		if fail := lockProjectVersion(constants.BranchName, version); fail != nil {
+			failures.Handle(fail, locale.T("err_lock_failed"))
+			return
+		}
+
+		print.Info(locale.Tr("version_locked", version))
 		return
 	}
 
-	up := updater.Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		Dir:            constants.UpdateStorageDir,
-		CmdName:        constants.CommandName,
-	}
-
+	up := newUpdater(constants.Version, "")
 	info, err := up.Info()
 	if err != nil {
 		failures.Handle(err, locale.T("err_no_update_info"))
+		return
 	}
 
 	logging.Debug("Update info: %v", info)
@@ -68,36 +97,26 @@ func Execute(cmd *cobra.Command, args []string) {
 		"toVersion":   info.Version,
 	}))
 
-	if isForwardCall() {
-		// If this is a forward call (version locking) then we should just update the version in the activestate.yaml
-		// The actual update will happen the next time the State Tool is invoked in this project
-		fail := lockVersion(constants.BranchName, info.Version)
-		if fail != nil {
-			failures.Handle(fail, locale.T("err_update_failed"))
-			os.Exit(1)
-		}
-	} else {
-		err = up.Run()
-		if err != nil {
-			failures.Handle(err, locale.T("err_update_failed"))
-			os.Exit(1)
-		}
+	if err = up.Run(); err != nil {
+		failures.Handle(err, locale.T("err_update_failed"))
+		return
 	}
 
 	print.Info(locale.T("update_complete"))
 }
 
-func ExecuteLock(cmd *cobra.Command, args []string) {
-	print.Info(locale.Tr("locking_version", constants.Version))
-	fail := lockVersion(constants.BranchName, constants.Version)
-	if fail != nil {
-		failures.Handle(fail, locale.T("err_lock_failed"))
-		os.Exit(1)
+// leave desiredVersion empty for latest
+func newUpdater(currentVersion, desiredVersion string) *updater.Updater {
+	return &updater.Updater{
+		CurrentVersion: currentVersion,
+		DesiredVersion: desiredVersion,
+		APIURL:         constants.APIUpdateURL,
+		Dir:            constants.UpdateStorageDir,
+		CmdName:        constants.CommandName,
 	}
-	print.Info(locale.Tr("version_locked", constants.Version))
 }
 
-func lockVersion(branch, version string) *failures.Failure {
+func lockProjectVersion(branch, version string) *failures.Failure {
 	pj := projectfile.Get()
 	pj.Branch = branch
 	pj.Version = version
