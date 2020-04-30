@@ -13,10 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	expect "github.com/ActiveState/go-expect"
 	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/termtest/expect"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
@@ -231,26 +230,8 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
-func observeExpectFn(s *Session) func([]expect.Matcher, string, string, error) {
-	return func(matchers []expect.Matcher, raw, pty string, err error) {
-		if err == nil {
-			return
-		}
-
-		var value string
-		var sep string
-		for _, matcher := range matchers {
-			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
-			sep = ", "
-		}
-
-		pty = strings.TrimRight(pty, " \n") + "\n"
-
-		s.t.Fatalf(
-			"Could not meet expectation: Expectation: '%s'\nError: %v at\n%s\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%s\n",
-			value, err, stacktrace.Get().String(), pty, raw,
-		)
-	}
+func observeExpectFn(s *Session) expect.ExpectObserver {
+	return termtest.TestExpectObserveFn(s.t)
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
@@ -258,11 +239,12 @@ func (s *Session) Close() error {
 	if s.cp != nil {
 		s.cp.Close()
 	}
-	defer s.Dirs.Close()
-
-	if s.retainDirs {
-		return nil
-	}
+	defer func() {
+		if s.retainDirs {
+			return
+		}
+		s.Dirs.Close()
+	}()
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
