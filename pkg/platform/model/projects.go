@@ -34,7 +34,7 @@ var (
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, *failures.Failure) {
-	logging.Debug("fetching project (%s) in organization (%s), %s", projectName, orgName)
+	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 

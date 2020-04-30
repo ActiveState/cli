@@ -9,11 +9,15 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
-	"github.com/fsnotify/fsnotify"
+	"github.com/ActiveState/cli/pkg/projectfile"
+
+	"github.com/spf13/cobra"
 
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -22,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/spf13/cobra"
 )
 
 // The default open command and editors based on platform
@@ -327,12 +330,16 @@ func updateProjectFile(scriptFile *scriptfile.ScriptFile) *failures.Failure {
 		return fail
 	}
 
-	projectFile := project.Get().Source()
+	projectFile := projectfile.Get()
 	i := constraints.MostSpecificUnconstrained(EditArgs.Name, projectFile.Scripts.AsConstrainedEntities())
 	if i < 0 { // no script found
 		return nil
 	}
 	projectFile.Scripts[i].Value = string(updatedScript)
-	return projectFile.Save()
 
+	fail = projectFile.Save()
+	if fail != nil {
+		return fail
+	}
+	return nil
 }

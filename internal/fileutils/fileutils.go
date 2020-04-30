@@ -15,10 +15,11 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/google/uuid"
 )
 
 // FailFindInPathNotFound indicates the specified file was not found in the given path or parent directories
@@ -133,11 +134,9 @@ func IsBinary(fileBytes []byte) bool {
 
 // TargetExists checks if the given file or folder exists
 func TargetExists(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return true
+	_, err1 := os.Stat(path)
+	_, err2 := os.Readlink(path) // os.Stat returns false on Symlinks that don't point to a valid file
+	return err1 == nil || err2 == nil
 }
 
 // FileExists checks if the given file (not folder) exists
@@ -160,14 +159,6 @@ func DirExists(path string) bool {
 
 	mode := fi.Mode()
 	return mode.IsDir()
-}
-
-// PathExists checks if the given path exists, this can be a file or a folder
-func PathExists(path string) bool {
-	if _, err := os.Stat(path); err == nil {
-		return true
-	}
-	return false
 }
 
 // Hash will sha256 hash the given file

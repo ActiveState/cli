@@ -11,7 +11,7 @@ import (
 )
 
 func link(src, dst string) error {
-	logging.Debug("Creating symlink, oldname: %s newname: %s", src, dst)
+	logging.Debug("Creating symlink, source: %s target: %s", src, dst)
 	err := os.Symlink(src, dst)
 	if err != nil {
 		return locale.WrapInputError(

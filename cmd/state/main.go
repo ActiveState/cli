@@ -319,23 +319,23 @@ func processErrs(err error) error {
 		return nil
 	}
 
-	ee := &errs.WrappedErr{}
+	var ee errs.Error = &errs.WrappedErr{}
 	isErrs := errors.As(err, &ee)
-	if ! isErrs {
+	if !isErrs {
 		return err
 	}
 
 	// Log error if this isn't a user input error
-	if ! locale.IsInputError(err) {
+	if !locale.IsInputError(err) {
 		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), ee.Stack().String())
 	}
 
 	// Log if the error isn't localized
-	if ! locale.IsError(err) {
-		logging.Error("MUST ADDRESS: Error does not have localization: %s", err.Error())
+	if !locale.IsError(err) {
+		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if ! rtutils.BuiltViaCI {
+		if !rtutils.BuiltViaCI {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s", err.Error(), ee.Stack().String()))
 		}
 		return err

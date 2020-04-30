@@ -43,7 +43,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 	}
 
 	cp := ts.Spawn(computedArgs...)
-	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
