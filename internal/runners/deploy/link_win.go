@@ -17,7 +17,7 @@ func link(src, dst string) error {
 	if strings.HasSuffix(dst, ".exe") {
 		dst = strings.Replace(dst, ".exe", ".lnk", 1)
 	}
-	logging.Debug("Creating shortcut, oldname: %s newname: %s", src, dst)
+	logging.Debug("Creating shortcut, source: %s target: %s", src, dst)
 
 	root, err := environment.GetRootPath()
 	if err != nil {

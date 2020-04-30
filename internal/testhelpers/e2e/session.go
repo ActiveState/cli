@@ -10,16 +10,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"gopkg.in/yaml.v2"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -239,12 +240,11 @@ func (s *Session) Close() error {
 	if s.cp != nil {
 		s.cp.Close()
 	}
-	defer func() {
-		if s.retainDirs {
-			return
-		}
-		s.Dirs.Close()
-	}()
+	defer s.Dirs.Close()
+
+	if s.retainDirs {
+		return nil
+	}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
@@ -258,4 +258,8 @@ func (s *Session) Close() error {
 		}
 	}
 	return nil
+}
+
+func RunningOnCI() bool {
+	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
 }

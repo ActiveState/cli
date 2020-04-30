@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 )
@@ -106,6 +108,15 @@ func (c *CmdEnv) get(name string) (string, *failures.Failure) {
 		return v, failures.FailOS.Wrap(err, locale.T("err_windows_registry"))
 	}
 	return v, nil
+}
+
+// GetUnsafe is an alias for `get` intended for use by tests/integration tests, don't use for anything else!
+func (c *CmdEnv) GetUnsafe(name string) string {
+	r, f := c.get(name)
+	if f != nil {
+		log.Fatalf("GetUnsafe failed with: %s", f.Error())
+	}
+	return r
 }
 
 func envBackupName(name string) string {

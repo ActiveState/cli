@@ -99,9 +99,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("Downloading", 5*time.Second)
-	cp.Expect("Installing", 5*time.Second)
-	cp.Expect("activated state", 5*time.Second)
+	cp.Expect("Downloading", 20*time.Second)
+	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state", 120*time.Second)
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
@@ -174,20 +174,22 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Perl"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Where would you like to checkout")
 	cp.SendLine(cp.WorkDirectory())
-	cp.Expect("Downloading", 5*time.Second)
-	cp.Expect("Installing", 5*time.Second)
-	cp.Expect("activated state", 5*time.Second)
+	cp.Expect("Downloading", 20*time.Second)
+	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("activated state", 120*time.Second)
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine(perlExe + " -e \"use DBD::Pg\"")
+	cp.SendLine(perlExe + " -e \"use DBD::Pg\" && echo \"exit:$?\"")
+	cp.Expect("exit:0")
+
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

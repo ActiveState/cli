@@ -61,8 +61,6 @@ defaults:
         name: Run integration tests
         command: |
           set -e
-
-          go test ./internal/testhelpers/e2e
           go test ./test/integration -v
     deployBits: &deployBits
       run:

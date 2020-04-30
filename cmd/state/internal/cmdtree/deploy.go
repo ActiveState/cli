@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"runtime"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,24 +12,21 @@ func newDeployCommand(output output.Outputer) *captain.Command {
 
 	params := &deploy.Params{}
 
-	flags := []*captain.Flag{
-		{
-			Name:        "path",
-			Description: locale.T("flag_state_deploy_path_description"),
-			Value:       &params.Path,
-		},
-	}
-
-	flags = append(flags, &captain.Flag{
-		Name:        "force",
-		Description: locale.T("flag_state_deploy_force_description"),
-		Value:       &params.Force,
-	})
-
 	return captain.NewCommand(
 		"deploy",
 		locale.T("deploy_cmd_description"),
-		flags,
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Description: locale.T("flag_state_deploy_path_description"),
+				Value:       &params.Path,
+			},
+			{
+				Name:        "force",
+				Description: locale.T("flag_state_deploy_force_description"),
+				Value:       &params.Force,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_deploy_namespace"),
@@ -106,26 +101,21 @@ func newDeploySymlinkCommand(output output.Outputer) *captain.Command {
 
 	params := &deploy.Params{}
 
-	flags := []*captain.Flag{
-		{
-			Name:        "path",
-			Description: locale.T("flag_state_deploy_path_description"),
-			Value:       &params.Path,
-		},
-	}
-
-	if runtime.GOOS == "linux" {
-		flags = append(flags, &captain.Flag{
-			Name:        "force",
-			Description: locale.T("flag_state_deploy_force_description"),
-			Value:       &params.Force,
-		})
-	}
-
 	return captain.NewCommand(
 		"symlink",
 		locale.T("deploy_symlink_cmd_description"),
-		flags,
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Description: locale.T("flag_state_deploy_path_description"),
+				Value:       &params.Path,
+			},
+			{
+				Name:        "force",
+				Description: locale.T("flag_state_deploy_force_description"),
+				Value:       &params.Force,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_deploy_namespace"),
