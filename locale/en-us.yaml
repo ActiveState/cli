@@ -1352,7 +1352,7 @@ err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:
   other: |
-    Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
+    Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:

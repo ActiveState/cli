@@ -86,8 +86,6 @@ func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapsh
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
-	// temp skip // pythonExe := "python" + version
-
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -108,13 +106,13 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	// test python
-	// Temporarily skip these lines until MacOS on Python builds with correct copyright
-	// temp skip // cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
-	// temp skip // cp.Expect("ActiveState Software Inc.")
+	pythonExe := "python" + version
 
-	// temp skip // cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
-	// temp skip // cp.Expect("unit and functional testing")
+	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
+	cp.Expect("ActiveState Software Inc.")
+
+	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
+	cp.Expect("unit and functional testing")
 
 	// de-activate shell
 	cp.SendLine("exit")
@@ -245,7 +243,7 @@ func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
 	defer ts.Close()
 
 	cp := ts.Spawn("init", namespace, "python3")
-	cp.Expect(fmt.Sprintf("Project '%s' has been succesfully initialized", namespace))
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
