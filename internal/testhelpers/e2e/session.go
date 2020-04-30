@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/go-expect"
 	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/termtest/expect"
 	"github.com/autarch/testify/require"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
@@ -20,8 +20,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/pkg/projectfile"
+
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
