@@ -934,11 +934,13 @@ installer_err_runtime_no_commitid:
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
-  other: Build status could not be retrieved, please check the dashboard for more information
+  other: "Build status could not be retrieved, please view the project at: {{.V0}} for more information"
 build_status_in_progress:
-  other: Build is in progress, please try again later
+  other: "The project is currently building. Please visit {{.V0}} to see the progress."
 build_status_unknown_error:
-  other: "Build reported an unknown error: {{.V0}}; Please check the dashboard for more information"
+  other: "Build reported an unknown error: {{.V0}}; Please view the project at: {{.V1}} for more information"
+build_status_failed:
+  other: "The build for your project defined at: {{.V0}} is not building correctly. Error message recieved was: {{.V1}}. Please correct by visiting the above link or use 'state packages'"
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
