@@ -88,3 +88,24 @@ func Getwd() (string, error) {
 	}
 	return r, nil
 }
+
+func EnvSliceToMap(envSlice []string) map[string]string {
+	env := map[string]string{}
+	for _, v := range envSlice {
+		kv := strings.SplitN(v, "=", 2)
+		env[kv[0]] = ""
+		if len(kv) == 2 { // account for empty values, windows does some weird stuff, better safe than sorry
+			env[kv[0]] = kv[1]
+		}
+	}
+	return env
+}
+
+func EnvMapToSlice(envMap map[string]string) []string {
+	var env []string
+	for k, v := range envMap {
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	return env
+}

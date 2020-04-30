@@ -24,7 +24,7 @@ func setup(t *testing.T) {
 	os.Chdir(filepath.Join(root, "test"))
 }
 
-func TestActivateFailures(t *testing.T) {
+func TestGetFailures(t *testing.T) {
 	setup(t)
 
 	shell := os.Getenv("SHELL")
@@ -32,7 +32,7 @@ func TestActivateFailures(t *testing.T) {
 
 	os.Setenv("SHELL", "foo")
 	os.Setenv("ComSpec", "foo")
-	_, err := Activate()
+	_, err := Get()
 	os.Setenv("SHELL", shell)
 	os.Setenv("ComSpec", comspec)
 

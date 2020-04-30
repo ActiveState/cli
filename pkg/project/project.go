@@ -413,7 +413,7 @@ type Constant struct {
 // Name returns constant name
 func (c *Constant) Name() string { return c.constant.Name }
 
-// Value returns constant name
+// Value returns constant value
 func (c *Constant) Value() string {
 	return Expand(c.constant.Value)
 }

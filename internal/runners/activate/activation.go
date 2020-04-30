@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -83,9 +84,16 @@ func activate(owner, name, srcPath string) bool {
 
 	ignoreWindowsInterrupts()
 
-	subs, err := subshell.Activate()
-	if err != nil {
-		failures.Handle(err, locale.T("error_could_not_activate_subshell"))
+	subs, fail := subshell.Get()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))
+		return false
+	}
+
+	subs.SetEnv(venv.GetEnv(false, filepath.Dir(projectfile.Get().Path())))
+	fail = subs.Activate()
+	if fail != nil {
+		failures.Handle(fail, locale.T("error_could_not_activate_subshell"))
 		return false
 	}
 
