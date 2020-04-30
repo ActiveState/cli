@@ -87,13 +87,6 @@ func GetServiceURL(service Service) *url.URL {
 	return serviceURL
 }
 
-// GetPlatformURL returns the current platform
-func GetPlatformURL() *url.URL {
-	serviceURL := GetServiceURL(ServiceMono)
-	serviceURL.Path = ""
-	return serviceURL
-}
-
 func getProjectHost(service Service) *string {
 	if apiHost := os.Getenv(constants.APIHostEnvVarName); apiHost != "" {
 		return &apiHost

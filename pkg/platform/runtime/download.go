@@ -179,7 +179,7 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 }
 
 func (r *Download) projectURL() string {
-	url := api.GetPlatformURL()
+	url := api.GetServiceURL(api.ServiceHeadChef)
 	url.Path = path.Join(r.owner, r.projectName)
 	return url.String()
 }
