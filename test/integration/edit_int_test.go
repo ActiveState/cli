@@ -103,8 +103,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 
 	time.Sleep(time.Second * 2) // let CI env catch up
 
-	project := projectfile.Get()
-	project.Reload()
+	project, fail := projectfile.FromPath(ts.Dirs.Work)
+	suite.Require().NoError(fail.ToError())
 
 	i := constraints.MostSpecificUnconstrained("test-script", project.Scripts.AsConstrainedEntities())
 	suite.Require().True(i > -1, "Finds at least one script")
