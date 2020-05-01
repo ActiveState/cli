@@ -43,22 +43,22 @@ if [ -z "${TERM}" ]; then
   OUTPUT_ERROR=""
   OUTPUT_END=""
 else
-  OUTPUT_BOLD="tput bold"
-  OUTPUT_WARN="tput setf 3"
-  OUTPUT_ERROR="tput setf 1"
-  OUTPUT_END="tput sgr0"
+  OUTPUT_BOLD="$(tput bold)"
+  OUTPUT_WARN="$(tput setf 3)"
+  OUTPUT_ERROR="$(tput setf 1)"
+  OUTPUT_END="$(tput sgr0)"
 fi
 
 info () {
-  echo "$($OUTPUT_BOLD)==> ${1}$($OUTPUT_END)"
+  echo "$OUTPUT_BOLD==> ${1}$OUTPUT_END"
 }
 
 warn () {
-  echo "$($OUTPUT_WARN)${1}$($OUTPUT_END)"
+  echo "$OUTPUT_WARN${1}$OUTPUT_END"
 }
 
 error () {
-  echo "$($OUTPUT_ERROR)${1}$($OUTPUT_END)"
+  echo "$OUTPUT_ERROR${1}$OUTPUT_END"
 }
 
 userprompt () {
