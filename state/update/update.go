@@ -38,46 +38,66 @@ var Flags struct {
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
-	if Flags.Lock { // targeting project
-		projectVersion := projectfile.Get().Version
-		version := constants.Version
+	var canBumpProject bool
 
-		if projectVersion != "" { // existing lock
-			info, err := newUpdater(projectVersion, constants.Version).Info()
-			// TODO: what happens if constants.Version (desired) is before projectVersion (current)?
-			if err != nil {
-				failures.Handle(err, locale.T("err_no_update_info"))
-				return
-			}
-
-			logging.Debug("Update info: %v", info)
-			logging.Debug("Current version: %s", projectVersion)
-
-			if info == nil {
-				print.Info(locale.T("no_update_available"))
-				return
-			}
-
-			version = info.Version
-
-			print.Info(locale.T("updating_to_version", map[string]interface{}{
-				"fromVersion": projectVersion,
-				"toVersion":   version,
-			}))
-		} else {
-			print.Info(locale.Tr("locking_version", version))
-		}
-
-		if fail := lockProjectVersion(constants.BranchName, version); fail != nil {
-			failures.Handle(fail, locale.T("err_lock_failed"))
+	if !Flags.Lock { // targeting global
+		if !isForwardCall() && projectfile.Get().Version == "" {
+			updateGlobal() // NOTE: no --lock or locked project
 			return
 		}
 
-		print.Info(locale.Tr("version_locked", version))
+		// prompt to update locked version; skip the prompt if --force is set
+		// NOTE: possibly address --quiet if --force handling is not sufficient
+
+		// return if user resp is negative
+		// or continue out of this scope
+		canBumpProject = true
+	}
+
+	updateProject(canBumpProject)
+}
+
+func updateProject(canBumpProject bool) {
+	projectVersion := projectfile.Get().Version
+	version := constants.Version
+
+	// NOTE: --lock just locks to the current version (Flags.Lock)
+	// NOTE: no --lock updates locked version after prompt resp (!Flags.Lock && userAccepts)
+	if canBumpProject && projectVersion != "" { // existing lock
+		info, err := newUpdater(projectVersion).Info()
+		if err != nil {
+			failures.Handle(err, locale.T("err_no_update_info"))
+			return
+		}
+
+		logging.Debug("Update info: %v", info)
+		logging.Debug("Current version: %s", projectVersion)
+
+		if info == nil {
+			print.Info(locale.T("no_update_available"))
+			return
+		}
+
+		version = info.Version
+
+		print.Info(locale.T("updating_to_version", map[string]interface{}{
+			"fromVersion": projectVersion,
+			"toVersion":   version,
+		}))
+	} else {
+		print.Info(locale.Tr("locking_version", version))
+	}
+
+	if fail := lockProjectVersion(constants.BranchName, version); fail != nil {
+		failures.Handle(fail, locale.T("err_lock_failed"))
 		return
 	}
 
-	up := newUpdater(constants.Version, "")
+	print.Info(locale.Tr("version_locked", version))
+}
+
+func updateGlobal() {
+	up := newUpdater(constants.Version)
 	info, err := up.Info()
 	if err != nil {
 		failures.Handle(err, locale.T("err_no_update_info"))
@@ -106,10 +126,9 @@ func Execute(cmd *cobra.Command, args []string) {
 }
 
 // leave desiredVersion empty for latest
-func newUpdater(currentVersion, desiredVersion string) *updater.Updater {
+func newUpdater(currentVersion string) *updater.Updater {
 	return &updater.Updater{
 		CurrentVersion: currentVersion,
-		DesiredVersion: desiredVersion,
 		APIURL:         constants.APIUpdateURL,
 		Dir:            constants.UpdateStorageDir,
 		CmdName:        constants.CommandName,
