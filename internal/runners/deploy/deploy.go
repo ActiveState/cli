@@ -158,6 +158,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if ! installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
+	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
 	return envGetter, nil
 }
 
@@ -251,7 +252,7 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 			return link(fpath, target)
 		})
 		if err != nil {
-			return err
+			return errs.Wrap(err, "Error while walking path")
 		}
 	}
 
