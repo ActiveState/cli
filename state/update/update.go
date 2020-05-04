@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/print"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/commands"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -28,32 +29,64 @@ var Command = &commands.Command{
 			Type:        commands.TypeBool,
 			BoolVar:     &Flags.Lock,
 		},
+		&commands.Flag{
+			Name:        "force",
+			Description: "flag_update_force_description",
+			Type:        commands.TypeBool,
+			BoolVar:     &Flags.Force,
+		},
 	},
 }
 
 // Flags hold the flag values passed through the command line.
 var Flags struct {
-	Lock bool
+	Lock  bool
+	Force bool
 }
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
 	var updateFirst bool
 
-	if !Flags.Lock { // targeting global
-		if !isForwardCall() && projectfile.Get().Version == "" {
+	if !Flags.Lock {
+		if isNotForwardedOrLocked() {
 			updateGlobal()
 			return
 		}
 
-		// TODO: prompt to update locked version; skip the prompt if --force is set
-		// TODO: possibly address --quiet if --force handling is not sufficient
+		if fail := confirm(Flags.Force); fail != nil {
+			failures.Handle(fail, locale.T("err_lock_failed"))
+			return
+		}
 
-		// TODO: return if user resp is negative or continue out of this scope
 		updateFirst = true
 	}
 
 	lockProject(updateFirst)
+}
+
+func confirm(force bool) *failures.Failure {
+	if force {
+		return nil
+	}
+
+	msg := locale.T("confirm_update_locked_version")
+
+	prom := prompt.New()
+	confirmed, fail := prom.Confirm(msg, false)
+	if fail != nil {
+		return fail
+	}
+
+	if !confirmed {
+		return failures.FailUserInput.New("err_action_was_not_confirmed")
+	}
+
+	return nil
+}
+
+func isNotForwardedOrLocked() bool {
+	return !isForwardCall() && projectfile.Get().Version == ""
 }
 
 func lockProject(updateFirst bool) {
