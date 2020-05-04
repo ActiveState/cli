@@ -38,31 +38,29 @@ var Flags struct {
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
-	var canBumpProject bool
+	var updateFirst bool
 
 	if !Flags.Lock { // targeting global
 		if !isForwardCall() && projectfile.Get().Version == "" {
-			updateGlobal() // NOTE: AC2: no-lock or locked project
+			updateGlobal()
 			return
 		}
 
-		// TODO/NOTE: AC4 prompt to update locked version; skip the prompt if --force is set
-		// TODO/NOTE: AC4: possibly address --quiet if --force handling is not sufficient
+		// TODO: prompt to update locked version; skip the prompt if --force is set
+		// TODO: possibly address --quiet if --force handling is not sufficient
 
 		// TODO: return if user resp is negative or continue out of this scope
-		canBumpProject = true
+		updateFirst = true
 	}
 
-	updateProject(canBumpProject)
+	lockProject(updateFirst)
 }
 
-func updateProject(canBumpProject bool) {
+func lockProject(updateFirst bool) {
 	projectVersion := projectfile.Get().Version
 	version := constants.Version
 
-	// NOTE: AC1: with-lock just locks to the current version (Flags.Lock)
-	// NOTE: AC3: no-lock updates locked version after prompt resp (!Flags.Lock && userAccepts)
-	if canBumpProject && projectVersion != "" { // existing lock
+	if updateFirst && projectVersion != "" { // existing lock
 		info, err := newUpdater(projectVersion).Info()
 		if err != nil {
 			failures.Handle(err, locale.T("err_no_update_info"))
@@ -87,7 +85,7 @@ func updateProject(canBumpProject bool) {
 		print.Info(locale.Tr("locking_version", version))
 	}
 
-	if fail := lockProjectVersion(constants.BranchName, version); fail != nil {
+	if fail := setProjectVersion(constants.BranchName, version); fail != nil {
 		failures.Handle(fail, locale.T("err_lock_failed"))
 		return
 	}
@@ -134,7 +132,7 @@ func newUpdater(currentVersion string) *updater.Updater {
 	}
 }
 
-func lockProjectVersion(branch, version string) *failures.Failure {
+func setProjectVersion(branch, version string) *failures.Failure {
 	pj := projectfile.Get()
 	pj.Branch = branch
 	pj.Version = version
