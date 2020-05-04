@@ -1,11 +1,9 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -15,7 +13,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
 
@@ -50,10 +47,15 @@ func (suite *DeployIntegrationTestSuite) TestDeploy() {
 	}
 
 	cp.Expect("Installing", 120*time.Second)
-	cp.Expect("Configuring")
-	cp.Expect("Deployment Information")
-	cp.ExpectRe(fmt.Sprintf(`%s[\w\\\/\.\s]*bin`, regexp.QuoteMeta(ts.Dirs.Work))) // expect bin dir
-	cp.Expect("restart your terminal")
+	cp.Expect("Configuring", 120*time.Second)
+	cp.Expect("Symlinking")
+	cp.Expect("Deployment Information", 60*time.Second)
+	cp.Expect(ts.Dirs.Work) // expect bin dir
+	if runtime.GOOS == "windows" {
+		cp.Expect("log out")
+	} else {
+		cp.Expect("restart")
+	}
 	cp.ExpectExitCode(0)
 
 	// Linux symlinks to /usr/local/bin, so we can verify right away
@@ -89,12 +91,14 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 	cp.Expect("Installing Runtime")
 	cp.Expect("Downloading")
 	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("Installation completed", 120*time.Second)
 	cp.ExpectExitCode(0)
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping TestDeployConfigure when not running on CI, as it modifies bashrc/registry")
+		suite.T().Skipf("Skipping TestDeployConfigure when not ru" +
+			"nning on CI, as it modifies bashrc/registry")
 	}
 
 	ts := e2e.New(suite.T(), false)
@@ -133,8 +137,9 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Contains(string(bashContents), ts.Dirs.Work, "bashrc should contain our target dir")
 	} else {
 		// Test registry
-		e := cmd.NewCmdEnv()
-		suite.Contains(e.GetUnsafe("PATH"), ts.Dirs.Work, "Windows PATH should contain our target dir")
+		out, err := exec.Command("reg", "query", "HKCU\\Environment", "/v", "Path").Output()
+		suite.Require().NoError(err)
+		suite.Contains(string(out), ts.Dirs.Work, "Windows PATH should contain our target dir")
 	}
 }
 
@@ -181,8 +186,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 
 	cp = ts.Spawn("deploy", "report", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work)
 	cp.Expect("Deployment Information")
-	cp.ExpectRe(fmt.Sprintf(`%s[\w\\\/\.\s]*bin`, regexp.QuoteMeta(ts.Dirs.Work))) // expect bin dir
-	cp.Expect("restart your terminal")
+	cp.Expect(ts.Dirs.Work) // expect bin dir
+	if runtime.GOOS == "windows" {
+		cp.Expect("log out")
+	} else {
+		cp.Expect("restart")
+	}
 	cp.ExpectExitCode(0)
 }
 

@@ -161,7 +161,6 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	perlExe := "perl"
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -185,8 +184,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine(perlExe + " -e \"use DBD::Pg\" && echo \"exit:$?\"")
-	cp.Expect("exit:0")
+	cp.SendLine("perldoc -l DBD::Pg")
+	cp.Expect(ts.Dirs.Work)
+	cp.Expect("Pg.pm")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
