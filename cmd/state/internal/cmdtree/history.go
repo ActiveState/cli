@@ -34,7 +34,7 @@ func newHistoryCommand(outputer output.Outputer) *captain.Command {
 			namespace := opts.Namespace
 			if namespace == "" {
 				pj, fail := project.GetSafe()
-				if fail.Type.Matches(projectfile.FailNoProject) {
+				if fail != nil && fail.Type.Matches(projectfile.FailNoProject) {
 					return failures.FailUser.New("err_history_namespace")
 				}
 				if fail != nil {
