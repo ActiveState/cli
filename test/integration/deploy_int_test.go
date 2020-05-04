@@ -139,7 +139,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		// Test registry
 		out, err := exec.Command("reg", "query", "HKCU\\Environment", "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(out, ts.Dirs.Work, "Windows PATH should contain our target dir")
+		suite.Contains(string(out), ts.Dirs.Work, "Windows PATH should contain our target dir")
 	}
 }
 
