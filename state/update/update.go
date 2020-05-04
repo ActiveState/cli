@@ -42,15 +42,14 @@ func Execute(cmd *cobra.Command, args []string) {
 
 	if !Flags.Lock { // targeting global
 		if !isForwardCall() && projectfile.Get().Version == "" {
-			updateGlobal() // NOTE: no --lock or locked project
+			updateGlobal() // NOTE: AC2: no-lock or locked project
 			return
 		}
 
-		// prompt to update locked version; skip the prompt if --force is set
-		// NOTE: possibly address --quiet if --force handling is not sufficient
+		// TODO/NOTE: AC4 prompt to update locked version; skip the prompt if --force is set
+		// TODO/NOTE: AC4: possibly address --quiet if --force handling is not sufficient
 
-		// return if user resp is negative
-		// or continue out of this scope
+		// TODO: return if user resp is negative or continue out of this scope
 		canBumpProject = true
 	}
 
@@ -61,8 +60,8 @@ func updateProject(canBumpProject bool) {
 	projectVersion := projectfile.Get().Version
 	version := constants.Version
 
-	// NOTE: --lock just locks to the current version (Flags.Lock)
-	// NOTE: no --lock updates locked version after prompt resp (!Flags.Lock && userAccepts)
+	// NOTE: AC1: with-lock just locks to the current version (Flags.Lock)
+	// NOTE: AC3: no-lock updates locked version after prompt resp (!Flags.Lock && userAccepts)
 	if canBumpProject && projectVersion != "" { // existing lock
 		info, err := newUpdater(projectVersion).Info()
 		if err != nil {
