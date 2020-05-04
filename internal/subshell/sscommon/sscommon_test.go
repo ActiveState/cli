@@ -15,7 +15,7 @@ func TestEscapeEnv(t *testing.T) {
 		{
 			"Escapes Env",
 			map[string]string{
-				"k1": "v1\"\nv1",
+				"k1": fmt.Sprintf("v1\"%sv1", lineBreak),
 				"k2": "v2",
 			},
 			map[string]string{
