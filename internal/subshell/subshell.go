@@ -14,12 +14,12 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
 	"github.com/ActiveState/cli/internal/subshell/tcsh"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 )
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
@@ -53,30 +53,10 @@ type SubShell interface {
 	Shell() string
 
 	// SetEnv sets the environment up for the given subshell
-	SetEnv(env []string)
+	SetEnv(env map[string]string)
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
-}
-
-// Activate returns the correct subshell for the current environment after
-// activating the relevant virtual environment
-func Activate() (SubShell, *failures.Failure) {
-	logging.Debug("Activating Subshell")
-
-	// Why another check here? Because some things like events / run script don't take the virtualenv route,
-	// realistically this shouldn't really happen, but it's a useful failsafe for us
-	activeProject := os.Getenv(constants.ActivatedStateEnvVarName)
-	if activeProject != "" {
-		return nil, virtualenvironment.FailAlreadyActive.New("err_already_active")
-	}
-
-	subs, fail := Get()
-	if fail != nil {
-		return nil, fail
-	}
-
-	return subs, subs.Activate()
 }
 
 // Get returns the subshell relevant to the current process, but does not activate it
@@ -129,7 +109,7 @@ func Get() (SubShell, *failures.Failure) {
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
 	})
-	subs.SetEnv(env)
+	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs, nil
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 var (
@@ -90,7 +91,7 @@ func run(name string, args []string) error {
 			return fail.WithDescription("error_state_run_activate")
 		}
 
-		subs.SetEnv(venv.GetEnvSlice(true))
+		subs.SetEnv(venv.GetEnv(true, filepath.Dir(projectfile.Get().Path())))
 		path = venv.GetEnv(false, "")["PATH"]
 	}
 
