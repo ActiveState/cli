@@ -153,7 +153,7 @@ func (installer *Installer) Assembler() (Assembler, *failures.Failure) {
 	switch artifacts.BuildEngine {
 	case Alternative:
 		return NewAlternativeRuntime(artifacts.Artifacts, installer.params.CacheDir, artifacts.RecipeID)
-	case Camel:
+	case Camel, Hybrid:
 		return NewCamelRuntime(artifacts.Artifacts, installer.params.CacheDir)
 	default:
 		return nil, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
