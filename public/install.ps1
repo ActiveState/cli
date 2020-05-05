@@ -199,7 +199,12 @@ Cras eu porttitor urna. Duis nec metus vel nisi accumsan scelerisque. Cras lectu
     # automatically and most tested commands don't break lines on spaces so may
     # just leave this as is.
     Write-Host $folded
-    return promptYN "Do you accept the above agreement?"
+    if ( $script:NOPROMPT ) {
+        Write-Host "By running the State Tool installer without prompts you accept the above agreement"
+        return $True
+    } else {
+        return promptYN "Do you accept the above agreement?"
+    }
 }
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
@@ -301,15 +306,9 @@ function install()
     # Ensure errors from previously run commands are not reported during install
     $Error.Clear()
 
-    if ( -Not $script:NOPROMPT ) {
-        if (-Not (promptConsent)) {
-            Write-Host "Consent aggrement must be accepted to install the State Tool"
-            return
-        } else {
-            Write-Host "Consent agreement accepted"
-        }
-    } else {
-        Write-Host "Installing state tool without prompts. Automatically accepting consent agreement"
+    if (-Not (promptConsent)) {
+        Write-Host "Consent aggrement must be accepted to install the State Tool"
+        return
     }
 
     if ($h) {
