@@ -144,6 +144,10 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 			}
 
 			result.BuildEngine = BuildEngineFromResponse(resp)
+			if result.BuildEngine == UnknownEngine {
+				return result, FailRuntimeUnknownEngine.New("installer_err_engine_unknown")
+			}
+
 			if resp.RecipeID == nil {
 				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
 			}
