@@ -933,6 +933,8 @@ installer_err_runtime_no_commitid:
   other: A CommitID is required to install this runtime environment
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
+installer_err_engine_unknown:
+  other: Build engine is unknown.
 build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: {{.V0}} for more information"
 build_status_in_progress:

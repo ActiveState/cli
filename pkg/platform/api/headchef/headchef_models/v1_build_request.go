@@ -25,7 +25,7 @@ type V1BuildRequest struct {
 	// The version of camel to use when running setup-builds.pl. NOTE: this is temporary until the camel version is included in the recipe.
 	CamelCommit string `json:"camel_commit,omitempty"`
 
-	// A list of additional command-line parameters to pass to setup-builds.pl. NOTE: this is a temporary feature to expose some camel features before build options are implemented.
+	// OBSOLETE. Head Chef still accepts this field to not break old clients but does nothing with these values. Use the camel_flags field in the recipe.
 	// Unique: true
 	CamelFlags []string `json:"camel_flags"`
 
