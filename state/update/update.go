@@ -54,7 +54,7 @@ func Execute(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		if fail := confirm(Flags.Force); fail != nil {
+		if fail := confirmUpdateLocked(Flags.Force); fail != nil {
 			failures.Handle(fail, locale.T("err_lock_failed"))
 			return
 		}
@@ -65,7 +65,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	lockProject(updateFirst)
 }
 
-func confirm(force bool) *failures.Failure {
+func confirmUpdateLocked(force bool) *failures.Failure {
 	if force {
 		return nil
 	}
