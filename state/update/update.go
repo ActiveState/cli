@@ -49,7 +49,7 @@ func Execute(cmd *cobra.Command, args []string) {
 	var updateFirst bool
 
 	if !Flags.Lock {
-		if isNotForwardedOrLocked() {
+		if !isForwardedOrLocked() {
 			updateGlobal()
 			return
 		}
@@ -85,17 +85,14 @@ func confirm(force bool) *failures.Failure {
 	return nil
 }
 
-func isNotForwardedOrLocked() bool {
+func isForwardedOrLocked() bool {
 	if isForwardCall() {
-		return false
-	}
-
-	pj, fail := projectfile.GetSafe()
-	if fail != nil {
 		return true
 	}
 
-	return pj.Version == ""
+	pj, fail := projectfile.GetSafe()
+
+	return fail == nil && pj.Version != ""
 }
 
 func lockProject(updateFirst bool) {
