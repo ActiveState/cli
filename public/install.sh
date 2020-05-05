@@ -42,11 +42,13 @@ if [ -z "${TERM}" ]; then
   OUTPUT_WARN=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
+  WIDTH=80
 else
   OUTPUT_BOLD="$(tput bold)"
   OUTPUT_WARN="$(tput setf 3)"
   OUTPUT_ERROR="$(tput setf 1)"
   OUTPUT_END="$(tput sgr0)"
+  WIDTH="$(tput cols)"
 fi
 
 info () {
@@ -75,6 +77,39 @@ userinput () {
     echo "$result"
   fi
 }
+
+CONSENT_TEXT="\
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean ornare leo non dolor porttitor
+euismod. Cras
+commodo, nisi vel gravida volutpat, enim turpis tempor eros, ut venenatis elit leo ut nunc. Nulla fermentum
+ligula id tincidunt porttitor.
+
+  Morbi ut massa vitae tortor rutrum
+  gravida ut id nunc. Integer imperdiet pharetra augue, quis finibus justo
+  luctus id. Phasellus a diam ac risus consequat pharetra. Cras
+  lacinia neque
+  sed ipsum euismod, non commodo felis facilisis.
+
+Suspendisse luctus purus justo, sed iaculis lectus consequat nec. Etiam pretium ultricies
+ligula, a pretium sapien facilisis eu. Nulla rhoncus viverra turpis a rutrum.
+Cras eu porttitor urna. Duis nec metus vel nisi accumsan scelerisque. Cras lectus erat, mattis non mauris in, consectetur vulputate ipsum.
+"
+echo "$CONSENT_TEXT" | fold -s -w $WIDTH
+
+userprompt "Do you accept the above agreement? [y/N] "
+RESPONSE=$(userinput y)
+case "$RESPONSE" in
+  [Yy])
+    # Continue installation
+    info ""
+    ;;
+  [Nn]|*)
+    error "Consent aggrement must be accepted to install the State Tool"
+    exit 0
+    ;;
+esac
+
 
 # Determine the current OS.
 case `uname -s` in
