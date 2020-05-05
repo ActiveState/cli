@@ -87,6 +87,34 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateLocked() {
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	projectVersion := constants.Version
+	pjfile := projectfile.Project{
+		Project: projectURL,
+		Version: projectVersion,
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(false)...),
+	)
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("update --force"),
+		e2e.AppendEnv(suite.env(false)...),
+	)
+	cp.ExpectExitCode(0)
+
+	suite.versionCompare(ts, false, constants.Version, suite.Equal)
+}
+
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
