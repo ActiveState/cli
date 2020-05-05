@@ -1,6 +1,7 @@
 package update
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -46,6 +47,7 @@ var Flags struct {
 
 // Execute the current command
 func Execute(cmd *cobra.Command, args []string) {
+	fmt.Println("HUEHUEHUE")
 	var updateFirst bool
 
 	if !Flags.Lock {

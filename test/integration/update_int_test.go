@@ -87,6 +87,42 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateLocked() {
+	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	pjfile := projectfile.Project{
+		Project: projectURL,
+		Version: "0.11.15-SHA551aff5c",
+	}
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(true)...),
+	)
+
+	if os.Getenv("GIT_BRANCH") == "master" {
+		cp.ExpectRe("(Update completed|You are using the latest version available)", 60*time.Second)
+	} else {
+		cp.Expect("Update completed", 60*time.Second)
+	}
+	cp.ExpectExitCode(0)
+
+	//cp.ExpectNotExitCode(0)
+	/*
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("update --force"),
+			e2e.AppendEnv(suite.env(false)...),
+		)
+		cp.ExpectExitCode(0)
+
+		suite.versionCompare(ts, false, constants.Version, suite.Equal)
+	*/
+}
+
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
