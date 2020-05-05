@@ -102,7 +102,7 @@ RESPONSE=$(userinput y)
 case "$RESPONSE" in
   [Yy])
     # Continue installation
-    info ""
+    info "Conset agreement accepted"
     ;;
   [Nn]|*)
     error "Consent aggrement must be accepted to install the State Tool"
