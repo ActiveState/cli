@@ -27,7 +27,7 @@ type BuildStatusResponse struct {
 
 	// Name of the system that orchestrates the build
 	// Required: true
-	// Enum: [alternative camel]
+	// Enum: [alternative camel hybrid]
 	BuildEngine *string `json:"build_engine"`
 
 	// Build Request UUID Sub Schema
@@ -138,7 +138,7 @@ var buildStatusResponseTypeBuildEnginePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["alternative","camel"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["alternative","camel","hybrid"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -153,6 +153,9 @@ const (
 
 	// BuildStatusResponseBuildEngineCamel captures enum value "camel"
 	BuildStatusResponseBuildEngineCamel string = "camel"
+
+	// BuildStatusResponseBuildEngineHybrid captures enum value "hybrid"
+	BuildStatusResponseBuildEngineHybrid string = "hybrid"
 )
 
 // prop value enum
