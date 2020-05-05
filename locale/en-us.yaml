@@ -928,7 +928,7 @@ installer_err_runtime_move_files_access_denied:
   other: |
     Unable to move runtime files.  Please ensure that you have write permissions for the directory '{{.V0}}'
     If you believe this is happening due to antivirus software please report your issue on our forums: 
-    {{.V0}}
+    {{.V1}}
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '{{.V0}}' to '{{.V1}}'
 installer_err_runtime_rm_installdir:
@@ -938,11 +938,13 @@ installer_err_runtime_no_commitid:
 installer_err_runtime_preplatform:
   other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
 build_status_unknown:
-  other: Build status could not be retrieved, please check the dashboard for more information
+  other: "Build status could not be retrieved, please view the project at: {{.V0}} for more information"
 build_status_in_progress:
-  other: Build is in progress, please try again later
+  other: "The project is currently building. Please visit {{.V0}} to see the progress."
 build_status_unknown_error:
-  other: "Build reported an unknown error: {{.V0}}; Please check the dashboard for more information"
+  other: "Build reported an unknown error: {{.V0}}; Please view the project at: {{.V1}} for more information"
+build_status_failed:
+  other: "The build for your project defined at: {{.V0}} is not building correctly. Error message recieved was: {{.V1}}. Please correct by visiting the above link or use 'state packages'"
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -1356,7 +1358,7 @@ err_init_file_exists:
   other: The target directory '{{.V0}}' already contains an activestate.yaml.
 init_success:
   other: |
-    Project '{{.V0}}/{{.V1}}' has been succesfully initialized at '{{.V2}}'.
+    Project '{{.V0}}/{{.V1}}' has been successfully initialized at '{{.V2}}'.
     You should run 'state push' before activating your project for the first time.
     Once pushed you can activate your project with 'state activate'.
 flag_state_init_skeleton_description:
@@ -1455,6 +1457,8 @@ history_cmd_description:
   other: View history of the active or given project
 arg_state_history_namespace_description:
   other: "The namespace to view the history for (owner/name)"
+err_history_namespace:
+  other: "Please provide a namespace or run `state history` in a project directory"
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
@@ -1577,6 +1581,10 @@ deploy_restart_shell:
   other: |
 
     [BLUE][BOLD]Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.[/RESET]
+deploy_restart_cmd:
+  other: |
+
+    [BLUE][BOLD]Please log out and back in again in order to start using the newly configured Runtime Environment.[/RESET]
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:

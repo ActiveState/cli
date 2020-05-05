@@ -34,21 +34,31 @@ DOWNLOADEXT=".tar.gz"
 BINARYEXT=""
 ARCH="amd64"
 
-TERM="${TERM:=xterm}"
-
 NOPROMPT=false
 FORCEOVERWRITE=false
 
+if [ -z "${TERM}" ]; then
+  OUTPUT_BOLD=""
+  OUTPUT_WARN=""
+  OUTPUT_ERROR=""
+  OUTPUT_END=""
+else
+  OUTPUT_BOLD="$(tput bold)"
+  OUTPUT_WARN="$(tput setf 3)"
+  OUTPUT_ERROR="$(tput setf 1)"
+  OUTPUT_END="$(tput sgr0)"
+fi
+
 info () {
-  echo "$(tput bold)==> ${1}$(tput sgr0)"
+  echo "$OUTPUT_BOLD==> ${1}$OUTPUT_END"
 }
 
 warn () {
-  echo "$(tput setf 3)${1}$(tput sgr0)"
+  echo "$OUTPUT_WARN${1}$OUTPUT_END"
 }
 
 error () {
-  echo "$(tput setf 1)${1}$(tput sgr0)"
+  echo "$OUTPUT_ERROR${1}$OUTPUT_END"
 }
 
 userprompt () {

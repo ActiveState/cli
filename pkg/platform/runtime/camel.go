@@ -300,7 +300,7 @@ func (cr *CamelRuntime) GetEnv(inherit bool, projectDir string) (map[string]stri
 
 		// Unset AffectedEnv
 		if meta.AffectedEnv != "" {
-			env[meta.AffectedEnv] = ""
+			delete(env, meta.AffectedEnv)
 		}
 
 		// Set up env according to artifact meta

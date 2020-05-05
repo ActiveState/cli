@@ -127,7 +127,6 @@ scripts:
     description: Runs integration tests.
     value: |
       unset ACTIVESTATE_ACTIVATED
-      go test ./pkg/expect ./internal/testhelpers/e2e
       go test ./test/integration -v
   - name: clean
     description: Cleans out the build dir.

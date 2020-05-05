@@ -11,11 +11,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/termtest"
+
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/termtest"
 )
 
 type RunIntegrationTestSuite struct {
@@ -29,7 +30,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=40f4903a-e8a8-44a1-b2fd-eb1a2396a2f2
+project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=6d9280e7-75eb-401a-9e71-0d99759fbad3
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -174,9 +175,12 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	suite.createProjectFile(ts)
 
-	cp := ts.Spawn("activate")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Activating state: ActiveState-CLI/Python3")
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run helloWorldPython", cp.Executable()))
 	cp.Expect("Hello Python!", 5*time.Second)

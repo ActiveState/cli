@@ -115,7 +115,7 @@ func newOSVersionInfoFromDLL() (*OSVersionInfo, error) {
 	dll := windows.NewLazySystemDLL("kernel32.dll")
 	version, _, err := dll.NewProc("GetVersion").Call()
 	if err != nil {
-		return nil, fmt.Errorf("'GetVersion' via kernel32.dll failed: %w")
+		return nil, fmt.Errorf("'GetVersion' via kernel32.dll failed: %w", err)
 	}
 
 	major := int(byte(version))

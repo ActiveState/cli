@@ -15,6 +15,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/ActiveState/cli/internal/failures"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -132,11 +134,9 @@ func IsBinary(fileBytes []byte) bool {
 
 // TargetExists checks if the given file or folder exists
 func TargetExists(path string) bool {
-	_, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return true
+	_, err1 := os.Stat(path)
+	_, err2 := os.Readlink(path) // os.Stat returns false on Symlinks that don't point to a valid file
+	return err1 == nil || err2 == nil
 }
 
 // FileExists checks if the given file (not folder) exists
@@ -159,14 +159,6 @@ func DirExists(path string) bool {
 
 	mode := fi.Mode()
 	return mode.IsDir()
-}
-
-// PathExists checks if the given path exists, this can be a file or a folder
-func PathExists(path string) bool {
-	if _, err := os.Stat(path); err == nil {
-		return true
-	}
-	return false
 }
 
 // Hash will sha256 hash the given file
@@ -741,4 +733,30 @@ func HomeDir() (string, error) {
 	}
 
 	return usr.HomeDir, nil
+}
+
+// IsWritable returns true if the given path is writable
+func IsWritable(path string) bool {
+	fpath := filepath.Join(path, uuid.New().String())
+	if fail := Touch(fpath); fail != nil {
+		logging.Error("Could not create file: %v", fail.ToError())
+		return false
+	}
+
+	if errr := os.Remove(fpath); errr != nil {
+		logging.Error("Could not clean up test file: %v", errr)
+		return false
+	}
+
+	return true
+}
+
+// IsDir returns true if the given path is a directory
+func IsDir(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		logging.Debug("Could not stat path: %s, got error: %v", path, err)
+		return false
+	}
+	return info.IsDir()
 }

@@ -166,9 +166,15 @@ func newFilteredRequirementsTable(requirements model.Checkpoint, filter string) 
 		if !strings.Contains(req.Requirement, filter) {
 			continue
 		}
+
+		versionConstraint := req.VersionConstraint
+		if versionConstraint == "" {
+			versionConstraint = "Auto"
+		}
+
 		row := []string{
 			req.Requirement,
-			req.VersionConstraint,
+			versionConstraint,
 		}
 		rows = append(rows, row)
 	}

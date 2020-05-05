@@ -6,7 +6,6 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -90,7 +89,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 		return fail
 	}
 
-	if ! installed && step != UnsetStep && step != InstallStep {
+	if !installed && step != UnsetStep && step != InstallStep {
 		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
 	}
 
@@ -119,7 +118,7 @@ func runStepsWithFuncs(targetPath string, force bool, step Step, installer insta
 			out.Notice("") // Some space between steps
 		}
 	}
-	if rt.GOOS == "linux" && (step == UnsetStep || step == SymlinkStep) {
+	if step == UnsetStep || step == SymlinkStep {
 		logging.Debug("Running symlink step")
 		if envGetter == nil {
 			if envGetter, fail = installer.Env(); fail != nil {
@@ -159,6 +158,7 @@ func install(installer installable, out output.Outputer) (runtime.EnvGetter, err
 	if ! installed {
 		out.Notice(locale.T("using_cached_env"))
 	}
+	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
 	return envGetter, nil
 }
 
@@ -192,7 +192,7 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 	// Retrieve path to write symlinks to
 	path, err := usablePath()
 	if err != nil {
-		return errs.Wrap(err, "Could not retrieve a usable PATH")
+		return locale.WrapError(err, "err_usablepath", "Could not retrieve a usable PATH")
 	}
 
 	// Retrieve artifact binary directory
@@ -201,14 +201,16 @@ func symlink(installPath string, overwrite bool, envGetter runtime.EnvGetter, ou
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	// Symlink to PATH (eg. /usr/local/bin)
-	if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
-		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
+	if rt.GOOS == "linux" {
+		// Symlink to PATH (eg. /usr/local/bin)
+		if err := symlinkWithTarget(overwrite, path, bins, out); err != nil {
+			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
+		}
 	}
 
 	// Symlink to targetDir/bin
 	if err := symlinkWithTarget(overwrite, filepath.Join(installPath, "bin"), bins, out); err != nil {
-		return errs.Wrap(err, "Could not create symlinks to %s, overwrite: %v.", path, overwrite)
+		return locale.WrapError(err, "Could not create symlinks to {{.V0}}.", path)
 	}
 
 	return nil
@@ -225,14 +227,14 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are executable
-			if info == nil || info.IsDir() || info.Mode()&0111 == 0 { // check if executable by anyone
+			// Filter out files that are not executable
+			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
 				return nil // not executable
 			}
 
 			// Ensure target is valid
 			target := filepath.Join(path, filepath.Base(fpath))
-			if fileutils.FileExists(target) {
+			if fileutils.TargetExists(target) {
 				if overwrite {
 					out.Notice(locale.Tr("deploy_overwrite_target", target))
 					if err := os.Remove(target); err != nil {
@@ -247,17 +249,10 @@ func symlinkWithTarget(overwrite bool, path string, bins []string, out output.Ou
 				}
 			}
 
-			// Create symlink
-			err = os.Symlink(fpath, target)
-			if err != nil {
-				return locale.WrapInputError(
-					err, "err_deploy_symlink",
-					"Cannot create symlink at {{.V0}}, ensure you have permission to write to {{.V1}}.", target, filepath.Dir(target))
-			}
-			return nil
+			return link(fpath, target)
 		})
 		if err != nil {
-			return err
+			return errs.Wrap(err, "Error while walking path")
 		}
 	}
 
@@ -276,7 +271,6 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 	env := venv.GetEnv(false, "")
 
 	var bins []string
-
 	if path, ok := env["PATH"]; ok {
 		delete(env, "PATH")
 		bins = strings.Split(path, string(os.PathListSeparator))
@@ -289,7 +283,11 @@ func report(envGetter runtime.EnvGetter, out output.Outputer) error {
 		Environment:       env,
 	})
 
-	out.Notice(locale.T("deploy_restart_shell"))
+	if rt.GOOS == "windows" {
+		out.Notice(locale.T("deploy_restart_cmd"))
+	} else {
+		out.Notice(locale.T("deploy_restart_shell"))
+	}
 
 	return nil
 }
@@ -307,13 +305,8 @@ func usablePath() (string, error) {
 	}
 	var result string
 	for _, path := range paths {
-		// Check if we can write to this path
-		fpath := filepath.Join(path, uuid.New().String())
-		if err := fileutils.Touch(fpath); err != nil {
+		if path == "" || (!fileutils.IsDir(path) && !fileutils.FileExists(path)) || !fileutils.IsWritable(path) {
 			continue
-		}
-		if errr := os.Remove(fpath); errr != nil {
-			logging.Error("Could not clean up test file: %v", errr)
 		}
 
 		// Record result

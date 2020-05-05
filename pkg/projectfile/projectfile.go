@@ -438,6 +438,16 @@ func ValidateProjectURL(url string) *failures.Failure {
 	return nil
 }
 
+// Reload the project file from disk
+func (p *Project) Reload() *failures.Failure {
+	pj, fail := Parse(p.path)
+	if fail != nil {
+		return fail
+	}
+	*p = *pj
+	return nil
+}
+
 // Save the project to its activestate.yaml file
 func (p *Project) Save() *failures.Failure {
 	dat, err := yaml.Marshal(p)
@@ -449,6 +459,8 @@ func (p *Project) Save() *failures.Failure {
 	if fail != nil {
 		return fail
 	}
+
+	logging.Debug("Saving %s", p.Path())
 
 	f, err := os.Create(p.Path())
 	if err != nil {

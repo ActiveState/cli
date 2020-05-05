@@ -23,7 +23,7 @@ type SubShell struct {
 	binary string
 	rcFile *os.File
 	cmd    *exec.Cmd
-	env    []string
+	env    map[string]string
 	fs     chan *failures.Failure
 }
 
@@ -49,11 +49,12 @@ func (v *SubShell) WriteUserEnv(env map[string]string) *failures.Failure {
 		return failures.FailIO.Wrap(err)
 	}
 
+	env = sscommon.EscapeEnv(env)
 	return sscommon.WriteRcFile("fishrc_append.fish", filepath.Join(homeDir, ".config/fish/config.fish"), env)
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env []string) {
+func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
@@ -64,8 +65,9 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate() *failures.Failure {
+	env := sscommon.EscapeEnv(v.env)
 	var fail *failures.Failure
-	if v.rcFile, fail = sscommon.SetupProjectRcFile("fishrc.fish", ""); fail != nil {
+	if v.rcFile, fail = sscommon.SetupProjectRcFile("fishrc.fish", "", env); fail != nil {
 		return fail
 	}
 
@@ -98,7 +100,8 @@ func (v *SubShell) Deactivate() *failures.Failure {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(filename string, args ...string) error {
-	return sscommon.RunFuncByBinary(v.Binary())(v.env, filename, args...)
+	env := sscommon.EscapeEnv(v.env)
+	return sscommon.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(env), filename, args...)
 }
 
 // IsActive - see subshell.SubShell

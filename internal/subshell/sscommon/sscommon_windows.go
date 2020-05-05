@@ -7,6 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/failures"
 )
 
+var lineBreak = "\r\n"
+var lineBreakChar = `\r\n`
+
 func stop(cmd *exec.Cmd) *failures.Failure {
 	// windows should use "CTRL_CLOSE_EVENT"; SIGKILL works
 	sig := syscall.SIGKILL
