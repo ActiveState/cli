@@ -141,7 +141,7 @@ updating_to_version:
 err_update_failed:
   other: Update failed, check the error log for more information
 confirm_update_locked_version_prompt:
-  other: "This will update the State Tool version that your project is locked to. Are you sure you want to do this?"
+  other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 version_info:
   other: |
     ActiveState CLI version {{.Version}}
