@@ -76,7 +76,7 @@ const (
 	// Alternative is the new alternative build orchestration framework
 	Alternative
 
-	// Hybrid partially leverages Camel, and otherwise uses newer builders.
+	// Hybrid wraps Camel.
 	Hybrid
 )
 
