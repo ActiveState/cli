@@ -92,6 +92,8 @@ func BuildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEng
 		return Camel
 	case headchef_models.BuildStatusResponseBuildEngineAlternative:
 		return Alternative
+	case headchef_models.BuildStatusResponseBuildEngineHybrid:
+		return Hybrid
 	default:
 		return UnknownEngine
 	}
@@ -100,11 +102,11 @@ func BuildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEng
 func (be BuildEngine) String() string {
 	switch be {
 	case Camel:
-		return "camel"
+		return headchef_models.BuildStatusResponseBuildEngineCamel
 	case Alternative:
-		return "alternative"
+		return headchef_models.BuildStatusResponseBuildEngineAlternative
 	case Hybrid:
-		return "hybrid"
+		return headchef_models.BuildStatusResponseBuildEngineHybrid
 	default:
 		return "unknown"
 	}
