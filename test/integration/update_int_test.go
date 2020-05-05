@@ -92,6 +92,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLocked() {
 	pjfile := projectfile.Project{
 		Project: projectURL,
 		Version: "0.11.15-SHA551aff5c",
+		Branch:  "master",
 	}
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
