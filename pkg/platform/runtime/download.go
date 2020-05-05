@@ -59,9 +59,9 @@ type HeadChefArtifact = headchef_models.Artifact
 // This information is extracted from a build request response in the
 // FetchArtifacts() method
 type FetchArtifactsResult struct {
-	IsAlternative bool
-	Artifacts     []*HeadChefArtifact
-	RecipeID      strfmt.UUID
+	BuildEngine BuildEngine
+	Artifacts   []*HeadChefArtifact
+	RecipeID    strfmt.UUID
 }
 
 // DownloadDirectoryProvider provides download directories for individual artifacts
@@ -117,9 +117,7 @@ func (r *Download) fetchRecipeID() (strfmt.UUID, *failures.Failure) {
 // FetchArtifacts will retrieve artifact information from the head-chef (eg language installers)
 // The first return argument specifies whether we are dealing with an alternative build
 func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
-	result := &FetchArtifactsResult{
-		IsAlternative: false,
-	}
+	result := &FetchArtifactsResult{}
 
 	recipeID, fail := r.fetchRecipeID()
 	if fail != nil {
@@ -145,13 +143,13 @@ func (r *Download) FetchArtifacts() (*FetchArtifactsResult, *failures.Failure) {
 				return result, FailNoArtifacts.New(locale.T("err_no_artifacts"))
 			}
 
-			result.IsAlternative = resp.BuildEngine != nil && *resp.BuildEngine == headchef_models.BuildStatusResponseBuildEngineAlternative
+			result.BuildEngine = BuildEngineFromResponse(resp)
 			if resp.RecipeID == nil {
 				return result, FailBuildBadResponse.New(locale.T("err_corrupted_build_request_response"))
 			}
 			result.RecipeID = *resp.RecipeID
 			result.Artifacts = resp.Artifacts
-			logging.Debug("request isAlternative=%v, recipeID=%s", result.IsAlternative, result.RecipeID.String())
+			logging.Debug("request engine=%v, recipeID=%s", result.BuildEngine, result.RecipeID.String())
 
 			return result, nil
 
