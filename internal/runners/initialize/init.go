@@ -17,10 +17,6 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type setter interface {
-	Set(key string, value interface{})
-}
-
 // RunParams stores run func parameters.
 type RunParams struct {
 	Namespace *project.Namespaced
@@ -33,7 +29,6 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	config setter
 }
 
 func prepare(params *RunParams) error {
@@ -106,33 +101,29 @@ func prepare(params *RunParams) error {
 }
 
 // New returns a prepared ptr to Initialize instance.
-func New(config setter) *Initialize {
-	return &Initialize{config}
+func New() *Initialize {
+	return &Initialize{}
 }
 
 // Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
-	_, err := run(r.config, params)
+	_, err := run(params)
 	return err
 }
 
-func run(config setter, params *RunParams) (string, error) {
+func run(params *RunParams) (string, error) {
 	if err := prepare(params); err != nil {
 		return "", err
 	}
 
 	logging.Debug("Init: %s/%s", params.Namespace.Owner, params.Namespace.Project)
 
-	if params.language.Recognized() {
-		// Store language for when we run 'state push'
-		config.Set(params.Path+"_language", params.language.String())
-		config.Set(params.Path+"_language_version", params.version)
-	}
-
 	createParams := &projectfile.CreateParams{
-		Owner:     params.Namespace.Owner,
-		Project:   params.Namespace.Project,
-		Directory: params.Path,
+		Owner:           params.Namespace.Owner,
+		Project:         params.Namespace.Project,
+		Language:        params.language.String(),
+		LanguageVersion: params.version,
+		Directory:       params.Path,
 	}
 
 	if params.Style == SkeletonEditor {

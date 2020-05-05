@@ -1384,7 +1384,7 @@ err_push_invalid_language:
 push_creating_project:
   other: "Creating project {{.V1}} under {{.V0}} on the ActiveState Platform"
 push_project_created:
-  other: "Project created at {{.V0}}"
+  other: "Project created at {{.V0}} with language {{.V1}} {{.V2}}"
 push_up_to_date:
   other: "Your project is up to date"
 init_description:
