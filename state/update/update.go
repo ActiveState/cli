@@ -70,7 +70,7 @@ func confirm(force bool) *failures.Failure {
 		return nil
 	}
 
-	msg := locale.T("confirm_update_locked_version")
+	msg := locale.T("confirm_update_locked_version_prompt")
 
 	prom := prompt.New()
 	confirmed, fail := prom.Confirm(msg, false)
@@ -86,11 +86,26 @@ func confirm(force bool) *failures.Failure {
 }
 
 func isNotForwardedOrLocked() bool {
-	return !isForwardCall() && projectfile.Get().Version == ""
+	if isForwardCall() {
+		return false
+	}
+
+	pj, fail := projectfile.GetSafe()
+	if fail != nil {
+		return true
+	}
+
+	return pj.Version == ""
 }
 
 func lockProject(updateFirst bool) {
-	projectVersion := projectfile.Get().Version
+	pj, fail := projectfile.GetSafe()
+	if fail != nil {
+		failures.Handle(fail, locale.T("err_lock_failed"))
+		return
+	}
+
+	projectVersion := pj.Version
 	version := constants.Version
 
 	if updateFirst && projectVersion != "" { // existing lock
@@ -166,9 +181,14 @@ func newUpdater(currentVersion string) *updater.Updater {
 }
 
 func setProjectVersion(branch, version string) *failures.Failure {
-	pj := projectfile.Get()
+	pj, fail := projectfile.GetSafe()
+	if fail != nil {
+		return fail
+	}
+
 	pj.Branch = branch
 	pj.Version = version
+
 	return pj.Save()
 }
 
